@@ -1,101 +1,62 @@
+import { ObjectType, Field, HideField } from '@nestjs/graphql';
+import { Column, Entity, OneToMany, Index } from 'typeorm';
 import { AbstractEntity } from '@/database/abstract.entity';
-import { Gender } from '@/database/enums/gender.enum';
-import { PreferredLanguage } from '@/database/enums/preferredLanguage.enum';
-import { Employee } from '@/employee-management/employees/entities/employee.entity';
-import { Organization } from '@/organizations/entities/organization.entity';
-import { Role } from '@/roles/entities/role.entity';
-import { IUser } from '@/users/interfaces/user.interface';
-import { Field, ObjectType } from '@nestjs/graphql';
-import {
-  Column,
-  Entity,
-  JoinTable,
-  ManyToMany,
-  OneToMany,
-  RelationId,
-} from 'typeorm';
+import { Membership } from '@/memberships/entities/membership.entity';
 
 @ObjectType()
-@Entity()
-export class User extends AbstractEntity<User> implements IUser {
-  @Field(() => String, { nullable: true })
-  @Column('text', { nullable: true })
-  salutation?: string;
-
-  @Field(() => String, { nullable: true })
-  @Column('text', { nullable: true })
-  title?: string;
+@Entity('users')
+@Index('uq_users_email', ['email'], { unique: true })
+@Index('uq_users_username', ['username'], {
+  unique: true,
+  where: '"username" IS NOT NULL',
+})
+export class User extends AbstractEntity<User> {
+  @Field(() => String)
+  @Column({ name: 'first_name', type: 'varchar', length: 120 })
+  firstName!: string;
 
   @Field(() => String)
-  @Column('text')
-  firstName: string;
-
-  @Field(() => String, { nullable: true })
-  @Column('text', { nullable: true })
-  middleName?: string;
-
-  @Field(() => String, { nullable: true })
-  @Column('text', { nullable: true })
-  displayName?: string;
-
-  @Field(() => String)
-  @Column('text')
-  lastName: string;
-
-  @Field(() => Date, { nullable: true })
-  @Column('timestamptz', { nullable: true })
-  birthDate: Date;
-
-  @Field(() => Gender, { nullable: true })
-  @Column('enum', { enum: Gender, nullable: true })
-  gender: Gender;
-
-  @Field(() => PreferredLanguage, { defaultValue: 'DE' })
-  @Column('enum', { enum: PreferredLanguage, default: 'DE' })
-  preferredLanguage: PreferredLanguage;
+  @Column({ name: 'last_name', type: 'varchar', length: 120 })
+  lastName!: string;
 
   @Field(() => String)
   @Column('text', { unique: true })
-  email: string;
-
-  @Field(() => Boolean, { defaultValue: false })
-  @Column('boolean', { default: false })
-  emailVerified: boolean;
-
-  @Field(() => String)
-  @Column('text')
-  password: string;
+  email!: string;
 
   @Field(() => String, { nullable: true })
   @Column('text', { nullable: true })
-  refreshToken?: string;
+  username?: string | null;
 
-  @Field(() => String, { nullable: true })
-  @Column('text', { nullable: true })
-  mobilePhoneNumber?: string;
+  // Nicht im GraphQL-Schema exponieren
+  @HideField()
+  @Column({ name: 'password_hash', type: 'text', select: false })
+  passwordHash!: string;
 
-  @Field(() => String, { nullable: true })
-  @Column('text', { nullable: true })
-  profileImageUrl?: string;
+  @HideField()
+  @Column({
+    name: 'refresh_token',
+    type: 'text',
+    select: false,
+    nullable: true,
+  })
+  refreshToken: string | null;
 
-  @Field(() => [String], { nullable: true })
-  @RelationId((user: User) => user.roles)
-  roleIds: string[];
+  // Optionales externes Login, ebenfalls verbergen
+  @HideField()
+  @Column({
+    name: 'google_id',
+    type: 'varchar',
+    length: 64,
+    select: false,
+    nullable: true,
+  })
+  googleId?: string | null;
 
-  @Field(() => [Role], { nullable: true })
-  @ManyToMany(() => Role, (role) => role.users)
-  @JoinTable()
-  roles: Role[];
+  @Field(() => [Membership])
+  @OneToMany(() => Membership, (membership) => membership.user)
+  memberships!: Membership[];
 
-  @Field(() => String)
-  @RelationId((user: User) => user.organizations)
-  organizationIds: string[];
-
-  @Field(() => [Organization])
-  @ManyToMany(() => Organization, (organization) => organization.users)
-  organizations: Organization[];
-
-  @Field(() => [Employee], { nullable: true })
-  @OneToMany(() => Employee, (employee) => employee.user)
-  employees?: Employee[];
+  @Field(() => Boolean, { nullable: true })
+  @Column({ name: 'is_super_admin', type: 'boolean', default: false })
+  isSuperAdmin!: boolean;
 }

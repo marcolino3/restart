@@ -1,13 +1,17 @@
-import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
-import { UsersService } from './users.service';
-import { User } from './entities/user.entity';
+import { CurrentUser } from '@/auth/decorators/current-user.decorator';
+import { Permissions } from '@/auth/decorators/permissions.decorator';
+import { Roles } from '@/auth/decorators/roles.decorator';
+import { GqlJwtAuthGuard } from '@/auth/guard/gql-jwt-auth.guard';
+import { SystemRole } from '@/roles/entities/system-role.enum';
+import { UseGuards } from '@nestjs/common';
+import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CreateUserInput } from './dto/create-user.input';
 import { UpdateUserInput } from './dto/update-user.input';
-import { UseGuards } from '@nestjs/common';
-import { CurrentUser } from '@/auth/current-user.decorator';
-import { GqlJwtAuthGuard } from '@/auth/guard/gql-jwt-auth.guard';
+import { User } from './entities/user.entity';
+import { UsersService } from './users.service';
 
 @Resolver(() => User)
+@UseGuards(GqlJwtAuthGuard)
 export class UsersResolver {
   constructor(private readonly usersService: UsersService) {}
 
@@ -16,10 +20,16 @@ export class UsersResolver {
     return this.usersService.create(createUserInput);
   }
 
+  @Query(() => User, { name: 'currentUser' })
+  currentUser(@CurrentUser() user: User) {
+    return this.usersService.findCurrentUser(user.id);
+  }
+
   @Query(() => [User], { name: 'users' })
-  @UseGuards(GqlJwtAuthGuard)
-  findAll(@CurrentUser() user: User) {
-    console.log(user);
+  @UseGuards()
+  @Roles(SystemRole.ORG_ADMIN) // optional
+  @Permissions('EMPLOYEE_WRITE', 'TEAM_MANAGE') // optional
+  findAll() {
     return this.usersService.findAll();
   }
 

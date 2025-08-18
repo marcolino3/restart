@@ -1,9 +1,10 @@
-import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
 import {
   Column,
   CreateDateColumn,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  VersionColumn,
 } from 'typeorm';
 import { IBase } from './interfaces/base.interface';
 
@@ -12,6 +13,10 @@ export class AbstractEntity<T> implements IBase {
   @Field(() => ID)
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Field(() => Int)
+  @VersionColumn()
+  version: number;
 
   @Field(() => Boolean)
   @Column('boolean', { default: true })

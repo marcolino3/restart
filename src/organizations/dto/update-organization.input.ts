@@ -13,8 +13,31 @@ export class UpdateOrganizationInput
   @IsUUID()
   id: string;
 
+  @Field(() => String, { nullable: false })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  slug?: string;
+
+  @Field(() => [ID], { nullable: true })
+  teamIds?: string[];
+
   @Field(() => Boolean, { nullable: true })
   @IsOptional()
   @IsBoolean()
   isArchived?: boolean;
+
+  @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  isDeleted?: boolean;
 }

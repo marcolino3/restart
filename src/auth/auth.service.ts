@@ -1,117 +1,246 @@
-import { User } from '@/users/entities/user.entity';
+// src/auth/auth.service.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { compare, hash } from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { TokenPayload } from './token-payload.interface';
 import { Response } from 'express';
+
+import { User } from '@/users/entities/user.entity';
 import { UsersService } from '@/users/users.service';
+import { TokenPayload } from './interfaces/token-payload.interface';
+import { getAuthContext } from './utils/get-auth-context.util';
+import { SafeUser } from './interfaces/safe-user.type';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly enityManager: EntityManager,
+    private readonly entityManager: EntityManager,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
   ) {}
 
-  async verifyUser(email: string, password: string) {
-    const user = await this.enityManager.findOne(User, {
-      where: {
-        email,
-        isActive: true,
-      },
+  /**
+   * Username/Password Login: validiert User und liefert den User zurueck.
+   * Laedt passwordHash via select, da in der Entity select:false gesetzt ist.
+   */
+
+  async verifyUser(email: string, password: string): Promise<SafeUser> {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await this.entityManager.findOne(User, {
+      where: { email: normalizedEmail, isActive: true },
+      // passwordHash explizit mitladen
+      select: [
+        'id',
+        'firstName',
+        'lastName',
+        'email',
+        'passwordHash',
+        'isSuperAdmin',
+      ],
     });
 
-    if (!user) {
+    if (!user || !user.passwordHash) {
       throw new UnauthorizedException();
     }
 
-    const isAuthenticated = await compare(password, user.password);
-
-    if (!isAuthenticated) {
+    const ok = await compare(password, user.passwordHash);
+    if (!ok) {
       throw new UnauthorizedException();
     }
 
-    return user;
+    // Hash entfernen, dann typisieren
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { passwordHash, ...safe } = user as User & { passwordHash: string };
+    return safe as SafeUser;
   }
 
-  async verifyUserRefreshToken(refreshToken: string, userId: string) {
-    const user = await this.enityManager.findOne(User, {
-      where: {
-        id: userId,
-        isActive: true,
-      },
+  /**
+   * Validiert den Refresh-Token gegen den in der DB gespeicherten Hash.
+   * Laedt refreshToken via select, da in der Entity select:false gesetzt ist.
+   */
+  async verifyUserRefreshToken(
+    refreshToken: string,
+    userId: string,
+  ): Promise<User> {
+    const user = await this.entityManager.findOne(User, {
+      where: { id: userId, isActive: true },
+      select: ['id', 'refreshToken'],
     });
 
     if (!user || !user.refreshToken) throw new UnauthorizedException();
 
-    const isAuthenticated = await compare(refreshToken, user?.refreshToken);
-
-    if (!isAuthenticated) throw new UnauthorizedException();
+    const ok = await compare(refreshToken, user.refreshToken);
+    if (!ok) throw new UnauthorizedException();
 
     return user;
   }
 
-  async login(user: User, response: Response): Promise<void> {
-    // Expires Access Token for Cookie
-    const expiresAccessToken = new Date();
+  /**
+   * Erstellt Access/Refresh Tokens, speichert den gehashten Refresh-Token
+   * und setzt beide als Cookies. Baut das Access-Payload aus dem AuthContext.
+   */
+  // auth.service.ts (Ausschnitt)
+  async login(
+    user: User,
+    res: Response,
+    orgId: string,
+    redirect = false,
+  ): Promise<void> {
+    const ctx = await getAuthContext(this.entityManager, user.id, orgId);
 
-    expiresAccessToken.setMilliseconds(
-      expiresAccessToken.getTime() +
-        parseInt(
-          this.configService.getOrThrow<string>(
-            'JWT_ACCESS_TOKEN_EXPIRATION_MS',
-          ),
-        ),
-    );
-
-    // Expires RefreshToken for Cookie
-    const expiresRefreshToken = new Date();
-
-    expiresRefreshToken.setMilliseconds(
-      expiresRefreshToken.getTime() +
-        parseInt(
-          this.configService.getOrThrow<string>(
-            'JWT_REFRESH_TOKEN_EXPIRATION_MS',
-          ),
-        ),
-    );
-
-    const tokenPayload: TokenPayload = {
-      userId: user.id,
-      organizationIds: user.organizationIds,
-      roleIds: user.roleIds,
+    const payload: TokenPayload = {
+      sub: ctx.user.id,
+      orgId: ctx.org.id,
+      membershipId: ctx.membership.id,
+      persona: ctx.membership.persona,
+      roles: ctx.roles.map((r) => r.systemCode || ''),
+      isSuperAdmin: user.isSuperAdmin,
     };
 
-    const accessToken = this.jwtService.sign(tokenPayload, {
+    const accessToken = this.jwtService.sign(payload, {
       secret: this.configService.getOrThrow('JWT_ACCESS_TOKEN_SECRET'),
       expiresIn: `${this.configService.getOrThrow('JWT_ACCESS_TOKEN_EXPIRATION_MS')}ms`,
     });
 
-    const refreshToken = this.jwtService.sign(tokenPayload, {
-      secret: this.configService.getOrThrow('JWT_REFRESH_TOKEN_SECRET'),
-      expiresIn: `${this.configService.getOrThrow('JWT_REFRESH_TOKEN_EXPIRATION_MS')}ms`,
-    });
+    const refreshToken = this.jwtService.sign(
+      { sub: user.id },
+      {
+        secret: this.configService.getOrThrow('JWT_REFRESH_TOKEN_SECRET'),
+        expiresIn: `${this.configService.getOrThrow('JWT_REFRESH_TOKEN_EXPIRATION_MS')}ms`,
+      },
+    );
 
-    // Speicherung RefreshToken in DB
-    await this.usersService.update({
-      id: user.id,
-      refreshToken: await hash(refreshToken, 10),
-    });
+    await this.usersService.setRefreshToken(
+      user.id,
+      await hash(refreshToken, Number(process.env.BCRYPT_ROUNDS ?? 10)),
+    );
 
-    response.cookie('Authentication', accessToken, {
+    const prod = this.configService.get('NODE_ENV') === 'production';
+    const accessMs = parseInt(
+      this.configService.getOrThrow('JWT_ACCESS_TOKEN_EXPIRATION_MS'),
+    );
+    const refreshMs = parseInt(
+      this.configService.getOrThrow('JWT_REFRESH_TOKEN_EXPIRATION_MS'),
+    );
+
+    console.log('NODE_ENV', this.configService.getOrThrow('NODE_ENV'));
+    console.log('secure?', prod);
+
+    // Tokens
+    res.cookie('Authentication', accessToken, {
       httpOnly: true,
-      secure: this.configService.get('NODE_ENV') === 'production',
-      expires: expiresAccessToken,
+      secure: prod,
+      sameSite: prod ? 'none' : 'lax',
+      path: '/',
+      expires: new Date(Date.now() + accessMs),
+    });
+    res.cookie('Refresh', refreshToken, {
+      httpOnly: true,
+      secure: prod,
+      sameSite: prod ? 'none' : 'lax',
+      path: '/auth/refresh',
+      expires: new Date(Date.now() + refreshMs),
     });
 
-    response.cookie('Refresh', refreshToken, {
+    // Active Org zentral hier setzen
+    res.cookie('Active-Org', orgId, {
       httpOnly: true,
-      secure: this.configService.get('NODE_ENV') === 'production',
-      expires: expiresRefreshToken,
+      secure: prod,
+      sameSite: prod ? 'none' : 'lax',
+      path: '/',
+    });
+
+    if (redirect) {
+      res.redirect(
+        `${this.configService.getOrThrow('AUTH_UI_REDIRECT')}/de/admin/my-time-tracking`,
+      );
+    }
+  }
+
+  async loginRefreshOnly(user: User, res: Response): Promise<void> {
+    // 1) org-freies Access-Token fuer SuperAdmin
+    const accessMs = parseInt(
+      this.configService.getOrThrow('JWT_ACCESS_TOKEN_EXPIRATION_MS'),
+      10,
+    );
+    const accessToken = this.jwtService.sign(
+      { sub: user.id, isSuperAdmin: true }, // keine orgId, nur SA-Flag
+      {
+        secret: this.configService.getOrThrow('JWT_ACCESS_TOKEN_SECRET'),
+        // du wolltest ohne maxAge arbeiten -> also expires als Dauer
+        expiresIn: `${Math.floor(accessMs / 1000)}s`,
+      },
+    );
+
+    // 2) Refresh-Token wie gehabt
+    const refreshMs = parseInt(
+      this.configService.getOrThrow('JWT_REFRESH_TOKEN_EXPIRATION_MS'),
+      10,
+    );
+    const refreshToken = this.jwtService.sign(
+      { sub: user.id },
+      {
+        secret: this.configService.getOrThrow('JWT_REFRESH_TOKEN_SECRET'),
+        expiresIn: `${Math.floor(refreshMs / 1000)}s`,
+      },
+    );
+
+    await this.usersService.setRefreshToken(
+      user.id,
+      await hash(refreshToken, Number(process.env.BCRYPT_ROUNDS ?? 10)),
+    );
+
+    const prod = this.configService.get('NODE_ENV') === 'production';
+
+    console.log('NODE_ENV', this.configService.getOrThrow('NODE_ENV'));
+    console.log('secure?', prod);
+
+    // 3) Cookies setzen (ohne Active-Org)
+    res.cookie('Authentication', accessToken, {
+      httpOnly: true,
+      secure: prod,
+      sameSite: prod ? 'none' : 'lax',
+      path: '/',
+      expires: new Date(Date.now() + accessMs),
+    });
+
+    res.cookie('Refresh', refreshToken, {
+      httpOnly: true,
+      secure: prod,
+      sameSite: prod ? 'none' : 'lax',
+      path: '/',
+      expires: new Date(Date.now() + refreshMs),
+    });
+
+    // 4) Redirect auf Dashboard
+    res.redirect(
+      `${this.configService.getOrThrow('AUTH_UI_REDIRECT')}/de/admin/my-time-tracking`,
+    );
+  }
+
+  /**
+   * Optional: loescht Cookies und invalidiert den gespeicherten Refresh-Token.
+   */
+  async logout(userId: string, response: Response): Promise<void> {
+    // Refresh-Token in DB entfernen (bzw. auf null setzen)
+    await this.usersService.clearRefreshToken(userId);
+    const prod = this.configService.get('NODE_ENV') === 'production';
+
+    response.clearCookie('Authentication', {
+      httpOnly: true,
+      secure: prod,
+      sameSite: prod ? 'none' : 'lax',
+      path: '/',
+    });
+
+    response.clearCookie('Refresh', {
+      httpOnly: true,
+      secure: prod,
+      sameSite: prod ? 'none' : 'lax',
+      path: '/',
     });
   }
 }

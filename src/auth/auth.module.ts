@@ -8,6 +8,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { UsersModule } from '@/users/users.module';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
+import { OrganizationsModule } from '@/organizations/organizations.module';
+import { SuperAdminBootstrapService } from './super-admin-bootstrap.service';
 
 @Module({
   imports: [
@@ -21,6 +23,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
       inject: [ConfigService],
     }),
     UsersModule,
+    OrganizationsModule,
   ],
   controllers: [AuthController],
   providers: [
@@ -29,6 +32,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
     JwtStrategy,
     JwtRefreshStrategy,
     GoogleStrategy,
+    SuperAdminBootstrapService,
   ],
   exports: [],
 })

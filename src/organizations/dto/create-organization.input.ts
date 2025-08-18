@@ -1,48 +1,29 @@
-import { InputType, Field } from '@nestjs/graphql';
-import {
-  IsArray,
-  IsBoolean,
-  IsOptional,
-  IsString,
-  IsUUID,
-  ValidateNested,
-} from 'class-validator';
-import { IOrganization } from '@/organizations/interfaces/organization.interface';
-import { CreateAddressInput } from '@/addresses/dto/create-address.input';
-import { Type } from 'class-transformer';
+import { Field, InputType } from '@nestjs/graphql';
+import { IsEmail, IsNotEmpty, MinLength } from 'class-validator';
 
 @InputType()
-export class CreateOrganizationInput implements Partial<IOrganization> {
-  @Field(() => String, { nullable: true })
-  @IsOptional()
-  @IsString()
-  name?: string;
+export class CreateOrganizationInput {
+  @Field(() => String)
+  @IsNotEmpty()
+  organizationName: string;
 
-  @Field(() => String, { nullable: true })
-  @IsOptional()
-  @IsString()
-  subDomain?: string;
+  @Field(() => String)
+  @IsNotEmpty()
+  organizationSlug: string;
 
-  @Field(() => CreateAddressInput, { nullable: true })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => CreateAddressInput)
-  address?: CreateAddressInput;
+  @Field(() => String)
+  @IsNotEmpty()
+  ownerFirstName: string;
 
-  @Field(() => String, { nullable: true })
-  @IsOptional()
-  @IsString()
-  @IsUUID('4')
-  parentOrganzationId?: string;
+  @Field(() => String)
+  @IsNotEmpty()
+  ownerLastName: string;
 
-  @Field(() => [String], { nullable: true })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  @IsUUID('4', { each: true })
-  teamIds?: string[];
+  @Field(() => String)
+  @IsEmail()
+  ownerEmail: string;
 
-  @Field(() => Boolean, { defaultValue: true })
-  @IsBoolean()
-  isActive?: boolean;
+  @Field(() => String)
+  @MinLength(8)
+  ownerPassword: string;
 }

@@ -1,23 +1,39 @@
-import { InputType, Field } from '@nestjs/graphql';
-import { IsEmail, IsString } from 'class-validator';
-import { IUser } from '../interfaces/user.interface';
+// src/users/dto/create-user.input.ts
+import { Field, InputType } from '@nestjs/graphql';
+import {
+  IsBoolean,
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  MinLength,
+} from 'class-validator';
 
 @InputType()
-export class CreateUserInput implements Partial<IUser> {
+export class CreateUserInput {
   @Field(() => String)
-  @IsString()
-  firstName?: string;
+  @IsNotEmpty()
+  firstName!: string;
 
   @Field(() => String)
-  @IsString()
-  lastName?: string;
+  @IsNotEmpty()
+  lastName!: string;
 
   @Field(() => String)
-  @IsString()
   @IsEmail()
-  email: string;
+  email!: string;
 
-  @Field(() => String)
-  @IsString()
-  password: string;
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  // optional: z. B. min 3, max 60, nur sichtbare Zeichen pruefen
+  // @Length(3, 60)
+  username?: string | null;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @MinLength(8)
+  password?: string;
+
+  @Field(() => Boolean, { defaultValue: true })
+  @IsBoolean()
+  isActive: boolean;
 }

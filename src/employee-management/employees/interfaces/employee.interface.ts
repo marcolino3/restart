@@ -1,5 +1,5 @@
 import { IBase } from '@/database/interfaces/base.interface';
-import { TeamMembership } from '@/employee-management/teams/entities/team-membership.entity';
+import { TeamMember } from '@/employee-management/team-members/entities/team-member.entity';
 import { IUser } from '@/users/interfaces/user.interface';
 
 export interface IEmployee extends IBase {
@@ -8,5 +8,5 @@ export interface IEmployee extends IBase {
   user: IUser;
   userId: string;
 
-  teamMemberships: TeamMembership[];
+  teamMemberships: TeamMember[];
 }

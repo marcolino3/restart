@@ -1,27 +1,26 @@
-import { AbstractEntity } from '@/database/abstract.entity';
 import { ObjectType, Field } from '@nestjs/graphql';
-import { IPermission } from '@/permissions/interfaces/permission.interface';
-import { RestartModule } from '@/database/enums/restart-module.enum';
-import { Column } from 'typeorm';
+import { Column, Entity, ManyToMany, Unique } from 'typeorm';
+import { AbstractEntity } from '@/database/abstract.entity';
+import { PermissionCode } from './permission-code.enum';
+import { Role } from '@/roles/entities/role.entity';
 
 @ObjectType()
-export class Permission
-  extends AbstractEntity<Permission>
-  implements IPermission
-{
-  @Field(() => String, { nullable: true })
-  @Column('text', { nullable: true })
-  name?: string;
+@Entity('permissions')
+@Unique('uq_permissions_code', ['code'])
+export class Permission extends AbstractEntity<Permission> {
+  @Field(() => String)
+  @Column('text')
+  name!: string;
+
+  @Field(() => PermissionCode)
+  @Column({ name: 'code', type: 'enum', enum: PermissionCode })
+  code!: PermissionCode;
 
   @Field(() => String, { nullable: true })
   @Column('text', { nullable: true })
   description?: string;
 
-  @Field(() => String, { nullable: true })
-  @Column('enum', { enum: RestartModule, nullable: true })
-  module: RestartModule;
-
-  @Field(() => String, { nullable: true })
-  @Column('text', { nullable: true })
-  code: string;
+  @Field(() => [Role], { nullable: true })
+  @ManyToMany(() => Role, (role) => role.permissions)
+  roles?: Role[];
 }

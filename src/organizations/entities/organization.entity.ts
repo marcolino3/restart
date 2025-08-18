@@ -1,85 +1,41 @@
-import { AbstractEntity } from '@/database/abstract.entity';
-import { ObjectType, Field } from '@nestjs/graphql';
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  JoinTable,
-  ManyToMany,
-  ManyToOne,
-  OneToMany,
-  OneToOne,
-  RelationId,
-} from 'typeorm';
+import { ObjectType, Field, ID } from '@nestjs/graphql';
+import { Column, Entity, OneToMany, Index, RelationId } from 'typeorm';
 
-import { IOrganization } from '@/organizations/interfaces/organization.interface';
-import { Country } from '@/countries/entities/country.entity';
-import { Address } from '@/addresses/entities/address.entity';
-import { User } from '@/users/entities/user.entity';
-import { Role } from '@/roles/entities/role.entity';
+import { AbstractEntity } from '@/database/abstract.entity';
 import { Team } from '@/employee-management/teams/entities/team.entity';
+import { Membership } from '@/memberships/entities/membership.entity';
+import { IOrganization } from '@/organizations/interfaces/organization.interface';
+import { Role } from '@/roles/entities/role.entity';
 
 @ObjectType()
-@Entity()
+@Entity('organizations')
+@Index('uq_organizations_slug', ['slug'], { unique: true })
 export class Organization
   extends AbstractEntity<Organization>
   implements IOrganization
 {
-  @Field(() => String, { nullable: true })
-  @Column('text', { nullable: true })
-  name?: string;
+  @Field()
+  @Column({ name: 'name', type: 'varchar', length: 200 })
+  name!: string;
 
-  @Field(() => String, { nullable: true })
-  @Column('text', { nullable: true })
-  subDomain?: string;
+  @Field()
+  @Column({ name: 'slug', type: 'varchar', length: 120, unique: true })
+  slug!: string;
 
-  @Field(() => String, { nullable: true })
-  @RelationId((org: Organization) => org.address)
-  addressId?: string;
+  @Field(() => [Membership], { nullable: true })
+  @OneToMany(() => Membership, (membership) => membership.organization)
+  memberships?: Membership[];
 
-  @Field(() => Address, { nullable: true })
-  @OneToOne(() => Address, { nullable: true, cascade: true })
-  @JoinColumn()
-  address?: Address;
+  @Field(() => [Role], { nullable: true })
+  @OneToMany(() => Role, (role) => role.organization)
+  roles?: Role[];
 
-  @Field(() => String, { nullable: true })
-  @RelationId((organization: Organization) => organization.parentOrganization)
-  parentOrganizationId?: string;
-
-  @Field(() => Organization, { nullable: true })
-  @ManyToOne(
-    () => Organization,
-    (organization) => organization.parentOrganization,
-    {
-      nullable: true,
-    },
-  )
-  @JoinColumn({ name: 'parentId' })
-  parentOrganization?: Organization;
-
-  @Field(() => [String], { nullable: true })
-  @RelationId((organization: Organization) => organization.teams)
+  // Praktisch, wenn du nur IDs brauchst (keine eigene DB-Spalte!)
+  @Field(() => [ID], { nullable: true })
+  @RelationId((org: Organization) => org.teams)
   teamIds?: string[];
 
   @Field(() => [Team], { nullable: true })
-  @OneToMany(() => Team, (team) => team.organization, { cascade: true })
+  @OneToMany(() => Team, (team) => team.organization)
   teams?: Team[];
-
-  @Field(() => String, { nullable: true })
-  @RelationId((organization: Organization) => organization.country)
-  countryId?: string;
-
-  @Field(() => Country, { nullable: true })
-  @ManyToOne(() => Country, { nullable: true })
-  country?: Country;
-
-  @Field(() => [User], { nullable: true })
-  @ManyToMany(() => User, (user) => user.organizations)
-  @JoinTable()
-  users?: User[];
-
-  roleIds: string[];
-
-  @Field(() => [Role], { nullable: true })
-  roles: Role[];
 }

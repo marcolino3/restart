@@ -1,21 +1,25 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { TokenPayload } from '../token-payload.interface';
+import { TokenPayload } from '../interfaces/token-payload.interface';
 import { EntityManager } from 'typeorm';
 import { User } from '@/users/entities/user.entity';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
-    private readonly configService: ConfigService,
+    configService: ConfigService,
     private readonly entityManager: EntityManager,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (request: Request) => request.cookies?.Authentication as string,
+        (request: Request) => {
+          const token = request.cookies?.Authentication as string;
+
+          return token;
+        },
         ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
       secretOrKey: configService.getOrThrow('JWT_ACCESS_TOKEN_SECRET'),
@@ -23,6 +27,28 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: TokenPayload) {
-    return this.entityManager.findOneByOrFail(User, { id: payload.userId });
+    if (!payload?.sub) {
+      throw new UnauthorizedException();
+    }
+
+    const user = await this.entityManager.findOne(User, {
+      where: { id: payload.sub, isActive: true },
+      select: ['id', 'isSuperAdmin'],
+      relations: ['memberships'], // minimal
+    });
+
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+
+    const tokenPayload: TokenPayload = {
+      sub: user.id,
+      membershipId: user.memberships[0].id,
+      orgId: user.memberships[0].organizationId,
+      isSuperAdmin: user.isSuperAdmin,
+      persona: user.memberships[0].persona,
+    };
+
+    return tokenPayload;
   }
 }

@@ -1,23 +1,26 @@
+import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { GraphQLModule } from '@nestjs/graphql';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { DataSource, EntityManager } from 'typeorm';
+import { AddressesModule } from './addresses/addresses.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { GraphQLModule } from '@nestjs/graphql';
-import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
-import { OrganizationsModule } from './organizations/organizations.module';
-import { CommonModule } from './common/common.module';
-import { AddressesModule } from './addresses/addresses.module';
-import { CountriesModule } from './countries/countries.module';
-import { UsersModule } from './users/users.module';
-import { RolesModule } from './roles/roles.module';
-import { PermissionsModule } from './permissions/permissions.module';
 import { AuthAccountsModule } from './auth-accounts/auth-accounts.module';
-import { JwtModule } from '@nestjs/jwt';
 import { AuthModule } from './auth/auth.module';
+import { CommonModule } from './common/common.module';
+import { CountriesModule } from './countries/countries.module';
 import { EmployeeContractsModule } from './employee-management/employee-contracts/employee-contracts.module';
 import { EmployeeManagementModule } from './employee-management/employee-management.module';
+import { MembershipsModule } from './memberships/memberships.module';
+import { OrganizationsModule } from './organizations/organizations.module';
+import { PermissionsModule } from './permissions/permissions.module';
+import { RolesModule } from './roles/roles.module';
+import { UsersModule } from './users/users.module';
+import { MailModule } from './mail/mail.module';
+import { GoogleModule } from './google/google.module';
 
 @Module({
   imports: [
@@ -38,19 +41,35 @@ import { EmployeeManagementModule } from './employee-management/employee-managem
         autoLoadEntities: true,
         synchronize: true,
         autoSchemaFile: true,
+        // dropSchema: true,
         // schema: 'public',
         migrationsRun: true,
         migrations: ['/migrations/*.ts'],
+
         // logging: true,
       }),
     }),
-    GraphQLModule.forRoot<ApolloDriverConfig>({
+    GraphQLModule.forRootAsync<ApolloDriverConfig>({
+      inject: [DataSource],
       driver: ApolloDriver,
-      playground: false,
-      autoSchemaFile: true, // Falls du ein Schema generierst
-      introspection: true,
-      // autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
-      plugins: [ApolloServerPluginLandingPageLocalDefault()],
+      useFactory: (dataSource: DataSource) => ({
+        autoSchemaFile: true,
+        introspection: true,
+        playground: false,
+        context: ({
+          req,
+          res,
+        }: {
+          req: Request;
+          res: Response;
+          entityManager: EntityManager;
+        }) => ({
+          req,
+          res,
+          entityManager: dataSource.manager, // 💡 wichtig für deine Decorators
+        }),
+        plugins: [ApolloServerPluginLandingPageLocalDefault()],
+      }),
     }),
 
     OrganizationsModule,
@@ -64,13 +83,17 @@ import { EmployeeManagementModule } from './employee-management/employee-managem
     AuthModule,
     EmployeeContractsModule,
     EmployeeManagementModule,
+    MembershipsModule,
+    MailModule,
+    GoogleModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {
-  constructor() {
-    console.log('state', process.env.STATE);
+  constructor(private dataSource: DataSource) {
+    console.log('node_env', process.env.NODE_ENV);
+    console.log('port', process.env.PORT);
     console.log('host', process.env.DB_HOST);
     console.log('port', process.env.DB_PORT);
     console.log('username', process.env.DB_USERNAME);

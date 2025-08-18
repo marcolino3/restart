@@ -1,34 +1,25 @@
 import { AbstractEntity } from '@/database/abstract.entity';
-import { IEmployee } from '@/employee-management/employees/interfaces/employee.interface';
-import { TeamMembership } from '@/employee-management/teams/entities/team-membership.entity';
-import { User } from '@/users/entities/user.entity';
+import { EmployeeAbsence } from '@/employee-management/employee-absences/entities/employee-absence.entity';
+import { Membership } from '@/memberships/entities/membership.entity';
 import { Field, ObjectType } from '@nestjs/graphql';
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  RelationId,
-} from 'typeorm';
+import { Column, Entity, OneToMany, OneToOne } from 'typeorm';
 
 @ObjectType()
 @Entity('employees')
-export class Employee extends AbstractEntity<Employee> implements IEmployee {
-  @Field(() => Boolean, { defaultValue: false })
-  @Column('boolean', { default: false })
-  timeTrackingEnabled: boolean;
+export class Employee extends AbstractEntity<Employee> {
+  @Field(() => Membership)
+  @OneToOne(() => Membership, (membership) => membership.employee)
+  membership: Membership;
 
-  @Field(() => User)
-  @ManyToOne(() => User, (user) => user.employees, { nullable: false })
-  @JoinColumn({ name: 'userId' })
-  user: User;
+  @Field(() => Boolean)
+  @Column({ name: 'time_tracking_enabled', type: 'boolean', default: false })
+  timeTrackingEnabled!: boolean;
 
-  @Field(() => String)
-  @RelationId((employee: Employee) => employee.user)
-  userId: string;
-
-  @Field(() => [TeamMembership])
-  @OneToMany(() => TeamMembership, (membership) => membership.employee)
-  teamMemberships: TeamMembership[];
+  @Field(() => EmployeeAbsence, { nullable: true })
+  @OneToMany(
+    () => EmployeeAbsence,
+    (employeeAbsence) => employeeAbsence.employee,
+    { nullable: true },
+  )
+  absences?: EmployeeAbsence[];
 }

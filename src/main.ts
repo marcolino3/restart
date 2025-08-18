@@ -2,16 +2,13 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: [
-      // 'https://periparto-frontend-f9qno.ondigitalocean.app',
-      'http://localhost:3000',
-    ],
-    credentials: true, // Falls Cookies oder Header übergeben werden
+    origin: 'http://localhost:3000',
+    credentials: true,
   });
 
   app.setGlobalPrefix('/api');
