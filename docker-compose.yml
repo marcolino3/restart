@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: restart
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./restart-backend
+      dockerfile: Dockerfile
+    ports:
+      - "4001:3001"
+    env_file:
+      - ./restart-backend/.env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      ALLOWED_ORIGINS: "http://localhost:4000"
+      GOOGLE_AUTH_REDIRECT_URI: "http://localhost:4001/api/auth/google/callback"
+      AUTH_UI_REDIRECT: "http://localhost:4000"
+    depends_on:
+      - postgres
+
+  frontend:
+    build:
+      context: ./restart-ui
+      dockerfile: Dockerfile
+      args:
+        BACKEND_URL: "http://backend:3001"
+        NEXT_PUBLIC_API_URL: "http://localhost:4001"
+        NEXT_PUBLIC_GRAPHQL_API_URL: "http://localhost:4001/graphql"
+        NEXT_PUBLIC_BACKEND_PUBLIC_URL: "http://localhost:4001/public"
+        NEXT_PUBLIC_GOOGLE_LOGIN_API: "http://localhost:4001/api/auth/google"
+    ports:
+      - "4000:4000"
+    environment:
+      BACKEND_URL: "http://backend:3001"
+      INTERNAL_GRAPHQL_API_URL: "http://backend:3001/graphql"
+      PORT: "4000"
+      HOSTNAME: "0.0.0.0"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

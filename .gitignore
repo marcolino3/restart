@@ -1,0 +1,11 @@
+# Subproject directories (separate repos)
+restart-backend/
+restart-ui/
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+
+# OS
+.DS_Store

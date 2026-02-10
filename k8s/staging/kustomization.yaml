@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: restart-staging
+
+resources:
+  - ../base
+  - ingress.yaml
+  - secrets.yaml
+
+patches:
+  - target:
+      kind: Deployment
+      name: backend
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
+      kind: Deployment
+      name: frontend
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+
+configMapGenerator:
+  - name: backend-config
+    behavior: merge
+    literals:
+      - NODE_ENV=staging
+      - DB_HOST=STAGING_DB_HOST_PLACEHOLDER
+      - ALLOWED_ORIGINS=https://staging.colibri-app.ch
+      - GOOGLE_AUTH_REDIRECT_URI=https://staging.colibri-app.ch/api/auth/google/callback
+      - AUTH_UI_REDIRECT=https://staging.colibri-app.ch

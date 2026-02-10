@@ -1,0 +1,25 @@
+terraform {
+  required_version = ">= 1.5"
+
+  required_providers {
+    infomaniak = {
+      source = "infomaniak/infomaniak"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.25"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.12"
+    }
+  }
+
+  # Remote state storage - configure based on your setup
+  # backend "s3" {
+  #   bucket   = "restart-terraform-state"
+  #   key      = "terraform.tfstate"
+  #   region   = "eu-west-1"
+  #   encrypt  = true
+  # }
+}

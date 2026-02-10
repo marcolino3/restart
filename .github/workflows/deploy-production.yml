@@ -1,0 +1,56 @@
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to deploy (default: latest from staging)"
+        required: false
+        default: "latest"
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/restart-backend
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/restart-frontend
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+
+      - name: Deploy to production
+        run: |
+          TAG="${{ github.event.inputs.image_tag }}"
+          kubectl set image deployment/backend \
+            backend=${{ env.BACKEND_IMAGE }}:${TAG} \
+            -n restart-production
+          kubectl set image deployment/frontend \
+            frontend=${{ env.FRONTEND_IMAGE }}:${TAG} \
+            -n restart-production
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/backend -n restart-production --timeout=300s
+          kubectl rollout status deployment/frontend -n restart-production --timeout=300s
+
+      - name: Smoke test
+        run: |
+          sleep 10
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://app.colibri-app.ch/api/health)
+          if [ "$STATUS" != "200" ]; then
+            echo "Smoke test failed! HTTP status: $STATUS"
+            exit 1
+          fi
+          echo "Smoke test passed! HTTP status: $STATUS"

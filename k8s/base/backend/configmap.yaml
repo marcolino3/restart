@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+data:
+  NODE_ENV: "production"
+  PORT: "3001"
+  DB_PORT: "5432"
+  DB_NAME: "restart"
+  BCRYPT_ROUNDS: "10"
+  JWT_ACCESS_TOKEN_EXPIRATION_MS: "36000000"
+  JWT_REFRESH_TOKEN_EXPIRATION_MS: "604800000"
+  DB_SYNCHRONIZE: "false"
