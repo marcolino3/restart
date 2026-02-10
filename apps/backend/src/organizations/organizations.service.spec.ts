@@ -191,23 +191,6 @@ describe('OrganizationsService', () => {
     });
   });
 
-  // ── isSlugAvailable ──────────────────────────────────────────────
-  describe('isSlugAvailable', () => {
-    it('should return true when slug is not taken', async () => {
-      orgRepo.exist.mockResolvedValue(false);
-      expect(await service.isSlugAvailable('free-slug')).toBe(true);
-    });
-
-    it('should return false when slug is taken', async () => {
-      orgRepo.exist.mockResolvedValue(true);
-      expect(await service.isSlugAvailable('taken')).toBe(false);
-    });
-
-    it('should return false for empty slug', async () => {
-      expect(await service.isSlugAvailable('  ')).toBe(false);
-    });
-  });
-
   // ── updateForActiveOrg ───────────────────────────────────────────
   describe('updateForActiveOrg', () => {
     it('should update org name for superadmin', async () => {

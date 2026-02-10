@@ -2,7 +2,6 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 
-import { CreateOrganizationInput } from './dto/create-organization.input';
 import { UpdateOrganizationInput } from './dto/update-organization.input';
 import { Organization } from './entities/organization.entity';
 import { OrganizationsService } from './organizations.service';
@@ -23,10 +22,8 @@ export class OrganizationsResolver {
    */
   @Mutation(() => Organization, { name: 'createOrganization' })
   @UseGuards(GqlJwtAuthGuard, SuperAdminGuard)
-  createOrganization(
-    @Args('createOrganizationInput') input: CreateOrganizationInput,
-  ) {
-    return this.organizationsService.create(input);
+  createOrganization() {
+    return this.organizationsService.create();
   }
 
   /**
@@ -53,7 +50,7 @@ export class OrganizationsResolver {
   }
 
   /**
-   * Org updaten (aktive Org aus Token)
+   * Org updaten (orgId aus Input, da SuperAdmin editiert)
    */
   @Mutation(() => Organization, { name: 'updateOrganization' })
   @UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
@@ -61,11 +58,18 @@ export class OrganizationsResolver {
     @Args('updateOrganizationInput') input: UpdateOrganizationInput,
     @CurrentUser() user: TokenPayload,
   ) {
-    return this.organizationsService.updateForActiveOrg(
-      user.orgId,
-      input,
-      user,
-    );
+    return this.organizationsService.updateForActiveOrg(input.id, input, user);
+  }
+
+  /**
+   * Slug-Verfuegbarkeit pruefen
+   */
+  @Query(() => Boolean, { name: 'isOrganizationSlugAvailable' })
+  @UseGuards(GqlJwtAuthGuard, SuperAdminGuard)
+  isOrganizationSlugAvailable(
+    @Args('slug', { type: () => String }) slug: string,
+  ) {
+    return this.organizationsService.isSlugAvailable(slug);
   }
 
   /**
@@ -73,7 +77,10 @@ export class OrganizationsResolver {
    */
   @Mutation(() => Organization, { name: 'removeOrganization' })
   @UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
-  removeOrganization(@CurrentUser() user: TokenPayload) {
-    return this.organizationsService.removeForActiveOrg(user.orgId, user);
+  removeOrganization(
+    @Args('id', { type: () => String }) id: string,
+    @CurrentUser() user: TokenPayload,
+  ) {
+    return this.organizationsService.removeForActiveOrg(id, user);
   }
 }

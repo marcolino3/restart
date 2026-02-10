@@ -23,6 +23,9 @@ import { MailModule } from './mail/mail.module';
 import { GoogleModule } from './google/google.module';
 import { OrganizationSettingsModule } from './organization-settings/organization-settings.module';
 import { HealthModule } from './health/health.module';
+import { UploadModule } from './upload/upload.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -74,6 +77,11 @@ import { HealthModule } from './health/health.module';
       }),
     }),
 
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'public'),
+      serveRoot: '/public',
+    }),
+    UploadModule,
     OrganizationsModule,
     CommonModule,
     AddressesModule,

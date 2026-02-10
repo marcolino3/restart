@@ -31,7 +31,7 @@ export class EmployeeAbsenceCategoriesResolver {
     name: 'employeeAbsenceCategoriesByOrgId',
   })
   findEmployeeAbsenceCategoriesByOrgId(@CurrentUser() user: TokenPayload) {
-    const organizationId = user.orgId;
+    const organizationId = user.orgId!;
     return this.employeeAbsenceCategoriesService.findEmployeeAbsenceCategoriesByOrgId(
       organizationId,
     );

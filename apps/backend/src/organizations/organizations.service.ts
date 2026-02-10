@@ -1,6 +1,5 @@
 // src/organizations/organizations.service.ts
 import {
-  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -8,17 +7,12 @@ import {
 } from '@nestjs/common';
 import { EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { hash } from 'bcrypt';
 
 import { Organization } from '@/organizations/entities/organization.entity';
-import { CreateOrganizationInput } from './dto/create-organization.input';
 import { UpdateOrganizationInput } from './dto/update-organization.input';
 
-import { User } from '@/users/entities/user.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
-import { Role } from '@/roles/entities/role.entity';
 import { SystemRole } from '@/roles/entities/system-role.enum';
-import { Persona } from '@/common/enums/persona.enum';
 
 import { seedOrgSystemRoles } from '@/roles/seeds/system-roles.seeder';
 import { assignPermissionsToOrgSystemRoles } from '@/roles/seeds/assign-permissions-to-system-roles.seeder';
@@ -35,94 +29,23 @@ export class OrganizationsService {
   ) {}
 
   /**
-   * Legt eine neue Organisation an, seeden der Systemrollen & Permissions,
-   * Owner-User (find-or-create), Membership, Owner-Rolle zuweisen.
+   * Legt eine leere Organisation an + Seeds (Rollen, Permissions, AbsenceCategories).
    */
-  async create(input: CreateOrganizationInput) {
-    return this.entityManager
-      .transaction(async (manager) => {
-        const {
-          organizationName,
-          organizationSlug,
-          ownerFirstName,
-          ownerLastName,
-          ownerEmail,
-          ownerPassword,
-        } = input;
+  async create() {
+    return this.entityManager.transaction(async (manager) => {
+      const org = await manager.save(
+        manager.create(Organization, {
+          isActive: false,
+          timezone: 'Europe/Berlin',
+        }),
+      );
 
-        // 0) Normalisieren
-        const slug = organizationSlug.trim().toLowerCase();
-        const email = ownerEmail.trim().toLowerCase();
+      await seedOrgEmployeeAbsenceCategories(manager, org.id);
+      await seedOrgSystemRoles(manager, org.id);
+      await assignPermissionsToOrgSystemRoles(manager, org.id);
 
-        if (!slug) throw new BadRequestException('Slug required');
-
-        // 1) Slug-Check (Unique rettet Race-Condition)
-        const exists = await manager.exists(Organization, { where: { slug } });
-        if (exists)
-          throw new ConflictException('Organization slug already exists');
-
-        // 2) Organization
-        const organizationSaved = await manager.save(
-          manager.create(Organization, { name: organizationName, slug }),
-        );
-
-        // 3) User find-or-create (bestehenden User NICHT mit neuem PW ueberschreiben)
-        let user = await manager.findOneBy(User, { email });
-        if (!user) {
-          const passwordHash = await hash(
-            ownerPassword,
-            Number(process.env.BCRYPT_ROUNDS ?? 10),
-          );
-          user = await manager.save(
-            manager.create(User, {
-              firstName: ownerFirstName,
-              lastName: ownerLastName,
-              email,
-              passwordHash,
-            }),
-          );
-        }
-
-        // 4) Seeds fuer diese Org
-        await seedOrgEmployeeAbsenceCategories(manager, organizationSaved.id);
-        await seedOrgSystemRoles(manager, organizationSaved.id);
-        await assignPermissionsToOrgSystemRoles(manager, organizationSaved.id);
-
-        // 5) Membership anlegen
-        const membershipSaved = await manager.save(
-          manager.create(Membership, {
-            organizationId: organizationSaved.id,
-            userId: user.id,
-            persona: Persona.ADMIN,
-          }),
-        );
-
-        // 6) ORG_OWNER zuweisen
-        const ownerRole = await manager.getRepository(Role).findOneByOrFail({
-          organizationId: organizationSaved.id,
-          systemCode: SystemRole.ORG_OWNER,
-        });
-
-        await manager
-          .createQueryBuilder()
-          .relation(Membership, 'roles')
-          .of(membershipSaved.id)
-          .add(ownerRole.id);
-
-        return {
-          organizationId: organizationSaved.id,
-          userId: user.id,
-          membershipId: membershipSaved.id,
-        };
-      })
-      .catch((error) => {
-        // Postgres Unique
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        if (error?.code === '23505') {
-          throw new ConflictException('Unique constraint violated');
-        }
-        throw error;
-      });
+      return org;
+    });
   }
 
   /**
@@ -180,6 +103,16 @@ export class OrganizationsService {
   }
 
   /**
+   * Pruefen ob ein Slug verfuegbar ist.
+   */
+  async isSlugAvailable(slug: string): Promise<boolean> {
+    const norm = slug.trim().toLowerCase();
+    if (!norm) return false;
+    const exists = await this.orgRepo.exist({ where: { slug: norm } });
+    return !exists;
+  }
+
+  /**
    * Org updaten (org-gebunden). Optional Slug-Aenderung mit Unique-Check.
    */
   async updateForActiveOrg(
@@ -211,6 +144,16 @@ export class OrganizationsService {
     if (typeof input.name === 'string') {
       org.name = input.name;
     }
+
+    if (input.domain !== undefined) org.domain = input.domain || undefined;
+    if (input.street !== undefined) org.street = input.street || undefined;
+    if (input.zip !== undefined) org.zip = input.zip || undefined;
+    if (input.city !== undefined) org.city = input.city || undefined;
+    if (input.country !== undefined) org.country = input.country || undefined;
+    if (input.phone !== undefined) org.phone = input.phone || undefined;
+    if (input.email !== undefined) org.email = input.email || undefined;
+    if (input.website !== undefined) org.website = input.website || undefined;
+    if (input.timezone !== undefined) org.timezone = input.timezone;
 
     return this.orgRepo.save(org);
   }

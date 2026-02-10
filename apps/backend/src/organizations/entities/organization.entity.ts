@@ -14,13 +14,60 @@ export class Organization
   extends AbstractEntity<Organization>
   implements IOrganization
 {
-  @Field()
-  @Column({ name: 'name', type: 'varchar', length: 200 })
-  name!: string;
+  @Field({ nullable: true })
+  @Column({ name: 'name', type: 'varchar', length: 200, nullable: true })
+  name?: string;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'slug',
+    type: 'varchar',
+    length: 120,
+    unique: true,
+    nullable: true,
+  })
+  slug?: string;
+
+  @Field({ nullable: true })
+  @Column({ name: 'domain', type: 'varchar', length: 255, nullable: true })
+  domain?: string;
+
+  @Field({ nullable: true })
+  @Column({ name: 'street', type: 'varchar', length: 200, nullable: true })
+  street?: string;
+
+  @Field({ nullable: true })
+  @Column({ name: 'zip', type: 'varchar', length: 20, nullable: true })
+  zip?: string;
+
+  @Field({ nullable: true })
+  @Column({ name: 'city', type: 'varchar', length: 100, nullable: true })
+  city?: string;
+
+  @Field({ nullable: true })
+  @Column({ name: 'country', type: 'varchar', length: 100, nullable: true })
+  country?: string;
+
+  @Field({ nullable: true })
+  @Column({ name: 'phone', type: 'varchar', length: 50, nullable: true })
+  phone?: string;
+
+  @Field({ nullable: true })
+  @Column({ name: 'email', type: 'varchar', length: 200, nullable: true })
+  email?: string;
+
+  @Field({ nullable: true })
+  @Column({ name: 'website', type: 'varchar', length: 500, nullable: true })
+  website?: string;
 
   @Field()
-  @Column({ name: 'slug', type: 'varchar', length: 120, unique: true })
-  slug!: string;
+  @Column({
+    name: 'timezone',
+    type: 'varchar',
+    length: 100,
+    default: 'Europe/Berlin',
+  })
+  timezone!: string;
 
   @Field(() => [Membership], { nullable: true })
   @OneToMany(() => Membership, (membership) => membership.organization)
