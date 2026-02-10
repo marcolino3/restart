@@ -1,0 +1,11 @@
+node_modules
+.next
+.env
+.env.*
+.git
+.gitignore
+*.md
+coverage
+.eslintrc*
+docker-compose*
+Dockerfile
