@@ -41,12 +41,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException();
     }
 
+    const membership = user.memberships?.[0];
+
     const tokenPayload: TokenPayload = {
       sub: user.id,
-      membershipId: user.memberships[0].id,
-      orgId: user.memberships[0].organizationId,
+      membershipId: membership?.id,
+      orgId: membership?.organizationId,
       isSuperAdmin: user.isSuperAdmin,
-      persona: user.memberships[0].persona,
+      persona: membership?.persona,
     };
 
     return tokenPayload;

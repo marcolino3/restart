@@ -21,6 +21,8 @@ import { RolesModule } from './roles/roles.module';
 import { UsersModule } from './users/users.module';
 import { MailModule } from './mail/mail.module';
 import { GoogleModule } from './google/google.module';
+import { OrganizationSettingsModule } from './organization-settings/organization-settings.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -39,14 +41,14 @@ import { GoogleModule } from './google/google.module';
         password: configService.getOrThrow('DB_PASSWORD'),
         database: configService.getOrThrow('DB_NAME'),
         autoLoadEntities: true,
-        synchronize: true,
+        synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
+        ssl:
+          configService.get('NODE_ENV') === 'production'
+            ? { rejectUnauthorized: false }
+            : false,
         autoSchemaFile: true,
-        // dropSchema: true,
-        // schema: 'public',
         migrationsRun: true,
         migrations: ['/migrations/*.ts'],
-
-        // logging: true,
       }),
     }),
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
@@ -86,18 +88,10 @@ import { GoogleModule } from './google/google.module';
     MembershipsModule,
     MailModule,
     GoogleModule,
+    OrganizationSettingsModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {
-  constructor(private dataSource: DataSource) {
-    console.log('node_env', process.env.NODE_ENV);
-    console.log('port', process.env.PORT);
-    console.log('host', process.env.DB_HOST);
-    console.log('port', process.env.DB_PORT);
-    console.log('username', process.env.DB_USERNAME);
-    console.log('password', process.env.DB_PASSWORD);
-    console.log('db name', process.env.DB_NAME);
-  }
-}
+export class AppModule {}
