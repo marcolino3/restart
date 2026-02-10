@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Creates Kubernetes secrets from a .env file
 # Usage: ./scripts/setup-secrets.sh <namespace> <env-file>
-# Example: ./scripts/setup-secrets.sh restart-staging ./restart-backend/.env
+# Example: ./scripts/setup-secrets.sh restart-staging ./apps/backend/.env
 
 NAMESPACE="${1:?Usage: $0 <namespace> <env-file>}"
 ENV_FILE="${2:?Usage: $0 <namespace> <env-file>}"

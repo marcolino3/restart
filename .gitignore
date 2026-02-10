@@ -1,4 +1,4 @@
-# Subproject directories (separate repos)
+# Old separate repos (kept on disk, not part of monorepo)
 restart-backend/
 restart-ui/
 
@@ -9,3 +9,14 @@ terraform/*.tfstate.backup
 
 # OS
 .DS_Store
+
+# IDE
+.idea/
+
+# Dependencies (each app has its own)
+node_modules/
+
+# Environment files
+.env
+.env.*
+!.env.example

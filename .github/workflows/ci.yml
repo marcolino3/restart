@@ -10,15 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: restart-backend
+        working-directory: apps/backend
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "npm"
-          cache-dependency-path: restart-backend/package-lock.json
+          cache-dependency-path: apps/backend/package-lock.json
 
       - run: npm ci
       - run: npm run lint
@@ -30,15 +30,15 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: restart-ui
+        working-directory: apps/web
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "npm"
-          cache-dependency-path: restart-ui/package-lock.json
+          cache-dependency-path: apps/web/package-lock.json
 
       - run: npm ci
       - run: npm run lint

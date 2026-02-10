@@ -2,11 +2,25 @@
 
 ## Architecture
 
-- **Backend**: NestJS GraphQL API on port 3001
-- **Frontend**: Next.js SSR on port 3000
+- **Backend**: NestJS GraphQL API (`apps/backend/`) on port 3001
+- **Frontend**: Next.js SSR (`apps/web/`) on port 3000
 - **Database**: PostgreSQL (Infomaniak Managed)
 - **Hosting**: Infomaniak Managed Kubernetes (Switzerland)
 - **CI/CD**: GitHub Actions → GitHub Container Registry → Kubernetes
+
+## Project Structure
+
+```
+restart/
+├── apps/
+│   ├── backend/        # NestJS GraphQL API
+│   └── web/            # Next.js Frontend
+├── k8s/                # Kubernetes manifests (Kustomize)
+├── terraform/          # Infomaniak infrastructure
+├── scripts/            # Deployment helper scripts
+├── .github/workflows/  # CI/CD pipelines
+└── docker-compose.yml  # Local development
+```
 
 ## Environments
 
@@ -143,9 +157,9 @@ kubectl get svc -n ingress-nginx
 docker compose up --build
 
 # Access:
-# Frontend: http://localhost:3000
-# Backend:  http://localhost:3001
-# GraphQL:  http://localhost:3001/api/graphql
+# Frontend: http://localhost:4000
+# Backend:  http://localhost:4001
+# GraphQL:  http://localhost:4001/graphql
 ```
 
 ## Health Checks

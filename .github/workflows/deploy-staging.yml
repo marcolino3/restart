@@ -30,7 +30,7 @@ jobs:
       - name: Build and push backend image
         uses: docker/build-push-action@v5
         with:
-          context: ./restart-backend
+          context: ./apps/backend
           push: true
           tags: |
             ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
@@ -39,7 +39,7 @@ jobs:
       - name: Build and push frontend image
         uses: docker/build-push-action@v5
         with:
-          context: ./restart-ui
+          context: ./apps/web
           push: true
           build-args: |
             BACKEND_URL=http://backend:3001
