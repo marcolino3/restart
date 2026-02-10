@@ -1,0 +1,29 @@
+import { registerEnumType } from '@nestjs/graphql';
+
+export enum PermissionCode {
+  ORG_DELETE = 'ORG_DELETE',
+  ORG_TRANSFER_OWNERSHIP = 'ORG_TRANSFER_OWNERSHIP',
+  BILLING_MANAGE = 'BILLING_MANAGE',
+
+  USER_INVITE = 'USER_INVITE',
+  USER_REMOVE = 'USER_REMOVE',
+
+  ROLE_CREATE = 'ROLE_CREATE',
+  ROLE_DELETE = 'ROLE_DELETE',
+  ROLE_ASSIGN = 'ROLE_ASSIGN',
+
+  TEAM_CREATE = 'TEAM_CREATE',
+  TEAM_DELETE = 'TEAM_DELETE',
+  TEAM_MANAGE = 'TEAM_MANAGE',
+
+  EMPLOYEE_READ = 'EMPLOYEE_READ',
+  EMPLOYEE_WRITE = 'EMPLOYEE_WRITE',
+
+  TIMESHEET_READ = 'TIMESHEET_READ',
+  TIMESHEET_WRITE = 'TIMESHEET_WRITE',
+}
+
+registerEnumType(PermissionCode, {
+  name: 'PermissionCode',
+  description: 'Supported Permission Codes',
+});
