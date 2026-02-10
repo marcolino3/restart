@@ -1,35 +1,33 @@
-import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
 import { RolesService } from './roles.service';
 import { Role } from './entities/role.entity';
-import { CreateRoleInput } from './dto/create-role.input';
-import { UpdateRoleInput } from './dto/update-role.input';
+import { UpdateRolePermissionsInput } from './dto/update-role-permissions.input';
+import { UseGuards } from '@nestjs/common';
+import { GqlJwtAuthGuard } from '@/auth/guard/gql-jwt-auth.guard';
+import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
+import { Permissions } from '@/auth/decorators/permissions.decorator';
+import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 
 @Resolver(() => Role)
+@UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
 export class RolesResolver {
   constructor(private readonly rolesService: RolesService) {}
 
-  @Mutation(() => Role)
-  createRole(@Args('createRoleInput') createRoleInput: CreateRoleInput) {
-    return this.rolesService.create(createRoleInput);
-  }
-
-  @Query(() => [Role], { name: 'roles' })
-  findAll() {
-    return this.rolesService.findAll();
-  }
-
-  @Query(() => Role, { name: 'role' })
-  findOne(@Args('id', { type: () => Int }) id: number) {
-    return this.rolesService.findOne(id);
+  @Query(() => [Role], { name: 'rolesByOrgId' })
+  rolesByOrgId(@CurrentOrgId() orgId: string) {
+    return this.rolesService.findAllByOrgId(orgId);
   }
 
   @Mutation(() => Role)
-  updateRole(@Args('updateRoleInput') updateRoleInput: UpdateRoleInput) {
-    return this.rolesService.update(updateRoleInput.id, updateRoleInput);
-  }
-
-  @Mutation(() => Role)
-  removeRole(@Args('id', { type: () => Int }) id: number) {
-    return this.rolesService.remove(id);
+  @Permissions('ROLE_ASSIGN')
+  updateRolePermissions(
+    @Args('input') input: UpdateRolePermissionsInput,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.rolesService.updateRolePermissions(
+      input.roleId,
+      input.permissionCodes,
+      orgId,
+    );
   }
 }

@@ -100,6 +100,7 @@ export class AuthService {
       membershipId: ctx.membership.id,
       persona: ctx.membership.persona,
       roles: ctx.roles.map((r) => r.systemCode || ''),
+      permissions: ctx.permissions,
       isSuperAdmin: user.isSuperAdmin,
     };
 

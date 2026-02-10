@@ -12,5 +12,6 @@ import { CommonModule } from '@/common/common.module';
     PermissionsResolver,
     PermissionsService,
   ],
+  exports: [PermissionsService],
 })
 export class PermissionsModule {}

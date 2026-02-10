@@ -3,9 +3,10 @@ import { RolesService } from './roles.service';
 import { RolesResolver } from './roles.resolver';
 import { CommonModule } from '@/common/common.module';
 import { DatabaseModule } from '@/database/database.module';
+import { PermissionsModule } from '@/permissions/permissions.module';
 
 @Module({
-  imports: [CommonModule, DatabaseModule],
+  imports: [CommonModule, DatabaseModule, PermissionsModule],
   providers: [RolesResolver, RolesService],
   exports: [RolesService],
 })

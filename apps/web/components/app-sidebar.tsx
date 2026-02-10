@@ -9,13 +9,13 @@ import {
   IconFileAi,
   IconFileDescription,
   IconFileWord,
-  IconFolder,
   IconHelp,
   IconInnerShadowTop,
   IconListDetails,
   IconReport,
   IconSearch,
   IconSettings,
+  IconShieldLock,
   IconUsers,
 } from "@tabler/icons-react";
 
@@ -32,6 +32,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { PermissionGate } from "@/components/permission-gate";
 import { ROUTES } from "@/constants/routes";
 import { useLocale } from "next-intl";
 
@@ -172,6 +173,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
+        <PermissionGate permission="ROLE_ASSIGN">
+          <NavMain
+            items={[
+              {
+                title: "Rollen & Berechtigungen",
+                url: ROUTES.admin.roles(locale),
+                icon: IconShieldLock,
+              },
+            ]}
+          />
+        </PermissionGate>
         <NavDocuments items={data.documents} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>

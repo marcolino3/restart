@@ -19,9 +19,17 @@ type Documents = {
     "\n  mutation CreateEmployee($createEmployeeInput: CreateEmployeeInput!) {\n    createEmployee(createEmployeeInput: $createEmployeeInput) {\n      id\n    }\n  }\n": typeof types.CreateEmployeeDocument,
     "\n  query GetEmployeeById($employeeId: ID!) {\n    employeeById(employeeId: $employeeId) {\n      id\n      user {\n        firstName\n        lastName\n        email\n      }\n      persona\n      employee {\n        timeTrackingEnabled\n      }\n    }\n  }\n": typeof types.GetEmployeeByIdDocument,
     "\n  query GetEmployees {\n    employeesByOrgId {\n      membership {\n        employee {\n          isActive\n          timeTrackingEnabled\n          id\n        }\n        user {\n          firstName\n          id\n          email\n          lastName\n        }\n        persona\n      }\n    }\n  }\n": typeof types.GetEmployeesDocument,
+    "\n  mutation CreateOrganizationSetting($input: CreateOrganizationSettingInput!) {\n    createOrganizationSetting(input: $input) {\n      id\n      key\n      description\n      hasValue\n    }\n  }\n": typeof types.CreateOrganizationSettingDocument,
+    "\n  mutation DeleteOrganizationSetting($organizationId: ID!, $key: String!) {\n    deleteOrganizationSetting(organizationId: $organizationId, key: $key)\n  }\n": typeof types.DeleteOrganizationSettingDocument,
+    "\n  query GetOrganizationSetting($organizationId: ID!, $key: String!, $decrypt: Boolean!) {\n    organizationSetting(organizationId: $organizationId, key: $key, decrypt: $decrypt) {\n      id\n      organizationId\n      key\n      description\n      hasValue\n      value\n      version\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.GetOrganizationSettingDocument,
+    "\n  query GetOrganizationSettings($organizationId: ID!) {\n    organizationSettings(organizationId: $organizationId) {\n      id\n      organizationId\n      key\n      description\n      hasValue\n      version\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.GetOrganizationSettingsDocument,
+    "\n  mutation UpdateOrganizationSetting($input: UpdateOrganizationSettingInput!) {\n    updateOrganizationSetting(input: $input) {\n      id\n      key\n      description\n      hasValue\n    }\n  }\n": typeof types.UpdateOrganizationSettingDocument,
     "\n  mutation CreateOrganization(\n    $createOrganizationInput: CreateOrganizationInput!\n  ) {\n    createOrganization(createOrganizationInput: $createOrganizationInput) {\n      id\n    }\n  }\n": typeof types.CreateOrganizationDocument,
     "\n  query GetOrganizations {\n    organizations {\n      id\n      name\n      isActive\n    }\n  }\n": typeof types.GetOrganizationsDocument,
-    "\n  query GetCurrentUser {\n    currentUser {\n      id\n      firstName\n      lastName\n      email\n    }\n  }\n": typeof types.GetCurrentUserDocument,
+    "\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n": typeof types.GetPermissionsDocument,
+    "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n": typeof types.GetRolesByOrgIdDocument,
+    "\n  mutation UpdateRolePermissions($input: UpdateRolePermissionsInput!) {\n    updateRolePermissions(input: $input) {\n      id\n      permissions {\n        id\n        code\n      }\n    }\n  }\n": typeof types.UpdateRolePermissionsDocument,
+    "\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        email\n      }\n      roles\n      permissions\n      orgId\n      isSuperAdmin\n    }\n  }\n": typeof types.GetAuthContextDocument,
 };
 const documents: Documents = {
     "\n  mutation CreateEmployeeAbsenceNotice(\n    $createEmployeeAbsenceInput: CreateEmployeeAbsenceNoticeInput!\n  ) {\n    createEmployeeAbsenceNotice(\n      createEmployeeAbsenceInput: $createEmployeeAbsenceInput\n    ) {\n      id\n    }\n  }\n": types.CreateEmployeeAbsenceNoticeDocument,
@@ -29,9 +37,17 @@ const documents: Documents = {
     "\n  mutation CreateEmployee($createEmployeeInput: CreateEmployeeInput!) {\n    createEmployee(createEmployeeInput: $createEmployeeInput) {\n      id\n    }\n  }\n": types.CreateEmployeeDocument,
     "\n  query GetEmployeeById($employeeId: ID!) {\n    employeeById(employeeId: $employeeId) {\n      id\n      user {\n        firstName\n        lastName\n        email\n      }\n      persona\n      employee {\n        timeTrackingEnabled\n      }\n    }\n  }\n": types.GetEmployeeByIdDocument,
     "\n  query GetEmployees {\n    employeesByOrgId {\n      membership {\n        employee {\n          isActive\n          timeTrackingEnabled\n          id\n        }\n        user {\n          firstName\n          id\n          email\n          lastName\n        }\n        persona\n      }\n    }\n  }\n": types.GetEmployeesDocument,
+    "\n  mutation CreateOrganizationSetting($input: CreateOrganizationSettingInput!) {\n    createOrganizationSetting(input: $input) {\n      id\n      key\n      description\n      hasValue\n    }\n  }\n": types.CreateOrganizationSettingDocument,
+    "\n  mutation DeleteOrganizationSetting($organizationId: ID!, $key: String!) {\n    deleteOrganizationSetting(organizationId: $organizationId, key: $key)\n  }\n": types.DeleteOrganizationSettingDocument,
+    "\n  query GetOrganizationSetting($organizationId: ID!, $key: String!, $decrypt: Boolean!) {\n    organizationSetting(organizationId: $organizationId, key: $key, decrypt: $decrypt) {\n      id\n      organizationId\n      key\n      description\n      hasValue\n      value\n      version\n      createdAt\n      updatedAt\n    }\n  }\n": types.GetOrganizationSettingDocument,
+    "\n  query GetOrganizationSettings($organizationId: ID!) {\n    organizationSettings(organizationId: $organizationId) {\n      id\n      organizationId\n      key\n      description\n      hasValue\n      version\n      createdAt\n      updatedAt\n    }\n  }\n": types.GetOrganizationSettingsDocument,
+    "\n  mutation UpdateOrganizationSetting($input: UpdateOrganizationSettingInput!) {\n    updateOrganizationSetting(input: $input) {\n      id\n      key\n      description\n      hasValue\n    }\n  }\n": types.UpdateOrganizationSettingDocument,
     "\n  mutation CreateOrganization(\n    $createOrganizationInput: CreateOrganizationInput!\n  ) {\n    createOrganization(createOrganizationInput: $createOrganizationInput) {\n      id\n    }\n  }\n": types.CreateOrganizationDocument,
     "\n  query GetOrganizations {\n    organizations {\n      id\n      name\n      isActive\n    }\n  }\n": types.GetOrganizationsDocument,
-    "\n  query GetCurrentUser {\n    currentUser {\n      id\n      firstName\n      lastName\n      email\n    }\n  }\n": types.GetCurrentUserDocument,
+    "\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n": types.GetPermissionsDocument,
+    "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n": types.GetRolesByOrgIdDocument,
+    "\n  mutation UpdateRolePermissions($input: UpdateRolePermissionsInput!) {\n    updateRolePermissions(input: $input) {\n      id\n      permissions {\n        id\n        code\n      }\n    }\n  }\n": types.UpdateRolePermissionsDocument,
+    "\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        email\n      }\n      roles\n      permissions\n      orgId\n      isSuperAdmin\n    }\n  }\n": types.GetAuthContextDocument,
 };
 
 /**
@@ -71,6 +87,26 @@ export function graphql(source: "\n  query GetEmployees {\n    employeesByOrgId 
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n  mutation CreateOrganizationSetting($input: CreateOrganizationSettingInput!) {\n    createOrganizationSetting(input: $input) {\n      id\n      key\n      description\n      hasValue\n    }\n  }\n"): (typeof documents)["\n  mutation CreateOrganizationSetting($input: CreateOrganizationSettingInput!) {\n    createOrganizationSetting(input: $input) {\n      id\n      key\n      description\n      hasValue\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation DeleteOrganizationSetting($organizationId: ID!, $key: String!) {\n    deleteOrganizationSetting(organizationId: $organizationId, key: $key)\n  }\n"): (typeof documents)["\n  mutation DeleteOrganizationSetting($organizationId: ID!, $key: String!) {\n    deleteOrganizationSetting(organizationId: $organizationId, key: $key)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetOrganizationSetting($organizationId: ID!, $key: String!, $decrypt: Boolean!) {\n    organizationSetting(organizationId: $organizationId, key: $key, decrypt: $decrypt) {\n      id\n      organizationId\n      key\n      description\n      hasValue\n      value\n      version\n      createdAt\n      updatedAt\n    }\n  }\n"): (typeof documents)["\n  query GetOrganizationSetting($organizationId: ID!, $key: String!, $decrypt: Boolean!) {\n    organizationSetting(organizationId: $organizationId, key: $key, decrypt: $decrypt) {\n      id\n      organizationId\n      key\n      description\n      hasValue\n      value\n      version\n      createdAt\n      updatedAt\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetOrganizationSettings($organizationId: ID!) {\n    organizationSettings(organizationId: $organizationId) {\n      id\n      organizationId\n      key\n      description\n      hasValue\n      version\n      createdAt\n      updatedAt\n    }\n  }\n"): (typeof documents)["\n  query GetOrganizationSettings($organizationId: ID!) {\n    organizationSettings(organizationId: $organizationId) {\n      id\n      organizationId\n      key\n      description\n      hasValue\n      version\n      createdAt\n      updatedAt\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateOrganizationSetting($input: UpdateOrganizationSettingInput!) {\n    updateOrganizationSetting(input: $input) {\n      id\n      key\n      description\n      hasValue\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateOrganizationSetting($input: UpdateOrganizationSettingInput!) {\n    updateOrganizationSetting(input: $input) {\n      id\n      key\n      description\n      hasValue\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n  mutation CreateOrganization(\n    $createOrganizationInput: CreateOrganizationInput!\n  ) {\n    createOrganization(createOrganizationInput: $createOrganizationInput) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateOrganization(\n    $createOrganizationInput: CreateOrganizationInput!\n  ) {\n    createOrganization(createOrganizationInput: $createOrganizationInput) {\n      id\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
@@ -79,7 +115,19 @@ export function graphql(source: "\n  query GetOrganizations {\n    organizations
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query GetCurrentUser {\n    currentUser {\n      id\n      firstName\n      lastName\n      email\n    }\n  }\n"): (typeof documents)["\n  query GetCurrentUser {\n    currentUser {\n      id\n      firstName\n      lastName\n      email\n    }\n  }\n"];
+export function graphql(source: "\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n"): (typeof documents)["\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateRolePermissions($input: UpdateRolePermissionsInput!) {\n    updateRolePermissions(input: $input) {\n      id\n      permissions {\n        id\n        code\n      }\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateRolePermissions($input: UpdateRolePermissionsInput!) {\n    updateRolePermissions(input: $input) {\n      id\n      permissions {\n        id\n        code\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        email\n      }\n      roles\n      permissions\n      orgId\n      isSuperAdmin\n    }\n  }\n"): (typeof documents)["\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        email\n      }\n      roles\n      permissions\n      orgId\n      isSuperAdmin\n    }\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

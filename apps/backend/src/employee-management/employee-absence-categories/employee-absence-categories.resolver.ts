@@ -3,10 +3,13 @@ import { EmployeeAbsenceCategoriesService } from './employee-absence-categories.
 import { EmployeeAbsenceCategory } from './entities/employee-absence-category.entity';
 import { UseGuards } from '@nestjs/common';
 import { GqlJwtAuthGuard } from '@/auth/guard/gql-jwt-auth.guard';
+import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
+import { SuperAdminGuard } from '@/auth/guard/super-admin.guard';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 
 @Resolver(() => EmployeeAbsenceCategory)
+@UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
 export class EmployeeAbsenceCategoriesResolver {
   constructor(
     private readonly employeeAbsenceCategoriesService: EmployeeAbsenceCategoriesService,
@@ -15,6 +18,7 @@ export class EmployeeAbsenceCategoriesResolver {
   @Mutation(() => EmployeeAbsenceCategory, {
     name: 'seedSystemEmployeeAbsenceCategories',
   })
+  @UseGuards(SuperAdminGuard)
   seedSystemEmployeeAbsenceCategories(
     @Args('orgId', { type: () => String }) orgId: string,
   ) {
@@ -26,7 +30,6 @@ export class EmployeeAbsenceCategoriesResolver {
   @Query(() => [EmployeeAbsenceCategory], {
     name: 'employeeAbsenceCategoriesByOrgId',
   })
-  @UseGuards(GqlJwtAuthGuard)
   findEmployeeAbsenceCategoriesByOrgId(@CurrentUser() user: TokenPayload) {
     const organizationId = user.orgId;
     return this.employeeAbsenceCategoriesService.findEmployeeAbsenceCategoriesByOrgId(

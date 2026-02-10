@@ -45,10 +45,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     const tokenPayload: TokenPayload = {
       sub: user.id,
-      membershipId: membership?.id,
-      orgId: membership?.organizationId,
+      membershipId: payload.membershipId ?? membership?.id,
+      orgId: payload.orgId ?? membership?.organizationId,
       isSuperAdmin: user.isSuperAdmin,
-      persona: membership?.persona,
+      persona: payload.persona ?? membership?.persona,
+      roles: payload.roles,
+      permissions: payload.permissions,
     };
 
     return tokenPayload;

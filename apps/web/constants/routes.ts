@@ -20,6 +20,9 @@ export const ROUTES = {
     myTimeTrackingEdit: (locale: string, id: string) =>
       `/${locale}/admin/my-time-tracking/edit/${id}`,
 
+    // Roles
+    roles: (locale: string) => `/${locale}/admin/roles`,
+
     // Users
     users: (locale: string) => `/${locale}/admin/users`,
     usersCreate: (locale: string) => `/${locale}/admin/users/edit`,

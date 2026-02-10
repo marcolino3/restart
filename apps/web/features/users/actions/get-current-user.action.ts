@@ -1,26 +1,55 @@
-import { graphql } from "@/gql";
-import { GetCurrentUserQuery } from "@/gql/graphql";
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
+import { gql } from "graphql-request";
 
-const GetCurrentUserDocument = graphql(`
-  query GetCurrentUser {
-    currentUser {
-      id
-      firstName
-      lastName
-      email
+type AuthContextResponse = {
+  authContext: {
+    user: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+    };
+    roles: string[];
+    permissions: string[];
+    orgId: string;
+    isSuperAdmin: boolean;
+  };
+};
+
+const GetAuthContextDocument = gql`
+  query GetAuthContext {
+    authContext {
+      user {
+        id
+        firstName
+        lastName
+        email
+      }
+      roles
+      permissions
+      orgId
+      isSuperAdmin
     }
   }
-`);
+`;
 
 export const getCurrentUserAction = async () => {
   const client = await serverCookieGqlClient();
   try {
-    const { currentUser }: GetCurrentUserQuery = await client.request(
-      GetCurrentUserDocument
+    const data: AuthContextResponse = await client.request(
+      GetAuthContextDocument
     );
 
-    return { success: true, data: currentUser };
+    return {
+      success: true,
+      data: {
+        ...data.authContext.user,
+        roles: data.authContext.roles,
+        permissions: data.authContext.permissions,
+        orgId: data.authContext.orgId,
+        isSuperAdmin: data.authContext.isSuperAdmin,
+      },
+    };
   } catch (error) {
     console.log(error);
   }

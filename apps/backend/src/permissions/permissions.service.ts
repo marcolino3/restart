@@ -1,27 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { CreatePermissionInput } from './dto/create-permission.input';
-import { UpdatePermissionInput } from './dto/update-permission.input';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
+import { Permission } from './entities/permission.entity';
 
 @Injectable()
 export class PermissionsService {
-  create(createPermissionInput: CreatePermissionInput) {
-    return 'This action adds a new permission';
+  constructor(
+    @InjectRepository(Permission)
+    private readonly permissionRepo: Repository<Permission>,
+  ) {}
+
+  async findAll(): Promise<Permission[]> {
+    return this.permissionRepo.find({ order: { code: 'ASC' } });
   }
 
-  findAll() {
-    return `This action returns all permissions`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} permission`;
-  }
-
-  update(updatePermissionInput: UpdatePermissionInput) {
-    console.log(updatePermissionInput);
-    return `This action updates a #${updatePermissionInput} permission`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} permission`;
+  async findByCodes(codes: string[]): Promise<Permission[]> {
+    if (codes.length === 0) return [];
+    return this.permissionRepo.find({ where: { code: In(codes) as any } });
   }
 }

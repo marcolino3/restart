@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
 export type Maybe<T> = T | null;
-export type InputMaybe<T> = Maybe<T>;
+export type InputMaybe<T> = T | null | undefined;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
 export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
 export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
@@ -38,6 +38,15 @@ export type AuthAccount = {
   __typename?: 'AuthAccount';
   /** Example field (placeholder) */
   exampleField: Scalars['Int']['output'];
+};
+
+export type AuthContextOutput = {
+  __typename?: 'AuthContextOutput';
+  isSuperAdmin: Scalars['Boolean']['output'];
+  orgId: Scalars['String']['output'];
+  permissions: Array<Scalars['String']['output']>;
+  roles: Array<Scalars['String']['output']>;
+  user: User;
 };
 
 export type Country = {
@@ -98,17 +107,11 @@ export type CreateOrganizationInput = {
   ownerPassword: Scalars['String']['input'];
 };
 
-export type CreatePermissionInput = {
-  code?: InputMaybe<Scalars['String']['input']>;
+export type CreateOrganizationSettingInput = {
   description?: InputMaybe<Scalars['String']['input']>;
-  isActive?: Scalars['Boolean']['input'];
-  module?: InputMaybe<RestartModule>;
-  name?: InputMaybe<Scalars['String']['input']>;
-};
-
-export type CreateRoleInput = {
-  /** Example field (placeholder) */
-  exampleField: Scalars['Int']['input'];
+  key: Scalars['String']['input'];
+  organizationId: Scalars['ID']['input'];
+  value: Scalars['String']['input'];
 };
 
 export type CreateTeamInput = {
@@ -239,19 +242,17 @@ export type Mutation = {
   createEmployeeAbsenceNotice: EmployeeAbsence;
   createEmployeeContract: EmployeeContract;
   createOrganization: Organization;
-  createPermission: Permission;
-  createRole: Role;
+  createOrganizationSetting: OrganizationSettingOutput;
   createTeam: Team;
   createTeamMember: TeamMember;
   createTimeTracking: TimeTracking;
   createUser: User;
+  deleteOrganizationSetting: Scalars['Boolean']['output'];
   removeAddress: Address;
   removeAuthAccount: AuthAccount;
   removeCountry: Country;
   removeEmployeeContract: EmployeeContract;
   removeOrganization: Organization;
-  removePermission: Permission;
-  removeRole: Role;
   removeTeam: Team;
   removeTeamMember: TeamMember;
   removeTimeTracking: TimeTracking;
@@ -263,8 +264,8 @@ export type Mutation = {
   updateEmployee: Employee;
   updateEmployeeContract: EmployeeContract;
   updateOrganization: Organization;
-  updatePermission: Permission;
-  updateRole: Role;
+  updateOrganizationSetting: OrganizationSettingOutput;
+  updateRolePermissions: Role;
   updateTeam: Team;
   updateTeamMember: TeamMember;
   updateTimeTracking: TimeTracking;
@@ -307,13 +308,8 @@ export type MutationCreateOrganizationArgs = {
 };
 
 
-export type MutationCreatePermissionArgs = {
-  createPermissionInput: CreatePermissionInput;
-};
-
-
-export type MutationCreateRoleArgs = {
-  createRoleInput: CreateRoleInput;
+export type MutationCreateOrganizationSettingArgs = {
+  input: CreateOrganizationSettingInput;
 };
 
 
@@ -337,6 +333,12 @@ export type MutationCreateUserArgs = {
 };
 
 
+export type MutationDeleteOrganizationSettingArgs = {
+  key: Scalars['String']['input'];
+  organizationId: Scalars['ID']['input'];
+};
+
+
 export type MutationRemoveAddressArgs = {
   id: Scalars['Int']['input'];
 };
@@ -353,16 +355,6 @@ export type MutationRemoveCountryArgs = {
 
 
 export type MutationRemoveEmployeeContractArgs = {
-  id: Scalars['Int']['input'];
-};
-
-
-export type MutationRemovePermissionArgs = {
-  id: Scalars['Int']['input'];
-};
-
-
-export type MutationRemoveRoleArgs = {
   id: Scalars['Int']['input'];
 };
 
@@ -422,13 +414,13 @@ export type MutationUpdateOrganizationArgs = {
 };
 
 
-export type MutationUpdatePermissionArgs = {
-  updatePermissionInput: UpdatePermissionInput;
+export type MutationUpdateOrganizationSettingArgs = {
+  input: UpdateOrganizationSettingInput;
 };
 
 
-export type MutationUpdateRoleArgs = {
-  updateRoleInput: UpdateRoleInput;
+export type MutationUpdateRolePermissionsArgs = {
+  input: UpdateRolePermissionsInput;
 };
 
 
@@ -465,6 +457,19 @@ export type Organization = {
   teamIds?: Maybe<Array<Scalars['ID']['output']>>;
   teams?: Maybe<Array<Team>>;
   updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type OrganizationSettingOutput = {
+  __typename?: 'OrganizationSettingOutput';
+  createdAt: Scalars['DateTime']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  hasValue: Scalars['Boolean']['output'];
+  id: Scalars['ID']['output'];
+  key: Scalars['String']['output'];
+  organizationId: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  value?: Maybe<Scalars['String']['output']>;
   version: Scalars['Int']['output'];
 };
 
@@ -518,6 +523,7 @@ export type Query = {
   addresses: Array<Address>;
   authAccount: AuthAccount;
   authAccounts: Array<AuthAccount>;
+  authContext: AuthContextOutput;
   countries: Array<Country>;
   country: Country;
   currentUser: User;
@@ -527,11 +533,11 @@ export type Query = {
   employeeContracts: Array<EmployeeContract>;
   employeesByOrgId: Array<Employee>;
   organization: Organization;
+  organizationSetting: OrganizationSettingOutput;
+  organizationSettings: Array<OrganizationSettingOutput>;
   organizations: Array<Organization>;
-  permission: Permission;
   permissions: Array<Permission>;
-  role: Role;
-  roles: Array<Role>;
+  rolesByOrgId: Array<Role>;
   team: Team;
   teamMember: TeamMember;
   teamMembers: Array<TeamMember>;
@@ -572,13 +578,15 @@ export type QueryOrganizationArgs = {
 };
 
 
-export type QueryPermissionArgs = {
-  id: Scalars['Int']['input'];
+export type QueryOrganizationSettingArgs = {
+  decrypt?: Scalars['Boolean']['input'];
+  key: Scalars['String']['input'];
+  organizationId: Scalars['ID']['input'];
 };
 
 
-export type QueryRoleArgs = {
-  id: Scalars['Int']['input'];
+export type QueryOrganizationSettingsArgs = {
+  organizationId: Scalars['ID']['input'];
 };
 
 
@@ -600,12 +608,6 @@ export type QueryTimeTrackingArgs = {
 export type QueryUserArgs = {
   id: Scalars['ID']['input'];
 };
-
-/** Supported Restart Modules */
-export enum RestartModule {
-  Employees = 'EMPLOYEES',
-  RecordKeeping = 'RECORD_KEEPING'
-}
 
 export type Role = {
   __typename?: 'Role';
@@ -723,20 +725,16 @@ export type UpdateOrganizationInput = {
   teamIds?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
-export type UpdatePermissionInput = {
-  code?: InputMaybe<Scalars['String']['input']>;
+export type UpdateOrganizationSettingInput = {
   description?: InputMaybe<Scalars['String']['input']>;
-  id: Scalars['ID']['input'];
-  isActive?: InputMaybe<Scalars['Boolean']['input']>;
-  isArchived?: InputMaybe<Scalars['Boolean']['input']>;
-  module?: InputMaybe<RestartModule>;
-  name?: InputMaybe<Scalars['String']['input']>;
+  key: Scalars['String']['input'];
+  organizationId: Scalars['ID']['input'];
+  value?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type UpdateRoleInput = {
-  /** Example field (placeholder) */
-  exampleField?: InputMaybe<Scalars['Int']['input']>;
-  id: Scalars['Int']['input'];
+export type UpdateRolePermissionsInput = {
+  permissionCodes: Array<Scalars['String']['input']>;
+  roleId: Scalars['ID']['input'];
 };
 
 export type UpdateTeamInput = {
@@ -814,6 +812,44 @@ export type GetEmployeesQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type GetEmployeesQuery = { __typename?: 'Query', employeesByOrgId: Array<{ __typename?: 'Employee', membership: { __typename?: 'Membership', persona: Persona, employee?: { __typename?: 'Employee', isActive: boolean, timeTrackingEnabled: boolean, id: string } | null, user?: { __typename?: 'User', firstName: string, id: string, email: string, lastName: string } | null } }> };
 
+export type CreateOrganizationSettingMutationVariables = Exact<{
+  input: CreateOrganizationSettingInput;
+}>;
+
+
+export type CreateOrganizationSettingMutation = { __typename?: 'Mutation', createOrganizationSetting: { __typename?: 'OrganizationSettingOutput', id: string, key: string, description?: string | null, hasValue: boolean } };
+
+export type DeleteOrganizationSettingMutationVariables = Exact<{
+  organizationId: Scalars['ID']['input'];
+  key: Scalars['String']['input'];
+}>;
+
+
+export type DeleteOrganizationSettingMutation = { __typename?: 'Mutation', deleteOrganizationSetting: boolean };
+
+export type GetOrganizationSettingQueryVariables = Exact<{
+  organizationId: Scalars['ID']['input'];
+  key: Scalars['String']['input'];
+  decrypt: Scalars['Boolean']['input'];
+}>;
+
+
+export type GetOrganizationSettingQuery = { __typename?: 'Query', organizationSetting: { __typename?: 'OrganizationSettingOutput', id: string, organizationId: string, key: string, description?: string | null, hasValue: boolean, value?: string | null, version: number, createdAt: any, updatedAt: any } };
+
+export type GetOrganizationSettingsQueryVariables = Exact<{
+  organizationId: Scalars['ID']['input'];
+}>;
+
+
+export type GetOrganizationSettingsQuery = { __typename?: 'Query', organizationSettings: Array<{ __typename?: 'OrganizationSettingOutput', id: string, organizationId: string, key: string, description?: string | null, hasValue: boolean, version: number, createdAt: any, updatedAt: any }> };
+
+export type UpdateOrganizationSettingMutationVariables = Exact<{
+  input: UpdateOrganizationSettingInput;
+}>;
+
+
+export type UpdateOrganizationSettingMutation = { __typename?: 'Mutation', updateOrganizationSetting: { __typename?: 'OrganizationSettingOutput', id: string, key: string, description?: string | null, hasValue: boolean } };
+
 export type CreateOrganizationMutationVariables = Exact<{
   createOrganizationInput: CreateOrganizationInput;
 }>;
@@ -826,10 +862,27 @@ export type GetOrganizationsQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type GetOrganizationsQuery = { __typename?: 'Query', organizations: Array<{ __typename?: 'Organization', id: string, name: string, isActive: boolean }> };
 
-export type GetCurrentUserQueryVariables = Exact<{ [key: string]: never; }>;
+export type GetPermissionsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetCurrentUserQuery = { __typename?: 'Query', currentUser: { __typename?: 'User', id: string, firstName: string, lastName: string, email: string } };
+export type GetPermissionsQuery = { __typename?: 'Query', permissions: Array<{ __typename?: 'Permission', id: string, code: PermissionCode, name: string, description?: string | null }> };
+
+export type GetRolesByOrgIdQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetRolesByOrgIdQuery = { __typename?: 'Query', rolesByOrgId: Array<{ __typename?: 'Role', id: string, name?: string | null, systemCode?: SystemRole | null, isSystem: boolean, permissions?: Array<{ __typename?: 'Permission', id: string, code: PermissionCode, name: string }> | null }> };
+
+export type UpdateRolePermissionsMutationVariables = Exact<{
+  input: UpdateRolePermissionsInput;
+}>;
+
+
+export type UpdateRolePermissionsMutation = { __typename?: 'Mutation', updateRolePermissions: { __typename?: 'Role', id: string, permissions?: Array<{ __typename?: 'Permission', id: string, code: PermissionCode }> | null } };
+
+export type GetAuthContextQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetAuthContextQuery = { __typename?: 'Query', authContext: { __typename?: 'AuthContextOutput', roles: Array<string>, permissions: Array<string>, orgId: string, isSuperAdmin: boolean, user: { __typename?: 'User', id: string, firstName: string, lastName: string, email: string } } };
 
 
 export const CreateEmployeeAbsenceNoticeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateEmployeeAbsenceNotice"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"createEmployeeAbsenceInput"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateEmployeeAbsenceNoticeInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createEmployeeAbsenceNotice"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"createEmployeeAbsenceInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"createEmployeeAbsenceInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateEmployeeAbsenceNoticeMutation, CreateEmployeeAbsenceNoticeMutationVariables>;
@@ -837,6 +890,14 @@ export const GetEmployeeAbsenceCategoriesByOrgIdDocument = {"kind":"Document","d
 export const CreateEmployeeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateEmployee"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"createEmployeeInput"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateEmployeeInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createEmployee"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"createEmployeeInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"createEmployeeInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateEmployeeMutation, CreateEmployeeMutationVariables>;
 export const GetEmployeeByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEmployeeById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"email"}}]}},{"kind":"Field","name":{"kind":"Name","value":"persona"}},{"kind":"Field","name":{"kind":"Name","value":"employee"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"timeTrackingEnabled"}}]}}]}}]}}]} as unknown as DocumentNode<GetEmployeeByIdQuery, GetEmployeeByIdQueryVariables>;
 export const GetEmployeesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEmployees"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeesByOrgId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"membership"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employee"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"timeTrackingEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}},{"kind":"Field","name":{"kind":"Name","value":"persona"}}]}}]}}]}}]} as unknown as DocumentNode<GetEmployeesQuery, GetEmployeesQueryVariables>;
+export const CreateOrganizationSettingDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateOrganizationSetting"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateOrganizationSettingInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createOrganizationSetting"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"hasValue"}}]}}]}}]} as unknown as DocumentNode<CreateOrganizationSettingMutation, CreateOrganizationSettingMutationVariables>;
+export const DeleteOrganizationSettingDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteOrganizationSetting"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"organizationId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"key"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteOrganizationSetting"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"organizationId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"organizationId"}}},{"kind":"Argument","name":{"kind":"Name","value":"key"},"value":{"kind":"Variable","name":{"kind":"Name","value":"key"}}}]}]}}]} as unknown as DocumentNode<DeleteOrganizationSettingMutation, DeleteOrganizationSettingMutationVariables>;
+export const GetOrganizationSettingDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetOrganizationSetting"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"organizationId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"key"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"decrypt"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"organizationSetting"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"organizationId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"organizationId"}}},{"kind":"Argument","name":{"kind":"Name","value":"key"},"value":{"kind":"Variable","name":{"kind":"Name","value":"key"}}},{"kind":"Argument","name":{"kind":"Name","value":"decrypt"},"value":{"kind":"Variable","name":{"kind":"Name","value":"decrypt"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"organizationId"}},{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"hasValue"}},{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"version"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<GetOrganizationSettingQuery, GetOrganizationSettingQueryVariables>;
+export const GetOrganizationSettingsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetOrganizationSettings"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"organizationId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"organizationSettings"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"organizationId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"organizationId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"organizationId"}},{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"hasValue"}},{"kind":"Field","name":{"kind":"Name","value":"version"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<GetOrganizationSettingsQuery, GetOrganizationSettingsQueryVariables>;
+export const UpdateOrganizationSettingDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateOrganizationSetting"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateOrganizationSettingInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateOrganizationSetting"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"hasValue"}}]}}]}}]} as unknown as DocumentNode<UpdateOrganizationSettingMutation, UpdateOrganizationSettingMutationVariables>;
 export const CreateOrganizationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateOrganization"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"createOrganizationInput"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateOrganizationInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createOrganization"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"createOrganizationInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"createOrganizationInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateOrganizationMutation, CreateOrganizationMutationVariables>;
 export const GetOrganizationsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetOrganizations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"organizations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}}]}}]}}]} as unknown as DocumentNode<GetOrganizationsQuery, GetOrganizationsQueryVariables>;
-export const GetCurrentUserDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetCurrentUser"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"currentUser"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"email"}}]}}]}}]} as unknown as DocumentNode<GetCurrentUserQuery, GetCurrentUserQueryVariables>;
+export const GetPermissionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetPermissions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"permissions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]} as unknown as DocumentNode<GetPermissionsQuery, GetPermissionsQueryVariables>;
+export const GetRolesByOrgIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetRolesByOrgId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"rolesByOrgId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"systemCode"}},{"kind":"Field","name":{"kind":"Name","value":"isSystem"}},{"kind":"Field","name":{"kind":"Name","value":"permissions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<GetRolesByOrgIdQuery, GetRolesByOrgIdQueryVariables>;
+export const UpdateRolePermissionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateRolePermissions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateRolePermissionsInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateRolePermissions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"permissions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]}}]}}]} as unknown as DocumentNode<UpdateRolePermissionsMutation, UpdateRolePermissionsMutationVariables>;
+export const GetAuthContextDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAuthContext"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"authContext"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"email"}}]}},{"kind":"Field","name":{"kind":"Name","value":"roles"}},{"kind":"Field","name":{"kind":"Name","value":"permissions"}},{"kind":"Field","name":{"kind":"Name","value":"orgId"}},{"kind":"Field","name":{"kind":"Name","value":"isSuperAdmin"}}]}}]}}]} as unknown as DocumentNode<GetAuthContextQuery, GetAuthContextQueryVariables>;
