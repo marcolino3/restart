@@ -166,7 +166,7 @@ export class AuthController {
    * - stellt org-spezifisches Access-Token aus
    */
   @Post('switch-org')
-  @UseGuards(JwtRefreshAuthGuard)
+  @UseGuards(JwtAuthGuard)
   async switchOrg(
     @Req() req: AuthenticatedRequest,
     @Res({ passthrough: true }) res: Response,

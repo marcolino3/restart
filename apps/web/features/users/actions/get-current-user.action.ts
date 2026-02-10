@@ -11,7 +11,7 @@ type AuthContextResponse = {
     };
     roles: string[];
     permissions: string[];
-    orgId: string;
+    orgId?: string;
     isSuperAdmin: boolean;
   };
 };

@@ -3,6 +3,7 @@ import { SheetProvider } from "@/components/providers/sheet-provider";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
+import { getOrganizationsAction } from "@/features/organizations/actions/get-organizations.action";
 import { UserProvider } from "@/features/users/context/current-user.context";
 import { getLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
@@ -10,9 +11,15 @@ import React from "react";
 
 const AdminLayout = async ({ children }: { children: React.ReactNode }) => {
   const locale = await getLocale();
-  const res = await getCurrentUserAction();
+  const [res, orgsRes] = await Promise.all([
+    getCurrentUserAction(),
+    getOrganizationsAction(),
+  ]);
 
   if (!res?.success) redirect(`/${locale}/sign-in`);
+
+  const organizations = res.data.isSuperAdmin && orgsRes.success ? orgsRes.data : undefined;
+
   return (
     <UserProvider user={res.data}>
       <SidebarProvider
@@ -23,7 +30,7 @@ const AdminLayout = async ({ children }: { children: React.ReactNode }) => {
           } as React.CSSProperties
         }
       >
-        <AppSidebar variant="inset" />
+        <AppSidebar variant="inset" organizations={organizations} />
         <SheetProvider>
           <SidebarInset>
             <SiteHeader />

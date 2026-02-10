@@ -15,7 +15,7 @@ export class PermissionsService {
   }
 
   async findByCodes(codes: string[]): Promise<Permission[]> {
-    if (codes.length === 0) return [];
+    if (!codes || codes.length === 0) return [];
     return this.permissionRepo.find({ where: { code: In(codes) as any } });
   }
 }

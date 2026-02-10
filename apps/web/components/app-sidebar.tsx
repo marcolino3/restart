@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import {
+  IconBuilding,
   IconCamera,
-  IconChartBar,
   IconDashboard,
   IconDatabase,
   IconFileAi,
@@ -22,7 +22,9 @@ import {
 import { NavDocuments } from "@/components/nav-documents";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
+import { NavSuperAdmin } from "@/components/nav-super-admin";
 import { NavUser } from "@/components/nav-user";
+import { OrgSwitcher } from "@/components/org-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -32,12 +34,30 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { PermissionGate } from "@/components/permission-gate";
 import { ROUTES } from "@/constants/routes";
+import {
+  usePermissions,
+  useUser,
+} from "@/features/users/context/current-user.context";
 import { useLocale } from "next-intl";
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+type Organization = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  organizations?: Organization[];
+}
+
+export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
   const locale = useLocale();
+  const { hasPermission } = usePermissions();
+  const user = useUser();
+
+  const isSuperAdmin = user?.isSuperAdmin ?? false;
+
   const data = {
     user: {
       name: "shadcn",
@@ -56,11 +76,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: IconListDetails,
       },
       {
-        title: "Organizations",
-        url: ROUTES.admin.organizations(locale),
-        icon: IconChartBar,
-      },
-      {
         title: "Employees",
         url: ROUTES.admin.employees(locale),
         icon: IconUsers,
@@ -70,7 +85,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         url: "#",
         icon: IconUsers,
       },
+      ...(hasPermission("ROLE_ASSIGN")
+        ? [
+            {
+              title: "Rollen & Berechtigungen",
+              url: ROUTES.admin.roles(locale),
+              icon: IconShieldLock,
+            },
+          ]
+        : []),
     ],
+    ...(isSuperAdmin
+      ? {
+          navSuperAdmin: [
+            {
+              title: "Organizations",
+              url: ROUTES.admin.organizations(locale),
+              icon: IconBuilding,
+            },
+          ],
+        }
+      : {}),
     navClouds: [
       {
         title: "Capture",
@@ -157,33 +192,32 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
-            >
-              <a href="#">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">RMS</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        {isSuperAdmin && organizations ? (
+          <OrgSwitcher
+            organizations={organizations}
+            currentOrgId={user?.orgId}
+          />
+        ) : (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                className="data-[slot=sidebar-menu-button]:!p-1.5"
+              >
+                <a href="#">
+                  <IconInnerShadowTop className="!size-5" />
+                  <span className="text-base font-semibold">RMS</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <PermissionGate permission="ROLE_ASSIGN">
-          <NavMain
-            items={[
-              {
-                title: "Rollen & Berechtigungen",
-                url: ROUTES.admin.roles(locale),
-                icon: IconShieldLock,
-              },
-            ]}
-          />
-        </PermissionGate>
+        {isSuperAdmin && data.navSuperAdmin && (
+          <NavSuperAdmin items={data.navSuperAdmin} />
+        )}
         <NavDocuments items={data.documents} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>

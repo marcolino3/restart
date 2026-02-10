@@ -9,7 +9,7 @@ export type CurrentUser = {
   email: string;
   roles: string[];
   permissions: string[];
-  orgId: string;
+  orgId?: string;
   isSuperAdmin: boolean;
 };
 

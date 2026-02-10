@@ -12,8 +12,8 @@ export class AuthContextOutput {
   @Field(() => [String])
   permissions: string[];
 
-  @Field(() => String)
-  orgId: string;
+  @Field(() => String, { nullable: true })
+  orgId?: string;
 
   @Field(() => Boolean)
   isSuperAdmin: boolean;
