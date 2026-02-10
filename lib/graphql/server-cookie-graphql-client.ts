@@ -6,7 +6,10 @@ export const serverCookieGqlClient = async () => {
     .getAll()
     .map((c) => `${c.name}=${c.value}`)
     .join("; ");
-  return new GraphQLClient(process.env.NEXT_PUBLIC_GRAPHQL_API_URL!, {
+  const url =
+    process.env.INTERNAL_GRAPHQL_API_URL ||
+    process.env.NEXT_PUBLIC_GRAPHQL_API_URL!;
+  return new GraphQLClient(url, {
     headers: { cookie: cookieHeader },
     fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }),
   });

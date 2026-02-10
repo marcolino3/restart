@@ -150,7 +150,7 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
                     variant="secondary"
                     className="flex items-center gap-1"
                   >
-                    {t(option?.label)}
+                    {t(option?.label ?? "")}
                     <Button
                       variant={"ghost"}
                       onClick={() => {
