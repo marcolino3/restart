@@ -4,7 +4,7 @@ import { UpdateTimeTrackingInput } from './dto/update-time-tracking.input';
 
 @Injectable()
 export class TimeTrackingService {
-  create(createTimeTrackingInput: CreateTimeTrackingInput) {
+  create(_createTimeTrackingInput: CreateTimeTrackingInput) {
     return 'This action adds a new timeTracking';
   }
 
@@ -16,7 +16,7 @@ export class TimeTrackingService {
     return `This action returns a #${id} timeTracking`;
   }
 
-  update(id: number, updateTimeTrackingInput: UpdateTimeTrackingInput) {
+  update(id: number, _updateTimeTrackingInput: UpdateTimeTrackingInput) {
     return `This action updates a #${id} timeTracking`;
   }
 

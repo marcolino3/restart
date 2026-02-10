@@ -4,7 +4,7 @@ import { UpdateEmployeeContractInput } from './dto/update-employee-contract.inpu
 
 @Injectable()
 export class EmployeeContractsService {
-  create(createEmployeeContractInput: CreateEmployeeContractInput) {
+  create(_createEmployeeContractInput: CreateEmployeeContractInput) {
     return 'This action adds a new employeeContract';
   }
 
@@ -16,7 +16,10 @@ export class EmployeeContractsService {
     return `This action returns a #${id} employeeContract`;
   }
 
-  update(id: number, updateEmployeeContractInput: UpdateEmployeeContractInput) {
+  update(
+    id: number,
+    _updateEmployeeContractInput: UpdateEmployeeContractInput,
+  ) {
     return `This action updates a #${id} employeeContract`;
   }
 

@@ -4,7 +4,7 @@ import { UpdateAddressInput } from './dto/update-address.input';
 
 @Injectable()
 export class AddressesService {
-  create(createAddressInput: CreateAddressInput) {
+  create(_createAddressInput: CreateAddressInput) {
     return 'This action adds a new address';
   }
 
@@ -16,7 +16,7 @@ export class AddressesService {
     return `This action returns a #${id} address`;
   }
 
-  update(id: number, updateAddressInput: UpdateAddressInput) {
+  update(id: number, _updateAddressInput: UpdateAddressInput) {
     return `This action updates a #${id} address`;
   }
 

@@ -5,7 +5,7 @@
  * Start it with: docker compose -f docker-compose.test.yml up -d
  * Run with: npx jest --config ./test/jest-e2e.json --testPathPatterns=organizations.integration
  */
-import { DataSource, EntityManager } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { TestingModule } from '@nestjs/testing';
 
 import { OrganizationsService } from '@/organizations/organizations.service';

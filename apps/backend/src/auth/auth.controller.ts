@@ -144,7 +144,7 @@ export class AuthController {
     @Req() req: AuthenticatedRequest,
   ) {
     const host = req.hostname;
-    const orgSlug = host.split('.')[0];
+    const _orgSlug = host.split('.')[0];
 
     // ✅ Superadmin darf ohne Org einloggen -> nur Refresh setzen
     if (user.isSuperAdmin) {

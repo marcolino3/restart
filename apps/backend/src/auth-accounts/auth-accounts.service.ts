@@ -4,7 +4,7 @@ import { UpdateAuthAccountInput } from './dto/update-auth-account.input';
 
 @Injectable()
 export class AuthAccountsService {
-  create(createAuthAccountInput: CreateAuthAccountInput) {
+  create(_createAuthAccountInput: CreateAuthAccountInput) {
     return 'This action adds a new authAccount';
   }
 
@@ -16,7 +16,7 @@ export class AuthAccountsService {
     return `This action returns a #${id} authAccount`;
   }
 
-  update(id: number, updateAuthAccountInput: UpdateAuthAccountInput) {
+  update(id: number, _updateAuthAccountInput: UpdateAuthAccountInput) {
     return `This action updates a #${id} authAccount`;
   }
 

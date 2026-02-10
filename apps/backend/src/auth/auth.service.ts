@@ -244,7 +244,7 @@ export class AuthService {
 
     await this.usersService.setMagicLinkToken(user.id, tokenHash, expiresAt);
 
-    const baseUrl = this.configService.getOrThrow('AUTH_UI_REDIRECT');
+    const baseUrl = this.configService.getOrThrow<string>('AUTH_UI_REDIRECT');
     const magicLinkUrl = `${baseUrl}/api/auth/magic-link/verify?token=${rawToken}`;
 
     // TODO: Remove console.log once SMTP is configured

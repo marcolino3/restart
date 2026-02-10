@@ -44,7 +44,7 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
 
       - run: npm install -g npm@11
-      - run: npm ci
+      - run: npm install
       - run: npm run lint
       - run: npm test
       - run: npm run build
@@ -80,7 +80,7 @@ jobs:
         run: cd apps/backend && npm ci
 
       - name: Install Frontend
-        run: cd apps/web && npm ci
+        run: cd apps/web && npm install
 
       - name: Install E2E
         run: cd e2e && npm ci

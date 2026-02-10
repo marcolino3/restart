@@ -4,7 +4,7 @@ import { UpdateTeamMemberInput } from './dto/update-team-member.input';
 
 @Injectable()
 export class TeamMembersService {
-  create(createTeamMemberInput: CreateTeamMemberInput) {
+  create(_createTeamMemberInput: CreateTeamMemberInput) {
     return 'This action adds a new teamMember';
   }
 
@@ -16,7 +16,7 @@ export class TeamMembersService {
     return `This action returns a #${id} teamMember`;
   }
 
-  update(id: number, updateTeamMemberInput: UpdateTeamMemberInput) {
+  update(id: number, _updateTeamMemberInput: UpdateTeamMemberInput) {
     return `This action updates a #${id} teamMember`;
   }
 

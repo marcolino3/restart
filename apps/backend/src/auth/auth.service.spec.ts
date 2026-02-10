@@ -2,7 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { EntityManager, MoreThan } from 'typeorm';
+import { EntityManager } from 'typeorm';
+import { Response } from 'express';
 
 import { AuthService } from './auth.service';
 import { UsersService } from '@/users/users.service';
@@ -140,9 +141,9 @@ describe('AuthService', () => {
 
     it('should throw UnauthorizedException for non-existent user', async () => {
       em.findOne.mockResolvedValue(null);
-      await expect(
-        service.verifyUser('nobody@test.com', 'pw'),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.verifyUser('nobody@test.com', 'pw')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw UnauthorizedException for wrong password', async () => {
@@ -155,10 +156,12 @@ describe('AuthService', () => {
     });
 
     it('should throw UnauthorizedException when user has no passwordHash', async () => {
-      em.findOne.mockResolvedValue(mockUser({ passwordHash: undefined as any }));
-      await expect(
-        service.verifyUser('max@example.com', 'pw'),
-      ).rejects.toThrow(UnauthorizedException);
+      em.findOne.mockResolvedValue(
+        mockUser({ passwordHash: undefined as unknown as string }),
+      );
+      await expect(service.verifyUser('max@example.com', 'pw')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -248,18 +251,17 @@ describe('AuthService', () => {
   // ── logout ───────────────────────────────────────────────────────
   describe('logout', () => {
     it('should clear refresh token and cookies', async () => {
-      const res = {
-        clearCookie: jest.fn(),
-      } as any;
+      const clearCookieMock = jest.fn();
+      const res = { clearCookie: clearCookieMock } as unknown as Response;
 
       await service.logout('user-1', res);
 
       expect(usersService.clearRefreshToken).toHaveBeenCalledWith('user-1');
-      expect(res.clearCookie).toHaveBeenCalledWith(
+      expect(clearCookieMock).toHaveBeenCalledWith(
         'Authentication',
         expect.any(Object),
       );
-      expect(res.clearCookie).toHaveBeenCalledWith(
+      expect(clearCookieMock).toHaveBeenCalledWith(
         'Refresh',
         expect.any(Object),
       );

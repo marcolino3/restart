@@ -4,7 +4,7 @@ import { UpdateCountryInput } from './dto/update-country.input';
 
 @Injectable()
 export class CountriesService {
-  create(createCountryInput: CreateCountryInput) {
+  create(_createCountryInput: CreateCountryInput) {
     return 'This action adds a new country';
   }
 
@@ -16,7 +16,7 @@ export class CountriesService {
     return `This action returns a #${id} country`;
   }
 
-  update(id: number, updateCountryInput: UpdateCountryInput) {
+  update(id: number, _updateCountryInput: UpdateCountryInput) {
     return `This action updates a #${id} country`;
   }
 

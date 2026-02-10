@@ -5,18 +5,19 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager } from 'typeorm';
 
 import { OrganizationsService } from './organizations.service';
 import { Organization } from '@/organizations/entities/organization.entity';
-import { Membership } from '@/memberships/entities/membership.entity';
-import { SystemRole } from '@/roles/entities/system-role.enum';
 import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 
 // Mock seeders to avoid deep repository calls in unit tests
-jest.mock('@/employee-management/employee-absence-categories/seeds/seed-org-employee-absence-categories.seeder', () => ({
-  seedOrgEmployeeAbsenceCategories: jest.fn().mockResolvedValue(undefined),
-}));
+jest.mock(
+  '@/employee-management/employee-absence-categories/seeds/seed-org-employee-absence-categories.seeder',
+  () => ({
+    seedOrgEmployeeAbsenceCategories: jest.fn().mockResolvedValue(undefined),
+  }),
+);
 jest.mock('@/roles/seeds/system-roles.seeder', () => ({
   seedOrgSystemRoles: jest.fn().mockResolvedValue(undefined),
 }));
@@ -75,9 +76,9 @@ const createMockEntityManager = () => {
 
 // shared transaction-scoped manager mock
 const txManager = {
-  save: jest.fn().mockImplementation((data) =>
-    Promise.resolve({ id: 'new-org', ...data }),
-  ),
+  save: jest
+    .fn()
+    .mockImplementation((data) => Promise.resolve({ id: 'new-org', ...data })),
   create: jest.fn((_, data) => data),
 };
 
