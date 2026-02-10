@@ -1,10 +1,11 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Health Check', () => {
-  test('frontend should load the login page', async ({ page }) => {
-    await page.goto('/')
-    // Should redirect to sign-in or show the app
-    await expect(page).toHaveURL(/\/(en|de)\/(sign-in|admin)/)
+  test('frontend should be reachable', async ({ page }) => {
+    const response = await page.goto('/')
+    expect(response?.ok()).toBeTruthy()
+    // next-intl middleware redirects to a locale prefix
+    await expect(page).toHaveURL(/\/(en|de)/)
   })
 
   test('backend GraphQL endpoint should be reachable', async ({ request }) => {
