@@ -7,7 +7,10 @@ describe('EmployeeAbsencesResolver', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [EmployeeAbsencesResolver, EmployeeAbsencesService],
+      providers: [
+        EmployeeAbsencesResolver,
+        { provide: EmployeeAbsencesService, useValue: {} },
+      ],
     }).compile();
 
     resolver = module.get<EmployeeAbsencesResolver>(EmployeeAbsencesResolver);

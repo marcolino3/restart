@@ -42,4 +42,51 @@ jobs:
 
       - run: npm ci
       - run: npm run lint
+      - run: npm test
       - run: npm run build
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: colibri_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Backend
+        run: cd apps/backend && npm ci
+
+      - name: Install Frontend
+        run: cd apps/web && npm ci
+
+      - name: Install E2E
+        run: cd e2e && npm ci
+
+      - name: Install Playwright Browsers
+        run: cd e2e && npx playwright install --with-deps chromium
+
+      - name: Run E2E Tests
+        run: cd e2e && npx playwright test
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: colibri_test
+          DB_USERNAME: test
+          DB_PASSWORD: test

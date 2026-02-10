@@ -7,7 +7,10 @@ describe('PermissionsResolver', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [PermissionsResolver, PermissionsService],
+      providers: [
+        PermissionsResolver,
+        { provide: PermissionsService, useValue: {} },
+      ],
     }).compile();
 
     resolver = module.get<PermissionsResolver>(PermissionsResolver);
