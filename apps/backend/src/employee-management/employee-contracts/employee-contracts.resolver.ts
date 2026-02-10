@@ -11,11 +11,16 @@ import { Permissions } from '@/auth/decorators/permissions.decorator';
 @Resolver(() => EmployeeContract)
 @UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
 export class EmployeeContractsResolver {
-  constructor(private readonly employeeContractsService: EmployeeContractsService) {}
+  constructor(
+    private readonly employeeContractsService: EmployeeContractsService,
+  ) {}
 
   @Mutation(() => EmployeeContract)
   @Permissions('EMPLOYEE_WRITE')
-  createEmployeeContract(@Args('createEmployeeContractInput') createEmployeeContractInput: CreateEmployeeContractInput) {
+  createEmployeeContract(
+    @Args('createEmployeeContractInput')
+    createEmployeeContractInput: CreateEmployeeContractInput,
+  ) {
     return this.employeeContractsService.create(createEmployeeContractInput);
   }
 
@@ -33,8 +38,14 @@ export class EmployeeContractsResolver {
 
   @Mutation(() => EmployeeContract)
   @Permissions('EMPLOYEE_WRITE')
-  updateEmployeeContract(@Args('updateEmployeeContractInput') updateEmployeeContractInput: UpdateEmployeeContractInput) {
-    return this.employeeContractsService.update(updateEmployeeContractInput.id, updateEmployeeContractInput);
+  updateEmployeeContract(
+    @Args('updateEmployeeContractInput')
+    updateEmployeeContractInput: UpdateEmployeeContractInput,
+  ) {
+    return this.employeeContractsService.update(
+      updateEmployeeContractInput.id,
+      updateEmployeeContractInput,
+    );
   }
 
   @Mutation(() => EmployeeContract)

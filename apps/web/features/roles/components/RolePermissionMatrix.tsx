@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useOptimistic, useTransition } from "react";
+import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
@@ -26,44 +26,48 @@ type Props = {
   permissions: PermissionItem[];
 };
 
-export function RolePermissionMatrix({ roles, permissions }: Props) {
-  const [optimisticRoles, setOptimisticRoles] = useOptimistic(roles);
-  const [isPending, startTransition] = useTransition();
+export function RolePermissionMatrix({
+  roles: initialRoles,
+  permissions,
+}: Props) {
+  const [roles, setRoles] = useState(initialRoles);
+  const [saving, setSaving] = useState<string | null>(null);
 
-  const hasPermission = useCallback(
-    (role: RoleWithPermissions, permCode: string) => {
-      return role.permissions?.some((p) => p.code === permCode) ?? false;
-    },
-    []
-  );
+  function roleHasPermission(role: RoleWithPermissions, permCode: string) {
+    return role.permissions?.some((p) => p.code === permCode) ?? false;
+  }
 
-  const handleToggle = useCallback(
-    (role: RoleWithPermissions, permCode: string) => {
-      const currentCodes =
-        role.permissions?.map((p) => p.code) ?? [];
-      const newCodes = currentCodes.includes(permCode)
-        ? currentCodes.filter((c) => c !== permCode)
-        : [...currentCodes, permCode];
+  async function handleToggle(role: RoleWithPermissions, permCode: string) {
+    const currentCodes = role.permissions?.map((p) => p.code) ?? [];
+    const newCodes = currentCodes.includes(permCode)
+      ? currentCodes.filter((c) => c !== permCode)
+      : [...currentCodes, permCode];
 
-      startTransition(async () => {
-        setOptimisticRoles((prev) =>
-          prev.map((r) =>
-            r.id === role.id
-              ? {
-                  ...r,
-                  permissions: permissions.filter((p) =>
-                    newCodes.includes(p.code)
-                  ),
-                }
-              : r
-          )
-        );
+    // Optimistic update
+    setRoles((prev) =>
+      prev.map((r) =>
+        r.id === role.id
+          ? {
+              ...r,
+              permissions: permissions.filter((p) =>
+                newCodes.includes(p.code)
+              ),
+            }
+          : r
+      )
+    );
 
-        await updateRolePermissionsAction(role.id, newCodes);
-      });
-    },
-    [permissions, setOptimisticRoles]
-  );
+    setSaving(`${role.id}-${permCode}`);
+    const result = await updateRolePermissionsAction(role.id, newCodes);
+    setSaving(null);
+
+    if (!result.success) {
+      // Revert on failure
+      setRoles((prev) =>
+        prev.map((r) => (r.id === role.id ? role : r))
+      );
+    }
+  }
 
   return (
     <Card>
@@ -93,7 +97,7 @@ export function RolePermissionMatrix({ roles, permissions }: Props) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {optimisticRoles.map((role) => (
+              {roles.map((role) => (
                 <TableRow key={role.id}>
                   <TableCell className="sticky left-0 bg-background font-medium">
                     {role.name ?? role.systemCode}
@@ -101,8 +105,8 @@ export function RolePermissionMatrix({ roles, permissions }: Props) {
                   {permissions.map((perm) => (
                     <TableCell key={perm.code} className="text-center">
                       <Checkbox
-                        checked={hasPermission(role, perm.code)}
-                        disabled={isPending}
+                        checked={roleHasPermission(role, perm.code)}
+                        disabled={saving !== null}
                         onCheckedChange={() => handleToggle(role, perm.code)}
                       />
                     </TableCell>

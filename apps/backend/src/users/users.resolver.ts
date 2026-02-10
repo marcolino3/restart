@@ -28,7 +28,9 @@ export class UsersResolver {
   }
 
   @Query(() => AuthContextOutput, { name: 'authContext' })
-  async authContext(@CurrentUser() user: TokenPayload): Promise<AuthContextOutput> {
+  async authContext(
+    @CurrentUser() user: TokenPayload,
+  ): Promise<AuthContextOutput> {
     const fullUser = await this.usersService.findCurrentUser(user.sub);
     if (!fullUser) throw new NotFoundException('User not found');
     return {

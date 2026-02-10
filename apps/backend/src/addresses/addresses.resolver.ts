@@ -15,7 +15,9 @@ export class AddressesResolver {
 
   @Mutation(() => Address)
   @Permissions('EMPLOYEE_WRITE')
-  createAddress(@Args('createAddressInput') createAddressInput: CreateAddressInput) {
+  createAddress(
+    @Args('createAddressInput') createAddressInput: CreateAddressInput,
+  ) {
     return this.addressesService.create(createAddressInput);
   }
 
@@ -31,8 +33,13 @@ export class AddressesResolver {
 
   @Mutation(() => Address)
   @Permissions('EMPLOYEE_WRITE')
-  updateAddress(@Args('updateAddressInput') updateAddressInput: UpdateAddressInput) {
-    return this.addressesService.update(updateAddressInput.id, updateAddressInput);
+  updateAddress(
+    @Args('updateAddressInput') updateAddressInput: UpdateAddressInput,
+  ) {
+    return this.addressesService.update(
+      updateAddressInput.id,
+      updateAddressInput,
+    );
   }
 
   @Mutation(() => Address)

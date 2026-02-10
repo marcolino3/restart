@@ -9,10 +9,7 @@ import { EncryptionService } from './encryption.service';
 import { CommonModule } from '@/common/common.module';
 
 @Module({
-  imports: [
-    CommonModule,
-    TypeOrmModule.forFeature([OrganizationSetting]),
-  ],
+  imports: [CommonModule, TypeOrmModule.forFeature([OrganizationSetting])],
   providers: [
     OrganizationSettingsResolver,
     OrganizationSettingsService,

@@ -38,9 +38,11 @@ describe('UsersService', () => {
       findOneBy: jest.fn(),
       find: jest.fn(),
       create: jest.fn((_, data) => ({ id: 'new-user', ...data })),
-      save: jest.fn().mockImplementation((entity) =>
-        Promise.resolve({ id: 'new-user', ...entity }),
-      ),
+      save: jest
+        .fn()
+        .mockImplementation((entity) =>
+          Promise.resolve({ id: 'new-user', ...entity }),
+        ),
       update: jest.fn().mockResolvedValue({ affected: 1 }),
       findOneByOrFail: jest.fn(),
       transaction: jest.fn((cb: (m: any) => any) => cb(em)),
@@ -169,9 +171,9 @@ describe('UsersService', () => {
 
     it('should throw NotFoundException for unknown email', async () => {
       em.findOne.mockResolvedValue(null);
-      await expect(
-        service.findOneByEmail('nobody@test.com'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.findOneByEmail('nobody@test.com')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -208,7 +210,10 @@ describe('UsersService', () => {
       em.findOne.mockResolvedValue(null); // no email conflict
       em.findOneBy.mockResolvedValue(updated);
 
-      const result = await service.update({ id: 'user-1', firstName: 'Moritz' });
+      const result = await service.update({
+        id: 'user-1',
+        firstName: 'Moritz',
+      });
       expect(em.update).toHaveBeenCalled();
       expect(result.firstName).toBe('Moritz');
     });

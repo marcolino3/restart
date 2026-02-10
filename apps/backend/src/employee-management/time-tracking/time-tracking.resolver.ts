@@ -15,7 +15,10 @@ export class TimeTrackingResolver {
 
   @Mutation(() => TimeTracking)
   @Permissions('TIMESHEET_WRITE')
-  createTimeTracking(@Args('createTimeTrackingInput') createTimeTrackingInput: CreateTimeTrackingInput) {
+  createTimeTracking(
+    @Args('createTimeTrackingInput')
+    createTimeTrackingInput: CreateTimeTrackingInput,
+  ) {
     return this.timeTrackingService.create(createTimeTrackingInput);
   }
 
@@ -33,8 +36,14 @@ export class TimeTrackingResolver {
 
   @Mutation(() => TimeTracking)
   @Permissions('TIMESHEET_WRITE')
-  updateTimeTracking(@Args('updateTimeTrackingInput') updateTimeTrackingInput: UpdateTimeTrackingInput) {
-    return this.timeTrackingService.update(updateTimeTrackingInput.id, updateTimeTrackingInput);
+  updateTimeTracking(
+    @Args('updateTimeTrackingInput')
+    updateTimeTrackingInput: UpdateTimeTrackingInput,
+  ) {
+    return this.timeTrackingService.update(
+      updateTimeTrackingInput.id,
+      updateTimeTrackingInput,
+    );
   }
 
   @Mutation(() => TimeTracking)

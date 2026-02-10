@@ -1,31 +1,30 @@
+"use server";
+
+import { graphql } from "@/gql";
+import { GetOrganizationsQuery } from "@/gql/graphql";
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
-import { gql } from "graphql-request";
 
-type OrganizationsResponse = {
-  organizations: {
-    id: string;
-    name: string;
-    slug: string;
-  }[];
-};
-
-const GetOrganizationsDocument = gql`
-  query GetOrganizationsForSwitcher {
+const GetOrganizationsDocument = graphql(`
+  query GetOrganizations {
     organizations {
       id
       name
       slug
+      domain
+      isActive
     }
   }
-`;
+`);
 
 export async function getOrganizationsAction() {
   const client = await serverCookieGqlClient();
+
   try {
-    const data: OrganizationsResponse =
-      await client.request(GetOrganizationsDocument);
-    return { success: true, data: data.organizations };
-  } catch {
-    return { success: false, data: [] as OrganizationsResponse["organizations"] };
+    const { organizations } =
+      await client.request<GetOrganizationsQuery>(GetOrganizationsDocument);
+    return { success: true, data: organizations };
+  } catch (error) {
+    console.error(error);
+    return { success: false, error };
   }
 }

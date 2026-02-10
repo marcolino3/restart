@@ -24,8 +24,12 @@ type Documents = {
     "\n  query GetOrganizationSetting($organizationId: ID!, $key: String!, $decrypt: Boolean!) {\n    organizationSetting(organizationId: $organizationId, key: $key, decrypt: $decrypt) {\n      id\n      organizationId\n      key\n      description\n      hasValue\n      value\n      version\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.GetOrganizationSettingDocument,
     "\n  query GetOrganizationSettings($organizationId: ID!) {\n    organizationSettings(organizationId: $organizationId) {\n      id\n      organizationId\n      key\n      description\n      hasValue\n      version\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.GetOrganizationSettingsDocument,
     "\n  mutation UpdateOrganizationSetting($input: UpdateOrganizationSettingInput!) {\n    updateOrganizationSetting(input: $input) {\n      id\n      key\n      description\n      hasValue\n    }\n  }\n": typeof types.UpdateOrganizationSettingDocument,
-    "\n  mutation CreateOrganization(\n    $createOrganizationInput: CreateOrganizationInput!\n  ) {\n    createOrganization(createOrganizationInput: $createOrganizationInput) {\n      id\n    }\n  }\n": typeof types.CreateOrganizationDocument,
-    "\n  query GetOrganizations {\n    organizations {\n      id\n      name\n      isActive\n    }\n  }\n": typeof types.GetOrganizationsDocument,
+    "\n  query IsOrganizationSlugAvailable($slug: String!) {\n    isOrganizationSlugAvailable(slug: $slug)\n  }\n": typeof types.IsOrganizationSlugAvailableDocument,
+    "\n  mutation CreateOrganization {\n    createOrganization {\n      id\n    }\n  }\n": typeof types.CreateOrganizationDocument,
+    "\n  query Organization($id: String!) {\n    organization(id: $id) {\n      id\n      name\n      slug\n      domain\n      street\n      zip\n      city\n      country\n      phone\n      email\n      website\n      timezone\n      isActive\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.OrganizationDocument,
+    "\n  query GetOrganizations {\n    organizations {\n      id\n      name\n      slug\n      domain\n      isActive\n    }\n  }\n": typeof types.GetOrganizationsDocument,
+    "\n  mutation RemoveOrganization($id: String!) {\n    removeOrganization(id: $id) {\n      id\n    }\n  }\n": typeof types.RemoveOrganizationDocument,
+    "\n  mutation UpdateOrganization(\n    $updateOrganizationInput: UpdateOrganizationInput!\n  ) {\n    updateOrganization(updateOrganizationInput: $updateOrganizationInput) {\n      id\n      name\n      slug\n    }\n  }\n": typeof types.UpdateOrganizationDocument,
     "\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n": typeof types.GetPermissionsDocument,
     "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n": typeof types.GetRolesByOrgIdDocument,
     "\n  mutation UpdateRolePermissions($input: UpdateRolePermissionsInput!) {\n    updateRolePermissions(input: $input) {\n      id\n      permissions {\n        id\n        code\n      }\n    }\n  }\n": typeof types.UpdateRolePermissionsDocument,
@@ -42,8 +46,12 @@ const documents: Documents = {
     "\n  query GetOrganizationSetting($organizationId: ID!, $key: String!, $decrypt: Boolean!) {\n    organizationSetting(organizationId: $organizationId, key: $key, decrypt: $decrypt) {\n      id\n      organizationId\n      key\n      description\n      hasValue\n      value\n      version\n      createdAt\n      updatedAt\n    }\n  }\n": types.GetOrganizationSettingDocument,
     "\n  query GetOrganizationSettings($organizationId: ID!) {\n    organizationSettings(organizationId: $organizationId) {\n      id\n      organizationId\n      key\n      description\n      hasValue\n      version\n      createdAt\n      updatedAt\n    }\n  }\n": types.GetOrganizationSettingsDocument,
     "\n  mutation UpdateOrganizationSetting($input: UpdateOrganizationSettingInput!) {\n    updateOrganizationSetting(input: $input) {\n      id\n      key\n      description\n      hasValue\n    }\n  }\n": types.UpdateOrganizationSettingDocument,
-    "\n  mutation CreateOrganization(\n    $createOrganizationInput: CreateOrganizationInput!\n  ) {\n    createOrganization(createOrganizationInput: $createOrganizationInput) {\n      id\n    }\n  }\n": types.CreateOrganizationDocument,
-    "\n  query GetOrganizations {\n    organizations {\n      id\n      name\n      isActive\n    }\n  }\n": types.GetOrganizationsDocument,
+    "\n  query IsOrganizationSlugAvailable($slug: String!) {\n    isOrganizationSlugAvailable(slug: $slug)\n  }\n": types.IsOrganizationSlugAvailableDocument,
+    "\n  mutation CreateOrganization {\n    createOrganization {\n      id\n    }\n  }\n": types.CreateOrganizationDocument,
+    "\n  query Organization($id: String!) {\n    organization(id: $id) {\n      id\n      name\n      slug\n      domain\n      street\n      zip\n      city\n      country\n      phone\n      email\n      website\n      timezone\n      isActive\n      createdAt\n      updatedAt\n    }\n  }\n": types.OrganizationDocument,
+    "\n  query GetOrganizations {\n    organizations {\n      id\n      name\n      slug\n      domain\n      isActive\n    }\n  }\n": types.GetOrganizationsDocument,
+    "\n  mutation RemoveOrganization($id: String!) {\n    removeOrganization(id: $id) {\n      id\n    }\n  }\n": types.RemoveOrganizationDocument,
+    "\n  mutation UpdateOrganization(\n    $updateOrganizationInput: UpdateOrganizationInput!\n  ) {\n    updateOrganization(updateOrganizationInput: $updateOrganizationInput) {\n      id\n      name\n      slug\n    }\n  }\n": types.UpdateOrganizationDocument,
     "\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n": types.GetPermissionsDocument,
     "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n": types.GetRolesByOrgIdDocument,
     "\n  mutation UpdateRolePermissions($input: UpdateRolePermissionsInput!) {\n    updateRolePermissions(input: $input) {\n      id\n      permissions {\n        id\n        code\n      }\n    }\n  }\n": types.UpdateRolePermissionsDocument,
@@ -107,11 +115,27 @@ export function graphql(source: "\n  mutation UpdateOrganizationSetting($input: 
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  mutation CreateOrganization(\n    $createOrganizationInput: CreateOrganizationInput!\n  ) {\n    createOrganization(createOrganizationInput: $createOrganizationInput) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateOrganization(\n    $createOrganizationInput: CreateOrganizationInput!\n  ) {\n    createOrganization(createOrganizationInput: $createOrganizationInput) {\n      id\n    }\n  }\n"];
+export function graphql(source: "\n  query IsOrganizationSlugAvailable($slug: String!) {\n    isOrganizationSlugAvailable(slug: $slug)\n  }\n"): (typeof documents)["\n  query IsOrganizationSlugAvailable($slug: String!) {\n    isOrganizationSlugAvailable(slug: $slug)\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query GetOrganizations {\n    organizations {\n      id\n      name\n      isActive\n    }\n  }\n"): (typeof documents)["\n  query GetOrganizations {\n    organizations {\n      id\n      name\n      isActive\n    }\n  }\n"];
+export function graphql(source: "\n  mutation CreateOrganization {\n    createOrganization {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateOrganization {\n    createOrganization {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query Organization($id: String!) {\n    organization(id: $id) {\n      id\n      name\n      slug\n      domain\n      street\n      zip\n      city\n      country\n      phone\n      email\n      website\n      timezone\n      isActive\n      createdAt\n      updatedAt\n    }\n  }\n"): (typeof documents)["\n  query Organization($id: String!) {\n    organization(id: $id) {\n      id\n      name\n      slug\n      domain\n      street\n      zip\n      city\n      country\n      phone\n      email\n      website\n      timezone\n      isActive\n      createdAt\n      updatedAt\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetOrganizations {\n    organizations {\n      id\n      name\n      slug\n      domain\n      isActive\n    }\n  }\n"): (typeof documents)["\n  query GetOrganizations {\n    organizations {\n      id\n      name\n      slug\n      domain\n      isActive\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation RemoveOrganization($id: String!) {\n    removeOrganization(id: $id) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation RemoveOrganization($id: String!) {\n    removeOrganization(id: $id) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateOrganization(\n    $updateOrganizationInput: UpdateOrganizationInput!\n  ) {\n    updateOrganization(updateOrganizationInput: $updateOrganizationInput) {\n      id\n      name\n      slug\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateOrganization(\n    $updateOrganizationInput: UpdateOrganizationInput!\n  ) {\n    updateOrganization(updateOrganizationInput: $updateOrganizationInput) {\n      id\n      name\n      slug\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

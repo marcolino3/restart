@@ -13,7 +13,9 @@ describe('EmployeeAbsenceCategoriesResolver', () => {
       ],
     }).compile();
 
-    resolver = module.get<EmployeeAbsenceCategoriesResolver>(EmployeeAbsenceCategoriesResolver);
+    resolver = module.get<EmployeeAbsenceCategoriesResolver>(
+      EmployeeAbsenceCategoriesResolver,
+    );
   });
 
   it('should be defined', () => {

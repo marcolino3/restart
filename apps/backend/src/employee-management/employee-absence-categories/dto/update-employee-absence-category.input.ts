@@ -2,7 +2,9 @@ import { CreateEmployeeAbsenceCategoryInput } from './create-employee-absence-ca
 import { InputType, Field, Int, PartialType } from '@nestjs/graphql';
 
 @InputType()
-export class UpdateEmployeeAbsenceCategoryInput extends PartialType(CreateEmployeeAbsenceCategoryInput) {
+export class UpdateEmployeeAbsenceCategoryInput extends PartialType(
+  CreateEmployeeAbsenceCategoryInput,
+) {
   @Field(() => Int)
   id: number;
 }

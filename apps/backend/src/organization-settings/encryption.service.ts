@@ -14,7 +14,9 @@ export class EncryptionService {
   private readonly key: Buffer;
 
   constructor(private readonly configService: ConfigService) {
-    const keyHex = this.configService.get<string>('ORG_SETTINGS_ENCRYPTION_KEY');
+    const keyHex = this.configService.get<string>(
+      'ORG_SETTINGS_ENCRYPTION_KEY',
+    );
 
     if (!keyHex || keyHex.length !== 64) {
       throw new InternalServerErrorException(

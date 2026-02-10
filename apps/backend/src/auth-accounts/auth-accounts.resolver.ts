@@ -9,7 +9,10 @@ export class AuthAccountsResolver {
   constructor(private readonly authAccountsService: AuthAccountsService) {}
 
   @Mutation(() => AuthAccount)
-  createAuthAccount(@Args('createAuthAccountInput') createAuthAccountInput: CreateAuthAccountInput) {
+  createAuthAccount(
+    @Args('createAuthAccountInput')
+    createAuthAccountInput: CreateAuthAccountInput,
+  ) {
     return this.authAccountsService.create(createAuthAccountInput);
   }
 
@@ -24,8 +27,14 @@ export class AuthAccountsResolver {
   }
 
   @Mutation(() => AuthAccount)
-  updateAuthAccount(@Args('updateAuthAccountInput') updateAuthAccountInput: UpdateAuthAccountInput) {
-    return this.authAccountsService.update(updateAuthAccountInput.id, updateAuthAccountInput);
+  updateAuthAccount(
+    @Args('updateAuthAccountInput')
+    updateAuthAccountInput: UpdateAuthAccountInput,
+  ) {
+    return this.authAccountsService.update(
+      updateAuthAccountInput.id,
+      updateAuthAccountInput,
+    );
   }
 
   @Mutation(() => AuthAccount)

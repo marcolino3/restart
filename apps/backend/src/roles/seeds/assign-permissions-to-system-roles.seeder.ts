@@ -77,9 +77,7 @@ export async function assignPermissionsToOrgSystemRoles(
   const permByCode = new Map(perms.map((p) => [p.code, p.id]));
 
   for (const role of roles) {
-    const codes = role['systemCode']
-      ? (MATRIX[role['systemCode'] as SystemRole] ?? [])
-      : [];
+    const codes = role['systemCode'] ? (MATRIX[role['systemCode']] ?? []) : [];
     const permIds = codes
       .map((c) => permByCode.get(c))
       .filter(Boolean) as string[];

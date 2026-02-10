@@ -1,7 +1,7 @@
 "use server";
 
 import { graphql } from "@/gql";
-import { executeGraphQL } from "@/lib/actions/execute-graphql";
+import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { revalidatePath } from "next/cache";
 
 const CreateOrganizationSettingDocument = graphql(`
@@ -23,19 +23,18 @@ export interface CreateSettingInput {
 }
 
 export async function createOrganizationSettingAction(input: CreateSettingInput) {
-  const result = await executeGraphQL<{ id: string; key: string }>(
-    async (client) => {
-      const { createOrganizationSetting } = await client.request(
-        CreateOrganizationSettingDocument,
-        { input }
-      );
-      return createOrganizationSetting;
-    }
-  );
+  const client = await serverCookieGqlClient();
 
-  if (result.success) {
+  try {
+    const { createOrganizationSetting } = await client.request(
+      CreateOrganizationSettingDocument,
+      { input }
+    );
+
     revalidatePath("/admin/settings");
+    return { success: true, data: createOrganizationSetting };
+  } catch (error) {
+    console.error(error);
+    return { success: false, error };
   }
-
-  return result;
 }

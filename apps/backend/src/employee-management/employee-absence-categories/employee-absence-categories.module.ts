@@ -3,6 +3,9 @@ import { EmployeeAbsenceCategoriesService } from './employee-absence-categories.
 import { EmployeeAbsenceCategoriesResolver } from './employee-absence-categories.resolver';
 
 @Module({
-  providers: [EmployeeAbsenceCategoriesResolver, EmployeeAbsenceCategoriesService],
+  providers: [
+    EmployeeAbsenceCategoriesResolver,
+    EmployeeAbsenceCategoriesService,
+  ],
 })
 export class EmployeeAbsenceCategoriesModule {}

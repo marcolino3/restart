@@ -1,7 +1,7 @@
 "use server";
 
 import { graphql } from "@/gql";
-import { executeGraphQL } from "@/lib/actions/execute-graphql";
+import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { revalidatePath } from "next/cache";
 
 const DeleteOrganizationSettingDocument = graphql(`
@@ -14,17 +14,18 @@ export async function deleteOrganizationSettingAction(
   organizationId: string,
   key: string
 ) {
-  const result = await executeGraphQL<boolean>(async (client) => {
+  const client = await serverCookieGqlClient();
+
+  try {
     const { deleteOrganizationSetting } = await client.request(
       DeleteOrganizationSettingDocument,
       { organizationId, key }
     );
-    return deleteOrganizationSetting;
-  });
 
-  if (result.success) {
     revalidatePath("/admin/settings");
+    return { success: true, data: deleteOrganizationSetting };
+  } catch (error) {
+    console.error(error);
+    return { success: false, error };
   }
-
-  return result;
 }

@@ -113,7 +113,11 @@ export class OrganizationSettingsService {
 
     const normalizedKey = input.key.trim().toUpperCase();
     const setting = await this.settingRepo.findOne({
-      where: { organizationId: input.organizationId, key: normalizedKey, isActive: true },
+      where: {
+        organizationId: input.organizationId,
+        key: normalizedKey,
+        isActive: true,
+      },
     });
 
     if (!setting) {
@@ -167,7 +171,10 @@ export class OrganizationSettingsService {
   /**
    * Get decrypted value for internal use (e.g., other services)
    */
-  async getDecryptedValue(organizationId: string, key: string): Promise<string | null> {
+  async getDecryptedValue(
+    organizationId: string,
+    key: string,
+  ): Promise<string | null> {
     const normalizedKey = key.trim().toUpperCase();
     const setting = await this.settingRepo.findOne({
       where: { organizationId, key: normalizedKey, isActive: true },
@@ -187,7 +194,10 @@ export class OrganizationSettingsService {
   /**
    * Check if user has access to organization settings
    */
-  private async checkOrgAccess(organizationId: string, user: TokenPayload): Promise<void> {
+  private async checkOrgAccess(
+    organizationId: string,
+    user: TokenPayload,
+  ): Promise<void> {
     if (user.isSuperAdmin) {
       return;
     }
@@ -206,11 +216,13 @@ export class OrganizationSettingsService {
 
     const allowedRoles = [SystemRole.ORG_OWNER, SystemRole.ORG_ADMIN];
     const hasRole = membership.roles?.some(
-      (r) => r.systemCode && allowedRoles.includes(r.systemCode as SystemRole),
+      (r) => r.systemCode && allowedRoles.includes(r.systemCode),
     );
 
     if (!hasRole) {
-      throw new ForbiddenException('Insufficient permissions to manage settings');
+      throw new ForbiddenException(
+        'Insufficient permissions to manage settings',
+      );
     }
   }
 

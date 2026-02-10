@@ -15,7 +15,9 @@ export class TeamMembersResolver {
 
   @Mutation(() => TeamMember)
   @Permissions('TEAM_MANAGE')
-  createTeamMember(@Args('createTeamMemberInput') createTeamMemberInput: CreateTeamMemberInput) {
+  createTeamMember(
+    @Args('createTeamMemberInput') createTeamMemberInput: CreateTeamMemberInput,
+  ) {
     return this.teamMembersService.create(createTeamMemberInput);
   }
 
@@ -33,8 +35,13 @@ export class TeamMembersResolver {
 
   @Mutation(() => TeamMember)
   @Permissions('TEAM_MANAGE')
-  updateTeamMember(@Args('updateTeamMemberInput') updateTeamMemberInput: UpdateTeamMemberInput) {
-    return this.teamMembersService.update(updateTeamMemberInput.id, updateTeamMemberInput);
+  updateTeamMember(
+    @Args('updateTeamMemberInput') updateTeamMemberInput: UpdateTeamMemberInput,
+  ) {
+    return this.teamMembersService.update(
+      updateTeamMemberInput.id,
+      updateTeamMemberInput,
+    );
   }
 
   @Mutation(() => TeamMember)

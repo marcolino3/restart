@@ -40,7 +40,8 @@ export class RolesService {
     });
     if (!role) throw new NotFoundException(`Role ${roleId} not found in org`);
 
-    const permissions = await this.permissionsService.findByCodes(permissionCodes);
+    const permissions =
+      await this.permissionsService.findByCodes(permissionCodes);
     role.permissions = permissions;
     return this.roleRepo.save(role);
   }

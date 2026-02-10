@@ -9,7 +9,9 @@ export class CountriesResolver {
   constructor(private readonly countriesService: CountriesService) {}
 
   @Mutation(() => Country)
-  createCountry(@Args('createCountryInput') createCountryInput: CreateCountryInput) {
+  createCountry(
+    @Args('createCountryInput') createCountryInput: CreateCountryInput,
+  ) {
     return this.countriesService.create(createCountryInput);
   }
 
@@ -24,8 +26,13 @@ export class CountriesResolver {
   }
 
   @Mutation(() => Country)
-  updateCountry(@Args('updateCountryInput') updateCountryInput: UpdateCountryInput) {
-    return this.countriesService.update(updateCountryInput.id, updateCountryInput);
+  updateCountry(
+    @Args('updateCountryInput') updateCountryInput: UpdateCountryInput,
+  ) {
+    return this.countriesService.update(
+      updateCountryInput.id,
+      updateCountryInput,
+    );
   }
 
   @Mutation(() => Country)

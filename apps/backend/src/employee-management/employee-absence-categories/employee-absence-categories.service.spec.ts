@@ -13,7 +13,9 @@ describe('EmployeeAbsenceCategoriesService', () => {
       ],
     }).compile();
 
-    service = module.get<EmployeeAbsenceCategoriesService>(EmployeeAbsenceCategoriesService);
+    service = module.get<EmployeeAbsenceCategoriesService>(
+      EmployeeAbsenceCategoriesService,
+    );
   });
 
   it('should be defined', () => {

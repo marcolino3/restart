@@ -1,30 +1,28 @@
+"use server";
+
 import { graphql } from "@/gql";
-import { executeGraphQL } from "@/lib/actions/execute-graphql";
 import { CreateOrganizationMutation } from "@/gql/graphql";
-import { CreateOrganizationSlugFormType } from "../schemas/create-organization-slug-form.schema";
+import { redirect } from "next/navigation";
+import { ROUTES } from "@/constants/routes";
+import { getLocale } from "next-intl/server";
+import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 
 const CreateOrganizationDocument = graphql(`
-  mutation CreateOrganization(
-    $createOrganizationInput: CreateOrganizationInput!
-  ) {
-    createOrganization(createOrganizationInput: $createOrganizationInput) {
+  mutation CreateOrganization {
+    createOrganization {
       id
     }
   }
 `);
 
-export async function createOrganizationAction(
-  values: CreateOrganizationSlugFormType
-) {
-  return executeGraphQL<CreateOrganizationMutation["createOrganization"]>(
-    async (client) => {
-      const { createOrganization } = await client.request(
-        CreateOrganizationDocument,
-        {
-          createOrganizationInput: values,
-        }
-      );
-      return createOrganization;
-    }
-  );
+export async function createOrganizationAction() {
+  const locale = await getLocale();
+  const client = await serverCookieGqlClient();
+
+  const { createOrganization } =
+    await client.request<CreateOrganizationMutation>(
+      CreateOrganizationDocument
+    );
+
+  redirect(ROUTES.admin.organizationsEdit(locale, createOrganization.id));
 }

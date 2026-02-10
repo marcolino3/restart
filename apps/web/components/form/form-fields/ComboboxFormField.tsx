@@ -41,6 +41,7 @@ type ComboboxFormFieldProps<TFormValues extends FieldValues> = {
   multiple?: boolean;
   width?: string;
   className?: string;
+  translateOptions?: boolean;
 };
 
 export function ComboboxFormField<TFormValues extends FieldValues>({
@@ -54,6 +55,7 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
   multiple = false,
   width,
   className,
+  translateOptions = true,
 }: ComboboxFormFieldProps<TFormValues>) {
   const t = useTranslations("Common");
   const { control } = useFormContext();
@@ -103,8 +105,12 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
                     )}
                   >
                     {!multiple
-                      ? options.find((o) => o.value === field.value)?.label ||
-                        t(placeholder)
+                      ? (() => {
+                          const opt = options.find((o) => o.value === field.value);
+                          return opt
+                            ? translateOptions ? t(opt.label) : opt.label
+                            : t(placeholder);
+                        })()
                       : t(placeholder)}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
@@ -125,7 +131,7 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
                           value={option.label}
                           onSelect={() => toggleValue(option.value)}
                         >
-                          {t(option.label)}
+                          {translateOptions ? t(option.label) : option.label}
                           <Check
                             className={cn(
                               "ml-auto h-4 w-4",
@@ -150,7 +156,7 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
                     variant="secondary"
                     className="flex items-center gap-1"
                   >
-                    {t(option?.label ?? "")}
+                    {translateOptions ? t(option?.label ?? "") : option?.label ?? ""}
                     <Button
                       variant={"ghost"}
                       onClick={() => {

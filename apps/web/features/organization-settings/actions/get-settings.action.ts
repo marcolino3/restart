@@ -1,7 +1,7 @@
 "use server";
 
 import { graphql } from "@/gql";
-import { executeGraphQL } from "@/lib/actions/execute-graphql";
+import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 
 const GetOrganizationSettingsDocument = graphql(`
   query GetOrganizationSettings($organizationId: ID!) {
@@ -30,11 +30,16 @@ export interface OrganizationSetting {
 }
 
 export async function getOrganizationSettingsAction(organizationId: string) {
-  return executeGraphQL<OrganizationSetting[]>(async (client) => {
+  const client = await serverCookieGqlClient();
+
+  try {
     const { organizationSettings } = await client.request(
       GetOrganizationSettingsDocument,
       { organizationId }
     );
-    return organizationSettings as OrganizationSetting[];
-  });
+    return { success: true, data: organizationSettings as OrganizationSetting[] };
+  } catch (error) {
+    console.error(error);
+    return { success: false, error };
+  }
 }

@@ -1,8 +1,9 @@
-import { OpenSheetButton } from "@/components/buttons/OpenSheetButton";
-import { getOrganizationsAction } from "@/features/organizations/actions/get-organzations.action";
-import { CreateOrganizationForm } from "@/features/organizations/components/CreateOrganizationForm";
-import { OrganizationsTable } from "@/features/organizations/components/OrganizationsTable";
 import { PlusIcon } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { getOrganizationsAction } from "@/features/organizations/actions/get-organizations.action";
+import { OrganizationsTable } from "@/features/organizations/components/OrganizationsTable";
+import { createOrganizationAction } from "@/features/organizations/actions/create-organization.action";
 
 const OrganizationsPage = async () => {
   const response = await getOrganizationsAction();
@@ -15,14 +16,12 @@ const OrganizationsPage = async () => {
 
   return (
     <div>
-      <OpenSheetButton
-        title="createOrganization"
-        description="createOrganizationDescription"
-        buttonLabel="create"
-        icon={<PlusIcon />}
-      >
-        <CreateOrganizationForm />
-      </OpenSheetButton>
+      <form action={createOrganizationAction}>
+        <Button type="submit">
+          <PlusIcon />
+          Erstellen
+        </Button>
+      </form>
       <OrganizationsTable data={organizations} />
     </div>
   );

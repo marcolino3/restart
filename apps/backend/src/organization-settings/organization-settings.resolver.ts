@@ -37,7 +37,8 @@ export class OrganizationSettingsResolver {
   findOne(
     @Args('organizationId', { type: () => ID }) organizationId: string,
     @Args('key') key: string,
-    @Args('decrypt', { type: () => Boolean, defaultValue: false }) decrypt: boolean,
+    @Args('decrypt', { type: () => Boolean, defaultValue: false })
+    decrypt: boolean,
     @CurrentUser() user: TokenPayload,
   ) {
     return this.organizationSettingsService.findOne(
@@ -51,7 +52,9 @@ export class OrganizationSettingsResolver {
   /**
    * Create a new organization setting
    */
-  @Mutation(() => OrganizationSettingOutput, { name: 'createOrganizationSetting' })
+  @Mutation(() => OrganizationSettingOutput, {
+    name: 'createOrganizationSetting',
+  })
   @UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
   create(
     @Args('input') input: CreateOrganizationSettingInput,
@@ -63,7 +66,9 @@ export class OrganizationSettingsResolver {
   /**
    * Update an existing setting
    */
-  @Mutation(() => OrganizationSettingOutput, { name: 'updateOrganizationSetting' })
+  @Mutation(() => OrganizationSettingOutput, {
+    name: 'updateOrganizationSetting',
+  })
   @UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
   update(
     @Args('input') input: UpdateOrganizationSettingInput,

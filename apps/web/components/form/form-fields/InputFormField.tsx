@@ -21,6 +21,7 @@ interface Props {
   type?: string;
   width?: string;
   className?: string;
+  onChange?: () => void;
 }
 
 export const InputFormField = ({
@@ -31,6 +32,7 @@ export const InputFormField = ({
   type = "text",
   width = "w-full",
   className,
+  onChange: onChangeProp,
 }: Props) => {
   const t = useTranslations("Common");
   const { control } = useFormContext();
@@ -43,7 +45,15 @@ export const InputFormField = ({
         <FormItem className={cn(className, width)}>
           {label && <FormLabel>{t(label)}</FormLabel>}
           <FormControl>
-            <Input {...field} type={type} placeholder={placeholder} />
+            <Input
+              {...field}
+              type={type}
+              placeholder={placeholder}
+              onChange={(e) => {
+                field.onChange(e);
+                onChangeProp?.();
+              }}
+            />
           </FormControl>
           <FormMessage />
           {description && <FormDescription>{t(description)}</FormDescription>}
