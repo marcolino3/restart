@@ -91,8 +91,36 @@ jobs:
       - name: Run E2E Tests
         run: cd e2e && npx playwright test
         env:
+          # Database
           DB_HOST: localhost
           DB_PORT: 5432
           DB_NAME: colibri_test
           DB_USERNAME: test
           DB_PASSWORD: test
+          DB_SYNCHRONIZE: "true"
+          # App
+          NODE_ENV: test
+          PORT: 4001
+          ALLOWED_ORIGINS: http://localhost:4000
+          # JWT
+          JWT_ACCESS_TOKEN_SECRET: ci-test-access-secret-key
+          JWT_ACCESS_TOKEN_EXPIRATION_MS: "900000"
+          JWT_REFRESH_TOKEN_SECRET: ci-test-refresh-secret-key
+          JWT_REFRESH_TOKEN_EXPIRATION_MS: "604800000"
+          # Google OAuth (dummy values – backend requires non-empty strings at startup)
+          GOOGLE_AUTH_CLIENT_ID: ci-test-google-client-id
+          GOOGLE_AUTH_CLIENT_SECRET: ci-test-google-client-secret
+          GOOGLE_AUTH_REDIRECT_URI: http://localhost:4001/api/auth/google/redirect
+          # Auth
+          AUTH_UI_REDIRECT: http://localhost:4000
+          # Mail (dummy values – not actually used in E2E smoke tests)
+          SMTP_USER: ci-test@example.com
+          GOOGLE_MAIL_REFRESH_TOKEN: ci-test-mail-refresh-token
+          # Google Calendar
+          GOOGLE_CALENDAR_ID: ci-test-calendar-id
+          # Encryption
+          ORG_SETTINGS_ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+          # Frontend
+          NEXT_PUBLIC_API_URL: http://localhost:4001
+          NEXT_PUBLIC_GRAPHQL_API_URL: http://localhost:4001/graphql
+          BACKEND_URL: http://localhost:4001
