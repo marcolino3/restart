@@ -9,6 +9,7 @@ import { UsersModule } from '@/users/users.module';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { OrganizationsModule } from '@/organizations/organizations.module';
+import { MailModule } from '@/mail/mail.module';
 import { SuperAdminBootstrapService } from './super-admin-bootstrap.service';
 
 @Module({
@@ -24,6 +25,7 @@ import { SuperAdminBootstrapService } from './super-admin-bootstrap.service';
     }),
     UsersModule,
     OrganizationsModule,
+    MailModule,
   ],
   controllers: [AuthController],
   providers: [

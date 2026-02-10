@@ -2,7 +2,7 @@ import { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 import { routing } from "@/i18n/rounting";
 
-const backendUrl = process.env.BACKEND_URL || "http://localhost:3001";
+const backendUrl = process.env.BACKEND_URL || "http://localhost:4001";
 
 const nextConfig: NextConfig = {
   output: "standalone",

@@ -9,7 +9,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   const allowedOrigins = configService
-    .get('ALLOWED_ORIGINS', 'http://localhost:3000')
+    .get('ALLOWED_ORIGINS', 'http://localhost:4000')
     .split(',')
     .map((origin: string) => origin.trim());
 

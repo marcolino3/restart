@@ -52,6 +52,24 @@ export class User extends AbstractEntity<User> {
   })
   googleId?: string | null;
 
+  @HideField()
+  @Column({
+    name: 'magic_link_token',
+    type: 'text',
+    select: false,
+    nullable: true,
+  })
+  magicLinkToken: string | null;
+
+  @HideField()
+  @Column({
+    name: 'magic_link_expires_at',
+    type: 'timestamptz',
+    select: false,
+    nullable: true,
+  })
+  magicLinkExpiresAt: Date | null;
+
   @Field(() => [Membership])
   @OneToMany(() => Membership, (membership) => membership.user)
   memberships!: Membership[];

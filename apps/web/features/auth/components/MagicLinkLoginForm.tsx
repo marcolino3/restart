@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -17,9 +18,12 @@ import {
   MagicLinkLoginFormSchema,
   MagicLinkLoginFormType,
 } from "../schemas/magic-link-login-form.schema";
-import { Loader2 } from "lucide-react";
+import { Loader2, MailCheck } from "lucide-react";
 
 export const MagicLinkLoginForm = () => {
+  const [sent, setSent] = useState(false);
+  const [sentEmail, setSentEmail] = useState("");
+
   const form = useForm<MagicLinkLoginFormType>({
     resolver: zodResolver(MagicLinkLoginFormSchema),
     mode: "onBlur",
@@ -29,8 +33,29 @@ export const MagicLinkLoginForm = () => {
   });
 
   const onSubmit = async (values: MagicLinkLoginFormType) => {
-    console.log(values);
+    const res = await fetch("/api/auth/magic-link/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: values.email }),
+    });
+
+    if (res.ok) {
+      setSentEmail(values.email);
+      setSent(true);
+    }
   };
+
+  if (sent) {
+    return (
+      <div className="flex flex-col items-center gap-y-3 py-4 text-center">
+        <MailCheck className="h-10 w-10 text-green-600" />
+        <p className="text-sm">
+          Wir haben dir einen Login-Link an{" "}
+          <strong>{sentEmail}</strong> gesendet. Pruefe dein Postfach.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>

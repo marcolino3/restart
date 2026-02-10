@@ -179,6 +179,32 @@ export class UsersService {
   }
 
   /**
+   * Setzt den gehashten Magic-Link-Token und das Ablaufdatum.
+   */
+  async setMagicLinkToken(
+    userId: string,
+    tokenHash: string,
+    expiresAt: Date,
+  ): Promise<void> {
+    await this.entityManager.update(
+      User,
+      { id: userId },
+      { magicLinkToken: tokenHash, magicLinkExpiresAt: expiresAt },
+    );
+  }
+
+  /**
+   * Loescht den Magic-Link-Token (nach erfolgreichem Login oder bei Ablauf).
+   */
+  async clearMagicLinkToken(userId: string): Promise<void> {
+    await this.entityManager.update(
+      User,
+      { id: userId },
+      { magicLinkToken: null, magicLinkExpiresAt: null },
+    );
+  }
+
+  /**
    * Optional: Soft-Delete oder Deaktivieren (je nach deinem AbstractEntity).
    * Hier als simples Deaktivieren umgesetzt.
    */

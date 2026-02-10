@@ -1,13 +1,15 @@
 // src/auth/auth.service.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { EntityManager } from 'typeorm';
+import { EntityManager, MoreThan } from 'typeorm';
 import { compare, hash } from 'bcrypt';
+import { createHash, randomBytes } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
 
 import { User } from '@/users/entities/user.entity';
 import { UsersService } from '@/users/users.service';
+import { MailService } from '@/mail/mail.service';
 import { TokenPayload } from './interfaces/token-payload.interface';
 import { getAuthContext } from './utils/get-auth-context.util';
 import { SafeUser } from './interfaces/safe-user.type';
@@ -19,6 +21,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
+    private readonly mailService: MailService,
   ) {}
 
   /**
@@ -219,6 +222,73 @@ export class AuthService {
     res.redirect(
       `${this.configService.getOrThrow('AUTH_UI_REDIRECT')}/de/admin/my-time-tracking`,
     );
+  }
+
+  /**
+   * Erzeugt einen Magic-Link-Token, speichert den Hash in der DB und sendet die Email.
+   * Gibt keinen Fehler zurueck, wenn die Email nicht existiert (Sicherheit).
+   */
+  async sendMagicLink(email: string): Promise<void> {
+    let user: User;
+    try {
+      user = await this.usersService.findOneByEmail(email);
+    } catch {
+      // User nicht gefunden -> kein Fehler nach aussen (kein Email-Leak)
+      return;
+    }
+
+    const rawToken = randomBytes(32).toString('hex');
+    const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 Minuten
+
+    await this.usersService.setMagicLinkToken(user.id, tokenHash, expiresAt);
+
+    const baseUrl = this.configService.getOrThrow('AUTH_UI_REDIRECT');
+    const magicLinkUrl = `${baseUrl}/api/auth/magic-link/verify?token=${rawToken}`;
+
+    // TODO: Remove console.log once SMTP is configured
+    console.log(`[Magic Link] ${user.email} → ${magicLinkUrl}`);
+
+    try {
+      await this.mailService.sendMagicLinkEmail(
+        user.email,
+        user.firstName,
+        magicLinkUrl,
+      );
+    } catch (err) {
+      console.error('Failed to send magic link email:', err);
+    }
+  }
+
+  /**
+   * Verifiziert einen Magic-Link-Token: hasht ihn, sucht in der DB, loescht den Token.
+   */
+  async verifyMagicLink(token: string): Promise<User> {
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+
+    const user = await this.entityManager.findOne(User, {
+      where: {
+        magicLinkToken: tokenHash,
+        magicLinkExpiresAt: MoreThan(new Date()),
+      },
+      select: [
+        'id',
+        'firstName',
+        'lastName',
+        'email',
+        'isSuperAdmin',
+        'magicLinkToken',
+        'magicLinkExpiresAt',
+      ],
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid or expired magic link');
+    }
+
+    await this.usersService.clearMagicLinkToken(user.id);
+
+    return user;
   }
 
   /**

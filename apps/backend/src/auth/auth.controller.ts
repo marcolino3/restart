@@ -6,8 +6,10 @@ import {
   Controller,
   Get,
   Post,
+  Query,
   Req,
   Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
@@ -179,6 +181,46 @@ export class AuthController {
     const user = await this.usersService.findOne(payload.sub);
     await this.authService.login(user, res, orgId);
     return { success: true };
+  }
+
+  /**
+   * Magic Link senden
+   * - gibt immer { success: true } zurueck (kein Email-Leak)
+   */
+  @Post('magic-link/send')
+  async sendMagicLink(@Body('email') email: string) {
+    if (!email) {
+      throw new BadRequestException('Email is required');
+    }
+    await this.authService.sendMagicLink(email);
+    return { success: true };
+  }
+
+  /**
+   * Magic Link verifizieren
+   * - Token aus Query, User laden, login mit redirect
+   */
+  @Get('magic-link/verify')
+  async verifyMagicLink(
+    @Query('token') token: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    if (!token) {
+      throw new UnauthorizedException('Token is required');
+    }
+
+    const user = await this.authService.verifyMagicLink(token);
+    const userWithMembership = await this.usersService.findCurrentUser(user.id);
+
+    if (user.isSuperAdmin) {
+      await this.authService.loginRefreshOnly(user, res);
+      return;
+    }
+
+    const orgId = userWithMembership?.memberships[0]?.organizationId;
+    if (!orgId) throw new ConflictException('No Organization found.');
+
+    await this.authService.login(user, res, orgId, true);
   }
 
   @Post('logout')
