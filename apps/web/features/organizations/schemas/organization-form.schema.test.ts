@@ -5,7 +5,7 @@ describe('OrganizationFormSchema', () => {
   const validInput = {
     id: '550e8400-e29b-41d4-a716-446655440000',
     name: 'Acme Corp',
-    slug: 'acme-corp',
+    subdomain: 'acme-corp',
     timezone: 'Europe/Berlin',
   }
 
@@ -37,36 +37,36 @@ describe('OrganizationFormSchema', () => {
     expect(result.success).toBe(false)
   })
 
-  // slug validation
-  describe('slug', () => {
+  // subdomain validation
+  describe('subdomain', () => {
     it('should accept lowercase letters, numbers, hyphens', () => {
       const result = OrganizationFormSchema.safeParse({
         ...validInput,
-        slug: 'acme-corp-42',
+        subdomain: 'acme-corp-42',
       })
       expect(result.success).toBe(true)
     })
 
-    it('should reject uppercase letters in slug', () => {
+    it('should reject uppercase letters in subdomain', () => {
       const result = OrganizationFormSchema.safeParse({
         ...validInput,
-        slug: 'Acme-Corp',
+        subdomain: 'Acme-Corp',
       })
       expect(result.success).toBe(false)
     })
 
-    it('should reject spaces in slug', () => {
+    it('should reject spaces in subdomain', () => {
       const result = OrganizationFormSchema.safeParse({
         ...validInput,
-        slug: 'acme corp',
+        subdomain: 'acme corp',
       })
       expect(result.success).toBe(false)
     })
 
-    it('should reject special characters in slug', () => {
+    it('should reject special characters in subdomain', () => {
       const result = OrganizationFormSchema.safeParse({
         ...validInput,
-        slug: 'acme_corp!',
+        subdomain: 'acme_corp!',
       })
       expect(result.success).toBe(false)
     })
@@ -113,7 +113,7 @@ describe('OrganizationFormSchema', () => {
         id: '550e8400-e29b-41d4-a716-446655440000',
       })
       expect(result.name).toBe('')
-      expect(result.slug).toBe('')
+      expect(result.subdomain).toBe('')
       expect(result.domain).toBe('')
     })
   })

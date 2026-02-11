@@ -7,7 +7,7 @@ export const OrganizationFormSchema = z.object({
     .min(1, { message: "Darf nicht leer sein" })
     .optional()
     .default(""),
-  slug: z
+  subdomain: z
     .string()
     .min(1, { message: "Darf nicht leer sein" })
     .regex(/^[a-z0-9-]+$/, {
@@ -25,6 +25,7 @@ export const OrganizationFormSchema = z.object({
   email: z.email().optional().or(z.literal("")).default(""),
   website: z.string().optional().default(""),
   timezone: z.string().optional().default("Europe/Berlin"),
+  isActive: z.boolean().default(false),
 });
 
 export type OrganizationFormInput = z.input<typeof OrganizationFormSchema>;

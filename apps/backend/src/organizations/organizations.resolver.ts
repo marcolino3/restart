@@ -10,36 +10,27 @@ import { GqlJwtAuthGuard } from '@/auth/guard/gql-jwt-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
+import { Roles } from '@/auth/decorators/roles.decorator';
 import { SuperAdminGuard } from '@/auth/guard/super-admin.guard';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
+import { SystemRole } from '@/roles/entities/system-role.enum';
 
 @Resolver(() => Organization)
 export class OrganizationsResolver {
   constructor(private readonly organizationsService: OrganizationsService) {}
 
-  /**
-   * Nur Superadmin darf neue Orgs anlegen.
-   */
   @Mutation(() => Organization, { name: 'createOrganization' })
   @UseGuards(GqlJwtAuthGuard, SuperAdminGuard)
   createOrganization() {
     return this.organizationsService.create();
   }
 
-  /**
-   * Orgs auflisten
-   * - Superadmin: alle
-   * - normaler User: nur eigene (ueber Memberships)
-   */
   @Query(() => [Organization], { name: 'organizations' })
   @UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
   organizations(@CurrentUser() user: TokenPayload) {
     return this.organizationsService.findAllForUser(user);
   }
 
-  /**
-   * Eine Org lesen
-   */
   @Query(() => Organization, { name: 'organization' })
   @UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
   organization(
@@ -49,38 +40,34 @@ export class OrganizationsResolver {
     return this.organizationsService.findOneForUser(id, user);
   }
 
-  /**
-   * Org updaten (orgId aus Input, da SuperAdmin editiert)
-   */
   @Mutation(() => Organization, { name: 'updateOrganization' })
+  @Roles(SystemRole.ORG_OWNER, SystemRole.ORG_ADMIN)
   @UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
   updateOrganization(
     @Args('updateOrganizationInput') input: UpdateOrganizationInput,
-    @CurrentUser() user: TokenPayload,
   ) {
-    return this.organizationsService.updateForActiveOrg(input.id, input, user);
+    return this.organizationsService.updateOrganization(input.id, input);
   }
 
-  /**
-   * Slug-Verfuegbarkeit pruefen
-   */
-  @Query(() => Boolean, { name: 'isOrganizationSlugAvailable' })
+  @Query(() => Boolean, { name: 'isOrganizationSubdomainAvailable' })
   @UseGuards(GqlJwtAuthGuard, SuperAdminGuard)
-  isOrganizationSlugAvailable(
-    @Args('slug', { type: () => String }) slug: string,
+  isOrganizationSubdomainAvailable(
+    @Args('subdomain', { type: () => String }) subdomain: string,
   ) {
-    return this.organizationsService.isSlugAvailable(slug);
+    return this.organizationsService.isSubdomainAvailable(subdomain);
   }
 
-  /**
-   * Org entfernen (nur Owner/Superadmin)
-   */
-  @Mutation(() => Organization, { name: 'removeOrganization' })
-  @UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
-  removeOrganization(
-    @Args('id', { type: () => String }) id: string,
-    @CurrentUser() user: TokenPayload,
+  @Query(() => Boolean, { name: 'isOrganizationDomainAvailable' })
+  @UseGuards(GqlJwtAuthGuard, SuperAdminGuard)
+  isOrganizationDomainAvailable(
+    @Args('domain', { type: () => String }) domain: string,
   ) {
-    return this.organizationsService.removeForActiveOrg(id, user);
+    return this.organizationsService.isDomainAvailable(domain);
+  }
+
+  @Mutation(() => Organization, { name: 'removeOrganization' })
+  @UseGuards(GqlJwtAuthGuard, SuperAdminGuard)
+  removeOrganization(@Args('id', { type: () => String }) id: string) {
+    return this.organizationsService.removeOrganization(id);
   }
 }

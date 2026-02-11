@@ -9,7 +9,7 @@ const GetOrganizationsDocument = graphql(`
     organizations {
       id
       name
-      slug
+      subdomain
       domain
       isActive
     }

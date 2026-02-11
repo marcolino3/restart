@@ -18,7 +18,7 @@ const UpdateOrganizationDocument = graphql(`
     updateOrganization(updateOrganizationInput: $updateOrganizationInput) {
       id
       name
-      slug
+      subdomain
     }
   }
 `);

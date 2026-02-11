@@ -59,11 +59,11 @@ export class AuthController {
     const isLocal =
       host === 'localhost' || host === '127.0.0.1' || host === '::1';
 
-    let orgSlug: string | undefined;
+    let orgSubdomain: string | undefined;
     if (!isLocal) {
-      orgSlug = host.split('.')[0];
+      orgSubdomain = host.split('.')[0];
     } else {
-      orgSlug =
+      orgSubdomain =
         (typeof req.headers['x-org-slug'] === 'string'
           ? req.headers['x-org-slug'].trim()
           : undefined) ||
@@ -73,7 +73,7 @@ export class AuthController {
     }
 
     // ✅ Superadmin darf ohne Org einloggen -> nur Refresh setzen
-    // if (!orgSlug && user.isSuperAdmin) {
+    // if (!orgSubdomain && user.isSuperAdmin) {
     //   const { accessToken } = await this.authService.loginRefreshOnly(
     //     user,
     //     res,
@@ -87,13 +87,13 @@ export class AuthController {
     // }
 
     // Bisheriges Verhalten fuer alle anderen
-    if (!orgSlug) {
+    if (!orgSubdomain) {
       throw new BadRequestException(
         'Org nicht gefunden: subdomain oder x-org-slug Header oder ?org=... setzen',
       );
     }
 
-    const org = await this.organizationsService.findBySlug(orgSlug);
+    const org = await this.organizationsService.findBySubdomain(orgSubdomain);
     await this.authService.login(user, res, org.id);
     return { success: true };
   }
@@ -144,7 +144,7 @@ export class AuthController {
     @Req() req: AuthenticatedRequest,
   ) {
     const host = req.hostname;
-    const _orgSlug = host.split('.')[0];
+    const _orgSubdomain = host.split('.')[0];
 
     // ✅ Superadmin darf ohne Org einloggen -> nur Refresh setzen
     if (user.isSuperAdmin) {
@@ -153,7 +153,7 @@ export class AuthController {
     }
     const userWithMembership = await this.usersService.findCurrentUser(user.id);
     const orgId = userWithMembership?.memberships[0].organizationId;
-    // const org = await this.organizationsService.findBySlug(orgSlug);
+    // const org = await this.organizationsService.findBySlug(orgSubdomain);
 
     if (!orgId) throw new ConflictException('No Organization found.');
     await this.authService.login(user, res, orgId, true);

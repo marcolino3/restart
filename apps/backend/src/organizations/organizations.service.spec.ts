@@ -30,7 +30,7 @@ const mockOrg = (overrides: Partial<Organization> = {}): Organization =>
   ({
     id: 'org-1',
     name: 'Acme',
-    slug: 'acme',
+    subdomain: 'acme',
     timezone: 'Europe/Berlin',
     isActive: true,
     ...overrides,
@@ -51,7 +51,7 @@ const regularUser: TokenPayload = {
 const createMockRepository = () => ({
   find: jest.fn(),
   findOne: jest.fn(),
-  exist: jest.fn(),
+  exists: jest.fn(),
   save: jest.fn(),
   remove: jest.fn(),
 });
@@ -170,100 +170,91 @@ describe('OrganizationsService', () => {
     });
   });
 
-  // ── findBySlug ───────────────────────────────────────────────────
-  describe('findBySlug', () => {
-    it('should return org by slug (case insensitive, trimmed)', async () => {
-      const org = mockOrg({ slug: 'acme' });
+  // ── findBySubdomain ───────────────────────────────────────────────────
+  describe('findBySubdomain', () => {
+    it('should return org by subdomain (case insensitive, trimmed)', async () => {
+      const org = mockOrg({ subdomain: 'acme' });
       orgRepo.findOne.mockResolvedValue(org);
 
-      const result = await service.findBySlug('  ACME  ');
+      const result = await service.findBySubdomain('  ACME  ');
       expect(orgRepo.findOne).toHaveBeenCalledWith({
-        where: { slug: 'acme' },
+        where: { subdomain: 'acme' },
       });
       expect(result).toEqual(org);
     });
 
-    it('should throw NotFoundException for unknown slug', async () => {
+    it('should throw NotFoundException for unknown subdomain', async () => {
       orgRepo.findOne.mockResolvedValue(null);
-      await expect(service.findBySlug('nope')).rejects.toThrow(
+      await expect(service.findBySubdomain('nope')).rejects.toThrow(
         NotFoundException,
       );
     });
   });
 
-  // ── updateForActiveOrg ───────────────────────────────────────────
-  describe('updateForActiveOrg', () => {
-    it('should update org name for superadmin', async () => {
+  // ── updateOrganization ───────────────────────────────────────────
+  describe('updateOrganization', () => {
+    it('should update org name', async () => {
       const org = mockOrg();
       orgRepo.findOne.mockResolvedValue(org);
       orgRepo.save.mockResolvedValue({ ...org, name: 'New Name' });
 
-      const result = await service.updateForActiveOrg(
-        'org-1',
-        { id: 'org-1', name: 'New Name' },
-        superAdmin,
-      );
+      const result = await service.updateOrganization('org-1', {
+        id: 'org-1',
+        name: 'New Name',
+      });
       expect(result.name).toBe('New Name');
     });
 
-    it('should throw ConflictException on duplicate slug change', async () => {
-      const org = mockOrg({ slug: 'acme' });
+    it('should throw NotFoundException if org does not exist', async () => {
+      orgRepo.findOne.mockResolvedValue(null);
+      await expect(
+        service.updateOrganization('org-1', { id: 'org-1', name: 'Test' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ConflictException on duplicate subdomain change', async () => {
+      const org = mockOrg({ subdomain: 'acme' });
       orgRepo.findOne.mockResolvedValue(org);
-      orgRepo.exist.mockResolvedValue(true); // slug taken
+      orgRepo.exists.mockResolvedValue(true);
 
       await expect(
-        service.updateForActiveOrg(
-          'org-1',
-          { id: 'org-1', slug: 'taken-slug' },
-          superAdmin,
-        ),
+        service.updateOrganization('org-1', {
+          id: 'org-1',
+          subdomain: 'taken-subdomain',
+        }),
       ).rejects.toThrow(ConflictException);
     });
 
-    it('should throw ForbiddenException for non-admin regular user', async () => {
-      // userHasRoleInOrg will return false because mocked membership findOne returns null
-      em.getRepository.mockReturnValue({
-        createQueryBuilder: jest.fn().mockReturnValue(em._qb),
-        findOne: jest.fn().mockResolvedValue(null),
-      });
+    it('should throw ConflictException on duplicate domain change', async () => {
+      const org = mockOrg({ domain: 'acme.com' });
+      orgRepo.findOne.mockResolvedValue(org);
+      orgRepo.exists.mockResolvedValue(true);
 
       await expect(
-        service.updateForActiveOrg(
-          'org-1',
-          { id: 'org-1', name: 'Test' },
-          regularUser,
-        ),
-      ).rejects.toThrow(ForbiddenException);
+        service.updateOrganization('org-1', {
+          id: 'org-1',
+          domain: 'taken.com',
+        }),
+      ).rejects.toThrow(ConflictException);
     });
   });
 
-  // ── removeForActiveOrg ───────────────────────────────────────────
-  describe('removeForActiveOrg', () => {
-    it('should deactivate org as superadmin', async () => {
+  // ── removeOrganization ───────────────────────────────────────────
+  describe('removeOrganization', () => {
+    it('should deactivate org', async () => {
       const org = mockOrg();
       orgRepo.findOne.mockResolvedValue(org);
       orgRepo.save.mockResolvedValue({ ...org, isActive: false });
 
-      const result = await service.removeForActiveOrg('org-1', superAdmin);
+      const result = await service.removeOrganization('org-1');
       expect((result as Organization).isActive).toBe(false);
     });
 
     it('should throw NotFoundException for missing org', async () => {
       orgRepo.findOne.mockResolvedValue(null);
       await expect(
-        service.removeForActiveOrg('nonexistent', superAdmin),
+        service.removeOrganization('nonexistent'),
       ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw ForbiddenException for non-owner regular user', async () => {
-      em.getRepository.mockReturnValue({
-        createQueryBuilder: jest.fn().mockReturnValue(em._qb),
-        findOne: jest.fn().mockResolvedValue(null),
-      });
-
-      await expect(
-        service.removeForActiveOrg('org-1', regularUser),
-      ).rejects.toThrow(ForbiddenException);
     });
   });
 });

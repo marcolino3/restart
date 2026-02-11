@@ -19,9 +19,11 @@ spec:
       labels:
         app: backend
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: backend
-          image: ghcr.io/OWNER/restart-backend:latest
+          image: ghcr.io/marcolino3/restart-backend:latest
           ports:
             - containerPort: 3001
           envFrom:

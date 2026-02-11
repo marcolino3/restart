@@ -19,9 +19,11 @@ spec:
       labels:
         app: frontend
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: frontend
-          image: ghcr.io/OWNER/restart-frontend:latest
+          image: ghcr.io/marcolino3/restart-frontend:latest
           ports:
             - containerPort: 3000
           envFrom:

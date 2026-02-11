@@ -33,7 +33,7 @@ export class UpdateOrganizationInput
   @IsOptional()
   @IsString()
   @EmptyToUndefined()
-  slug?: string;
+  subdomain?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()

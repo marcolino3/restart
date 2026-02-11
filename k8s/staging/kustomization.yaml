@@ -6,7 +6,6 @@ namespace: restart-staging
 resources:
   - ../base
   - ingress.yaml
-  - secrets.yaml
 
 patches:
   - target:
@@ -29,7 +28,8 @@ configMapGenerator:
     behavior: merge
     literals:
       - NODE_ENV=staging
-      - DB_HOST=STAGING_DB_HOST_PLACEHOLDER
+      - DB_HOST=postgres-postgresql.restart-staging.svc.cluster.local
+      - DB_SYNCHRONIZE=true
       - ALLOWED_ORIGINS=https://staging.colibri-app.ch
       - GOOGLE_AUTH_REDIRECT_URI=https://staging.colibri-app.ch/api/auth/google/callback
       - AUTH_UI_REDIRECT=https://staging.colibri-app.ch

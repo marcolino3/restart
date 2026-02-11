@@ -17,7 +17,7 @@ export class CreateOrganizationInput {
   @IsOptional()
   @IsString()
   @EmptyToUndefined()
-  organizationSlug?: string;
+  organizationSubdomain?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
