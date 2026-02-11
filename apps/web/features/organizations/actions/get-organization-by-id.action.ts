@@ -9,7 +9,7 @@ const OrganizationByIdDocument = graphql(`
     organization(id: $id) {
       id
       name
-      slug
+      subdomain
       domain
       street
       zip
@@ -19,6 +19,8 @@ const OrganizationByIdDocument = graphql(`
       email
       website
       timezone
+      latitude
+      longitude
       isActive
       createdAt
       updatedAt

@@ -11,8 +11,10 @@ import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { FormActionButtons } from "@/components/form/form-fields/FormActionButtons";
 import { CountryComboboxFormField } from "@/components/form/form-fields/CountryComboboxFormField";
 import { TimezoneComboboxFormField } from "@/components/form/form-fields/TimezoneComboboxFormField";
+import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
 import { UploadFormField } from "@/components/form/form-fields/UploadFormField";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { GoogleMapDisplay } from "@/components/google-maps/GoogleMapDisplay";
 import { ROUTES } from "@/constants/routes";
 import { handleAction } from "@/lib/actions/handle-action";
 import { toSlug } from "@/lib/utils/to-slug";
@@ -24,7 +26,10 @@ import {
   OrganizationFormOutput,
 } from "../schemas/organization-form.schema";
 import { updateOrganizationAction } from "../actions/update-organization.action";
-import { checkSlugAvailableAction } from "../actions/check-slug-available.action";
+import { checkSubdomainAvailableAction } from "../actions/check-subdomain-available.action";
+import { checkDomainAvailableAction } from "../actions/check-domain-available.action";
+
+type AvailabilityStatus = "idle" | "checking" | "available" | "taken";
 
 interface OrganizationFormProps {
   organization: OrganizationQuery["organization"];
@@ -34,50 +39,55 @@ export const OrganizationForm = ({ organization }: OrganizationFormProps) => {
   const t = useTranslations("Common");
   const locale = useLocale();
   const router = useRouter();
-  const slugTouchedRef = useRef(!!organization.slug);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
-  const [slugStatus, setSlugStatus] = useState<
-    "idle" | "checking" | "available" | "taken"
-  >("idle");
+  const subdomainTouchedRef = useRef(!!organization.subdomain);
+  const [subdomainStatus, setSubdomainStatus] = useState<AvailabilityStatus>("idle");
+  const [domainStatus, setDomainStatus] = useState<AvailabilityStatus>("idle");
 
   const form = useForm({
     resolver: zodResolver(OrganizationFormSchema),
     defaultValues: OrganizationFormSchema.parse(sanitizeFormData(organization)),
   });
 
-  const checkSlug = useCallback(
-    (slug: string) => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      if (!slug) {
-        setSlugStatus("idle");
+  const checkSubdomain = useCallback(
+    async (subdomain: string) => {
+      if (!subdomain || subdomain === organization.subdomain) {
+        setSubdomainStatus("idle");
         return;
       }
-      if (slug === organization.slug) {
-        setSlugStatus("idle");
-        return;
-      }
-      setSlugStatus("checking");
-      debounceRef.current = setTimeout(async () => {
-        const available = await checkSlugAvailableAction(slug);
-        setSlugStatus(available ? "available" : "taken");
-      }, 400);
+      setSubdomainStatus("checking");
+      const available = await checkSubdomainAvailableAction(subdomain);
+      setSubdomainStatus(available ? "available" : "taken");
     },
-    [organization.slug]
+    [organization.subdomain]
+  );
+
+  const checkDomain = useCallback(
+    async (domain: string) => {
+      if (!domain || domain === organization.domain) {
+        setDomainStatus("idle");
+        return;
+      }
+      setDomainStatus("checking");
+      const available = await checkDomainAvailableAction(domain);
+      setDomainStatus(available ? "available" : "taken");
+    },
+    [organization.domain]
   );
 
   const nameValue = form.watch("name");
   useEffect(() => {
-    if (slugTouchedRef.current) return;
+    if (subdomainTouchedRef.current) return;
     const generated = toSlug(nameValue ?? "");
-    form.setValue("slug", generated, { shouldValidate: true });
-    checkSlug(generated);
-  }, [nameValue, form, checkSlug]);
+    form.setValue("subdomain", generated, { shouldValidate: true });
+  }, [nameValue, form]);
 
   const onSubmit = async (values: Record<string, unknown>) => {
-    if (slugStatus === "taken") {
-      form.setError("slug", {
-        message: t("slugTaken"),
-      });
+    if (subdomainStatus === "taken") {
+      form.setError("subdomain", { message: t("subdomainTaken") });
+      return;
+    }
+    if (domainStatus === "taken") {
+      form.setError("domain", { message: t("domainTaken") });
       return;
     }
 
@@ -89,6 +99,16 @@ export const OrganizationForm = ({ organization }: OrganizationFormProps) => {
         router.push(ROUTES.admin.organizations(locale));
       },
     });
+  };
+
+  const renderStatus = (status: AvailabilityStatus, field: "subdomain" | "domain") => {
+    if (status === "checking")
+      return <p className="text-sm text-muted-foreground mt-1">{t("subdomainChecking")}</p>;
+    if (status === "available")
+      return <p className="text-sm text-green-600 mt-1">{t(`${field}Available`)}</p>;
+    if (status === "taken")
+      return <p className="text-sm text-destructive mt-1">{t(`${field}Taken`)}</p>;
+    return null;
   };
 
   return (
@@ -103,31 +123,24 @@ export const OrganizationForm = ({ organization }: OrganizationFormProps) => {
             <InputFormField name="name" label="name" />
             <div>
               <InputFormField
-                name="slug"
-                label="slug"
+                name="subdomain"
+                label="subdomain"
                 onChange={() => {
-                  slugTouchedRef.current = true;
-                  const val = form.getValues("slug") as string;
-                  checkSlug(val);
+                  subdomainTouchedRef.current = true;
                 }}
+                onBlur={() => checkSubdomain(form.getValues("subdomain") as string)}
               />
-              {slugStatus === "checking" && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {t("slugChecking")}
-                </p>
-              )}
-              {slugStatus === "available" && (
-                <p className="text-sm text-green-600 mt-1">
-                  {t("slugAvailable")}
-                </p>
-              )}
-              {slugStatus === "taken" && (
-                <p className="text-sm text-destructive mt-1">
-                  {t("slugTaken")}
-                </p>
-              )}
+              {renderStatus(subdomainStatus, "subdomain")}
             </div>
-            <InputFormField name="domain" label="domain" placeholder="z.B. rietberg-montessori.ch" />
+            <div>
+              <InputFormField
+                name="domain"
+                label="domain"
+                placeholder="z.B. rietberg-montessori.ch"
+                onBlur={() => checkDomain(form.getValues("domain") as string)}
+              />
+              {renderStatus(domainStatus, "domain")}
+            </div>
           </CardContent>
         </Card>
 
@@ -145,6 +158,22 @@ export const OrganizationForm = ({ organization }: OrganizationFormProps) => {
             <CountryComboboxFormField name="country" />
           </CardContent>
         </Card>
+
+        {/* Standort / Karte */}
+        {organization.latitude != null && organization.longitude != null && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("location")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <GoogleMapDisplay
+                latitude={organization.latitude}
+                longitude={organization.longitude}
+                className="h-[300px] w-full rounded-md"
+              />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Kontakt */}
         <Card>
@@ -182,6 +211,8 @@ export const OrganizationForm = ({ organization }: OrganizationFormProps) => {
             />
           </CardContent>
         </Card>
+
+        <SwitchFormField name="isActive" label="isActive" />
 
         <FormActionButtons
           disabled={form.formState.isSubmitting}

@@ -10,9 +10,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { Organization } from '@/organizations/entities/organization.entity';
 import { UpdateOrganizationInput } from './dto/update-organization.input';
-
 import { Membership } from '@/memberships/entities/membership.entity';
-import { SystemRole } from '@/roles/entities/system-role.enum';
+import { GeocodingService } from '@/google/geocoding.service';
 
 import { seedOrgSystemRoles } from '@/roles/seeds/system-roles.seeder';
 import { assignPermissionsToOrgSystemRoles } from '@/roles/seeds/assign-permissions-to-system-roles.seeder';
@@ -26,6 +25,7 @@ export class OrganizationsService {
     private readonly entityManager: EntityManager,
     @InjectRepository(Organization)
     private readonly orgRepo: Repository<Organization>,
+    private readonly geocodingService: GeocodingService,
   ) {}
 
   /**
@@ -58,25 +58,20 @@ export class OrganizationsService {
       return this.orgRepo.find();
     }
 
-    // Orgs ueber Memberships des Users
-    const orgs = await this.entityManager
+    return this.entityManager
       .getRepository(Organization)
       .createQueryBuilder('o')
       .innerJoin(
         Membership,
         'm',
         'm.organization_id = o.id AND m.user_id = :uid',
-        {
-          uid: user.sub,
-        },
+        { uid: user.sub },
       )
       .getMany();
-
-    return orgs;
   }
 
   /**
-   * Eine Org holen, nur wenn der User Zugriff hat
+   * Eine Org holen, nur wenn der User Zugriff hat.
    */
   async findOneForUser(orgId: string, user: TokenPayload) {
     const org = await this.orgRepo.findOne({ where: { id: orgId } });
@@ -93,117 +88,88 @@ export class OrganizationsService {
   }
 
   /**
-   * Nach Slug (ohne Zugriffspruefung, z. B. beim Login/Callback)
+   * Nach Subdomain (ohne Zugriffspruefung, z. B. beim Login/Callback).
    */
-  async findBySlug(slug: string): Promise<Organization> {
-    const norm = slug.trim().toLowerCase();
-    const org = await this.orgRepo.findOne({ where: { slug: norm } });
+  async findBySubdomain(subdomain: string): Promise<Organization> {
+    const norm = subdomain.trim().toLowerCase();
+    const org = await this.orgRepo.findOne({ where: { subdomain: norm } });
     if (!org) throw new NotFoundException('Organization not found');
     return org;
   }
 
-  /**
-   * Pruefen ob ein Slug verfuegbar ist.
-   */
-  async isSlugAvailable(slug: string): Promise<boolean> {
-    const norm = slug.trim().toLowerCase();
+  async isSubdomainAvailable(subdomain: string): Promise<boolean> {
+    const norm = subdomain.trim().toLowerCase();
     if (!norm) return false;
-    const exists = await this.orgRepo.exist({ where: { slug: norm } });
-    return !exists;
+    return !(await this.orgRepo.exists({ where: { subdomain: norm } }));
+  }
+
+  async isDomainAvailable(domain: string): Promise<boolean> {
+    const norm = domain.trim().toLowerCase();
+    if (!norm) return false;
+    return !(await this.orgRepo.exists({ where: { domain: norm } }));
   }
 
   /**
-   * Org updaten (org-gebunden). Optional Slug-Aenderung mit Unique-Check.
+   * Org updaten. Subdomain + Domain mit Unique-Check.
    */
-  async updateForActiveOrg(
-    orgId: string,
-    input: UpdateOrganizationInput,
-    user: TokenPayload,
-  ) {
-    // Zugriff
-    if (!user.isSuperAdmin) {
-      const isAdmin = await this.userHasRoleInOrg(user.sub, orgId, [
-        SystemRole.ORG_OWNER,
-        SystemRole.ORG_ADMIN,
-      ]);
-      if (!isAdmin) throw new ForbiddenException('Insufficient role');
-    }
-
+  async updateOrganization(orgId: string, input: UpdateOrganizationInput) {
     const org = await this.orgRepo.findOne({ where: { id: orgId } });
     if (!org) throw new NotFoundException('Organization not found');
 
-    // optional Slug-Aenderung
-    if (input.slug && input.slug !== org.slug) {
-      const nextSlug = input.slug.trim().toLowerCase();
-      const exists = await this.orgRepo.exist({ where: { slug: nextSlug } });
-      if (exists)
-        throw new ConflictException('Organization slug already exists');
-      org.slug = nextSlug;
+    const { id: _id, subdomain, domain, ...rest } = input;
+
+    if (subdomain && subdomain !== org.subdomain) {
+      const next = subdomain.trim().toLowerCase();
+      if (await this.orgRepo.exists({ where: { subdomain: next } }))
+        throw new ConflictException('Organization subdomain already exists');
+      org.subdomain = next;
     }
 
-    if (typeof input.name === 'string') {
-      org.name = input.name;
+    if (domain && domain !== org.domain) {
+      if (await this.orgRepo.exists({ where: { domain } }))
+        throw new ConflictException('Organization domain already exists');
+      org.domain = domain;
     }
 
-    if (input.domain !== undefined) org.domain = input.domain || undefined;
-    if (input.street !== undefined) org.street = input.street || undefined;
-    if (input.zip !== undefined) org.zip = input.zip || undefined;
-    if (input.city !== undefined) org.city = input.city || undefined;
-    if (input.country !== undefined) org.country = input.country || undefined;
-    if (input.phone !== undefined) org.phone = input.phone || undefined;
-    if (input.email !== undefined) org.email = input.email || undefined;
-    if (input.website !== undefined) org.website = input.website || undefined;
-    if (input.timezone !== undefined) org.timezone = input.timezone;
+    Object.assign(org, rest);
+
+    // Geocode if any address field changed
+    const addressChanged =
+      'street' in input ||
+      'zip' in input ||
+      'city' in input ||
+      'country' in input;
+
+    if (addressChanged) {
+      try {
+        const result = await this.geocodingService.geocode({
+          street: org.street,
+          zip: org.zip,
+          city: org.city,
+          country: org.country,
+        });
+
+        if (result) {
+          org.latitude = result.latitude;
+          org.longitude = result.longitude;
+          org.location = `(${result.longitude},${result.latitude})`;
+        }
+      } catch {
+        // Geocoding failure should not block saving
+      }
+    }
 
     return this.orgRepo.save(org);
   }
 
   /**
-   * Org entfernen (org-gebunden). Standard: Soft Delete (falls Base das unterstuetzt),
-   * oder isActive=false setzen.
+   * Org entfernen (Soft Delete: isActive=false).
    */
-  async removeForActiveOrg(orgId: string, user: TokenPayload) {
-    if (!user.isSuperAdmin) {
-      const isOwner = await this.userHasRoleInOrg(user.sub, orgId, [
-        SystemRole.ORG_OWNER,
-      ]);
-      if (!isOwner)
-        throw new ForbiddenException('Only owner can delete organization');
-    }
-
+  async removeOrganization(orgId: string) {
     const org = await this.orgRepo.findOne({ where: { id: orgId } });
     if (!org) throw new NotFoundException('Organization not found');
 
-    // Soft-Delete wenn AbstractEntity deletedAt hat und Repo konfiguriert ist:
-    // return this.orgRepo.softRemove(org);
-
-    // Fallback: deaktivieren
-    if ('isActive' in org) {
-      org.isActive = false;
-      return this.orgRepo.save(org);
-    }
-
-    // Letzter Ausweg (DEV): hart loeschen
-    return this.orgRepo.remove(org);
-  }
-
-  /**
-   * Hilfsfunktion: hat User eine der Rollen in dieser Org?
-   */
-  private async userHasRoleInOrg(
-    userId: string,
-    orgId: string,
-    roles: SystemRole[],
-  ) {
-    // membership + roles laden
-    const membership = await this.entityManager
-      .getRepository(Membership)
-      .findOne({
-        where: { userId, organizationId: orgId },
-        relations: ['roles'],
-      });
-    if (!membership) return false;
-    const codes = membership.roles?.map((r) => r.systemCode ?? r.name) ?? [];
-    return roles.some((r) => codes.includes(r));
+    org.isActive = false;
+    return this.orgRepo.save(org);
   }
 }

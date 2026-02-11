@@ -1,4 +1,4 @@
-import { ObjectType, Field, ID } from '@nestjs/graphql';
+import { ObjectType, Field, ID, Float } from '@nestjs/graphql';
 import { Column, Entity, OneToMany, Index, RelationId } from 'typeorm';
 
 import { AbstractEntity } from '@/database/abstract.entity';
@@ -9,7 +9,8 @@ import { Role } from '@/roles/entities/role.entity';
 
 @ObjectType()
 @Entity('organizations')
-@Index('uq_organizations_slug', ['slug'], { unique: true })
+@Index('uq_organizations_subdomain', ['subdomain'], { unique: true })
+@Index('uq_organizations_domain', ['domain'], { unique: true })
 export class Organization
   extends AbstractEntity<Organization>
   implements IOrganization
@@ -20,16 +21,16 @@ export class Organization
 
   @Field({ nullable: true })
   @Column({
-    name: 'slug',
+    name: 'subdomain',
     type: 'varchar',
     length: 120,
     unique: true,
     nullable: true,
   })
-  slug?: string;
+  subdomain?: string;
 
   @Field({ nullable: true })
-  @Column({ name: 'domain', type: 'varchar', length: 255, nullable: true })
+  @Column({ name: 'domain', type: 'varchar', length: 255, unique: true, nullable: true })
   domain?: string;
 
   @Field({ nullable: true })
@@ -68,6 +69,22 @@ export class Organization
     default: 'Europe/Berlin',
   })
   timezone!: string;
+
+  @Field(() => Float, { nullable: true })
+  @Column({ name: 'latitude', type: 'float', nullable: true })
+  latitude?: number;
+
+  @Field(() => Float, { nullable: true })
+  @Column({ name: 'longitude', type: 'float', nullable: true })
+  longitude?: number;
+
+  @Index('idx_organizations_location', { spatial: true })
+  @Column({
+    name: 'location',
+    type: 'point',
+    nullable: true,
+  })
+  location?: string;
 
   @Field(() => [Membership], { nullable: true })
   @OneToMany(() => Membership, (membership) => membership.organization)

@@ -5,7 +5,7 @@ import { Role } from '@/roles/entities/role.entity';
 
 export interface IOrganization extends IBase {
   name?: string;
-  slug?: string;
+  subdomain?: string;
   domain?: string;
   street?: string;
   zip?: string;
@@ -15,6 +15,8 @@ export interface IOrganization extends IBase {
   email?: string;
   website?: string;
   timezone: string;
+  latitude?: number;
+  longitude?: number;
   memberships?: Membership[];
   roles?: Role[];
   teams?: ITeam[];
