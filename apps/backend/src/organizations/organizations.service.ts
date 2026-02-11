@@ -55,7 +55,7 @@ export class OrganizationsService {
    */
   async findAllForUser(user: TokenPayload) {
     if (user.isSuperAdmin) {
-      return this.orgRepo.find();
+      return this.orgRepo.find({ where: { isArchived: false } });
     }
 
     return this.entityManager
@@ -67,6 +67,7 @@ export class OrganizationsService {
         'm.organization_id = o.id AND m.user_id = :uid',
         { uid: user.sub },
       )
+      .where('o.is_archived = :archived', { archived: false })
       .getMany();
   }
 
@@ -170,6 +171,7 @@ export class OrganizationsService {
     if (!org) throw new NotFoundException('Organization not found');
 
     org.isActive = false;
+    org.isArchived = true;
     return this.orgRepo.save(org);
   }
 }
