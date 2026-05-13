@@ -16,6 +16,9 @@ import { FormActionButtons } from "@/components/form/form-fields/FormActionButto
 import { ROUTES } from "@/constants/routes";
 import { handleAction } from "@/lib/actions/handle-action";
 import { Persona } from "@/gql/graphql";
+import { useUser } from "@/features/users/context/current-user.context";
+import Link from "next/link";
+import { Mail } from "lucide-react";
 
 import {
   EmployeeFormSchema,
@@ -44,6 +47,7 @@ export default function EmployeeForm({ employee }: Props) {
   const router = useRouter();
   const isEdit = Boolean(employee);
 
+  const currentUser = useUser();
   const user = employee?.membership?.user;
   const primaryEmail = user?.userEmails?.find((e) => e.isPrimary)?.email ?? "";
 
@@ -118,8 +122,19 @@ export default function EmployeeForm({ employee }: Props) {
           <h3 className="text-lg font-semibold">{t("contact")}</h3>
           {isEdit ? (
             <div className="space-y-1">
-              <label className="text-sm font-medium">{t("email")}</label>
               <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">{t("email")}</label>
+                {currentUser?.isSuperAdmin && user?.id && (
+                  <Link
+                    href={ROUTES.admin.usersEdit(locale, user.id)}
+                    className="inline-flex items-center gap-1 text-xs text-primary underline-offset-4 hover:underline"
+                  >
+                    <Mail className="h-3 w-3" />
+                    {t("manageEmails")}
+                  </Link>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm text-muted-foreground">
                   {primaryEmail}
                 </span>

@@ -21,6 +21,7 @@ import {
 } from "../schemas/update-user-form.schema";
 import { updateUserAction } from "../actions/update-user.action";
 import { UserDetail } from "../actions/get-user-by-id.action";
+import { UserEmailsManager } from "./UserEmailsManager";
 
 interface UserFormProps {
   user: UserDetail;
@@ -77,26 +78,10 @@ export default function UserForm({ user }: UserFormProps) {
 
         <section className="space-y-4">
           <h3 className="text-lg font-semibold">{t("emails")}</h3>
-          {user.userEmails?.length ? (
-            <div className="space-y-2">
-              {user.userEmails.map((ue) => (
-                <div
-                  key={ue.id}
-                  className="flex items-center gap-2 p-2 rounded border"
-                >
-                  <span className="flex-1">{ue.email}</span>
-                  {ue.isPrimary && (
-                    <Badge variant="default">{t("primaryEmail")}</Badge>
-                  )}
-                  {ue.isVerified && (
-                    <Badge variant="secondary">{t("verifiedEmail")}</Badge>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">{t("noResults")}</p>
-          )}
+          <UserEmailsManager
+            userId={user.id}
+            emails={user.userEmails ?? []}
+          />
         </section>
 
         <Separator />

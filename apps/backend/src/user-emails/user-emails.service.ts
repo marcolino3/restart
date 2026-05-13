@@ -1,10 +1,11 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, MoreThan, Repository } from 'typeorm';
+import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
+import { EntityManager, ILike, MoreThan, Repository } from 'typeorm';
 import { UserEmail } from './entities/user-email.entity';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class UserEmailsService {
   constructor(
     @InjectRepository(UserEmail)
     private readonly repo: Repository<UserEmail>,
+    @InjectEntityManager() private readonly em: EntityManager,
   ) {}
 
   async findByEmail(email: string): Promise<UserEmail> {
@@ -100,7 +102,27 @@ export class UserEmailsService {
     return ue;
   }
 
-  async remove(id: string): Promise<void> {
+  async setPrimary(id: string): Promise<UserEmail> {
+    const target = await this.findOne(id);
+    if (target.isPrimary) return target;
+    // TODO: once email verification flow is in place, require isVerified === true here.
+    await this.em.transaction(async (trx) => {
+      await trx.update(
+        UserEmail,
+        { userId: target.userId, isPrimary: true },
+        { isPrimary: false },
+      );
+      await trx.update(UserEmail, { id: target.id }, { isPrimary: true });
+    });
+    return this.findOne(id);
+  }
+
+  async remove(id: string): Promise<UserEmail> {
+    const ue = await this.findOne(id);
+    if (ue.isPrimary) {
+      throw new BadRequestException('Cannot remove the primary email');
+    }
     await this.repo.update({ id }, { isActive: false });
+    return { ...ue, isActive: false };
   }
 }
