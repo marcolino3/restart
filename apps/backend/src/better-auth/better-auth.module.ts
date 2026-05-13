@@ -1,6 +1,10 @@
 import { Module } from '@nestjs/common';
 import { AuthModule as BetterAuthIntegrationModule } from '@thallesp/nestjs-better-auth';
 import { auth } from '@/lib/auth';
+import { UsersModule } from '@/users/users.module';
+import { DatabaseModule } from '@/database/database.module';
+import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
+import { BetterAuthPocResolver } from './better-auth-poc.resolver';
 
 @Module({
   imports: [
@@ -12,6 +16,10 @@ import { auth } from '@/lib/auth';
       // and the existing guards.
       disableGlobalAuthGuard: true,
     }),
+    DatabaseModule,
+    UsersModule,
   ],
+  providers: [GqlBetterAuthGuard, BetterAuthPocResolver],
+  exports: [GqlBetterAuthGuard],
 })
 export class BetterAuthModule {}
