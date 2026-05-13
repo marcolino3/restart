@@ -10,10 +10,13 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthAccountsModule } from './auth-accounts/auth-accounts.module';
 import { AuthModule } from './auth/auth.module';
+import { BetterAuthModule } from './better-auth/better-auth.module';
+import { UserEmailsModule } from './user-emails/user-emails.module';
 import { CommonModule } from './common/common.module';
 import { CountriesModule } from './countries/countries.module';
 import { EmployeeContractsModule } from './employee-management/employee-contracts/employee-contracts.module';
 import { EmployeeManagementModule } from './employee-management/employee-management.module';
+import { SchoolManagementModule } from './school-management/school-management.module';
 import { MembershipsModule } from './memberships/memberships.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { PermissionsModule } from './permissions/permissions.module';
@@ -87,12 +90,15 @@ import { join } from 'path';
     AddressesModule,
     CountriesModule,
     UsersModule,
+    UserEmailsModule,
     RolesModule,
     PermissionsModule,
     AuthAccountsModule,
     AuthModule,
+    BetterAuthModule,
     EmployeeContractsModule,
     EmployeeManagementModule,
+    SchoolManagementModule,
     MembershipsModule,
     MailModule,
     GoogleModule,

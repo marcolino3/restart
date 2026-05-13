@@ -1,3 +1,4 @@
+import path from "node:path";
 import { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 import { routing } from "@/i18n/rounting";
@@ -6,6 +7,7 @@ const backendUrl = process.env.BACKEND_URL || "http://localhost:4001";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  outputFileTracingRoot: path.join(__dirname, "../../"),
   typescript: {
     // TODO: Fix pre-existing TS errors and remove this
     ignoreBuildErrors: true,
