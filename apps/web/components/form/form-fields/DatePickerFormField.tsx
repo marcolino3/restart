@@ -28,6 +28,7 @@ type DatePickerFormFieldProps<TFormValues extends FieldValues> = {
   label?: string;
   description?: string;
   disabledDate?: (date: Date) => boolean;
+  width?: string;
 };
 
 export function DatePickerFormField<TFormValues extends FieldValues>({
@@ -35,6 +36,7 @@ export function DatePickerFormField<TFormValues extends FieldValues>({
   label,
   description,
   disabledDate = (date) => date > new Date() || date < new Date("1900-01-01"),
+  width = "w-full",
 }: DatePickerFormFieldProps<TFormValues>) {
   const t = useTranslations("Common");
   const form = useFormContext<TFormValues>();
@@ -64,7 +66,7 @@ export function DatePickerFormField<TFormValues extends FieldValues>({
         };
 
         return (
-          <FormItem className="flex flex-col">
+          <FormItem className={cn("flex flex-col", width)}>
             {label && <FormLabel>{t(label)}</FormLabel>}
             <Popover>
               <PopoverTrigger asChild>
@@ -72,7 +74,7 @@ export function DatePickerFormField<TFormValues extends FieldValues>({
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-[240px] pl-3 text-left font-normal",
+                      "w-full pl-3 text-left font-normal",
                       !value && "text-muted-foreground"
                     )}
                   >

@@ -193,30 +193,6 @@ export class AuthController {
   }
 
   /**
-   * Org-Wechsel
-   * - erfordert gueltigen Refresh (User eingeloggt)
-   * - setzt Active-Org Cookie
-   * - stellt org-spezifisches Access-Token aus
-   */
-  @Post('switch-org')
-  @UseGuards(JwtAuthGuard)
-  async switchOrg(
-    @Req() req: AuthenticatedRequest,
-    @Res({ passthrough: true }) res: Response,
-    @Body('orgId') orgId: string,
-  ) {
-    const payload = req.user;
-    if (!payload?.sub) throw new BadRequestException('Invalid refresh payload');
-
-    // Optional: Membership pruefen (user darf diese Org waehlen)
-    // z. B. membershipsService.assertUserInOrg(payload.sub, orgId);
-
-    const user = await this.usersService.findOne(payload.sub);
-    await this.authService.login(user, res, orgId);
-    return { success: true };
-  }
-
-  /**
    * Magic Link senden
    * - gibt immer { success: true } zurueck (kein Email-Leak)
    */

@@ -1,6 +1,5 @@
-// src/auth/auth.service.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { EntityManager, MoreThan } from 'typeorm';
+import { EntityManager } from 'typeorm';
 import { compare, hash } from 'bcrypt';
 import { createHash, randomBytes } from 'crypto';
 import { ConfigService } from '@nestjs/config';
@@ -9,10 +8,12 @@ import { Response } from 'express';
 
 import { User } from '@/users/entities/user.entity';
 import { UsersService } from '@/users/users.service';
+import { UserEmailsService } from '@/user-emails/user-emails.service';
 import { MailService } from '@/mail/mail.service';
 import { TokenPayload } from './interfaces/token-payload.interface';
 import { getAuthContext } from './utils/get-auth-context.util';
 import { SafeUser } from './interfaces/safe-user.type';
+import { AUTH_COOKIE_NAME, REFRESH_COOKIE_NAME } from './constants/cookie-names';
 
 @Injectable()
 export class AuthService {
@@ -21,48 +22,40 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
+    private readonly userEmailsService: UserEmailsService,
     private readonly mailService: MailService,
   ) {}
 
   /**
-   * Username/Password Login: validiert User und liefert den User zurueck.
-   * Laedt passwordHash via select, da in der Entity select:false gesetzt ist.
+   * Username/Password Login: sucht UserEmail, prueft PW, laedt User.
    */
-
   async verifyUser(email: string, password: string): Promise<SafeUser> {
-    const normalizedEmail = email.trim().toLowerCase();
+    const userEmail = await this.userEmailsService.findByEmailWithPassword(
+      email.trim().toLowerCase(),
+    );
 
-    const user = await this.entityManager.findOne(User, {
-      where: { email: normalizedEmail, isActive: true },
-      // passwordHash explizit mitladen
-      select: [
-        'id',
-        'firstName',
-        'lastName',
-        'email',
-        'passwordHash',
-        'isSuperAdmin',
-      ],
-    });
-
-    if (!user || !user.passwordHash) {
+    if (!userEmail || !userEmail.passwordHash) {
       throw new UnauthorizedException();
     }
 
-    const ok = await compare(password, user.passwordHash);
+    const ok = await compare(password, userEmail.passwordHash);
     if (!ok) {
       throw new UnauthorizedException();
     }
 
-    // Hash entfernen, dann typisieren
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { passwordHash, ...safe } = user as User & { passwordHash: string };
-    return safe as SafeUser;
+    const user = await this.entityManager.findOne(User, {
+      where: { id: userEmail.userId, isActive: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+
+    return user as SafeUser;
   }
 
   /**
    * Validiert den Refresh-Token gegen den in der DB gespeicherten Hash.
-   * Laedt refreshToken via select, da in der Entity select:false gesetzt ist.
    */
   async verifyUserRefreshToken(
     refreshToken: string,
@@ -83,9 +76,8 @@ export class AuthService {
 
   /**
    * Erstellt Access/Refresh Tokens, speichert den gehashten Refresh-Token
-   * und setzt beide als Cookies. Baut das Access-Payload aus dem AuthContext.
+   * und setzt beide als Cookies.
    */
-  // auth.service.ts (Ausschnitt)
   async login(
     user: User,
     res: Response,
@@ -97,8 +89,8 @@ export class AuthService {
     const payload: TokenPayload = {
       sub: ctx.user.id,
       orgId: ctx.org.id,
-      membershipId: ctx.membership.id,
-      persona: ctx.membership.persona,
+      membershipId: ctx.membership?.id,
+      persona: ctx.membership?.persona,
       roles: ctx.roles.map((r) => r.systemCode || ''),
       permissions: ctx.permissions,
       isSuperAdmin: user.isSuperAdmin,
@@ -130,18 +122,14 @@ export class AuthService {
       this.configService.getOrThrow('JWT_REFRESH_TOKEN_EXPIRATION_MS'),
     );
 
-    console.log('NODE_ENV', this.configService.getOrThrow('NODE_ENV'));
-    console.log('secure?', prod);
-
-    // Tokens
-    res.cookie('Authentication', accessToken, {
+    res.cookie(AUTH_COOKIE_NAME, accessToken, {
       httpOnly: true,
       secure: prod,
       sameSite: prod ? 'none' : 'lax',
       path: '/',
       expires: new Date(Date.now() + accessMs),
     });
-    res.cookie('Refresh', refreshToken, {
+    res.cookie(REFRESH_COOKIE_NAME, refreshToken, {
       httpOnly: true,
       secure: prod,
       sameSite: prod ? 'none' : 'lax',
@@ -149,7 +137,6 @@ export class AuthService {
       expires: new Date(Date.now() + refreshMs),
     });
 
-    // Active Org zentral hier setzen
     res.cookie('Active-Org', orgId, {
       httpOnly: true,
       secure: prod,
@@ -165,21 +152,18 @@ export class AuthService {
   }
 
   async loginRefreshOnly(user: User, res: Response): Promise<void> {
-    // 1) org-freies Access-Token fuer SuperAdmin
     const accessMs = parseInt(
       this.configService.getOrThrow('JWT_ACCESS_TOKEN_EXPIRATION_MS'),
       10,
     );
     const accessToken = this.jwtService.sign(
-      { sub: user.id, isSuperAdmin: true }, // keine orgId, nur SA-Flag
+      { sub: user.id, isSuperAdmin: true },
       {
         secret: this.configService.getOrThrow('JWT_ACCESS_TOKEN_SECRET'),
-        // du wolltest ohne maxAge arbeiten -> also expires als Dauer
         expiresIn: `${Math.floor(accessMs / 1000)}s`,
       },
     );
 
-    // 2) Refresh-Token wie gehabt
     const refreshMs = parseInt(
       this.configService.getOrThrow('JWT_REFRESH_TOKEN_EXPIRATION_MS'),
       10,
@@ -199,11 +183,7 @@ export class AuthService {
 
     const prod = this.configService.get('NODE_ENV') === 'production';
 
-    console.log('NODE_ENV', this.configService.getOrThrow('NODE_ENV'));
-    console.log('secure?', prod);
-
-    // 3) Cookies setzen (ohne Active-Org)
-    res.cookie('Authentication', accessToken, {
+    res.cookie(AUTH_COOKIE_NAME, accessToken, {
       httpOnly: true,
       secure: prod,
       sameSite: prod ? 'none' : 'lax',
@@ -211,7 +191,7 @@ export class AuthService {
       expires: new Date(Date.now() + accessMs),
     });
 
-    res.cookie('Refresh', refreshToken, {
+    res.cookie(REFRESH_COOKIE_NAME, refreshToken, {
       httpOnly: true,
       secure: prod,
       sameSite: prod ? 'none' : 'lax',
@@ -219,41 +199,41 @@ export class AuthService {
       expires: new Date(Date.now() + refreshMs),
     });
 
-    // 4) Redirect auf Dashboard
     res.redirect(
       `${this.configService.getOrThrow('AUTH_UI_REDIRECT')}/de/admin/my-time-tracking`,
     );
   }
 
   /**
-   * Erzeugt einen Magic-Link-Token, speichert den Hash in der DB und sendet die Email.
-   * Gibt keinen Fehler zurueck, wenn die Email nicht existiert (Sicherheit).
+   * Magic-Link: Token erzeugen, Hash auf UserEmail speichern, Email senden.
    */
   async sendMagicLink(email: string): Promise<void> {
-    let user: User;
+    let userEmail;
     try {
-      user = await this.usersService.findOneByEmail(email);
+      userEmail = await this.userEmailsService.findByEmail(email);
     } catch {
-      // User nicht gefunden -> kein Fehler nach aussen (kein Email-Leak)
       return;
     }
 
     const rawToken = randomBytes(32).toString('hex');
     const tokenHash = createHash('sha256').update(rawToken).digest('hex');
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 Minuten
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-    await this.usersService.setMagicLinkToken(user.id, tokenHash, expiresAt);
+    await this.userEmailsService.setMagicLinkToken(
+      userEmail.id,
+      tokenHash,
+      expiresAt,
+    );
 
     const baseUrl = this.configService.getOrThrow<string>('AUTH_UI_REDIRECT');
     const magicLinkUrl = `${baseUrl}/api/auth/magic-link/verify?token=${rawToken}`;
 
-    // TODO: Remove console.log once SMTP is configured
-    console.log(`[Magic Link] ${user.email} → ${magicLinkUrl}`);
+    console.log(`[Magic Link] ${userEmail.email} → ${magicLinkUrl}`);
 
     try {
       await this.mailService.sendMagicLinkEmail(
-        user.email,
-        user.firstName,
+        userEmail.email,
+        '',
         magicLinkUrl,
       );
     } catch (err) {
@@ -262,52 +242,39 @@ export class AuthService {
   }
 
   /**
-   * Verifiziert einen Magic-Link-Token: hasht ihn, sucht in der DB, loescht den Token.
+   * Magic-Link verifizieren: hasht Token, sucht UserEmail, laedt User.
    */
   async verifyMagicLink(token: string): Promise<User> {
     const tokenHash = createHash('sha256').update(token).digest('hex');
 
+    const userEmail =
+      await this.userEmailsService.findByMagicLinkToken(tokenHash);
+
+    await this.userEmailsService.clearMagicLinkToken(userEmail.id);
+
     const user = await this.entityManager.findOne(User, {
-      where: {
-        magicLinkToken: tokenHash,
-        magicLinkExpiresAt: MoreThan(new Date()),
-      },
-      select: [
-        'id',
-        'firstName',
-        'lastName',
-        'email',
-        'isSuperAdmin',
-        'magicLinkToken',
-        'magicLinkExpiresAt',
-      ],
+      where: { id: userEmail.userId, isActive: true },
     });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid or expired magic link');
+      throw new UnauthorizedException('User not found or inactive');
     }
-
-    await this.usersService.clearMagicLinkToken(user.id);
 
     return user;
   }
 
-  /**
-   * Optional: loescht Cookies und invalidiert den gespeicherten Refresh-Token.
-   */
   async logout(userId: string, response: Response): Promise<void> {
-    // Refresh-Token in DB entfernen (bzw. auf null setzen)
     await this.usersService.clearRefreshToken(userId);
     const prod = this.configService.get('NODE_ENV') === 'production';
 
-    response.clearCookie('Authentication', {
+    response.clearCookie(AUTH_COOKIE_NAME, {
       httpOnly: true,
       secure: prod,
       sameSite: prod ? 'none' : 'lax',
       path: '/',
     });
 
-    response.clearCookie('Refresh', {
+    response.clearCookie(REFRESH_COOKIE_NAME, {
       httpOnly: true,
       secure: prod,
       sameSite: prod ? 'none' : 'lax',

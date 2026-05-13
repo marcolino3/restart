@@ -2,16 +2,15 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Form,
-  FormControl,
-  FormDescription,
   FormField,
   FormItem,
-  FormLabel,
+  FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import {
@@ -47,47 +46,58 @@ export const MagicLinkLoginForm = () => {
 
   if (sent) {
     return (
-      <div className="flex flex-col items-center gap-y-3 py-4 text-center">
-        <MailCheck className="h-10 w-10 text-green-600" />
-        <p className="text-sm">
-          Wir haben dir einen Login-Link an{" "}
-          <strong>{sentEmail}</strong> gesendet. Pruefe dein Postfach.
-        </p>
+      <div className="flex flex-col items-center gap-3 py-4 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+          <MailCheck className="h-6 w-6 text-green-600 dark:text-green-400" />
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm font-medium">Login-Link gesendet</p>
+          <p className="text-sm text-muted-foreground">
+            Wir haben dir einen Link an{" "}
+            <strong className="text-foreground">{sentEmail}</strong> gesendet.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-y-6"
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="grid gap-6"
+      >
+        <FormField
+          name="email"
+          control={form.control}
+          render={({ field }) => (
+            <FormItem className="grid gap-2">
+              <Label htmlFor="magic-link-email">E-Mail</Label>
+              <FormControl>
+                <Input
+                  {...field}
+                  id="magic-link-email"
+                  type="email"
+                  placeholder="name@beispiel.de"
+                  autoComplete="email"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button
+          type="submit"
+          variant="secondary"
+          className="w-full"
+          disabled={form.formState.isSubmitting}
         >
-          <FormField
-            name="email"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>E-Mail</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormDescription>
-                  Wir schicken dir einen Login-Link per E-Mail.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit">
-            {form.formState.isSubmitting && (
-              <Loader2 className="mr-2 animate-spin" />
-            )}
-            Magic Link zusenden
-          </Button>
-        </form>
-      </Form>
-    </div>
+          {form.formState.isSubmitting && (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          )}
+          Magic Link senden
+        </Button>
+      </form>
+    </Form>
   );
 };

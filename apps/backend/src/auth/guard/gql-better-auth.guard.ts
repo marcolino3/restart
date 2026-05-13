@@ -41,9 +41,13 @@ export class GqlBetterAuthGuard implements CanActivate {
     const gqlCtx = GqlExecutionContext.create(context).getContext<GqlContext>();
     const req = gqlCtx.req;
 
-    const session = await auth.api.getSession({
+    const session = (await auth.api.getSession({
       headers: req.headers as unknown as Headers,
-    });
+    })) as
+      | (Awaited<ReturnType<typeof auth.api.getSession>> & {
+          activeOrganizationId?: string | null;
+        })
+      | null;
     if (!session?.user) {
       throw new UnauthorizedException('No active session');
     }
@@ -57,18 +61,14 @@ export class GqlBetterAuthGuard implements CanActivate {
       );
     }
 
-    // Pick active org: explicit Active-Org cookie wins, else first membership.
-    // (Mirrors the legacy AuthController behaviour for Google/Apple callbacks.)
-    const activeOrgCookie = req.cookies?.['Active-Org'];
-    const orgId =
-      activeOrgCookie ??
-      (await this.usersService.findCurrentUser(dbUser.id))?.memberships?.[0]
-        ?.organizationId;
-
-    // SuperAdmin without org context is allowed (matches existing behaviour)
-    if (!orgId && !dbUser.isSuperAdmin) {
-      throw new UnauthorizedException('No organization context');
-    }
+    // Active org is sourced from session.activeOrganizationId (populated by
+    // the customSession plugin in apps/backend/src/lib/auth.ts from the
+    // Active-Org cookie). If absent, the request still passes auth but with
+    // empty roles/permissions — @Permissions() / @SuperAdminOnly() guards
+    // downstream will reject any org-scoped query, while the unprotected
+    // `authContext` query stays reachable so the frontend can route the user
+    // to /select-org.
+    const orgId = session.activeOrganizationId ?? undefined;
 
     let payload: TokenPayload;
     if (orgId) {
@@ -84,10 +84,9 @@ export class GqlBetterAuthGuard implements CanActivate {
         isSuperAdmin: dbUser.isSuperAdmin,
       };
     } else {
-      // SuperAdmin without org
       payload = {
         sub: dbUser.id,
-        isSuperAdmin: true,
+        isSuperAdmin: dbUser.isSuperAdmin,
         roles: [],
         permissions: [],
       };

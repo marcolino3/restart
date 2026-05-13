@@ -4,6 +4,7 @@ import { Employee } from '@/employee-management/employees/entities/employee.enti
 import { Organization } from '@/organizations/entities/organization.entity';
 import { Role } from '@/roles/entities/role.entity';
 import { User } from '@/users/entities/user.entity';
+import { UserEmail } from '@/user-emails/entities/user-email.entity';
 import { Field, ID, ObjectType } from '@nestjs/graphql';
 import {
   Column,
@@ -54,6 +55,21 @@ export class Membership extends AbstractEntity<Membership> {
   })
   @JoinColumn({ name: 'user_id' })
   user?: User;
+
+  // Contact email for this org context
+  @Field(() => ID, { nullable: true })
+  @Column('uuid', { nullable: true, name: 'user_email_id' })
+  userEmailId?: string;
+
+  @Field(() => UserEmail, { nullable: true })
+  @ManyToOne(() => UserEmail, { nullable: true })
+  @JoinColumn({ name: 'user_email_id' })
+  userEmail?: UserEmail;
+
+  // Contact phone for this org context
+  @Field(() => String, { nullable: true })
+  @Column({ name: 'contact_phone', type: 'varchar', length: 30, nullable: true })
+  contactPhone?: string;
 
   // Employee
   @Field(() => String, { nullable: true })

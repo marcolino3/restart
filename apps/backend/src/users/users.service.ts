@@ -1,9 +1,8 @@
 import {
-  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { EntityManager, ILike, Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { hash } from 'bcrypt';
 
 import { CreateUserInput } from './dto/create-user.input';
@@ -11,143 +10,142 @@ import { UpdateUserInput } from './dto/update-user.input';
 import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PasswordService } from './password.service';
+import { UserEmailsService } from '@/user-emails/user-emails.service';
+import { Membership } from '@/memberships/entities/membership.entity';
+import { Role } from '@/roles/entities/role.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     private readonly entityManager: EntityManager,
     private readonly passwordService: PasswordService,
+    private readonly userEmailsService: UserEmailsService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
 
   /**
-   * Legt einen neuen User an.
-   * - normalisiert E-Mail/Username
-   * - prueft Eindeutigkeit der E-Mail (case-insensitive)
-   * - hasht das Passwort
+   * Legt einen neuen User an + erstellt die erste UserEmail.
+   * Email + optionales PW werden an UserEmailsService delegiert.
    */
   async create(input: CreateUserInput): Promise<User> {
-    const emailNorm = input.email.trim().toLowerCase();
     const usernameNorm = input.username?.trim();
 
-    // case-insensitive Check via ILike oder unique index + try/catch
-    const exists = await this.entityManager.findOne(User, {
-      where: { email: ILike(emailNorm) },
-      select: ['id'],
-    });
-    if (exists) {
-      throw new ConflictException('User with this email already exists');
-    }
-
-    let passwordHash: string;
-    if (!input.password) {
-      passwordHash = await this.passwordService.generateRandomPasswordHash(12);
-    } else {
+    let passwordHash: string | undefined;
+    if (input.password) {
       const rounds = Number(process.env.BCRYPT_ROUNDS ?? 10);
       passwordHash = await hash(input.password, rounds);
+    } else {
+      passwordHash = await this.passwordService.generateRandomPasswordHash(12);
     }
 
-    const user = this.entityManager.create(User, {
-      firstName: input.firstName,
-      lastName: input.lastName,
-      email: emailNorm,
-      username: usernameNorm,
-      passwordHash,
-      // weitere optionale Felder aus deinem DTO hier zuweisen
+    return this.entityManager.transaction(async (tx) => {
+      const user = tx.create(User, {
+        title: input.title,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        username: usernameNorm,
+        isActive: input.isActive,
+      });
+      const saved = await tx.save(user);
+
+      // Erste Email als primary + verified anlegen
+      const userEmail = await this.userEmailsService.create(
+        saved.id,
+        input.email,
+        passwordHash,
+        true, // isPrimary
+        true, // isVerified
+      );
+
+      // Membership erstellen
+      const membership = tx.create(Membership, {
+        userId: saved.id,
+        organizationId: input.organizationId,
+        persona: input.persona,
+        userEmailId: userEmail.id,
+      });
+      const savedMembership = await tx.save(membership);
+
+      // Roles zuweisen
+      if (input.roleIds?.length) {
+        const roles = await tx.findByIds(Role, input.roleIds);
+        savedMembership.roles = roles;
+        await tx.save(savedMembership);
+      }
+
+      return saved;
     });
-
-    const saved = await this.entityManager.save(user);
-    // Sicherheits-halber keine sensiblen Felder mutwillig zurueckgeben
-
-    return saved;
   }
 
   /**
-   * Gibt den aktuell eingeloggten User für das UserProfil im Frontend zurück
-   * - normalisiert E-Mail/Username
-   * - prueft Eindeutigkeit der E-Mail (case-insensitive)
-   * - hasht das Passwort
+   * Gibt den aktuell eingeloggten User mit Relationen zurueck.
    */
   async findCurrentUser(id: string) {
     return this.userRepository.findOne({
-      where: {
-        id,
-      },
-      relations: ['memberships'],
+      where: { id },
+      relations: ['memberships', 'userEmails'],
     });
   }
 
-  /**
-   * Listet Nutzer (einfach gehalten).
-   */
   async findAll(): Promise<User[]> {
-    return this.entityManager.find(User);
+    return this.entityManager.find(User, {
+      relations: [
+        'userEmails',
+        'userEmails.authAccounts',
+        'memberships',
+        'memberships.organization',
+      ],
+    });
   }
 
-  /**
-   * Holt einen User per ID (404 wenn nicht vorhanden).
-   */
   async findOne(id: string): Promise<User> {
-    const user = await this.entityManager.findOneBy(User, { id });
+    const user = await this.entityManager.findOne(User, {
+      where: { id },
+      relations: [
+        'userEmails',
+        'userEmails.authAccounts',
+        'memberships',
+        'memberships.organization',
+      ],
+    });
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
 
   /**
-   * Holt einen User per E-Mail (case-insensitive) oder wirft 404.
+   * Findet User ueber Email - delegiert an UserEmailsService.
    */
   async findOneByEmail(email: string): Promise<User> {
-    const emailNorm = email.trim().toLowerCase();
-    const user = await this.entityManager.findOne(User, {
-      where: { email: ILike(emailNorm) },
-    });
-    if (!user) throw new NotFoundException('User not found');
-    return user;
+    const ue = await this.userEmailsService.findByEmail(email);
+    return this.findOne(ue.userId);
   }
 
   /**
-   * Generisches Update fuer Stammdaten (nicht fuer Passwort/RefreshToken).
-   * - normalisiert E-Mail/Username
-   * - nutzt direktes Update (kein vorheriges Load + Merge noetig)
-   * - gibt den aktuellen Stand zurueck
+   * Generisches Update fuer Stammdaten.
+   * Keine Email-Updates hier - laeuft ueber UserEmailsService.
    */
   async update(input: UpdateUserInput): Promise<User> {
-    const { id, email, username, ...rest } = input;
+    const { id, username, ...rest } = input;
 
     return this.entityManager.transaction(async (m) => {
-      const patch: Partial<User> = { ...rest }; // <-- klar typisiert, kein any
-
-      if (email !== undefined) {
-        const emailNorm = email.trim().toLowerCase();
-
-        // Kollision pruefen (falls E-Mail geaendert wird)
-        const conflict = await m.findOne(User, {
-          where: { email: ILike(emailNorm) },
-          select: ['id'],
-        });
-        if (conflict && conflict.id !== id) {
-          throw new ConflictException('Email already in use by another user');
-        }
-
-        patch.email = emailNorm; // <-- kein any-Zugriff
-      }
+      const patch: Partial<User> = { ...rest };
 
       if (username !== undefined) {
-        patch.username = username?.trim() ?? null; // falls dein Feld `string | null` ist
+        patch.username = username?.trim() ?? null;
       }
 
       await m.update(User, { id }, patch);
 
-      const updated = await m.findOneBy(User, { id });
+      const updated = await m.findOne(User, {
+        where: { id },
+        relations: ['userEmails'],
+      });
       if (!updated) throw new NotFoundException('User not found');
       return updated;
     });
   }
 
-  /**
-   * Setzt den gehashten Refresh-Token (Rotation in AuthService).
-   */
   async setRefreshToken(
     userId: string,
     refreshTokenHash: string,
@@ -159,9 +157,6 @@ export class UsersService {
     );
   }
 
-  /**
-   * Loescht/invalidiert den Refresh-Token (z. B. beim Logout).
-   */
   async clearRefreshToken(userId: string): Promise<void> {
     await this.entityManager.update(
       User,
@@ -170,44 +165,6 @@ export class UsersService {
     );
   }
 
-  /**
-   * Setzt den Passwort-Hash (Hashing extern erledigen oder hier uebergeben).
-   * Wenn du selbst hashen willst, kannst du eine Variante setPasswordPlain implementieren.
-   */
-  async setPasswordHash(userId: string, passwordHash: string): Promise<void> {
-    await this.entityManager.update(User, { id: userId }, { passwordHash });
-  }
-
-  /**
-   * Setzt den gehashten Magic-Link-Token und das Ablaufdatum.
-   */
-  async setMagicLinkToken(
-    userId: string,
-    tokenHash: string,
-    expiresAt: Date,
-  ): Promise<void> {
-    await this.entityManager.update(
-      User,
-      { id: userId },
-      { magicLinkToken: tokenHash, magicLinkExpiresAt: expiresAt },
-    );
-  }
-
-  /**
-   * Loescht den Magic-Link-Token (nach erfolgreichem Login oder bei Ablauf).
-   */
-  async clearMagicLinkToken(userId: string): Promise<void> {
-    await this.entityManager.update(
-      User,
-      { id: userId },
-      { magicLinkToken: null, magicLinkExpiresAt: null },
-    );
-  }
-
-  /**
-   * Optional: Soft-Delete oder Deaktivieren (je nach deinem AbstractEntity).
-   * Hier als simples Deaktivieren umgesetzt.
-   */
   async remove(id: string): Promise<void> {
     const patch: Partial<User> = { isActive: false };
     await this.entityManager.update(User, { id }, patch);

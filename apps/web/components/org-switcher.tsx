@@ -47,7 +47,7 @@ export function OrgSwitcher({ organizations, currentOrgId }: OrgSwitcherProps) {
 
     setSwitching(true);
     try {
-      const res = await fetch("/api/auth/switch-org", {
+      const res = await fetch("/api/org/switch", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

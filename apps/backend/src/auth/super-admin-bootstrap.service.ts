@@ -1,8 +1,8 @@
-// src/auth/superadmin-bootstrap.service.ts
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { compare, hash } from 'bcrypt';
 import { User } from '@/users/entities/user.entity';
+import { UserEmail } from '@/user-emails/entities/user-email.entity';
 
 @Injectable()
 export class SuperAdminBootstrapService implements OnApplicationBootstrap {
@@ -22,38 +22,63 @@ export class SuperAdminBootstrapService implements OnApplicationBootstrap {
 
     try {
       await this.em.transaction(async (tx) => {
-        // Optional: Passwort nur neu hashen, wenn sich etwas geaendert hat
-        const existing = await tx.findOne(User, {
-          where: { email: emailEnv },
-          select: ['id', 'passwordHash'], // wichtig: Hash explizit laden
-        });
+        // 1) UserEmail suchen (case-insensitive)
+        let userEmail = await tx
+          .createQueryBuilder(UserEmail, 'ue')
+          .addSelect('ue.passwordHash')
+          .where('LOWER(ue.email) = :email', { email: emailEnv })
+          .getOne();
 
-        let passwordHash = existing?.passwordHash ?? '';
-        if (!existing || !(await compare(passEnv, passwordHash))) {
-          passwordHash = await hash(
+        let user: User | null = null;
+
+        if (userEmail) {
+          // UserEmail existiert -> User laden
+          user = await tx.findOneBy(User, { id: userEmail.userId });
+
+          // PW-Hash aktualisieren falls noetig
+          if (
+            !userEmail.passwordHash ||
+            !(await compare(passEnv, userEmail.passwordHash))
+          ) {
+            const newHash = await hash(
+              passEnv,
+              Number(process.env.BCRYPT_ROUNDS ?? 10),
+            );
+            await tx.update(UserEmail, { id: userEmail.id }, { passwordHash: newHash });
+          }
+
+          // SuperAdmin-Flag sicherstellen
+          if (user && !user.isSuperAdmin) {
+            await tx.update(User, { id: user.id }, { isSuperAdmin: true });
+          }
+
+          this.logger.log(`Superadmin aktualisiert: ${emailEnv}`);
+        } else {
+          // Neuen User + UserEmail anlegen
+          const passwordHash = await hash(
             passEnv,
             Number(process.env.BCRYPT_ROUNDS ?? 10),
           );
-        }
 
-        // Idempotent: upsert by email
-        await tx.getRepository(User).upsert(
-          {
-            email: emailEnv,
+          user = tx.create(User, {
             firstName: 'Super',
             lastName: 'Admin',
-            passwordHash,
             isSuperAdmin: true,
             isActive: true,
-          },
-          ['email'],
-        );
+          });
+          const savedUser = await tx.save(user);
 
-        this.logger.log(
-          existing
-            ? `Superadmin aktualisiert: ${emailEnv}`
-            : `Superadmin angelegt: ${emailEnv}`,
-        );
+          userEmail = tx.create(UserEmail, {
+            userId: savedUser.id,
+            email: emailEnv,
+            passwordHash,
+            isPrimary: true,
+            isVerified: true,
+          });
+          await tx.save(userEmail);
+
+          this.logger.log(`Superadmin angelegt: ${emailEnv}`);
+        }
       });
     } catch (e) {
       this.logger.error('Superadmin-Seed fehlgeschlagen', e as Error);

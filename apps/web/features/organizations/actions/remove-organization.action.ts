@@ -20,13 +20,13 @@ export async function removeOrganizationAction(id: string) {
   const client = await serverCookieGqlClient();
 
   try {
-    await client.request<RemoveOrganizationMutation>(
+    const result = await client.request<RemoveOrganizationMutation>(
       RemoveOrganizationDocument,
       { id }
     );
 
     revalidatePath(ROUTES.admin.organizations(locale));
-    return { success: true as const };
+    return { success: true as const, data: result.removeOrganization };
   } catch (error) {
     console.error(error);
     return { success: false as const, error: String(error) };

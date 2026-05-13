@@ -13,6 +13,7 @@ import {
   IconInnerShadowTop,
   IconListDetails,
   IconReport,
+  IconSchool,
   IconSearch,
   IconSettings,
   IconShieldLock,
@@ -85,6 +86,29 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
         url: "#",
         icon: IconUsers,
       },
+      ...(hasPermission("SCHOOL_CLASS_READ")
+        ? [
+            {
+              title: "Schulklassen",
+              url: ROUTES.admin.schoolClasses(locale),
+              icon: IconSchool,
+            },
+            {
+              title: "Schüler",
+              url: ROUTES.admin.students(locale),
+              icon: IconUsers,
+            },
+          ]
+        : []),
+      ...(hasPermission("CONTACT_PERSON_READ")
+        ? [
+            {
+              title: "Bezugspersonen",
+              url: ROUTES.admin.contactPersons(locale),
+              icon: IconUsers,
+            },
+          ]
+        : []),
       ...(hasPermission("ROLE_ASSIGN")
         ? [
             {
@@ -102,6 +126,11 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
               title: "Organizations",
               url: ROUTES.admin.organizations(locale),
               icon: IconBuilding,
+            },
+            {
+              title: "Users",
+              url: ROUTES.admin.users(locale),
+              icon: IconUsers,
             },
           ],
         }

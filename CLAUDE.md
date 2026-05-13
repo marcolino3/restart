@@ -78,15 +78,35 @@ cd apps/web && npm run dev             # Frontend (Port 4000) + Codegen Watch
 
 ## Sicherheits-Richtlinien
 
-- JWT Tokens NUR als httpOnly, secure, sameSite Cookies - NIEMALS im localStorage
+- Session-Tokens NUR als httpOnly, secure, sameSite Cookies - NIEMALS im localStorage
 - Alle Mutations hinter `@Permissions()` oder `@SuperAdminOnly()` Guards
 - Input-Validierung: class-validator (Backend) + Zod (Frontend)
 - SQL-Injection: TypeORM Parameterized Queries, keine Raw-Queries
 - XSS: React Auto-Escaping, kein dangerouslySetInnerHTML
 - CORS: Explizite Allowed Origins
-- Org-Isolation: Jede Query muss orgId aus JWT prüfen
 - Secrets: Kubernetes Secrets, nie im Code
 - Sensitive Entity-Fields mit `@HideField()` aus GraphQL ausschliessen
+
+### Multi-Tenant-Isolation (KRITISCH)
+
+**Regel:** Jede authentifizierte Query/Mutation MUSS gegen die aktive
+Organization-ID aus der Session gefiltert werden. Daten ohne Org-Bezug sind
+NICHT erlaubt — Ausnahme: explizit globale Operationen über
+`@SuperAdminOnly()`.
+
+**Architektur:**
+- Active-Org wird im `Active-Org` httpOnly-Cookie gehalten.
+- Das better-auth `customSession`-Plugin (`apps/backend/src/lib/auth.ts`) liest
+  das Cookie und surfaced `session.activeOrganizationId`.
+- `GqlBetterAuthGuard` (`apps/backend/src/auth/guard/gql-better-auth.guard.ts`)
+  validiert Membership und populiert `req.user.orgId`.
+- Resolver: `WHERE organizationId = req.user.orgId` für jede Query auf
+  org-scoped Entities (Membership, Employee, Student, etc.).
+- Frontend redirected User ohne aktive Org auf `/select-org` (nur SuperAdmin
+  darf ohne Org navigieren).
+- Org-Wechsel: `POST /api/org/switch` (siehe `org-switch.controller.ts`)
+  validiert Membership + setzt Cookie. KEINE Route unter `/api/auth/*` — die
+  gehört better-auth.
 
 ---
 

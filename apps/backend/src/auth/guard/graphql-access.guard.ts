@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
 import { ROLES_KEY } from '@/auth/decorators/roles.decorator';
 import { PERMS_KEY } from '@/auth/decorators/permissions.decorator';
+import { SUPER_ADMIN_KEY } from '@/auth/decorators/super-admin.decorator';
 import { SystemRole } from '@/roles/entities/system-role.enum';
 import type { Request } from 'express';
 import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
@@ -22,25 +23,29 @@ export class GraphQLAccessGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
+    const handlers = [context.getHandler(), context.getClass()];
+
+    const superAdminOnly =
+      this.reflector.getAllAndOverride<boolean>(SUPER_ADMIN_KEY, handlers) ??
+      false;
+
     const rolesReq =
-      this.reflector.getAllAndOverride<SystemRole[]>(ROLES_KEY, [
-        context.getHandler(),
-        context.getClass(),
-      ]) ?? [];
+      this.reflector.getAllAndOverride<SystemRole[]>(ROLES_KEY, handlers) ?? [];
 
     const permsReq =
-      this.reflector.getAllAndOverride<string[]>(PERMS_KEY, [
-        context.getHandler(),
-        context.getClass(),
-      ]) ?? [];
+      this.reflector.getAllAndOverride<string[]>(PERMS_KEY, handlers) ?? [];
 
     // Nichts gefordert -> ok
-    if (rolesReq.length === 0 && permsReq.length === 0) return true;
+    if (!superAdminOnly && rolesReq.length === 0 && permsReq.length === 0)
+      return true;
 
     const ctx = GqlExecutionContext.create(context);
-    const gqlCtx = ctx.getContext<GqlContext>(); // <-- getypter Context
-    const user = gqlCtx.req.user; // <-- kein any mehr
+    const gqlCtx = ctx.getContext<GqlContext>();
+    const user = gqlCtx.req.user;
     if (user?.isSuperAdmin) return true;
+
+    if (superAdminOnly)
+      throw new ForbiddenException('SuperAdmin only');
 
     if (!user) throw new ForbiddenException('Unauthenticated');
 

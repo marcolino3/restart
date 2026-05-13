@@ -22,6 +22,7 @@ interface Props {
   width?: string;
   className?: string;
   onChange?: () => void;
+  onBlur?: () => void;
 }
 
 export const InputFormField = ({
@@ -33,6 +34,7 @@ export const InputFormField = ({
   width = "w-full",
   className,
   onChange: onChangeProp,
+  onBlur: onBlurProp,
 }: Props) => {
   const t = useTranslations("Common");
   const { control } = useFormContext();
@@ -52,6 +54,10 @@ export const InputFormField = ({
               onChange={(e) => {
                 field.onChange(e);
                 onChangeProp?.();
+              }}
+              onBlur={(e) => {
+                field.onBlur();
+                onBlurProp?.();
               }}
             />
           </FormControl>

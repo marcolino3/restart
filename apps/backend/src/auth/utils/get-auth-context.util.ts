@@ -34,16 +34,21 @@ export async function getAuthContext(
   const membership = await em.findOne(Membership, {
     where: { userId, organizationId: orgId },
   });
-  if (!membership) {
+
+  // SuperAdmin darf ohne Membership auf eine Org zugreifen
+  if (!membership && !user.isSuperAdmin) {
     throw new UnauthorizedException('No membership in this org');
   }
 
   // 3) Rollen der Membership (Owner-Seite ist Membership -> Join ueber membership_roles)
-  const roles = await em
-    .createQueryBuilder(Role, 'r')
-    .innerJoin('membership_roles', 'mr', 'mr.role_id = r.id')
-    .where('mr.membership_id = :mid', { mid: membership.id })
-    .getMany();
+  let roles: Role[] = [];
+  if (membership) {
+    roles = await em
+      .createQueryBuilder(Role, 'r')
+      .innerJoin('membership_roles', 'mr', 'mr.role_id = r.id')
+      .where('mr.membership_id = :mid', { mid: membership.id })
+      .getMany();
+  }
 
   // 4) Permissions ueber alle Rollen (distinct Codes)
   let permissions: string[] = [];
@@ -57,19 +62,10 @@ export async function getAuthContext(
     permissions = Array.from(new Set(permRows.map((r) => r.code)));
   }
 
-  // 5) Teams der Membership (via TeamMember Join-Tabelle)
-  //    Falls du eine TeamMember-Entity hast, kannst du auch ueber Repository gehen;
-  //    hier direkt ueber die Join-Tabelle:
-  // const teams = await em
-  //   .createQueryBuilder(Team, 't')
-  //   .innerJoin('team_members', 'tm', 'tm.team_id = t.id')
-  //   .where('tm.membership_id = :mid', { mid: membership.id })
-  //   .getMany();
-
-  // 6) Optional: Employee (1:1 zu Membership)
+  // 5) Optional: Employee (1:1 zu Membership)
   let employee: Employee | null = null;
 
-  if (membership.employeeId) {
+  if (membership?.employeeId) {
     employee = await em.findOneByOrFail(Employee, {
       id: membership.employeeId,
     });
@@ -78,10 +74,9 @@ export async function getAuthContext(
   return {
     user,
     org,
-    membership,
+    membership: membership ?? ({} as Membership),
     roles,
     permissions,
-    // teams,
     employee: employee ?? null,
   };
 }

@@ -1,6 +1,7 @@
 import { Membership } from '@/memberships/entities/membership.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { User } from '@/users/entities/user.entity';
+import { UserEmail } from '@/user-emails/entities/user-email.entity';
 import {
   ConflictException,
   Injectable,
@@ -28,10 +29,20 @@ export class EmployeesService {
     input: CreateEmployeeInput,
     currentOrganizationId: string,
   ): Promise<Employee> {
-    const { email, firstName, lastName, persona } = input;
+    const {
+      email,
+      firstName,
+      lastName,
+      persona,
+      title,
+      dateOfBirth,
+      socialSecurityNumber,
+      contactPhone,
+      timeTrackingEnabled,
+    } = input;
 
     return this.entityManager.transaction(async (manager) => {
-      // 1) Org prüfen
+      // 1) Org pruefen
       const organization = await manager.findOne(Organization, {
         where: { id: currentOrganizationId },
       });
@@ -39,25 +50,45 @@ export class EmployeesService {
         throw new NotFoundException('Organization not found');
       }
 
-      // 2) User prüfen (ggf. anlegen)
+      // 2) User pruefen via UserEmail (ggf. anlegen)
       const normalizedEmail = email.toLowerCase().trim();
-      let user = await manager.findOne(User, {
+      let userEmail = await manager.findOne(UserEmail, {
         where: { email: normalizedEmail },
       });
 
-      if (!user) {
+      let user: User;
+      if (userEmail) {
+        const existingUser = await manager.findOneBy(User, {
+          id: userEmail.userId,
+        });
+        if (!existingUser) {
+          throw new NotFoundException('User for email not found');
+        }
+        user = existingUser;
+      } else {
+        // Neuen User + UserEmail anlegen
         user = manager.create(User, {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
-          email: normalizedEmail,
-          passwordHash:
-            await this.passwordService.generateRandomPasswordHash(10),
+          title: title?.trim() || undefined,
+          dateOfBirth: dateOfBirth || undefined,
+          socialSecurityNumber: socialSecurityNumber?.trim() || undefined,
           isActive: true,
         });
         user = await manager.save(User, user);
+
+        userEmail = manager.create(UserEmail, {
+          userId: user.id,
+          email: normalizedEmail,
+          passwordHash:
+            await this.passwordService.generateRandomPasswordHash(10),
+          isPrimary: true,
+          isVerified: false,
+        });
+        await manager.save(UserEmail, userEmail);
       }
 
-      // 3) Membership prüfen oder anlegen
+      // 3) Membership pruefen oder anlegen
       let membership = await manager.findOne(Membership, {
         where: {
           organizationId: organization.id,
@@ -76,6 +107,8 @@ export class EmployeesService {
           organizationId: organization.id,
           userId: user.id,
           persona,
+          userEmailId: userEmail.id,
+          contactPhone: contactPhone?.trim() || undefined,
           isActive: true,
           isArchived: false,
         });
@@ -85,7 +118,7 @@ export class EmployeesService {
       // 4) Employee anlegen
       let employee = manager.create(Employee, {
         membership,
-        timeTrackingEnabled: false,
+        timeTrackingEnabled: timeTrackingEnabled ?? false,
         isActive: true,
         isArchived: false,
       });
@@ -95,7 +128,7 @@ export class EmployeesService {
       membership.employeeId = employee.id;
       await manager.save(Membership, membership);
 
-      // 6) Employee zurückgeben (mit Membership + Relationen falls nötig)
+      // 6) Employee zurueckgeben
       return manager.findOneOrFail(Employee, {
         where: { id: employee.id },
         relations: {
@@ -106,9 +139,20 @@ export class EmployeesService {
   }
 
   async updateEmployeeMinimal(
-    input: UpdateEmployeeInput, // oder besser: UpdateEmployeeInput
+    input: UpdateEmployeeInput,
+    organizationId: string,
   ): Promise<Employee> {
-    const { id, email, firstName, lastName, persona } = input;
+    const {
+      id,
+      firstName,
+      lastName,
+      persona,
+      title,
+      dateOfBirth,
+      socialSecurityNumber,
+      contactPhone,
+      timeTrackingEnabled,
+    } = input;
 
     return this.entityManager.transaction(async (manager) => {
       // 1) Employee laden (inkl. Membership + User)
@@ -124,23 +168,39 @@ export class EmployeesService {
       }
 
       const membership = employee.membership;
+
+      // Org-Isolation pruefen
+      if (membership.organizationId !== organizationId) {
+        throw new NotFoundException('Employee not found');
+      }
+
       const user = membership.user;
 
-      // 2) User-Daten aktualisieren (falls geändert)
+      // 2) User-Daten aktualisieren (falls geaendert)
       let userChanged = false;
 
-      if (user && firstName && user?.firstName !== firstName.trim()) {
+      if (user && firstName !== undefined && user.firstName !== firstName.trim()) {
         user.firstName = firstName.trim();
         userChanged = true;
       }
 
-      if (user && lastName && user?.lastName !== lastName.trim()) {
+      if (user && lastName !== undefined && user.lastName !== lastName.trim()) {
         user.lastName = lastName.trim();
         userChanged = true;
       }
 
-      if (user && email && user.email !== email.toLowerCase().trim()) {
-        user.email = email.toLowerCase().trim();
+      if (user && title !== undefined && user.title !== (title.trim() || null)) {
+        user.title = title.trim() || null;
+        userChanged = true;
+      }
+
+      if (user && dateOfBirth !== undefined) {
+        user.dateOfBirth = dateOfBirth || null;
+        userChanged = true;
+      }
+
+      if (user && socialSecurityNumber !== undefined) {
+        user.socialSecurityNumber = socialSecurityNumber?.trim() || null;
         userChanged = true;
       }
 
@@ -148,17 +208,38 @@ export class EmployeesService {
         await manager.save(User, user);
       }
 
-      // 3) Membership aktualisieren (Persona)
-      if (persona && membership.persona !== persona) {
+      // 3) Membership aktualisieren (Persona, ContactPhone)
+      let membershipChanged = false;
+
+      if (persona !== undefined && membership.persona !== persona) {
         membership.persona = persona;
+        membershipChanged = true;
+      }
+
+      if (contactPhone !== undefined) {
+        membership.contactPhone = contactPhone?.trim() || undefined;
+        membershipChanged = true;
+      }
+
+      if (membershipChanged) {
         await manager.save(Membership, membership);
       }
 
-      // 5) Employee mit geladenen Relationen zurückgeben
+      // 4) Employee aktualisieren (TimeTracking)
+      if (timeTrackingEnabled !== undefined && employee.timeTrackingEnabled !== timeTrackingEnabled) {
+        employee.timeTrackingEnabled = timeTrackingEnabled;
+        await manager.save(Employee, employee);
+      }
+
+      // 5) Employee mit geladenen Relationen zurueckgeben
       return manager.findOneOrFail(Employee, {
         where: { id: employee.id },
         relations: {
-          membership: { user: true, organization: true, roles: true },
+          membership: {
+            user: { userEmails: true },
+            organization: true,
+            roles: true,
+          },
         },
       });
     });
@@ -170,7 +251,7 @@ export class EmployeesService {
         membership: {
           organization: true,
           employee: true,
-          user: true,
+          user: { userEmails: true },
         },
       },
       where: {
@@ -186,15 +267,31 @@ export class EmployeesService {
     return employees;
   }
 
-  async findEmployeeById(employeeId: string, organizationId: string) {
-    const membership = this.entityManager.findOne(Membership, {
-      where: {
-        organizationId,
-        employeeId,
+  async findEmployeeById(
+    employeeId: string,
+    organizationId: string,
+  ): Promise<Employee> {
+    const employee = await this.employeesService.findOne({
+      where: { id: employeeId },
+      relations: {
+        membership: {
+          user: { userEmails: true },
+          organization: true,
+          roles: true,
+          userEmail: true,
+        },
       },
-      relations: ['employee', 'user'],
     });
 
-    return membership;
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    // Org-Isolation pruefen
+    if (employee.membership?.organizationId !== organizationId) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    return employee;
   }
 }

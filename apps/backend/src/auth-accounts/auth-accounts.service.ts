@@ -1,26 +1,39 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthAccountInput } from './dto/create-auth-account.input';
-import { UpdateAuthAccountInput } from './dto/update-auth-account.input';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { AuthAccount } from './entities/auth-account.entity';
+import { AuthProvider } from './interfaces/auth-provider.enum';
 
 @Injectable()
 export class AuthAccountsService {
-  create(_createAuthAccountInput: CreateAuthAccountInput) {
-    return 'This action adds a new authAccount';
+  constructor(
+    @InjectRepository(AuthAccount)
+    private readonly repo: Repository<AuthAccount>,
+  ) {}
+
+  async findByProviderAndId(
+    provider: AuthProvider,
+    providerId: string,
+  ): Promise<AuthAccount | null> {
+    return this.repo.findOne({ where: { provider, providerId } });
   }
 
-  findAll() {
-    return `This action returns all authAccounts`;
+  async findByUserEmailId(userEmailId: string): Promise<AuthAccount[]> {
+    return this.repo.find({ where: { userEmailId } });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} authAccount`;
+  async linkProvider(
+    userEmailId: string,
+    provider: AuthProvider,
+    providerId: string,
+  ): Promise<AuthAccount> {
+    const aa = this.repo.create({ userEmailId, provider, providerId });
+    return this.repo.save(aa);
   }
 
-  update(id: number, _updateAuthAccountInput: UpdateAuthAccountInput) {
-    return `This action updates a #${id} authAccount`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} authAccount`;
+  async unlinkProvider(authAccountId: string): Promise<void> {
+    const aa = await this.repo.findOneBy({ id: authAccountId });
+    if (!aa) throw new NotFoundException('AuthAccount not found');
+    await this.repo.remove(aa);
   }
 }

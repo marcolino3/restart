@@ -1,5 +1,5 @@
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
-import { GqlJwtAuthGuard } from '@/auth/guard/gql-jwt-auth.guard';
+import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { UseGuards } from '@nestjs/common';
@@ -9,7 +9,7 @@ import { EmployeeAbsencesService } from './employee-absences.service';
 import { EmployeeAbsence } from './entities/employee-absence.entity';
 
 @Resolver(() => EmployeeAbsence)
-@UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
+@UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
 export class EmployeeAbsencesResolver {
   constructor(
     private readonly employeeAbsencesService: EmployeeAbsencesService,

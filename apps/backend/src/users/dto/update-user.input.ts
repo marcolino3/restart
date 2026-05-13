@@ -1,24 +1,40 @@
-// src/users/dto/update-user.input.ts
-import { Field, ID, InputType, OmitType, PartialType } from '@nestjs/graphql';
-import { IsEmail, IsOptional, IsUUID, Length } from 'class-validator';
-import { CreateUserInput } from './create-user.input';
+import { Field, ID, InputType } from '@nestjs/graphql';
+import {
+  IsDateString,
+  IsOptional,
+  IsUUID,
+  Length,
+} from 'class-validator';
 
 @InputType()
-export class UpdateUserInput extends PartialType(
-  OmitType(CreateUserInput, ['password'] as const), // kein Passwort im generischen Update
-) {
+export class UpdateUserInput {
   @Field(() => ID)
   @IsUUID()
   id!: string;
 
-  // Falls du Email/Username hier strenger validieren willst, kannst du es ueberschreiben:
   @Field(() => String, { nullable: true })
   @IsOptional()
-  @IsEmail()
-  email?: string;
+  title?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  firstName?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  lastName?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
   @Length(3, 60)
   username?: string | null;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsDateString()
+  dateOfBirth?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  socialSecurityNumber?: string;
 }

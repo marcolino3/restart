@@ -4,17 +4,28 @@ import * as React from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
+  SortingState,
+  VisibilityState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  SortingState,
   useReactTable,
-  VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
+import {
+  ArrowUpDown,
+  ChevronDown,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -22,11 +33,17 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -35,137 +52,186 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Employee, GetEmployeesQuery } from "@/gql/graphql";
+import { ROUTES } from "@/constants/routes";
+import { EmployeeListItem } from "../actions/get-employees.action";
 
 interface Props {
-  data: GetEmployeesQuery["employeesByOrgId"];
+  data: EmployeeListItem[];
 }
 
-export const columns: ColumnDef<Employee>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
+const useColumns = (): ColumnDef<EmployeeListItem>[] => {
+  const t = useTranslations("Common");
+  const locale = useLocale();
 
-  {
-    id: "firstName",
-    accessorFn: (row) => row.membership.user?.firstName ?? "",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Vorname
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ getValue }) => <div>{getValue<string>()}</div>,
-  },
-  {
-    id: "lastName",
-    accessorFn: (row) => row.membership.user?.lastName ?? "",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Nachname
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ getValue }) => <div>{getValue<string>()}</div>,
-  },
-  {
-    id: "email",
-    accessorFn: (row) => row.membership.user?.email ?? "",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        E-Mail
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ getValue }) => <div>{getValue<string>()}</div>,
-  },
-
-  {
-    accessorKey: "persona",
-    header: ({ column }) => {
-      return (
+  return [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) =>
+            table.toggleAllPageRowsSelected(!!value)
+          }
+          aria-label={t("selectAll")}
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label={t("selectRow")}
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      id: "firstName",
+      accessorFn: (row) => row.membership.user?.firstName ?? "",
+      header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Bereich
-          <ArrowUpDown />
+          {t("firstName")} <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-      );
+      ),
+      cell: ({ getValue }) => <div>{getValue<string>()}</div>,
+      filterFn: "includesString",
     },
-    cell: ({ row }) => {
-      const persona = row.original.membership.persona;
-      return <div>{persona}</div>;
+    {
+      id: "lastName",
+      accessorFn: (row) => row.membership.user?.lastName ?? "",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          {t("lastName")} <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ getValue }) => <div>{getValue<string>()}</div>,
+      filterFn: "includesString",
     },
-  },
+    {
+      id: "email",
+      accessorFn: (row) => {
+        const emails = row.membership.user?.userEmails;
+        const primary = emails?.find((e) => e.isPrimary);
+        return primary?.email ?? emails?.[0]?.email ?? "";
+      },
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          {t("email")} <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ getValue }) => <div>{getValue<string>()}</div>,
+      filterFn: "includesString",
+    },
+    {
+      id: "persona",
+      accessorFn: (row) => row.membership.persona,
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          {t("persona")} <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const persona = row.original.membership.persona;
+        return <Badge variant="secondary">{t(persona)}</Badge>;
+      },
+    },
+    {
+      id: "isActive",
+      accessorFn: (row) => row.membership.employee?.isActive ?? true,
+      header: t("isActive"),
+      cell: ({ getValue }) => {
+        const value = getValue<boolean>();
+        return value ? (
+          <Badge variant="default">{t("active")}</Badge>
+        ) : (
+          <Badge variant="destructive">{t("inactive")}</Badge>
+        );
+      },
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const employee = row.original.membership.employee;
+        const user = row.original.membership.user;
+        const name = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim();
 
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => {
-      const data = row.original.membership.employee;
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(data?.id)}
-            >
-              Copy payment ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View customer</DropdownMenuItem>
-            <DropdownMenuItem>View payment details</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">{t("openMenu")}</span>
+                <MoreHorizontal />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link
+                  href={ROUTES.admin.employeesEdit(locale, employee?.id ?? "")}
+                  className="flex gap-2"
+                >
+                  <Pencil className="h-4 w-4" /> {t("edit")}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-destructive focus:text-destructive cursor-pointer">
+                <Trash2 className="h-4 w-4 mr-2" />
+                {t("delete")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
     },
-  },
-];
+  ];
+};
+
+const PERSONA_VALUES = [
+  "ADMIN",
+  "HR",
+  "OFFICE",
+  "TEACHER",
+  "PARENT",
+  "STUDENT",
+  "EMPLOYEE",
+] as const;
 
 export const EmployeesTable = ({ data }: Props) => {
+  const t = useTranslations("Common");
+  const locale = useLocale();
+  const router = useRouter();
+  const columns = useColumns();
+
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
+  const [columnFilters, setColumnFilters] =
+    React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  const handlePageSizeChange = (value: string) => {
+    const newPageSize = value === "all" ? data.length : Number(value);
+    setPagination({ pageIndex: 0, pageSize: newPageSize });
+  };
 
   const table = useReactTable({
     data,
@@ -178,108 +244,215 @@ export const EmployeesTable = ({ data }: Props) => {
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    onPaginationChange: setPagination,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
+      pagination,
     },
   });
 
   return (
     <div className="w-full">
-      <div className="flex items-center py-4">
+      {/* Filters */}
+      <div className="flex items-center py-4 gap-2 flex-wrap">
         <Input
-          placeholder="Filter Vorname..."
+          placeholder={t("filterFirstName")}
           value={
             (table.getColumn("firstName")?.getFilterValue() as string) ?? ""
           }
-          onChange={(event) =>
-            table.getColumn("firstName")?.setFilterValue(event.target.value)
+          onChange={(e) =>
+            table.getColumn("firstName")?.setFilterValue(e.target.value)
           }
-          className="max-w-sm"
+          className="max-w-[180px]"
         />
+        <Input
+          placeholder={t("filterLastName")}
+          value={
+            (table.getColumn("lastName")?.getFilterValue() as string) ?? ""
+          }
+          onChange={(e) =>
+            table.getColumn("lastName")?.setFilterValue(e.target.value)
+          }
+          className="max-w-[180px]"
+        />
+        <Input
+          placeholder={t("filterEmail")}
+          value={
+            (table.getColumn("email")?.getFilterValue() as string) ?? ""
+          }
+          onChange={(e) =>
+            table.getColumn("email")?.setFilterValue(e.target.value)
+          }
+          className="max-w-[200px]"
+        />
+
+        {/* Persona filter */}
+        <Select
+          value={
+            (table.getColumn("persona")?.getFilterValue() as string) ?? "ALL"
+          }
+          onValueChange={(value) =>
+            table
+              .getColumn("persona")
+              ?.setFilterValue(value === "ALL" ? undefined : value)
+          }
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder={t("persona")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">{t("all")}</SelectItem>
+            {PERSONA_VALUES.map((p) => (
+              <SelectItem key={p} value={p}>
+                {t(p)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Page size */}
+        <Select
+          value={
+            pagination.pageSize >= data.length
+              ? "all"
+              : String(pagination.pageSize)
+          }
+          onValueChange={handlePageSizeChange}
+        >
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder={t("show")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="10">10 {t("items")}</SelectItem>
+            <SelectItem value="25">25 {t("items")}</SelectItem>
+            <SelectItem value="50">50 {t("items")}</SelectItem>
+            <SelectItem value="all">{t("all")}</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Reset filters */}
+        {columnFilters.length > 0 && (
+          <Button
+            variant="ghost"
+            onClick={() => setColumnFilters([])}
+            className="h-8 px-2 lg:px-3"
+          >
+            {t("resetFilters")}
+            <X className="ml-2 h-4 w-4" />
+          </Button>
+        )}
+
+        {/* Column visibility */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown />
+              {t("columns")} <ChevronDown />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {table
               .getAllColumns()
               .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
+              .map((column) => (
+                <DropdownMenuCheckboxItem
+                  key={column.id}
+                  className="capitalize"
+                  checked={column.getIsVisible()}
+                  onCheckedChange={(value) =>
+                    column.toggleVisibility(!!value)
+                  }
+                >
+                  {t(column.id)}
+                </DropdownMenuCheckboxItem>
+              ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="overflow-hidden rounded-md border">
+
+      {/* Table */}
+      <div className="rounded-md border">
         <Table>
-          <TableHeader className="bg-muted sticky top-0 z-10">
+          <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
               </TableRow>
             ))}
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              table.getRowModel().rows.map((row) => {
+                const empId = row.original.membership.employee?.id;
+                return (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className={empId ? "cursor-pointer" : ""}
+                    onClick={() => {
+                      if (empId) {
+                        router.push(
+                          ROUTES.admin.employeesView(locale, empId)
+                        );
+                      }
+                    }}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        onClick={(e) => {
+                          if (
+                            cell.column.id === "select" ||
+                            cell.column.id === "actions"
+                          ) {
+                            e.stopPropagation();
+                          }
+                        }}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })
             ) : (
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No results.
+                  {t("noResults")}
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
+
+      {/* Footer */}
       <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="text-muted-foreground flex-1 text-sm">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+        <div className="flex-1 text-sm text-muted-foreground">
+          {table.getFilteredRowModel().rows.length} {t("results")}
+          {table.getFilteredSelectedRowModel().rows.length > 0 && (
+            <span className="ml-2">
+              ({table.getFilteredSelectedRowModel().rows.length}{" "}
+              {t("selected")})
+            </span>
+          )}
         </div>
         <div className="space-x-2">
           <Button
@@ -288,7 +461,7 @@ export const EmployeesTable = ({ data }: Props) => {
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            Previous
+            {t("previous")}
           </Button>
           <Button
             variant="outline"
@@ -296,7 +469,7 @@ export const EmployeesTable = ({ data }: Props) => {
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            Next
+            {t("next")}
           </Button>
         </div>
       </div>

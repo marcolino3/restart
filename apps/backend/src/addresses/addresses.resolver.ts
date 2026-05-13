@@ -1,50 +1,58 @@
-import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { UseGuards } from '@nestjs/common';
+import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
+import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
+import { Permissions } from '@/auth/decorators/permissions.decorator';
+import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { AddressesService } from './addresses.service';
 import { Address } from './entities/address.entity';
 import { CreateAddressInput } from './dto/create-address.input';
 import { UpdateAddressInput } from './dto/update-address.input';
-import { UseGuards } from '@nestjs/common';
-import { GqlJwtAuthGuard } from '@/auth/guard/gql-jwt-auth.guard';
-import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
-import { Permissions } from '@/auth/decorators/permissions.decorator';
 
 @Resolver(() => Address)
-@UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
+@UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
 export class AddressesResolver {
   constructor(private readonly addressesService: AddressesService) {}
 
+  @Query(() => [Address], { name: 'addressesByOrgId' })
+  @Permissions('ADDRESS_READ')
+  findAll(@CurrentOrgId() orgId: string) {
+    return this.addressesService.findAllByOrgId(orgId);
+  }
+
+  @Query(() => Address, { name: 'addressById' })
+  @Permissions('ADDRESS_READ')
+  findOne(
+    @Args('id', { type: () => ID }) id: string,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.addressesService.findOne(id, orgId);
+  }
+
   @Mutation(() => Address)
-  @Permissions('EMPLOYEE_WRITE')
+  @Permissions('ADDRESS_WRITE')
   createAddress(
-    @Args('createAddressInput') createAddressInput: CreateAddressInput,
+    @Args('input') input: CreateAddressInput,
+    @CurrentOrgId() orgId: string,
   ) {
-    return this.addressesService.create(createAddressInput);
-  }
-
-  @Query(() => [Address], { name: 'addresses' })
-  findAll() {
-    return this.addressesService.findAll();
-  }
-
-  @Query(() => Address, { name: 'address' })
-  findOne(@Args('id', { type: () => Int }) id: number) {
-    return this.addressesService.findOne(id);
+    return this.addressesService.create(input, orgId);
   }
 
   @Mutation(() => Address)
-  @Permissions('EMPLOYEE_WRITE')
+  @Permissions('ADDRESS_WRITE')
   updateAddress(
-    @Args('updateAddressInput') updateAddressInput: UpdateAddressInput,
+    @Args('input') input: UpdateAddressInput,
+    @CurrentOrgId() orgId: string,
   ) {
-    return this.addressesService.update(
-      updateAddressInput.id,
-      updateAddressInput,
-    );
+    return this.addressesService.update(input, orgId);
   }
 
-  @Mutation(() => Address)
-  @Permissions('EMPLOYEE_WRITE')
-  removeAddress(@Args('id', { type: () => Int }) id: number) {
-    return this.addressesService.remove(id);
+  @Mutation(() => Boolean)
+  @Permissions('ADDRESS_DELETE')
+  deleteAddress(
+    @Args('id', { type: () => ID }) id: string,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.addressesService.remove(id, orgId);
   }
 }

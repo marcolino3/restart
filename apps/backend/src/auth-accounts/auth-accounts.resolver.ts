@@ -1,44 +1,19 @@
-import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import { Resolver, Query, Args, ID } from '@nestjs/graphql';
+import { UseGuards } from '@nestjs/common';
+import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
+import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { AuthAccountsService } from './auth-accounts.service';
 import { AuthAccount } from './entities/auth-account.entity';
-import { CreateAuthAccountInput } from './dto/create-auth-account.input';
-import { UpdateAuthAccountInput } from './dto/update-auth-account.input';
 
 @Resolver(() => AuthAccount)
+@UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
 export class AuthAccountsResolver {
   constructor(private readonly authAccountsService: AuthAccountsService) {}
 
-  @Mutation(() => AuthAccount)
-  createAuthAccount(
-    @Args('createAuthAccountInput')
-    createAuthAccountInput: CreateAuthAccountInput,
+  @Query(() => [AuthAccount], { name: 'authAccountsByUserEmailId' })
+  findByUserEmailId(
+    @Args('userEmailId', { type: () => ID }) userEmailId: string,
   ) {
-    return this.authAccountsService.create(createAuthAccountInput);
-  }
-
-  @Query(() => [AuthAccount], { name: 'authAccounts' })
-  findAll() {
-    return this.authAccountsService.findAll();
-  }
-
-  @Query(() => AuthAccount, { name: 'authAccount' })
-  findOne(@Args('id', { type: () => Int }) id: number) {
-    return this.authAccountsService.findOne(id);
-  }
-
-  @Mutation(() => AuthAccount)
-  updateAuthAccount(
-    @Args('updateAuthAccountInput')
-    updateAuthAccountInput: UpdateAuthAccountInput,
-  ) {
-    return this.authAccountsService.update(
-      updateAuthAccountInput.id,
-      updateAuthAccountInput,
-    );
-  }
-
-  @Mutation(() => AuthAccount)
-  removeAuthAccount(@Args('id', { type: () => Int }) id: number) {
-    return this.authAccountsService.remove(id);
+    return this.authAccountsService.findByUserEmailId(userEmailId);
   }
 }

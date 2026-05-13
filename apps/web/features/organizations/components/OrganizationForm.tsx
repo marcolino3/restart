@@ -7,13 +7,13 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 
 import { Form } from "@/components/ui/form";
+import { Separator } from "@/components/ui/separator";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { FormActionButtons } from "@/components/form/form-fields/FormActionButtons";
 import { CountryComboboxFormField } from "@/components/form/form-fields/CountryComboboxFormField";
 import { TimezoneComboboxFormField } from "@/components/form/form-fields/TimezoneComboboxFormField";
 import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
 import { UploadFormField } from "@/components/form/form-fields/UploadFormField";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GoogleMapDisplay } from "@/components/google-maps/GoogleMapDisplay";
 import { ROUTES } from "@/constants/routes";
 import { handleAction } from "@/lib/actions/handle-action";
@@ -113,104 +113,87 @@ export const OrganizationForm = ({ organization }: OrganizationFormProps) => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Grunddaten */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("basicData")}</CardTitle>
-          </CardHeader>
-          <CardContent className="form-gap-y">
-            <InputFormField name="name" label="name" />
-            <div>
-              <InputFormField
-                name="subdomain"
-                label="subdomain"
-                onChange={() => {
-                  subdomainTouchedRef.current = true;
-                }}
-                onBlur={() => checkSubdomain(form.getValues("subdomain") as string)}
-              />
-              {renderStatus(subdomainStatus, "subdomain")}
-            </div>
-            <div>
-              <InputFormField
-                name="domain"
-                label="domain"
-                placeholder="z.B. rietberg-montessori.ch"
-                onBlur={() => checkDomain(form.getValues("domain") as string)}
-              />
-              {renderStatus(domainStatus, "domain")}
-            </div>
-          </CardContent>
-        </Card>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <section className="space-y-4">
+          <h3 className="text-lg font-semibold">{t("basicData")}</h3>
+          <InputFormField name="name" label="name" />
+          <div>
+            <InputFormField
+              name="subdomain"
+              label="subdomain"
+              onChange={() => {
+                subdomainTouchedRef.current = true;
+              }}
+              onBlur={() =>
+                checkSubdomain(form.getValues("subdomain") as string)
+              }
+            />
+            {renderStatus(subdomainStatus, "subdomain")}
+          </div>
+          <div>
+            <InputFormField
+              name="domain"
+              label="domain"
+              placeholder="z.B. rietberg-montessori.ch"
+              onBlur={() => checkDomain(form.getValues("domain") as string)}
+            />
+            {renderStatus(domainStatus, "domain")}
+          </div>
+        </section>
 
-        {/* Adresse */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("address")}</CardTitle>
-          </CardHeader>
-          <CardContent className="form-gap-y">
-            <InputFormField name="street" label="street" />
-            <div className="flex gap-4">
-              <InputFormField name="zip" label="zip" width="w-1/3" />
-              <InputFormField name="city" label="city" width="w-2/3" />
-            </div>
-            <CountryComboboxFormField name="country" />
-          </CardContent>
-        </Card>
+        <Separator />
 
-        {/* Standort / Karte */}
+        <section className="space-y-4">
+          <h3 className="text-lg font-semibold">{t("address")}</h3>
+          <InputFormField name="street" label="street" />
+          <div className="flex gap-4">
+            <InputFormField name="zip" label="zip" width="w-1/3" />
+            <InputFormField name="city" label="city" width="w-2/3" />
+          </div>
+          <CountryComboboxFormField name="country" />
+        </section>
+
         {organization.latitude != null && organization.longitude != null && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("location")}</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <>
+            <Separator />
+            <section className="space-y-4">
+              <h3 className="text-lg font-semibold">{t("location")}</h3>
               <GoogleMapDisplay
                 latitude={organization.latitude}
                 longitude={organization.longitude}
                 className="h-[300px] w-full rounded-md"
               />
-            </CardContent>
-          </Card>
+            </section>
+          </>
         )}
 
-        {/* Kontakt */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("contact")}</CardTitle>
-          </CardHeader>
-          <CardContent className="form-gap-y">
-            <InputFormField name="phone" label="phone" />
-            <InputFormField name="email" label="email" type="email" />
-            <InputFormField name="website" label="website" />
-          </CardContent>
-        </Card>
+        <Separator />
 
-        {/* Einstellungen */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("settings")}</CardTitle>
-          </CardHeader>
-          <CardContent className="form-gap-y">
-            <TimezoneComboboxFormField name="timezone" />
-          </CardContent>
-        </Card>
+        <section className="space-y-4">
+          <h3 className="text-lg font-semibold">{t("contact")}</h3>
+          <InputFormField name="phone" label="phone" />
+          <InputFormField name="email" label="email" type="email" />
+          <InputFormField name="website" label="website" />
+        </section>
 
-        {/* Logo */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("logo")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <UploadFormField
-              name="logo"
-              label="logo"
-              entity="organizations"
-              id={organization.id}
-            />
-          </CardContent>
-        </Card>
+        <Separator />
+
+        <section className="space-y-4">
+          <h3 className="text-lg font-semibold">{t("settings")}</h3>
+          <TimezoneComboboxFormField name="timezone" />
+        </section>
+
+        <Separator />
+
+        <section className="space-y-4">
+          <h3 className="text-lg font-semibold">{t("logo")}</h3>
+          <UploadFormField
+            name="logo"
+            label="logo"
+            entity="organizations"
+            id={organization.id}
+          />
+        </section>
 
         <SwitchFormField name="isActive" label="isActive" />
 

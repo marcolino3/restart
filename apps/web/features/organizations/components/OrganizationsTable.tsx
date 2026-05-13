@@ -16,7 +16,6 @@ import {
 import { ArrowUpDown, ChevronDown, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -175,12 +174,7 @@ const OrganizationsTableColumns = (): ColumnDef<OrganizationRow>[] => {
               <DropdownMenuSeparator />
               <DeleteConfirmationDialog
                 itemName={data.name || data.id}
-                onConfirm={async () => {
-                  const result = await removeOrganizationAction(data.id);
-                  if (!result.success) {
-                    toast.error(t("deleteError"));
-                  }
-                }}
+                onConfirm={() => removeOrganizationAction(data.id)}
                 trigger={
                   <DropdownMenuItem
                     onSelect={(e) => e.preventDefault()}
@@ -228,13 +222,11 @@ export const OrganizationsTable = ({ data }: Props) => {
       if (!result.success) errorCount++;
     }
 
-    if (errorCount === 0) {
-      toast.success(`${ids.length} ${t("itemsDeleted")}`);
-    } else {
-      toast.error(t("deleteError"));
-    }
-
     setRowSelection({});
+
+    return errorCount === 0
+      ? { success: true as const }
+      : { success: false as const, error: t("deleteError") };
   };
 
   const table = useReactTable({

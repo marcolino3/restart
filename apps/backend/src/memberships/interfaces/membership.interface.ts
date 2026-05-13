@@ -12,6 +12,9 @@ export interface IMembership extends IBase {
   userId: string;
   user: IUser;
 
+  userEmailId?: string;
+  contactPhone?: string;
+
   isEmployee: boolean;
   timeTrackingEnabled: boolean;
 }

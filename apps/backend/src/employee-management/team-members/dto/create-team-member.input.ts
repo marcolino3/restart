@@ -1,7 +1,13 @@
-import { InputType, Int, Field } from '@nestjs/graphql';
+import { Field, ID, InputType } from '@nestjs/graphql';
+import { IsUUID } from 'class-validator';
 
 @InputType()
 export class CreateTeamMemberInput {
-  @Field(() => Int, { description: 'Example field (placeholder)' })
-  exampleField: number;
+  @Field(() => ID)
+  @IsUUID()
+  teamId: string;
+
+  @Field(() => ID)
+  @IsUUID()
+  employeeId: string;
 }
