@@ -17,6 +17,7 @@ import { CountriesModule } from './countries/countries.module';
 import { EmployeeContractsModule } from './employee-management/employee-contracts/employee-contracts.module';
 import { EmployeeManagementModule } from './employee-management/employee-management.module';
 import { SchoolManagementModule } from './school-management/school-management.module';
+import { CurriculaModule } from './curricula/curricula.module';
 import { MembershipsModule } from './memberships/memberships.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { PermissionsModule } from './permissions/permissions.module';
@@ -99,6 +100,7 @@ import { join } from 'path';
     EmployeeContractsModule,
     EmployeeManagementModule,
     SchoolManagementModule,
+    CurriculaModule,
     MembershipsModule,
     MailModule,
     GoogleModule,

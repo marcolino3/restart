@@ -17,6 +17,12 @@ import { GradeLevel } from '@/school-management/grade-levels/entities/grade-leve
 import { SchoolClassEnrollment } from '@/school-management/school-class-enrollments/entities/school-class-enrollment.entity';
 import { SchoolClass } from '@/school-management/school-classes/entities/school-class.entity';
 import { Student } from '@/school-management/students/entities/student.entity';
+import { CurriculumLevel } from '@/curricula/entities/curriculum-level.entity';
+import { CurriculumLevelTranslation } from '@/curricula/entities/curriculum-level-translation.entity';
+import { Curriculum } from '@/curricula/entities/curriculum.entity';
+import { CurriculumTranslation } from '@/curricula/entities/curriculum-translation.entity';
+import { CurriculumNode } from '@/curricula/entities/curriculum-node.entity';
+import { CurriculumNodeTranslation } from '@/curricula/entities/curriculum-node-translation.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { Permission } from '@/permissions/entities/permission.entity';
@@ -54,6 +60,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       AdmissionStage,
       ContactPerson,
       StudentContactPerson,
+      CurriculumLevel,
+      CurriculumLevelTranslation,
+      Curriculum,
+      CurriculumTranslation,
+      CurriculumNode,
+      CurriculumNodeTranslation,
     ]),
   ],
   exports: [TypeOrmModule],
