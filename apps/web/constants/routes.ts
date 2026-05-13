@@ -42,6 +42,12 @@ export const ROUTES = {
     contactPersonsEdit: (locale: string, id: string) =>
       `/${locale}/admin/contact-persons/edit/${id}`,
 
+    // Curricula
+    curricula: (locale: string) => `/${locale}/admin/curricula`,
+    curriculaCreate: (locale: string) => `/${locale}/admin/curricula/edit`,
+    curriculaEdit: (locale: string, id: string) =>
+      `/${locale}/admin/curricula/edit/${id}`,
+
     // Admission Stages
     admissionStages: (locale: string) =>
       `/${locale}/admin/settings/admission-stages`,

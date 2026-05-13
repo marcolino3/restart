@@ -13,6 +13,7 @@ import {
   IconInnerShadowTop,
   IconListDetails,
   IconReport,
+  IconBook,
   IconSchool,
   IconSearch,
   IconSettings,
@@ -106,6 +107,15 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
               title: "Bezugspersonen",
               url: ROUTES.admin.contactPersons(locale),
               icon: IconUsers,
+            },
+          ]
+        : []),
+      ...(hasPermission("CURRICULUM_READ")
+        ? [
+            {
+              title: "Curricula",
+              url: ROUTES.admin.curricula(locale),
+              icon: IconBook,
             },
           ]
         : []),
