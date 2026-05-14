@@ -103,14 +103,18 @@ export const CurriculumForm = ({ curriculum }: Props) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <InputFormField name="slug" label="slug" />
+        <InputFormField namespace="Curricula" name="slug" label="slug" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <InputFormField name="nameDe" label="nameDe" />
-          <InputFormField name="nameEn" label="nameEn" />
-          <InputFormField name="nameFr" label="nameFr" />
-          <InputFormField name="nameIt" label="nameIt" />
+          <InputFormField namespace="Curricula" name="nameDe" label="nameDe" />
+          <InputFormField namespace="Curricula" name="nameEn" label="nameEn" />
+          <InputFormField namespace="Curricula" name="nameFr" label="nameFr" />
+          <InputFormField namespace="Curricula" name="nameIt" label="nameIt" />
         </div>
-        <InputFormField name="descriptionDe" label="descriptionDe" />
+        <InputFormField
+          namespace="Curricula"
+          name="descriptionDe"
+          label="descriptionDe"
+        />
         <div className="flex gap-2 justify-end">
           <Button type="button" variant="outline" onClick={() => router.back()}>
             {tCommon("cancel")}
