@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, ILike, MoreThan, Repository } from 'typeorm';
+import { EntityManager, ILike, Repository } from 'typeorm';
 import { UserEmail } from './entities/user-email.entity';
 
 @Injectable()

@@ -78,7 +78,7 @@ export class OrgSwitchController {
   }
 
   @Post('clear')
-  async clear(@Res({ passthrough: true }) res: Response) {
+  clear(@Res({ passthrough: true }) res: Response) {
     res.clearCookie(ACTIVE_ORG_COOKIE, { path: '/' });
     return { success: true };
   }

@@ -69,6 +69,7 @@ export const auth = betterAuth({
     // session.activeOrganizationId so every consumer reads it uniformly.
     // Membership validation happens in GqlBetterAuthGuard / OrgSwitchController
     // — this callback is intentionally cheap (no DB hit).
+    // eslint-disable-next-line @typescript-eslint/require-await -- customSession's signature requires a Promise return
     customSession(async ({ user, session }, ctx) => {
       const cookieHeader =
         ctx.headers?.get?.('cookie') ?? ctx.request?.headers.get('cookie');
