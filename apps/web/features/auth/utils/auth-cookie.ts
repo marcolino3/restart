@@ -1,7 +1,9 @@
 import { jwtDecode } from "jwt-decode";
 
-export const AUTH_COOKIE = "Authentication";
-export const REFRESH_COOKIE = "Refresh";
+const prefix = process.env.COOKIE_PREFIX || '';
+
+export const AUTH_COOKIE = `${prefix}Authentication`;
+export const REFRESH_COOKIE = `${prefix}Refresh`;
 
 export const getAuthCookie = (response: Response) => {
   const setCookieHeader = response.headers.get("Set-Cookie");

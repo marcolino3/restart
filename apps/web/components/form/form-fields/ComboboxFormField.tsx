@@ -42,6 +42,8 @@ type ComboboxFormFieldProps<TFormValues extends FieldValues> = {
   width?: string;
   className?: string;
   translateOptions?: boolean;
+  /** i18n namespace for label/description/placeholder/option-labels. Default `"Common"`. */
+  namespace?: string;
 };
 
 export function ComboboxFormField<TFormValues extends FieldValues>({
@@ -56,8 +58,9 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
   width,
   className,
   translateOptions = true,
+  namespace = "Common",
 }: ComboboxFormFieldProps<TFormValues>) {
-  const t = useTranslations("Common");
+  const t = useTranslations(namespace);
   const { control } = useFormContext();
   return (
     <FormField
@@ -90,7 +93,7 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
           : [];
 
         return (
-          <FormItem className={cn(className, "flex flex-col gap-2")}>
+          <FormItem className={cn(className, width || "w-full", "min-w-0 flex flex-col gap-2")}>
             {label && <FormLabel>{t(label)}</FormLabel>}
             <Popover>
               <PopoverTrigger asChild>
@@ -99,24 +102,25 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
                     variant="outline"
                     role="combobox"
                     className={cn(
-                      width || "w-[200px]",
-                      "justify-between",
+                      "w-full justify-between",
                       !field.value && "text-muted-foreground"
                     )}
                   >
-                    {!multiple
-                      ? (() => {
-                          const opt = options.find((o) => o.value === field.value);
-                          return opt
-                            ? translateOptions ? t(opt.label) : opt.label
-                            : t(placeholder);
-                        })()
-                      : t(placeholder)}
+                    <span className="truncate">
+                      {!multiple
+                        ? (() => {
+                            const opt = options.find((o) => o.value === field.value);
+                            return opt
+                              ? translateOptions ? t(opt.label) : opt.label
+                              : t(placeholder);
+                          })()
+                        : t(placeholder)}
+                    </span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </FormControl>
               </PopoverTrigger>
-              <PopoverContent className={cn(width || "w-[200px]", "p-0")}>
+              <PopoverContent className="p-0" align="start">
                 <Command>
                   <CommandInput
                     placeholder={t(searchPlaceholder)}

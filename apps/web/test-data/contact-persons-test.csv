@@ -1,0 +1,27 @@
+salutation;firstName;lastName;email;phone;mobile;dateOfBirth;occupation;roles;nationalities;preferredLanguages;notes
+MRS;Anna;Meier;anna.meier@example.com;+41 31 312 45 67;+41 79 312 45 67;1985-04-12;Lehrerin;MOTHER;CH;de;
+MR;Thomas;Meier;thomas.meier@example.com;;+41 79 456 78 90;1983-09-22;Ingenieur;FATHER;CH;de;
+MRS;Sandra;Keller;sandra.keller@example.com;+41 44 789 01 23;+41 78 789 01 23;1984-07-15;Ärztin;MOTHER;CH|DE;de|en;
+MR;Markus;Keller;markus.keller@example.com;;+41 76 321 65 98;1982-11-30;Informatiker;FATHER;DE;de;
+MRS;Claudia;Brunner;claudia.brunner@example.com;+41 61 234 56 78;+41 79 234 56 78;1988-02-18;Krankenschwester;MOTHER;CH;de|fr;
+MR;Peter;Brunner;peter.brunner@example.com;;+41 78 876 54 32;1986-06-25;Schreiner;FATHER;CH;de;
+MRS;Karin;Schmid;karin.schmid@example.com;+41 52 345 67 89;+41 79 345 67 89;1987-01-05;Buchhalterin;MOTHER;AT;de;
+MR;Daniel;Schmid;daniel.schmid@example.com;;+41 76 654 32 10;1985-08-14;Koch;FATHER;CH;de;
+MRS;Laura;Fischer;laura.fischer@example.com;+41 41 456 78 90;+41 78 456 78 90;1990-05-20;Grafikdesignerin;MOTHER;CH;de|en;
+MR;Stefan;Fischer;stefan.fischer@example.com;;+41 79 567 89 01;1989-12-03;Anwalt;FATHER;CH;de;
+MRS;Sabine;Baumann;sabine.baumann@example.com;+41 62 567 89 01;+41 76 567 89 01;1986-10-08;Apothekerin;MOTHER;CH;de;
+MR;Reto;Baumann;reto.baumann@example.com;;+41 79 678 90 12;1984-03-17;Elektriker;FATHER;CH;de;
+MRS;Monika;Gerber;monika.gerber@example.com;+41 33 678 90 12;+41 78 678 90 12;1983-08-22;Psychologin;MOTHER;CH;de|fr;
+MRS;Heidi;Gerber;heidi.gerber@example.com;+41 33 111 22 33;;1955-02-14;Rentnerin;GRANDMOTHER;CH;de;Lebt in Thun
+MRS;Nicole;Huber;nicole.huber@example.com;+41 43 789 01 23;+41 79 789 01 23;1991-04-11;Journalistin;MOTHER;CH|IT;de|it;
+MR;Marco;Huber;marco.huber@example.com;;+41 76 890 12 34;1988-07-29;Architekt;FATHER;IT;it|de;
+MRS;Barbara;Steiner;barbara.steiner@example.com;+41 56 890 12 34;+41 78 890 12 34;1987-06-15;Floristin;MOTHER;CH;de;
+MR;Andreas;Steiner;andreas.steiner@example.com;;+41 79 901 23 45;1985-11-08;Mechaniker;FATHER;CH;de;
+MRS;Christina;Müller;christina.mueller@example.com;+41 71 901 23 45;+41 76 901 23 45;1984-12-20;Lehrerin;MOTHER;DE;de;
+MR;Patrick;Müller;patrick.mueller@example.com;;+41 79 012 34 56;1983-05-06;Banker;FATHER;CH;de|en;
+MRS;Franziska;Weber;franziska.weber@example.com;+41 81 012 34 56;+41 78 012 34 56;1992-03-25;Physiotherapeutin;MOTHER;CH;de;
+MR;Michael;Weber;michael.weber@example.com;;+41 79 123 45 67;1990-09-18;Polizist;FATHER;CH;de;
+MRS;Martina;Berger;martina.berger@example.com;+41 34 234 56 78;+41 76 234 56 78;1986-08-30;Verkäuferin;MOTHER;CH;de;
+MR;Jürg;Berger;juerg.berger@example.com;;+41 79 345 67 89;1984-02-13;Gärtner;FATHER;CH;de;
+MRS;Iris;Zimmermann;iris.zimmermann@example.com;+41 44 456 78 90;+41 78 456 78 90;1985-11-27;Tierärztin;MOTHER;CH;de;
+MR;Beat;Zimmermann;beat.zimmermann@example.com;;+41 79 567 89 01;1983-07-19;Pilot;FATHER;CH;de|fr|en;

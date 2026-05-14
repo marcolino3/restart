@@ -22,6 +22,14 @@ interface Props {
   width?: string;
   className?: string;
   onChange?: () => void;
+  onBlur?: () => void;
+  /**
+   * i18n namespace from which `label` and `description` are translated.
+   * Defaults to `"Common"` for backwards compatibility. Feature-specific
+   * labels (e.g. `nameIt`, `descriptionDe`) belong in the feature namespace
+   * (e.g. `Curricula`), not in `Common` — pass `namespace="Curricula"`.
+   */
+  namespace?: string;
 }
 
 export const InputFormField = ({
@@ -33,8 +41,10 @@ export const InputFormField = ({
   width = "w-full",
   className,
   onChange: onChangeProp,
+  onBlur: onBlurProp,
+  namespace = "Common",
 }: Props) => {
-  const t = useTranslations("Common");
+  const t = useTranslations(namespace);
   const { control } = useFormContext();
 
   return (
@@ -52,6 +62,10 @@ export const InputFormField = ({
               onChange={(e) => {
                 field.onChange(e);
                 onChangeProp?.();
+              }}
+              onBlur={(e) => {
+                field.onBlur();
+                onBlurProp?.();
               }}
             />
           </FormControl>

@@ -1,8 +1,9 @@
 {
-  "name": "e2e",
+  "name": "@restart/e2e",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "private": true,
   "directories": {
     "test": "tests"
   },

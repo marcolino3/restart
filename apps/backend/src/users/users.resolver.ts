@@ -1,6 +1,7 @@
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
-import { GqlJwtAuthGuard } from '@/auth/guard/gql-jwt-auth.guard';
+import { SuperAdminOnly } from '@/auth/decorators/super-admin.decorator';
+import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { NotFoundException, UseGuards } from '@nestjs/common';
@@ -12,12 +13,12 @@ import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 
 @Resolver(() => User)
-@UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
+@UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
 export class UsersResolver {
   constructor(private readonly usersService: UsersService) {}
 
   @Mutation(() => User)
-  @Permissions('USER_INVITE')
+  @SuperAdminOnly()
   createUser(@Args('createUserInput') createUserInput: CreateUserInput) {
     return this.usersService.create(createUserInput);
   }
@@ -43,12 +44,13 @@ export class UsersResolver {
   }
 
   @Query(() => [User], { name: 'users' })
-  @Permissions('EMPLOYEE_READ')
+  @SuperAdminOnly()
   findAll() {
     return this.usersService.findAll();
   }
 
   @Query(() => User, { name: 'user' })
+  @SuperAdminOnly()
   findOne(@Args('id', { type: () => ID }) id: string) {
     return this.usersService.findOne(id);
   }

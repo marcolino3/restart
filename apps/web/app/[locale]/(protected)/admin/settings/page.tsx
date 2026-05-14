@@ -2,15 +2,22 @@ import { OpenSheetButton } from "@/components/buttons/OpenSheetButton";
 import { getOrganizationSettingsAction } from "@/features/organization-settings/actions/get-settings.action";
 import { CreateSettingForm } from "@/features/organization-settings/components/CreateSettingForm";
 import { SettingsPageClient } from "@/features/organization-settings/components/SettingsPageClient";
-import { getCurrentOrgId } from "@/lib/auth/get-current-org-id";
+import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 import { KeyRound, PlusIcon } from "lucide-react";
+import { getLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
 
 const SettingsPage = async () => {
-  const organizationId = await getCurrentOrgId();
+  const userRes = await getCurrentUserAction();
+  const locale = await getLocale();
 
+  if (!userRes?.success) {
+    redirect(`/${locale}/sign-in`);
+  }
+
+  const organizationId = userRes.data.orgId;
   if (!organizationId) {
-    redirect("/sign-in");
+    redirect(`/${locale}/select-org`);
   }
 
   const response = await getOrganizationSettingsAction(organizationId);

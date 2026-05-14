@@ -4,12 +4,12 @@ import { Team } from './entities/team.entity';
 import { CreateTeamInput } from './dto/create-team.input';
 import { UpdateTeamInput } from './dto/update-team.input';
 import { UseGuards } from '@nestjs/common';
-import { GqlJwtAuthGuard } from '@/auth/guard/gql-jwt-auth.guard';
+import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 
 @Resolver(() => Team)
-@UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
+@UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
 export class TeamsResolver {
   constructor(private readonly teamsService: TeamsService) {}
 

@@ -1,10 +1,6 @@
-export const logoutAction = async () => {
-  // NestJS Logout-Endpoint aufrufen, der Cookies löscht
-  await fetch("/api/auth/logout", {
-    method: "POST",
-    credentials: "include",
-  });
+import { authClient } from "@/lib/auth-client";
 
-  // Clientseitige Navigation (optional)
+export const logoutAction = async () => {
+  await authClient.signOut();
   return { success: true };
 };

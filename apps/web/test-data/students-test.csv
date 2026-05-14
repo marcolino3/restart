@@ -1,0 +1,21 @@
+firstName;lastName;dateOfBirth;gender;enrollmentDate;notes
+Lena;Meier;2017-03-15;FEMALE;2023-08-14;
+Noah;Keller;2016-11-22;MALE;2022-08-15;Hochbegabt, braucht Zusatzmaterial
+Mia;Brunner;2017-06-08;FEMALE;2023-08-14;
+Luca;Schmid;2016-09-03;MALE;2022-08-15;
+Emma;Fischer;2018-01-12;FEMALE;2024-08-12;
+Levin;Baumann;2017-04-28;MALE;2023-08-14;Laktoseintoleranz
+Sofia;Gerber;2016-07-19;FEMALE;2022-08-15;
+Matteo;Huber;2018-05-05;MALE;2024-08-12;
+Lina;Steiner;2017-10-30;FEMALE;2023-08-14;
+Elias;Müller;2016-12-14;MALE;2022-08-15;
+Alina;Weber;2018-02-17;FEMALE;2024-08-12;Braucht Nachteilsausgleich
+Nico;Berger;2017-08-09;MALE;2023-08-14;
+Nora;Zimmermann;2016-04-21;FEMALE;2022-08-15;
+Julian;Moser;2018-07-03;MALE;2024-08-12;
+Amelie;Widmer;2017-11-25;FEMALE;2023-08-14;
+David;Frei;2016-06-16;MALE;2022-08-15;
+Lea;Graf;2018-09-11;FEMALE;2024-08-12;
+Finn;Wyss;2017-01-07;MALE;2023-08-14;
+Clara;Roth;2016-03-29;FEMALE;2022-08-15;
+Samuel;Bieri;2018-04-18;MALE;2024-08-12;

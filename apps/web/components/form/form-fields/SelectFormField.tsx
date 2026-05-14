@@ -24,6 +24,8 @@ interface Props {
   placeholder?: string;
   options: { label: string; value: string }[];
   width?: string;
+  /** i18n namespace for `label`, `description`, `placeholder` und option-labels. Default `"Common"`. */
+  namespace?: string;
 }
 
 export const SelectFormField = ({
@@ -33,8 +35,9 @@ export const SelectFormField = ({
   placeholder,
   options,
   width = "w-full",
+  namespace = "Common",
 }: Props) => {
-  const t = useTranslations("Common");
+  const t = useTranslations(namespace);
   const { control } = useFormContext();
 
   return (

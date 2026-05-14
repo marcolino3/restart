@@ -1,5 +1,14 @@
+"use server";
+
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
+
+type UserEmail = {
+  id: string;
+  email: string;
+  isPrimary: boolean;
+  isVerified: boolean;
+};
 
 type AuthContextResponse = {
   authContext: {
@@ -7,7 +16,7 @@ type AuthContextResponse = {
       id: string;
       firstName: string;
       lastName: string;
-      email: string;
+      userEmails: UserEmail[];
     };
     roles: string[];
     permissions: string[];
@@ -23,7 +32,12 @@ const GetAuthContextDocument = gql`
         id
         firstName
         lastName
-        email
+        userEmails {
+          id
+          email
+          isPrimary
+          isVerified
+        }
       }
       roles
       permissions
@@ -40,10 +54,15 @@ export const getCurrentUserAction = async () => {
       GetAuthContextDocument
     );
 
+    const primaryEmail = data.authContext.user.userEmails.find(
+      (e) => e.isPrimary
+    );
+
     return {
       success: true,
       data: {
         ...data.authContext.user,
+        email: primaryEmail?.email ?? data.authContext.user.userEmails[0]?.email,
         roles: data.authContext.roles,
         permissions: data.authContext.permissions,
         orgId: data.authContext.orgId,

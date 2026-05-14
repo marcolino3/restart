@@ -17,6 +17,8 @@ type TimePickerFormFieldProps<TFormValues extends FieldValues> = {
   label?: string;
   description?: string;
   stepsInSeconds?: number;
+  /** i18n namespace for `label` + `description`. Default `"Common"`. */
+  namespace?: string;
 };
 
 // Hilfsfunktion zum sicheren Type Narrowing
@@ -34,9 +36,10 @@ export function TimePickerFormField<TFormValues extends FieldValues>({
   label,
   description,
   stepsInSeconds = 60,
+  namespace = "Common",
 }: TimePickerFormFieldProps<TFormValues>) {
   const form = useFormContext<TFormValues>();
-  const t = useTranslations("Common");
+  const t = useTranslations(namespace);
 
   return (
     <FormField

@@ -19,6 +19,7 @@ import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guard/local-auth.guard';
 import { JwtRefreshAuthGuard } from './guard/jwt-refresh-auth.guard';
 import { GoogleAuthGuard } from './guard/google-auth.guard';
+import { AppleAuthGuard } from './guard/apple-auth.guard';
 
 import { CurrentUser } from './decorators/current-user.decorator';
 import { User } from '@/users/entities/user.entity';
@@ -33,7 +34,10 @@ type AuthenticatedRequest = Request & {
   cookies: Record<string, string>;
 };
 
-@Controller('auth')
+// POC: Renamed from 'auth' to 'auth-legacy' so better-auth can own /api/auth/*
+// during the migration. Once better-auth is fully wired up, this controller
+// will be removed entirely.
+@Controller('auth-legacy')
 export class AuthController {
   constructor(
     private readonly configService: ConfigService,
@@ -160,27 +164,32 @@ export class AuthController {
   }
 
   /**
-   * Org-Wechsel
-   * - erfordert gueltigen Refresh (User eingeloggt)
-   * - setzt Active-Org Cookie
-   * - stellt org-spezifisches Access-Token aus
+   * Apple OAuth Start
    */
-  @Post('switch-org')
-  @UseGuards(JwtAuthGuard)
-  async switchOrg(
-    @Req() req: AuthenticatedRequest,
+  @Get('apple')
+  @UseGuards(AppleAuthGuard)
+  loginApple() {
+    // wird von Passport gestartet
+  }
+
+  /**
+   * Apple OAuth Callback (Apple sendet POST!)
+   */
+  @Post('apple/callback')
+  @UseGuards(AppleAuthGuard)
+  async appleCallback(
+    @CurrentUser() user: User,
     @Res({ passthrough: true }) res: Response,
-    @Body('orgId') orgId: string,
   ) {
-    const payload = req.user;
-    if (!payload?.sub) throw new BadRequestException('Invalid refresh payload');
+    if (user.isSuperAdmin) {
+      await this.authService.loginRefreshOnly(user, res);
+      return;
+    }
+    const userWithMembership = await this.usersService.findCurrentUser(user.id);
+    const orgId = userWithMembership?.memberships[0]?.organizationId;
 
-    // Optional: Membership pruefen (user darf diese Org waehlen)
-    // z. B. membershipsService.assertUserInOrg(payload.sub, orgId);
-
-    const user = await this.usersService.findOne(payload.sub);
-    await this.authService.login(user, res, orgId);
-    return { success: true };
+    if (!orgId) throw new ConflictException('No Organization found.');
+    await this.authService.login(user, res, orgId, true);
   }
 
   /**

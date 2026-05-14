@@ -6,7 +6,7 @@ import { OrganizationSettingOutput } from './dto/organization-setting.output';
 import { CreateOrganizationSettingInput } from './dto/create-organization-setting.input';
 import { UpdateOrganizationSettingInput } from './dto/update-organization-setting.input';
 
-import { GqlJwtAuthGuard } from '@/auth/guard/gql-jwt-auth.guard';
+import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
@@ -21,7 +21,7 @@ export class OrganizationSettingsResolver {
    * Get all settings for an organization (values are hidden)
    */
   @Query(() => [OrganizationSettingOutput], { name: 'organizationSettings' })
-  @UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
+  @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
   findAll(
     @Args('organizationId', { type: () => ID }) organizationId: string,
     @CurrentUser() user: TokenPayload,
@@ -33,7 +33,7 @@ export class OrganizationSettingsResolver {
    * Get a single setting, optionally with decrypted value
    */
   @Query(() => OrganizationSettingOutput, { name: 'organizationSetting' })
-  @UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
+  @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
   findOne(
     @Args('organizationId', { type: () => ID }) organizationId: string,
     @Args('key') key: string,
@@ -55,7 +55,7 @@ export class OrganizationSettingsResolver {
   @Mutation(() => OrganizationSettingOutput, {
     name: 'createOrganizationSetting',
   })
-  @UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
+  @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
   create(
     @Args('input') input: CreateOrganizationSettingInput,
     @CurrentUser() user: TokenPayload,
@@ -69,7 +69,7 @@ export class OrganizationSettingsResolver {
   @Mutation(() => OrganizationSettingOutput, {
     name: 'updateOrganizationSetting',
   })
-  @UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
+  @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
   update(
     @Args('input') input: UpdateOrganizationSettingInput,
     @CurrentUser() user: TokenPayload,
@@ -81,7 +81,7 @@ export class OrganizationSettingsResolver {
    * Delete a setting
    */
   @Mutation(() => Boolean, { name: 'deleteOrganizationSetting' })
-  @UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
+  @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
   remove(
     @Args('organizationId', { type: () => ID }) organizationId: string,
     @Args('key') key: string,

@@ -1,7 +1,6 @@
 import { registerEnumType } from '@nestjs/graphql';
 
 export enum AuthProvider {
-  PASSWORD = 'PASSWORD',
   GOOGLE = 'GOOGLE',
   APPLE = 'APPLE',
 }

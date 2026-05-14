@@ -1,12 +1,9 @@
-import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import { getLocale } from "next-intl/server";
+import { redirect } from "next/navigation";
+import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 
 export default async function Home() {
-  const t = await getTranslations("HomePage");
-  return (
-    <div>
-      <h1>{t("title")}</h1>
-      <Link href="/about">{t("about")}</Link>
-    </div>
-  );
+  const locale = await getLocale();
+  const res = await getCurrentUserAction();
+  redirect(res?.success ? `/${locale}/admin` : `/${locale}/sign-in`);
 }

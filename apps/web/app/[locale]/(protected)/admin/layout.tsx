@@ -18,6 +18,13 @@ const AdminLayout = async ({ children }: { children: React.ReactNode }) => {
 
   if (!res?.success) redirect(`/${locale}/sign-in`);
 
+  // Multi-tenancy: every authenticated request must run in an org context.
+  // Exception: SuperAdmin may operate without an active org (only sees the
+  // global SuperAdmin nav). Everyone else lands on /select-org.
+  if (!res.data.orgId && !res.data.isSuperAdmin) {
+    redirect(`/${locale}/select-org`);
+  }
+
   const organizations = res.data.isSuperAdmin && orgsRes.success ? orgsRes.data : undefined;
 
   return (

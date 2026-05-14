@@ -1,10 +1,12 @@
+import { Field, ID, InputType, PartialType } from '@nestjs/graphql';
+import { IsUUID } from 'class-validator';
 import { CreateEmployeeContractInput } from './create-employee-contract.input';
-import { InputType, Field, Int, PartialType } from '@nestjs/graphql';
 
 @InputType()
 export class UpdateEmployeeContractInput extends PartialType(
   CreateEmployeeContractInput,
 ) {
-  @Field(() => Int)
-  id: number;
+  @Field(() => ID)
+  @IsUUID()
+  id: string;
 }

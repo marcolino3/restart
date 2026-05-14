@@ -23,6 +23,30 @@ const PERMISSION_CATALOG: Array<{
   { code: PermissionCode.EMPLOYEE_WRITE, name: 'Mitarbeiter schreiben' },
   { code: PermissionCode.TIMESHEET_READ, name: 'Stundenzettel lesen' },
   { code: PermissionCode.TIMESHEET_WRITE, name: 'Stundenzettel schreiben' },
+  { code: PermissionCode.SCHOOL_CLASS_READ, name: 'Schulklasse lesen' },
+  { code: PermissionCode.SCHOOL_CLASS_WRITE, name: 'Schulklasse schreiben' },
+  { code: PermissionCode.SCHOOL_CLASS_DELETE, name: 'Schulklasse loeschen' },
+  { code: PermissionCode.CONTACT_PERSON_READ, name: 'Bezugsperson lesen' },
+  { code: PermissionCode.CONTACT_PERSON_WRITE, name: 'Bezugsperson schreiben' },
+  { code: PermissionCode.CONTACT_PERSON_DELETE, name: 'Bezugsperson loeschen' },
+  { code: PermissionCode.ADMISSION_STAGE_READ, name: 'Aufnahmestufe lesen' },
+  {
+    code: PermissionCode.ADMISSION_STAGE_MANAGE,
+    name: 'Aufnahmestufen verwalten',
+  },
+  {
+    code: PermissionCode.CURRICULUM_LEVEL_READ,
+    name: 'Curriculum-Stufe lesen',
+  },
+  {
+    code: PermissionCode.CURRICULUM_LEVEL_MANAGE,
+    name: 'Curriculum-Stufen verwalten',
+  },
+  { code: PermissionCode.CURRICULUM_READ, name: 'Curriculum lesen' },
+  { code: PermissionCode.CURRICULUM_MANAGE, name: 'Curriculum verwalten' },
+  { code: PermissionCode.ADDRESS_READ, name: 'Adresse lesen' },
+  { code: PermissionCode.ADDRESS_WRITE, name: 'Adresse schreiben' },
+  { code: PermissionCode.ADDRESS_DELETE, name: 'Adresse loeschen' },
 ];
 
 export async function seedPermissionCatalog(manager: EntityManager) {

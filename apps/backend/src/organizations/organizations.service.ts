@@ -18,6 +18,7 @@ import { assignPermissionsToOrgSystemRoles } from '@/roles/seeds/assign-permissi
 
 import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { seedOrgEmployeeAbsenceCategories } from '@/employee-management/employee-absence-categories/seeds/seed-org-employee-absence-categories.seeder';
+import { seedOrgAdmissionStages } from '@/school-management/admission-stages/seeds/default-admission-stages';
 
 @Injectable()
 export class OrganizationsService {
@@ -43,6 +44,7 @@ export class OrganizationsService {
       await seedOrgEmployeeAbsenceCategories(manager, org.id);
       await seedOrgSystemRoles(manager, org.id);
       await assignPermissionsToOrgSystemRoles(manager, org.id);
+      await seedOrgAdmissionStages(manager, org.id);
 
       return org;
     });

@@ -1,9 +1,33 @@
 "use server";
-import { graphql } from "@/gql";
-import { GetEmployeesQuery } from "@/gql/graphql";
-import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 
-const GetEmployeesDocument = graphql(`
+import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
+import { gql } from "graphql-request";
+
+export type EmployeeListItem = {
+  membership: {
+    employee?: {
+      isActive: boolean;
+      timeTrackingEnabled: boolean;
+      id: string;
+    } | null;
+    user?: {
+      firstName: string;
+      id: string;
+      lastName: string;
+      userEmails: {
+        email: string;
+        isPrimary: boolean;
+      }[];
+    } | null;
+    persona: string;
+  };
+};
+
+type GetEmployeesResponse = {
+  employeesByOrgId: EmployeeListItem[];
+};
+
+const GetEmployeesDocument = gql`
   query GetEmployees {
     employeesByOrgId {
       membership {
@@ -15,22 +39,24 @@ const GetEmployeesDocument = graphql(`
         user {
           firstName
           id
-          email
           lastName
+          userEmails {
+            email
+            isPrimary
+          }
         }
         persona
       }
     }
   }
-`);
+`;
 
 export const getEmployeesAction = async () => {
   const client = await serverCookieGqlClient();
 
   try {
-    const { employeesByOrgId } = await client.request<GetEmployeesQuery>(
-      GetEmployeesDocument
-    );
+    const { employeesByOrgId } =
+      await client.request<GetEmployeesResponse>(GetEmployeesDocument);
     return { success: true, data: employeesByOrgId };
   } catch (error) {
     console.log(error);

@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MagicLinkLoginForm } from "./MagicLinkLoginForm";
 import { Separator } from "@/components/ui/separator";
 import { GoogleLoginButton } from "./GoogleLoginButton";
+import { AppleLoginButton } from "./AppleLoginButton";
 
 export const LoginCard = () => {
   return (
@@ -13,6 +14,7 @@ export const LoginCard = () => {
         <MagicLinkLoginForm />
         <Separator />
         <GoogleLoginButton />
+        <AppleLoginButton />
       </CardContent>
     </Card>
   );

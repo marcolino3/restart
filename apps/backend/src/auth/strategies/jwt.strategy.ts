@@ -6,6 +6,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { TokenPayload } from '../interfaces/token-payload.interface';
 import { EntityManager } from 'typeorm';
 import { User } from '@/users/entities/user.entity';
+import { AUTH_COOKIE_NAME } from '../constants/cookie-names';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -16,7 +17,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
-          const token = request.cookies?.Authentication as string;
+          const token = request.cookies?.[AUTH_COOKIE_NAME] as string;
 
           return token;
         },

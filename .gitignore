@@ -9,8 +9,17 @@ terraform/*.tfstate.backup
 # IDE
 .idea/
 
-# Dependencies (each app has its own)
+# Dependencies (hoisted via pnpm workspaces)
 node_modules/
+
+# Build outputs
+dist/
+.next/
+coverage/
+out/
+
+# Turborepo
+.turbo/
 
 # Environment files
 .env

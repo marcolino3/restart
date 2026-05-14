@@ -2,11 +2,11 @@ import { Resolver, Query } from '@nestjs/graphql';
 import { PermissionsService } from './permissions.service';
 import { Permission } from './entities/permission.entity';
 import { UseGuards } from '@nestjs/common';
-import { GqlJwtAuthGuard } from '@/auth/guard/gql-jwt-auth.guard';
+import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 
 @Resolver(() => Permission)
-@UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
+@UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
 export class PermissionsResolver {
   constructor(private readonly permissionsService: PermissionsService) {}
 

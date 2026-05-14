@@ -6,6 +6,8 @@ import { EntityManager } from 'typeorm';
 import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
 import { PasswordService } from './password.service';
+import { UserEmailsService } from '@/user-emails/user-emails.service';
+import { Persona } from '@/common/enums/persona.enum';
 
 // Mock bcrypt
 jest.mock('bcrypt', () => ({
@@ -31,6 +33,7 @@ describe('UsersService', () => {
   let em: Record<string, jest.Mock>;
   let userRepo: Record<string, jest.Mock>;
   let passwordService: Record<string, jest.Mock>;
+  let userEmailsService: Record<string, jest.Mock>;
 
   beforeEach(async () => {
     em = {
@@ -45,6 +48,7 @@ describe('UsersService', () => {
         ),
       update: jest.fn().mockResolvedValue({ affected: 1 }),
       findOneByOrFail: jest.fn(),
+      findByIds: jest.fn().mockResolvedValue([]),
       transaction: jest.fn((cb: (m: any) => any) => cb(em)),
     };
 
@@ -58,12 +62,19 @@ describe('UsersService', () => {
         .mockResolvedValue('random-hashed-pw'),
     };
 
+    userEmailsService = {
+      create: jest.fn().mockResolvedValue({ id: 'ue-1', email: 'test@example.com' }),
+      findByEmail: jest.fn(),
+      findByUserId: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         { provide: EntityManager, useValue: em },
         { provide: getRepositoryToken(User), useValue: userRepo },
         { provide: PasswordService, useValue: passwordService },
+        { provide: UserEmailsService, useValue: userEmailsService },
       ],
     }).compile();
 
@@ -81,14 +92,17 @@ describe('UsersService', () => {
         email: 'Max@Example.com',
         password: 'secret123',
         isActive: true,
+        organizationId: 'org-1',
+        persona: Persona.EMPLOYEE,
+        roleIds: [],
       });
 
       expect(em.create).toHaveBeenCalledWith(User, {
         firstName: 'Max',
         lastName: 'Mustermann',
-        email: 'max@example.com',
+        title: undefined,
         username: undefined,
-        passwordHash: 'hashed-password',
+        isActive: true,
       });
       expect(em.save).toHaveBeenCalled();
       expect(result).toBeDefined();
@@ -102,6 +116,9 @@ describe('UsersService', () => {
         lastName: 'Mustermann',
         email: 'max@example.com',
         isActive: true,
+        organizationId: 'org-1',
+        persona: Persona.EMPLOYEE,
+        roleIds: [],
       });
 
       expect(passwordService.generateRandomPasswordHash).toHaveBeenCalledWith(
@@ -110,7 +127,7 @@ describe('UsersService', () => {
     });
 
     it('should throw ConflictException if email already exists', async () => {
-      em.findOne.mockResolvedValue({ id: 'existing-user' });
+      userEmailsService.create.mockRejectedValue(new ConflictException('Email already in use'));
 
       await expect(
         service.create({
@@ -119,11 +136,14 @@ describe('UsersService', () => {
           email: 'max@example.com',
           password: 'pw',
           isActive: true,
+          organizationId: 'org-1',
+          persona: Persona.EMPLOYEE,
+          roleIds: [],
         }),
       ).rejects.toThrow(ConflictException);
     });
 
-    it('should normalize email to lowercase', async () => {
+    it('should delegate email creation to UserEmailsService', async () => {
       em.findOne.mockResolvedValue(null);
 
       await service.create({
@@ -132,12 +152,12 @@ describe('UsersService', () => {
         email: '  MAX@EXAMPLE.COM  ',
         password: 'pw',
         isActive: true,
+        organizationId: 'org-1',
+        persona: Persona.EMPLOYEE,
+        roleIds: [],
       });
 
-      expect(em.create).toHaveBeenCalledWith(
-        User,
-        expect.objectContaining({ email: 'max@example.com' }),
-      );
+      expect(userEmailsService.create).toHaveBeenCalled();
     });
   });
 

@@ -6,7 +6,7 @@ import { UpdateOrganizationInput } from './dto/update-organization.input';
 import { Organization } from './entities/organization.entity';
 import { OrganizationsService } from './organizations.service';
 
-import { GqlJwtAuthGuard } from '@/auth/guard/gql-jwt-auth.guard';
+import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
@@ -20,19 +20,19 @@ export class OrganizationsResolver {
   constructor(private readonly organizationsService: OrganizationsService) {}
 
   @Mutation(() => Organization, { name: 'createOrganization' })
-  @UseGuards(GqlJwtAuthGuard, SuperAdminGuard)
+  @UseGuards(GqlBetterAuthGuard, SuperAdminGuard)
   createOrganization() {
     return this.organizationsService.create();
   }
 
   @Query(() => [Organization], { name: 'organizations' })
-  @UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
+  @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
   organizations(@CurrentUser() user: TokenPayload) {
     return this.organizationsService.findAllForUser(user);
   }
 
   @Query(() => Organization, { name: 'organization' })
-  @UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
+  @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
   organization(
     @Args('id', { type: () => String }) id: string,
     @CurrentUser() user: TokenPayload,
@@ -42,7 +42,7 @@ export class OrganizationsResolver {
 
   @Mutation(() => Organization, { name: 'updateOrganization' })
   @Roles(SystemRole.ORG_OWNER, SystemRole.ORG_ADMIN)
-  @UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
+  @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
   updateOrganization(
     @Args('updateOrganizationInput') input: UpdateOrganizationInput,
   ) {
@@ -50,7 +50,7 @@ export class OrganizationsResolver {
   }
 
   @Query(() => Boolean, { name: 'isOrganizationSubdomainAvailable' })
-  @UseGuards(GqlJwtAuthGuard, SuperAdminGuard)
+  @UseGuards(GqlBetterAuthGuard, SuperAdminGuard)
   isOrganizationSubdomainAvailable(
     @Args('subdomain', { type: () => String }) subdomain: string,
   ) {
@@ -58,7 +58,7 @@ export class OrganizationsResolver {
   }
 
   @Query(() => Boolean, { name: 'isOrganizationDomainAvailable' })
-  @UseGuards(GqlJwtAuthGuard, SuperAdminGuard)
+  @UseGuards(GqlBetterAuthGuard, SuperAdminGuard)
   isOrganizationDomainAvailable(
     @Args('domain', { type: () => String }) domain: string,
   ) {
@@ -66,7 +66,7 @@ export class OrganizationsResolver {
   }
 
   @Mutation(() => Organization, { name: 'removeOrganization' })
-  @UseGuards(GqlJwtAuthGuard, SuperAdminGuard)
+  @UseGuards(GqlBetterAuthGuard, SuperAdminGuard)
   removeOrganization(@Args('id', { type: () => String }) id: string) {
     return this.organizationsService.removeOrganization(id);
   }

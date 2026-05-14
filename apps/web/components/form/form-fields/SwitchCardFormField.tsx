@@ -16,6 +16,8 @@ interface Props {
   label?: string;
   description?: string;
   disabled?: boolean;
+  /** i18n namespace for `label` + `description`. Default `"Common"`. */
+  namespace?: string;
 }
 
 export const SwitchCardFormField = ({
@@ -23,9 +25,10 @@ export const SwitchCardFormField = ({
   label,
   description,
   disabled = false,
+  namespace = "Common",
 }: Props) => {
   const { control } = useFormContext();
-  const t = useTranslations("Common");
+  const t = useTranslations(namespace);
 
   return (
     <FormField

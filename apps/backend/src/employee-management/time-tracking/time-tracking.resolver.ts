@@ -1,54 +1,86 @@
-import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import { UseGuards } from '@nestjs/common';
+import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
+import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
+import { Permissions } from '@/auth/decorators/permissions.decorator';
+import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { TimeTrackingService } from './time-tracking.service';
 import { TimeTracking } from './entities/time-tracking.entity';
 import { CreateTimeTrackingInput } from './dto/create-time-tracking.input';
 import { UpdateTimeTrackingInput } from './dto/update-time-tracking.input';
-import { UseGuards } from '@nestjs/common';
-import { GqlJwtAuthGuard } from '@/auth/guard/gql-jwt-auth.guard';
-import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
-import { Permissions } from '@/auth/decorators/permissions.decorator';
 
 @Resolver(() => TimeTracking)
-@UseGuards(GqlJwtAuthGuard, GraphQLAccessGuard)
+@UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
 export class TimeTrackingResolver {
   constructor(private readonly timeTrackingService: TimeTrackingService) {}
+
+  @Query(() => [TimeTracking], { name: 'timeTrackingByEmployeeId' })
+  @Permissions('TIMESHEET_READ')
+  findAllByEmployee(
+    @Args('employeeId', { type: () => ID }) employeeId: string,
+    @CurrentOrgId() orgId: string,
+    @Args('from', { type: () => String, nullable: true }) from?: string,
+    @Args('to', { type: () => String, nullable: true }) to?: string,
+  ) {
+    return this.timeTrackingService.findAllByEmployeeId(
+      employeeId,
+      orgId,
+      from ? new Date(from) : undefined,
+      to ? new Date(to) : undefined,
+    );
+  }
+
+  @Query(() => TimeTracking, { name: 'timeTrackingById' })
+  @Permissions('TIMESHEET_READ')
+  findOne(
+    @Args('id', { type: () => ID }) id: string,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.timeTrackingService.findOne(id, orgId);
+  }
 
   @Mutation(() => TimeTracking)
   @Permissions('TIMESHEET_WRITE')
   createTimeTracking(
-    @Args('createTimeTrackingInput')
-    createTimeTrackingInput: CreateTimeTrackingInput,
+    @Args('input') input: CreateTimeTrackingInput,
+    @CurrentOrgId() orgId: string,
   ) {
-    return this.timeTrackingService.create(createTimeTrackingInput);
+    return this.timeTrackingService.create(input, orgId);
   }
 
-  @Query(() => [TimeTracking], { name: 'timeTracking' })
-  @Permissions('TIMESHEET_READ')
-  findAll() {
-    return this.timeTrackingService.findAll();
+  @Mutation(() => TimeTracking)
+  @Permissions('TIMESHEET_WRITE')
+  startTimeTracking(
+    @Args('employeeId', { type: () => ID }) employeeId: string,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.timeTrackingService.start(employeeId, orgId);
   }
 
-  @Query(() => TimeTracking, { name: 'timeTracking' })
-  @Permissions('TIMESHEET_READ')
-  findOne(@Args('id', { type: () => Int }) id: number) {
-    return this.timeTrackingService.findOne(id);
+  @Mutation(() => TimeTracking)
+  @Permissions('TIMESHEET_WRITE')
+  stopTimeTracking(
+    @Args('employeeId', { type: () => ID }) employeeId: string,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.timeTrackingService.stop(employeeId, orgId);
   }
 
   @Mutation(() => TimeTracking)
   @Permissions('TIMESHEET_WRITE')
   updateTimeTracking(
-    @Args('updateTimeTrackingInput')
-    updateTimeTrackingInput: UpdateTimeTrackingInput,
+    @Args('input') input: UpdateTimeTrackingInput,
+    @CurrentOrgId() orgId: string,
   ) {
-    return this.timeTrackingService.update(
-      updateTimeTrackingInput.id,
-      updateTimeTrackingInput,
-    );
+    return this.timeTrackingService.update(input, orgId);
   }
 
-  @Mutation(() => TimeTracking)
+  @Mutation(() => Boolean)
   @Permissions('TIMESHEET_WRITE')
-  removeTimeTracking(@Args('id', { type: () => Int }) id: number) {
-    return this.timeTrackingService.remove(id);
+  deleteTimeTracking(
+    @Args('id', { type: () => ID }) id: string,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.timeTrackingService.remove(id, orgId);
   }
 }
