@@ -5,6 +5,10 @@ import { Pool } from 'pg';
 const requireEnv = (key: string): string => {
   const value = process.env[key];
   if (!value) {
+    // Tests don't exercise the real auth flow (better-auth is mocked via
+    // jest moduleNameMapper). Fall back to a dummy so module-load doesn't
+    // fail when DB_* env vars aren't injected by the test runner.
+    if (process.env.NODE_ENV === 'test') return '';
     throw new Error(`Missing required env var: ${key}`);
   }
   return value;
