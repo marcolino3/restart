@@ -26,6 +26,8 @@ interface Props {
   disabledValues?: string[];
   requiredValues?: string[];
   translateLabels?: boolean;
+  /** i18n namespace for `label` + option-labels (when `translateLabels`). Default `"Common"`. */
+  namespace?: string;
 }
 
 export const CheckboxGroupFormField = ({
@@ -36,8 +38,9 @@ export const CheckboxGroupFormField = ({
   disabledValues = [],
   requiredValues = [],
   translateLabels = true,
+  namespace = "Common",
 }: Props) => {
-  const t = useTranslations("Common");
+  const t = useTranslations(namespace);
   const { control } = useFormContext();
 
   return (

@@ -29,6 +29,8 @@ type DatePickerFormFieldProps<TFormValues extends FieldValues> = {
   description?: string;
   disabledDate?: (date: Date) => boolean;
   width?: string;
+  /** i18n namespace for `label`. Default `"Common"`. */
+  namespace?: string;
 };
 
 export function DatePickerFormField<TFormValues extends FieldValues>({
@@ -37,8 +39,9 @@ export function DatePickerFormField<TFormValues extends FieldValues>({
   description,
   disabledDate = (date) => date > new Date() || date < new Date("1900-01-01"),
   width = "w-full",
+  namespace = "Common",
 }: DatePickerFormFieldProps<TFormValues>) {
-  const t = useTranslations("Common");
+  const t = useTranslations(namespace);
   const form = useFormContext<TFormValues>();
 
   return (

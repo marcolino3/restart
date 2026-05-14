@@ -26,6 +26,8 @@ interface Props {
   className?: string;
   width?: string;
   allowDelete?: boolean;
+  /** i18n namespace for `label`. Default `"Common"`. */
+  namespace?: string;
 }
 
 export const UploadFormField = ({
@@ -36,8 +38,9 @@ export const UploadFormField = ({
   className,
   width = "w-full",
   allowDelete = true,
+  namespace = "Common",
 }: Props) => {
-  const t = useTranslations("Common");
+  const t = useTranslations(namespace);
   const { control } = useFormContext();
   const { field } = useController({ name, control });
 

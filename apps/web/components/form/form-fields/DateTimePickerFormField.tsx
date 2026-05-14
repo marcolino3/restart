@@ -29,6 +29,8 @@ type DateTimePickerFormFieldProps<TFormValues extends FieldValues> = {
   label?: string;
   description?: string;
   disabledDate?: (date: Date) => boolean;
+  /** i18n namespace for `label`. Default `"Common"`. */
+  namespace?: string;
 };
 
 export function DateTimePickerFormField<TFormValues extends FieldValues>({
@@ -37,8 +39,9 @@ export function DateTimePickerFormField<TFormValues extends FieldValues>({
   description,
   disabledDate = (date) =>
     date > new Date("2100-01-01") || date < new Date("1900-01-01"),
+  namespace = "Common",
 }: DateTimePickerFormFieldProps<TFormValues>) {
-  const t = useTranslations("Common");
+  const t = useTranslations(namespace);
   const form = useFormContext<TFormValues>();
 
   return (

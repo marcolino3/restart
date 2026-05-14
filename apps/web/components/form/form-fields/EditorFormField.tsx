@@ -20,14 +20,17 @@ type TiptapFormFieldProps<TFormValues extends FieldValues> = {
   name: FieldPath<TFormValues>;
   label?: string;
   className?: string;
+  /** i18n namespace for `label`. Default `"Common"`. */
+  namespace?: string;
 };
 
 export function EditorFormField<TFormValues extends FieldValues>({
   name,
   label,
   className,
+  namespace = "Common",
 }: TiptapFormFieldProps<TFormValues>) {
-  const t = useTranslations("Common");
+  const t = useTranslations(namespace);
   const { control } = useFormContext();
 
   return (

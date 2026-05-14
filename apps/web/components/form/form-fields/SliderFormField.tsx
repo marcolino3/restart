@@ -24,6 +24,8 @@ interface SliderFormFieldProps {
   trackClassName?: string;
   rangeClassName?: string;
   thumbClassName?: string;
+  /** i18n namespace for `label` + `description`. Default `"Common"`. */
+  namespace?: string;
 }
 
 export const SliderFormField = ({
@@ -37,8 +39,9 @@ export const SliderFormField = ({
   trackClassName,
   rangeClassName,
   thumbClassName,
+  namespace = "Common",
 }: SliderFormFieldProps) => {
-  const t = useTranslations("Common");
+  const t = useTranslations(namespace);
   const { control, watch } = useFormContext();
   const value = watch(name);
 

@@ -44,6 +44,8 @@ type ComboboxFormFieldProps<TFormValues extends FieldValues> = {
   width?: string;
   className?: string;
   clearable?: boolean;
+  /** i18n namespace for label/description/placeholder. Default `"Common"`. */
+  namespace?: string;
 };
 
 export function ComboboxFormFieldWithoutTranslation<
@@ -61,8 +63,9 @@ export function ComboboxFormFieldWithoutTranslation<
   width,
   className,
   clearable = false,
+  namespace = "Common",
 }: ComboboxFormFieldProps<TFormValues>) {
-  const t = useTranslations("Common");
+  const t = useTranslations(namespace);
   const { control } = useFormContext();
 
   return (

@@ -21,6 +21,8 @@ interface Props {
 
   width?: string;
   className?: string;
+  /** i18n namespace for `label` + `description`. Default `"Common"`. */
+  namespace?: string;
 }
 
 export const TextareaFormField = ({
@@ -30,8 +32,9 @@ export const TextareaFormField = ({
   description,
   width = "w-full",
   className,
+  namespace = "Common",
 }: Props) => {
-  const t = useTranslations("Common");
+  const t = useTranslations(namespace);
   const { control } = useFormContext();
 
   return (
