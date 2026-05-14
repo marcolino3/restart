@@ -113,7 +113,9 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/$1"
+      "^@/(.*)$": "<rootDir>/$1",
+      "^better-auth$": "<rootDir>/../test/__mocks__/better-auth.ts",
+      "^better-auth/plugins$": "<rootDir>/../test/__mocks__/better-auth-plugins.ts"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
