@@ -42,6 +42,7 @@ interface Props {
   curriculumId: string;
   levels: CurriculumLevelDTO[];
   initialNodesByLevel?: Map<string, CurriculumNodeDTO[]>;
+  includeArchived?: boolean;
 }
 
 type LevelRow = CurriculumLevelDTO & { name: string };
@@ -50,6 +51,7 @@ export function CurriculumLevelsTable({
   curriculumId,
   levels,
   initialNodesByLevel,
+  includeArchived = false,
 }: Props) {
   const t = useTranslations("Curricula");
   const tCommon = useTranslations("Common");
@@ -85,7 +87,11 @@ export function CurriculumLevelsTable({
     if (nodesByLevel.has(levelId)) return;
     if (loading.has(levelId)) return;
     setLoading((prev) => new Set(prev).add(levelId));
-    const res = await getCurriculumNodesAction(curriculumId, levelId);
+    const res = await getCurriculumNodesAction(
+      curriculumId,
+      levelId,
+      includeArchived,
+    );
     setNodesByLevel((prev) => {
       const next = new Map(prev);
       next.set(levelId, res.success && res.data ? res.data : []);
@@ -97,6 +103,12 @@ export function CurriculumLevelsTable({
       return next;
     });
   };
+
+  // Invalidate cache when the archived-toggle changes so we re-fetch with the new flag.
+  useEffect(() => {
+    setNodesByLevel(initialNodesByLevel ?? new Map());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [includeArchived]);
 
   // When filter is active, pre-fetch nodes for all levels so deep matches are findable.
   useEffect(() => {
@@ -274,11 +286,8 @@ export function CurriculumLevelsTable({
                     ))}
                   </TableRow>
                   {row.getIsExpanded() && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={columns.length}
-                        className="bg-muted/30 p-4"
-                      >
+                    <TableRow className="hover:bg-transparent">
+                      <TableCell colSpan={columns.length} className="p-4">
                         {loading.has(row.original.id) ? (
                           <p className="text-sm text-muted-foreground">
                             {tCommon("loading")}

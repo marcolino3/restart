@@ -3,7 +3,7 @@ import { getCurrentUserAction } from "@/features/users/actions/get-current-user.
 import { SchoolClassesTable } from "@/features/school-classes/components/SchoolClassesTable";
 import { ROUTES } from "@/constants/routes";
 import { Button } from "@/components/ui/button";
-import { PlusIcon, Settings2 } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 
@@ -30,20 +30,12 @@ const SchoolClassesPage = async () => {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">{t("schoolClasses")}</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" asChild>
-            <Link href={ROUTES.admin.gradeLevels(locale)}>
-              <Settings2 className="mr-2 h-4 w-4" />
-              {t("manageGradeLevels")}
-            </Link>
-          </Button>
-          <Button asChild>
-            <Link href={ROUTES.admin.schoolClassesCreate(locale)}>
-              <PlusIcon className="mr-2 h-4 w-4" />
-              {tC("createSchoolClass")}
-            </Link>
-          </Button>
-        </div>
+        <Button asChild>
+          <Link href={ROUTES.admin.schoolClassesCreate(locale)}>
+            <PlusIcon className="mr-2 h-4 w-4" />
+            {tC("createSchoolClass")}
+          </Link>
+        </Button>
       </div>
       {classes.length > 0 ? (
         <SchoolClassesTable data={classes} />

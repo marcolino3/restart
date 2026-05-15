@@ -60,11 +60,17 @@ interface Props {
   data: CurriculumDTO[];
   levels: CurriculumLevelDTO[];
   headerActions?: React.ReactNode;
+  includeArchived?: boolean;
 }
 
 type CurriculumRow = CurriculumDTO & { name: string };
 
-export function CurriculaTable({ data, levels, headerActions }: Props) {
+export function CurriculaTable({
+  data,
+  levels,
+  headerActions,
+  includeArchived = false,
+}: Props) {
   const t = useTranslations("Curricula");
   const tCommon = useTranslations("Common");
   const locale = useLocale();
@@ -301,13 +307,11 @@ export function CurriculaTable({ data, levels, headerActions }: Props) {
                   </TableRow>
                   {row.getIsExpanded() && (
                     <TableRow className="hover:bg-transparent">
-                      <TableCell
-                        colSpan={columns.length}
-                        className="bg-muted/20 p-4"
-                      >
+                      <TableCell colSpan={columns.length} className="p-4">
                         <CurriculumLevelsTable
                           curriculumId={row.original.id}
                           levels={levels}
+                          includeArchived={includeArchived}
                         />
                       </TableCell>
                     </TableRow>

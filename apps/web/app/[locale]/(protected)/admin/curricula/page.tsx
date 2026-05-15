@@ -21,11 +21,11 @@ const CurriculaPage = async ({ searchParams }: PageProps) => {
 
   const [curriculaRes, levelsRes] = await Promise.all([
     getCurriculaAction(includeArchived),
-    getCurriculumLevelsAction(),
+    getCurriculumLevelsAction(includeArchived),
   ]);
   const list = curriculaRes.success && curriculaRes.data ? curriculaRes.data : [];
   const levels = (levelsRes.success && levelsRes.data ? levelsRes.data : [])
-    .filter((l) => !l.isArchived)
+    .filter((l) => includeArchived || !l.isArchived)
     .sort((a, b) => a.position - b.position);
 
   return (
@@ -43,7 +43,11 @@ const CurriculaPage = async ({ searchParams }: PageProps) => {
           </Button>
         </div>
       </div>
-      <CurriculaTable data={list} levels={levels} />
+      <CurriculaTable
+        data={list}
+        levels={levels}
+        includeArchived={includeArchived}
+      />
     </div>
   );
 };

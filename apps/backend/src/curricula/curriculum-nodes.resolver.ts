@@ -70,6 +70,15 @@ export class CurriculumNodesResolver {
     return this.service.archive(id, orgId);
   }
 
+  @Mutation(() => Boolean)
+  @Permissions('CURRICULUM_MANAGE')
+  unarchiveCurriculumNode(
+    @Args('id', { type: () => ID }) id: string,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.service.unarchive(id, orgId);
+  }
+
   @Mutation(() => [CurriculumNode])
   @Permissions('CURRICULUM_MANAGE')
   reorderCurriculumNodes(

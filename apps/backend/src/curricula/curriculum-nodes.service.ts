@@ -219,6 +219,16 @@ export class CurriculumNodesService {
     return true;
   }
 
+  async unarchive(id: string, organizationId: string): Promise<boolean> {
+    const node = await this.findOne(id, organizationId);
+    const ids = await this.collectSubtreeIds(node.id, organizationId);
+    await this.nodesRepo.update(
+      { id: In(ids), organizationId },
+      { isArchived: false },
+    );
+    return true;
+  }
+
   async reorder(
     input: ReorderCurriculumNodesInput,
     organizationId: string,

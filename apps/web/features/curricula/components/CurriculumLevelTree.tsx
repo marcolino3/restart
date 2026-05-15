@@ -25,12 +25,14 @@ import {
   ChevronsDownUp,
   ChevronsUpDown,
   GripVertical,
+  RotateCcw,
 } from "lucide-react";
 import { ArchiveConfirmationDialog } from "@/components/common/ArchiveConfirmationDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { handleAction } from "@/lib/actions/handle-action";
 import { archiveCurriculumNodeAction } from "../actions/archive-curriculum-node.action";
+import { unarchiveCurriculumNodeAction } from "../actions/unarchive-curriculum-node.action";
 import { reorderCurriculumNodesAction } from "../actions/reorder-curriculum-nodes.action";
 import {
   buildTree,
@@ -214,6 +216,31 @@ export function CurriculumLevelTree({
     });
   };
 
+  const handleUnarchive = async (id: string) => {
+    setNodes((prev) => {
+      const subtree = new Set<string>([id]);
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const n of prev) {
+          if (n.parentId && subtree.has(n.parentId) && !subtree.has(n.id)) {
+            subtree.add(n.id);
+            changed = true;
+          }
+        }
+      }
+      return prev.map((n) =>
+        subtree.has(n.id) ? { ...n, isArchived: false } : n,
+      );
+    });
+    await handleAction({
+      action: () => unarchiveCurriculumNodeAction(id),
+      successMessage: t("nodeRestored"),
+      errorMessage: t("nodeRestoreError"),
+      onSuccess: () => router.refresh(),
+    });
+  };
+
   return (
     <div className="space-y-2">
       {!hideToolbar && (
@@ -258,6 +285,7 @@ export function CurriculumLevelTree({
             onToggle={toggleNode}
             onReorder={handleReorder}
             onArchive={handleArchive}
+            onUnarchive={handleUnarchive}
             onEdit={setEditingNode}
             dragDisabled={filterActive}
           />
@@ -320,6 +348,7 @@ interface SortableGroupProps {
   onToggle: (id: string) => void;
   onReorder: (parentId: string | null, ids: string[]) => void;
   onArchive: (id: string) => void;
+  onUnarchive: (id: string) => void;
   onEdit: (node: CurriculumNodeDTO) => void;
   dragDisabled: boolean;
 }
@@ -334,6 +363,7 @@ function SortableGroup({
   onToggle,
   onReorder,
   onArchive,
+  onUnarchive,
   onEdit,
   dragDisabled,
 }: SortableGroupProps) {
@@ -379,6 +409,7 @@ function SortableGroup({
               expanded={expanded}
               onToggle={() => onToggle(node.id)}
               onArchive={onArchive}
+              onUnarchive={onUnarchive}
               onEdit={onEdit}
               dragDisabled={dragDisabled}
             >
@@ -393,6 +424,7 @@ function SortableGroup({
                   onToggle={onToggle}
                   onReorder={onReorder}
                   onArchive={onArchive}
+                  onUnarchive={onUnarchive}
                   onEdit={onEdit}
                   dragDisabled={dragDisabled}
                 />
@@ -412,6 +444,7 @@ interface SortableNodeRowProps {
   expanded: boolean;
   onToggle: () => void;
   onArchive: (id: string) => void;
+  onUnarchive: (id: string) => void;
   onEdit: (node: CurriculumNodeDTO) => void;
   dragDisabled: boolean;
   children?: React.ReactNode;
@@ -424,6 +457,7 @@ function SortableNodeRow({
   expanded,
   onToggle,
   onArchive,
+  onUnarchive,
   onEdit,
   dragDisabled,
   children,
@@ -451,9 +485,13 @@ function SortableNodeRow({
   const availableLocales = new Set(node.translations.map((tr) => tr.locale));
   const ALL_LOCALES: CurriculumLocale[] = ["DE", "FR", "IT", "EN"];
 
+  const archivedRow = node.isArchived;
+
   return (
     <div ref={setNodeRef} style={style} className={isDragging ? "opacity-50" : ""}>
-      <div className="flex items-center gap-1 py-1.5 px-2 hover:bg-accent rounded-md transition-colors group">
+      <div
+        className={`flex items-center gap-1 py-1.5 px-2 hover:bg-accent rounded-md transition-colors group ${archivedRow ? "opacity-50" : ""}`}
+      >
         {hasChildren ? (
           <Button
             variant="ghost"
@@ -512,24 +550,40 @@ function SortableNodeRow({
             );
           })}
         </span>
-        <ArchiveConfirmationDialog
-          title={t("archiveNodeTitle")}
-          description={t("archiveNodeDescription")}
-          onConfirm={async () => {
-            await onArchive(node.id);
-            return { success: true };
-          }}
-          trigger={
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 opacity-0 group-hover:opacity-100"
-              aria-label={tCommon("archive")}
-            >
-              <Archive className="h-3.5 w-3.5" />
-            </Button>
-          }
-        />
+        {archivedRow ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={(e) => {
+              e.stopPropagation();
+              onUnarchive(node.id);
+            }}
+            aria-label={t("restoreNode")}
+            title={t("restoreNode")}
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+          </Button>
+        ) : (
+          <ArchiveConfirmationDialog
+            title={t("archiveNodeTitle")}
+            description={t("archiveNodeDescription")}
+            onConfirm={async () => {
+              await onArchive(node.id);
+              return { success: true };
+            }}
+            trigger={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 opacity-0 group-hover:opacity-100"
+                aria-label={tCommon("archive")}
+              >
+                <Archive className="h-3.5 w-3.5" />
+              </Button>
+            }
+          />
+        )}
       </div>
       {children}
     </div>

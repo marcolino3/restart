@@ -36,6 +36,7 @@ type Documents = {
     "\n  query GetCurriculumNodes(\n    $curriculumId: ID!\n    $levelId: ID!\n    $includeArchived: Boolean\n  ) {\n    curriculumNodes(\n      curriculumId: $curriculumId\n      levelId: $levelId\n      includeArchived: $includeArchived\n    ) {\n      id\n      curriculumId\n      levelId\n      parentId\n      nodeType\n      position\n      isArchived\n      translations {\n        locale\n        name\n        notes\n      }\n    }\n  }\n": typeof types.GetCurriculumNodesDocument,
     "\n  mutation ImportCurriculumFromPlan($input: ImportCurriculumPlanInput!) {\n    importCurriculumFromPlan(input: $input) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n": typeof types.ImportCurriculumFromPlanDocument,
     "\n  mutation ReorderCurriculumNodes($input: ReorderCurriculumNodesInput!) {\n    reorderCurriculumNodes(input: $input) {\n      id\n      parentId\n      position\n    }\n  }\n": typeof types.ReorderCurriculumNodesDocument,
+    "\n  mutation UnarchiveCurriculumNode($id: ID!) {\n    unarchiveCurriculumNode(id: $id)\n  }\n": typeof types.UnarchiveCurriculumNodeDocument,
     "\n  mutation UnarchiveCurriculum($id: ID!) {\n    unarchiveCurriculum(id: $id) {\n      id\n      isArchived\n    }\n  }\n": typeof types.UnarchiveCurriculumDocument,
     "\n  mutation UpdateCurriculum($input: UpdateCurriculumInput!) {\n    updateCurriculum(input: $input) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n": typeof types.UpdateCurriculumDocument,
     "\n  mutation UpsertCurriculumNodeTranslation(\n    $input: UpsertCurriculumNodeTranslationInput!\n  ) {\n    upsertCurriculumNodeTranslation(input: $input) {\n      locale\n      name\n      notes\n    }\n  }\n": typeof types.UpsertCurriculumNodeTranslationDocument,
@@ -47,6 +48,11 @@ type Documents = {
     "\n  query GetEmployeeById($employeeId: ID!) {\n    employeeById(employeeId: $employeeId) {\n      id\n      timeTrackingEnabled\n      membership {\n        id\n        persona\n        contactPhone\n        user {\n          id\n          title\n          firstName\n          lastName\n          dateOfBirth\n          userEmails {\n            email\n            isPrimary\n          }\n        }\n        organization {\n          id\n          name\n        }\n        roles {\n          id\n          name\n          systemCode\n        }\n      }\n    }\n  }\n": typeof types.GetEmployeeByIdDocument,
     "\n  query GetEmployees {\n    employeesByOrgId {\n      membership {\n        employee {\n          isActive\n          timeTrackingEnabled\n          id\n        }\n        user {\n          firstName\n          id\n          lastName\n          userEmails {\n            email\n            isPrimary\n          }\n        }\n        persona\n      }\n    }\n  }\n": typeof types.GetEmployeesDocument,
     "\n  mutation UpdateEmployee($updateEmployeeInput: UpdateEmployeeInput!) {\n    updateEmployee(updateEmployeeInput: $updateEmployeeInput) {\n      id\n    }\n  }\n": typeof types.UpdateEmployeeDocument,
+    "\n  mutation CreateGradeLevel($input: CreateGradeLevelInput!) {\n    createGradeLevel(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n": typeof types.CreateGradeLevelDocument,
+    "\n  mutation DeleteGradeLevel($id: ID!) {\n    deleteGradeLevel(id: $id)\n  }\n": typeof types.DeleteGradeLevelDocument,
+    "\n  query GetGradeLevels {\n    gradeLevelsByOrgId {\n      id\n      name\n      sortOrder\n    }\n  }\n": typeof types.GetGradeLevelsDocument,
+    "\n  mutation ReorderGradeLevels($input: ReorderGradeLevelsInput!) {\n    reorderGradeLevels(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n": typeof types.ReorderGradeLevelsDocument,
+    "\n  mutation UpdateGradeLevel($input: UpdateGradeLevelInput!) {\n    updateGradeLevel(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n": typeof types.UpdateGradeLevelDocument,
     "\n  mutation CreateOrganizationSetting($input: CreateOrganizationSettingInput!) {\n    createOrganizationSetting(input: $input) {\n      id\n      key\n      description\n      hasValue\n    }\n  }\n": typeof types.CreateOrganizationSettingDocument,
     "\n  mutation DeleteOrganizationSetting($organizationId: ID!, $key: String!) {\n    deleteOrganizationSetting(organizationId: $organizationId, key: $key)\n  }\n": typeof types.DeleteOrganizationSettingDocument,
     "\n  query GetOrganizationSetting($organizationId: ID!, $key: String!, $decrypt: Boolean!) {\n    organizationSetting(organizationId: $organizationId, key: $key, decrypt: $decrypt) {\n      id\n      organizationId\n      key\n      description\n      hasValue\n      value\n      version\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.GetOrganizationSettingDocument,
@@ -62,11 +68,8 @@ type Documents = {
     "\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n": typeof types.GetPermissionsDocument,
     "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n": typeof types.GetRolesByOrgIdDocument,
     "\n  mutation UpdateRolePermissions($input: UpdateRolePermissionsInput!) {\n    updateRolePermissions(input: $input) {\n      id\n      permissions {\n        id\n        code\n      }\n    }\n  }\n": typeof types.UpdateRolePermissionsDocument,
-    "\n  mutation CreateGradeLevel($input: CreateGradeLevelInput!) {\n    createGradeLevel(input: $input) {\n      id\n      name\n    }\n  }\n": typeof types.CreateGradeLevelDocument,
     "\n  mutation CreateSchoolClass($input: CreateSchoolClassInput!) {\n    createSchoolClass(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateSchoolClassDocument,
-    "\n  mutation DeleteGradeLevel($id: ID!) {\n    deleteGradeLevel(id: $id)\n  }\n": typeof types.DeleteGradeLevelDocument,
     "\n  mutation DeleteSchoolClass($id: ID!) {\n    deleteSchoolClass(id: $id)\n  }\n": typeof types.DeleteSchoolClassDocument,
-    "\n  query GetGradeLevels {\n    gradeLevelsByOrgId {\n      id\n      name\n      sortOrder\n    }\n  }\n": typeof types.GetGradeLevelsDocument,
     "\n  query GetSchoolClassById($id: ID!) {\n    schoolClassById(id: $id) {\n      id\n      name\n      gradeLevels {\n        id\n        name\n      }\n      color\n      description\n      sortOrder\n      maxCapacity\n      room\n      isActive\n    }\n  }\n": typeof types.GetSchoolClassByIdDocument,
     "\n  query GetSchoolClasses {\n    schoolClassesByOrgId {\n      id\n      name\n      gradeLevels {\n        id\n        name\n      }\n      color\n      description\n      sortOrder\n      maxCapacity\n      room\n      isActive\n    }\n  }\n": typeof types.GetSchoolClassesDocument,
     "\n  mutation UpdateSchoolClass($input: UpdateSchoolClassInput!) {\n    updateSchoolClass(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateSchoolClassDocument,
@@ -111,6 +114,7 @@ const documents: Documents = {
     "\n  query GetCurriculumNodes(\n    $curriculumId: ID!\n    $levelId: ID!\n    $includeArchived: Boolean\n  ) {\n    curriculumNodes(\n      curriculumId: $curriculumId\n      levelId: $levelId\n      includeArchived: $includeArchived\n    ) {\n      id\n      curriculumId\n      levelId\n      parentId\n      nodeType\n      position\n      isArchived\n      translations {\n        locale\n        name\n        notes\n      }\n    }\n  }\n": types.GetCurriculumNodesDocument,
     "\n  mutation ImportCurriculumFromPlan($input: ImportCurriculumPlanInput!) {\n    importCurriculumFromPlan(input: $input) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n": types.ImportCurriculumFromPlanDocument,
     "\n  mutation ReorderCurriculumNodes($input: ReorderCurriculumNodesInput!) {\n    reorderCurriculumNodes(input: $input) {\n      id\n      parentId\n      position\n    }\n  }\n": types.ReorderCurriculumNodesDocument,
+    "\n  mutation UnarchiveCurriculumNode($id: ID!) {\n    unarchiveCurriculumNode(id: $id)\n  }\n": types.UnarchiveCurriculumNodeDocument,
     "\n  mutation UnarchiveCurriculum($id: ID!) {\n    unarchiveCurriculum(id: $id) {\n      id\n      isArchived\n    }\n  }\n": types.UnarchiveCurriculumDocument,
     "\n  mutation UpdateCurriculum($input: UpdateCurriculumInput!) {\n    updateCurriculum(input: $input) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n": types.UpdateCurriculumDocument,
     "\n  mutation UpsertCurriculumNodeTranslation(\n    $input: UpsertCurriculumNodeTranslationInput!\n  ) {\n    upsertCurriculumNodeTranslation(input: $input) {\n      locale\n      name\n      notes\n    }\n  }\n": types.UpsertCurriculumNodeTranslationDocument,
@@ -122,6 +126,11 @@ const documents: Documents = {
     "\n  query GetEmployeeById($employeeId: ID!) {\n    employeeById(employeeId: $employeeId) {\n      id\n      timeTrackingEnabled\n      membership {\n        id\n        persona\n        contactPhone\n        user {\n          id\n          title\n          firstName\n          lastName\n          dateOfBirth\n          userEmails {\n            email\n            isPrimary\n          }\n        }\n        organization {\n          id\n          name\n        }\n        roles {\n          id\n          name\n          systemCode\n        }\n      }\n    }\n  }\n": types.GetEmployeeByIdDocument,
     "\n  query GetEmployees {\n    employeesByOrgId {\n      membership {\n        employee {\n          isActive\n          timeTrackingEnabled\n          id\n        }\n        user {\n          firstName\n          id\n          lastName\n          userEmails {\n            email\n            isPrimary\n          }\n        }\n        persona\n      }\n    }\n  }\n": types.GetEmployeesDocument,
     "\n  mutation UpdateEmployee($updateEmployeeInput: UpdateEmployeeInput!) {\n    updateEmployee(updateEmployeeInput: $updateEmployeeInput) {\n      id\n    }\n  }\n": types.UpdateEmployeeDocument,
+    "\n  mutation CreateGradeLevel($input: CreateGradeLevelInput!) {\n    createGradeLevel(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n": types.CreateGradeLevelDocument,
+    "\n  mutation DeleteGradeLevel($id: ID!) {\n    deleteGradeLevel(id: $id)\n  }\n": types.DeleteGradeLevelDocument,
+    "\n  query GetGradeLevels {\n    gradeLevelsByOrgId {\n      id\n      name\n      sortOrder\n    }\n  }\n": types.GetGradeLevelsDocument,
+    "\n  mutation ReorderGradeLevels($input: ReorderGradeLevelsInput!) {\n    reorderGradeLevels(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n": types.ReorderGradeLevelsDocument,
+    "\n  mutation UpdateGradeLevel($input: UpdateGradeLevelInput!) {\n    updateGradeLevel(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n": types.UpdateGradeLevelDocument,
     "\n  mutation CreateOrganizationSetting($input: CreateOrganizationSettingInput!) {\n    createOrganizationSetting(input: $input) {\n      id\n      key\n      description\n      hasValue\n    }\n  }\n": types.CreateOrganizationSettingDocument,
     "\n  mutation DeleteOrganizationSetting($organizationId: ID!, $key: String!) {\n    deleteOrganizationSetting(organizationId: $organizationId, key: $key)\n  }\n": types.DeleteOrganizationSettingDocument,
     "\n  query GetOrganizationSetting($organizationId: ID!, $key: String!, $decrypt: Boolean!) {\n    organizationSetting(organizationId: $organizationId, key: $key, decrypt: $decrypt) {\n      id\n      organizationId\n      key\n      description\n      hasValue\n      value\n      version\n      createdAt\n      updatedAt\n    }\n  }\n": types.GetOrganizationSettingDocument,
@@ -137,11 +146,8 @@ const documents: Documents = {
     "\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n": types.GetPermissionsDocument,
     "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n": types.GetRolesByOrgIdDocument,
     "\n  mutation UpdateRolePermissions($input: UpdateRolePermissionsInput!) {\n    updateRolePermissions(input: $input) {\n      id\n      permissions {\n        id\n        code\n      }\n    }\n  }\n": types.UpdateRolePermissionsDocument,
-    "\n  mutation CreateGradeLevel($input: CreateGradeLevelInput!) {\n    createGradeLevel(input: $input) {\n      id\n      name\n    }\n  }\n": types.CreateGradeLevelDocument,
     "\n  mutation CreateSchoolClass($input: CreateSchoolClassInput!) {\n    createSchoolClass(input: $input) {\n      id\n    }\n  }\n": types.CreateSchoolClassDocument,
-    "\n  mutation DeleteGradeLevel($id: ID!) {\n    deleteGradeLevel(id: $id)\n  }\n": types.DeleteGradeLevelDocument,
     "\n  mutation DeleteSchoolClass($id: ID!) {\n    deleteSchoolClass(id: $id)\n  }\n": types.DeleteSchoolClassDocument,
-    "\n  query GetGradeLevels {\n    gradeLevelsByOrgId {\n      id\n      name\n      sortOrder\n    }\n  }\n": types.GetGradeLevelsDocument,
     "\n  query GetSchoolClassById($id: ID!) {\n    schoolClassById(id: $id) {\n      id\n      name\n      gradeLevels {\n        id\n        name\n      }\n      color\n      description\n      sortOrder\n      maxCapacity\n      room\n      isActive\n    }\n  }\n": types.GetSchoolClassByIdDocument,
     "\n  query GetSchoolClasses {\n    schoolClassesByOrgId {\n      id\n      name\n      gradeLevels {\n        id\n        name\n      }\n      color\n      description\n      sortOrder\n      maxCapacity\n      room\n      isActive\n    }\n  }\n": types.GetSchoolClassesDocument,
     "\n  mutation UpdateSchoolClass($input: UpdateSchoolClassInput!) {\n    updateSchoolClass(input: $input) {\n      id\n    }\n  }\n": types.UpdateSchoolClassDocument,
@@ -269,6 +275,10 @@ export function graphql(source: "\n  mutation ReorderCurriculumNodes($input: Reo
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n  mutation UnarchiveCurriculumNode($id: ID!) {\n    unarchiveCurriculumNode(id: $id)\n  }\n"): (typeof documents)["\n  mutation UnarchiveCurriculumNode($id: ID!) {\n    unarchiveCurriculumNode(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n  mutation UnarchiveCurriculum($id: ID!) {\n    unarchiveCurriculum(id: $id) {\n      id\n      isArchived\n    }\n  }\n"): (typeof documents)["\n  mutation UnarchiveCurriculum($id: ID!) {\n    unarchiveCurriculum(id: $id) {\n      id\n      isArchived\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
@@ -310,6 +320,26 @@ export function graphql(source: "\n  query GetEmployees {\n    employeesByOrgId 
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation UpdateEmployee($updateEmployeeInput: UpdateEmployeeInput!) {\n    updateEmployee(updateEmployeeInput: $updateEmployeeInput) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateEmployee($updateEmployeeInput: UpdateEmployeeInput!) {\n    updateEmployee(updateEmployeeInput: $updateEmployeeInput) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation CreateGradeLevel($input: CreateGradeLevelInput!) {\n    createGradeLevel(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n"): (typeof documents)["\n  mutation CreateGradeLevel($input: CreateGradeLevelInput!) {\n    createGradeLevel(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation DeleteGradeLevel($id: ID!) {\n    deleteGradeLevel(id: $id)\n  }\n"): (typeof documents)["\n  mutation DeleteGradeLevel($id: ID!) {\n    deleteGradeLevel(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetGradeLevels {\n    gradeLevelsByOrgId {\n      id\n      name\n      sortOrder\n    }\n  }\n"): (typeof documents)["\n  query GetGradeLevels {\n    gradeLevelsByOrgId {\n      id\n      name\n      sortOrder\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ReorderGradeLevels($input: ReorderGradeLevelsInput!) {\n    reorderGradeLevels(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n"): (typeof documents)["\n  mutation ReorderGradeLevels($input: ReorderGradeLevelsInput!) {\n    reorderGradeLevels(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateGradeLevel($input: UpdateGradeLevelInput!) {\n    updateGradeLevel(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateGradeLevel($input: UpdateGradeLevelInput!) {\n    updateGradeLevel(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -373,23 +403,11 @@ export function graphql(source: "\n  mutation UpdateRolePermissions($input: Upda
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  mutation CreateGradeLevel($input: CreateGradeLevelInput!) {\n    createGradeLevel(input: $input) {\n      id\n      name\n    }\n  }\n"): (typeof documents)["\n  mutation CreateGradeLevel($input: CreateGradeLevelInput!) {\n    createGradeLevel(input: $input) {\n      id\n      name\n    }\n  }\n"];
-/**
- * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
- */
 export function graphql(source: "\n  mutation CreateSchoolClass($input: CreateSchoolClassInput!) {\n    createSchoolClass(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateSchoolClass($input: CreateSchoolClassInput!) {\n    createSchoolClass(input: $input) {\n      id\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  mutation DeleteGradeLevel($id: ID!) {\n    deleteGradeLevel(id: $id)\n  }\n"): (typeof documents)["\n  mutation DeleteGradeLevel($id: ID!) {\n    deleteGradeLevel(id: $id)\n  }\n"];
-/**
- * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
- */
 export function graphql(source: "\n  mutation DeleteSchoolClass($id: ID!) {\n    deleteSchoolClass(id: $id)\n  }\n"): (typeof documents)["\n  mutation DeleteSchoolClass($id: ID!) {\n    deleteSchoolClass(id: $id)\n  }\n"];
-/**
- * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
- */
-export function graphql(source: "\n  query GetGradeLevels {\n    gradeLevelsByOrgId {\n      id\n      name\n      sortOrder\n    }\n  }\n"): (typeof documents)["\n  query GetGradeLevels {\n    gradeLevelsByOrgId {\n      id\n      name\n      sortOrder\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
