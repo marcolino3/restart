@@ -19,7 +19,7 @@ import {
 } from "../schemas/update-school-class-form.schema";
 import { updateSchoolClassAction } from "../actions/update-school-class.action";
 import { SchoolClassDetail } from "../actions/get-school-class-by-id.action";
-import { GradeLevelItem } from "../actions/get-grade-levels.action";
+import { GradeLevelItem } from "@/features/grade-levels/actions/get-grade-levels.action";
 
 interface Props {
   schoolClass: SchoolClassDetail;

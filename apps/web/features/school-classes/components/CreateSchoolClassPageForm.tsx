@@ -18,7 +18,7 @@ import {
   CreateSchoolClassFormOutput,
 } from "../schemas/create-school-class-form.schema";
 import { createSchoolClassAction } from "../actions/create-school-class.action";
-import { GradeLevelItem } from "../actions/get-grade-levels.action";
+import { GradeLevelItem } from "@/features/grade-levels/actions/get-grade-levels.action";
 
 interface Props {
   gradeLevels: GradeLevelItem[];

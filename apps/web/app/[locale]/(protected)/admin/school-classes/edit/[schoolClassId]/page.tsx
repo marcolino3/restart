@@ -1,5 +1,5 @@
 import { getSchoolClassByIdAction } from "@/features/school-classes/actions/get-school-class-by-id.action";
-import { getGradeLevelsAction } from "@/features/school-classes/actions/get-grade-levels.action";
+import { getGradeLevelsAction } from "@/features/grade-levels/actions/get-grade-levels.action";
 import EditSchoolClassPageForm from "@/features/school-classes/components/EditSchoolClassPageForm";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";

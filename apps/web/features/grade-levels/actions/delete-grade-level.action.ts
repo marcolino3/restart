@@ -20,6 +20,7 @@ export const deleteGradeLevelAction = async (id: string) => {
       DeleteGradeLevelDocument,
       { id },
     );
+    revalidatePath(`/${locale}/admin/grade-levels`);
     revalidatePath(`/${locale}/admin/school-classes`);
     return { success: true as const, data: result.deleteGradeLevel };
   } catch (error) {

@@ -29,6 +29,9 @@ export const ROUTES = {
     schoolClassesEdit: (locale: string, id: string) =>
       `/${locale}/admin/school-classes/edit/${id}`,
 
+    // Grade Levels
+    gradeLevels: (locale: string) => `/${locale}/admin/grade-levels`,
+
     // Students
     students: (locale: string) => `/${locale}/admin/students`,
     studentsCreate: (locale: string) => `/${locale}/admin/students/edit`,

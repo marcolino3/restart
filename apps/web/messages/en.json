@@ -376,6 +376,26 @@
     "inUse": "In use",
     "gradeLevelInUseTooltip": "This grade level is assigned to a class and cannot be deleted"
   },
+  "GradeLevels": {
+    "gradeLevels": "Grade Levels",
+    "manageGradeLevelsDescription": "Create, sort and rename the grade levels for your organization. Classes can be assigned to one or more grade levels.",
+    "name": "Name",
+    "add": "Add",
+    "edit": "Edit",
+    "drag": "Drag to reorder",
+    "editGradeLevel": "Edit grade level",
+    "gradeLevelNamePlaceholder": "Grade level name...",
+    "noGradeLevelsFound": "No grade levels found.",
+    "selectOrganizationFirst": "Please select an organization in the sidebar first.",
+    "inUse": "In use",
+    "gradeLevelInUseTooltip": "This grade level is assigned to a class and cannot be deleted.",
+    "gradeLevelCreated": "Grade level created successfully",
+    "gradeLevelCreateError": "Error creating grade level",
+    "gradeLevelUpdated": "Grade level saved successfully",
+    "gradeLevelUpdateError": "Error saving grade level",
+    "gradeLevelsReordered": "Order saved",
+    "reorderError": "Error saving order"
+  },
   "Students": {
     "students": "Students",
     "createStudent": "Create Student",

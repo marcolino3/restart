@@ -1,5 +1,5 @@
 import CreateSchoolClassPageForm from "@/features/school-classes/components/CreateSchoolClassPageForm";
-import { getGradeLevelsAction } from "@/features/school-classes/actions/get-grade-levels.action";
+import { getGradeLevelsAction } from "@/features/grade-levels/actions/get-grade-levels.action";
 import { getTranslations } from "next-intl/server";
 
 export default async function CreateSchoolClassPage() {

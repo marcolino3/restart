@@ -8,6 +8,7 @@ import { GradeLevelsService } from './grade-levels.service';
 import { GradeLevel } from './entities/grade-level.entity';
 import { CreateGradeLevelInput } from './dto/create-grade-level.input';
 import { UpdateGradeLevelInput } from './dto/update-grade-level.input';
+import { ReorderGradeLevelsInput } from './dto/reorder-grade-levels.input';
 
 @Resolver(() => GradeLevel)
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
@@ -54,5 +55,14 @@ export class GradeLevelsResolver {
     @CurrentOrgId() orgId: string,
   ) {
     return this.gradeLevelsService.remove(id, orgId);
+  }
+
+  @Mutation(() => [GradeLevel])
+  @Permissions('SCHOOL_CLASS_WRITE')
+  reorderGradeLevels(
+    @Args('input') input: ReorderGradeLevelsInput,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.gradeLevelsService.reorder(input, orgId);
   }
 }

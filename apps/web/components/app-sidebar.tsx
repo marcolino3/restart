@@ -14,6 +14,7 @@ import {
   IconListDetails,
   IconReport,
   IconBook,
+  IconLayersIntersect,
   IconSchool,
   IconSearch,
   IconSettings,
@@ -93,6 +94,11 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
               title: "Schulklassen",
               url: ROUTES.admin.schoolClasses(locale),
               icon: IconSchool,
+            },
+            {
+              title: "Stufen",
+              url: ROUTES.admin.gradeLevels(locale),
+              icon: IconLayersIntersect,
             },
             {
               title: "Schüler",

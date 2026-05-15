@@ -374,6 +374,26 @@
     "inUse": "In Verwendung",
     "gradeLevelInUseTooltip": "Diese Stufe ist einer Klasse zugewiesen und kann nicht gelöscht werden"
   },
+  "GradeLevels": {
+    "gradeLevels": "Stufen",
+    "manageGradeLevelsDescription": "Erstelle, sortiere und benenne die Stufen deiner Organisation. Klassen können einer oder mehreren Stufen zugeordnet werden.",
+    "name": "Name",
+    "add": "Hinzufügen",
+    "edit": "Bearbeiten",
+    "drag": "Verschieben",
+    "editGradeLevel": "Stufe bearbeiten",
+    "gradeLevelNamePlaceholder": "Name der Stufe...",
+    "noGradeLevelsFound": "Keine Stufen vorhanden.",
+    "selectOrganizationFirst": "Bitte wähle zuerst eine Organisation in der Seitenleiste aus.",
+    "inUse": "In Verwendung",
+    "gradeLevelInUseTooltip": "Diese Stufe ist einer Klasse zugewiesen und kann nicht gelöscht werden.",
+    "gradeLevelCreated": "Stufe erfolgreich erstellt",
+    "gradeLevelCreateError": "Fehler beim Erstellen der Stufe",
+    "gradeLevelUpdated": "Stufe erfolgreich gespeichert",
+    "gradeLevelUpdateError": "Fehler beim Speichern der Stufe",
+    "gradeLevelsReordered": "Reihenfolge gespeichert",
+    "reorderError": "Fehler beim Speichern der Reihenfolge"
+  },
   "Students": {
     "students": "Schüler",
     "createStudent": "Schüler erstellen",

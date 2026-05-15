@@ -4,11 +4,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { GradeLevel } from './entities/grade-level.entity';
 import { SchoolClass } from '@/school-management/school-classes/entities/school-class.entity';
 import { CreateGradeLevelInput } from './dto/create-grade-level.input';
 import { UpdateGradeLevelInput } from './dto/update-grade-level.input';
+import { ReorderGradeLevelsInput } from './dto/reorder-grade-levels.input';
 
 @Injectable()
 export class GradeLevelsService {
@@ -88,5 +89,27 @@ export class GradeLevelsService {
     gradeLevel.isActive = false;
     await this.gradeLevelRepo.save(gradeLevel);
     return true;
+  }
+
+  async reorder(
+    input: ReorderGradeLevelsInput,
+    organizationId: string,
+  ): Promise<GradeLevel[]> {
+    const levels = await this.gradeLevelRepo.find({
+      where: { id: In(input.ids), organizationId, isActive: true },
+    });
+    if (levels.length !== input.ids.length) {
+      throw new NotFoundException(
+        'One or more grade levels not found in this organization',
+      );
+    }
+    const byId = new Map(levels.map((l) => [l.id, l]));
+    const toSave = input.ids.map((id, index) => {
+      const level = byId.get(id)!;
+      level.sortOrder = index;
+      return level;
+    });
+    await this.gradeLevelRepo.save(toSave);
+    return this.findAllByOrgId(organizationId);
   }
 }
