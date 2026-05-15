@@ -4,9 +4,12 @@ import { getCurriculumByIdAction } from "@/features/curricula/actions/get-curric
 import { getCurriculumLevelsAction } from "@/features/curricula/actions/get-curriculum-levels.action";
 import { getCurriculumNodesAction } from "@/features/curricula/actions/get-curriculum-nodes.action";
 import { CurriculumForm } from "@/features/curricula/components/CurriculumForm";
-import { CurriculumLevelTree } from "@/features/curricula/components/CurriculumLevelTree";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { pickTranslation, type CurriculumLocale } from "@/features/curricula/types";
+import { CurriculumLevelsTable } from "@/features/curricula/components/CurriculumLevelsTable";
+import {
+  pickTranslation,
+  type CurriculumLocale,
+  type CurriculumNodeDTO,
+} from "@/features/curricula/types";
 
 interface PageProps {
   params: Promise<{ curriculumId: string; locale: string }>;
@@ -35,7 +38,7 @@ const EditCurriculumPage = async ({ params }: PageProps) => {
     }),
   );
 
-  const nodesByLevel = new Map(
+  const nodesByLevel = new Map<string, CurriculumNodeDTO[]>(
     levelNodes.map((entry) => [entry.levelId, entry.nodes]),
   );
 
@@ -46,8 +49,7 @@ const EditCurriculumPage = async ({ params }: PageProps) => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold mb-1">{headerName}</h1>
-        <p className="text-sm text-muted-foreground">/{curriculum.slug}</p>
+        <h1 className="text-2xl font-bold">{headerName}</h1>
       </div>
 
       <section>
@@ -59,31 +61,11 @@ const EditCurriculumPage = async ({ params }: PageProps) => {
 
       <section>
         <h2 className="text-lg font-semibold mb-3">{t("structure")}</h2>
-        {levels.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-8 text-center border rounded-md">
-            {t("noLevelsYet")}
-          </p>
-        ) : (
-          <Tabs defaultValue={levels[0].id}>
-            <TabsList className="flex-wrap h-auto">
-              {levels.map((l) => (
-                <TabsTrigger key={l.id} value={l.id}>
-                  {pickTranslation(l.translations, localeUpper)?.name ??
-                    l.slug}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            {levels.map((l) => (
-              <TabsContent key={l.id} value={l.id} className="mt-4">
-                <CurriculumLevelTree
-                  curriculumId={curriculumId}
-                  levelId={l.id}
-                  initialNodes={nodesByLevel.get(l.id) ?? []}
-                />
-              </TabsContent>
-            ))}
-          </Tabs>
-        )}
+        <CurriculumLevelsTable
+          curriculumId={curriculumId}
+          levels={levels}
+          initialNodesByLevel={nodesByLevel}
+        />
       </section>
     </div>
   );

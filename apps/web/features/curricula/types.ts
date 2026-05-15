@@ -1,14 +1,14 @@
 export type CurriculumLocale = "DE" | "FR" | "EN" | "IT";
 
-export const CURRICULUM_LOCALES: CurriculumLocale[] = ["DE", "FR", "EN", "IT"];
+export const CURRICULUM_LOCALES: CurriculumLocale[] = ["DE", "FR", "IT", "EN"];
 
-export type CurriculumNodeType = "AREA" | "TOPIC" | "PRESENTATION" | "WORK";
+export type CurriculumNodeType = "AREA" | "TOPIC" | "GROUP" | "LESSON";
 
 export const NODE_TYPE_RANK: Record<CurriculumNodeType, number> = {
   AREA: 0,
   TOPIC: 1,
-  PRESENTATION: 2,
-  WORK: 3,
+  GROUP: 2,
+  LESSON: 3,
 };
 
 export type CurriculumTranslationDTO = {
@@ -86,8 +86,8 @@ export type ImportPlanStats = {
   levelCount: number;
   areaCount: number;
   topicCount: number;
-  presentationCount: number;
-  workCount: number;
+  groupCount: number;
+  lessonCount: number;
 };
 
 export type ImportPlan = {

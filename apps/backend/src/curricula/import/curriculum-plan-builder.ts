@@ -32,8 +32,8 @@ export interface ImportPlan {
     levelCount: number;
     areaCount: number;
     topicCount: number;
-    presentationCount: number;
-    workCount: number;
+    groupCount: number;
+    lessonCount: number;
   };
   warnings: string[];
 }
@@ -96,8 +96,8 @@ export function buildImportPlan(
     levelCount: 0,
     areaCount: 0,
     topicCount: 0,
-    presentationCount: 0,
-    workCount: 0,
+    groupCount: 0,
+    lessonCount: 0,
   };
 
   const sortedRows = [...rows].sort((a, b) => {
@@ -183,13 +183,13 @@ function buildPathForRow(
     segments.push({ name: row.area, nodeType: CurriculumNodeType.AREA });
   if (row.topic)
     segments.push({ name: row.topic, nodeType: CurriculumNodeType.TOPIC });
-  if (row.presentation)
+  if (row.group)
     segments.push({
-      name: row.presentation,
-      nodeType: CurriculumNodeType.PRESENTATION,
+      name: row.group,
+      nodeType: CurriculumNodeType.GROUP,
     });
-  if (row.work)
-    segments.push({ name: row.work, nodeType: CurriculumNodeType.WORK });
+  if (row.lesson)
+    segments.push({ name: row.lesson, nodeType: CurriculumNodeType.LESSON });
   return segments;
 }
 
@@ -199,9 +199,8 @@ function bumpStats(
 ): void {
   if (nodeType === CurriculumNodeType.AREA) stats.areaCount += 1;
   else if (nodeType === CurriculumNodeType.TOPIC) stats.topicCount += 1;
-  else if (nodeType === CurriculumNodeType.PRESENTATION)
-    stats.presentationCount += 1;
-  else if (nodeType === CurriculumNodeType.WORK) stats.workCount += 1;
+  else if (nodeType === CurriculumNodeType.GROUP) stats.groupCount += 1;
+  else if (nodeType === CurriculumNodeType.LESSON) stats.lessonCount += 1;
 }
 
 function stripIndexes(nodes: PlanNode[]): void {

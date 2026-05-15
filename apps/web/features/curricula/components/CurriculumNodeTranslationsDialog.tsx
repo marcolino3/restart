@@ -28,6 +28,11 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   node: CurriculumNodeDTO;
+  onSaved?: (
+    nodeId: string,
+    locale: CurriculumLocale,
+    translation: { name: string; notes: string | null },
+  ) => void;
 }
 
 type LocaleDraft = { name: string; notes: string };
@@ -36,6 +41,7 @@ export function CurriculumNodeTranslationsDialog({
   open,
   onOpenChange,
   node,
+  onSaved,
 }: Props) {
   const t = useTranslations("Curricula");
   const tCommon = useTranslations("Common");
@@ -77,7 +83,13 @@ export function CurriculumNodeTranslationsDialog({
         }),
       successMessage: t("translationSaved"),
       errorMessage: t("translationSaveError"),
-      onSuccess: () => router.refresh(),
+      onSuccess: () => {
+        onSaved?.(node.id, locale, {
+          name: draft.name,
+          notes: draft.notes || null,
+        });
+        router.refresh();
+      },
     });
     setSavingLocale(null);
   };

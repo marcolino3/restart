@@ -65,10 +65,10 @@ export class ImportPlanStatsType {
   topicCount: number;
 
   @Field(() => Int)
-  presentationCount: number;
+  groupCount: number;
 
   @Field(() => Int)
-  workCount: number;
+  lessonCount: number;
 }
 
 @ObjectType('CurriculumImportPlan')

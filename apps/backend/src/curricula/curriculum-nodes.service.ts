@@ -18,8 +18,8 @@ import { Curriculum } from './entities/curriculum.entity';
 const NODE_TYPE_RANK: Record<CurriculumNodeType, number> = {
   [CurriculumNodeType.AREA]: 0,
   [CurriculumNodeType.TOPIC]: 1,
-  [CurriculumNodeType.PRESENTATION]: 2,
-  [CurriculumNodeType.WORK]: 3,
+  [CurriculumNodeType.GROUP]: 2,
+  [CurriculumNodeType.LESSON]: 3,
 };
 
 @Injectable()

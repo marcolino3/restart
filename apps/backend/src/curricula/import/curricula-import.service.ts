@@ -24,8 +24,8 @@ import { ImportPlanType } from './dto/import-plan.types';
 const NODE_TYPE_RANK: Record<CurriculumNodeType, number> = {
   [CurriculumNodeType.AREA]: 0,
   [CurriculumNodeType.TOPIC]: 1,
-  [CurriculumNodeType.PRESENTATION]: 2,
-  [CurriculumNodeType.WORK]: 3,
+  [CurriculumNodeType.GROUP]: 2,
+  [CurriculumNodeType.LESSON]: 3,
 };
 
 @Injectable()
@@ -224,8 +224,8 @@ export class CurriculaImportService {
   ): void {
     for (const node of nodes) {
       if (parentType === null) {
-        if (node.nodeType === CurriculumNodeType.WORK) {
-          // tolerated: rank(WORK) > rank(any), but root WORK is unusual — flag downstream
+        if (node.nodeType === CurriculumNodeType.LESSON) {
+          // tolerated: rank(LESSON) > rank(any), but root LESSON is unusual — flag downstream
         }
       } else if (NODE_TYPE_RANK[node.nodeType] <= NODE_TYPE_RANK[parentType]) {
         throw new BadRequestException(

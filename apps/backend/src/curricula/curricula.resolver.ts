@@ -62,6 +62,15 @@ export class CurriculaResolver {
     return this.service.archive(id, orgId);
   }
 
+  @Mutation(() => Curriculum)
+  @Permissions('CURRICULUM_MANAGE')
+  unarchiveCurriculum(
+    @Args('id', { type: () => ID }) id: string,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.service.unarchive(id, orgId);
+  }
+
   @Mutation(() => [Curriculum])
   @Permissions('CURRICULUM_MANAGE')
   reorderCurricula(

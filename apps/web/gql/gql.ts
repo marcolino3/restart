@@ -27,6 +27,18 @@ type Documents = {
     "\n  mutation UpdateAddress($input: UpdateAddressInput!) {\n    updateAddress(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateAddressDocument,
     "\n  mutation UpdateContactPerson($input: UpdateContactPersonInput!) {\n    updateContactPerson(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateContactPersonDocument,
     "\n  mutation UpdateStudentContactPersonLink(\n    $input: UpdateStudentContactPersonInput!\n  ) {\n    updateStudentContactPersonLink(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateStudentContactPersonLinkDocument,
+    "\n  mutation ArchiveCurriculumNode($id: ID!) {\n    archiveCurriculumNode(id: $id)\n  }\n": typeof types.ArchiveCurriculumNodeDocument,
+    "\n  mutation ArchiveCurriculum($id: ID!) {\n    archiveCurriculum(id: $id)\n  }\n": typeof types.ArchiveCurriculumDocument,
+    "\n  mutation CreateCurriculum($input: CreateCurriculumInput!) {\n    createCurriculum(input: $input) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n": typeof types.CreateCurriculumDocument,
+    "\n  query GetCurricula($includeArchived: Boolean) {\n    curricula(includeArchived: $includeArchived) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n": typeof types.GetCurriculaDocument,
+    "\n  query GetCurriculumById($id: ID!) {\n    curriculumById(id: $id) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n": typeof types.GetCurriculumByIdDocument,
+    "\n  query GetCurriculumLevels($includeArchived: Boolean) {\n    curriculumLevels(includeArchived: $includeArchived) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n      }\n    }\n  }\n": typeof types.GetCurriculumLevelsDocument,
+    "\n  query GetCurriculumNodes(\n    $curriculumId: ID!\n    $levelId: ID!\n    $includeArchived: Boolean\n  ) {\n    curriculumNodes(\n      curriculumId: $curriculumId\n      levelId: $levelId\n      includeArchived: $includeArchived\n    ) {\n      id\n      curriculumId\n      levelId\n      parentId\n      nodeType\n      position\n      isArchived\n      translations {\n        locale\n        name\n        notes\n      }\n    }\n  }\n": typeof types.GetCurriculumNodesDocument,
+    "\n  mutation ImportCurriculumFromPlan($input: ImportCurriculumPlanInput!) {\n    importCurriculumFromPlan(input: $input) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n": typeof types.ImportCurriculumFromPlanDocument,
+    "\n  mutation ReorderCurriculumNodes($input: ReorderCurriculumNodesInput!) {\n    reorderCurriculumNodes(input: $input) {\n      id\n      parentId\n      position\n    }\n  }\n": typeof types.ReorderCurriculumNodesDocument,
+    "\n  mutation UnarchiveCurriculum($id: ID!) {\n    unarchiveCurriculum(id: $id) {\n      id\n      isArchived\n    }\n  }\n": typeof types.UnarchiveCurriculumDocument,
+    "\n  mutation UpdateCurriculum($input: UpdateCurriculumInput!) {\n    updateCurriculum(input: $input) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n": typeof types.UpdateCurriculumDocument,
+    "\n  mutation UpsertCurriculumNodeTranslation(\n    $input: UpsertCurriculumNodeTranslationInput!\n  ) {\n    upsertCurriculumNodeTranslation(input: $input) {\n      locale\n      name\n      notes\n    }\n  }\n": typeof types.UpsertCurriculumNodeTranslationDocument,
     "\n  mutation CreateEmployeeAbsenceNotice(\n    $createEmployeeAbsenceInput: CreateEmployeeAbsenceNoticeInput!\n  ) {\n    createEmployeeAbsenceNotice(\n      createEmployeeAbsenceInput: $createEmployeeAbsenceInput\n    ) {\n      id\n    }\n  }\n": typeof types.CreateEmployeeAbsenceNoticeDocument,
     "\n  query GetEmployeeAbsenceCategoriesByOrgId {\n    employeeAbsenceCategoriesByOrgId {\n      id\n      systemCode\n    }\n  }\n": typeof types.GetEmployeeAbsenceCategoriesByOrgIdDocument,
     "\n  mutation CreateEmployeeNote(\n    $createEmployeeNoteInput: CreateEmployeeNoteInput!\n  ) {\n    createEmployeeNote(createEmployeeNoteInput: $createEmployeeNoteInput) {\n      id\n    }\n  }\n": typeof types.CreateEmployeeNoteDocument,
@@ -66,11 +78,14 @@ type Documents = {
     "\n  query GetStudents {\n    studentsByOrgId {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      gender\n      enrollmentDate\n      exitDate\n      isActive\n    }\n  }\n": typeof types.GetStudentsDocument,
     "\n  mutation UpdateEnrollment($input: UpdateSchoolClassEnrollmentInput!) {\n    updateEnrollment(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateEnrollmentDocument,
     "\n  mutation UpdateStudent($input: UpdateStudentInput!) {\n    updateStudent(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateStudentDocument,
+    "\n  mutation AddUserEmail($userId: ID!, $email: String!) {\n    addUserEmail(userId: $userId, email: $email) {\n      id\n      email\n      isPrimary\n      isVerified\n    }\n  }\n": typeof types.AddUserEmailDocument,
     "\n  mutation CreateUser($createUserInput: CreateUserInput!) {\n    createUser(createUserInput: $createUserInput) {\n      id\n    }\n  }\n": typeof types.CreateUserDocument,
     "\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        userEmails {\n          id\n          email\n          isPrimary\n          isVerified\n        }\n      }\n      roles\n      permissions\n      orgId\n      isSuperAdmin\n    }\n  }\n": typeof types.GetAuthContextDocument,
     "\n  query RolesByOrganizationId($organizationId: ID!) {\n    rolesByOrganizationId(organizationId: $organizationId) {\n      id\n      name\n      systemCode\n      isSystem\n    }\n  }\n": typeof types.RolesByOrganizationIdDocument,
     "\n  query GetUserById($id: ID!) {\n    user(id: $id) {\n      id\n      title\n      firstName\n      lastName\n      username\n      dateOfBirth\n      isSuperAdmin\n      isActive\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n      }\n      memberships {\n        id\n        persona\n        contactPhone\n        userEmailId\n        organization {\n          id\n          name\n        }\n      }\n    }\n  }\n": typeof types.GetUserByIdDocument,
     "\n  query GetUsers {\n    users {\n      id\n      title\n      firstName\n      lastName\n      isSuperAdmin\n      isActive\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n        authAccounts {\n          id\n          provider\n        }\n      }\n      memberships {\n        id\n        persona\n        organization {\n          id\n          name\n        }\n      }\n    }\n  }\n": typeof types.GetUsersDocument,
+    "\n  mutation RemoveUserEmail($id: ID!) {\n    removeUserEmail(id: $id) {\n      id\n    }\n  }\n": typeof types.RemoveUserEmailDocument,
+    "\n  mutation SetPrimaryUserEmail($id: ID!) {\n    setPrimaryUserEmail(id: $id) {\n      id\n      isPrimary\n    }\n  }\n": typeof types.SetPrimaryUserEmailDocument,
     "\n  mutation UpdateUser($updateUserInput: UpdateUserInput!) {\n    updateUser(updateUserInput: $updateUserInput) {\n      id\n    }\n  }\n": typeof types.UpdateUserDocument,
 };
 const documents: Documents = {
@@ -87,6 +102,18 @@ const documents: Documents = {
     "\n  mutation UpdateAddress($input: UpdateAddressInput!) {\n    updateAddress(input: $input) {\n      id\n    }\n  }\n": types.UpdateAddressDocument,
     "\n  mutation UpdateContactPerson($input: UpdateContactPersonInput!) {\n    updateContactPerson(input: $input) {\n      id\n    }\n  }\n": types.UpdateContactPersonDocument,
     "\n  mutation UpdateStudentContactPersonLink(\n    $input: UpdateStudentContactPersonInput!\n  ) {\n    updateStudentContactPersonLink(input: $input) {\n      id\n    }\n  }\n": types.UpdateStudentContactPersonLinkDocument,
+    "\n  mutation ArchiveCurriculumNode($id: ID!) {\n    archiveCurriculumNode(id: $id)\n  }\n": types.ArchiveCurriculumNodeDocument,
+    "\n  mutation ArchiveCurriculum($id: ID!) {\n    archiveCurriculum(id: $id)\n  }\n": types.ArchiveCurriculumDocument,
+    "\n  mutation CreateCurriculum($input: CreateCurriculumInput!) {\n    createCurriculum(input: $input) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n": types.CreateCurriculumDocument,
+    "\n  query GetCurricula($includeArchived: Boolean) {\n    curricula(includeArchived: $includeArchived) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n": types.GetCurriculaDocument,
+    "\n  query GetCurriculumById($id: ID!) {\n    curriculumById(id: $id) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n": types.GetCurriculumByIdDocument,
+    "\n  query GetCurriculumLevels($includeArchived: Boolean) {\n    curriculumLevels(includeArchived: $includeArchived) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n      }\n    }\n  }\n": types.GetCurriculumLevelsDocument,
+    "\n  query GetCurriculumNodes(\n    $curriculumId: ID!\n    $levelId: ID!\n    $includeArchived: Boolean\n  ) {\n    curriculumNodes(\n      curriculumId: $curriculumId\n      levelId: $levelId\n      includeArchived: $includeArchived\n    ) {\n      id\n      curriculumId\n      levelId\n      parentId\n      nodeType\n      position\n      isArchived\n      translations {\n        locale\n        name\n        notes\n      }\n    }\n  }\n": types.GetCurriculumNodesDocument,
+    "\n  mutation ImportCurriculumFromPlan($input: ImportCurriculumPlanInput!) {\n    importCurriculumFromPlan(input: $input) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n": types.ImportCurriculumFromPlanDocument,
+    "\n  mutation ReorderCurriculumNodes($input: ReorderCurriculumNodesInput!) {\n    reorderCurriculumNodes(input: $input) {\n      id\n      parentId\n      position\n    }\n  }\n": types.ReorderCurriculumNodesDocument,
+    "\n  mutation UnarchiveCurriculum($id: ID!) {\n    unarchiveCurriculum(id: $id) {\n      id\n      isArchived\n    }\n  }\n": types.UnarchiveCurriculumDocument,
+    "\n  mutation UpdateCurriculum($input: UpdateCurriculumInput!) {\n    updateCurriculum(input: $input) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n": types.UpdateCurriculumDocument,
+    "\n  mutation UpsertCurriculumNodeTranslation(\n    $input: UpsertCurriculumNodeTranslationInput!\n  ) {\n    upsertCurriculumNodeTranslation(input: $input) {\n      locale\n      name\n      notes\n    }\n  }\n": types.UpsertCurriculumNodeTranslationDocument,
     "\n  mutation CreateEmployeeAbsenceNotice(\n    $createEmployeeAbsenceInput: CreateEmployeeAbsenceNoticeInput!\n  ) {\n    createEmployeeAbsenceNotice(\n      createEmployeeAbsenceInput: $createEmployeeAbsenceInput\n    ) {\n      id\n    }\n  }\n": types.CreateEmployeeAbsenceNoticeDocument,
     "\n  query GetEmployeeAbsenceCategoriesByOrgId {\n    employeeAbsenceCategoriesByOrgId {\n      id\n      systemCode\n    }\n  }\n": types.GetEmployeeAbsenceCategoriesByOrgIdDocument,
     "\n  mutation CreateEmployeeNote(\n    $createEmployeeNoteInput: CreateEmployeeNoteInput!\n  ) {\n    createEmployeeNote(createEmployeeNoteInput: $createEmployeeNoteInput) {\n      id\n    }\n  }\n": types.CreateEmployeeNoteDocument,
@@ -126,11 +153,14 @@ const documents: Documents = {
     "\n  query GetStudents {\n    studentsByOrgId {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      gender\n      enrollmentDate\n      exitDate\n      isActive\n    }\n  }\n": types.GetStudentsDocument,
     "\n  mutation UpdateEnrollment($input: UpdateSchoolClassEnrollmentInput!) {\n    updateEnrollment(input: $input) {\n      id\n    }\n  }\n": types.UpdateEnrollmentDocument,
     "\n  mutation UpdateStudent($input: UpdateStudentInput!) {\n    updateStudent(input: $input) {\n      id\n    }\n  }\n": types.UpdateStudentDocument,
+    "\n  mutation AddUserEmail($userId: ID!, $email: String!) {\n    addUserEmail(userId: $userId, email: $email) {\n      id\n      email\n      isPrimary\n      isVerified\n    }\n  }\n": types.AddUserEmailDocument,
     "\n  mutation CreateUser($createUserInput: CreateUserInput!) {\n    createUser(createUserInput: $createUserInput) {\n      id\n    }\n  }\n": types.CreateUserDocument,
     "\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        userEmails {\n          id\n          email\n          isPrimary\n          isVerified\n        }\n      }\n      roles\n      permissions\n      orgId\n      isSuperAdmin\n    }\n  }\n": types.GetAuthContextDocument,
     "\n  query RolesByOrganizationId($organizationId: ID!) {\n    rolesByOrganizationId(organizationId: $organizationId) {\n      id\n      name\n      systemCode\n      isSystem\n    }\n  }\n": types.RolesByOrganizationIdDocument,
     "\n  query GetUserById($id: ID!) {\n    user(id: $id) {\n      id\n      title\n      firstName\n      lastName\n      username\n      dateOfBirth\n      isSuperAdmin\n      isActive\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n      }\n      memberships {\n        id\n        persona\n        contactPhone\n        userEmailId\n        organization {\n          id\n          name\n        }\n      }\n    }\n  }\n": types.GetUserByIdDocument,
     "\n  query GetUsers {\n    users {\n      id\n      title\n      firstName\n      lastName\n      isSuperAdmin\n      isActive\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n        authAccounts {\n          id\n          provider\n        }\n      }\n      memberships {\n        id\n        persona\n        organization {\n          id\n          name\n        }\n      }\n    }\n  }\n": types.GetUsersDocument,
+    "\n  mutation RemoveUserEmail($id: ID!) {\n    removeUserEmail(id: $id) {\n      id\n    }\n  }\n": types.RemoveUserEmailDocument,
+    "\n  mutation SetPrimaryUserEmail($id: ID!) {\n    setPrimaryUserEmail(id: $id) {\n      id\n      isPrimary\n    }\n  }\n": types.SetPrimaryUserEmailDocument,
     "\n  mutation UpdateUser($updateUserInput: UpdateUserInput!) {\n    updateUser(updateUserInput: $updateUserInput) {\n      id\n    }\n  }\n": types.UpdateUserDocument,
 };
 
@@ -200,6 +230,54 @@ export function graphql(source: "\n  mutation UpdateContactPerson($input: Update
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation UpdateStudentContactPersonLink(\n    $input: UpdateStudentContactPersonInput!\n  ) {\n    updateStudentContactPersonLink(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateStudentContactPersonLink(\n    $input: UpdateStudentContactPersonInput!\n  ) {\n    updateStudentContactPersonLink(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ArchiveCurriculumNode($id: ID!) {\n    archiveCurriculumNode(id: $id)\n  }\n"): (typeof documents)["\n  mutation ArchiveCurriculumNode($id: ID!) {\n    archiveCurriculumNode(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ArchiveCurriculum($id: ID!) {\n    archiveCurriculum(id: $id)\n  }\n"): (typeof documents)["\n  mutation ArchiveCurriculum($id: ID!) {\n    archiveCurriculum(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation CreateCurriculum($input: CreateCurriculumInput!) {\n    createCurriculum(input: $input) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n"): (typeof documents)["\n  mutation CreateCurriculum($input: CreateCurriculumInput!) {\n    createCurriculum(input: $input) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetCurricula($includeArchived: Boolean) {\n    curricula(includeArchived: $includeArchived) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetCurricula($includeArchived: Boolean) {\n    curricula(includeArchived: $includeArchived) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetCurriculumById($id: ID!) {\n    curriculumById(id: $id) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetCurriculumById($id: ID!) {\n    curriculumById(id: $id) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetCurriculumLevels($includeArchived: Boolean) {\n    curriculumLevels(includeArchived: $includeArchived) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetCurriculumLevels($includeArchived: Boolean) {\n    curriculumLevels(includeArchived: $includeArchived) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetCurriculumNodes(\n    $curriculumId: ID!\n    $levelId: ID!\n    $includeArchived: Boolean\n  ) {\n    curriculumNodes(\n      curriculumId: $curriculumId\n      levelId: $levelId\n      includeArchived: $includeArchived\n    ) {\n      id\n      curriculumId\n      levelId\n      parentId\n      nodeType\n      position\n      isArchived\n      translations {\n        locale\n        name\n        notes\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetCurriculumNodes(\n    $curriculumId: ID!\n    $levelId: ID!\n    $includeArchived: Boolean\n  ) {\n    curriculumNodes(\n      curriculumId: $curriculumId\n      levelId: $levelId\n      includeArchived: $includeArchived\n    ) {\n      id\n      curriculumId\n      levelId\n      parentId\n      nodeType\n      position\n      isArchived\n      translations {\n        locale\n        name\n        notes\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ImportCurriculumFromPlan($input: ImportCurriculumPlanInput!) {\n    importCurriculumFromPlan(input: $input) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n"): (typeof documents)["\n  mutation ImportCurriculumFromPlan($input: ImportCurriculumPlanInput!) {\n    importCurriculumFromPlan(input: $input) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ReorderCurriculumNodes($input: ReorderCurriculumNodesInput!) {\n    reorderCurriculumNodes(input: $input) {\n      id\n      parentId\n      position\n    }\n  }\n"): (typeof documents)["\n  mutation ReorderCurriculumNodes($input: ReorderCurriculumNodesInput!) {\n    reorderCurriculumNodes(input: $input) {\n      id\n      parentId\n      position\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UnarchiveCurriculum($id: ID!) {\n    unarchiveCurriculum(id: $id) {\n      id\n      isArchived\n    }\n  }\n"): (typeof documents)["\n  mutation UnarchiveCurriculum($id: ID!) {\n    unarchiveCurriculum(id: $id) {\n      id\n      isArchived\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateCurriculum($input: UpdateCurriculumInput!) {\n    updateCurriculum(input: $input) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateCurriculum($input: UpdateCurriculumInput!) {\n    updateCurriculum(input: $input) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpsertCurriculumNodeTranslation(\n    $input: UpsertCurriculumNodeTranslationInput!\n  ) {\n    upsertCurriculumNodeTranslation(input: $input) {\n      locale\n      name\n      notes\n    }\n  }\n"): (typeof documents)["\n  mutation UpsertCurriculumNodeTranslation(\n    $input: UpsertCurriculumNodeTranslationInput!\n  ) {\n    upsertCurriculumNodeTranslation(input: $input) {\n      locale\n      name\n      notes\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -359,6 +437,10 @@ export function graphql(source: "\n  mutation UpdateStudent($input: UpdateStuden
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n  mutation AddUserEmail($userId: ID!, $email: String!) {\n    addUserEmail(userId: $userId, email: $email) {\n      id\n      email\n      isPrimary\n      isVerified\n    }\n  }\n"): (typeof documents)["\n  mutation AddUserEmail($userId: ID!, $email: String!) {\n    addUserEmail(userId: $userId, email: $email) {\n      id\n      email\n      isPrimary\n      isVerified\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n  mutation CreateUser($createUserInput: CreateUserInput!) {\n    createUser(createUserInput: $createUserInput) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateUser($createUserInput: CreateUserInput!) {\n    createUser(createUserInput: $createUserInput) {\n      id\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
@@ -376,6 +458,14 @@ export function graphql(source: "\n  query GetUserById($id: ID!) {\n    user(id:
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  query GetUsers {\n    users {\n      id\n      title\n      firstName\n      lastName\n      isSuperAdmin\n      isActive\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n        authAccounts {\n          id\n          provider\n        }\n      }\n      memberships {\n        id\n        persona\n        organization {\n          id\n          name\n        }\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetUsers {\n    users {\n      id\n      title\n      firstName\n      lastName\n      isSuperAdmin\n      isActive\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n        authAccounts {\n          id\n          provider\n        }\n      }\n      memberships {\n        id\n        persona\n        organization {\n          id\n          name\n        }\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation RemoveUserEmail($id: ID!) {\n    removeUserEmail(id: $id) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation RemoveUserEmail($id: ID!) {\n    removeUserEmail(id: $id) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation SetPrimaryUserEmail($id: ID!) {\n    setPrimaryUserEmail(id: $id) {\n      id\n      isPrimary\n    }\n  }\n"): (typeof documents)["\n  mutation SetPrimaryUserEmail($id: ID!) {\n    setPrimaryUserEmail(id: $id) {\n      id\n      isPrimary\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

@@ -150,6 +150,13 @@ export class CurriculaService {
     return true;
   }
 
+  async unarchive(id: string, organizationId: string): Promise<Curriculum> {
+    const curriculum = await this.findOne(id, organizationId);
+    curriculum.isArchived = false;
+    await this.curriculaRepo.save(curriculum);
+    return this.findOne(id, organizationId);
+  }
+
   async reorder(ids: string[], organizationId: string): Promise<Curriculum[]> {
     const curricula = await this.curriculaRepo.find({
       where: { id: In(ids), organizationId },

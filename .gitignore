@@ -9,6 +9,10 @@ terraform/*.tfstate.backup
 # IDE
 .idea/
 
+# Claude Code (local-only files; tracked agents/commands remain checked in)
+.claude/scheduled_tasks.lock
+.claude/settings.local.json
+
 # Dependencies (hoisted via pnpm workspaces)
 node_modules/
 

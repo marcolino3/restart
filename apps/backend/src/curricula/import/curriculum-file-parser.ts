@@ -5,8 +5,8 @@ export interface CurriculumRawRow {
   sequence: number | null;
   area: string | null;
   topic: string | null;
-  presentation: string | null;
-  work: string | null;
+  group: string | null;
+  lesson: string | null;
   rowNumber: number;
 }
 
@@ -24,20 +24,16 @@ const COLUMN_ALIASES: Record<
   sequence: ['sequence', 'seq', 'reihenfolge', 'nr', 'no', 'ordre'],
   area: ['area', 'bereich', 'domaine', 'ambito'],
   topic: ['topic', 'thema', 'sujet', 'argomento'],
-  presentation: [
-    'presentation',
-    'präsentation',
-    'praesentation',
-    'présentation',
-    'presentazione',
-  ],
-  work: [
-    'work',
+  group: ['group', 'gruppe', 'groupe', 'gruppo'],
+  lesson: [
     'lesson',
+    'lessons',
+    'lektion',
+    'lektionen',
+    'work',
     'work/lesson',
     'works/lessons',
     'arbeit',
-    'lektion',
     'travail',
     'lavoro',
   ],
@@ -67,7 +63,7 @@ function detectColumns(headerRow: unknown[]): Record<string, number> | null {
       }
     }
   }
-  if (!('level' in found) || !('work' in found)) return null;
+  if (!('level' in found) || !('lesson' in found)) return null;
   return found;
 }
 
@@ -130,7 +126,7 @@ export function parseCurriculumFile(
   const headerInfo = findHeaderRow(sheetData);
   if (!headerInfo) {
     throw new Error(
-      'Could not detect header row. Expected columns "Level" and "Work/Lesson" within the first 5 rows.',
+      'Could not detect header row. Expected columns "Level" and "Lesson" within the first 5 rows.',
     );
   }
 
@@ -140,16 +136,16 @@ export function parseCurriculumFile(
   for (let i = headerRow + 1; i < sheetData.length; i++) {
     const r = sheetData[i] ?? [];
     const level = pickCell(r, columns.level);
-    const work = pickCell(r, columns.work);
-    if (!level || !work) continue;
+    const lesson = pickCell(r, columns.lesson);
+    if (!level || !lesson) continue;
 
     rows.push({
       level,
       sequence: parseSequence(pickCell(r, columns.sequence)),
       area: pickCell(r, columns.area),
       topic: pickCell(r, columns.topic),
-      presentation: pickCell(r, columns.presentation),
-      work,
+      group: pickCell(r, columns.group),
+      lesson,
       rowNumber: i + 1,
     });
   }

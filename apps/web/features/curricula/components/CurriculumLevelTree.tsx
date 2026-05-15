@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import {
@@ -18,8 +18,17 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Archive, GripVertical, Languages, Trash2 } from "lucide-react";
+import {
+  Archive,
+  ChevronDown,
+  ChevronRight,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  GripVertical,
+} from "lucide-react";
+import { ArchiveConfirmationDialog } from "@/components/common/ArchiveConfirmationDialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { handleAction } from "@/lib/actions/handle-action";
 import { archiveCurriculumNodeAction } from "../actions/archive-curriculum-node.action";
 import { reorderCurriculumNodesAction } from "../actions/reorder-curriculum-nodes.action";
@@ -36,19 +45,38 @@ interface Props {
   curriculumId: string;
   levelId: string;
   initialNodes: CurriculumNodeDTO[];
+  /** External signal: when this value changes, expand all nodes. */
+  expandSignal?: number;
+  /** External signal: when this value changes, collapse all nodes. */
+  collapseSignal?: number;
+  /** Optional controlled filter from parent. When set, the internal filter UI is hidden. */
+  externalFilter?: string;
+  /** Hide internal toolbar (filter input + expand-all button) when parent provides its own. */
+  hideToolbar?: boolean;
 }
 
-const NODE_TYPE_LABEL: Record<CurriculumTreeNode["nodeType"], string> = {
-  AREA: "Area",
-  TOPIC: "Topic",
-  PRESENTATION: "Presentation",
-  WORK: "Work",
+const NODE_TYPE_I18N_KEY: Record<CurriculumTreeNode["nodeType"], string> = {
+  AREA: "nodeTypeArea",
+  TOPIC: "nodeTypeTopic",
+  GROUP: "nodeTypeGroup",
+  LESSON: "nodeTypeLesson",
+};
+
+const LOCALE_PRESENT_CLS: Record<CurriculumLocale, string> = {
+  DE: "bg-amber-600 text-white",
+  FR: "bg-blue-600 text-white",
+  IT: "bg-emerald-600 text-white",
+  EN: "bg-violet-600 text-white",
 };
 
 export function CurriculumLevelTree({
   curriculumId,
   levelId,
   initialNodes,
+  expandSignal,
+  collapseSignal,
+  externalFilter,
+  hideToolbar,
 }: Props) {
   const t = useTranslations("Curricula");
   const router = useRouter();
@@ -59,20 +87,102 @@ export function CurriculumLevelTree({
   const [editingNode, setEditingNode] = useState<CurriculumNodeDTO | null>(
     null,
   );
+  const [internalFilter, setInternalFilter] = useState("");
+  const [manualExpanded, setManualExpanded] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setNodes(initialNodes);
   }, [initialNodes]);
 
-  const tree = buildTree(nodes);
+  const lastExpandSignal = useRef(expandSignal);
+  const lastCollapseSignal = useRef(collapseSignal);
+
+  useEffect(() => {
+    if (expandSignal === undefined) return;
+    if (expandSignal === lastExpandSignal.current) return;
+    lastExpandSignal.current = expandSignal;
+    setManualExpanded(new Set(nodes.map((n) => n.id)));
+  }, [expandSignal, nodes]);
+
+  useEffect(() => {
+    if (collapseSignal === undefined) return;
+    if (collapseSignal === lastCollapseSignal.current) return;
+    lastCollapseSignal.current = collapseSignal;
+    setManualExpanded(new Set());
+  }, [collapseSignal]);
+
+  const filter = (externalFilter ?? internalFilter).trim().toLowerCase();
+  const filterActive = filter.length > 0;
+
+  const tree = useMemo(() => buildTree(nodes), [nodes]);
+
+  // Build name index per node id for filter matching.
+  const nodeNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const n of nodes) {
+      const name =
+        pickTranslation(n.translations, localeUpper)?.name ?? "";
+      map.set(n.id, name.toLowerCase());
+    }
+    return map;
+  }, [nodes, localeUpper]);
+
+  // Compute which nodes are visible (themselves or any descendant matches) and which
+  // ancestors must be auto-expanded to reveal a match.
+  const { visible, autoExpand } = useMemo(() => {
+    if (!filterActive) {
+      return {
+        visible: null as Set<string> | null, // null = show all
+        autoExpand: new Set<string>(),
+      };
+    }
+    const visibleSet = new Set<string>();
+    const autoExpandSet = new Set<string>();
+
+    const walk = (node: CurriculumTreeNode): boolean => {
+      const selfMatch = (nodeNameById.get(node.id) ?? "").includes(filter);
+      let anyChildMatch = false;
+      for (const child of node.children) {
+        const childMatched = walk(child);
+        if (childMatched) anyChildMatch = true;
+      }
+      const matched = selfMatch || anyChildMatch;
+      if (matched) {
+        visibleSet.add(node.id);
+        if (anyChildMatch) autoExpandSet.add(node.id);
+      }
+      return matched;
+    };
+
+    for (const root of tree) walk(root);
+    return { visible: visibleSet, autoExpand: autoExpandSet };
+  }, [filterActive, filter, tree, nodeNameById]);
+
+  const isExpanded = (id: string) =>
+    autoExpand.has(id) || manualExpanded.has(id);
+
+  const toggleNode = (id: string) => {
+    setManualExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const allExpanded =
+    nodes.length > 0 && nodes.every((n) => manualExpanded.has(n.id));
+
+  const toggleAll = () => {
+    if (allExpanded) setManualExpanded(new Set());
+    else setManualExpanded(new Set(nodes.map((n) => n.id)));
+  };
 
   const handleReorder = async (
     parentId: string | null,
     newOrderIds: string[],
   ) => {
-    // Optimistic local re-order
     setNodes((prev) => {
-      const byId = new Map(prev.map((n) => [n.id, n]));
       const groupIds = new Set(newOrderIds);
       return prev.map((n) => {
         if (!groupIds.has(n.id) || n.parentId !== parentId) return n;
@@ -104,30 +214,96 @@ export function CurriculumLevelTree({
     });
   };
 
-  if (tree.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground py-8 text-center">
-        {t("noNodesYet")}
-      </p>
-    );
-  }
-
   return (
-    <div className="space-y-1">
-      <SortableGroup
-        siblings={tree}
-        parentId={null}
-        depth={0}
-        localeUpper={localeUpper}
-        onReorder={handleReorder}
-        onArchive={handleArchive}
-        onEdit={setEditingNode}
-      />
+    <div className="space-y-2">
+      {!hideToolbar && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {externalFilter === undefined && (
+            <Input
+              placeholder={t("filterNodes")}
+              value={internalFilter}
+              onChange={(e) => setInternalFilter(e.target.value)}
+              className="max-w-sm h-8"
+            />
+          )}
+          <Button variant="outline" size="sm" onClick={toggleAll}>
+            {allExpanded ? (
+              <>
+                <ChevronsDownUp className="h-4 w-4 mr-2" />
+                {t("collapseAll")}
+              </>
+            ) : (
+              <>
+                <ChevronsUpDown className="h-4 w-4 mr-2" />
+                {t("expandAll")}
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
+      {tree.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-8 text-center">
+          {t("noNodesYet")}
+        </p>
+      ) : (
+        <div className="space-y-1">
+          <SortableGroup
+            siblings={tree}
+            parentId={null}
+            depth={0}
+            localeUpper={localeUpper}
+            visible={visible}
+            isExpanded={isExpanded}
+            onToggle={toggleNode}
+            onReorder={handleReorder}
+            onArchive={handleArchive}
+            onEdit={setEditingNode}
+            dragDisabled={filterActive}
+          />
+        </div>
+      )}
       {editingNode && (
         <CurriculumNodeTranslationsDialog
           open={true}
           onOpenChange={(open) => !open && setEditingNode(null)}
           node={editingNode}
+          onSaved={(nodeId, locale, translation) => {
+            setNodes((prev) =>
+              prev.map((n) => {
+                if (n.id !== nodeId) return n;
+                const others = n.translations.filter(
+                  (tr) => tr.locale !== locale,
+                );
+                return {
+                  ...n,
+                  translations: [
+                    ...others,
+                    {
+                      locale,
+                      name: translation.name,
+                      notes: translation.notes,
+                    },
+                  ],
+                };
+              }),
+            );
+            setEditingNode((curr) =>
+              curr && curr.id === nodeId
+                ? {
+                    ...curr,
+                    translations: [
+                      ...curr.translations.filter((tr) => tr.locale !== locale),
+                      {
+                        locale,
+                        name: translation.name,
+                        notes: translation.notes,
+                      },
+                    ],
+                  }
+                : curr,
+            );
+          }}
         />
       )}
     </div>
@@ -139,9 +315,13 @@ interface SortableGroupProps {
   parentId: string | null;
   depth: number;
   localeUpper: CurriculumLocale;
+  visible: Set<string> | null;
+  isExpanded: (id: string) => boolean;
+  onToggle: (id: string) => void;
   onReorder: (parentId: string | null, ids: string[]) => void;
   onArchive: (id: string) => void;
   onEdit: (node: CurriculumNodeDTO) => void;
+  dragDisabled: boolean;
 }
 
 function SortableGroup({
@@ -149,15 +329,25 @@ function SortableGroup({
   parentId,
   depth,
   localeUpper,
+  visible,
+  isExpanded,
+  onToggle,
   onReorder,
   onArchive,
   onEdit,
+  dragDisabled,
 }: SortableGroupProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   );
 
+  const visibleSiblings = useMemo(
+    () => (visible ? siblings.filter((s) => visible.has(s.id)) : siblings),
+    [siblings, visible],
+  );
+
   const handleDragEnd = (e: DragEndEvent) => {
+    if (dragDisabled) return;
     const { active, over } = e;
     if (!over || active.id === over.id) return;
     const ids = siblings.map((s) => s.id);
@@ -175,31 +365,41 @@ function SortableGroup({
       onDragEnd={handleDragEnd}
     >
       <SortableContext
-        items={siblings.map((s) => s.id)}
+        items={visibleSiblings.map((s) => s.id)}
         strategy={verticalListSortingStrategy}
       >
-        {siblings.map((node) => (
-          <SortableNodeRow
-            key={node.id}
-            node={node}
-            depth={depth}
-            localeUpper={localeUpper}
-            onArchive={onArchive}
-            onEdit={onEdit}
-          >
-            {node.children.length > 0 && (
-              <SortableGroup
-                siblings={node.children}
-                parentId={node.id}
-                depth={depth + 1}
-                localeUpper={localeUpper}
-                onReorder={onReorder}
-                onArchive={onArchive}
-                onEdit={onEdit}
-              />
-            )}
-          </SortableNodeRow>
-        ))}
+        {visibleSiblings.map((node) => {
+          const expanded = isExpanded(node.id);
+          return (
+            <SortableNodeRow
+              key={node.id}
+              node={node}
+              depth={depth}
+              localeUpper={localeUpper}
+              expanded={expanded}
+              onToggle={() => onToggle(node.id)}
+              onArchive={onArchive}
+              onEdit={onEdit}
+              dragDisabled={dragDisabled}
+            >
+              {node.children.length > 0 && expanded && (
+                <SortableGroup
+                  siblings={node.children}
+                  parentId={node.id}
+                  depth={depth + 1}
+                  localeUpper={localeUpper}
+                  visible={visible}
+                  isExpanded={isExpanded}
+                  onToggle={onToggle}
+                  onReorder={onReorder}
+                  onArchive={onArchive}
+                  onEdit={onEdit}
+                  dragDisabled={dragDisabled}
+                />
+              )}
+            </SortableNodeRow>
+          );
+        })}
       </SortableContext>
     </DndContext>
   );
@@ -209,8 +409,11 @@ interface SortableNodeRowProps {
   node: CurriculumTreeNode;
   depth: number;
   localeUpper: CurriculumLocale;
+  expanded: boolean;
+  onToggle: () => void;
   onArchive: (id: string) => void;
   onEdit: (node: CurriculumNodeDTO) => void;
+  dragDisabled: boolean;
   children?: React.ReactNode;
 }
 
@@ -218,8 +421,11 @@ function SortableNodeRow({
   node,
   depth,
   localeUpper,
+  expanded,
+  onToggle,
   onArchive,
   onEdit,
+  dragDisabled,
   children,
 }: SortableNodeRowProps) {
   const {
@@ -229,7 +435,7 @@ function SortableNodeRow({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: node.id });
+  } = useSortable({ id: node.id, disabled: dragDisabled });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -241,51 +447,89 @@ function SortableNodeRow({
   const tCommon = useTranslations("Common");
   const name =
     pickTranslation(node.translations, localeUpper)?.name ?? "(untitled)";
-  const missingLocales = (
-    ["DE", "FR", "EN", "IT"] as CurriculumLocale[]
-  ).filter((l) => !node.translations.some((tr) => tr.locale === l));
+  const hasChildren = node.children.length > 0;
+  const availableLocales = new Set(node.translations.map((tr) => tr.locale));
+  const ALL_LOCALES: CurriculumLocale[] = ["DE", "FR", "IT", "EN"];
 
   return (
     <div ref={setNodeRef} style={style} className={isDragging ? "opacity-50" : ""}>
-      <div className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted/40 rounded group">
+      <div className="flex items-center gap-1 py-1.5 px-2 hover:bg-accent rounded-md transition-colors group">
+        {hasChildren ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={onToggle}
+            aria-label={expanded ? tCommon("collapse") : tCommon("expand")}
+          >
+            {expanded ? (
+              <ChevronDown className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        ) : (
+          <span className="inline-block h-6 w-6" />
+        )}
         <span
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground"
+          className={
+            dragDisabled
+              ? "p-1 text-muted-foreground opacity-30"
+              : "cursor-grab active:cursor-grabbing p-1 text-muted-foreground"
+          }
           aria-label="drag"
         >
           <GripVertical className="h-4 w-4" />
         </span>
         <span className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-          {NODE_TYPE_LABEL[node.nodeType]}
+          {t(NODE_TYPE_I18N_KEY[node.nodeType])}
         </span>
         <span className="flex-1 truncate text-sm">{name}</span>
-        {missingLocales.length > 0 && (
-          <span
-            className="text-[10px] text-amber-700 dark:text-amber-400"
-            title={`${t("missingLocales")}: ${missingLocales.join(", ")}`}
-          >
-            {missingLocales.join("/")}
-          </span>
-        )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 opacity-0 group-hover:opacity-100"
-          onClick={() => onEdit(node)}
-          aria-label={t("editTranslations")}
-        >
-          <Languages className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 opacity-0 group-hover:opacity-100 text-destructive"
-          onClick={() => onArchive(node.id)}
-          aria-label={tCommon("archive")}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
+        <span className="flex items-center gap-1">
+          {ALL_LOCALES.map((loc) => {
+            const present = availableLocales.has(loc);
+            const baseCls =
+              "text-[10px] uppercase tracking-wide font-medium px-1.5 py-0.5 rounded cursor-pointer transition-opacity hover:opacity-80";
+            const colorCls = present
+              ? LOCALE_PRESENT_CLS[loc]
+              : "bg-muted text-muted-foreground/60";
+            return (
+              <button
+                key={loc}
+                type="button"
+                className={`${baseCls} ${colorCls}`}
+                title={`${t(`locale${loc}`)} – ${t("editTranslations")}`}
+                aria-label={`${t(`locale${loc}`)} – ${t("editTranslations")}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(node);
+                }}
+              >
+                {t(`locale${loc}`)}
+              </button>
+            );
+          })}
+        </span>
+        <ArchiveConfirmationDialog
+          title={t("archiveNodeTitle")}
+          description={t("archiveNodeDescription")}
+          onConfirm={async () => {
+            await onArchive(node.id);
+            return { success: true };
+          }}
+          trigger={
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 opacity-0 group-hover:opacity-100"
+              aria-label={tCommon("archive")}
+            >
+              <Archive className="h-3.5 w-3.5" />
+            </Button>
+          }
+        />
       </div>
       {children}
     </div>

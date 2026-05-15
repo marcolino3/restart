@@ -3,12 +3,12 @@ import { registerEnumType } from '@nestjs/graphql';
 export enum CurriculumNodeType {
   AREA = 'AREA',
   TOPIC = 'TOPIC',
-  PRESENTATION = 'PRESENTATION',
-  WORK = 'WORK',
+  GROUP = 'GROUP',
+  LESSON = 'LESSON',
 }
 
 registerEnumType(CurriculumNodeType, {
   name: 'CurriculumNodeType',
   description:
-    'Hierarchy level of a curriculum node: AREA > TOPIC > PRESENTATION > WORK',
+    'Hierarchy level of a curriculum node: AREA > TOPIC > GROUP > LESSON',
 });

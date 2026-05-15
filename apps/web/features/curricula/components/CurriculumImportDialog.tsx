@@ -44,12 +44,10 @@ export function CurriculumImportDialog() {
   const [isCommitting, setIsCommitting] = useState(false);
   const [plan, setPlan] = useState<ImportPlan | null>(null);
   const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
 
   const reset = () => {
     setPlan(null);
     setName("");
-    setSlug("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -86,7 +84,6 @@ export function CurriculumImportDialog() {
       setPlan(data);
       const defaultName = file.name.replace(/\.[^.]+$/, "");
       setName(defaultName);
-      setSlug(slugify(defaultName));
     } catch (err) {
       toast.error(t("importPreviewError"), {
         description: err instanceof Error ? err.message : String(err),
@@ -97,10 +94,12 @@ export function CurriculumImportDialog() {
   };
 
   const handleCommit = async () => {
-    if (!plan || !name.trim() || !slug.trim()) return;
+    if (!plan || !name.trim()) return;
+    const finalSlug = slugify(name.trim());
+    if (!finalSlug) return;
     setIsCommitting(true);
     const result = await handleAction({
-      action: () => importCurriculumFromPlanAction(plan, slug.trim(), name.trim()),
+      action: () => importCurriculumFromPlanAction(plan, finalSlug, name.trim()),
       successMessage: t("importCommitted"),
       errorMessage: t("importCommitError"),
       onSuccess: (data) => {
@@ -144,7 +143,7 @@ export function CurriculumImportDialog() {
                 {t("importExpectedColumns")}
               </div>
               <code className="text-xs bg-background p-2 rounded block overflow-x-auto">
-                Level · Sequence · Area · Topic · Presentation · Work/Lesson
+                Level · Area · Topic · Group · Lesson
               </code>
               <p className="text-xs text-muted-foreground">
                 {t("importFormatHint")}
@@ -171,10 +170,10 @@ export function CurriculumImportDialog() {
               <Stat label={t("areaCount")} value={plan.stats.areaCount} />
               <Stat label={t("topicCount")} value={plan.stats.topicCount} />
               <Stat
-                label={t("presentationCount")}
-                value={plan.stats.presentationCount}
+                label={t("groupCount")}
+                value={plan.stats.groupCount}
               />
-              <Stat label={t("workCount")} value={plan.stats.workCount} />
+              <Stat label={t("lessonCount")} value={plan.stats.lessonCount} />
             </div>
 
             {plan.warnings.length > 0 && (
@@ -187,28 +186,13 @@ export function CurriculumImportDialog() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="curr-name">{t("curriculumName")}</Label>
-                <Input
-                  id="curr-name"
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    if (!slug || slug === slugify(name)) {
-                      setSlug(slugify(e.target.value));
-                    }
-                  }}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="curr-slug">{t("slug")}</Label>
-                <Input
-                  id="curr-slug"
-                  value={slug}
-                  onChange={(e) => setSlug(slugify(e.target.value))}
-                />
-              </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="curr-name">{t("curriculumName")}</Label>
+              <Input
+                id="curr-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </div>
 
             <div className="border rounded-lg max-h-80 overflow-y-auto p-2 text-sm">
@@ -247,7 +231,7 @@ export function CurriculumImportDialog() {
           )}
           <Button
             onClick={handleCommit}
-            disabled={!plan || !name.trim() || !slug.trim() || isCommitting}
+            disabled={!plan || !name.trim() || isCommitting}
           >
             {isCommitting ? (
               <>
