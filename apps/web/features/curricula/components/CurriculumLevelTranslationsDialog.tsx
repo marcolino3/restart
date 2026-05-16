@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
 import {
   Dialog,
@@ -13,8 +16,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Form } from "@/components/ui/form";
+import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -37,6 +40,14 @@ interface Props {
   ) => void;
 }
 
+const TranslationsSchema = z.object({
+  DE: z.string(),
+  FR: z.string(),
+  EN: z.string(),
+  IT: z.string(),
+});
+type TranslationsValues = z.infer<typeof TranslationsSchema>;
+
 export function CurriculumLevelTranslationsDialog({
   open,
   onOpenChange,
@@ -48,47 +59,30 @@ export function CurriculumLevelTranslationsDialog({
   const tCommon = useTranslations("Common");
   const router = useRouter();
 
-  const [drafts, setDrafts] = useState<Record<CurriculumLocale, string>>({
-    DE: "",
-    FR: "",
-    EN: "",
-    IT: "",
+  const form = useForm<TranslationsValues>({
+    resolver: zodResolver(TranslationsSchema),
+    defaultValues: { DE: "", FR: "", EN: "", IT: "" },
   });
-  const [savingLocale, setSavingLocale] = useState<CurriculumLocale | null>(
-    null,
-  );
 
   useEffect(() => {
-    const next: Record<CurriculumLocale, string> = {
-      DE: "",
-      FR: "",
-      EN: "",
-      IT: "",
-    };
-    for (const tr of level.translations) {
-      next[tr.locale] = tr.name;
-    }
-    setDrafts(next);
-  }, [level]);
+    const next: TranslationsValues = { DE: "", FR: "", EN: "", IT: "" };
+    for (const tr of level.translations) next[tr.locale] = tr.name;
+    form.reset(next);
+  }, [level, form]);
 
   const handleSave = async (locale: CurriculumLocale) => {
-    const name = drafts[locale].trim();
+    const name = form.getValues(locale).trim();
     if (!name) return;
-    setSavingLocale(locale);
-    try {
-      const res = await upsertCurriculumLevelTranslationAction(
-        { curriculumLevelId: level.id, locale, name },
-        curriculumId,
-      );
-      if (res.success) {
-        toast.success(t("translationSaved"));
-        onSaved?.(level.id, locale, { name });
-        router.refresh();
-      } else {
-        toast.error(t("translationSaveError"));
-      }
-    } finally {
-      setSavingLocale(null);
+    const res = await upsertCurriculumLevelTranslationAction(
+      { curriculumLevelId: level.id, locale, name },
+      curriculumId,
+    );
+    if (res.success) {
+      toast.success(t("translationSaved"));
+      onSaved?.(level.id, locale, { name });
+      router.refresh();
+    } else {
+      toast.error(t("translationSaveError"));
     }
   };
 
@@ -100,38 +94,41 @@ export function CurriculumLevelTranslationsDialog({
           <DialogDescription>{t("editTranslationsHint")}</DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="DE">
-          <TabsList className="grid grid-cols-4">
-            {CURRICULUM_LOCALES.map((loc) => (
-              <TabsTrigger key={loc} value={loc}>
-                {loc}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          {CURRICULUM_LOCALES.map((loc) => (
-            <TabsContent key={loc} value={loc} className="space-y-3 mt-3">
-              <div className="space-y-1.5">
-                <Label htmlFor={`level-name-${loc}`}>{t("name")}</Label>
-                <Input
-                  id={`level-name-${loc}`}
-                  value={drafts[loc]}
-                  onChange={(e) =>
-                    setDrafts((d) => ({ ...d, [loc]: e.target.value }))
-                  }
-                />
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  size="sm"
-                  onClick={() => handleSave(loc)}
-                  disabled={savingLocale === loc || !drafts[loc].trim()}
-                >
-                  {savingLocale === loc ? tCommon("saving") : tCommon("save")}
-                </Button>
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+        <Form {...form}>
+          <Tabs defaultValue="DE">
+            <TabsList className="grid grid-cols-4">
+              {CURRICULUM_LOCALES.map((loc) => (
+                <TabsTrigger key={loc} value={loc}>
+                  {loc}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            {CURRICULUM_LOCALES.map((loc) => {
+              const value = form.watch(loc);
+              return (
+                <TabsContent key={loc} value={loc} className="mt-3 space-y-3">
+                  <InputFormField
+                    name={loc}
+                    label="name"
+                    namespace="Curricula"
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      type="button"
+                      onClick={() => handleSave(loc)}
+                      disabled={form.formState.isSubmitting || !value?.trim()}
+                    >
+                      {form.formState.isSubmitting
+                        ? tCommon("saving")
+                        : tCommon("save")}
+                    </Button>
+                  </div>
+                </TabsContent>
+              );
+            })}
+          </Tabs>
+        </Form>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

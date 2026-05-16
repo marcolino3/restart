@@ -2,13 +2,13 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { format } from "date-fns";
-import { de } from "date-fns/locale";
-import { CalendarIcon, Plus, LogOut } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Plus, LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -17,20 +17,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { Form } from "@/components/ui/form";
+import { SelectFormFieldWithoutTranslations } from "@/components/form/form-fields/SelectFormFieldWithoutTranslations";
+import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
 import { EnrollmentItem } from "../actions/get-student-enrollments.action";
 import { createEnrollmentAction } from "../actions/create-enrollment.action";
 import { updateEnrollmentAction } from "../actions/update-enrollment.action";
@@ -43,45 +32,47 @@ interface Props {
   schoolClasses: SchoolClassListItem[];
 }
 
+const EnrollmentFormSchema = z.object({
+  schoolClassId: z.string().min(1),
+  enrolledAt: z.date(),
+});
+type EnrollmentFormValues = z.infer<typeof EnrollmentFormSchema>;
+
 export function StudentEnrollmentsList({
   studentId,
   enrollments: initialEnrollments,
   schoolClasses,
 }: Props) {
   const tS = useTranslations("Students");
-  const tCommon = useTranslations("Common");
   const [enrollments, setEnrollments] =
     React.useState<EnrollmentItem[]>(initialEnrollments);
   const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [selectedClassId, setSelectedClassId] = React.useState("");
-  const [enrolledAt, setEnrolledAt] = React.useState<Date | undefined>(
-    new Date()
-  );
-  const [isCreating, setIsCreating] = React.useState(false);
+
+  const form = useForm<EnrollmentFormValues>({
+    resolver: zodResolver(EnrollmentFormSchema),
+    defaultValues: {
+      schoolClassId: "",
+      enrolledAt: new Date(),
+    },
+  });
 
   const activeEnrollments = enrollments.filter((e) => !e.leftAt);
   const pastEnrollments = enrollments.filter((e) => e.leftAt);
 
-  const handleAssign = async () => {
-    if (!selectedClassId || !enrolledAt) return;
-    setIsCreating(true);
-
-    const enrolledAtStr = enrolledAt.toISOString().split("T")[0];
+  const handleAssign = async (values: EnrollmentFormValues) => {
+    const enrolledAtStr = values.enrolledAt.toISOString().split("T")[0];
 
     await handleAction({
       action: () =>
-        createEnrollmentAction(studentId, selectedClassId, enrolledAtStr),
+        createEnrollmentAction(studentId, values.schoolClassId, enrolledAtStr),
       successMessage: tS("enrollmentCreated"),
       errorMessage: tS("enrollmentCreateError"),
       onSuccess: () => {
         setDialogOpen(false);
-        setSelectedClassId("");
-        // Reload page to get fresh data
+        form.reset({ schoolClassId: "", enrolledAt: new Date() });
         window.location.reload();
       },
     });
-
-    setIsCreating(false);
   };
 
   const handleMarkAsLeft = async (enrollmentId: string) => {
@@ -94,8 +85,8 @@ export function StudentEnrollmentsList({
       onSuccess: () => {
         setEnrollments((prev) =>
           prev.map((e) =>
-            e.id === enrollmentId ? { ...e, leftAt: today } : e
-          )
+            e.id === enrollmentId ? { ...e, leftAt: today } : e,
+          ),
         );
       },
     });
@@ -103,6 +94,11 @@ export function StudentEnrollmentsList({
 
   const formatDate = (date: string) =>
     new Date(date).toLocaleDateString("de-CH");
+
+  const schoolClassOptions = schoolClasses.map((sc) => ({
+    label: sc.name,
+    value: sc.id,
+  }));
 
   return (
     <Card>
@@ -120,63 +116,32 @@ export function StudentEnrollmentsList({
               <DialogHeader>
                 <DialogTitle>{tS("assignClass")}</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>{tS("selectClass")}</Label>
-                  <Select
-                    value={selectedClassId}
-                    onValueChange={setSelectedClassId}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={tS("selectClass")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {schoolClasses.map((sc) => (
-                        <SelectItem key={sc.id} value={sc.id}>
-                          {sc.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>{tS("enrolledAt")}</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !enrolledAt && "text-muted-foreground"
-                        )}
-                      >
-                        {enrolledAt ? (
-                          format(enrolledAt, "PPP", { locale: de })
-                        ) : (
-                          <span>{tCommon("pickADate")}</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={enrolledAt}
-                        onSelect={setEnrolledAt}
-                        captionLayout="dropdown"
-                        locale={de}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <Button
-                  onClick={handleAssign}
-                  disabled={isCreating || !selectedClassId || !enrolledAt}
-                  className="w-full"
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(handleAssign)}
+                  className="space-y-4"
                 >
-                  {tS("assignClass")}
-                </Button>
-              </div>
+                  <SelectFormFieldWithoutTranslations
+                    name="schoolClassId"
+                    label={tS("selectClass")}
+                    placeholder={tS("selectClass")}
+                    options={schoolClassOptions}
+                  />
+                  <DatePickerFormField
+                    name="enrolledAt"
+                    label="enrolledAt"
+                    namespace="Students"
+                    disabledDate={() => false}
+                  />
+                  <Button
+                    type="submit"
+                    disabled={form.formState.isSubmitting}
+                    className="w-full"
+                  >
+                    {tS("assignClass")}
+                  </Button>
+                </form>
+              </Form>
             </DialogContent>
           </Dialog>
         </div>

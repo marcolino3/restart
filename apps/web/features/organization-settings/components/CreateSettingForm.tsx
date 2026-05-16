@@ -1,20 +1,15 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Form } from "@/components/ui/form";
+import { InputFormField } from "@/components/form/form-fields/InputFormField";
+import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { settingFormSchema, SettingFormValues } from "../schemas/setting-form.schema";
+import {
+  settingFormSchema,
+  SettingFormValues,
+} from "../schemas/setting-form.schema";
 import { createOrganizationSettingAction } from "../actions/create-setting.action";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -59,63 +54,24 @@ export const CreateSettingForm = ({ organizationId, onSuccess }: Props) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
+        <InputFormField
           name="key"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Key</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  placeholder="GOOGLE_API_KEY"
-                  className="font-mono"
-                  onChange={(e) =>
-                    field.onChange(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ""))
-                  }
-                />
-              </FormControl>
-              <FormDescription>
-                Nur Grossbuchstaben, Zahlen und Unterstriche
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="createKeyLabel"
+          namespace="OrganizationSettings"
+          placeholder="GOOGLE_API_KEY"
         />
-
-        <FormField
-          control={form.control}
+        <InputFormField
           name="value"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Wert</FormLabel>
-              <FormControl>
-                <Input {...field} type="password" placeholder="••••••••" />
-              </FormControl>
-              <FormDescription>
-                Der Wert wird verschlüsselt gespeichert
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="createValueLabel"
+          namespace="OrganizationSettings"
+          type="password"
+          placeholder="••••••••"
         />
-
-        <FormField
-          control={form.control}
+        <TextareaFormField
           name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Beschreibung (optional)</FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  placeholder="Wofür wird dieser Key verwendet?"
-                  rows={3}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="descriptionLabel"
+          namespace="OrganizationSettings"
+          placeholder="Wofür wird dieser Key verwendet?"
         />
 
         <Button type="submit" disabled={form.formState.isSubmitting}>

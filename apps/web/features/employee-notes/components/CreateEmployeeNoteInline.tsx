@@ -1,20 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { toast } from "sonner";
-import { Tag } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Form } from "@/components/ui/form";
+import { InputFormField } from "@/components/form/form-fields/InputFormField";
+import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
+import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { createEmployeeNoteAction } from "../actions/create-employee-note.action";
 
 const CATEGORIES = [
@@ -27,6 +24,13 @@ const CATEGORIES = [
   "OTHER",
 ] as const;
 
+const NoteSchema = z.object({
+  title: z.string().min(1),
+  content: z.string().min(1),
+  category: z.string().min(1),
+});
+type NoteValues = z.infer<typeof NoteSchema>;
+
 interface CreateEmployeeNoteInlineProps {
   employeeId: string;
 }
@@ -35,98 +39,65 @@ export default function CreateEmployeeNoteInline({
   employeeId,
 }: CreateEmployeeNoteInlineProps) {
   const t = useTranslations("EmployeeNotes");
-  const tC = useTranslations("Common");
   const router = useRouter();
 
-  const [content, setContent] = useState("");
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState<string>("GENERAL");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const form = useForm<NoteValues>({
+    resolver: zodResolver(NoteSchema),
+    defaultValues: { title: "", content: "", category: "GENERAL" },
+  });
 
-  const handleSubmit = async () => {
-    if (!content.trim() || !title.trim()) return;
+  const categoryOptions = CATEGORIES.map((c) => ({
+    label: `category.${c}`,
+    value: c,
+  }));
 
-    setIsSubmitting(true);
+  const onSubmit = async (values: NoteValues) => {
     const result = await createEmployeeNoteAction({
       employeeId,
-      category,
-      title: title.trim(),
-      content: content.trim(),
+      category: values.category,
+      title: values.title.trim(),
+      content: values.content.trim(),
       date: new Date().toISOString().split("T")[0],
     });
 
     if (result.success) {
       toast.success(t("noteCreated"));
-      setContent("");
-      setTitle("");
-      setCategory("GENERAL");
+      form.reset({ title: "", content: "", category: "GENERAL" });
       router.refresh();
     } else {
       toast.error(t("noteCreateError"));
     }
-    setIsSubmitting(false);
   };
 
   return (
-    <div className="min-w-0 flex-1">
-      <div className="relative">
-        <div className="rounded-lg border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-          {/* Title input */}
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder={t("titlePlaceholder")}
-            className="block w-full border-b border-input bg-transparent px-3 py-2 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none"
-          />
-
-          {/* Content textarea */}
-          <textarea
-            rows={3}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder={t("contentPlaceholder")}
-            className="block w-full resize-none bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-          />
-
-          {/* Spacer for toolbar */}
-          <div aria-hidden="true" className="py-2">
-            <div className="py-px">
-              <div className="h-9" />
-            </div>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+        <InputFormField
+          name="title"
+          label="noteTitle"
+          namespace="EmployeeNotes"
+          placeholder={t("titlePlaceholder")}
+        />
+        <TextareaFormField
+          name="content"
+          label="noteContent"
+          namespace="EmployeeNotes"
+          placeholder={t("contentPlaceholder")}
+        />
+        <div className="flex items-end gap-3">
+          <div className="flex-1">
+            <SelectFormField
+              name="category"
+              label="categoryLabel"
+              namespace="EmployeeNotes"
+              options={categoryOptions}
+            />
           </div>
+          <Button type="submit" disabled={form.formState.isSubmitting}>
+            {t("post")}
+          </Button>
         </div>
-
-        {/* Toolbar */}
-        <div className="absolute inset-x-0 bottom-0 flex justify-between py-2 pr-2 pl-3">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Tag className="h-4 w-4" />
-            </div>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="h-8 w-[160px] text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORIES.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {tC(cat)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="shrink-0">
-            <Button
-              size="sm"
-              disabled={!content.trim() || !title.trim() || isSubmitting}
-              onClick={handleSubmit}
-            >
-              {t("post")}
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
+      </form>
+    </Form>
   );
 }

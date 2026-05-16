@@ -2,23 +2,21 @@
 
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Plus,
   ExternalLink,
   MoreHorizontal,
   Pencil,
   Trash2,
-  Check,
-  ChevronsUpDown,
 } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -27,26 +25,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
+import { Form } from "@/components/ui/form";
+import { InputFormField } from "@/components/form/form-fields/InputFormField";
+import { CheckboxFormField } from "@/components/form/form-fields/CheckboxFormField";
+import { ComboboxFormFieldWithoutTranslation } from "@/components/form/form-fields/ComboboxFormFieldWithoutTranslation";
 import { handleAction } from "@/lib/actions/handle-action";
 import { ROUTES } from "@/constants/routes";
 import { RELATIONSHIP_TYPES } from "@/features/contact-persons/schemas/contact-person-form.schema";
@@ -63,6 +51,35 @@ interface Props {
   allContactPersons: ContactPersonListItem[];
 }
 
+const RelationshipFieldsSchema = z.object({
+  relationshipType: z.string().min(1),
+  isPrimaryContact: z.boolean(),
+  hasCustody: z.boolean(),
+  isPickupAuthorized: z.boolean(),
+  livesWithStudent: z.boolean(),
+  emergencyPriority: z.string(),
+});
+
+const AssignSchema = RelationshipFieldsSchema.extend({
+  contactPersonId: z.string().min(1),
+});
+type AssignValues = z.infer<typeof AssignSchema>;
+
+const EditSchema = RelationshipFieldsSchema.extend({
+  notes: z.string(),
+});
+type EditValues = z.infer<typeof EditSchema>;
+
+const ASSIGN_DEFAULTS: AssignValues = {
+  contactPersonId: "",
+  relationshipType: "",
+  isPrimaryContact: false,
+  hasCustody: false,
+  isPickupAuthorized: true,
+  livesWithStudent: false,
+  emergencyPriority: "",
+};
+
 export function StudentContactPersonsList({
   studentId,
   links: initialLinks,
@@ -76,37 +93,29 @@ export function StudentContactPersonsList({
   const [links, setLinks] =
     React.useState<StudentContactPersonItem[]>(initialLinks);
 
-  // --- Assign dialog state ---
   const [assignDialogOpen, setAssignDialogOpen] = React.useState(false);
-  const [isLinking, setIsLinking] = React.useState(false);
-  const [selectedContactPersonId, setSelectedContactPersonId] =
-    React.useState("");
-  const [selectedRelationshipType, setSelectedRelationshipType] =
-    React.useState("");
-  const [isPrimaryContact, setIsPrimaryContact] = React.useState(false);
-  const [hasCustody, setHasCustody] = React.useState(false);
-  const [isPickupAuthorized, setIsPickupAuthorized] = React.useState(true);
-  const [livesWithStudent, setLivesWithStudent] = React.useState(false);
-  const [emergencyPriority, setEmergencyPriority] = React.useState("");
-  const [comboboxOpen, setComboboxOpen] = React.useState(false);
-
-  // --- Edit dialog state ---
   const [editDialogOpen, setEditDialogOpen] = React.useState(false);
   const [editingLink, setEditingLink] =
     React.useState<StudentContactPersonItem | null>(null);
-  const [editRelationshipType, setEditRelationshipType] = React.useState("");
-  const [editIsPrimaryContact, setEditIsPrimaryContact] = React.useState(false);
-  const [editHasCustody, setEditHasCustody] = React.useState(false);
-  const [editIsPickupAuthorized, setEditIsPickupAuthorized] =
-    React.useState(true);
-  const [editLivesWithStudent, setEditLivesWithStudent] = React.useState(false);
-  const [editEmergencyPriority, setEditEmergencyPriority] = React.useState("");
-  const [editNotes, setEditNotes] = React.useState("");
-  const [isUpdating, setIsUpdating] = React.useState(false);
-  const [assignRelTypeOpen, setAssignRelTypeOpen] = React.useState(false);
-  const [editRelTypeOpen, setEditRelTypeOpen] = React.useState(false);
 
-  // Filter out already-linked contact persons
+  const assignForm = useForm<AssignValues>({
+    resolver: zodResolver(AssignSchema),
+    defaultValues: ASSIGN_DEFAULTS,
+  });
+
+  const editForm = useForm<EditValues>({
+    resolver: zodResolver(EditSchema),
+    defaultValues: {
+      relationshipType: "",
+      isPrimaryContact: false,
+      hasCustody: false,
+      isPickupAuthorized: true,
+      livesWithStudent: false,
+      emergencyPriority: "",
+      notes: "",
+    },
+  });
+
   const linkedContactPersonIds = new Set(
     links.map((l) => l.contactPerson.id),
   );
@@ -114,83 +123,75 @@ export function StudentContactPersonsList({
     (cp) => !cp.isArchived && !linkedContactPersonIds.has(cp.id),
   );
 
-  const selectedContactPerson = allContactPersons.find(
-    (cp) => cp.id === selectedContactPersonId,
-  );
+  const contactPersonOptions = availableContactPersons.map((cp) => ({
+    label: cp.email
+      ? `${cp.firstName} ${cp.lastName} (${cp.email})`
+      : `${cp.firstName} ${cp.lastName}`,
+    value: cp.id,
+  }));
 
-  const resetAssignForm = () => {
-    setSelectedContactPersonId("");
-    setSelectedRelationshipType("");
-    setIsPrimaryContact(false);
-    setHasCustody(false);
-    setIsPickupAuthorized(true);
-    setLivesWithStudent(false);
-    setEmergencyPriority("");
-    setComboboxOpen(false);
-  };
+  const relationshipOptions = RELATIONSHIP_TYPES.map((r) => ({
+    label: tC(r),
+    value: r,
+  })).sort((a, b) => a.label.localeCompare(b.label));
 
   const openEditDialog = (link: StudentContactPersonItem) => {
     setEditingLink(link);
-    setEditRelationshipType(link.relationshipType);
-    setEditIsPrimaryContact(link.isPrimaryContact);
-    setEditHasCustody(link.hasCustody);
-    setEditIsPickupAuthorized(link.isPickupAuthorized);
-    setEditLivesWithStudent(link.livesWithStudent);
-    setEditEmergencyPriority(
-      link.emergencyPriority ? String(link.emergencyPriority) : "",
-    );
-    setEditNotes(link.notes ?? "");
+    editForm.reset({
+      relationshipType: link.relationshipType,
+      isPrimaryContact: link.isPrimaryContact,
+      hasCustody: link.hasCustody,
+      isPickupAuthorized: link.isPickupAuthorized,
+      livesWithStudent: link.livesWithStudent,
+      emergencyPriority: link.emergencyPriority
+        ? String(link.emergencyPriority)
+        : "",
+      notes: link.notes ?? "",
+    });
     setEditDialogOpen(true);
   };
 
-  const handleLink = async () => {
-    if (!selectedContactPersonId || !selectedRelationshipType) return;
-    setIsLinking(true);
-
+  const handleLink = async (values: AssignValues) => {
     await handleAction({
       action: () =>
         linkContactPersonToStudentAction({
           studentId,
-          contactPersonId: selectedContactPersonId,
-          relationshipType: selectedRelationshipType,
-          isPrimaryContact,
-          hasCustody,
-          isPickupAuthorized,
-          livesWithStudent,
-          emergencyPriority: emergencyPriority
-            ? parseInt(emergencyPriority)
+          contactPersonId: values.contactPersonId,
+          relationshipType: values.relationshipType,
+          isPrimaryContact: values.isPrimaryContact,
+          hasCustody: values.hasCustody,
+          isPickupAuthorized: values.isPickupAuthorized,
+          livesWithStudent: values.livesWithStudent,
+          emergencyPriority: values.emergencyPriority
+            ? parseInt(values.emergencyPriority)
             : undefined,
         }),
       successMessage: tS("contactPersonLinked"),
       errorMessage: tS("contactPersonLinkError"),
       onSuccess: () => {
         setAssignDialogOpen(false);
-        resetAssignForm();
+        assignForm.reset(ASSIGN_DEFAULTS);
         window.location.reload();
       },
     });
-
-    setIsLinking(false);
   };
 
-  const handleUpdate = async () => {
-    if (!editingLink || !editRelationshipType) return;
-    setIsUpdating(true);
-
+  const handleUpdate = async (values: EditValues) => {
+    if (!editingLink) return;
     await handleAction({
       action: () =>
         updateStudentContactPersonLinkAction(
           {
             id: editingLink.id,
-            relationshipType: editRelationshipType,
-            isPrimaryContact: editIsPrimaryContact,
-            hasCustody: editHasCustody,
-            isPickupAuthorized: editIsPickupAuthorized,
-            livesWithStudent: editLivesWithStudent,
-            emergencyPriority: editEmergencyPriority
-              ? parseInt(editEmergencyPriority)
+            relationshipType: values.relationshipType,
+            isPrimaryContact: values.isPrimaryContact,
+            hasCustody: values.hasCustody,
+            isPickupAuthorized: values.isPickupAuthorized,
+            livesWithStudent: values.livesWithStudent,
+            emergencyPriority: values.emergencyPriority
+              ? parseInt(values.emergencyPriority)
               : null,
-            notes: editNotes || null,
+            notes: values.notes || null,
           },
           studentId,
         ),
@@ -202,142 +203,6 @@ export function StudentContactPersonsList({
         window.location.reload();
       },
     });
-
-    setIsUpdating(false);
-  };
-
-  const relationshipOptions = RELATIONSHIP_TYPES.map((r) => ({
-    label: tC(r),
-    value: r,
-  })).sort((a, b) => a.label.localeCompare(b.label));
-
-  // Shared form fields for assign and edit dialogs
-  const renderRelationshipFields = (
-    mode: "assign" | "edit",
-  ) => {
-    const rt = mode === "assign" ? selectedRelationshipType : editRelationshipType;
-    const setRt = mode === "assign" ? setSelectedRelationshipType : setEditRelationshipType;
-    const pc = mode === "assign" ? isPrimaryContact : editIsPrimaryContact;
-    const setPc = mode === "assign" ? setIsPrimaryContact : setEditIsPrimaryContact;
-    const cust = mode === "assign" ? hasCustody : editHasCustody;
-    const setCust = mode === "assign" ? setHasCustody : setEditHasCustody;
-    const pickup = mode === "assign" ? isPickupAuthorized : editIsPickupAuthorized;
-    const setPickup = mode === "assign" ? setIsPickupAuthorized : setEditIsPickupAuthorized;
-    const lives = mode === "assign" ? livesWithStudent : editLivesWithStudent;
-    const setLives = mode === "assign" ? setLivesWithStudent : setEditLivesWithStudent;
-    const ep = mode === "assign" ? emergencyPriority : editEmergencyPriority;
-    const setEp = mode === "assign" ? setEmergencyPriority : setEditEmergencyPriority;
-    const relTypeOpen = mode === "assign" ? assignRelTypeOpen : editRelTypeOpen;
-    const setRelTypeOpen = mode === "assign" ? setAssignRelTypeOpen : setEditRelTypeOpen;
-    const selectedRelLabel = relationshipOptions.find((o) => o.value === rt)?.label;
-
-    return (
-      <>
-        {/* Relationship Type */}
-        <div className="space-y-2">
-          <Label>{tC("relationshipType")}</Label>
-          <Popover open={relTypeOpen} onOpenChange={setRelTypeOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={relTypeOpen}
-                className={cn(
-                  "w-full justify-between",
-                  !rt && "text-muted-foreground",
-                )}
-              >
-                {selectedRelLabel ?? tC("relationshipType")}
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-full p-0" align="start">
-              <Command>
-                <CommandInput placeholder={tS("searchContactPerson")} />
-                <CommandList>
-                  <CommandEmpty>{tC("noContactPersonsFound")}</CommandEmpty>
-                  <CommandGroup>
-                    {relationshipOptions.map((opt) => (
-                      <CommandItem
-                        key={opt.value}
-                        value={opt.label}
-                        onSelect={() => {
-                          setRt(opt.value);
-                          setRelTypeOpen(false);
-                        }}
-                      >
-                        {opt.label}
-                        <Check
-                          className={cn(
-                            "ml-auto h-4 w-4",
-                            rt === opt.value ? "opacity-100" : "opacity-0",
-                          )}
-                        />
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        {/* Checkboxes */}
-        <div className="grid grid-cols-2 gap-3">
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={pc}
-              onCheckedChange={(v) => setPc(v === true)}
-            />
-            {tS("primaryContact")}
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={cust}
-              onCheckedChange={(v) => setCust(v === true)}
-            />
-            {tS("custody")}
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={pickup}
-              onCheckedChange={(v) => setPickup(v === true)}
-            />
-            {tS("pickupAuthorized")}
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={lives}
-              onCheckedChange={(v) => setLives(v === true)}
-            />
-            {tS("livesWithStudent")}
-          </label>
-        </div>
-
-        {/* Emergency Priority */}
-        <div className="space-y-2">
-          <Label>{tS("emergencyPriority")}</Label>
-          <Input
-            type="number"
-            min={1}
-            placeholder="1"
-            value={ep}
-            onChange={(e) => setEp(e.target.value)}
-          />
-        </div>
-
-        {/* Notes (only in edit mode) */}
-        {mode === "edit" && (
-          <div className="space-y-2">
-            <Label>{tCommon("notes")}</Label>
-            <Input
-              value={editNotes}
-              onChange={(e) => setEditNotes(e.target.value)}
-            />
-          </div>
-        )}
-      </>
-    );
   };
 
   return (
@@ -349,7 +214,7 @@ export function StudentContactPersonsList({
             open={assignDialogOpen}
             onOpenChange={(open) => {
               setAssignDialogOpen(open);
-              if (!open) resetAssignForm();
+              if (!open) assignForm.reset(ASSIGN_DEFAULTS);
             }}
           >
             <DialogTrigger asChild>
@@ -362,102 +227,80 @@ export function StudentContactPersonsList({
               <DialogHeader>
                 <DialogTitle>{tS("assignContactPerson")}</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
-                {/* Contact Person Combobox */}
-                <div className="space-y-2">
-                  <Label>{tS("selectContactPerson")}</Label>
-                  <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={comboboxOpen}
-                        className={cn(
-                          "w-full justify-between",
-                          !selectedContactPersonId && "text-muted-foreground",
-                        )}
-                      >
-                        {selectedContactPerson
-                          ? `${selectedContactPerson.firstName} ${selectedContactPerson.lastName}`
-                          : tS("selectContactPerson")}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0" align="start">
-                      <Command>
-                        <CommandInput
-                          placeholder={tS("searchContactPerson")}
-                        />
-                        <CommandList>
-                          <CommandEmpty>
-                            {tC("noContactPersonsFound")}
-                          </CommandEmpty>
-                          <CommandGroup>
-                            {availableContactPersons.map((cp) => (
-                              <CommandItem
-                                key={cp.id}
-                                value={`${cp.firstName} ${cp.lastName} ${cp.email ?? ""}`}
-                                onSelect={() => {
-                                  setSelectedContactPersonId(cp.id);
-                                  setComboboxOpen(false);
-                                }}
-                              >
-                                {cp.firstName} {cp.lastName}
-                                {cp.email && (
-                                  <span className="ml-1 text-muted-foreground">
-                                    ({cp.email})
-                                  </span>
-                                )}
-                                <Check
-                                  className={cn(
-                                    "ml-auto h-4 w-4",
-                                    selectedContactPersonId === cp.id
-                                      ? "opacity-100"
-                                      : "opacity-0",
-                                  )}
-                                />
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {renderRelationshipFields("assign")}
-
-                {/* Submit */}
-                <Button
-                  onClick={handleLink}
-                  disabled={
-                    isLinking ||
-                    !selectedContactPersonId ||
-                    !selectedRelationshipType
-                  }
-                  className="w-full"
+              <Form {...assignForm}>
+                <form
+                  onSubmit={assignForm.handleSubmit(handleLink)}
+                  className="space-y-4"
                 >
-                  {tS("assignContactPerson")}
-                </Button>
-
-                {/* Link to create new contact person */}
-                <div className="text-center">
-                  <Link
-                    href={ROUTES.admin.contactPersonsCreate(locale)}
-                    className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+                  <ComboboxFormFieldWithoutTranslation
+                    name="contactPersonId"
+                    label="selectContactPerson"
+                    namespace="Students"
+                    options={contactPersonOptions}
+                    width="w-full"
+                  />
+                  <ComboboxFormFieldWithoutTranslation
+                    name="relationshipType"
+                    label="relationshipType"
+                    namespace="ContactPersons"
+                    options={relationshipOptions}
+                    width="w-full"
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <CheckboxFormField
+                      name="isPrimaryContact"
+                      label="primaryContact"
+                      namespace="Students"
+                    />
+                    <CheckboxFormField
+                      name="hasCustody"
+                      label="custody"
+                      namespace="Students"
+                    />
+                    <CheckboxFormField
+                      name="isPickupAuthorized"
+                      label="pickupAuthorized"
+                      namespace="Students"
+                    />
+                    <CheckboxFormField
+                      name="livesWithStudent"
+                      label="livesWithStudent"
+                      namespace="Students"
+                    />
+                  </div>
+                  <InputFormField
+                    name="emergencyPriority"
+                    label="emergencyPriority"
+                    namespace="Students"
+                    type="number"
+                    placeholder="1"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={assignForm.formState.isSubmitting}
+                    className="w-full"
                   >
-                    <ExternalLink className="h-3 w-3" />
-                    {tS("createNewContactPerson")}
-                  </Link>
-                </div>
-              </div>
+                    {tS("assignContactPerson")}
+                  </Button>
+
+                  <div className="text-center">
+                    <Link
+                      href={ROUTES.admin.contactPersonsCreate(locale)}
+                      className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      {tS("createNewContactPerson")}
+                    </Link>
+                  </div>
+                </form>
+              </Form>
             </DialogContent>
           </Dialog>
         </div>
       </CardHeader>
       <CardContent>
         {links.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {tS("noContactPersons")}
           </p>
         ) : (
@@ -498,7 +341,7 @@ export function StudentContactPersonsList({
                   {(link.contactPerson.email ||
                     link.contactPerson.phone ||
                     link.contactPerson.mobile) && (
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-muted-foreground text-sm">
                       {[
                         link.contactPerson.email,
                         link.contactPerson.phone,
@@ -510,7 +353,6 @@ export function StudentContactPersonsList({
                   )}
                 </div>
 
-                {/* Three-dots dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0">
@@ -523,7 +365,7 @@ export function StudentContactPersonsList({
                       className="cursor-pointer"
                       onClick={() => openEditDialog(link)}
                     >
-                      <Pencil className="h-4 w-4 mr-2" />
+                      <Pencil className="mr-2 h-4 w-4" />
                       {tCommon("edit")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -546,7 +388,7 @@ export function StudentContactPersonsList({
                           className="text-destructive focus:text-destructive cursor-pointer"
                           onSelect={(e) => e.preventDefault()}
                         >
-                          <Trash2 className="h-4 w-4 mr-2" />
+                          <Trash2 className="mr-2 h-4 w-4" />
                           {tCommon("delete")}
                         </DropdownMenuItem>
                       }
@@ -559,14 +401,13 @@ export function StudentContactPersonsList({
         )}
       </CardContent>
 
-      {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
               {tS("editContactPersonLink")}
               {editingLink && (
-                <span className="font-normal text-muted-foreground">
+                <span className="text-muted-foreground font-normal">
                   {" "}
                   &ndash; {editingLink.contactPerson.firstName}{" "}
                   {editingLink.contactPerson.lastName}
@@ -574,17 +415,61 @@ export function StudentContactPersonsList({
               )}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            {renderRelationshipFields("edit")}
-
-            <Button
-              onClick={handleUpdate}
-              disabled={isUpdating || !editRelationshipType}
-              className="w-full"
+          <Form {...editForm}>
+            <form
+              onSubmit={editForm.handleSubmit(handleUpdate)}
+              className="space-y-4"
             >
-              {tCommon("save")}
-            </Button>
-          </div>
+              <ComboboxFormFieldWithoutTranslation
+                name="relationshipType"
+                label="relationshipType"
+                namespace="ContactPersons"
+                options={relationshipOptions}
+                width="w-full"
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <CheckboxFormField
+                  name="isPrimaryContact"
+                  label="primaryContact"
+                  namespace="Students"
+                />
+                <CheckboxFormField
+                  name="hasCustody"
+                  label="custody"
+                  namespace="Students"
+                />
+                <CheckboxFormField
+                  name="isPickupAuthorized"
+                  label="pickupAuthorized"
+                  namespace="Students"
+                />
+                <CheckboxFormField
+                  name="livesWithStudent"
+                  label="livesWithStudent"
+                  namespace="Students"
+                />
+              </div>
+              <InputFormField
+                name="emergencyPriority"
+                label="emergencyPriority"
+                namespace="Students"
+                type="number"
+                placeholder="1"
+              />
+              <InputFormField
+                name="notes"
+                label="notes"
+                namespace="Common"
+              />
+              <Button
+                type="submit"
+                disabled={editForm.formState.isSubmitting}
+                className="w-full"
+              >
+                {tCommon("save")}
+              </Button>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </Card>

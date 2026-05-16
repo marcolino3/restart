@@ -3,11 +3,15 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { CheckCircle, FileText, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Form } from "@/components/ui/form";
+import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +24,8 @@ import {
 import { ROUTES } from "@/constants/routes";
 import { importCurriculumFromPlanAction } from "../actions/import-curriculum-from-plan.action";
 import { pickTranslation, type CurriculumLocale, type ImportPlan } from "../types";
+
+const NameSchema = z.object({ name: z.string() });
 
 function slugify(value: string): string {
   return value
@@ -42,11 +48,16 @@ export function CurriculumImportDialog() {
   const [isUploading, setIsUploading] = useState(false);
   const [isCommitting, setIsCommitting] = useState(false);
   const [plan, setPlan] = useState<ImportPlan | null>(null);
-  const [name, setName] = useState("");
+
+  const nameForm = useForm<z.infer<typeof NameSchema>>({
+    resolver: zodResolver(NameSchema),
+    defaultValues: { name: "" },
+  });
+  const name = nameForm.watch("name");
 
   const reset = () => {
     setPlan(null);
-    setName("");
+    nameForm.reset({ name: "" });
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -82,7 +93,7 @@ export function CurriculumImportDialog() {
       const data = (await res.json()) as ImportPlan;
       setPlan(data);
       const defaultName = file.name.replace(/\.[^.]+$/, "");
-      setName(defaultName);
+      nameForm.reset({ name: defaultName });
     } catch (err) {
       toast.error(t("importPreviewError"), {
         description: err instanceof Error ? err.message : String(err),
@@ -205,14 +216,13 @@ export function CurriculumImportDialog() {
               </div>
             )}
 
-            <div className="space-y-1.5">
-              <Label htmlFor="curr-name">{t("curriculumName")}</Label>
-              <Input
-                id="curr-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+            <Form {...nameForm}>
+              <InputFormField
+                name="name"
+                label="curriculumName"
+                namespace="Curricula"
               />
-            </div>
+            </Form>
 
             <div className="border rounded-lg max-h-80 overflow-y-auto p-2 text-sm">
               {plan.levels.map((lvl) => (

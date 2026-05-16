@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
 import {
   Dialog,
   DialogContent,
@@ -12,9 +16,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Form } from "@/components/ui/form";
+import { InputFormField } from "@/components/form/form-fields/InputFormField";
+import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
 import { Button } from "@/components/ui/button";
 import { handleAction } from "@/lib/actions/handle-action";
 import { upsertCurriculumNodeTranslationAction } from "../actions/upsert-node-translation.action";
@@ -35,7 +39,24 @@ interface Props {
   ) => void;
 }
 
-type LocaleDraft = { name: string; notes: string };
+const LocaleDraftSchema = z.object({
+  name: z.string(),
+  notes: z.string(),
+});
+const TranslationsSchema = z.object({
+  DE: LocaleDraftSchema,
+  FR: LocaleDraftSchema,
+  EN: LocaleDraftSchema,
+  IT: LocaleDraftSchema,
+});
+type TranslationsValues = z.infer<typeof TranslationsSchema>;
+
+const EMPTY: TranslationsValues = {
+  DE: { name: "", notes: "" },
+  FR: { name: "", notes: "" },
+  EN: { name: "", notes: "" },
+  IT: { name: "", notes: "" },
+};
 
 export function CurriculumNodeTranslationsDialog({
   open,
@@ -46,33 +67,23 @@ export function CurriculumNodeTranslationsDialog({
   const t = useTranslations("Curricula");
   const tCommon = useTranslations("Common");
   const router = useRouter();
-  const [drafts, setDrafts] = useState<Record<CurriculumLocale, LocaleDraft>>({
-    DE: { name: "", notes: "" },
-    FR: { name: "", notes: "" },
-    EN: { name: "", notes: "" },
-    IT: { name: "", notes: "" },
+
+  const form = useForm<TranslationsValues>({
+    resolver: zodResolver(TranslationsSchema),
+    defaultValues: EMPTY,
   });
-  const [savingLocale, setSavingLocale] = useState<CurriculumLocale | null>(
-    null,
-  );
 
   useEffect(() => {
-    const next: Record<CurriculumLocale, LocaleDraft> = {
-      DE: { name: "", notes: "" },
-      FR: { name: "", notes: "" },
-      EN: { name: "", notes: "" },
-      IT: { name: "", notes: "" },
-    };
+    const next: TranslationsValues = JSON.parse(JSON.stringify(EMPTY));
     for (const tr of node.translations) {
       next[tr.locale] = { name: tr.name, notes: tr.notes ?? "" };
     }
-    setDrafts(next);
-  }, [node]);
+    form.reset(next);
+  }, [node, form]);
 
   const handleSave = async (locale: CurriculumLocale) => {
-    const draft = drafts[locale];
+    const draft = form.getValues(locale);
     if (!draft.name.trim()) return;
-    setSavingLocale(locale);
     await handleAction({
       action: () =>
         upsertCurriculumNodeTranslationAction({
@@ -91,7 +102,6 @@ export function CurriculumNodeTranslationsDialog({
         router.refresh();
       },
     });
-    setSavingLocale(null);
   };
 
   return (
@@ -102,57 +112,48 @@ export function CurriculumNodeTranslationsDialog({
           <DialogDescription>{t("editTranslationsHint")}</DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="DE">
-          <TabsList className="grid grid-cols-4">
-            {CURRICULUM_LOCALES.map((loc) => (
-              <TabsTrigger key={loc} value={loc}>
-                {loc}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          {CURRICULUM_LOCALES.map((loc) => (
-            <TabsContent key={loc} value={loc} className="space-y-3 mt-3">
-              <div className="space-y-1.5">
-                <Label htmlFor={`name-${loc}`}>{t("name")}</Label>
-                <Input
-                  id={`name-${loc}`}
-                  value={drafts[loc].name}
-                  onChange={(e) =>
-                    setDrafts((d) => ({
-                      ...d,
-                      [loc]: { ...d[loc], name: e.target.value },
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor={`notes-${loc}`}>{t("notes")}</Label>
-                <Textarea
-                  id={`notes-${loc}`}
-                  rows={3}
-                  value={drafts[loc].notes}
-                  onChange={(e) =>
-                    setDrafts((d) => ({
-                      ...d,
-                      [loc]: { ...d[loc], notes: e.target.value },
-                    }))
-                  }
-                />
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  size="sm"
-                  onClick={() => handleSave(loc)}
-                  disabled={
-                    savingLocale === loc || !drafts[loc].name.trim()
-                  }
-                >
-                  {savingLocale === loc ? tCommon("saving") : tCommon("save")}
-                </Button>
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+        <Form {...form}>
+          <Tabs defaultValue="DE">
+            <TabsList className="grid grid-cols-4">
+              {CURRICULUM_LOCALES.map((loc) => (
+                <TabsTrigger key={loc} value={loc}>
+                  {loc}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            {CURRICULUM_LOCALES.map((loc) => {
+              const draft = form.watch(loc);
+              return (
+                <TabsContent key={loc} value={loc} className="mt-3 space-y-3">
+                  <InputFormField
+                    name={`${loc}.name`}
+                    label="name"
+                    namespace="Curricula"
+                  />
+                  <TextareaFormField
+                    name={`${loc}.notes`}
+                    label="notes"
+                    namespace="Curricula"
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      type="button"
+                      onClick={() => handleSave(loc)}
+                      disabled={
+                        form.formState.isSubmitting || !draft?.name?.trim()
+                      }
+                    >
+                      {form.formState.isSubmitting
+                        ? tCommon("saving")
+                        : tCommon("save")}
+                    </Button>
+                  </div>
+                </TabsContent>
+              );
+            })}
+          </Tabs>
+        </Form>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
