@@ -35,6 +35,22 @@ export class CurriculumLevelsService {
     });
   }
 
+  async findAllByCurriculum(
+    curriculumId: string,
+    organizationId: string,
+    includeArchived = false,
+  ): Promise<CurriculumLevel[]> {
+    return this.levelsRepo.find({
+      where: {
+        curriculumId,
+        organizationId,
+        ...(includeArchived ? {} : { isArchived: false }),
+      },
+      relations: ['translations'],
+      order: { position: 'ASC', createdAt: 'ASC' },
+    });
+  }
+
   async findOne(id: string, organizationId: string): Promise<CurriculumLevel> {
     const level = await this.levelsRepo.findOne({
       where: { id, organizationId },
@@ -55,11 +71,11 @@ export class CurriculumLevelsService {
 
     return this.dataSource.transaction(async (m) => {
       const clash = await m.getRepository(CurriculumLevel).exists({
-        where: { organizationId, slug },
+        where: { curriculumId: input.curriculumId, slug },
       });
       if (clash) {
         throw new ConflictException(
-          `Curriculum level with slug "${slug}" already exists`,
+          `Curriculum level with slug "${slug}" already exists in this curriculum`,
         );
       }
 
@@ -69,7 +85,9 @@ export class CurriculumLevelsService {
           .getRepository(CurriculumLevel)
           .createQueryBuilder('l')
           .select('MAX(l.position)', 'max')
-          .where('l.organization_id = :orgId', { orgId: organizationId })
+          .where('l.curriculum_id = :curriculumId', {
+            curriculumId: input.curriculumId,
+          })
           .getRawOne<{ max: number | null }>();
         position = (max?.max ?? -1) + 1;
       }
@@ -77,6 +95,7 @@ export class CurriculumLevelsService {
       const level = m.getRepository(CurriculumLevel).create({
         slug,
         position,
+        curriculumId: input.curriculumId,
         organizationId,
       });
       const saved = await m.getRepository(CurriculumLevel).save(level);

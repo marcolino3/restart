@@ -1,4 +1,4 @@
-import { Field, InputType, Int } from '@nestjs/graphql';
+import { Field, ID, InputType, Int } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
@@ -7,6 +7,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
   Matches,
   MaxLength,
   Min,
@@ -16,6 +17,10 @@ import { CurriculumLevelTranslationInput } from './curriculum-level-translation.
 
 @InputType()
 export class CreateCurriculumLevelInput {
+  @Field(() => ID)
+  @IsUUID()
+  curriculumId: string;
+
   @Field(() => String)
   @IsString()
   @IsNotEmpty()

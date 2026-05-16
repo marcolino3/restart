@@ -18,7 +18,7 @@ describe('OrganizationFormSchema', () => {
     const result = OrganizationFormSchema.safeParse({
       ...validInput,
       domain: 'acme.com',
-      street: 'Musterstraße 1',
+      street: 'Musterstrasse 1',
       zip: '10115',
       city: 'Berlin',
       country: 'DE',

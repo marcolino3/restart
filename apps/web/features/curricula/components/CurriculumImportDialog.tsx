@@ -17,7 +17,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { handleAction } from "@/lib/actions/handle-action";
 import { ROUTES } from "@/constants/routes";
 import { importCurriculumFromPlanAction } from "../actions/import-curriculum-from-plan.action";
 import { pickTranslation, type CurriculumLocale, type ImportPlan } from "../types";
@@ -98,19 +97,28 @@ export function CurriculumImportDialog() {
     const finalSlug = slugify(name.trim());
     if (!finalSlug) return;
     setIsCommitting(true);
-    const result = await handleAction({
-      action: () => importCurriculumFromPlanAction(plan, finalSlug, name.trim()),
-      successMessage: t("importCommitted"),
-      errorMessage: t("importCommitError"),
-      onSuccess: (data) => {
-        router.push(ROUTES.admin.curriculaEdit(locale, data.id));
-        router.refresh();
-        setOpen(false);
-        reset();
-      },
-    });
-    setIsCommitting(false);
-    return result;
+    try {
+      const result = await importCurriculumFromPlanAction(
+        plan,
+        finalSlug,
+        name.trim(),
+      );
+      if (!result.success) {
+        toast.error(t("importCommitError"), {
+          description: result.error ? String(result.error) : undefined,
+        });
+        return;
+      }
+      // Backend done + revalidatePath() fired in the action. Navigate first
+      // so the user lands on the fresh edit page, then show success toast.
+      router.push(ROUTES.admin.curriculaEdit(locale, result.data.id));
+      router.refresh();
+      toast.success(t("importCommitted"));
+      setOpen(false);
+      reset();
+    } finally {
+      setIsCommitting(false);
+    }
   };
 
   const localeUpper = locale.toUpperCase() as CurriculumLocale;
@@ -119,6 +127,7 @@ export function CurriculumImportDialog() {
     <Dialog
       open={open}
       onOpenChange={(o) => {
+        if (isCommitting || isUploading) return;
         setOpen(o);
         if (!o) reset();
       }}

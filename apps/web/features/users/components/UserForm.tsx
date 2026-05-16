@@ -8,6 +8,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Form } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
+import { SocialSecurityNumberFormField } from "@/components/form/form-fields/SocialSecurityNumberFormField";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
 import { FormActionButtons } from "@/components/form/form-fields/FormActionButtons";
 import { Badge } from "@/components/ui/badge";
@@ -25,9 +26,10 @@ import { UserEmailsManager } from "./UserEmailsManager";
 
 interface UserFormProps {
   user: UserDetail;
+  orgCountry?: string | null;
 }
 
-export default function UserForm({ user }: UserFormProps) {
+export default function UserForm({ user, orgCountry }: UserFormProps) {
   const t = useTranslations("Common");
   const locale = useLocale();
   const router = useRouter();
@@ -68,9 +70,10 @@ export default function UserForm({ user }: UserFormProps) {
             <InputFormField name="lastName" label="lastName" width="w-1/2" />
           </div>
           <DatePickerFormField name="dateOfBirth" label="dateOfBirth" />
-          <InputFormField
+          <SocialSecurityNumberFormField
             name="socialSecurityNumber"
             label="socialSecurityNumber"
+            country={orgCountry}
           />
         </section>
 

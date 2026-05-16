@@ -4,7 +4,9 @@ import { getCurriculumByIdAction } from "@/features/curricula/actions/get-curric
 import { getCurriculumLevelsAction } from "@/features/curricula/actions/get-curriculum-levels.action";
 import { getCurriculumNodesAction } from "@/features/curricula/actions/get-curriculum-nodes.action";
 import { CurriculumForm } from "@/features/curricula/components/CurriculumForm";
+import { CurriculumLevelTree } from "@/features/curricula/components/CurriculumLevelTree";
 import { CurriculumLevelsTable } from "@/features/curricula/components/CurriculumLevelsTable";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   pickTranslation,
   type CurriculumLocale,
@@ -22,7 +24,7 @@ const EditCurriculumPage = async ({ params }: PageProps) => {
 
   const [curriculumRes, levelsRes] = await Promise.all([
     getCurriculumByIdAction(curriculumId),
-    getCurriculumLevelsAction(),
+    getCurriculumLevelsAction(curriculumId),
   ]);
 
   if (!curriculumRes.success || !curriculumRes.data) notFound();
@@ -47,26 +49,35 @@ const EditCurriculumPage = async ({ params }: PageProps) => {
     curriculum.slug;
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">{headerName}</h1>
-      </div>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">{headerName}</h1>
 
-      <section>
-        <h2 className="text-lg font-semibold mb-3">
-          {t("curriculumDetails")}
-        </h2>
-        <CurriculumForm curriculum={curriculum} />
-      </section>
+      <Tabs defaultValue="structure" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="structure">{t("structure")}</TabsTrigger>
+          <TabsTrigger value="details">{t("curriculumDetails")}</TabsTrigger>
+        </TabsList>
 
-      <section>
-        <h2 className="text-lg font-semibold mb-3">{t("structure")}</h2>
-        <CurriculumLevelsTable
-          curriculumId={curriculumId}
-          levels={levels}
-          initialNodesByLevel={nodesByLevel}
-        />
-      </section>
+        <TabsContent value="structure">
+          {levels.length === 1 ? (
+            <CurriculumLevelTree
+              curriculumId={curriculumId}
+              levelId={levels[0].id}
+              initialNodes={nodesByLevel.get(levels[0].id) ?? []}
+            />
+          ) : (
+            <CurriculumLevelsTable
+              curriculumId={curriculumId}
+              levels={levels}
+              initialNodesByLevel={nodesByLevel}
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="details">
+          <CurriculumForm curriculum={curriculum} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

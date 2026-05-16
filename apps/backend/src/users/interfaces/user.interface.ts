@@ -7,5 +7,11 @@ export interface IUser extends IBase {
   username?: string;
   dateOfBirth?: Date;
   socialSecurityNumber?: string;
+  street?: string;
+  houseNumber?: string;
+  addressLine2?: string;
+  postalCode?: string;
+  city?: string;
+  country?: string;
   isSuperAdmin: boolean;
 }

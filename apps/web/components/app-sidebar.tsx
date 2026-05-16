@@ -85,7 +85,7 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
       },
       {
         title: "Team",
-        url: "#",
+        url: ROUTES.admin.teams(locale),
         icon: IconUsers,
       },
       ...(hasPermission("SCHOOL_CLASS_READ")

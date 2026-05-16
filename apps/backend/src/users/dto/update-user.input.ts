@@ -37,4 +37,28 @@ export class UpdateUserInput {
   @Field(() => String, { nullable: true })
   @IsOptional()
   socialSecurityNumber?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  street?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  houseNumber?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  addressLine2?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  postalCode?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  city?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  country?: string;
 }

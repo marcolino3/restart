@@ -40,6 +40,12 @@ export const updateEmployeeAction = async (values: EmployeeFormOutput) => {
       ? { socialSecurityNumber: parsed.socialSecurityNumber }
       : {}),
     ...(parsed.contactPhone ? { contactPhone: parsed.contactPhone } : {}),
+    street: parsed.street ?? "",
+    houseNumber: parsed.houseNumber ?? "",
+    addressLine2: parsed.addressLine2 ?? "",
+    postalCode: parsed.postalCode ?? "",
+    city: parsed.city ?? "",
+    country: parsed.country ?? "",
   };
 
   try {

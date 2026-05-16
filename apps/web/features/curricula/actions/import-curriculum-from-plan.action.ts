@@ -1,6 +1,8 @@
 "use server";
 
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
+import { revalidatePath } from "next/cache";
+import { getLocale } from "next-intl/server";
 import { gql } from "graphql-request";
 import type {
   CurriculumDTO,
@@ -99,11 +101,18 @@ export const importCurriculumFromPlanAction = async (
   input.curriculumTranslations = [
     { locale: plan.sourceLocale, name: curriculumName },
   ];
-  const client = await serverCookieGqlClient();
+  const [client, locale] = await Promise.all([
+    serverCookieGqlClient(),
+    getLocale(),
+  ]);
   try {
     const { importCurriculumFromPlan } = await client.request<Response>(
       Document,
       { input },
+    );
+    revalidatePath(`/${locale}/admin/curricula`);
+    revalidatePath(
+      `/${locale}/admin/curricula/edit/${importCurriculumFromPlan.id}`,
     );
     return { success: true as const, data: importCurriculumFromPlan };
   } catch (error) {

@@ -14,12 +14,18 @@ import { CreateEmployeeInput } from './dto/create-employee.input';
 import { UpdateEmployeeInput } from './dto/update-employee.input';
 import { Employee } from './entities/employee.entity';
 import { PasswordService } from '@/users/password.service';
+import {
+  AuditLogChange,
+  EmployeeAuditLogService,
+} from '../employee-audit-log/employee-audit-log.service';
+import { EmployeeAuditLogEntityType } from '../employee-audit-log/entities/employee-audit-log.entity';
 
 @Injectable()
 export class EmployeesService {
   constructor(
     private readonly entityManager: EntityManager,
     private readonly passwordService: PasswordService,
+    private readonly auditLogService: EmployeeAuditLogService,
 
     @InjectRepository(Employee)
     private readonly employeesService: Repository<Employee>,
@@ -39,6 +45,12 @@ export class EmployeesService {
       socialSecurityNumber,
       contactPhone,
       timeTrackingEnabled,
+      street,
+      houseNumber,
+      addressLine2,
+      postalCode,
+      city,
+      country,
     } = input;
 
     return this.entityManager.transaction(async (manager) => {
@@ -73,6 +85,12 @@ export class EmployeesService {
           title: title?.trim() || undefined,
           dateOfBirth: dateOfBirth || undefined,
           socialSecurityNumber: socialSecurityNumber?.trim() || undefined,
+          street: street?.trim() || undefined,
+          houseNumber: houseNumber?.trim() || undefined,
+          addressLine2: addressLine2?.trim() || undefined,
+          postalCode: postalCode?.trim() || undefined,
+          city: city?.trim() || undefined,
+          country: country?.trim() || undefined,
           isActive: true,
         });
         user = await manager.save(User, user);
@@ -141,6 +159,7 @@ export class EmployeesService {
   async updateEmployeeMinimal(
     input: UpdateEmployeeInput,
     organizationId: string,
+    actorMembershipId?: string | null,
   ): Promise<Employee> {
     const {
       id,
@@ -152,6 +171,12 @@ export class EmployeesService {
       socialSecurityNumber,
       contactPhone,
       timeTrackingEnabled,
+      street,
+      houseNumber,
+      addressLine2,
+      postalCode,
+      city,
+      country,
     } = input;
 
     return this.entityManager.transaction(async (manager) => {
@@ -175,60 +200,97 @@ export class EmployeesService {
       }
 
       const user = membership.user;
+      const changes: AuditLogChange[] = [];
+
+      const trackUser = (
+        field: keyof User,
+        next: string | null | undefined,
+      ) => {
+        if (!user) return;
+        const normalized = next?.trim() || null;
+        const current = (user[field] as string | null | undefined) ?? null;
+        if (current !== normalized) {
+          changes.push({
+            entityType: EmployeeAuditLogEntityType.USER,
+            fieldName: field as string,
+            oldValue: current,
+            newValue: normalized,
+          });
+          (user[field] as unknown) = normalized;
+        }
+      };
 
       // 2) User-Daten aktualisieren (falls geaendert)
-      let userChanged = false;
+      if (firstName !== undefined) trackUser('firstName', firstName);
+      if (lastName !== undefined) trackUser('lastName', lastName);
+      if (title !== undefined) trackUser('title', title);
+      if (dateOfBirth !== undefined) trackUser('dateOfBirth', dateOfBirth);
+      if (socialSecurityNumber !== undefined)
+        trackUser('socialSecurityNumber', socialSecurityNumber);
+      if (street !== undefined) trackUser('street', street);
+      if (houseNumber !== undefined) trackUser('houseNumber', houseNumber);
+      if (addressLine2 !== undefined) trackUser('addressLine2', addressLine2);
+      if (postalCode !== undefined) trackUser('postalCode', postalCode);
+      if (city !== undefined) trackUser('city', city);
+      if (country !== undefined) trackUser('country', country);
 
-      if (user && firstName !== undefined && user.firstName !== firstName.trim()) {
-        user.firstName = firstName.trim();
-        userChanged = true;
-      }
-
-      if (user && lastName !== undefined && user.lastName !== lastName.trim()) {
-        user.lastName = lastName.trim();
-        userChanged = true;
-      }
-
-      if (user && title !== undefined && user.title !== (title.trim() || null)) {
-        user.title = title.trim() || null;
-        userChanged = true;
-      }
-
-      if (user && dateOfBirth !== undefined) {
-        user.dateOfBirth = dateOfBirth || null;
-        userChanged = true;
-      }
-
-      if (user && socialSecurityNumber !== undefined) {
-        user.socialSecurityNumber = socialSecurityNumber?.trim() || null;
-        userChanged = true;
-      }
-
-      if (user && userChanged) {
+      if (user && changes.some((c) => c.entityType === EmployeeAuditLogEntityType.USER)) {
         await manager.save(User, user);
       }
 
       // 3) Membership aktualisieren (Persona, ContactPhone)
-      let membershipChanged = false;
-
       if (persona !== undefined && membership.persona !== persona) {
+        changes.push({
+          entityType: EmployeeAuditLogEntityType.MEMBERSHIP,
+          fieldName: 'persona',
+          oldValue: membership.persona,
+          newValue: persona,
+        });
         membership.persona = persona;
-        membershipChanged = true;
       }
 
       if (contactPhone !== undefined) {
-        membership.contactPhone = contactPhone?.trim() || undefined;
-        membershipChanged = true;
+        const next = contactPhone?.trim() || null;
+        const current = membership.contactPhone ?? null;
+        if (current !== next) {
+          changes.push({
+            entityType: EmployeeAuditLogEntityType.MEMBERSHIP,
+            fieldName: 'contactPhone',
+            oldValue: current,
+            newValue: next,
+          });
+          membership.contactPhone = next ?? undefined;
+        }
       }
 
-      if (membershipChanged) {
+      if (changes.some((c) => c.entityType === EmployeeAuditLogEntityType.MEMBERSHIP)) {
         await manager.save(Membership, membership);
       }
 
       // 4) Employee aktualisieren (TimeTracking)
-      if (timeTrackingEnabled !== undefined && employee.timeTrackingEnabled !== timeTrackingEnabled) {
+      if (
+        timeTrackingEnabled !== undefined &&
+        employee.timeTrackingEnabled !== timeTrackingEnabled
+      ) {
+        changes.push({
+          entityType: EmployeeAuditLogEntityType.EMPLOYEE,
+          fieldName: 'timeTrackingEnabled',
+          oldValue: String(employee.timeTrackingEnabled),
+          newValue: String(timeTrackingEnabled),
+        });
         employee.timeTrackingEnabled = timeTrackingEnabled;
         await manager.save(Employee, employee);
+      }
+
+      // 5) Audit-Log schreiben
+      if (changes.length > 0) {
+        await this.auditLogService.logChanges(
+          employee.id,
+          organizationId,
+          actorMembershipId ?? null,
+          changes,
+          manager,
+        );
       }
 
       // 5) Employee mit geladenen Relationen zurueckgeben

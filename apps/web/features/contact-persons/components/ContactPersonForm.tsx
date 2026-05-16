@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
+import { SocialSecurityNumberFormField } from "@/components/form/form-fields/SocialSecurityNumberFormField";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { ComboboxFormField } from "@/components/form/form-fields/ComboboxFormField";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
@@ -45,12 +46,14 @@ interface Props {
   contactPerson?: ContactPersonDetail;
   addressSuggestions?: AddressSuggestion[];
   sharingWith?: SharingContactPerson[];
+  orgCountry?: string | null;
 }
 
 export default function ContactPersonForm({
   contactPerson,
   addressSuggestions = [],
   sharingWith = [],
+  orgCountry,
 }: Props) {
   const tC = useTranslations("ContactPersons");
   const tCountries = useTranslations("Countries");
@@ -195,9 +198,10 @@ export default function ContactPersonForm({
             <DatePickerFormField name="dateOfBirth" label="dateOfBirth" />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <InputFormField
+            <SocialSecurityNumberFormField
               name="socialSecurityNumber"
               label="socialSecurityNumber"
+              country={form.watch("country") || orgCountry}
             />
             <InputFormField name="occupation" label="occupation" />
           </div>

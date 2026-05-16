@@ -17,6 +17,12 @@ export type EmployeeDetail = {
       lastName: string;
       dateOfBirth?: string | null;
       socialSecurityNumber?: string | null;
+      street?: string | null;
+      houseNumber?: string | null;
+      addressLine2?: string | null;
+      postalCode?: string | null;
+      city?: string | null;
+      country?: string | null;
       userEmails: {
         email: string;
         isPrimary: boolean;
@@ -53,6 +59,13 @@ const GetEmployeeByIdDocument = gql`
           firstName
           lastName
           dateOfBirth
+          socialSecurityNumber
+          street
+          houseNumber
+          addressLine2
+          postalCode
+          city
+          country
           userEmails {
             email
             isPrimary

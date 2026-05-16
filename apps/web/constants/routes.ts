@@ -32,6 +32,11 @@ export const ROUTES = {
     // Grade Levels
     gradeLevels: (locale: string) => `/${locale}/admin/grade-levels`,
 
+    // Teams
+    teams: (locale: string) => `/${locale}/admin/teams`,
+    teamsDetail: (locale: string, id: string) =>
+      `/${locale}/admin/teams/${id}`,
+
     // Students
     students: (locale: string) => `/${locale}/admin/students`,
     studentsCreate: (locale: string) => `/${locale}/admin/students/edit`,

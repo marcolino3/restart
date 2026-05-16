@@ -20,6 +20,9 @@ export class EmployeeContractsService {
       ...input,
       startDate: new Date(input.startDate),
       endDate: input.endDate ? new Date(input.endDate) : undefined,
+      probationEndDate: input.probationEndDate
+        ? new Date(input.probationEndDate)
+        : undefined,
       organizationId,
     });
     return this.contractRepo.save(contract);
@@ -62,11 +65,16 @@ export class EmployeeContractsService {
     organizationId: string,
   ): Promise<EmployeeContract> {
     const contract = await this.findOne(input.id, organizationId);
-    const { startDate, endDate, ...rest } = input;
+    const { startDate, endDate, probationEndDate, ...rest } = input;
     Object.assign(contract, rest);
     if (startDate) contract.startDate = new Date(startDate);
     if (endDate !== undefined) {
-      contract.endDate = endDate ? new Date(endDate) : undefined;
+      contract.endDate = endDate ? new Date(endDate) : null;
+    }
+    if (probationEndDate !== undefined) {
+      contract.probationEndDate = probationEndDate
+        ? new Date(probationEndDate)
+        : null;
     }
     return this.contractRepo.save(contract);
   }

@@ -20,10 +20,15 @@ export class CurriculumLevelsResolver {
   @Permissions('CURRICULUM_LEVEL_READ')
   findAll(
     @CurrentOrgId() orgId: string,
+    @Args('curriculumId', { type: () => ID }) curriculumId: string,
     @Args('includeArchived', { type: () => Boolean, nullable: true })
     includeArchived?: boolean,
   ) {
-    return this.service.findAllByOrgId(orgId, includeArchived ?? false);
+    return this.service.findAllByCurriculum(
+      curriculumId,
+      orgId,
+      includeArchived ?? false,
+    );
   }
 
   @Query(() => CurriculumLevel, { name: 'curriculumLevelById' })

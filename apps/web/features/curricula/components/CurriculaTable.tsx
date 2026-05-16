@@ -1,16 +1,14 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import {
   type ColumnDef,
-  type ExpandedState,
   type SortingState,
   flexRender,
   getCoreRowModel,
-  getExpandedRowModel,
   getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
@@ -18,15 +16,13 @@ import {
 import {
   Archive,
   ArrowUpDown,
-  ChevronDown,
-  ChevronRight,
-  ChevronsDownUp,
-  ChevronsUpDown,
   MoreHorizontal,
   Pencil,
   RotateCcw,
+  Trash2,
 } from "lucide-react";
 import { ArchiveConfirmationDialog } from "@/components/common/ArchiveConfirmationDialog";
+import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -46,42 +42,41 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { handleAction } from "@/lib/actions/handle-action";
 import { ROUTES } from "@/constants/routes";
+import { useUser } from "@/features/users/context/current-user.context";
 import { archiveCurriculumAction } from "../actions/archive-curriculum.action";
 import { unarchiveCurriculumAction } from "../actions/unarchive-curriculum.action";
+import { hardDeleteCurriculumAction } from "../actions/hard-delete-curriculum.action";
 import {
   pickTranslation,
   type CurriculumDTO,
-  type CurriculumLevelDTO,
   type CurriculumLocale,
 } from "../types";
-import { CurriculumLevelsTable } from "./CurriculumLevelsTable";
 
 interface Props {
   data: CurriculumDTO[];
-  levels: CurriculumLevelDTO[];
   headerActions?: React.ReactNode;
-  includeArchived?: boolean;
 }
 
 type CurriculumRow = CurriculumDTO & { name: string };
 
-export function CurriculaTable({
-  data,
-  levels,
-  headerActions,
-  includeArchived = false,
-}: Props) {
+export function CurriculaTable({ data, headerActions }: Props) {
   const t = useTranslations("Curricula");
   const tCommon = useTranslations("Common");
   const locale = useLocale();
   const router = useRouter();
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [expanded, setExpanded] = useState<ExpandedState>({});
   const [globalFilter, setGlobalFilter] = useState("");
   const [archiveTarget, setArchiveTarget] = useState<{
     id: string;
     name: string;
   } | null>(null);
+  const [hardDeleteTarget, setHardDeleteTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const currentUser = useUser();
+  const isSuperAdmin = currentUser?.isSuperAdmin ?? false;
 
   const localeUpper = locale.toUpperCase() as CurriculumLocale;
 
@@ -96,31 +91,6 @@ export function CurriculaTable({
 
   const columns = useMemo<ColumnDef<CurriculumRow>[]>(
     () => [
-      {
-        id: "expander",
-        header: () => null,
-        enableSorting: false,
-        cell: ({ row }) => (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={(e) => {
-              e.stopPropagation();
-              row.toggleExpanded();
-            }}
-            aria-label={
-              row.getIsExpanded() ? tCommon("collapse") : tCommon("expand")
-            }
-          >
-            {row.getIsExpanded() ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
-          </Button>
-        ),
-      },
       {
         accessorKey: "name",
         header: ({ column }) => (
@@ -141,10 +111,6 @@ export function CurriculaTable({
             )}
           </div>
         ),
-      },
-      {
-        accessorKey: "position",
-        header: t("position"),
       },
       {
         id: "actions",
@@ -203,25 +169,41 @@ export function CurriculaTable({
                   {tCommon("archive")}
                 </DropdownMenuItem>
               )}
+              {isSuperAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="cursor-pointer text-destructive focus:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setHardDeleteTarget({
+                        id: row.original.id,
+                        name: row.original.name,
+                      });
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {t("hardDeleteCurriculum")}
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         ),
       },
     ],
-    [t, tCommon, locale, router],
+    [t, tCommon, locale, router, isSuperAdmin],
   );
 
   const table = useReactTable({
     data: rows,
     columns,
-    state: { sorting, expanded, globalFilter },
+    state: { sorting, globalFilter },
     onSortingChange: setSorting,
-    onExpandedChange: setExpanded,
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
     globalFilterFn: (row, _columnId, filterValue) => {
       const filter = String(filterValue).toLowerCase().trim();
       if (!filter) return true;
@@ -232,8 +214,6 @@ export function CurriculaTable({
     },
   });
 
-  const allExpanded = table.getIsAllRowsExpanded();
-
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 flex-wrap">
@@ -243,23 +223,6 @@ export function CurriculaTable({
           onChange={(e) => setGlobalFilter(e.target.value)}
           className="max-w-sm"
         />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.toggleAllRowsExpanded(!allExpanded)}
-        >
-          {allExpanded ? (
-            <>
-              <ChevronsDownUp className="h-4 w-4 mr-2" />
-              {t("collapseAll")}
-            </>
-          ) : (
-            <>
-              <ChevronsUpDown className="h-4 w-4 mr-2" />
-              {t("expandAll")}
-            </>
-          )}
-        </Button>
         {headerActions && <div className="ml-auto">{headerActions}</div>}
       </div>
       <div className="rounded-md border">
@@ -268,10 +231,7 @@ export function CurriculaTable({
             {table.getHeaderGroups().map((hg) => (
               <TableRow key={hg.id}>
                 {hg.headers.map((h) => (
-                  <TableHead
-                    key={h.id}
-                    className={h.id === "expander" ? "w-10" : undefined}
-                  >
+                  <TableHead key={h.id}>
                     {h.isPlaceholder
                       ? null
                       : flexRender(h.column.columnDef.header, h.getContext())}
@@ -283,40 +243,29 @@ export function CurriculaTable({
           <TableBody>
             {table.getRowModel().rows.length > 0 ? (
               table.getRowModel().rows.map((row) => (
-                <Fragment key={row.id}>
-                  <TableRow
-                    className="cursor-pointer"
-                    onClick={() => row.toggleExpanded()}
-                    data-archived={row.original.isArchived || undefined}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell
-                        key={cell.id}
-                        className={
-                          row.original.isArchived
-                            ? "text-muted-foreground"
-                            : undefined
-                        }
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                  {row.getIsExpanded() && (
-                    <TableRow className="hover:bg-transparent">
-                      <TableCell colSpan={columns.length} className="p-4">
-                        <CurriculumLevelsTable
-                          curriculumId={row.original.id}
-                          levels={levels}
-                          includeArchived={includeArchived}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </Fragment>
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer"
+                  onClick={() =>
+                    router.push(
+                      ROUTES.admin.curriculaEdit(locale, row.original.id),
+                    )
+                  }
+                  data-archived={row.original.isArchived || undefined}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      className={
+                        row.original.isArchived
+                          ? "text-muted-foreground"
+                          : undefined
+                      }
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
               ))
             ) : (
               <TableRow>
@@ -343,6 +292,22 @@ export function CurriculaTable({
             return { success: res.success };
           }}
           onSuccess={() => setArchiveTarget(null)}
+        />
+      )}
+      {hardDeleteTarget && (
+        <DeleteConfirmationDialog
+          open={true}
+          onOpenChange={(o) => !o && setHardDeleteTarget(null)}
+          title={t("hardDeleteCurriculumTitle")}
+          description={t("hardDeleteCurriculumDescription", {
+            name: hardDeleteTarget.name,
+          })}
+          onConfirm={async () => {
+            const res = await hardDeleteCurriculumAction(hardDeleteTarget.id);
+            if (res.success) router.refresh();
+            return res;
+          }}
+          onSuccess={() => setHardDeleteTarget(null)}
         />
       )}
     </div>

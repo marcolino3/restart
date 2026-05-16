@@ -7,8 +7,11 @@ import type { CurriculumLevelDTO } from "../types";
 type Response = { curriculumLevels: CurriculumLevelDTO[] };
 
 const Document = gql`
-  query GetCurriculumLevels($includeArchived: Boolean) {
-    curriculumLevels(includeArchived: $includeArchived) {
+  query GetCurriculumLevels($curriculumId: ID!, $includeArchived: Boolean) {
+    curriculumLevels(
+      curriculumId: $curriculumId
+      includeArchived: $includeArchived
+    ) {
       id
       slug
       position
@@ -21,10 +24,14 @@ const Document = gql`
   }
 `;
 
-export const getCurriculumLevelsAction = async (includeArchived = false) => {
+export const getCurriculumLevelsAction = async (
+  curriculumId: string,
+  includeArchived = false,
+) => {
   const client = await serverCookieGqlClient();
   try {
     const { curriculumLevels } = await client.request<Response>(Document, {
+      curriculumId,
       includeArchived,
     });
     return { success: true as const, data: curriculumLevels };

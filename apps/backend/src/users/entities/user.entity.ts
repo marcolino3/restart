@@ -31,7 +31,7 @@ export class User extends AbstractEntity<User> {
   @Column({ name: 'date_of_birth', type: 'date', nullable: true })
   dateOfBirth?: string | null;
 
-  @HideField()
+  @Field(() => String, { nullable: true })
   @Column({
     name: 'social_security_number',
     type: 'varchar',
@@ -39,6 +39,30 @@ export class User extends AbstractEntity<User> {
     nullable: true,
   })
   socialSecurityNumber?: string | null;
+
+  @Field(() => String, { nullable: true })
+  @Column({ name: 'street', type: 'varchar', length: 200, nullable: true })
+  street?: string | null;
+
+  @Field(() => String, { nullable: true })
+  @Column({ name: 'house_number', type: 'varchar', length: 30, nullable: true })
+  houseNumber?: string | null;
+
+  @Field(() => String, { nullable: true })
+  @Column({ name: 'address_line_2', type: 'varchar', length: 200, nullable: true })
+  addressLine2?: string | null;
+
+  @Field(() => String, { nullable: true })
+  @Column({ name: 'postal_code', type: 'varchar', length: 20, nullable: true })
+  postalCode?: string | null;
+
+  @Field(() => String, { nullable: true })
+  @Column({ name: 'city', type: 'varchar', length: 120, nullable: true })
+  city?: string | null;
+
+  @Field(() => String, { nullable: true })
+  @Column({ name: 'country', type: 'varchar', length: 80, nullable: true })
+  country?: string | null;
 
   @HideField()
   @Column({

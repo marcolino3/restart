@@ -63,6 +63,7 @@ export class CurriculaImportService {
       const levelIdBySlug = await this.upsertLevels(
         m,
         input.levels,
+        curriculum.id,
         organizationId,
       );
 
@@ -132,13 +133,14 @@ export class CurriculaImportService {
   private async upsertLevels(
     m: EntityManager,
     levels: ImportPlanLevelInput[],
+    curriculumId: string,
     organizationId: string,
   ): Promise<Map<string, string>> {
     const result = new Map<string, string>();
     for (const level of levels) {
       const slug = level.slug.trim().toLowerCase();
       const existing = await m.getRepository(CurriculumLevel).findOne({
-        where: { organizationId, slug },
+        where: { curriculumId, slug },
       });
       if (existing) {
         result.set(level.slug, existing.id);
@@ -158,6 +160,7 @@ export class CurriculaImportService {
       const created = m.getRepository(CurriculumLevel).create({
         slug,
         position: level.position,
+        curriculumId,
         organizationId,
       });
       const saved = await m.getRepository(CurriculumLevel).save(created);

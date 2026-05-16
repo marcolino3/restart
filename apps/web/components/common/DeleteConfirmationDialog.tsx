@@ -26,6 +26,8 @@ interface DeleteConfirmationDialogProps {
   onSuccess?: () => void;
   trigger?: React.ReactNode;
   disabled?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function DeleteConfirmationDialog({
@@ -36,9 +38,17 @@ export function DeleteConfirmationDialog({
   onSuccess,
   trigger,
   disabled = false,
+  open: controlledOpen,
+  onOpenChange,
 }: DeleteConfirmationDialogProps) {
   const t = useTranslations("Common");
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const setOpen = (next: boolean) => {
+    if (!isControlled) setUncontrolledOpen(next);
+    onOpenChange?.(next);
+  };
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleConfirm = async () => {
@@ -76,7 +86,9 @@ export function DeleteConfirmationDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>{trigger ?? defaultTrigger}</AlertDialogTrigger>
+      {!isControlled && (
+        <AlertDialogTrigger asChild>{trigger ?? defaultTrigger}</AlertDialogTrigger>
+      )}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>

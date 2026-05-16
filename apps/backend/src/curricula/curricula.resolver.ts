@@ -2,6 +2,7 @@ import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
+import { SuperAdminOnly } from '@/auth/decorators/super-admin.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { CurriculaService } from './curricula.service';
@@ -69,6 +70,15 @@ export class CurriculaResolver {
     @CurrentOrgId() orgId: string,
   ) {
     return this.service.unarchive(id, orgId);
+  }
+
+  @Mutation(() => Boolean)
+  @SuperAdminOnly()
+  hardDeleteCurriculum(
+    @Args('id', { type: () => ID }) id: string,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.service.hardDelete(id, orgId);
   }
 
   @Mutation(() => [Curriculum])

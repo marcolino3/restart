@@ -1,6 +1,7 @@
 import { AbstractEntity } from '@/database/abstract.entity';
+import { Curriculum } from './curriculum.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
-import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
 import {
   Column,
   Entity,
@@ -15,7 +16,8 @@ import { CurriculumLevelTranslation } from './curriculum-level-translation.entit
 @ObjectType()
 @Entity('curriculum_levels')
 @Index('idx_curriculum_levels_org', ['organizationId'])
-@Index('UQ_curriculum_level_org_slug', ['organizationId', 'slug'], {
+@Index('idx_curriculum_levels_curriculum', ['curriculumId'])
+@Index('UQ_curriculum_level_curriculum_slug', ['curriculumId', 'slug'], {
   unique: true,
 })
 export class CurriculumLevel
@@ -29,6 +31,15 @@ export class CurriculumLevel
   @Field(() => Int)
   @Column('int', { default: 0 })
   position: number;
+
+  @Field(() => ID)
+  @Column('uuid', { name: 'curriculum_id' })
+  curriculumId: string;
+
+  @Field(() => Curriculum, { nullable: true })
+  @ManyToOne(() => Curriculum, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'curriculum_id' })
+  curriculum?: Curriculum;
 
   @Field(() => String)
   @Column('uuid', { name: 'organization_id' })

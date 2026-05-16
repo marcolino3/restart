@@ -157,6 +157,15 @@ export class CurriculaService {
     return this.findOne(id, organizationId);
   }
 
+  async hardDelete(id: string, organizationId: string): Promise<boolean> {
+    await this.findOne(id, organizationId);
+    // Cascade is configured on FKs: curriculum_translations, curriculum_nodes,
+    // curriculum_node_translations are all ON DELETE CASCADE; levels remain
+    // (they're org-scoped and shared between curricula).
+    await this.curriculaRepo.delete({ id, organizationId });
+    return true;
+  }
+
   async reorder(ids: string[], organizationId: string): Promise<Curriculum[]> {
     const curricula = await this.curriculaRepo.find({
       where: { id: In(ids), organizationId },

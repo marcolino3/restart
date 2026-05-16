@@ -4,7 +4,6 @@ import { PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
 import { getCurriculaAction } from "@/features/curricula/actions/get-curricula.action";
-import { getCurriculumLevelsAction } from "@/features/curricula/actions/get-curriculum-levels.action";
 import { CurriculaTable } from "@/features/curricula/components/CurriculaTable";
 import { CurriculumImportDialog } from "@/features/curricula/components/CurriculumImportDialog";
 import { ShowArchivedToggle } from "@/features/curricula/components/ShowArchivedToggle";
@@ -19,14 +18,8 @@ const CurriculaPage = async ({ searchParams }: PageProps) => {
   const { archived } = await searchParams;
   const includeArchived = archived === "1";
 
-  const [curriculaRes, levelsRes] = await Promise.all([
-    getCurriculaAction(includeArchived),
-    getCurriculumLevelsAction(includeArchived),
-  ]);
+  const curriculaRes = await getCurriculaAction(includeArchived);
   const list = curriculaRes.success && curriculaRes.data ? curriculaRes.data : [];
-  const levels = (levelsRes.success && levelsRes.data ? levelsRes.data : [])
-    .filter((l) => includeArchived || !l.isArchived)
-    .sort((a, b) => a.position - b.position);
 
   return (
     <div>
@@ -43,11 +36,7 @@ const CurriculaPage = async ({ searchParams }: PageProps) => {
           </Button>
         </div>
       </div>
-      <CurriculaTable
-        data={list}
-        levels={levels}
-        includeArchived={includeArchived}
-      />
+      <CurriculaTable data={list} />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { AbstractEntity } from '@/database/abstract.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
-import { ObjectType, Field } from '@nestjs/graphql';
+import { ObjectType, Field, Int } from '@nestjs/graphql';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { ITeam } from '../interfaces/team.interface';
 
@@ -11,6 +11,10 @@ export class Team extends AbstractEntity<Team> implements ITeam {
   @Field(() => String)
   @Column('text')
   name: string;
+
+  @Field(() => Int)
+  @Column('integer', { default: 0 })
+  sortOrder: number;
 
   @Field(() => String)
   @Column('uuid', { name: 'organization_id' })

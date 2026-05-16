@@ -4,6 +4,9 @@ import { Country } from '@/countries/entities/country.entity';
 import { EmployeeAbsenceCategory } from '@/employee-management/employee-absence-categories/entities/employee-absence-category.entity';
 import { EmployeeAbsenceDay } from '@/employee-management/employee-absences/entities/employee-absence-days.entity';
 import { EmployeeAbsence } from '@/employee-management/employee-absences/entities/employee-absence.entity';
+import { EmployeeAuditLog } from '@/employee-management/employee-audit-log/entities/employee-audit-log.entity';
+import { EmployeeHrProfile } from '@/employee-management/employee-hr-profiles/entities/employee-hr-profile.entity';
+import { EmployeeEmergencyProfile } from '@/employee-management/employee-emergency/entities/employee-emergency-profile.entity';
 import { EmployeeNote } from '@/employee-management/employee-notes/entities/employee-note.entity';
 import { Employee } from '@/employee-management/employees/entities/employee.entity';
 import { EmployeeContract } from '@/employee-management/employee-contracts/entities/employee-contract.entity';
@@ -53,6 +56,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       EmployeeAbsence,
       EmployeeAbsenceDay,
       EmployeeNote,
+      EmployeeAuditLog,
+      EmployeeHrProfile,
+      EmployeeEmergencyProfile,
       GradeLevel,
       SchoolClass,
       SchoolClassEnrollment,

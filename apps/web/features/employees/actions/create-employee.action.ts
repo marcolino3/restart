@@ -47,6 +47,12 @@ export const createEmployeeAction = async (values: EmployeeFormOutput) => {
     ...(parsed.timeTrackingEnabled
       ? { timeTrackingEnabled: parsed.timeTrackingEnabled }
       : {}),
+    ...(parsed.street ? { street: parsed.street } : {}),
+    ...(parsed.houseNumber ? { houseNumber: parsed.houseNumber } : {}),
+    ...(parsed.addressLine2 ? { addressLine2: parsed.addressLine2 } : {}),
+    ...(parsed.postalCode ? { postalCode: parsed.postalCode } : {}),
+    ...(parsed.city ? { city: parsed.city } : {}),
+    ...(parsed.country ? { country: parsed.country } : {}),
   };
 
   try {
