@@ -1,6 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { EmployeeContract } from './entities/employee-contract.entity';
 import { CreateEmployeeContractInput } from './dto/create-employee-contract.input';
 import { UpdateEmployeeContractInput } from './dto/update-employee-contract.input';
@@ -10,6 +14,7 @@ export class EmployeeContractsService {
   constructor(
     @InjectRepository(EmployeeContract)
     private readonly contractRepo: Repository<EmployeeContract>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(
@@ -18,11 +23,6 @@ export class EmployeeContractsService {
   ): Promise<EmployeeContract> {
     const contract = this.contractRepo.create({
       ...input,
-      startDate: new Date(input.startDate),
-      endDate: input.endDate ? new Date(input.endDate) : undefined,
-      probationEndDate: input.probationEndDate
-        ? new Date(input.probationEndDate)
-        : undefined,
       organizationId,
     });
     return this.contractRepo.save(contract);
@@ -64,19 +64,62 @@ export class EmployeeContractsService {
     input: UpdateEmployeeContractInput,
     organizationId: string,
   ): Promise<EmployeeContract> {
-    const contract = await this.findOne(input.id, organizationId);
-    const { startDate, endDate, probationEndDate, ...rest } = input;
-    Object.assign(contract, rest);
-    if (startDate) contract.startDate = new Date(startDate);
-    if (endDate !== undefined) {
-      contract.endDate = endDate ? new Date(endDate) : null;
+    const previous = await this.findOne(input.id, organizationId);
+
+    if (!input.startDate) {
+      throw new BadRequestException(
+        'startDate is required to create a new contract version',
+      );
     }
-    if (probationEndDate !== undefined) {
-      contract.probationEndDate = probationEndDate
-        ? new Date(probationEndDate)
-        : null;
+
+    const newStartDate = input.startDate;
+    if (newStartDate <= previous.startDate) {
+      throw new BadRequestException(
+        'New contract startDate must be after the previous contract startDate',
+      );
     }
-    return this.contractRepo.save(contract);
+
+    const { id: _ignored, ...incoming } = input;
+
+    return this.dataSource.transaction(async (manager) => {
+      const repo = manager.getRepository(EmployeeContract);
+
+      previous.endDate = this.dayBefore(newStartDate);
+      await repo.save(previous);
+
+      const next = repo.create({
+        organizationId,
+        employeeId: previous.employeeId,
+        startDate: newStartDate,
+        endDate: incoming.endDate ?? null,
+        probationEndDate: incoming.probationEndDate ?? null,
+        contractType: incoming.contractType ?? previous.contractType,
+        position: incoming.position ?? previous.position,
+        supervisorMembershipId:
+          incoming.supervisorMembershipId !== undefined
+            ? incoming.supervisorMembershipId
+            : previous.supervisorMembershipId,
+        workloadPercent: incoming.workloadPercent ?? previous.workloadPercent,
+        weeklyHours: incoming.weeklyHours ?? previous.weeklyHours,
+        grossSalary: incoming.grossSalary ?? previous.grossSalary,
+        paymentInterval: incoming.paymentInterval ?? previous.paymentInterval,
+        has13thSalary: incoming.has13thSalary ?? previous.has13thSalary,
+        annualVacationDays:
+          incoming.annualVacationDays ?? previous.annualVacationDays,
+        remainingVacationDays:
+          incoming.remainingVacationDays ?? previous.remainingVacationDays,
+        notes: incoming.notes ?? previous.notes,
+        previousContractId: previous.id,
+      });
+
+      return repo.save(next);
+    });
+  }
+
+  private dayBefore(isoDate: string): string {
+    const d = new Date(`${isoDate}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - 1);
+    return d.toISOString().split('T')[0];
   }
 
   async remove(id: string, organizationId: string): Promise<boolean> {

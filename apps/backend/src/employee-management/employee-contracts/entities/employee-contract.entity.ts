@@ -50,17 +50,17 @@ export class EmployeeContract extends AbstractEntity<EmployeeContract> {
   employee: Employee;
 
   // --- Vertragslaufzeit ---
-  @Field(() => Date)
+  @Field(() => String)
   @Column('date', { name: 'start_date' })
-  startDate: Date;
+  startDate: string;
 
-  @Field(() => Date, { nullable: true })
+  @Field(() => String, { nullable: true })
   @Column('date', { name: 'end_date', nullable: true })
-  endDate?: Date | null;
+  endDate?: string | null;
 
-  @Field(() => Date, { nullable: true })
+  @Field(() => String, { nullable: true })
   @Column('date', { name: 'probation_end_date', nullable: true })
-  probationEndDate?: Date | null;
+  probationEndDate?: string | null;
 
   // --- Vertragsart / Funktion ---
   @Field(() => EmployeeContractType, { nullable: true })
@@ -146,4 +146,13 @@ export class EmployeeContract extends AbstractEntity<EmployeeContract> {
   @Field(() => String, { nullable: true })
   @Column('text', { nullable: true })
   notes?: string | null;
+
+  @Field(() => ID, { nullable: true })
+  @Column('uuid', { name: 'previous_contract_id', nullable: true })
+  previousContractId?: string | null;
+
+  @Field(() => EmployeeContract, { nullable: true })
+  @ManyToOne(() => EmployeeContract, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'previous_contract_id' })
+  previousContract?: EmployeeContract | null;
 }

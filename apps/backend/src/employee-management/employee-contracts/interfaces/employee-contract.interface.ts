@@ -3,9 +3,10 @@ import { IBase } from '@/database/interfaces/base.interface';
 export interface IEmployeeContract extends IBase {
   organizationId: string;
   employeeId: string;
-  startDate: Date;
-  endDate?: Date;
+  startDate: string;
+  endDate?: string;
   workloadPercent?: number;
   grossSalary?: number;
   notes?: string;
+  previousContractId?: string;
 }
