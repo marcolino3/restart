@@ -4,6 +4,26 @@ metadata:
   name: restart-ingress
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
+    # HTTPS erzwingen (HTTP → 308 Redirect).
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    # Maximale Body-Size für Uploads (Bilder/CSV-Imports). 10 MB ist großzügig
+    # für die aktuellen Use-Cases; bei Bedarf hochsetzen.
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    # Generelle Connection-Limits gegen einfache DoS.
+    nginx.ingress.kubernetes.io/limit-rps: "20"
+    nginx.ingress.kubernetes.io/limit-rpm: "600"
+    nginx.ingress.kubernetes.io/limit-connections: "20"
+    # Security-Header: schützen gegen Clickjacking, MIME-Sniffing, Mixed-Content.
+    # HSTS preload-fähig (1 Jahr). CSP bewusst nicht hier — gehört in Next.js,
+    # weil dynamische Nonces nötig sind (Inline-Scripts in Server-Components).
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains";
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
+      more_set_headers "Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=()";
+      more_set_headers "X-Robots-Tag: noindex, nofollow";
 spec:
   ingressClassName: nginx
   tls:

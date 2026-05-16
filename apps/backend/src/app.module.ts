@@ -1,10 +1,17 @@
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
+import { LoggerModule } from 'nestjs-pino';
 import { DataSource, EntityManager } from 'typeorm';
+import { loggerConfig } from './logger.config';
 import { AddressesModule } from './addresses/addresses.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -33,30 +40,54 @@ import { join } from 'path';
 
 @Module({
   imports: [
+    // SentryModule MUSS als erstes geladen werden, damit der globale Filter
+    // alle anderen Module einhängen kann.
+    SentryModule.forRoot(),
+
+    LoggerModule.forRoot(loggerConfig),
+
     ConfigModule.forRoot({
       isGlobal: true,
     }),
 
+    // Globales Rate-Limit als Defense-in-Depth (Ingress hat eigenes Limit).
+    // Drei Buckets: short (Burst-Schutz), medium (Normal), long (sustained).
+    // Login/Register/Reset bekommen via @Throttle()-Decorator strengere Limits
+    // direkt am Controller (siehe SPEC für TODO im Auth-Modul).
+    ThrottlerModule.forRoot([
+      { name: 'short', ttl: 1000, limit: 10 },
+      { name: 'medium', ttl: 10_000, limit: 50 },
+      { name: 'long', ttl: 60_000, limit: 200 },
+    ]),
+
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.getOrThrow('DB_HOST'),
+      useFactory: (configService: ConfigService) => {
+        const nodeEnv = configService.get<string>('NODE_ENV');
+        const isProd = nodeEnv === 'production';
+        // In Production werden Migrationen über einen separaten K8s Pre-Deploy-Job
+        // ausgeführt (siehe k8s/base/jobs/migrate-job.yaml), damit ein fehlgeschlagenes
+        // Schema-Update den Rollout blockiert. In Dev/Staging laufen sie beim Boot.
+        const migrationsRun =
+          configService.get<string>('DB_MIGRATIONS_RUN') === 'true' ||
+          (!isProd && configService.get<string>('DB_MIGRATIONS_RUN') !== 'false');
 
-        port: configService.getOrThrow('DB_PORT'),
-        username: configService.getOrThrow('DB_USERNAME'),
-        password: configService.getOrThrow('DB_PASSWORD'),
-        database: configService.getOrThrow('DB_NAME'),
-        autoLoadEntities: true,
-        synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
-        ssl:
-          configService.get('NODE_ENV') === 'production'
-            ? { rejectUnauthorized: false }
-            : false,
-        autoSchemaFile: true,
-        migrationsRun: true,
-        migrations: ['/migrations/*.ts'],
-      }),
+        return {
+          type: 'postgres',
+          host: configService.getOrThrow('DB_HOST'),
+          port: configService.getOrThrow('DB_PORT'),
+          username: configService.getOrThrow('DB_USERNAME'),
+          password: configService.getOrThrow('DB_PASSWORD'),
+          database: configService.getOrThrow('DB_NAME'),
+          autoLoadEntities: true,
+          synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
+          ssl: isProd ? { rejectUnauthorized: false } : false,
+          autoSchemaFile: true,
+          migrationsRun,
+          migrations: [__dirname + '/migrations/*.{ts,js}'],
+          migrationsTableName: 'typeorm_migrations',
+        };
+      },
     }),
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       inject: [DataSource],
@@ -108,6 +139,24 @@ import { join } from 'path';
     HealthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    // SentryGlobalFilter fängt unerwartete Exceptions ab und meldet sie an
+    // Sentry, bevor Nest sie als 500 ausliefert. Erwartete HTTP-Exceptions
+    // (Unauthorized/Forbidden/BadRequest) werden in instrument.ts gefiltert.
+    {
+      provide: APP_FILTER,
+      useClass: SentryGlobalFilter,
+    },
+    // ThrottlerGuard global registrieren — kann pro Route/Controller mit
+    // @SkipThrottle() ausgenommen oder mit @Throttle() überschrieben werden.
+    // GqlThrottlerGuard ist eine Sub-Klasse, die zusätzlich GraphQL-Requests
+    // korrekt aus dem GqlExecutionContext liest (sonst crasht getTracker auf
+    // `req.ip`).
+    {
+      provide: APP_GUARD,
+      useClass: GqlThrottlerGuard,
+    },
+    AppService,
+  ],
 })
 export class AppModule {}

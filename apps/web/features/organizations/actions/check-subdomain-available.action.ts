@@ -1,7 +1,7 @@
 "use server";
 
-import { graphql } from "@/gql";
-import { IsOrganizationSubdomainAvailableQuery } from "@/gql/graphql";
+import { graphql } from "@restart/shared-types";
+import { IsOrganizationSubdomainAvailableQuery } from "@restart/shared-types/graphql";
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 
 const IsSubdomainAvailableDocument = graphql(`

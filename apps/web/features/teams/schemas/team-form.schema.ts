@@ -1,7 +1,1 @@
-import { z } from "zod";
-
-export const TeamFormSchema = z.object({
-  name: z.string().trim().min(1).max(120),
-});
-
-export type TeamFormType = z.infer<typeof TeamFormSchema>;
+export * from "@restart/shared-schemas/teams/team-form.schema";

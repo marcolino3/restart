@@ -31,9 +31,7 @@ export type EmployeeHrProfile = {
   iban?: string | null;
   bankAccountHolder?: string | null;
   bankName?: string | null;
-  bvgProvider?: string | null;
   bvgInsuranceNumber?: string | null;
-  uvgProvider?: string | null;
   withholdingTaxCode?: string | null;
   nationality?: string | null;
   residencePermitType?: EmployeeResidencePermitType | null;
@@ -56,9 +54,7 @@ const Document = gql`
       iban
       bankAccountHolder
       bankName
-      bvgProvider
       bvgInsuranceNumber
-      uvgProvider
       withholdingTaxCode
       nationality
       residencePermitType

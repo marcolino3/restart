@@ -1,0 +1,58 @@
+# Backend (NestJS) Network-Regeln.
+#
+# INGRESS: - nginx-Ingress-Controller (für /api/* und /graphql).
+#          - Frontend-Pods (für SSR-internal Calls über das ClusterIP).
+#          - Migration-Job-Pods (Label component=migration) für DB-Init-Pings.
+#
+# EGRESS:  - DNS (separat).
+#          - HTTPS ins Internet: Google OAuth, Apple OAuth, Sentry, SMTP-API.
+#          - SMTP klassisch (587 STARTTLS / 465 SMTPS) — manche Provider.
+#          - PostgreSQL (5432): bei Infomaniak Managed PG geht das über eine
+#            externe IP, daher 0.0.0.0/0 auf 5432. Wenn du eine private DB-IP
+#            kennst, hier einschränken.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+        - podSelector:
+            matchLabels:
+              app: frontend
+      ports:
+        - protocol: TCP
+          port: 3001
+  egress:
+    # PostgreSQL
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 5432
+    # HTTPS für OAuth, Sentry, Google Mail API, Maps API
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+    # SMTP (STARTTLS + SMTPS)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 587
+        - protocol: TCP
+          port: 465

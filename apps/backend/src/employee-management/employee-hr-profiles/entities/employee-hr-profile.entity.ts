@@ -92,16 +92,7 @@ export class EmployeeHrProfile extends AbstractEntity<EmployeeHrProfile> {
   @Column({ name: 'bank_name', type: 'varchar', length: 200, nullable: true })
   bankName?: string | null;
 
-  // --- Versicherungen & Steuern ---
-  @Field(() => String, { nullable: true })
-  @Column({
-    name: 'bvg_provider',
-    type: 'varchar',
-    length: 200,
-    nullable: true,
-  })
-  bvgProvider?: string | null;
-
+  // --- Persönliche Versicherungs-/Steuer-Identifikatoren ---
   @Field(() => String, { nullable: true })
   @Column({
     name: 'bvg_insurance_number',
@@ -110,15 +101,6 @@ export class EmployeeHrProfile extends AbstractEntity<EmployeeHrProfile> {
     nullable: true,
   })
   bvgInsuranceNumber?: string | null;
-
-  @Field(() => String, { nullable: true })
-  @Column({
-    name: 'uvg_provider',
-    type: 'varchar',
-    length: 200,
-    nullable: true,
-  })
-  uvgProvider?: string | null;
 
   @Field(() => String, { nullable: true })
   @Column({

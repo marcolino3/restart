@@ -12,7 +12,7 @@ import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
 import { CountryComboboxFormField } from "@/components/form/form-fields/CountryComboboxFormField";
 import { ROUTES } from "@/constants/routes";
-import { Persona } from "@/gql/graphql";
+import { Persona } from "@restart/shared-types/graphql";
 import { useUser } from "@/features/users/context/current-user.context";
 
 import type { EmployeeDetail } from "../actions/get-employee-by-id.action";

@@ -34,14 +34,8 @@ export const upsertEmployeeHrProfileAction = async (
       bankAccountHolder: parsed.bankAccountHolder ?? "",
     }),
     ...(parsed.bankName !== undefined && { bankName: parsed.bankName ?? "" }),
-    ...(parsed.bvgProvider !== undefined && {
-      bvgProvider: parsed.bvgProvider ?? "",
-    }),
     ...(parsed.bvgInsuranceNumber !== undefined && {
       bvgInsuranceNumber: parsed.bvgInsuranceNumber ?? "",
-    }),
-    ...(parsed.uvgProvider !== undefined && {
-      uvgProvider: parsed.uvgProvider ?? "",
     }),
     ...(parsed.withholdingTaxCode !== undefined && {
       withholdingTaxCode: parsed.withholdingTaxCode ?? "",

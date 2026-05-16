@@ -74,9 +74,7 @@ export default function EmployeeHrTabEdit({
       iban: profile?.iban ?? "",
       bankAccountHolder: profile?.bankAccountHolder ?? "",
       bankName: profile?.bankName ?? "",
-      bvgProvider: profile?.bvgProvider ?? "",
       bvgInsuranceNumber: profile?.bvgInsuranceNumber ?? "",
-      uvgProvider: profile?.uvgProvider ?? "",
       withholdingTaxCode: profile?.withholdingTaxCode ?? "",
       nationality: profile?.nationality ?? "",
       residencePermitType: profile?.residencePermitType ?? undefined,
@@ -127,17 +125,11 @@ export default function EmployeeHrTabEdit({
           </FormRow>
         </SectionBody>
 
-        {/* Versicherungen & Steuern */}
+        {/* Persönliche Versicherungs-/Steuer-Daten */}
         <SectionHeader title={tE("hr.insurances")} mt />
         <SectionBody>
-          <FormRow label={tE("hr.bvgProvider")}>
-            <InputFormField name="bvgProvider" />
-          </FormRow>
           <FormRow label={tE("hr.bvgInsuranceNumber")}>
             <InputFormField name="bvgInsuranceNumber" />
-          </FormRow>
-          <FormRow label={tE("hr.uvgProvider")}>
-            <InputFormField name="uvgProvider" />
           </FormRow>
           <FormRow label={tE("hr.withholdingTaxCode")}>
             <InputFormField

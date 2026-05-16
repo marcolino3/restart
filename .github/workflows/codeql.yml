@@ -1,0 +1,56 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Wöchentlich Montag 04:00 UTC — fängt Schwachstellen in
+    # ungeänderten Pfaden auf, sobald CodeQL neue Regeln hat.
+    - cron: "0 4 * * 1"
+
+# CodeQL braucht keine PR-Write-Rechte; minimal halten.
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # JS-Analyse deckt sowohl JavaScript als auch TypeScript ab.
+        language: ["javascript-typescript"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # Security-extended + quality: deutlich mehr Regeln als Default,
+          # findet z. B. Prototype-Pollution, unsichere Deserialization,
+          # SSRF-Patterns, hardcoded Secrets in Tests.
+          queries: security-extended,security-and-quality
+
+      # Build-Schritt für JS/TS optional — autobuild reicht.
+      # Falls CodeQL ohne Build false-positives produziert, manuellen
+      # pnpm build hier ergänzen.
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

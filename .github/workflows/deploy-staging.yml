@@ -8,6 +8,7 @@ env:
   REGISTRY: ghcr.io
   BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/restart-backend
   FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/restart-frontend
+  NAMESPACE: restart-staging
 
 jobs:
   build:
@@ -16,6 +17,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      # SARIF-Upload aus Trivy-Image-Scan in GitHub Security-Tab.
+      security-events: write
     outputs:
       has_kubeconfig: ${{ steps.check.outputs.has_kubeconfig }}
 
@@ -45,6 +48,8 @@ jobs:
           context: .
           file: ./apps/backend/Dockerfile
           push: true
+          build-args: |
+            SENTRY_RELEASE=${{ github.sha }}
           tags: |
             ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
             ${{ env.BACKEND_IMAGE }}:latest
@@ -55,17 +60,115 @@ jobs:
           context: .
           file: ./apps/web/Dockerfile
           push: true
+          # Sentry-Build-Args: DSN + Release werden ins Browser-Bundle inlined.
+          # SENTRY_AUTH_TOKEN ist nur für den Source-Map-Upload nötig (optional).
           build-args: |
             BACKEND_URL=http://backend:3001
+            NEXT_PUBLIC_SENTRY_DSN=${{ secrets.SENTRY_DSN_FRONTEND }}
+            NEXT_PUBLIC_SENTRY_ENVIRONMENT=staging
+            NEXT_PUBLIC_SENTRY_RELEASE=${{ github.sha }}
+            SENTRY_ORG=${{ vars.SENTRY_ORG }}
+            SENTRY_PROJECT=${{ vars.SENTRY_PROJECT_FRONTEND }}
+            SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
+            NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.POSTHOG_KEY_STAGING }}
+            NEXT_PUBLIC_POSTHOG_HOST=/ingest
           tags: |
             ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
             ${{ env.FRONTEND_IMAGE }}:latest
 
-  deploy:
-    name: Deploy to Staging
+      # Image-Vulnerability-Scan — Build schlägt fehl bei CRITICAL.
+      # Greift NACH dem Push, weil Trivy das pushed Image über GHCR pullt
+      # (das schließt einen Bug aus, bei dem das gepushte Layer-Set ein
+      # anderes als das lokal gebaute ist).
+      - name: Scan backend image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          severity: "CRITICAL"
+          exit-code: "1"
+          ignore-unfixed: true
+          format: "sarif"
+          output: "trivy-backend.sarif"
+
+      - name: Scan frontend image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+          severity: "CRITICAL"
+          exit-code: "1"
+          ignore-unfixed: true
+          format: "sarif"
+          output: "trivy-frontend.sarif"
+
+      - name: Upload backend image scan results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-backend.sarif"
+          category: "trivy-image-backend"
+
+      - name: Upload frontend image scan results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-frontend.sarif"
+          category: "trivy-image-frontend"
+
+  migrate:
+    name: Run DB Migrations
     needs: build
     runs-on: ubuntu-latest
     if: needs.build.outputs.has_kubeconfig == 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+
+      - name: Apply migration job
+        env:
+          IMAGE_OWNER: ${{ github.repository_owner }}
+          # Job-Namen dürfen keine Grossbuchstaben und max. 63 Zeichen haben.
+          # SHA in Kleinbuchstaben + auf 12 Zeichen kürzen.
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          export IMAGE_OWNER=$(echo "$IMAGE_OWNER" | tr '[:upper:]' '[:lower:]')
+          export IMAGE_TAG=$(echo "$IMAGE_TAG" | cut -c1-12)
+          JOB_NAME="migrate-${IMAGE_TAG}"
+          envsubst < k8s/base/jobs/migrate-job.yaml | kubectl apply -n "$NAMESPACE" -f -
+
+          echo "Waiting for $JOB_NAME to complete…"
+          for i in $(seq 1 60); do
+            COMPLETE=$(kubectl get job "$JOB_NAME" -n "$NAMESPACE" \
+              -o 'jsonpath={.status.conditions[?(@.type=="Complete")].status}' 2>/dev/null || echo "")
+            FAILED=$(kubectl get job "$JOB_NAME" -n "$NAMESPACE" \
+              -o 'jsonpath={.status.conditions[?(@.type=="Failed")].status}' 2>/dev/null || echo "")
+            if [ "$COMPLETE" = "True" ]; then
+              echo "::notice::Migrations applied"
+              kubectl logs -n "$NAMESPACE" "job/$JOB_NAME" --tail=50 || true
+              exit 0
+            fi
+            if [ "$FAILED" = "True" ]; then
+              echo "::error::Migration job failed"
+              kubectl logs -n "$NAMESPACE" "job/$JOB_NAME" --tail=200 || true
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "::error::Timeout waiting for migration job"
+          kubectl logs -n "$NAMESPACE" "job/$JOB_NAME" --tail=200 || true
+          exit 1
+
+  deploy:
+    name: Deploy to Staging
+    needs: migrate
+    runs-on: ubuntu-latest
 
     steps:
       - name: Set up kubectl
@@ -80,12 +183,21 @@ jobs:
         run: |
           kubectl set image deployment/backend \
             backend=${{ env.BACKEND_IMAGE }}:${{ github.sha }} \
-            -n restart-staging
+            -n "$NAMESPACE"
           kubectl set image deployment/frontend \
             frontend=${{ env.FRONTEND_IMAGE }}:${{ github.sha }} \
-            -n restart-staging
+            -n "$NAMESPACE"
 
       - name: Wait for rollout
+        id: rollout
         run: |
-          kubectl rollout status deployment/backend -n restart-staging --timeout=300s
-          kubectl rollout status deployment/frontend -n restart-staging --timeout=300s
+          set -e
+          kubectl rollout status deployment/backend -n "$NAMESPACE" --timeout=300s
+          kubectl rollout status deployment/frontend -n "$NAMESPACE" --timeout=300s
+
+      - name: Rollback on failure
+        if: failure() && steps.rollout.outcome == 'failure'
+        run: |
+          echo "::warning::Rollout failed — rolling back deployments"
+          kubectl rollout undo deployment/backend -n "$NAMESPACE" || true
+          kubectl rollout undo deployment/frontend -n "$NAMESPACE" || true

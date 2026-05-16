@@ -1,4 +1,1 @@
-import z from "zod";
-
-export const enumToZodEnum = <T extends Record<string, string>>(e: T) =>
-  z.enum(Object.values(e) as [T[keyof T], ...T[keyof T][]]);
+export * from "@restart/shared-schemas/zod/enum-to-zod-enum";

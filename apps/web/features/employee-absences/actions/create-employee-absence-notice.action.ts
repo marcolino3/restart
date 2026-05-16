@@ -5,8 +5,8 @@ import {
   EmployeeAbsenceNoticeFormSchema,
   EmployeeAbsenceNoticeFormType,
 } from "../schemas/employee-absence-notice-form.schema";
-import { graphql } from "@/gql";
-import { CreateEmployeeAbsenceNoticeMutation } from "@/gql/graphql";
+import { graphql } from "@restart/shared-types";
+import { CreateEmployeeAbsenceNoticeMutation } from "@restart/shared-types/graphql";
 
 const CreateEmployeeAbsenceNoticeDocument = graphql(`
   mutation CreateEmployeeAbsenceNotice(

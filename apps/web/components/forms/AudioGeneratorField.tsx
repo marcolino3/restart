@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Language, VoiceGender } from '@/gql/graphql';
+import { Language, VoiceGender } from '@restart/shared-types/graphql';
 import { generateContentAudioAction } from '@/actions/audio/generate-content-audio.action';
 import { deleteContentAudioAction } from '@/actions/audio/delete-content-audio.action';
 import { Loader2, Volume2, Trash2, Play, Pause, RotateCcw, RotateCw } from 'lucide-react';

@@ -1,0 +1,15 @@
+# Default-Deny: kein Pod im Namespace darf irgendetwas, solange es nicht
+# explizit erlaubt wird. Basis für alle weiteren Policies — ohne diese
+# Policy sind NetworkPolicies eine Empfehlung, kein Zwang.
+#
+# Voraussetzung: CNI mit NetworkPolicy-Support (Infomaniak Managed K8s
+# nutzt Calico — bestätigen über `kubectl get pods -n kube-system | grep calico`).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress

@@ -1,6 +1,6 @@
 "use server";
 
-import { graphql } from "@/gql";
+import { graphql } from "@restart/shared-types";
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 
 const GetOrganizationSettingsDocument = graphql(`

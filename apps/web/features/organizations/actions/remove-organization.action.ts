@@ -1,7 +1,7 @@
 "use server";
 
-import { graphql } from "@/gql";
-import { RemoveOrganizationMutation } from "@/gql/graphql";
+import { graphql } from "@restart/shared-types";
+import { RemoveOrganizationMutation } from "@restart/shared-types/graphql";
 import { revalidatePath } from "next/cache";
 import { ROUTES } from "@/constants/routes";
 import { getLocale } from "next-intl/server";

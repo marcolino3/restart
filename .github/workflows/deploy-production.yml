@@ -4,20 +4,89 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: "Image tag to deploy (default: latest from staging)"
+        description: "Image tag to deploy (commit SHA, default: latest from staging)"
         required: false
         default: "latest"
+      skip_migrations:
+        description: "Skip DB migration job (NUR im Notfall — überspringen führt zu Schema-Drift)"
+        type: boolean
+        required: false
+        default: false
 
 env:
   REGISTRY: ghcr.io
   BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/restart-backend
   FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/restart-frontend
+  NAMESPACE: restart-production
 
 jobs:
+  migrate:
+    name: Run DB Migrations
+    runs-on: ubuntu-latest
+    environment: production
+    if: ${{ !inputs.skip_migrations }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+
+      - name: Apply migration job
+        env:
+          IMAGE_OWNER: ${{ github.repository_owner }}
+          INPUT_TAG: ${{ inputs.image_tag }}
+        run: |
+          export IMAGE_OWNER=$(echo "$IMAGE_OWNER" | tr '[:upper:]' '[:lower:]')
+          # Job-Suffix: bei Commit-SHA die ersten 12 Zeichen, sonst Tag-Name + Timestamp
+          if [ "$INPUT_TAG" = "latest" ]; then
+            JOB_SUFFIX="latest-$(date +%s)"
+          else
+            JOB_SUFFIX=$(echo "$INPUT_TAG" | cut -c1-12 | tr '[:upper:]' '[:lower:]')
+          fi
+          # Template hat ${IMAGE_TAG} an zwei Stellen (Job-Name UND Image-Tag).
+          # Wir wollen sie auseinander halten: zuerst Job-Name setzen via envsubst,
+          # dann den Image-Tag im resultierenden YAML korrigieren.
+          export IMAGE_TAG="$JOB_SUFFIX"
+          JOB_NAME="migrate-${JOB_SUFFIX}"
+          envsubst < k8s/base/jobs/migrate-job.yaml \
+            | sed "s|restart-backend:${JOB_SUFFIX}|restart-backend:${INPUT_TAG}|g" \
+            | kubectl apply -n "$NAMESPACE" -f -
+
+          echo "Waiting for $JOB_NAME to complete…"
+          for i in $(seq 1 120); do
+            COMPLETE=$(kubectl get job "$JOB_NAME" -n "$NAMESPACE" \
+              -o 'jsonpath={.status.conditions[?(@.type=="Complete")].status}' 2>/dev/null || echo "")
+            FAILED=$(kubectl get job "$JOB_NAME" -n "$NAMESPACE" \
+              -o 'jsonpath={.status.conditions[?(@.type=="Failed")].status}' 2>/dev/null || echo "")
+            if [ "$COMPLETE" = "True" ]; then
+              echo "::notice::Production migrations applied"
+              kubectl logs -n "$NAMESPACE" "job/$JOB_NAME" --tail=50 || true
+              exit 0
+            fi
+            if [ "$FAILED" = "True" ]; then
+              echo "::error::Production migration FAILED — rollout aborted"
+              kubectl logs -n "$NAMESPACE" "job/$JOB_NAME" --tail=200 || true
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "::error::Timeout waiting for production migration job"
+          kubectl logs -n "$NAMESPACE" "job/$JOB_NAME" --tail=200 || true
+          exit 1
+
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
     environment: production
+    needs: [migrate]
+    # Damit der Deploy auch dann läuft, wenn migrate übersprungen wurde:
+    if: always() && (needs.migrate.result == 'success' || needs.migrate.result == 'skipped')
 
     steps:
       - uses: actions/checkout@v4
@@ -32,25 +101,44 @@ jobs:
 
       - name: Deploy to production
         run: |
-          TAG="${{ github.event.inputs.image_tag }}"
+          TAG="${{ inputs.image_tag }}"
           kubectl set image deployment/backend \
             backend=${{ env.BACKEND_IMAGE }}:${TAG} \
-            -n restart-production
+            -n "$NAMESPACE"
           kubectl set image deployment/frontend \
             frontend=${{ env.FRONTEND_IMAGE }}:${TAG} \
-            -n restart-production
+            -n "$NAMESPACE"
 
       - name: Wait for rollout
+        id: rollout
         run: |
-          kubectl rollout status deployment/backend -n restart-production --timeout=300s
-          kubectl rollout status deployment/frontend -n restart-production --timeout=300s
+          set -e
+          kubectl rollout status deployment/backend -n "$NAMESPACE" --timeout=300s
+          kubectl rollout status deployment/frontend -n "$NAMESPACE" --timeout=300s
+
+      - name: Rollback on rollout failure
+        if: failure() && steps.rollout.outcome == 'failure'
+        run: |
+          echo "::error::Production rollout failed — rolling back"
+          kubectl rollout undo deployment/backend -n "$NAMESPACE" || true
+          kubectl rollout undo deployment/frontend -n "$NAMESPACE" || true
+          exit 1
 
       - name: Smoke test
+        id: smoke
         run: |
           sleep 10
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://app.colibri-app.ch/api/health)
           if [ "$STATUS" != "200" ]; then
-            echo "Smoke test failed! HTTP status: $STATUS"
+            echo "::error::Smoke test failed! HTTP status: $STATUS"
             exit 1
           fi
-          echo "Smoke test passed! HTTP status: $STATUS"
+          echo "::notice::Smoke test passed (HTTP $STATUS)"
+
+      - name: Rollback on smoke test failure
+        if: failure() && steps.smoke.outcome == 'failure'
+        run: |
+          echo "::error::Smoke test failed — rolling back"
+          kubectl rollout undo deployment/backend -n "$NAMESPACE" || true
+          kubectl rollout undo deployment/frontend -n "$NAMESPACE" || true
+          exit 1

@@ -3,8 +3,24 @@ kind: Ingress
 metadata:
   name: restart-ingress
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
     cert-manager.io/cluster-issuer: letsencrypt-prod
+    # HTTPS erzwingen.
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    # Body-Size für Uploads.
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    # Rate-Limit in Production schärfer als staging — Schul-Software hat
+    # vorhersagbare Last-Profile (kein Web-Crawler-Traffic gewünscht).
+    nginx.ingress.kubernetes.io/limit-rps: "30"
+    nginx.ingress.kubernetes.io/limit-rpm: "1200"
+    nginx.ingress.kubernetes.io/limit-connections: "30"
+    # Security-Header.
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload";
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
+      more_set_headers "Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=()";
 spec:
   ingressClassName: nginx
   tls:
@@ -16,6 +32,13 @@ spec:
       http:
         paths:
           - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 3001
+          - path: /graphql
             pathType: Prefix
             backend:
               service:

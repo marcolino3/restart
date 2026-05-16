@@ -1,7 +1,7 @@
 "use server";
 
-import { graphql } from "@/gql";
-import { CreateOrganizationMutation } from "@/gql/graphql";
+import { graphql } from "@restart/shared-types";
+import { CreateOrganizationMutation } from "@restart/shared-types/graphql";
 import { redirect } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
 import { getLocale } from "next-intl/server";

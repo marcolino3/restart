@@ -29,3 +29,12 @@ out/
 .env
 .env.*
 !.env.example
+
+# Sealed-Secrets — NUR die verschlüsselten SealedSecret-Manifeste sind im Git
+# zugelassen. Klartext-Secret-Manifeste, Master-Key-Backups und temporäre
+# Output-Files niemals committen.
+*.secret.yaml
+secrets-plain.yaml
+sealed-secrets-backup/
+sealed-secrets-keys-*.yaml
+sealed-secrets-keys-*.yaml.age

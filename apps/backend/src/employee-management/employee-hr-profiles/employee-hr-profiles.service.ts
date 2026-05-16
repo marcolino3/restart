@@ -67,9 +67,7 @@ export class EmployeeHrProfilesService {
       trackField('iban', input.iban);
       trackField('bankAccountHolder', input.bankAccountHolder);
       trackField('bankName', input.bankName);
-      trackField('bvgProvider', input.bvgProvider);
       trackField('bvgInsuranceNumber', input.bvgInsuranceNumber);
-      trackField('uvgProvider', input.uvgProvider);
       trackField('withholdingTaxCode', input.withholdingTaxCode);
       trackField('nationality', input.nationality);
       trackField('residencePermitType', input.residencePermitType);
@@ -93,14 +91,8 @@ export class EmployeeHrProfilesService {
         ...(input.bankName !== undefined && {
           bankName: input.bankName?.trim() || null,
         }),
-        ...(input.bvgProvider !== undefined && {
-          bvgProvider: input.bvgProvider?.trim() || null,
-        }),
         ...(input.bvgInsuranceNumber !== undefined && {
           bvgInsuranceNumber: input.bvgInsuranceNumber?.trim() || null,
-        }),
-        ...(input.uvgProvider !== undefined && {
-          uvgProvider: input.uvgProvider?.trim() || null,
         }),
         ...(input.withholdingTaxCode !== undefined && {
           withholdingTaxCode:

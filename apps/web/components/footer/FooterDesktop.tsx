@@ -1,4 +1,4 @@
-import { NavigationTreeOutput } from "@/gql/graphql";
+import { NavigationTreeOutput } from "@restart/shared-types/graphql";
 import { cn } from "@/lib/utils";
 import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";

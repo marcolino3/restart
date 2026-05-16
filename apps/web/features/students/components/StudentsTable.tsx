@@ -342,7 +342,7 @@ export const StudentsTable = ({ data }: Props) => {
                   className="cursor-pointer"
                   onClick={() => {
                     router.push(
-                      ROUTES.admin.studentsEdit(locale, row.original.id)
+                      ROUTES.admin.studentsView(locale, row.original.id)
                     );
                   }}
                 >

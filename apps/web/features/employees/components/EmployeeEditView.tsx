@@ -18,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormActionButtons } from "@/components/form/form-fields/FormActionButtons";
 import { ROUTES } from "@/constants/routes";
 import { handleAction } from "@/lib/actions/handle-action";
-import { Persona } from "@/gql/graphql";
+import { Persona } from "@restart/shared-types/graphql";
 
 import type { EmployeeDetail } from "../actions/get-employee-by-id.action";
 import type { EmployeeAuditLogItem } from "../actions/get-employee-audit-log.action";

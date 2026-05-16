@@ -106,4 +106,41 @@ export class UpdateOrganizationInput
   @IsOptional()
   @IsBoolean()
   isDeleted?: boolean;
+
+  // --- Versicherungen ---
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @EmptyToUndefined()
+  bvgProvider?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @EmptyToUndefined()
+  bvgContactPhone?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @EmptyToUndefined()
+  uvgProvider?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @EmptyToUndefined()
+  uvgContactPhone?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @EmptyToUndefined()
+  dailySicknessProvider?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @EmptyToUndefined()
+  dailySicknessContactPhone?: string;
 }

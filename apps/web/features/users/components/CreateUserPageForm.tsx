@@ -15,7 +15,7 @@ import { FormActionButtons } from "@/components/form/form-fields/FormActionButto
 import { ROUTES } from "@/constants/routes";
 import { handleAction } from "@/lib/actions/handle-action";
 import { mapEnumToOptions } from "@/lib/forms/map-enum-to-options";
-import { Persona } from "@/gql/graphql";
+import { Persona } from "@restart/shared-types/graphql";
 
 import {
   CreateUserFormSchema,

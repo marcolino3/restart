@@ -1,13 +1,17 @@
-// Load .env before any other imports — better-auth (in src/lib/auth.ts) is
-// constructed at module-load time and needs DB_*, GOOGLE_AUTH_*, and
-// BETTER_AUTH_* env vars before NestJS's ConfigModule runs.
-import 'dotenv/config';
+// Sentry-Instrumentation MUSS vor allem anderen geladen werden — sie hängt
+// sich in den Node require-Hook und kann Module nicht mehr instrumentieren,
+// die schon geladen sind. `instrument.ts` lädt selbst `dotenv/config`, damit
+// better-auth (in src/lib/auth.ts) — das beim Modul-Load läuft — die ENV-Vars
+// findet.
+import './instrument';
 
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Logger } from 'nestjs-pino';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 
@@ -25,7 +29,12 @@ async function bootstrap() {
     // @thallesp/nestjs-better-auth re-applies JSON/urlencoded parsing for
     // non-auth routes via its own middleware (see forRoot bodyParser option).
     bodyParser: false,
+    // bufferLogs verhindert dass Logs während der DI-Initialisierung
+    // mit dem Default-Logger (console) rausgehen; sobald wir den
+    // nestjs-pino Logger setzen, wird der Buffer geflusht.
+    bufferLogs: true,
   });
+  app.useLogger(app.get(Logger));
   const configService = app.get(ConfigService);
 
   const allowedOrigins = configService
@@ -39,6 +48,22 @@ async function bootstrap() {
   });
 
   app.setGlobalPrefix('/api');
+
+  // Helmet: setzt sicherheitskritische HTTP-Header (X-Content-Type-Options,
+  // X-Frame-Options, etc.). Der Ingress setzt diese auch — die App ist
+  // Defense-in-Depth für den Fall, dass jemand den Ingress umgeht (z. B.
+  // direkter Pod-Zugriff aus einem anderen Service im Cluster).
+  //
+  // CSP wird hier NICHT gesetzt: das Backend liefert nur API/GraphQL aus,
+  // CSP ist eine Frontend-Belange (Next.js Middleware setzt sie pro Response).
+  // crossOriginEmbedderPolicy aus: würde Cross-Origin-Bilder/Iframes brechen.
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+    }),
+  );
+
   app.use(cookieParser());
   // Re-apply body parsing for non-auth routes (the global `bodyParser: false`
   // above disabled Nest's built-in parser so better-auth can read the raw
@@ -61,6 +86,7 @@ async function bootstrap() {
 }
 
 bootstrap().catch((err) => {
+  // eslint-disable-next-line no-console -- Bootstrap-Fehler: Logger noch nicht initialisiert
   console.error('Fatal startup error', err);
   process.exit(1);
 });

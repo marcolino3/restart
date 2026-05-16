@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Name + Image werden zur Deploy-Zeit per `envsubst` ersetzt, damit jeder
+  # Deploy einen eigenen Job bekommt (Jobs sind immutable und Namen müssen
+  # eindeutig sein, sonst schlägt `kubectl apply` fehl).
+  name: migrate-${IMAGE_TAG}
+  labels:
+    app: backend
+    component: migration
+spec:
+  # Nach 6h Lifetime aufräumen, damit der Namespace nicht mit alten Migration-Jobs vollläuft.
+  ttlSecondsAfterFinished: 21600
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: backend
+        component: migration
+    spec:
+      restartPolicy: Never
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: migrate
+          image: ghcr.io/${IMAGE_OWNER}/restart-backend:${IMAGE_TAG}
+          command: ["node", "dist/src/migrate.js"]
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"

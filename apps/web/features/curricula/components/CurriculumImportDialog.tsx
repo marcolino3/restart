@@ -152,11 +152,21 @@ export function CurriculumImportDialog() {
                 {t("importExpectedColumns")}
               </div>
               <code className="text-xs bg-background p-2 rounded block overflow-x-auto">
-                Level · Area · Topic · Group · Lesson
+                Sequence · Level · Area · Topic · Group · Lesson
               </code>
               <p className="text-xs text-muted-foreground">
                 {t("importFormatHint")}
               </p>
+              <p className="text-xs text-muted-foreground">
+                {t("importMultiSheetHint")}
+              </p>
+              <a
+                href="/curricula-import-template.xlsx"
+                download
+                className="text-xs text-primary underline-offset-4 hover:underline"
+              >
+                {t("importDownloadTemplate")}
+              </a>
             </div>
             <div className="flex items-center gap-3">
               <Input
@@ -207,17 +217,23 @@ export function CurriculumImportDialog() {
             <div className="border rounded-lg max-h-80 overflow-y-auto p-2 text-sm">
               {plan.levels.map((lvl) => (
                 <div key={lvl.slug} className="mb-3">
-                  <div className="font-semibold">
-                    {pickTranslation(lvl.translations, localeUpper)?.name ??
-                      lvl.slug}{" "}
-                    <span className="text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <span>
+                      {pickTranslation(lvl.translations, localeUpper)?.name ??
+                        lvl.slug}
+                    </span>
+                    <LocaleBadges translations={lvl.translations} />
+                    <span className="text-xs text-muted-foreground font-normal">
                       ({lvl.roots.length} {t("topLevelNodes")})
                     </span>
                   </div>
                   <ul className="pl-4 list-disc text-muted-foreground">
                     {lvl.roots.slice(0, 5).map((n) => (
-                      <li key={n.tempId}>
-                        {pickTranslation(n.translations, localeUpper)?.name}
+                      <li key={n.tempId} className="flex items-center gap-2">
+                        <span>
+                          {pickTranslation(n.translations, localeUpper)?.name}
+                        </span>
+                        <LocaleBadges translations={n.translations} />
                       </li>
                     ))}
                     {lvl.roots.length > 5 && (
@@ -266,5 +282,31 @@ function Stat({ label, value }: { label: string; value: number }) {
       <div className="text-xs text-muted-foreground">{label}</div>
       <div className="text-lg font-semibold">{value}</div>
     </div>
+  );
+}
+
+const ALL_LOCALES: CurriculumLocale[] = ["DE", "FR", "IT", "EN"];
+
+function LocaleBadges({
+  translations,
+}: {
+  translations: { locale: CurriculumLocale; name: string }[];
+}) {
+  const present = new Set(translations.map((t) => t.locale));
+  return (
+    <span className="flex items-center gap-1">
+      {ALL_LOCALES.map((loc) => (
+        <span
+          key={loc}
+          className={
+            present.has(loc)
+              ? "text-[10px] uppercase tracking-wide font-medium px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+              : "text-[10px] uppercase tracking-wide font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground/50"
+          }
+        >
+          {loc}
+        </span>
+      ))}
+    </span>
   );
 }

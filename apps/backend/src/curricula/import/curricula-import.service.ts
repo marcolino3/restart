@@ -37,8 +37,8 @@ export class CurriculaImportService {
   ) {}
 
   previewFromBuffer(buffer: Buffer, filename: string): ImportPlanType {
-    const { rows, warnings } = parseCurriculumFile(buffer, filename);
-    const plan = buildImportPlan(rows, { warnings });
+    const parsed = parseCurriculumFile(buffer, filename);
+    const plan = buildImportPlan(parsed);
     return plan;
   }
 

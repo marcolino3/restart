@@ -45,7 +45,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ROUTES } from "@/constants/routes";
-import { GetOrganizationsQuery } from "@/gql/graphql";
+import { GetOrganizationsQuery } from "@restart/shared-types/graphql";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { removeOrganizationAction } from "../actions/remove-organization.action";
 

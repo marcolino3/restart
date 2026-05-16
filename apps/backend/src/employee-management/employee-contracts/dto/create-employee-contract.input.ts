@@ -1,4 +1,4 @@
-import { Field, Float, ID, InputType } from '@nestjs/graphql';
+import { Field, Float, ID, InputType, Int } from '@nestjs/graphql';
 import {
   IsBoolean,
   IsDateString,
@@ -78,7 +78,7 @@ export class CreateEmployeeContractInput {
   @IsBoolean()
   has13thSalary?: boolean;
 
-  @Field(() => Number, { nullable: true })
+  @Field(() => Int, { nullable: true })
   @IsOptional()
   @IsNumber()
   @Min(0)

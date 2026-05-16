@@ -9,7 +9,7 @@ import { Form } from "@/components/ui/form";
 import { FormActionButtons } from "@/components/form/form-fields/FormActionButtons";
 import { ROUTES } from "@/constants/routes";
 import { handleAction } from "@/lib/actions/handle-action";
-import { Persona } from "@/gql/graphql";
+import { Persona } from "@restart/shared-types/graphql";
 
 import {
   EmployeeFormSchema,

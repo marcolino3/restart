@@ -1,8 +1,8 @@
 "use server";
 
-import { graphql } from "@/gql";
+import { graphql } from "@restart/shared-types";
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
-import { GetEmployeeAbsenceCategoriesByOrgIdQuery } from "@/gql/graphql";
+import { GetEmployeeAbsenceCategoriesByOrgIdQuery } from "@restart/shared-types/graphql";
 
 const GetEmployeeAbsenceCategoriesByOrgIdDocument = graphql(`
   query GetEmployeeAbsenceCategoriesByOrgId {

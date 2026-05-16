@@ -1,7 +1,7 @@
 "use server";
 
-import { graphql } from "@/gql";
-import { GetOrganizationsQuery } from "@/gql/graphql";
+import { graphql } from "@restart/shared-types";
+import { GetOrganizationsQuery } from "@restart/shared-types/graphql";
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 
 const GetOrganizationsDocument = graphql(`

@@ -1,0 +1,99 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Täglich 03:00 UTC — fängt frische CVEs in Dependencies auf.
+    - cron: "0 3 * * *"
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gitleaks:
+    name: Secret Scanning (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history damit gitleaks auch alte Commits scannt.
+          # Auf großen Repos später auf depth: 50 begrenzen, hier reicht 0.
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Free / OSS-Mode: kein Lizenz-Token nötig.
+          GITLEAKS_ENABLE_COMMENTS: true
+          GITLEAKS_ENABLE_SUMMARY: true
+
+  trivy-fs:
+    name: Filesystem Vulnerability Scan (Trivy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          # Scope: Manifests + Lockfiles + Dockerfiles + IaC. Findet:
+          # - npm/pnpm Vulnerabilities (auch transitive)
+          # - K8s-Manifest-Misconfigs (privileged, runAsRoot, etc.)
+          # - Dockerfile-Issues (latest-Tag, COPY chown, USER root)
+          scanners: "vuln,misconfig,secret"
+          severity: "CRITICAL,HIGH"
+          # Build bricht bei CRITICAL/HIGH ab — bewusst streng.
+          # Bei False-Positives in .trivyignore oder per CVE ausblenden.
+          exit-code: "1"
+          ignore-unfixed: true
+          format: "sarif"
+          output: "trivy-fs-results.sarif"
+
+      - name: Upload Trivy scan results to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-fs-results.sarif"
+          category: "trivy-fs"
+
+  pnpm-audit:
+    name: pnpm audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      # Production deps strikt: HIGH+ failed den Build.
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level=high
+        continue-on-error: false
+
+      # Dev-deps: nur reporten, nicht failen — sonst blockieren Vitest/ESLint
+      # Transitive-CVEs jedes Update.
+      - name: Audit all dependencies (report only)
+        run: pnpm audit --audit-level=moderate
+        continue-on-error: true

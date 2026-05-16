@@ -102,4 +102,49 @@ export class Organization
   @Field(() => [Team], { nullable: true })
   @OneToMany(() => Team, (team) => team.organization)
   teams?: Team[];
+
+  // --- Versicherungen ---
+  @Field({ nullable: true })
+  @Column({ name: 'bvg_provider', type: 'varchar', length: 200, nullable: true })
+  bvgProvider?: string;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'bvg_contact_phone',
+    type: 'varchar',
+    length: 60,
+    nullable: true,
+  })
+  bvgContactPhone?: string;
+
+  @Field({ nullable: true })
+  @Column({ name: 'uvg_provider', type: 'varchar', length: 200, nullable: true })
+  uvgProvider?: string;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'uvg_contact_phone',
+    type: 'varchar',
+    length: 60,
+    nullable: true,
+  })
+  uvgContactPhone?: string;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'daily_sickness_provider',
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
+  dailySicknessProvider?: string;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'daily_sickness_contact_phone',
+    type: 'varchar',
+    length: 60,
+    nullable: true,
+  })
+  dailySicknessContactPhone?: string;
 }

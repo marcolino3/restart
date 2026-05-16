@@ -19,18 +19,36 @@ spec:
       labels:
         app: backend
     spec:
+      serviceAccountName: backend-sa
+      automountServiceAccountToken: false
       imagePullSecrets:
         - name: ghcr-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: backend
           image: ghcr.io/marcolino3/restart-backend:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3001
+              name: http
+              protocol: TCP
           envFrom:
             - configMapRef:
                 name: backend-config
             - secretRef:
                 name: backend-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
           resources:
             requests:
               memory: "256Mi"
@@ -38,6 +56,11 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
+          # Wir mounten /tmp als emptyDir, weil readOnlyRootFilesystem
+          # sonst Node/Sharp/Multer beim Schreiben in /tmp blockt.
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           livenessProbe:
             httpGet:
               path: /api/health
@@ -54,3 +77,16 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 5
             failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            # 60 * 5s = 5min Toleranz für Cold-Start (TypeORM-Init, etc.)
+            failureThreshold: 60
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 100Mi

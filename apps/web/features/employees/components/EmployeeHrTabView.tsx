@@ -40,14 +40,12 @@ export default function EmployeeHrTabView({ profile }: Props) {
         <Row label={tE("hr.bankName")} value={profile?.bankName || "–"} />
       </Section>
 
-      {/* Versicherungen & Steuern */}
+      {/* Persönliche Versicherungs-/Steuer-Daten */}
       <Section title={tE("hr.insurances")} mt>
-        <Row label={tE("hr.bvgProvider")} value={profile?.bvgProvider || "–"} />
         <Row
           label={tE("hr.bvgInsuranceNumber")}
           value={profile?.bvgInsuranceNumber || "–"}
         />
-        <Row label={tE("hr.uvgProvider")} value={profile?.uvgProvider || "–"} />
         <Row
           label={tE("hr.withholdingTaxCode")}
           value={profile?.withholdingTaxCode || "–"}

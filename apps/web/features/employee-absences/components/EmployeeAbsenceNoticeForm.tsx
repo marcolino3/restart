@@ -10,7 +10,7 @@ import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFor
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
 import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
 import { CreateButton } from "@/components/buttons/CreateButton";
-import { GetEmployeeAbsenceCategoriesByOrgIdQuery } from "@/gql/graphql";
+import { GetEmployeeAbsenceCategoriesByOrgIdQuery } from "@restart/shared-types/graphql";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { createEmployeeAbsenceNoticeAction } from "../actions/create-employee-absence-notice.action";
 import { toast } from "sonner";

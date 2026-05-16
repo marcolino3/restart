@@ -6,8 +6,58 @@ namespace: restart-staging
 resources:
   - ../base
   - ingress.yaml
+  # SealedSecrets werden via Bootstrap-Skript erzeugt — siehe
+  # k8s/staging/sealed-secrets/README.md. Solange das Verzeichnis leer ist,
+  # wird hier nichts referenziert. Sobald die ersten SealedSecrets existieren,
+  # gezielt eintragen:
+  #   - sealed-secrets/backend-secrets.yaml
+  #   - sealed-secrets/frontend-secrets.yaml
 
 patches:
+  # HPA: staging fährt kleiner — 1 bis 2 Replicas reichen für Smoketests.
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: backend-hpa
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 2
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: frontend-hpa
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 2
+
+  # PDB: bei nur 1 Pod blockiert minAvailable=1 alle Node-Drains.
+  # Auf maxUnavailable=1 umstellen, damit Cluster-Upgrades durchgehen können.
+  - target:
+      kind: PodDisruptionBudget
+      name: backend-pdb
+    patch: |
+      - op: remove
+        path: /spec/minAvailable
+      - op: add
+        path: /spec/maxUnavailable
+        value: 1
+  - target:
+      kind: PodDisruptionBudget
+      name: frontend-pdb
+    patch: |
+      - op: remove
+        path: /spec/minAvailable
+      - op: add
+        path: /spec/maxUnavailable
+        value: 1
+
+  # Initial-Replicas auf 1 (HPA wird sie ggf. anpassen).
   - target:
       kind: Deployment
       name: backend
@@ -33,3 +83,5 @@ configMapGenerator:
       - ALLOWED_ORIGINS=https://staging.colibri-app.ch
       - GOOGLE_AUTH_REDIRECT_URI=https://staging.colibri-app.ch/api/auth/google/callback
       - AUTH_UI_REDIRECT=https://staging.colibri-app.ch
+      - SENTRY_ENVIRONMENT=staging
+      - LOG_LEVEL=info

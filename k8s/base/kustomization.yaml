@@ -2,9 +2,25 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
+  # Backend
   - backend/deployment.yaml
   - backend/service.yaml
+  - backend/serviceaccount.yaml
   - backend/configmap.yaml
+  - backend/hpa.yaml
+  - backend/pdb.yaml
+
+  # Frontend
   - frontend/deployment.yaml
   - frontend/service.yaml
+  - frontend/serviceaccount.yaml
   - frontend/configmap.yaml
+  - frontend/hpa.yaml
+  - frontend/pdb.yaml
+
+  # Network Policies (default-deny + explizite Allows)
+  - network-policies/default-deny.yaml
+  - network-policies/allow-dns.yaml
+  - network-policies/frontend.yaml
+  - network-policies/backend.yaml
+  - network-policies/migrate-job.yaml

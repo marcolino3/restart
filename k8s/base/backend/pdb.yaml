@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: backend-pdb
+  labels:
+    app: backend
+spec:
+  # Mindestens 1 Pod muss während Voluntary Disruptions (Node-Drain bei
+  # Cluster-Upgrade) erreichbar bleiben. Bei Staging mit replicas=1 setzt
+  # der Staging-Overlay diesen Wert auf 0, damit Drains nicht blockiert werden.
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: backend

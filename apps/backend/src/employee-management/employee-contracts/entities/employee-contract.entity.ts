@@ -6,6 +6,7 @@ import {
   Field,
   Float,
   ID,
+  Int,
   ObjectType,
   registerEnumType,
 } from '@nestjs/graphql';
@@ -128,7 +129,7 @@ export class EmployeeContract extends AbstractEntity<EmployeeContract> {
   has13thSalary?: boolean | null;
 
   // --- Ferien ---
-  @Field(() => Number, { nullable: true })
+  @Field(() => Int, { nullable: true })
   @Column({ name: 'annual_vacation_days', type: 'int', nullable: true })
   annualVacationDays?: number | null;
 

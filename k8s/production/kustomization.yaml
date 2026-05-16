@@ -6,23 +6,13 @@ namespace: restart-production
 resources:
   - ../base
   - ingress.yaml
-  - secrets.yaml
+  # SealedSecrets — via ./scripts/bootstrap-secrets.sh production erzeugen.
+  # Sobald die Dateien existieren, hier explizit eintragen, z. B.:
+  #   - sealed-secrets/backend-secrets.yaml
+  #   - sealed-secrets/frontend-secrets.yaml
 
-patches:
-  - target:
-      kind: Deployment
-      name: backend
-    patch: |
-      - op: replace
-        path: /spec/replicas
-        value: 2
-  - target:
-      kind: Deployment
-      name: frontend
-    patch: |
-      - op: replace
-        path: /spec/replicas
-        value: 2
+# Production nutzt die Base-Defaults für HPA (min 2 / max 5) und PDB (minAvailable 1).
+# Die Deployment.replicas in der Base sind der Startwert; HPA übernimmt danach.
 
 configMapGenerator:
   - name: backend-config
@@ -30,6 +20,9 @@ configMapGenerator:
     literals:
       - NODE_ENV=production
       - DB_HOST=PRODUCTION_DB_HOST_PLACEHOLDER
+      - DB_SYNCHRONIZE=false
       - ALLOWED_ORIGINS=https://app.colibri-app.ch
       - GOOGLE_AUTH_REDIRECT_URI=https://app.colibri-app.ch/api/auth/google/callback
       - AUTH_UI_REDIRECT=https://app.colibri-app.ch
+      - SENTRY_ENVIRONMENT=production
+      - LOG_LEVEL=info

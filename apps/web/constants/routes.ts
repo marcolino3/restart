@@ -39,6 +39,8 @@ export const ROUTES = {
 
     // Students
     students: (locale: string) => `/${locale}/admin/students`,
+    studentsView: (locale: string, id: string) =>
+      `/${locale}/admin/students/${id}`,
     studentsCreate: (locale: string) => `/${locale}/admin/students/edit`,
     studentsEdit: (locale: string, id: string) =>
       `/${locale}/admin/students/edit/${id}`,

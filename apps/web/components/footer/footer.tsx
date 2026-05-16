@@ -1,4 +1,4 @@
-import { NavigationTreeOutput } from "@/gql/graphql";
+import { NavigationTreeOutput } from "@restart/shared-types/graphql";
 import { FooterDesktop } from "./FooterDesktop";
 import { FooterMobile } from "./FooterMobile";
 

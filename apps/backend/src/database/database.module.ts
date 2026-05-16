@@ -19,6 +19,7 @@ import { StudentContactPerson } from '@/school-management/contact-persons/entiti
 import { GradeLevel } from '@/school-management/grade-levels/entities/grade-level.entity';
 import { SchoolClassEnrollment } from '@/school-management/school-class-enrollments/entities/school-class-enrollment.entity';
 import { SchoolClass } from '@/school-management/school-classes/entities/school-class.entity';
+import { StudentNote } from '@/school-management/student-notes/entities/student-note.entity';
 import { Student } from '@/school-management/students/entities/student.entity';
 import { CurriculumLevel } from '@/curricula/entities/curriculum-level.entity';
 import { CurriculumLevelTranslation } from '@/curricula/entities/curriculum-level-translation.entity';
@@ -63,6 +64,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       SchoolClass,
       SchoolClassEnrollment,
       Student,
+      StudentNote,
       AdmissionStage,
       ContactPerson,
       StudentContactPerson,

@@ -1,0 +1,65 @@
+# gitleaks Konfiguration — erweitert das Standard-Ruleset um
+# Allowlists für bekannte Test-Werte und generated files.
+#
+# https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml
+title = "Restart / Colibri — gitleaks config"
+
+[extend]
+# Auf dem von gitleaks mitgelieferten Default-Ruleset aufsetzen.
+useDefault = true
+
+[allowlist]
+description = "Globale Ausnahmen"
+
+paths = [
+  # Code-Generation-Output — kein Code, keine echten Secrets.
+  '''apps/web/gql/.*''',
+  '''packages/shared-types/.*\.generated\.ts''',
+  # Lock-Dateien (gitleaks matched manchmal Hashes als Token).
+  '''pnpm-lock\.yaml''',
+  # Beispiel-Dateien.
+  '''.*\.env\.example''',
+  # Diese Config selbst.
+  '''\.gitleaks\.toml''',
+  # i18n-Strings (deutsche/englische Texte triggern manchmal Generic-Token-Rules).
+  '''apps/web/messages/.*\.json''',
+  # E2E + Tests: dürfen Dummy-Secrets enthalten (siehe Allowlist unten).
+  '''e2e/.*''',
+  '''apps/backend/test/.*''',
+  '''apps/.*\.spec\.ts''',
+]
+
+regexes = [
+  # CI-Test-Secrets aus .github/workflows/ci.yml — bewusst hardcoded.
+  '''ci-test-(access|refresh|google|mail)-(secret|client|refresh|token)-?(key|id)?''',
+  # Sentry-DSNs sind keine Geheimnisse (Public-Key, kein Auth).
+  '''https://[a-f0-9]+@o\d+\.ingest\.(de|us|eu)\.sentry\.io/\d+''',
+  # Beispiel-Encryption-Key aus CI (0123456789abcdef…).
+  '''0123456789abcdef[0-9a-f]+''',
+  # PLACEHOLDER-Strings.
+  '''PLACEHOLDER''',
+]
+
+stopwords = [
+  "example",
+  "placeholder",
+  "dummy",
+  "test",
+  "sample",
+]
+
+# Eigene Regel: Better-Auth Cookies erkennen, falls jemand sie versehentlich
+# aus einer Session-Inspection ins Git pasted.
+[[rules]]
+id = "better-auth-session-token"
+description = "Better-Auth Session-Token (sieht aus wie eine signierte ID)"
+regex = '''better-auth\.session_token=[A-Za-z0-9_-]{32,}'''
+tags = ["better-auth", "session"]
+
+# Eigene Regel: JWT mit auffälliger Größe — gitleaks default hat 'jwt' aber
+# nicht alle Varianten.
+[[rules]]
+id = "long-jwt"
+description = "JWT-ähnlicher Token > 100 Zeichen"
+regex = '''eyJ[A-Za-z0-9_-]{20,}\.eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}'''
+tags = ["jwt"]

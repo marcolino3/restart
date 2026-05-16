@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { customSession } from 'better-auth/plugins';
+import { expo } from '@better-auth/expo';
 import { Pool } from 'pg';
 
 const requireEnv = (key: string): string => {
@@ -77,10 +78,15 @@ export const auth = betterAuth({
     customSession(async ({ user, session }, ctx) => {
       const cookieHeader =
         ctx.headers?.get?.('cookie') ?? ctx.request?.headers.get('cookie');
-      const raw = parseCookie(cookieHeader, ACTIVE_ORG_COOKIE);
+      const raw =
+        parseCookie(cookieHeader, ACTIVE_ORG_COOKIE) ??
+        ctx.headers?.get?.(ACTIVE_ORG_COOKIE.toLowerCase()) ??
+        ctx.request?.headers.get(ACTIVE_ORG_COOKIE.toLowerCase()) ??
+        undefined;
       const activeOrganizationId = raw && UUID_RE.test(raw) ? raw : null;
       return { user, session, activeOrganizationId };
     }),
+    expo(),
   ],
 });
 

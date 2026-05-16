@@ -36,21 +36,11 @@ export class UpsertEmployeeHrProfileInput {
   @IsString()
   bankName?: string;
 
-  // --- Versicherungen & Steuern ---
-  @Field(() => String, { nullable: true })
-  @IsOptional()
-  @IsString()
-  bvgProvider?: string;
-
+  // --- Persönliche Versicherungs-/Steuer-Identifikatoren ---
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
   bvgInsuranceNumber?: string;
-
-  @Field(() => String, { nullable: true })
-  @IsOptional()
-  @IsString()
-  uvgProvider?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()

@@ -1,7 +1,7 @@
 "use server";
 
-import { graphql } from "@/gql";
-import { OrganizationQuery } from "@/gql/graphql";
+import { graphql } from "@restart/shared-types";
+import { OrganizationQuery } from "@restart/shared-types/graphql";
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 
 const OrganizationByIdDocument = graphql(`
@@ -22,6 +22,12 @@ const OrganizationByIdDocument = graphql(`
       latitude
       longitude
       isActive
+      bvgProvider
+      bvgContactPhone
+      uvgProvider
+      uvgContactPhone
+      dailySicknessProvider
+      dailySicknessContactPhone
       createdAt
       updatedAt
     }

@@ -12,23 +12,6 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": [
-        "src/**",
-        "app/**",
-        "components/**",
-        "lib/**",
-        "hooks/**",
-        "messages/**",
-        "public/**",
-        "gql/**",
-        "i18n/**",
-        "nest-cli.json",
-        "next.config.*",
-        "tsconfig*.json",
-        "postcss.config.*",
-        "tailwind.config.*",
-        "package.json"
-      ],
       "outputs": [
         "dist/**",
         ".next/**",
@@ -37,11 +20,11 @@
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "dependsOn": ["^build"]
     },
     "lint": {
-      "dependsOn": ["^build"],
-      "outputs": []
+      "dependsOn": ["^build"]
     },
     "test": {
       "dependsOn": ["^build"],
@@ -53,11 +36,9 @@
     },
     "codegen": {
       "cache": false,
-      "outputs": ["gql/**"]
+      "outputs": ["src/**", "gql/**"]
     },
-    "format": {
-      "outputs": []
-    },
+    "format": {},
     "clean": {
       "cache": false
     }

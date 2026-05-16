@@ -19,16 +19,37 @@ spec:
       labels:
         app: frontend
     spec:
+      serviceAccountName: frontend-sa
+      automountServiceAccountToken: false
       imagePullSecrets:
         - name: ghcr-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: frontend
           image: ghcr.io/marcolino3/restart-frontend:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
+              name: http
+              protocol: TCP
           envFrom:
             - configMapRef:
                 name: frontend-config
+            - secretRef:
+                name: frontend-secrets
+                optional: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
           resources:
             requests:
               memory: "256Mi"
@@ -36,6 +57,14 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
+          # Next.js Standalone schreibt Cache-Files unter .next/cache und
+          # legacy-Bilder/Logs in /tmp — beides nicht möglich bei
+          # readOnlyRootFilesystem ohne emptyDir.
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: next-cache
+              mountPath: /app/apps/web/.next/cache
           livenessProbe:
             httpGet:
               path: /
@@ -52,3 +81,18 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 5
             failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 30
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 100Mi
+        - name: next-cache
+          emptyDir:
+            sizeLimit: 500Mi

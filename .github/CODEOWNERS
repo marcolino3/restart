@@ -1,0 +1,26 @@
+# CODEOWNERS — automatische Reviewer-Anfragen pro Pfad
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner für alles
+*                                       @marcolino3
+
+# Sicherheits-kritische Bereiche — immer reviewen
+/apps/backend/src/auth/                 @marcolino3
+/apps/backend/src/better-auth/          @marcolino3
+/apps/backend/src/auth-accounts/        @marcolino3
+/apps/backend/src/permissions/          @marcolino3
+/apps/backend/src/roles/                @marcolino3
+/apps/backend/src/organization-settings/ @marcolino3
+/apps/backend/src/lib/auth.ts           @marcolino3
+
+# Infrastruktur
+/terraform/                             @marcolino3
+/k8s/                                   @marcolino3
+/.github/workflows/                     @marcolino3
+/docker-compose.yml                     @marcolino3
+**/Dockerfile                           @marcolino3
+
+# Dependencies & Build
+/package.json                           @marcolino3
+/pnpm-lock.yaml                         @marcolino3
+/turbo.json                             @marcolino3

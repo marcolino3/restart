@@ -3,9 +3,8 @@ import { getStudentEnrollmentsAction } from "@/features/students/actions/get-stu
 import { getSchoolClassesAction } from "@/features/school-classes/actions/get-school-classes.action";
 import { getStudentContactPersonsAction } from "@/features/contact-persons/actions/get-student-contact-persons.action";
 import { getContactPersonsAction } from "@/features/contact-persons/actions/get-contact-persons.action";
-import StudentForm from "@/features/students/components/StudentForm";
-import { StudentEnrollmentsList } from "@/features/students/components/StudentEnrollmentsList";
-import { StudentContactPersonsList } from "@/features/students/components/StudentContactPersonsList";
+import { getStudentNotesAction } from "@/features/student-notes/actions/get-student-notes.action";
+import StudentEditView from "@/features/students/components/StudentEditView";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
@@ -17,12 +16,20 @@ const EditStudentPage = async ({ params }: Props) => {
   const { studentId } = await params;
   const t = await getTranslations("Students");
 
-  const [studentResult, enrollmentsResult, classesResult, contactPersonLinksResult, allContactPersonsResult] = await Promise.all([
+  const [
+    studentResult,
+    enrollmentsResult,
+    classesResult,
+    contactPersonLinksResult,
+    allContactPersonsResult,
+    notesResult,
+  ] = await Promise.all([
     getStudentByIdAction(studentId),
     getStudentEnrollmentsAction(studentId),
     getSchoolClassesAction(),
     getStudentContactPersonsAction(studentId),
     getContactPersonsAction(),
+    getStudentNotesAction(studentId),
   ]);
 
   if (!studentResult.success || !studentResult.data) {
@@ -42,24 +49,20 @@ const EditStudentPage = async ({ params }: Props) => {
   const allContactPersons = allContactPersonsResult.success
     ? (allContactPersonsResult.data ?? [])
     : [];
+  const notes = notesResult.success ? (notesResult.data ?? []) : [];
+  const studentName =
+    `${student.firstName} ${student.lastName}`.trim() || t("students");
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">
-        {t("editStudent")} &ndash; {student.firstName} {student.lastName}
-      </h1>
-      <StudentForm student={student} />
-      <StudentEnrollmentsList
-        studentId={student.id}
-        enrollments={enrollments}
-        schoolClasses={schoolClasses}
-      />
-      <StudentContactPersonsList
-        studentId={student.id}
-        links={contactPersonLinks}
-        allContactPersons={allContactPersons}
-      />
-    </div>
+    <StudentEditView
+      student={student}
+      enrollments={enrollments}
+      schoolClasses={schoolClasses}
+      contactPersonLinks={contactPersonLinks}
+      allContactPersons={allContactPersons}
+      notes={notes}
+      studentName={studentName}
+    />
   );
 };
 
