@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Colibri",
-    "slug": "colibri",
+    "name": "Restart",
+    "slug": "restart",
     "version": "0.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "colibri",
+    "scheme": "restart",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -14,11 +14,12 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "bundleIdentifier": "ch.colibri.app",
-      "supportsTablet": true
+      "bundleIdentifier": "ch.restart.app",
+      "supportsTablet": true,
+      "usesAppleSignIn": true
     },
     "android": {
-      "package": "ch.colibri.app",
+      "package": "ch.restart.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -34,7 +35,9 @@
     "plugins": [
       "expo-router",
       "expo-localization",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-apple-authentication",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { customSession } from 'better-auth/plugins';
 import { expo } from '@better-auth/expo';
+import * as jwt from 'jsonwebtoken';
 import { Pool } from 'pg';
 
 const requireEnv = (key: string): string => {
@@ -48,6 +49,37 @@ const parseCookie = (header: string | null | undefined, name: string) => {
   return undefined;
 };
 
+// Apple requires an ES256-signed JWT as clientSecret. Build it at module load
+// if the secrets are present; skip the provider entirely otherwise so dev/CI
+// without Apple Developer credentials still boots.
+const APPLE_BUNDLE_ID = process.env.APPLE_BUNDLE_ID ?? 'ch.restart.app';
+
+const buildAppleSocialConfig = () => {
+  const privateKey = process.env.APPLE_AUTH_PRIVATE_KEY;
+  const clientId = process.env.APPLE_AUTH_CLIENT_ID;
+  const teamId = process.env.APPLE_AUTH_TEAM_ID;
+  const keyId = process.env.APPLE_AUTH_KEY_ID;
+  if (!privateKey || !clientId || !teamId || !keyId) return undefined;
+
+  const normalizedKey = privateKey.replace(/\\n/g, '\n');
+  const clientSecret = jwt.sign({}, normalizedKey, {
+    algorithm: 'ES256',
+    issuer: teamId,
+    audience: 'https://appleid.apple.com',
+    subject: clientId,
+    expiresIn: '180d',
+    keyid: keyId,
+  });
+
+  return {
+    clientId,
+    clientSecret,
+    appBundleIdentifier: APPLE_BUNDLE_ID,
+  };
+};
+
+const appleSocial = buildAppleSocialConfig();
+
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:4001',
   secret: requireEnv('BETTER_AUTH_SECRET'),
@@ -56,18 +88,29 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  // OAuth state is stored in the `verification` DB table instead of an
+  // encrypted cookie. Required for Expo: the in-app web browser (used
+  // for OAuth) is a separate cookie jar from the Expo client, so the
+  // default cookie-based state lookup fails on Mobile (state_mismatch
+  // / "auth state cookie not found"). Database lookup works for both
+  // Web (same cookie jar) and Mobile (no cookie needed).
+  account: {
+    storeStateStrategy: 'database',
+  },
   socialProviders: {
     google: {
       clientId: requireEnv('GOOGLE_AUTH_CLIENT_ID'),
       clientSecret: requireEnv('GOOGLE_AUTH_CLIENT_SECRET'),
-      // Force the OAuth callback through the frontend's Next.js proxy
-      // (frontend rewrites /api/* to backend). This makes the
-      // better-auth session cookie land on the frontend domain — required
-      // for Next.js Server Actions to read it via cookies().
-      redirectURI:
-        process.env.BETTER_AUTH_GOOGLE_REDIRECT_URI ??
-        'http://localhost:4000/api/auth/callback/google',
+      // No redirectURI override: callback lands on backend
+      // (${baseURL}/api/auth/callback/google = localhost:4001 in dev),
+      // which keeps the state cookie on the same origin as where it was
+      // set during the expo()-proxy leg of the mobile flow.
+      // The web flow still works because localhost shares cookies across
+      // ports; for production the cookie config must allow the parent
+      // domain (e.g. set cookie Domain= to a shared parent) so the web
+      // frontend and backend subdomains both see the auth cookie.
     },
+    ...(appleSocial ? { apple: appleSocial } : {}),
   },
   plugins: [
     // Surfaces the active organization id (from the Active-Org cookie) on
