@@ -27,6 +27,9 @@ type Documents = {
     "\n  mutation UpdateAddress($input: UpdateAddressInput!) {\n    updateAddress(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateAddressDocument,
     "\n  mutation UpdateContactPerson($input: UpdateContactPersonInput!) {\n    updateContactPerson(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateContactPersonDocument,
     "\n  mutation UpdateStudentContactPersonLink(\n    $input: UpdateStudentContactPersonInput!\n  ) {\n    updateStudentContactPersonLink(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateStudentContactPersonLinkDocument,
+    "\n  mutation DeleteCountryInputTemplate($id: ID!) {\n    deleteCountryInputTemplate(id: $id)\n  }\n": typeof types.DeleteCountryInputTemplateDocument,
+    "\n  query CountryInputTemplates {\n    countryInputTemplates {\n      id\n      countryCode\n      fieldType\n      mask\n      placeholder\n      maxLength\n      regex\n      prefix\n      validatorKind\n    }\n  }\n": typeof types.CountryInputTemplatesDocument,
+    "\n  mutation UpsertCountryInputTemplate(\n    $input: UpsertCountryInputTemplateInput!\n  ) {\n    upsertCountryInputTemplate(input: $input) {\n      id\n      countryCode\n      fieldType\n      mask\n      placeholder\n      maxLength\n      regex\n      prefix\n      validatorKind\n    }\n  }\n": typeof types.UpsertCountryInputTemplateDocument,
     "\n  mutation ArchiveCurriculumNode($id: ID!) {\n    archiveCurriculumNode(id: $id)\n  }\n": typeof types.ArchiveCurriculumNodeDocument,
     "\n  mutation ArchiveCurriculum($id: ID!) {\n    archiveCurriculum(id: $id)\n  }\n": typeof types.ArchiveCurriculumDocument,
     "\n  mutation CreateCurriculum($input: CreateCurriculumInput!) {\n    createCurriculum(input: $input) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n": typeof types.CreateCurriculumDocument,
@@ -127,6 +130,9 @@ const documents: Documents = {
     "\n  mutation UpdateAddress($input: UpdateAddressInput!) {\n    updateAddress(input: $input) {\n      id\n    }\n  }\n": types.UpdateAddressDocument,
     "\n  mutation UpdateContactPerson($input: UpdateContactPersonInput!) {\n    updateContactPerson(input: $input) {\n      id\n    }\n  }\n": types.UpdateContactPersonDocument,
     "\n  mutation UpdateStudentContactPersonLink(\n    $input: UpdateStudentContactPersonInput!\n  ) {\n    updateStudentContactPersonLink(input: $input) {\n      id\n    }\n  }\n": types.UpdateStudentContactPersonLinkDocument,
+    "\n  mutation DeleteCountryInputTemplate($id: ID!) {\n    deleteCountryInputTemplate(id: $id)\n  }\n": types.DeleteCountryInputTemplateDocument,
+    "\n  query CountryInputTemplates {\n    countryInputTemplates {\n      id\n      countryCode\n      fieldType\n      mask\n      placeholder\n      maxLength\n      regex\n      prefix\n      validatorKind\n    }\n  }\n": types.CountryInputTemplatesDocument,
+    "\n  mutation UpsertCountryInputTemplate(\n    $input: UpsertCountryInputTemplateInput!\n  ) {\n    upsertCountryInputTemplate(input: $input) {\n      id\n      countryCode\n      fieldType\n      mask\n      placeholder\n      maxLength\n      regex\n      prefix\n      validatorKind\n    }\n  }\n": types.UpsertCountryInputTemplateDocument,
     "\n  mutation ArchiveCurriculumNode($id: ID!) {\n    archiveCurriculumNode(id: $id)\n  }\n": types.ArchiveCurriculumNodeDocument,
     "\n  mutation ArchiveCurriculum($id: ID!) {\n    archiveCurriculum(id: $id)\n  }\n": types.ArchiveCurriculumDocument,
     "\n  mutation CreateCurriculum($input: CreateCurriculumInput!) {\n    createCurriculum(input: $input) {\n      id\n      slug\n      position\n      isArchived\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n": types.CreateCurriculumDocument,
@@ -280,6 +286,18 @@ export function graphql(source: "\n  mutation UpdateContactPerson($input: Update
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation UpdateStudentContactPersonLink(\n    $input: UpdateStudentContactPersonInput!\n  ) {\n    updateStudentContactPersonLink(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateStudentContactPersonLink(\n    $input: UpdateStudentContactPersonInput!\n  ) {\n    updateStudentContactPersonLink(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation DeleteCountryInputTemplate($id: ID!) {\n    deleteCountryInputTemplate(id: $id)\n  }\n"): (typeof documents)["\n  mutation DeleteCountryInputTemplate($id: ID!) {\n    deleteCountryInputTemplate(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query CountryInputTemplates {\n    countryInputTemplates {\n      id\n      countryCode\n      fieldType\n      mask\n      placeholder\n      maxLength\n      regex\n      prefix\n      validatorKind\n    }\n  }\n"): (typeof documents)["\n  query CountryInputTemplates {\n    countryInputTemplates {\n      id\n      countryCode\n      fieldType\n      mask\n      placeholder\n      maxLength\n      regex\n      prefix\n      validatorKind\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpsertCountryInputTemplate(\n    $input: UpsertCountryInputTemplateInput!\n  ) {\n    upsertCountryInputTemplate(input: $input) {\n      id\n      countryCode\n      fieldType\n      mask\n      placeholder\n      maxLength\n      regex\n      prefix\n      validatorKind\n    }\n  }\n"): (typeof documents)["\n  mutation UpsertCountryInputTemplate(\n    $input: UpsertCountryInputTemplateInput!\n  ) {\n    upsertCountryInputTemplate(input: $input) {\n      id\n      countryCode\n      fieldType\n      mask\n      placeholder\n      maxLength\n      regex\n      prefix\n      validatorKind\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

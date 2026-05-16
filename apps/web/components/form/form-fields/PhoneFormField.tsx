@@ -29,10 +29,10 @@ interface Props {
   namespace?: string;
 }
 
-export const SocialSecurityNumberFormField = ({
+export const PhoneFormField = ({
   name,
   country,
-  label = "socialSecurityNumber",
+  label = "phone",
   description,
   placeholder,
   width = "w-full",
@@ -41,7 +41,7 @@ export const SocialSecurityNumberFormField = ({
 }: Props) => {
   const t = useTranslations(namespace);
   const { control } = useFormContext();
-  const template = useCountryTemplate(country, "SSN");
+  const template = useCountryTemplate(country, "PHONE");
 
   const maskRef = useMemo(
     () =>
@@ -70,9 +70,9 @@ export const SocialSecurityNumberFormField = ({
                 field.ref(el);
                 if (maskRef) maskRef(el);
               }}
-              type="text"
-              inputMode={template ? "numeric" : "text"}
-              autoComplete="off"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
               maxLength={template?.maxLength ?? undefined}
               placeholder={
                 template

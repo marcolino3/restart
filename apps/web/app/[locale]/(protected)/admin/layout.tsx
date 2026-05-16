@@ -5,15 +5,18 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 import { getOrganizationsAction } from "@/features/organizations/actions/get-organizations.action";
 import { UserProvider } from "@/features/users/context/current-user.context";
+import { getCountryInputTemplatesAction } from "@/features/country-input-templates/actions/get-country-input-templates.action";
+import { CountryInputTemplatesProvider } from "@/features/country-input-templates/CountryInputTemplatesProvider";
 import { getLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
 import React from "react";
 
 const AdminLayout = async ({ children }: { children: React.ReactNode }) => {
   const locale = await getLocale();
-  const [res, orgsRes] = await Promise.all([
+  const [res, orgsRes, templatesRes] = await Promise.all([
     getCurrentUserAction(),
     getOrganizationsAction(),
+    getCountryInputTemplatesAction(),
   ]);
 
   if (!res?.success) redirect(`/${locale}/sign-in`);
@@ -29,6 +32,7 @@ const AdminLayout = async ({ children }: { children: React.ReactNode }) => {
 
   return (
     <UserProvider user={res.data}>
+      <CountryInputTemplatesProvider templates={templatesRes.data}>
       <SidebarProvider
         style={
           {
@@ -51,6 +55,7 @@ const AdminLayout = async ({ children }: { children: React.ReactNode }) => {
           </SidebarInset>
         </SheetProvider>
       </SidebarProvider>
+      </CountryInputTemplatesProvider>
     </UserProvider>
   );
 };

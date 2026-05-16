@@ -20,6 +20,7 @@ import {
   IconSettings,
   IconShieldLock,
   IconUsers,
+  IconWorld,
 } from "@tabler/icons-react";
 
 import { NavDocuments } from "@/components/nav-documents";
@@ -147,6 +148,11 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
               title: "Users",
               url: ROUTES.admin.users(locale),
               icon: IconUsers,
+            },
+            {
+              title: "Country Templates",
+              url: ROUTES.admin.countryTemplates(locale),
+              icon: IconWorld,
             },
           ],
         }

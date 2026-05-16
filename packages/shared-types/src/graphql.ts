@@ -161,6 +161,39 @@ export type Country = {
   version: Scalars['Int']['output'];
 };
 
+export enum CountryInputFieldType {
+  Iban = 'IBAN',
+  Phone = 'PHONE',
+  PostalCode = 'POSTAL_CODE',
+  Ssn = 'SSN'
+}
+
+export type CountryInputTemplate = {
+  __typename?: 'CountryInputTemplate';
+  countryCode: Scalars['String']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  fieldType: CountryInputFieldType;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  mask: Scalars['String']['output'];
+  maxLength?: Maybe<Scalars['Int']['output']>;
+  placeholder?: Maybe<Scalars['String']['output']>;
+  prefix?: Maybe<Scalars['String']['output']>;
+  regex?: Maybe<Scalars['String']['output']>;
+  updatedAt: Scalars['DateTime']['output'];
+  validatorKind: CountryInputValidatorKind;
+  version: Scalars['Int']['output'];
+};
+
+export enum CountryInputValidatorKind {
+  ChSsn = 'CH_SSN',
+  IbanMod97 = 'IBAN_MOD97',
+  None = 'NONE',
+  Regex = 'REGEX'
+}
+
 export type CreateAddressInput = {
   addressLine2?: InputMaybe<Scalars['String']['input']>;
   city?: InputMaybe<Scalars['String']['input']>;
@@ -669,7 +702,7 @@ export type EmployeeContract = {
   deletedAt?: Maybe<Scalars['DateTime']['output']>;
   employee?: Maybe<Employee>;
   employeeId: Scalars['String']['output'];
-  endDate?: Maybe<Scalars['DateTime']['output']>;
+  endDate?: Maybe<Scalars['String']['output']>;
   grossSalary?: Maybe<Scalars['Float']['output']>;
   has13thSalary?: Maybe<Scalars['Boolean']['output']>;
   id: Scalars['ID']['output'];
@@ -680,9 +713,11 @@ export type EmployeeContract = {
   organizationId: Scalars['String']['output'];
   paymentInterval?: Maybe<EmployeePaymentInterval>;
   position?: Maybe<Scalars['String']['output']>;
-  probationEndDate?: Maybe<Scalars['DateTime']['output']>;
+  previousContract?: Maybe<EmployeeContract>;
+  previousContractId?: Maybe<Scalars['ID']['output']>;
+  probationEndDate?: Maybe<Scalars['String']['output']>;
   remainingVacationDays?: Maybe<Scalars['String']['output']>;
-  startDate: Scalars['DateTime']['output'];
+  startDate: Scalars['String']['output'];
   supervisor?: Maybe<Membership>;
   supervisorMembershipId?: Maybe<Scalars['ID']['output']>;
   updatedAt: Scalars['DateTime']['output'];
@@ -912,6 +947,7 @@ export type Mutation = {
   createTimeTracking: TimeTracking;
   createUser: User;
   deleteAddress: Scalars['Boolean']['output'];
+  deleteCountryInputTemplate: Scalars['Boolean']['output'];
   deleteEmployeeContract: Scalars['Boolean']['output'];
   deleteEnrollment: Scalars['Boolean']['output'];
   deleteGradeLevel: Scalars['Boolean']['output'];
@@ -968,6 +1004,7 @@ export type Mutation = {
   updateTeamMember: TeamMember;
   updateTimeTracking: TimeTracking;
   updateUser: User;
+  upsertCountryInputTemplate: CountryInputTemplate;
   upsertCurriculumLevelTranslation: CurriculumLevelTranslation;
   upsertCurriculumNodeTranslation: CurriculumNodeTranslation;
   upsertCurriculumTranslation: CurriculumTranslation;
@@ -1118,6 +1155,11 @@ export type MutationCreateUserArgs = {
 
 
 export type MutationDeleteAddressArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteCountryInputTemplateArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -1404,6 +1446,11 @@ export type MutationUpdateUserArgs = {
 };
 
 
+export type MutationUpsertCountryInputTemplateArgs = {
+  input: UpsertCountryInputTemplateInput;
+};
+
+
 export type MutationUpsertCurriculumLevelTranslationArgs = {
   input: UpsertCurriculumLevelTranslationInput;
 };
@@ -1548,6 +1595,8 @@ export type Query = {
   contactPersonsSharingAddress: Array<ContactPerson>;
   countries: Array<Country>;
   country: Country;
+  countryInputTemplate?: Maybe<CountryInputTemplate>;
+  countryInputTemplates: Array<CountryInputTemplate>;
   currentUser: User;
   curricula: Array<Curriculum>;
   curriculumById: Curriculum;
@@ -1637,6 +1686,12 @@ export type QueryContactPersonsSharingAddressArgs = {
 
 export type QueryCountryArgs = {
   id: Scalars['Int']['input'];
+};
+
+
+export type QueryCountryInputTemplateArgs = {
+  countryCode: Scalars['String']['input'];
+  fieldType: CountryInputFieldType;
 };
 
 
@@ -2336,6 +2391,17 @@ export type UpdateUserInput = {
   username?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type UpsertCountryInputTemplateInput = {
+  countryCode: Scalars['String']['input'];
+  fieldType: CountryInputFieldType;
+  mask: Scalars['String']['input'];
+  maxLength?: InputMaybe<Scalars['Int']['input']>;
+  placeholder?: InputMaybe<Scalars['String']['input']>;
+  prefix?: InputMaybe<Scalars['String']['input']>;
+  regex?: InputMaybe<Scalars['String']['input']>;
+  validatorKind?: InputMaybe<CountryInputValidatorKind>;
+};
+
 export type UpsertCurriculumLevelTranslationInput = {
   curriculumLevelId: Scalars['ID']['input'];
   locale: CurriculumLocale;
@@ -2526,6 +2592,25 @@ export type UpdateStudentContactPersonLinkMutationVariables = Exact<{
 
 export type UpdateStudentContactPersonLinkMutation = { __typename?: 'Mutation', updateStudentContactPersonLink: { __typename?: 'StudentContactPerson', id: string } };
 
+export type DeleteCountryInputTemplateMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteCountryInputTemplateMutation = { __typename?: 'Mutation', deleteCountryInputTemplate: boolean };
+
+export type CountryInputTemplatesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type CountryInputTemplatesQuery = { __typename?: 'Query', countryInputTemplates: Array<{ __typename?: 'CountryInputTemplate', id: string, countryCode: string, fieldType: CountryInputFieldType, mask: string, placeholder?: string | null, maxLength?: number | null, regex?: string | null, prefix?: string | null, validatorKind: CountryInputValidatorKind }> };
+
+export type UpsertCountryInputTemplateMutationVariables = Exact<{
+  input: UpsertCountryInputTemplateInput;
+}>;
+
+
+export type UpsertCountryInputTemplateMutation = { __typename?: 'Mutation', upsertCountryInputTemplate: { __typename?: 'CountryInputTemplate', id: string, countryCode: string, fieldType: CountryInputFieldType, mask: string, placeholder?: string | null, maxLength?: number | null, regex?: string | null, prefix?: string | null, validatorKind: CountryInputValidatorKind } };
+
 export type ArchiveCurriculumNodeMutationVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
@@ -2672,7 +2757,7 @@ export type EmployeeContractsByEmployeeIdQueryVariables = Exact<{
 }>;
 
 
-export type EmployeeContractsByEmployeeIdQuery = { __typename?: 'Query', employeeContractsByEmployeeId: Array<{ __typename?: 'EmployeeContract', id: string, employeeId: string, startDate: any, endDate?: any | null, probationEndDate?: any | null, contractType?: EmployeeContractType | null, position?: string | null, supervisorMembershipId?: string | null, workloadPercent?: number | null, weeklyHours?: string | null, grossSalary?: number | null, paymentInterval?: EmployeePaymentInterval | null, has13thSalary?: boolean | null, annualVacationDays?: number | null, remainingVacationDays?: string | null, notes?: string | null, isActive: boolean }> };
+export type EmployeeContractsByEmployeeIdQuery = { __typename?: 'Query', employeeContractsByEmployeeId: Array<{ __typename?: 'EmployeeContract', id: string, employeeId: string, startDate: string, endDate?: string | null, probationEndDate?: string | null, contractType?: EmployeeContractType | null, position?: string | null, supervisorMembershipId?: string | null, workloadPercent?: number | null, weeklyHours?: string | null, grossSalary?: number | null, paymentInterval?: EmployeePaymentInterval | null, has13thSalary?: boolean | null, annualVacationDays?: number | null, remainingVacationDays?: string | null, notes?: string | null, isActive: boolean }> };
 
 export type CreateEmployeeContractMutationVariables = Exact<{
   input: CreateEmployeeContractInput;
@@ -3118,6 +3203,9 @@ export const UnlinkContactPersonFromStudentDocument = {"kind":"Document","defini
 export const UpdateAddressDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateAddress"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateAddressInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateAddress"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateAddressMutation, UpdateAddressMutationVariables>;
 export const UpdateContactPersonDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateContactPerson"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateContactPersonInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateContactPerson"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateContactPersonMutation, UpdateContactPersonMutationVariables>;
 export const UpdateStudentContactPersonLinkDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateStudentContactPersonLink"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateStudentContactPersonInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateStudentContactPersonLink"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateStudentContactPersonLinkMutation, UpdateStudentContactPersonLinkMutationVariables>;
+export const DeleteCountryInputTemplateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteCountryInputTemplate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteCountryInputTemplate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteCountryInputTemplateMutation, DeleteCountryInputTemplateMutationVariables>;
+export const CountryInputTemplatesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"CountryInputTemplates"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"countryInputTemplates"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"countryCode"}},{"kind":"Field","name":{"kind":"Name","value":"fieldType"}},{"kind":"Field","name":{"kind":"Name","value":"mask"}},{"kind":"Field","name":{"kind":"Name","value":"placeholder"}},{"kind":"Field","name":{"kind":"Name","value":"maxLength"}},{"kind":"Field","name":{"kind":"Name","value":"regex"}},{"kind":"Field","name":{"kind":"Name","value":"prefix"}},{"kind":"Field","name":{"kind":"Name","value":"validatorKind"}}]}}]}}]} as unknown as DocumentNode<CountryInputTemplatesQuery, CountryInputTemplatesQueryVariables>;
+export const UpsertCountryInputTemplateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpsertCountryInputTemplate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpsertCountryInputTemplateInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"upsertCountryInputTemplate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"countryCode"}},{"kind":"Field","name":{"kind":"Name","value":"fieldType"}},{"kind":"Field","name":{"kind":"Name","value":"mask"}},{"kind":"Field","name":{"kind":"Name","value":"placeholder"}},{"kind":"Field","name":{"kind":"Name","value":"maxLength"}},{"kind":"Field","name":{"kind":"Name","value":"regex"}},{"kind":"Field","name":{"kind":"Name","value":"prefix"}},{"kind":"Field","name":{"kind":"Name","value":"validatorKind"}}]}}]}}]} as unknown as DocumentNode<UpsertCountryInputTemplateMutation, UpsertCountryInputTemplateMutationVariables>;
 export const ArchiveCurriculumNodeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ArchiveCurriculumNode"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"archiveCurriculumNode"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<ArchiveCurriculumNodeMutation, ArchiveCurriculumNodeMutationVariables>;
 export const ArchiveCurriculumDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ArchiveCurriculum"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"archiveCurriculum"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<ArchiveCurriculumMutation, ArchiveCurriculumMutationVariables>;
 export const CreateCurriculumDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateCurriculum"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateCurriculumInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createCurriculum"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"position"}},{"kind":"Field","name":{"kind":"Name","value":"isArchived"}},{"kind":"Field","name":{"kind":"Name","value":"translations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]}}]} as unknown as DocumentNode<CreateCurriculumMutation, CreateCurriculumMutationVariables>;

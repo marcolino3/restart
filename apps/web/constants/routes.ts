@@ -62,6 +62,12 @@ export const ROUTES = {
     admissionStages: (locale: string) =>
       `/${locale}/admin/settings/admission-stages`,
 
+    // Country Input Templates
+    countryTemplates: (locale: string) =>
+      `/${locale}/admin/settings/country-templates`,
+    countryTemplatesDetail: (locale: string, countryCode: string) =>
+      `/${locale}/admin/settings/country-templates/${countryCode.toUpperCase()}`,
+
     // Roles
     roles: (locale: string) => `/${locale}/admin/roles`,
 

@@ -19,6 +19,7 @@ import { BetterAuthModule } from './better-auth/better-auth.module';
 import { UserEmailsModule } from './user-emails/user-emails.module';
 import { CommonModule } from './common/common.module';
 import { CountriesModule } from './countries/countries.module';
+import { CountryInputTemplatesModule } from './country-input-templates/country-input-templates.module';
 import { EmployeeContractsModule } from './employee-management/employee-contracts/employee-contracts.module';
 import { EmployeeManagementModule } from './employee-management/employee-management.module';
 import { SchoolManagementModule } from './school-management/school-management.module';
@@ -115,6 +116,7 @@ import { join } from 'path';
     CommonModule,
     AddressesModule,
     CountriesModule,
+    CountryInputTemplatesModule,
     UsersModule,
     UserEmailsModule,
     RolesModule,

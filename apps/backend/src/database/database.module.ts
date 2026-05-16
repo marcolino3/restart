@@ -1,6 +1,7 @@
 import { Address } from '@/addresses/entities/address.entity';
 import { AuthAccount } from '@/auth-accounts/entities/auth-account.entity';
 import { Country } from '@/countries/entities/country.entity';
+import { CountryInputTemplate } from '@/country-input-templates/entities/country-input-template.entity';
 import { EmployeeAbsenceCategory } from '@/employee-management/employee-absence-categories/entities/employee-absence-category.entity';
 import { EmployeeAbsenceDay } from '@/employee-management/employee-absences/entities/employee-absence-days.entity';
 import { EmployeeAbsence } from '@/employee-management/employee-absences/entities/employee-absence.entity';
@@ -47,6 +48,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       Permission,
       Address,
       Country,
+      CountryInputTemplate,
       Team,
       TeamMember,
       Employee,

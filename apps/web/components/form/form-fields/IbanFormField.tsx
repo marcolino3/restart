@@ -15,11 +15,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { useCountryTemplate } from "@/features/country-input-templates/CountryInputTemplatesProvider";
+import {
+  IBAN_MASK,
+  IBAN_MAX_LENGTH,
+  IBAN_PLACEHOLDER,
+} from "@/lib/forms/iban";
 
 interface Props {
   name: string;
-  country?: string | null;
   label?: string;
   description?: string;
   placeholder?: string;
@@ -29,10 +32,9 @@ interface Props {
   namespace?: string;
 }
 
-export const SocialSecurityNumberFormField = ({
+export const IbanFormField = ({
   name,
-  country,
-  label = "socialSecurityNumber",
+  label = "iban",
   description,
   placeholder,
   width = "w-full",
@@ -41,18 +43,15 @@ export const SocialSecurityNumberFormField = ({
 }: Props) => {
   const t = useTranslations(namespace);
   const { control } = useFormContext();
-  const template = useCountryTemplate(country, "SSN");
 
   const maskRef = useMemo(
     () =>
-      template?.mask
-        ? withMask(template.mask, {
-            placeholder: "_",
-            showMaskOnHover: false,
-            showMaskOnFocus: true,
-          })
-        : null,
-    [template?.mask],
+      withMask(IBAN_MASK, {
+        placeholder: "_",
+        showMaskOnHover: false,
+        showMaskOnFocus: true,
+      }),
+    [],
   );
 
   return (
@@ -68,18 +67,16 @@ export const SocialSecurityNumberFormField = ({
               value={field.value ?? ""}
               ref={(el) => {
                 field.ref(el);
-                if (maskRef) maskRef(el);
+                maskRef(el);
               }}
               type="text"
-              inputMode={template ? "numeric" : "text"}
+              inputMode="text"
               autoComplete="off"
-              maxLength={template?.maxLength ?? undefined}
-              placeholder={
-                template
-                  ? (placeholder ?? template.placeholder ?? undefined)
-                  : placeholder
+              maxLength={IBAN_MAX_LENGTH}
+              placeholder={placeholder ?? IBAN_PLACEHOLDER}
+              onChange={(e) =>
+                field.onChange(e.target.value.toUpperCase())
               }
-              onChange={(e) => field.onChange(e.target.value)}
             />
           </FormControl>
           <FormMessage />
