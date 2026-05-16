@@ -2,7 +2,7 @@ services:
   test-db:
     image: postgres:17
     environment:
-      POSTGRES_DB: colibri_test
+      POSTGRES_DB: restart_test
       POSTGRES_USER: test
       POSTGRES_PASSWORD: test
     ports:

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Datenschutzerklärung — Colibri",
-  description: "Datenschutzerklärung der Colibri Schul-Software",
+  title: "Datenschutzerklärung — Restart",
+  description: "Datenschutzerklärung der Restart Schul-Software",
 };
 
 /**
@@ -46,8 +46,6 @@ export default function PrivacyPage() {
         <h2 className="text-xl font-semibold">Eingesetzte Drittdienste</h2>
         <ul className="list-disc space-y-1 pl-6">
           <li>Infomaniak (Hosting, Cloud-Infrastruktur, Schweiz)</li>
-          <li>Sentry (Fehler-Monitoring, EU)</li>
-          <li>PostHog (Produkt-Analytics, EU — nur mit Einwilligung)</li>
           <li>Google (OAuth-Login, Google Maps API)</li>
         </ul>
       </section>
