@@ -86,8 +86,6 @@ export default function EmployeeHrTabEdit({
       maritalStatus: profile?.maritalStatus ?? undefined,
       denomination: profile?.denomination ?? "",
       numberOfChildren: profile?.numberOfChildren ?? null,
-      annualVacationDays: profile?.annualVacationDays ?? null,
-      remainingVacationDays: profile?.remainingVacationDays ?? "",
       onboardingStatus: profile?.onboardingStatus ?? undefined,
       ndaSigned: profile?.ndaSigned ?? false,
       criminalRecordSubmitted: profile?.criminalRecordSubmitted ?? false,
@@ -193,25 +191,6 @@ export default function EmployeeHrTabEdit({
             <InputFormField
               name="numberOfChildren"
               type="number"
-              width="w-32"
-            />
-          </FormRow>
-        </SectionBody>
-
-        {/* Ferien */}
-        <SectionHeader title={tE("hr.vacation")} mt />
-        <SectionBody>
-          <FormRow label={tE("hr.annualVacationDays")}>
-            <InputFormField
-              name="annualVacationDays"
-              type="number"
-              width="w-32"
-            />
-          </FormRow>
-          <FormRow label={tE("hr.remainingVacationDays")}>
-            <InputFormField
-              name="remainingVacationDays"
-              placeholder="0.00"
               width="w-32"
             />
           </FormRow>

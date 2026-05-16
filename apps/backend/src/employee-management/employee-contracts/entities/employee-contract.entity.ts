@@ -127,6 +127,21 @@ export class EmployeeContract extends AbstractEntity<EmployeeContract> {
   @Column({ name: 'has_13th_salary', type: 'boolean', nullable: true })
   has13thSalary?: boolean | null;
 
+  // --- Ferien ---
+  @Field(() => Number, { nullable: true })
+  @Column({ name: 'annual_vacation_days', type: 'int', nullable: true })
+  annualVacationDays?: number | null;
+
+  @Field(() => String, { nullable: true })
+  @Column({
+    name: 'remaining_vacation_days',
+    type: 'numeric',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+  })
+  remainingVacationDays?: string | null;
+
   @Field(() => String, { nullable: true })
   @Column('text', { nullable: true })
   notes?: string | null;

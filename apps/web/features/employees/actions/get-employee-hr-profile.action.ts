@@ -41,8 +41,6 @@ export type EmployeeHrProfile = {
   maritalStatus?: EmployeeMaritalStatus | null;
   denomination?: string | null;
   numberOfChildren?: number | null;
-  annualVacationDays?: number | null;
-  remainingVacationDays?: string | null;
   onboardingStatus?: EmployeeOnboardingStatus | null;
   ndaSigned?: boolean | null;
   criminalRecordSubmitted?: boolean | null;
@@ -68,8 +66,6 @@ const Document = gql`
       maritalStatus
       denomination
       numberOfChildren
-      annualVacationDays
-      remainingVacationDays
       onboardingStatus
       ndaSigned
       criminalRecordSubmitted

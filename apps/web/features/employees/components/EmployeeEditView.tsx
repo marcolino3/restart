@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Eye } from "lucide-react";
+import { Eye } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BackButton } from "@/components/common/BackButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormActionButtons } from "@/components/form/form-fields/FormActionButtons";
 import { ROUTES } from "@/constants/routes";
@@ -23,8 +24,10 @@ import type { EmployeeDetail } from "../actions/get-employee-by-id.action";
 import type { EmployeeAuditLogItem } from "../actions/get-employee-audit-log.action";
 import type { EmployeeHrProfile } from "../actions/get-employee-hr-profile.action";
 import type { EmployeeEmergencyProfile } from "../actions/get-employee-emergency-profile.action";
+import type { EmployeeContract } from "../actions/employee-contracts.actions";
 import EmployeeHrTabEdit from "./EmployeeHrTabEdit";
 import EmployeeEmergencyTabEdit from "./EmployeeEmergencyTabEdit";
+import EmployeeContractsTab from "./EmployeeContractsTab";
 import {
   EmployeeFormSchema,
   EmployeeFormOutput,
@@ -42,6 +45,7 @@ interface Props {
   auditLog: EmployeeAuditLogItem[];
   hrProfile: EmployeeHrProfile | null;
   emergencyProfile: EmployeeEmergencyProfile | null;
+  contracts: EmployeeContract[];
   employeeName: string;
 }
 
@@ -76,6 +80,7 @@ export default function EmployeeEditView({
   auditLog,
   hrProfile,
   emergencyProfile,
+  contracts,
   employeeName,
 }: Props) {
   const t = useTranslations("Common");
@@ -146,20 +151,15 @@ export default function EmployeeEditView({
   return (
     <div className="min-h-full">
       <main className="py-10">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:max-w-7xl lg:px-8 mb-4">
+          <BackButton
+            href={`${ROUTES.admin.employeesView(locale, employee.id)}?tab=${activeTab}`}
+            label={tE("backToEmployee")}
+          />
+        </div>
         {/* Page header — identical to view page */}
         <div className="mx-auto max-w-3xl px-4 sm:px-6 md:flex md:items-center md:justify-between md:space-x-5 lg:max-w-7xl lg:px-8">
           <div className="flex items-center space-x-5">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="shrink-0"
-              onClick={() =>
-                router.push(ROUTES.admin.employeesView(locale, employee.id))
-              }
-              aria-label={t("back")}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
             <div className="shrink-0">
               <Avatar className="h-16 w-16">
                 <AvatarFallback className="bg-primary text-primary-foreground text-xl font-semibold">
@@ -216,12 +216,10 @@ export default function EmployeeEditView({
               <TabsTrigger value="documents" disabled>
                 {tE("attachments")}
               </TabsTrigger>
+              <TabsTrigger value="contracts">{tE("contracts")}</TabsTrigger>
               <TabsTrigger value="history">{tE("history")}</TabsTrigger>
               <TabsTrigger value="absences" disabled>
                 {t("absenceNotice")}
-              </TabsTrigger>
-              <TabsTrigger value="contracts" disabled>
-                {tE("contracts")}
               </TabsTrigger>
             </TabsList>
 
@@ -296,6 +294,14 @@ export default function EmployeeEditView({
                   </p>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="contracts">
+              <EmployeeContractsTab
+                employeeId={employee.id}
+                contracts={contracts}
+                editable
+              />
             </TabsContent>
 
             <TabsContent value="history">

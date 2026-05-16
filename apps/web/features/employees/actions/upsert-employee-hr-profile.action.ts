@@ -66,15 +66,6 @@ export const upsertEmployeeHrProfileAction = async (
       numberOfChildren:
         parsed.numberOfChildren === null ? undefined : parsed.numberOfChildren,
     }),
-    ...(parsed.annualVacationDays !== undefined && {
-      annualVacationDays:
-        parsed.annualVacationDays === null
-          ? undefined
-          : parsed.annualVacationDays,
-    }),
-    ...(parsed.remainingVacationDays !== undefined && {
-      remainingVacationDays: parsed.remainingVacationDays ?? "",
-    }),
     ...(parsed.onboardingStatus !== undefined && {
       onboardingStatus: parsed.onboardingStatus || undefined,
     }),

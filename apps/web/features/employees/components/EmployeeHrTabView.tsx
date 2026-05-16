@@ -83,18 +83,6 @@ export default function EmployeeHrTabView({ profile }: Props) {
         />
       </Section>
 
-      {/* Ferien */}
-      <Section title={tE("hr.vacation")} mt>
-        <Row
-          label={tE("hr.annualVacationDays")}
-          value={profile?.annualVacationDays ?? "–"}
-        />
-        <Row
-          label={tE("hr.remainingVacationDays")}
-          value={profile?.remainingVacationDays ?? "–"}
-        />
-      </Section>
-
       {/* Onboarding / Compliance */}
       <Section title={tE("hr.onboardingCompliance")} mt>
         <Row

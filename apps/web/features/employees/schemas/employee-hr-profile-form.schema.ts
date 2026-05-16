@@ -47,8 +47,6 @@ export const EmployeeHrProfileFormSchema = z.object({
   maritalStatus: EmployeeMaritalStatusEnum.or(z.literal("")).optional(),
   denomination: z.string().optional().default(""),
   numberOfChildren: intOrNull,
-  annualVacationDays: intOrNull,
-  remainingVacationDays: z.string().optional().default(""),
   onboardingStatus: EmployeeOnboardingStatusEnum.or(z.literal("")).optional(),
   ndaSigned: z.boolean().nullable().optional(),
   criminalRecordSubmitted: z.boolean().nullable().optional(),

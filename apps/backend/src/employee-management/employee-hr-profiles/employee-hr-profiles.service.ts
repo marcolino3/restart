@@ -77,8 +77,6 @@ export class EmployeeHrProfilesService {
       trackField('maritalStatus', input.maritalStatus);
       trackField('denomination', input.denomination);
       trackField('numberOfChildren', input.numberOfChildren);
-      trackField('annualVacationDays', input.annualVacationDays);
-      trackField('remainingVacationDays', input.remainingVacationDays);
       trackField('onboardingStatus', input.onboardingStatus);
       trackField('ndaSigned', input.ndaSigned);
       trackField('criminalRecordSubmitted', input.criminalRecordSubmitted);
@@ -125,12 +123,6 @@ export class EmployeeHrProfilesService {
         }),
         ...(input.numberOfChildren !== undefined && {
           numberOfChildren: input.numberOfChildren,
-        }),
-        ...(input.annualVacationDays !== undefined && {
-          annualVacationDays: input.annualVacationDays,
-        }),
-        ...(input.remainingVacationDays !== undefined && {
-          remainingVacationDays: input.remainingVacationDays || null,
         }),
         ...(input.onboardingStatus !== undefined && {
           onboardingStatus: input.onboardingStatus,

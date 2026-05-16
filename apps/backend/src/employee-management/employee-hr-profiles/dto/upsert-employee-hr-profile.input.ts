@@ -89,18 +89,6 @@ export class UpsertEmployeeHrProfileInput {
   @Min(0)
   numberOfChildren?: number;
 
-  // --- Ferien ---
-  @Field(() => Int, { nullable: true })
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  annualVacationDays?: number;
-
-  @Field(() => String, { nullable: true })
-  @IsOptional()
-  @IsString()
-  remainingVacationDays?: string;
-
   // --- Onboarding / Compliance ---
   @Field(() => EmployeeOnboardingStatus, { nullable: true })
   @IsOptional()

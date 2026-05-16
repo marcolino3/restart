@@ -1,5 +1,9 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { ChevronLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ROUTES } from "@/constants/routes";
 import { getCurriculumByIdAction } from "@/features/curricula/actions/get-curriculum-by-id.action";
 import { getCurriculumLevelsAction } from "@/features/curricula/actions/get-curriculum-levels.action";
 import { getCurriculumNodesAction } from "@/features/curricula/actions/get-curriculum-nodes.action";
@@ -50,6 +54,12 @@ const EditCurriculumPage = async ({ params }: PageProps) => {
 
   return (
     <div className="space-y-6">
+      <Button variant="ghost" size="sm" asChild className="-ml-2 w-fit">
+        <Link href={ROUTES.admin.curricula(locale)}>
+          <ChevronLeft className="mr-1 h-4 w-4" />
+          {t("backToCurricula")}
+        </Link>
+      </Button>
       <h1 className="text-2xl font-bold">{headerName}</h1>
 
       <Tabs defaultValue="structure" className="w-full">

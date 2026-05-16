@@ -362,7 +362,24 @@
     "employeeDetails": "Employee details and employment.",
     "roles": "Roles",
     "attachments": "Attachments",
-    "viewFullProfile": "View full profile"
+    "viewFullProfile": "View full profile",
+    "backToEmployees": "Back to employees",
+    "backToEmployee": "Back to profile",
+    "contract": {
+      "create": "New contract",
+      "edit": "Edit contract",
+      "save": "Save",
+      "cancel": "Cancel",
+      "created": "Contract created",
+      "updated": "Contract saved",
+      "deleted": "Contract deleted",
+      "saveError": "Failed to save contract",
+      "deleteError": "Failed to delete contract",
+      "deleteConfirm": "Really delete this contract?",
+      "noContracts": "No contracts recorded yet.",
+      "listDescription": "Employment contracts of this employee.",
+      "notes": "Notes"
+    }
   },
   "EmployeeHistory": {
     "noEntries": "No changes recorded yet.",
@@ -754,9 +771,11 @@
     "noNodesYet": "No nodes in this level yet.",
     "missingLocales": "Missing locales",
     "editTranslations": "Edit translations",
+    "editLevelTranslations": "Edit level translations",
     "editTranslationsHint": "Maintain name and notes per locale. Each language is saved individually.",
     "translationSaved": "Translation saved",
     "translationSaveError": "Could not save translation",
+    "backToCurricula": "Back to list",
     "curriculumCreated": "Curriculum created",
     "curriculumCreateError": "Could not create curriculum",
     "curriculumUpdated": "Curriculum updated",

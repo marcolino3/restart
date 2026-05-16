@@ -78,6 +78,17 @@ export class CreateEmployeeContractInput {
   @IsBoolean()
   has13thSalary?: boolean;
 
+  @Field(() => Number, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  annualVacationDays?: number;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  remainingVacationDays?: string;
+
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()

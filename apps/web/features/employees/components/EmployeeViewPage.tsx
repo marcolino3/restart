@@ -2,13 +2,14 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Pencil, ArrowLeft, Paperclip } from "lucide-react";
+import { Pencil, Paperclip } from "lucide-react";
 import Link from "next/link";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BackButton } from "@/components/common/BackButton";
 import { ROUTES } from "@/constants/routes";
 
 import type { EmployeeDetail } from "../actions/get-employee-by-id.action";
@@ -16,12 +17,14 @@ import type { EmployeeNoteItem } from "@/features/employee-notes/actions/get-emp
 import type { EmployeeAuditLogItem } from "../actions/get-employee-audit-log.action";
 import type { EmployeeHrProfile } from "../actions/get-employee-hr-profile.action";
 import type { EmployeeEmergencyProfile } from "../actions/get-employee-emergency-profile.action";
+import type { EmployeeContract } from "../actions/employee-contracts.actions";
 import EmployeeNotesFeed from "@/features/employee-notes/components/EmployeeNotesFeed";
 import EmployeeNotesTimeline from "@/features/employee-notes/components/EmployeeNotesTimeline";
 import CreateEmployeeNoteInline from "@/features/employee-notes/components/CreateEmployeeNoteInline";
 import EmployeeHistoryFeed from "./EmployeeHistoryFeed";
 import EmployeeHrTabView from "./EmployeeHrTabView";
 import EmployeeEmergencyTabView from "./EmployeeEmergencyTabView";
+import EmployeeContractsTab from "./EmployeeContractsTab";
 
 interface EmployeeViewPageProps {
   employee: EmployeeDetail;
@@ -29,6 +32,7 @@ interface EmployeeViewPageProps {
   auditLog: EmployeeAuditLogItem[];
   hrProfile: EmployeeHrProfile | null;
   emergencyProfile: EmployeeEmergencyProfile | null;
+  contracts: EmployeeContract[];
   employeeName: string;
 }
 
@@ -45,6 +49,7 @@ export default function EmployeeViewPage({
   auditLog,
   hrProfile,
   emergencyProfile,
+  contracts,
   employeeName,
 }: EmployeeViewPageProps) {
   const t = useTranslations("Common");
@@ -84,18 +89,15 @@ export default function EmployeeViewPage({
   return (
     <div className="min-h-full">
       <main className="py-10">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:max-w-7xl lg:px-8 mb-4">
+          <BackButton
+            href={ROUTES.admin.employees(locale)}
+            label={tE("backToEmployees")}
+          />
+        </div>
         {/* Page header */}
         <div className="mx-auto max-w-3xl px-4 sm:px-6 md:flex md:items-center md:justify-between md:space-x-5 lg:max-w-7xl lg:px-8">
           <div className="flex items-center space-x-5">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="shrink-0"
-              onClick={() => router.push(ROUTES.admin.employees(locale))}
-              aria-label={t("back")}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
             <div className="shrink-0">
               <Avatar className="h-16 w-16">
                 <AvatarFallback className="bg-primary text-primary-foreground text-xl font-semibold">
@@ -123,10 +125,7 @@ export default function EmployeeViewPage({
               </p>
             </div>
           </div>
-          <div className="mt-6 flex flex-col-reverse justify-stretch space-y-4 space-y-reverse sm:flex-row-reverse sm:justify-end sm:space-y-0 sm:space-x-3 sm:space-x-reverse md:mt-0 md:flex-row md:space-x-3">
-            <Button variant="outline" asChild>
-              <Link href={ROUTES.admin.employees(locale)}>{t("back")}</Link>
-            </Button>
+          <div className="mt-6 flex md:mt-0">
             <Button asChild>
               <Link
                 href={`${ROUTES.admin.employeesEdit(locale, employee.id)}?tab=${activeTab}`}
@@ -153,12 +152,10 @@ export default function EmployeeViewPage({
               </TabsTrigger>
               <TabsTrigger value="logbook">{tN("logbook")}</TabsTrigger>
               <TabsTrigger value="documents">{tE("attachments")}</TabsTrigger>
+              <TabsTrigger value="contracts">{tE("contracts")}</TabsTrigger>
               <TabsTrigger value="history">{tE("history")}</TabsTrigger>
               <TabsTrigger value="absences" disabled>
                 {t("absenceNotice")}
-              </TabsTrigger>
-              <TabsTrigger value="contracts" disabled>
-                {tE("contracts")}
               </TabsTrigger>
             </TabsList>
 
@@ -413,6 +410,15 @@ export default function EmployeeViewPage({
                   </li>
                 </ul>
               </div>
+            </TabsContent>
+
+            {/* Verträge */}
+            <TabsContent value="contracts">
+              <EmployeeContractsTab
+                employeeId={employee.id}
+                contracts={contracts}
+                editable
+              />
             </TabsContent>
 
             {/* History */}

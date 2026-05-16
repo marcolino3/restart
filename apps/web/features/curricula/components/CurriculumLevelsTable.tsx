@@ -18,6 +18,7 @@ import {
   ChevronRight,
   ChevronsDownUp,
   ChevronsUpDown,
+  Languages,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ import {
   type CurriculumNodeDTO,
 } from "../types";
 import { CurriculumLevelTree } from "./CurriculumLevelTree";
+import { CurriculumLevelTranslationsDialog } from "./CurriculumLevelTranslationsDialog";
 
 interface Props {
   curriculumId: string;
@@ -63,6 +65,9 @@ export function CurriculumLevelsTable({
   const [sorting, setSorting] = useState<SortingState>([
     { id: "position", desc: false },
   ]);
+  const [editingLevel, setEditingLevel] = useState<CurriculumLevelDTO | null>(
+    null,
+  );
   const [nodesByLevel, setNodesByLevel] = useState<
     Map<string, CurriculumNodeDTO[]>
   >(initialNodesByLevel ?? new Map());
@@ -180,6 +185,26 @@ export function CurriculumLevelsTable({
       },
       { accessorKey: "name", header: t("name") },
       { accessorKey: "position", header: t("position") },
+      {
+        id: "actions",
+        header: () => null,
+        enableSorting: false,
+        cell: ({ row }) => (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditingLevel(row.original);
+            }}
+            aria-label={t("editLevelTranslations")}
+            title={t("editLevelTranslations")}
+          >
+            <Languages className="h-4 w-4" />
+          </Button>
+        ),
+      },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [t, tCommon, nodesByLevel, loading],
@@ -321,6 +346,14 @@ export function CurriculumLevelsTable({
           </TableBody>
         </Table>
       </div>
+      {editingLevel && (
+        <CurriculumLevelTranslationsDialog
+          open={true}
+          onOpenChange={(o) => !o && setEditingLevel(null)}
+          level={editingLevel}
+          curriculumId={curriculumId}
+        />
+      )}
     </div>
   );
 }

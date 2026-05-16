@@ -173,21 +173,6 @@ export class EmployeeHrProfile extends AbstractEntity<EmployeeHrProfile> {
   @Column({ name: 'number_of_children', type: 'int', nullable: true })
   numberOfChildren?: number | null;
 
-  // --- Ferien ---
-  @Field(() => Int, { nullable: true })
-  @Column({ name: 'annual_vacation_days', type: 'int', nullable: true })
-  annualVacationDays?: number | null;
-
-  @Field(() => String, { nullable: true })
-  @Column({
-    name: 'remaining_vacation_days',
-    type: 'numeric',
-    precision: 5,
-    scale: 2,
-    nullable: true,
-  })
-  remainingVacationDays?: string | null;
-
   // --- Onboarding / Compliance ---
   @Field(() => EmployeeOnboardingStatus, { nullable: true })
   @Column({

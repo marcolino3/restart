@@ -3,6 +3,7 @@ import { getEmployeeNotesAction } from "@/features/employee-notes/actions/get-em
 import { getEmployeeAuditLogAction } from "@/features/employees/actions/get-employee-audit-log.action";
 import { getEmployeeHrProfileAction } from "@/features/employees/actions/get-employee-hr-profile.action";
 import { getEmployeeEmergencyProfileAction } from "@/features/employees/actions/get-employee-emergency-profile.action";
+import { getEmployeeContractsAction } from "@/features/employees/actions/employee-contracts.actions";
 import EmployeeViewPage from "@/features/employees/components/EmployeeViewPage";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -21,12 +22,14 @@ const ViewEmployeePage = async ({ params }: Props) => {
     auditLogResult,
     hrProfileResult,
     emergencyProfileResult,
+    contractsResult,
   ] = await Promise.all([
     getEmployeeByIdAction(employeeId),
     getEmployeeNotesAction(employeeId),
     getEmployeeAuditLogAction(employeeId),
     getEmployeeHrProfileAction(employeeId),
     getEmployeeEmergencyProfileAction(employeeId),
+    getEmployeeContractsAction(employeeId),
   ]);
 
   if (!employeeResult.success || !employeeResult.data) {
@@ -40,6 +43,7 @@ const ViewEmployeePage = async ({ params }: Props) => {
   const emergencyProfile = emergencyProfileResult.success
     ? emergencyProfileResult.data
     : null;
+  const contracts = contractsResult.success ? contractsResult.data : [];
   const employeeName = employee.membership?.user
     ? `${employee.membership.user.firstName} ${employee.membership.user.lastName}`
     : t("employees");
@@ -52,6 +56,7 @@ const ViewEmployeePage = async ({ params }: Props) => {
         auditLog={auditLog}
         hrProfile={hrProfile}
         emergencyProfile={emergencyProfile}
+        contracts={contracts}
         employeeName={employeeName}
       />
     </div>
