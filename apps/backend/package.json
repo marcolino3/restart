@@ -46,8 +46,6 @@
     "@nestjs/terminus": "^11.1.1",
     "@nestjs/throttler": "^6.5.0",
     "@nestjs/typeorm": "^11.0.0",
-    "@sentry/nestjs": "^10.53.1",
-    "@sentry/profiling-node": "^10.53.1",
     "@thallesp/nestjs-better-auth": "^2.6.0",
     "@types/luxon": "^3.7.1",
     "bcrypt": "^6.0.0",

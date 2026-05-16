@@ -1,11 +1,9 @@
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
@@ -40,10 +38,6 @@ import { join } from 'path';
 
 @Module({
   imports: [
-    // SentryModule MUSS als erstes geladen werden, damit der globale Filter
-    // alle anderen Module einhängen kann.
-    SentryModule.forRoot(),
-
     LoggerModule.forRoot(loggerConfig),
 
     ConfigModule.forRoot({
@@ -140,13 +134,6 @@ import { join } from 'path';
   ],
   controllers: [AppController],
   providers: [
-    // SentryGlobalFilter fängt unerwartete Exceptions ab und meldet sie an
-    // Sentry, bevor Nest sie als 500 ausliefert. Erwartete HTTP-Exceptions
-    // (Unauthorized/Forbidden/BadRequest) werden in instrument.ts gefiltert.
-    {
-      provide: APP_FILTER,
-      useClass: SentryGlobalFilter,
-    },
     // ThrottlerGuard global registrieren — kann pro Route/Controller mit
     // @SkipThrottle() ausgenommen oder mit @Throttle() überschrieben werden.
     // GqlThrottlerGuard ist eine Sub-Klasse, die zusätzlich GraphQL-Requests

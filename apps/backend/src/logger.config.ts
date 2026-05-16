@@ -13,7 +13,7 @@ export const loggerConfig: Params = {
     level: process.env.LOG_LEVEL ?? (isDev ? 'debug' : 'info'),
 
     // Lokal: pino-pretty für lesbare Logs. In Cluster-Umgebung: rohes JSON
-    // für Loki/Grafana/Sentry-Forwarder.
+    // für Loki/Grafana.
     transport: isDev
       ? {
           target: 'pino-pretty',
@@ -28,7 +28,7 @@ export const loggerConfig: Params = {
       : undefined,
 
     // Per-Request Correlation-ID: erlaubt es, alle Logs eines Requests
-    // im Aggregator (Loki/Sentry) zusammenzuziehen.
+    // im Aggregator (Loki) zusammenzuziehen.
     genReqId: (req: IncomingMessage) => {
       const existing = req.headers['x-request-id'];
       if (typeof existing === 'string' && existing.length > 0) return existing;

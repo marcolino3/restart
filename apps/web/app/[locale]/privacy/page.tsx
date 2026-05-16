@@ -13,7 +13,7 @@ export const metadata: Metadata = {
  *  - Verantwortliche Stelle (Anschrift, Kontakt)
  *  - Zwecke der Verarbeitung
  *  - Rechtsgrundlage (DSGVO Art. 6, revDSG)
- *  - Empfänger (Infomaniak, Sentry, PostHog, Google für OAuth/Maps)
+ *  - Empfänger (Infomaniak, Google für OAuth/Maps)
  *  - Speicherdauer
  *  - Betroffenenrechte (Auskunft, Berichtigung, Löschung, Datenportabilität)
  *  - Cookies + Tracking (Liste, Zweck, Speicherdauer pro Cookie)
@@ -36,15 +36,9 @@ export default function PrivacyPage() {
       <section className="space-y-2">
         <h2 className="text-xl font-semibold">Cookies und Tracking</h2>
         <p>
-          Wir verwenden technisch notwendige Cookies für den Login (better-auth
-          Session-Cookie). Zusätzlich setzen wir nach ausdrücklicher
-          Einwilligung Analytics-Cookies von PostHog ein, um die Anwendung zu
-          verbessern. Diese Daten werden auf Servern in der EU verarbeitet.
-        </p>
-        <p>
-          Die Einwilligung kann jederzeit widerrufen werden, indem das
-          Browser-Cookie <code>cc-analytics</code> gelöscht oder die Funktion
-          in den Einstellungen deaktiviert wird.
+          Wir verwenden ausschliesslich technisch notwendige Cookies für den
+          Login (better-auth Session-Cookie). Es werden keine Analytics- oder
+          Tracking-Cookies gesetzt.
         </p>
       </section>
 

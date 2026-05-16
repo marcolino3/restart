@@ -1,9 +1,4 @@
-// Sentry-Instrumentation MUSS vor allem anderen geladen werden — sie hängt
-// sich in den Node require-Hook und kann Module nicht mehr instrumentieren,
-// die schon geladen sind. `instrument.ts` lädt selbst `dotenv/config`, damit
-// better-auth (in src/lib/auth.ts) — das beim Modul-Load läuft — die ENV-Vars
-// findet.
-import './instrument';
+import 'dotenv/config';
 
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
