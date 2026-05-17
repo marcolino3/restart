@@ -63,6 +63,12 @@ export const ROUTES = {
     recordKeeping: (locale: string) => `/${locale}/admin/record-keeping`,
     recordKeepingHeatmap: (locale: string) =>
       `/${locale}/admin/record-keeping/heatmap`,
+    recordKeepingAttention: (locale: string) =>
+      `/${locale}/admin/record-keeping/attention`,
+    recordKeepingStudents: (locale: string) =>
+      `/${locale}/admin/record-keeping/students`,
+    recordKeepingStudent: (locale: string, studentId: string) =>
+      `/${locale}/admin/record-keeping/students/${studentId}`,
 
     // Admission Stages
     admissionStages: (locale: string) =>

@@ -2,6 +2,7 @@
 
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
+import { invalidateCurriculumCache } from "../lib/invalidate-curriculum-cache";
 import type { CurriculumNodeDTO } from "../types";
 
 type Input = {
@@ -30,6 +31,7 @@ export const reorderCurriculumNodesAction = async (input: Input) => {
       Document,
       { input },
     );
+    await invalidateCurriculumCache();
     return { success: true as const, data: reorderCurriculumNodes };
   } catch (error) {
     console.error(error);

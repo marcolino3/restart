@@ -4,6 +4,8 @@ import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
+import { CurrentUser } from '@/auth/decorators/current-user.decorator';
+import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { SchoolClassesService } from './school-classes.service';
 import { SchoolClass } from './entities/school-class.entity';
 import { CreateSchoolClassInput } from './dto/create-school-class.input';
@@ -18,6 +20,25 @@ export class SchoolClassesResolver {
   @Permissions('SCHOOL_CLASS_READ')
   findAll(@CurrentOrgId() orgId: string) {
     return this.schoolClassesService.findAllByOrgId(orgId);
+  }
+
+  /**
+   * Klassen, die der aufrufende User unterrichtet (oder alle, wenn
+   * Admin/SuperAdmin). Wird von der Klassen-Heatmap-Auswahl
+   * verwendet, damit Lehrer:innen nur ihre eigenen Klassen sehen.
+   */
+  @Query(() => [SchoolClass], { name: 'myTeachingSchoolClasses' })
+  @Permissions('SCHOOL_CLASS_READ')
+  findVisibleToUser(
+    @CurrentOrgId() orgId: string,
+    @CurrentUser() user: TokenPayload,
+  ) {
+    return this.schoolClassesService.findVisibleToUser(
+      orgId,
+      user.sub,
+      user.roles ?? [],
+      user.isSuperAdmin ?? false,
+    );
   }
 
   @Query(() => SchoolClass, { name: 'schoolClassById' })

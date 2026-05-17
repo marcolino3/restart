@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { CommonModule } from '@/common/common.module';
 import { DatabaseModule } from '@/database/database.module';
 import { UsersModule } from '@/users/users.module';
+import { StudentsModule } from '@/school-management/students/students.module';
 import { CurriculaResolver } from './curricula.resolver';
 import { CurriculaService } from './curricula.service';
 import { CurriculumLevelsResolver } from './curriculum-levels.resolver';
@@ -13,9 +14,11 @@ import { CurriculaImportResolver } from './import/curricula-import.resolver';
 import { CurriculaImportService } from './import/curricula-import.service';
 import { LessonRecordsResolver } from './record-keeping/lesson-records.resolver';
 import { LessonRecordsService } from './record-keeping/lesson-records.service';
+import { RecordKeepingSettingsResolver } from './record-keeping/record-keeping-settings.resolver';
+import { RecordKeepingSettingsService } from './record-keeping/record-keeping-settings.service';
 
 @Module({
-  imports: [CommonModule, DatabaseModule, UsersModule],
+  imports: [CommonModule, DatabaseModule, UsersModule, StudentsModule],
   controllers: [CurriculaImportController],
   providers: [
     CurriculumLevelsResolver,
@@ -28,6 +31,8 @@ import { LessonRecordsService } from './record-keeping/lesson-records.service';
     CurriculaImportResolver,
     LessonRecordsResolver,
     LessonRecordsService,
+    RecordKeepingSettingsResolver,
+    RecordKeepingSettingsService,
   ],
   exports: [
     CurriculumLevelsService,
@@ -35,6 +40,7 @@ import { LessonRecordsService } from './record-keeping/lesson-records.service';
     CurriculumNodesService,
     CurriculaImportService,
     LessonRecordsService,
+    RecordKeepingSettingsService,
   ],
 })
 export class CurriculaModule {}

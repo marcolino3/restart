@@ -18,10 +18,12 @@ export type StudentLessonRecordItem = {
   note?: string | null;
   lesson?: {
     id: string;
+    position: number;
     translations: { locale: string; name: string }[];
     ancestors?: Array<{
       id: string;
       nodeType: "AREA" | "TOPIC" | "GROUP" | "LESSON";
+      position: number;
       translations: { locale: string; name: string }[];
     }>;
   } | null;
@@ -42,6 +44,7 @@ const Document = gql`
       note
       lesson {
         id
+        position
         translations {
           locale
           name
@@ -49,6 +52,7 @@ const Document = gql`
         ancestors {
           id
           nodeType
+          position
           translations {
             locale
             name

@@ -2,6 +2,7 @@
 
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
+import { invalidateCurriculumCache } from "../lib/invalidate-curriculum-cache";
 import type { LessonScale, LessonType } from "../types";
 
 export type UpdateLessonClassificationInput = {
@@ -36,6 +37,7 @@ export const updateLessonClassificationAction = async (
     const { updateCurriculumNode } = await client.request<Response>(Document, {
       input,
     });
+    await invalidateCurriculumCache();
     return { success: true as const, data: updateCurriculumNode };
   } catch (error) {
     console.error(error);

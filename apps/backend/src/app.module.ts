@@ -24,6 +24,7 @@ import { EmployeeContractsModule } from './employee-management/employee-contract
 import { EmployeeManagementModule } from './employee-management/employee-management.module';
 import { SchoolManagementModule } from './school-management/school-management.module';
 import { CurriculaModule } from './curricula/curricula.module';
+import { CurriculumNodeLoaders } from './curricula/loaders/curriculum-node-loaders';
 import { MembershipsModule } from './memberships/memberships.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { PermissionsModule } from './permissions/permissions.module';
@@ -102,6 +103,9 @@ import { join } from 'path';
           req,
           res,
           entityManager: dataSource.manager, // 💡 wichtig für deine Decorators
+          loaders: {
+            curriculumNodes: new CurriculumNodeLoaders(dataSource),
+          },
         }),
         plugins: [ApolloServerPluginLandingPageLocalDefault()],
       }),

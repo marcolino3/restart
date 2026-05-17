@@ -2,6 +2,7 @@
 
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
+import { invalidateCurriculumCache } from "../lib/invalidate-curriculum-cache";
 
 type Response = { archiveCurriculum: boolean };
 
@@ -17,6 +18,7 @@ export const archiveCurriculumAction = async (id: string) => {
     const { archiveCurriculum } = await client.request<Response>(Document, {
       id,
     });
+    await invalidateCurriculumCache();
     return { success: archiveCurriculum, data: archiveCurriculum } as const;
   } catch (error) {
     console.error(error);

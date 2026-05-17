@@ -52,6 +52,10 @@ const PERMISSION_CATALOG: Array<{
     code: PermissionCode.RECORD_KEEPING_WRITE,
     name: 'Fortschritts-Eintraege schreiben',
   },
+  {
+    code: PermissionCode.RECORD_KEEPING_SETTINGS_MANAGE,
+    name: 'Aufmerksamkeits-Schwellen verwalten',
+  },
   { code: PermissionCode.ADDRESS_READ, name: 'Adresse lesen' },
   { code: PermissionCode.ADDRESS_WRITE, name: 'Adresse schreiben' },
   { code: PermissionCode.ADDRESS_DELETE, name: 'Adresse loeschen' },

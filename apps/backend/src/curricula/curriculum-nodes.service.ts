@@ -310,34 +310,6 @@ export class CurriculumNodesService {
   }
 
   /**
-   * Eltern-Chain eines Nodes bis zur Wurzel.
-   * Reihenfolge: nächster Parent zuerst, AREA zuletzt.
-   * Z.B. fuer LESSON: [GROUP, TOPIC, AREA].
-   */
-  async getAncestors(
-    nodeId: string,
-    organizationId: string,
-  ): Promise<CurriculumNode[]> {
-    const chain: CurriculumNode[] = [];
-    let currentId: string | null | undefined = nodeId;
-    // Initial node selbst NICHT in den Output (nur Vorfahren).
-    let isFirst = true;
-    while (currentId) {
-      const n: CurriculumNode | null = await this.nodesRepo.findOne({
-        where: { id: currentId, organizationId },
-        relations: ['translations'],
-      });
-      if (!n) break;
-      if (!isFirst) chain.push(n);
-      isFirst = false;
-      currentId = n.parentId ?? null;
-      // Schutz vor unwahrscheinlichen Loops (max 8 — sollte praxis-far überreichen)
-      if (chain.length > 8) break;
-    }
-    return chain;
-  }
-
-  /**
    * Alle LESSON-Nodes der Org, mit Translations.
    * Für UI-Pickers (RecordKeeping Bulk-Entry, Prerequisites-Editor).
    */
@@ -373,6 +345,72 @@ export class CurriculumNodesService {
       relations: ['translations'],
       order: { position: 'ASC', createdAt: 'ASC' },
     });
+  }
+
+  /**
+   * For each AREA in the org, count active LESSON descendants across the
+   * whole sub-tree (AREA → TOPIC → GROUP → LESSON). Used as the curriculum-
+   * wide denominator for the per-area progress radar so percentages are
+   * relative to "all lessons in this area" rather than "lessons tracked
+   * so far".
+   */
+  async findAreaLessonCounts(organizationId: string): Promise<
+    {
+      areaId: string;
+      lessonCount: number;
+      curriculumId: string | null;
+      curriculumName: string | null;
+    }[]
+  > {
+    // Translation pick prefers DE then EN then any other locale, fallback
+    // to the bare curriculum row's `id` if no translation exists.
+    const rows = await this.dataSource.query<
+      {
+        area_id: string;
+        lesson_count: string;
+        curriculum_id: string | null;
+        curriculum_name: string | null;
+      }[]
+    >(
+      // Per AREA hat jeder Knoten genau ein curriculum_id (vererbt vom
+      // AREA-Root). Wir grouppieren also nach (area_id, curriculum_id) und
+      // ziehen den Namen via Sub-Select aus curriculum_translations.
+      // Vorherige Variante nutzte MAX(uuid), das in Postgres keinen
+      // Aggregator hat → "function max(uuid) does not exist".
+      `WITH RECURSIVE areas AS (
+         SELECT id AS root_id, id, parent_id, node_type, "isArchived"
+         FROM curriculum_nodes
+         WHERE organization_id = $1
+           AND node_type = 'AREA'
+           AND "isArchived" = false
+       UNION ALL
+         SELECT a.root_id, n.id, n.parent_id, n.node_type, n."isArchived"
+         FROM curriculum_nodes n
+         JOIN areas a ON n.parent_id = a.id
+         WHERE n."isArchived" = false
+       )
+       SELECT a.root_id AS area_id,
+              COUNT(*) FILTER (WHERE a.node_type = 'LESSON') AS lesson_count,
+              root.curriculum_id::text AS curriculum_id,
+              COALESCE(
+                (SELECT ct.name FROM curriculum_translations ct
+                  WHERE ct.curriculum_id = root.curriculum_id AND ct.locale = 'DE' LIMIT 1),
+                (SELECT ct.name FROM curriculum_translations ct
+                  WHERE ct.curriculum_id = root.curriculum_id AND ct.locale = 'EN' LIMIT 1),
+                (SELECT ct.name FROM curriculum_translations ct
+                  WHERE ct.curriculum_id = root.curriculum_id LIMIT 1)
+              ) AS curriculum_name
+       FROM areas a
+       JOIN curriculum_nodes root ON root.id = a.root_id
+       GROUP BY a.root_id, root.curriculum_id`,
+      [organizationId],
+    );
+    return rows.map((r) => ({
+      areaId: r.area_id,
+      lessonCount: Number(r.lesson_count),
+      curriculumId: r.curriculum_id,
+      curriculumName: r.curriculum_name,
+    }));
   }
 
   // ─────────────────────────────────────────────────────────────────

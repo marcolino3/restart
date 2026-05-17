@@ -9,6 +9,7 @@ import { Field, ID, ObjectType } from '@nestjs/graphql';
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   JoinTable,
   ManyToMany,
@@ -18,6 +19,9 @@ import {
 
 @ObjectType()
 @Entity('memberships')
+@Index('idx_memberships_user', ['userId'])
+@Index('idx_memberships_employee', ['employeeId'])
+@Index('idx_memberships_org', ['organizationId'])
 export class Membership extends AbstractEntity<Membership> {
   // Organization
   @Field(() => ID)

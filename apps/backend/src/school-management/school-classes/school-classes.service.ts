@@ -74,6 +74,58 @@ export class SchoolClassesService {
     });
   }
 
+  /**
+   * Klassen, die der aufrufende User unterrichtet (oder alle, wenn
+   * Admin/SuperAdmin). Gleiche Sichtbarkeits-Regel wie
+   * `StudentsService.assertSchoolClassVisibleToUser`, damit die
+   * Klassen-Heatmap-Auswahl im Frontend nur Klassen anzeigt, auf die
+   * der Lehrer auch wirklich Zugriff hat.
+   */
+  async findVisibleToUser(
+    organizationId: string,
+    userId: string,
+    roles: string[],
+    isSuperAdmin: boolean,
+  ): Promise<SchoolClass[]> {
+    const ADMIN_ROLES = new Set([
+      'ORG_OWNER',
+      'ORG_ADMIN',
+      'HR_MANAGER',
+      'OFFICE',
+    ]);
+    const isAdmin =
+      isSuperAdmin || (roles ?? []).some((r) => ADMIN_ROLES.has(r));
+    if (isAdmin) {
+      return this.findAllByOrgId(organizationId);
+    }
+    // Teacher (or any non-admin role): only return classes where they
+    // are assigned via `school_class_teachers`.
+    return this.schoolClassRepo
+      .createQueryBuilder('sc')
+      .leftJoinAndSelect('sc.gradeLevels', 'gradeLevels')
+      .leftJoinAndSelect('sc.teachers', 'teachers')
+      .leftJoinAndSelect('teachers.membership', 'tm')
+      .leftJoinAndSelect('tm.user', 'tu')
+      .innerJoin(
+        'school_class_teachers',
+        'sct_user',
+        'sct_user.school_class_id = sc.id',
+      )
+      .innerJoin(
+        'memberships',
+        'm_user',
+        'm_user.employee_id = sct_user.employee_id',
+      )
+      .where('sc.organization_id = :orgId', { orgId: organizationId })
+      .andWhere('sc."isActive" = true')
+      .andWhere('m_user.user_id = :uid', { uid: userId })
+      .andWhere('m_user.organization_id = :orgId', { orgId: organizationId })
+      .andWhere('m_user."isActive" = true')
+      .orderBy('sc."sortOrder"', 'ASC')
+      .addOrderBy('sc.name', 'ASC')
+      .getMany();
+  }
+
   async findOne(id: string, organizationId: string): Promise<SchoolClass> {
     const schoolClass = await this.schoolClassRepo.findOne({
       where: { id, organizationId, isActive: true },

@@ -4,6 +4,7 @@ import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-clien
 import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
 import { gql } from "graphql-request";
+import { invalidateCurriculumCache } from "../lib/invalidate-curriculum-cache";
 import type {
   CurriculumDTO,
   CurriculumLocale,
@@ -110,6 +111,7 @@ export const importCurriculumFromPlanAction = async (
       Document,
       { input },
     );
+    await invalidateCurriculumCache();
     revalidatePath(`/${locale}/admin/curricula`);
     revalidatePath(
       `/${locale}/admin/curricula/edit/${importCurriculumFromPlan.id}`,

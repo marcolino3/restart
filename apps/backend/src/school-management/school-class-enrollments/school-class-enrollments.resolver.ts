@@ -5,6 +5,9 @@ import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { Student } from '@/school-management/students/entities/student.entity';
+import { StudentsService } from '@/school-management/students/students.service';
+import { CurrentUser } from '@/auth/decorators/current-user.decorator';
+import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { SchoolClassEnrollmentsService } from './school-class-enrollments.service';
 import { SchoolClassEnrollment } from './entities/school-class-enrollment.entity';
 import { CreateSchoolClassEnrollmentInput } from './dto/create-school-class-enrollment.input';
@@ -16,14 +19,23 @@ import { UpdateSchoolClassEnrollmentInput } from './dto/update-school-class-enro
 export class SchoolClassEnrollmentsResolver {
   constructor(
     private readonly enrollmentsService: SchoolClassEnrollmentsService,
+    private readonly studentsService: StudentsService,
   ) {}
 
   @Query(() => [SchoolClassEnrollment], { name: 'enrollmentsByStudentId' })
   @Permissions('SCHOOL_CLASS_READ')
-  findByStudentId(
+  async findByStudentId(
     @Args('studentId', { type: () => ID }) studentId: string,
     @CurrentOrgId() orgId: string,
+    @CurrentUser() user: TokenPayload,
   ) {
+    await this.studentsService.assertStudentVisibleToUser(
+      studentId,
+      user.sub,
+      user.roles ?? [],
+      user.isSuperAdmin ?? false,
+      orgId,
+    );
     return this.enrollmentsService.findByStudentId(studentId, orgId);
   }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
@@ -44,7 +44,7 @@ const cellBgClass = (masteredRatio: number, total: number): string => {
   return "bg-emerald-300";
 };
 
-export function ClassroomHeatmap({ data }: Props) {
+function ClassroomHeatmapImpl({ data }: Props) {
   const t = useTranslations("RecordKeeping");
   const [activeCell, setActiveCell] = useState<{
     studentId: string;
@@ -269,3 +269,6 @@ export function ClassroomHeatmap({ data }: Props) {
     </TooltipProvider>
   );
 }
+
+/** Memoized: tab-switches in ClassroomTabs don't re-render the grid. */
+export const ClassroomHeatmap = memo(ClassroomHeatmapImpl);

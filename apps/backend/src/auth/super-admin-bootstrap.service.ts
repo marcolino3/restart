@@ -80,6 +80,26 @@ export class SuperAdminBootstrapService implements OnApplicationBootstrap {
           this.logger.log(`Superadmin angelegt: ${emailEnv}`);
         }
       });
+
+      // Mirror the SuperAdmin flag into better-auth's separate `user` table
+      // by setting `role='admin'`. The admin plugin's impersonation check
+      // gates on this column (`adminRoles=['admin']` by default). Run
+      // outside the previous transaction (it spans a different table set)
+      // and ignore if the row doesn't exist yet — the user may not have
+      // logged in via better-auth even once.
+      try {
+        await this.em.query(
+          `UPDATE "user"
+             SET role = 'admin'
+           WHERE email = $1
+             AND (role IS DISTINCT FROM 'admin')`,
+          [emailEnv],
+        );
+      } catch (err) {
+        this.logger.warn(
+          `Could not sync admin role on better-auth user (column missing?): ${(err as Error).message}`,
+        );
+      }
     } catch (e) {
       this.logger.error('Superadmin-Seed fehlgeschlagen', e as Error);
       throw e;

@@ -1,5 +1,9 @@
 import { betterAuth } from 'better-auth';
-import { APIError, createAuthMiddleware } from 'better-auth/api';
+import {
+  APIError,
+  createAuthMiddleware,
+  getSessionFromCtx,
+} from 'better-auth/api';
 import { admin, customSession } from 'better-auth/plugins';
 import { expo } from '@better-auth/expo';
 import * as jwt from 'jsonwebtoken';
@@ -142,24 +146,38 @@ export const auth = betterAuth({
   ],
   hooks: {
     // Gate `/admin/impersonate-user` and `/admin/stop-impersonating` to
-    // SuperAdmins only. We don't use better-auth's optional `role` column —
-    // authorization runs against our own `isSuperAdmin` flag on the user.
-    before: createAuthMiddleware(async (ctx) => {
+    // SuperAdmins only. better-auth has its own `user` table (separate from
+    // the Restart `users` table where `is_super_admin` lives), so the
+    // session.user shape doesn't carry that flag — we look it up directly
+    // in our domain DB by email.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    before: createAuthMiddleware(async (ctx: any) => {
       if (
         ctx.path !== '/admin/impersonate-user' &&
         ctx.path !== '/admin/stop-impersonating'
       ) {
         return;
       }
-      const session = (
-        ctx.context as {
-          session?: { user?: { isSuperAdmin?: boolean } } | null;
-        }
-      ).session;
-      if (!session?.user?.isSuperAdmin) {
-        throw new APIError('FORBIDDEN', {
-          message: 'SuperAdmin only',
-        });
+      // Explicitly load the session — before-hooks don't auto-populate it.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const session = (await getSessionFromCtx(ctx)) as any;
+      const email = session?.user?.email as string | undefined;
+      if (!email) {
+        throw new APIError('UNAUTHORIZED', { message: 'No session' });
+      }
+      const result: Array<{ is_super_admin: boolean }> = await pool
+        .query(
+          `SELECT u.is_super_admin
+             FROM users u
+             INNER JOIN user_emails ue ON ue.user_id = u.id
+             WHERE ue.email = $1
+             LIMIT 1`,
+          [email],
+        )
+        .then((r) => r.rows);
+      const isSuperAdmin = result[0]?.is_super_admin === true;
+      if (!isSuperAdmin) {
+        throw new APIError('FORBIDDEN', { message: 'SuperAdmin only' });
       }
     }),
   },

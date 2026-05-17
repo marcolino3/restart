@@ -29,6 +29,7 @@ import { CurriculumTranslation } from '@/curricula/entities/curriculum-translati
 import { CurriculumNode } from '@/curricula/entities/curriculum-node.entity';
 import { CurriculumNodeTranslation } from '@/curricula/entities/curriculum-node-translation.entity';
 import { LessonRecord } from '@/curricula/record-keeping/entities/lesson-record.entity';
+import { RecordKeepingSettings } from '@/curricula/record-keeping/entities/record-keeping-settings.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { Permission } from '@/permissions/entities/permission.entity';
@@ -78,6 +79,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       CurriculumNode,
       CurriculumNodeTranslation,
       LessonRecord,
+      RecordKeepingSettings,
     ]),
   ],
   exports: [TypeOrmModule],

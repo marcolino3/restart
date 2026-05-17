@@ -2,6 +2,7 @@
 
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
+import { invalidateCurriculumCache } from "../lib/invalidate-curriculum-cache";
 import type {
   CurriculumDTO,
   CurriculumTranslationDTO,
@@ -36,6 +37,7 @@ export const createCurriculumAction = async (input: Input) => {
     const { createCurriculum } = await client.request<Response>(Document, {
       input,
     });
+    await invalidateCurriculumCache();
     return { success: true as const, data: createCurriculum };
   } catch (error) {
     console.error(error);

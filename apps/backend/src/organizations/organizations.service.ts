@@ -69,7 +69,7 @@ export class OrganizationsService {
         'm.organization_id = o.id AND m.user_id = :uid',
         { uid: user.sub },
       )
-      .where('o.is_archived = :archived', { archived: false })
+      .where('o."isArchived" = :archived', { archived: false })
       .getMany();
   }
 

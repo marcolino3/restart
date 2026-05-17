@@ -1,4 +1,5 @@
 import { Field, ID, InputType } from '@nestjs/graphql';
+import { Type } from 'class-transformer';
 import {
   IsEnum,
   IsISO8601,
@@ -6,8 +7,10 @@ import {
   IsString,
   IsUUID,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
 import { LessonRecordStatus } from '../../enums/lesson-record-status.enum';
+import { LessonRecordObservationInput } from './lesson-record-observation.input';
 
 @InputType()
 export class CreateLessonRecordInput {
@@ -37,4 +40,10 @@ export class CreateLessonRecordInput {
   @IsOptional()
   @IsUUID()
   schoolClassEnrollmentId?: string | null;
+
+  @Field(() => LessonRecordObservationInput, { nullable: true })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LessonRecordObservationInput)
+  observation?: LessonRecordObservationInput | null;
 }

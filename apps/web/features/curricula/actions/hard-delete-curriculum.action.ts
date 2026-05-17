@@ -4,6 +4,7 @@ import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-clien
 import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
 import { gql } from "graphql-request";
+import { invalidateCurriculumCache } from "../lib/invalidate-curriculum-cache";
 
 const Document = gql`
   mutation HardDeleteCurriculum($id: ID!) {
@@ -18,6 +19,7 @@ export const hardDeleteCurriculumAction = async (id: string) => {
     const { hardDeleteCurriculum } = await client.request<{
       hardDeleteCurriculum: boolean;
     }>(Document, { id });
+    await invalidateCurriculumCache();
     revalidatePath(`/${locale}/admin/curricula`);
     return { success: hardDeleteCurriculum, data: hardDeleteCurriculum } as const;
   } catch (error) {

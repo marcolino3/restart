@@ -1,5 +1,12 @@
 import { IBase } from '@/database/interfaces/base.interface';
+import { LessonRecordDifficulty } from '../../enums/lesson-record-difficulty.enum';
+import { LessonRecordEngagement } from '../../enums/lesson-record-engagement.enum';
+import { LessonRecordSelfAssessment } from '../../enums/lesson-record-self-assessment.enum';
+import { LessonRecordSocialForm } from '../../enums/lesson-record-social-form.enum';
 import { LessonRecordStatus } from '../../enums/lesson-record-status.enum';
+import { RoomMood } from '../../enums/room-mood.enum';
+import { TeacherPreparation } from '../../enums/teacher-preparation.enum';
+import { TeacherStressLevel } from '../../enums/teacher-stress-level.enum';
 
 export interface ILessonRecord extends IBase {
   studentId: string;
@@ -10,4 +17,13 @@ export interface ILessonRecord extends IBase {
   recordedById?: string | null;
   schoolClassEnrollmentId?: string | null;
   organizationId: string;
+  engagement?: LessonRecordEngagement | null;
+  difficulty?: LessonRecordDifficulty | null;
+  socialForm?: LessonRecordSocialForm | null;
+  selfAssessment?: LessonRecordSelfAssessment | null;
+  selfAssessmentByChild: boolean;
+  lessonClarityConfirmed?: boolean | null;
+  teacherPreparation?: TeacherPreparation | null;
+  roomMood?: RoomMood | null;
+  teacherStressLevel?: TeacherStressLevel | null;
 }

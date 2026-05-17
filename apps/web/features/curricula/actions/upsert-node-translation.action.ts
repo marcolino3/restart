@@ -2,6 +2,7 @@
 
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
+import { invalidateCurriculumCache } from "../lib/invalidate-curriculum-cache";
 import type {
   CurriculumLocale,
   CurriculumNodeTranslationDTO,
@@ -37,6 +38,7 @@ export const upsertCurriculumNodeTranslationAction = async (input: Input) => {
       Document,
       { input },
     );
+    await invalidateCurriculumCache();
     return { success: true as const, data: upsertCurriculumNodeTranslation };
   } catch (error) {
     console.error(error);

@@ -3,8 +3,16 @@
 import { updateTag } from "next/cache";
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
-import { studentLessonRecordsTag } from "../lib/cache-tags";
-import type { LessonRecordDTO, LessonRecordStatus } from "../types";
+import {
+  classroomAttentionTag,
+  classroomHeatmapTag,
+  studentLessonRecordsTag,
+} from "../lib/cache-tags";
+import type {
+  LessonRecordDTO,
+  LessonRecordObservation,
+  LessonRecordStatus,
+} from "../types";
 
 export type CreateLessonRecordsBulkInput = {
   lessonId: string;
@@ -12,6 +20,12 @@ export type CreateLessonRecordsBulkInput = {
   recordedAt: string;
   status: LessonRecordStatus;
   note?: string | null;
+  /**
+   * Hattie observation seed — values applied to every created row. Per-child
+   * overrides are written separately via updateLessonRecordAction after this
+   * mutation returns.
+   */
+  observation?: LessonRecordObservation | null;
 };
 
 type Response = {
@@ -33,6 +47,10 @@ const Document = gql`
 
 export const createLessonRecordsBulkAction = async (
   input: CreateLessonRecordsBulkInput,
+  /** Optional — pass when called from a classroom-bound UI so we can
+   *  invalidate that classroom's heatmap + attention caches too. The
+   *  field isn't part of the GraphQL input. */
+  schoolClassId?: string,
 ) => {
   const client = await serverCookieGqlClient();
   try {
@@ -45,6 +63,13 @@ export const createLessonRecordsBulkAction = async (
     // so their progress tab reflects the new entries immediately.
     for (const studentId of input.studentIds) {
       updateTag(studentLessonRecordsTag(studentId));
+    }
+
+    // Classroom-level caches (heatmap + attention) — only invalidate the
+    // one classroom the bulk-entry targeted to avoid stampeding org-wide.
+    if (schoolClassId) {
+      updateTag(classroomAttentionTag(schoolClassId));
+      updateTag(classroomHeatmapTag(schoolClassId));
     }
 
     return { success: true as const, data: createLessonRecordsBulk };

@@ -32,10 +32,18 @@ export class StudentsResolver {
 
   @Query(() => Student, { name: 'studentById' })
   @Permissions('SCHOOL_CLASS_READ')
-  findOne(
+  async findOne(
     @Args('id', { type: () => ID }) id: string,
     @CurrentOrgId() orgId: string,
+    @CurrentUser() user: TokenPayload,
   ) {
+    await this.studentsService.assertStudentVisibleToUser(
+      id,
+      user.sub,
+      user.roles ?? [],
+      user.isSuperAdmin ?? false,
+      orgId,
+    );
     return this.studentsService.findOne(id, orgId);
   }
 
@@ -50,29 +58,53 @@ export class StudentsResolver {
 
   @Mutation(() => Student)
   @Permissions('SCHOOL_CLASS_WRITE')
-  updateStudent(
+  async updateStudent(
     @Args('input') input: UpdateStudentInput,
     @CurrentOrgId() orgId: string,
+    @CurrentUser() user: TokenPayload,
   ) {
+    await this.studentsService.assertStudentVisibleToUser(
+      input.id,
+      user.sub,
+      user.roles ?? [],
+      user.isSuperAdmin ?? false,
+      orgId,
+    );
     return this.studentsService.update(input, orgId);
   }
 
   @Mutation(() => Boolean)
   @Permissions('SCHOOL_CLASS_DELETE')
-  deleteStudent(
+  async deleteStudent(
     @Args('id', { type: () => ID }) id: string,
     @CurrentOrgId() orgId: string,
+    @CurrentUser() user: TokenPayload,
   ) {
+    await this.studentsService.assertStudentVisibleToUser(
+      id,
+      user.sub,
+      user.roles ?? [],
+      user.isSuperAdmin ?? false,
+      orgId,
+    );
     return this.studentsService.remove(id, orgId);
   }
 
   @Mutation(() => Student)
   @Permissions('SCHOOL_CLASS_WRITE')
-  moveStudentToStage(
+  async moveStudentToStage(
     @Args('studentId', { type: () => ID }) studentId: string,
     @Args('stageId', { type: () => ID }) stageId: string,
     @CurrentOrgId() orgId: string,
+    @CurrentUser() user: TokenPayload,
   ) {
+    await this.studentsService.assertStudentVisibleToUser(
+      studentId,
+      user.sub,
+      user.roles ?? [],
+      user.isSuperAdmin ?? false,
+      orgId,
+    );
     return this.studentsService.moveToStage(studentId, stageId, orgId);
   }
 }

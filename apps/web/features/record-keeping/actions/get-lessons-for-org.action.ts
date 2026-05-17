@@ -7,6 +7,7 @@ import type { CurriculumNodeType, LessonOption } from "../types";
 type RawAncestor = {
   id: string;
   nodeType: string;
+  position: number;
   translations: { locale: string; name: string }[];
 };
 
@@ -35,6 +36,7 @@ const Document = gql`
       ancestors {
         id
         nodeType
+        position
         translations {
           locale
           name
@@ -66,6 +68,7 @@ export const getLessonsForOrgAction = async (): Promise<
       ancestors: (n.ancestors ?? []).map((a) => ({
         id: a.id,
         nodeType: a.nodeType as CurriculumNodeType,
+        position: a.position,
         translations: a.translations.map((t) => ({
           locale: toLocale(t.locale),
           name: t.name,

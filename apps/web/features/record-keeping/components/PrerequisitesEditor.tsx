@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { getLessonPrerequisitesAction } from "../actions/get-lesson-prerequisites.action";
 import { setLessonPrerequisitesAction } from "../actions/set-lesson-prerequisites.action";
 import type { LessonOption } from "../types";
+import { LessonBreadcrumb } from "./LessonBreadcrumb";
 
 interface Props {
   lessonId: string;
@@ -171,11 +172,15 @@ export const PrerequisitesEditor = ({
                         key={l.id}
                         value={name}
                         onSelect={() => toggle(l.id)}
+                        className="flex items-start gap-2"
                       >
-                        {name}
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="truncate">{name}</span>
+                          <LessonBreadcrumb ancestors={l.ancestors} />
+                        </div>
                         <Check
                           className={cn(
-                            "ml-auto h-4 w-4",
+                            "ml-auto h-4 w-4 flex-shrink-0",
                             isSelected ? "opacity-100" : "opacity-0",
                           )}
                         />

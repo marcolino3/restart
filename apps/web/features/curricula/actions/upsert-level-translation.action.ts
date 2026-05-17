@@ -4,6 +4,7 @@ import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-clien
 import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
 import { gql } from "graphql-request";
+import { invalidateCurriculumCache } from "../lib/invalidate-curriculum-cache";
 import type { CurriculumLocale } from "../types";
 
 type Input = {
@@ -43,6 +44,7 @@ export const upsertCurriculumLevelTranslationAction = async (
       Document,
       { input },
     );
+    await invalidateCurriculumCache();
     if (curriculumId) {
       revalidatePath(`/${uiLocale}/admin/curricula/edit/${curriculumId}`);
     }

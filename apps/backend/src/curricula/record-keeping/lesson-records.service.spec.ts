@@ -6,6 +6,10 @@ import { SchoolClassEnrollment } from '@/school-management/school-class-enrollme
 import { Student } from '@/school-management/students/entities/student.entity';
 import { CurriculumNode } from '../entities/curriculum-node.entity';
 import { CurriculumNodeType } from '../enums/curriculum-node-type.enum';
+import { LessonRecordDifficulty } from '../enums/lesson-record-difficulty.enum';
+import { LessonRecordEngagement } from '../enums/lesson-record-engagement.enum';
+import { LessonRecordSelfAssessment } from '../enums/lesson-record-self-assessment.enum';
+import { LessonRecordSocialForm } from '../enums/lesson-record-social-form.enum';
 import { LessonRecordStatus } from '../enums/lesson-record-status.enum';
 import { LessonRecord } from './entities/lesson-record.entity';
 import { LessonRecordsService } from './lesson-records.service';
@@ -108,6 +112,143 @@ describe('LessonRecordsService', () => {
         }),
       );
       expect(result.id).toBe('rec-1');
+    });
+
+    it('persists observation badges when provided', async () => {
+      nodesRepo.findOne.mockResolvedValue({
+        id: 'les-1',
+        nodeType: CurriculumNodeType.LESSON,
+      });
+      studentsRepo.exists.mockResolvedValue(true);
+
+      await service.create(
+        {
+          ...input,
+          observation: {
+            engagement: LessonRecordEngagement.FOCUSED,
+            difficulty: LessonRecordDifficulty.JUST_RIGHT,
+            socialForm: LessonRecordSocialForm.WITH_PARTNER,
+            selfAssessment: LessonRecordSelfAssessment.UNDERSTOOD,
+            selfAssessmentByChild: true,
+            lessonClarityConfirmed: true,
+          },
+        },
+        'org-1',
+        'user-9',
+      );
+
+      expect(recordsRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          engagement: LessonRecordEngagement.FOCUSED,
+          difficulty: LessonRecordDifficulty.JUST_RIGHT,
+          socialForm: LessonRecordSocialForm.WITH_PARTNER,
+          selfAssessment: LessonRecordSelfAssessment.UNDERSTOOD,
+          selfAssessmentByChild: true,
+          lessonClarityConfirmed: true,
+        }),
+      );
+    });
+
+    it('rejects selfAssessmentByChild=true without selfAssessment', async () => {
+      nodesRepo.findOne.mockResolvedValue({
+        id: 'les-1',
+        nodeType: CurriculumNodeType.LESSON,
+      });
+      studentsRepo.exists.mockResolvedValue(true);
+
+      await expect(
+        service.create(
+          {
+            ...input,
+            observation: {
+              selfAssessmentByChild: true,
+            },
+          },
+          'org-1',
+          'user-9',
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('leaves observation fields null when input.observation is omitted', async () => {
+      nodesRepo.findOne.mockResolvedValue({
+        id: 'les-1',
+        nodeType: CurriculumNodeType.LESSON,
+      });
+      studentsRepo.exists.mockResolvedValue(true);
+
+      await service.create(input, 'org-1', 'user-9');
+
+      const created = recordsRepo.create.mock.calls[0][0];
+      expect(created).not.toHaveProperty('engagement');
+      expect(created).not.toHaveProperty('difficulty');
+    });
+  });
+
+  describe('update observation patch', () => {
+    const existing = {
+      id: 'rec-1',
+      organizationId: 'org-1',
+      engagement: LessonRecordEngagement.FOCUSED,
+      difficulty: LessonRecordDifficulty.JUST_RIGHT,
+      socialForm: LessonRecordSocialForm.ALONE,
+      selfAssessment: LessonRecordSelfAssessment.UNDERSTOOD,
+      selfAssessmentByChild: true,
+      lessonClarityConfirmed: true,
+    };
+
+    it('patches only the fields present in observation', async () => {
+      recordsRepo.findOne.mockResolvedValue({ ...existing });
+
+      await service.update(
+        {
+          id: 'rec-1',
+          observation: { difficulty: LessonRecordDifficulty.TOO_HARD },
+        },
+        'org-1',
+      );
+
+      expect(recordsRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          difficulty: LessonRecordDifficulty.TOO_HARD,
+          engagement: LessonRecordEngagement.FOCUSED,
+          selfAssessment: LessonRecordSelfAssessment.UNDERSTOOD,
+        }),
+      );
+    });
+
+    it('clears all observation fields when observation=null', async () => {
+      recordsRepo.findOne.mockResolvedValue({ ...existing });
+
+      await service.update(
+        { id: 'rec-1', observation: null },
+        'org-1',
+      );
+
+      expect(recordsRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          engagement: null,
+          difficulty: null,
+          socialForm: null,
+          selfAssessment: null,
+          selfAssessmentByChild: false,
+          lessonClarityConfirmed: null,
+        }),
+      );
+    });
+
+    it('rejects patch that would leave selfAssessmentByChild=true without selfAssessment', async () => {
+      recordsRepo.findOne.mockResolvedValue({ ...existing });
+
+      await expect(
+        service.update(
+          {
+            id: 'rec-1',
+            observation: { selfAssessment: null },
+          },
+          'org-1',
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
   });
 });

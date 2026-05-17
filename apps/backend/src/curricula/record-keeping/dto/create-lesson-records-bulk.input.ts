@@ -1,4 +1,5 @@
 import { Field, ID, InputType } from '@nestjs/graphql';
+import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   ArrayUnique,
@@ -9,8 +10,10 @@ import {
   IsString,
   IsUUID,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
 import { LessonRecordStatus } from '../../enums/lesson-record-status.enum';
+import { LessonRecordObservationInput } from './lesson-record-observation.input';
 
 /**
  * Lesson-First Bulk-Eingabe:
@@ -42,4 +45,15 @@ export class CreateLessonRecordsBulkInput {
   @IsString()
   @MaxLength(2000)
   note?: string | null;
+
+  /**
+   * Seed-Werte für die Beobachtungs-Badges. Gelten für alle Kinder im Bulk;
+   * individuelle Anpassungen erfolgen nach dem Save per Update-Mutation
+   * (Akkordeon-UI im Bulk-Modal).
+   */
+  @Field(() => LessonRecordObservationInput, { nullable: true })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LessonRecordObservationInput)
+  observation?: LessonRecordObservationInput | null;
 }

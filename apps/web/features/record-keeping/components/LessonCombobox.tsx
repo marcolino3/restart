@@ -62,6 +62,11 @@ const findAncestor = (
 ): LessonAncestor | undefined =>
   lesson.ancestors?.find((a) => a.nodeType === type);
 
+// Curriculum-Daten können historisch gleichnamige AREA/TOPIC/GROUP-Einträge
+// mit unterschiedlichen IDs enthalten (z.B. doppelter Import). Wir filtern
+// und gruppieren deshalb nach normalisiertem Namen statt nach ID.
+const normalizeKey = (s: string) => s.toLocaleLowerCase().trim();
+
 const BREADCRUMB_SEP = " › ";
 
 /**
@@ -87,63 +92,75 @@ export function LessonCombobox<TFormValues extends FieldValues>({
   const [selectedTopics, setSelectedTopics] = useState<Set<string>>(new Set());
   const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
 
-  // Lookup-Maps für Ancestor-Namen
-  const ancestorNameById = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const l of lessons) {
-      for (const a of l.ancestors ?? []) {
-        m.set(a.id, pickName(a.translations, locale));
-      }
-    }
-    return m;
-  }, [lessons, locale]);
-
-  // Verfügbare Areas (immer aus dem Gesamt-Pool)
+  // Verfügbare Areas (immer aus dem Gesamt-Pool); Dedup über normalisierten Namen.
   const allAreas = useMemo(() => {
     const m = new Map<string, string>();
     for (const l of lessons) {
       const a = findAncestor(l, "AREA");
-      if (a) m.set(a.id, pickName(a.translations, locale));
+      if (!a) continue;
+      const name = pickName(a.translations, locale);
+      const key = normalizeKey(name);
+      if (!m.has(key)) m.set(key, name);
     }
     return Array.from(m.entries())
       .map(([id, name]) => ({ id, name }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [lessons, locale]);
 
-  // Topics: nur jene aus Lessons, die zu den selektierten Areas passen
+  // Topics: nur jene aus Lessons, die zu den selektierten Areas passen.
   const availableTopics = useMemo(() => {
     const m = new Map<string, string>();
     for (const l of lessons) {
       const area = findAncestor(l, "AREA");
-      if (selectedAreas.size > 0 && (!area || !selectedAreas.has(area.id)))
+      const areaKey = area
+        ? normalizeKey(pickName(area.translations, locale))
+        : null;
+      if (selectedAreas.size > 0 && (!areaKey || !selectedAreas.has(areaKey)))
         continue;
       const topic = findAncestor(l, "TOPIC");
-      if (topic) m.set(topic.id, pickName(topic.translations, locale));
+      if (!topic) continue;
+      const name = pickName(topic.translations, locale);
+      const key = normalizeKey(name);
+      if (!m.has(key)) m.set(key, name);
     }
     return Array.from(m.entries())
       .map(([id, name]) => ({ id, name }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [lessons, selectedAreas, locale]);
 
-  // Groups: passend zu Areas + Topics
+  // Groups: passend zu Areas + Topics.
   const availableGroups = useMemo(() => {
     const m = new Map<string, string>();
     for (const l of lessons) {
       const area = findAncestor(l, "AREA");
-      if (selectedAreas.size > 0 && (!area || !selectedAreas.has(area.id)))
+      const areaKey = area
+        ? normalizeKey(pickName(area.translations, locale))
+        : null;
+      if (selectedAreas.size > 0 && (!areaKey || !selectedAreas.has(areaKey)))
         continue;
       const topic = findAncestor(l, "TOPIC");
-      if (selectedTopics.size > 0 && (!topic || !selectedTopics.has(topic.id)))
+      const topicKey = topic
+        ? normalizeKey(pickName(topic.translations, locale))
+        : null;
+      if (
+        selectedTopics.size > 0 &&
+        (!topicKey || !selectedTopics.has(topicKey))
+      )
         continue;
       const group = findAncestor(l, "GROUP");
-      if (group) m.set(group.id, pickName(group.translations, locale));
+      if (!group) continue;
+      const name = pickName(group.translations, locale);
+      const key = normalizeKey(name);
+      if (!m.has(key)) m.set(key, name);
     }
     return Array.from(m.entries())
       .map(([id, name]) => ({ id, name }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [lessons, selectedAreas, selectedTopics, locale]);
 
-  // Gefilterte + sortierte Lessons, gruppiert nach AREA
+  // Gefilterte + sortierte Lessons in echter Hierarchie:
+  // AREA → TOPIC → GROUP → LESSON. Spiegelt das Indent-Layout der
+  // Schüler-Fortschritts-Übersicht (StudentProgressTab) wider.
   const groupedFiltered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const filtered = lessons.filter((l) => {
@@ -151,11 +168,27 @@ export function LessonCombobox<TFormValues extends FieldValues>({
       const topic = findAncestor(l, "TOPIC");
       const group = findAncestor(l, "GROUP");
 
-      if (selectedAreas.size > 0 && (!area || !selectedAreas.has(area.id)))
+      const areaKey = area
+        ? normalizeKey(pickName(area.translations, locale))
+        : null;
+      const topicKey = topic
+        ? normalizeKey(pickName(topic.translations, locale))
+        : null;
+      const groupKey = group
+        ? normalizeKey(pickName(group.translations, locale))
+        : null;
+
+      if (selectedAreas.size > 0 && (!areaKey || !selectedAreas.has(areaKey)))
         return false;
-      if (selectedTopics.size > 0 && (!topic || !selectedTopics.has(topic.id)))
+      if (
+        selectedTopics.size > 0 &&
+        (!topicKey || !selectedTopics.has(topicKey))
+      )
         return false;
-      if (selectedGroups.size > 0 && (!group || !selectedGroups.has(group.id)))
+      if (
+        selectedGroups.size > 0 &&
+        (!groupKey || !selectedGroups.has(groupKey))
+      )
         return false;
 
       if (!q) return true;
@@ -166,29 +199,123 @@ export function LessonCombobox<TFormValues extends FieldValues>({
       return lessonName.includes(q) || ancestorNames.includes(q);
     });
 
-    // Group by AREA-id, sort Areas alphabetically, lessons within by position
-    const byArea = new Map<
-      string,
-      { areaId: string; areaName: string; items: LessonOption[] }
-    >();
-    const noAreaKey = "__no_area__";
+    type LessonLeaf = { lesson: LessonOption; name: string };
+    type GroupBucket = {
+      groupKey: string;
+      groupName: string | null;
+      position: number;
+      lessons: LessonLeaf[];
+    };
+    type TopicBucket = {
+      topicKey: string;
+      topicName: string | null;
+      position: number;
+      groups: GroupBucket[];
+    };
+    type AreaBucket = {
+      areaKey: string;
+      areaName: string;
+      position: number;
+      topics: TopicBucket[];
+    };
+
+    const NO_AREA_KEY = "__no_area__";
+    const NO_TOPIC_KEY = "__no_topic__";
+    const NO_GROUP_KEY = "__no_group__";
+    const POS_INF = Number.MAX_SAFE_INTEGER;
+
+    const areas = new Map<string, AreaBucket>();
     for (const l of filtered) {
       const area = findAncestor(l, "AREA");
-      const key = area?.id ?? noAreaKey;
+      const topic = findAncestor(l, "TOPIC");
+      const group = findAncestor(l, "GROUP");
+
       const areaName = area
         ? pickName(area.translations, locale)
         : t("noLessonsFound");
-      if (!byArea.has(key)) {
-        byArea.set(key, { areaId: key, areaName, items: [] });
+      const areaKey = area ? normalizeKey(areaName) : NO_AREA_KEY;
+      const topicName = topic ? pickName(topic.translations, locale) : null;
+      const topicKey = topicName ? normalizeKey(topicName) : NO_TOPIC_KEY;
+      const groupName = group ? pickName(group.translations, locale) : null;
+      const groupKey = groupName ? normalizeKey(groupName) : NO_GROUP_KEY;
+
+      let areaBucket = areas.get(areaKey);
+      if (!areaBucket) {
+        areaBucket = {
+          areaKey,
+          areaName,
+          position: area?.position ?? POS_INF,
+          topics: [],
+        };
+        areas.set(areaKey, areaBucket);
       }
-      byArea.get(key)!.items.push(l);
+      let topicBucket = areaBucket.topics.find((b) => b.topicKey === topicKey);
+      if (!topicBucket) {
+        topicBucket = {
+          topicKey,
+          topicName,
+          position: topic?.position ?? POS_INF,
+          groups: [],
+        };
+        areaBucket.topics.push(topicBucket);
+      }
+      let groupBucket = topicBucket.groups.find(
+        (b) => b.groupKey === groupKey,
+      );
+      if (!groupBucket) {
+        groupBucket = {
+          groupKey,
+          groupName,
+          position: group?.position ?? POS_INF,
+          lessons: [],
+        };
+        topicBucket.groups.push(groupBucket);
+      }
+      groupBucket.lessons.push({
+        lesson: l,
+        name: pickName(l.translations, locale),
+      });
     }
-    const groups = Array.from(byArea.values());
-    groups.sort((a, b) => a.areaName.localeCompare(b.areaName));
-    for (const g of groups) {
-      g.items.sort((a, b) => a.position - b.position);
+
+    const byPosThenName = <T extends { position: number; name: string }>(
+      a: T,
+      b: T,
+    ) => {
+      if (a.position !== b.position) return a.position - b.position;
+      return a.name.localeCompare(b.name);
+    };
+
+    const sortedAreas = Array.from(areas.values()).sort((a, b) =>
+      byPosThenName(
+        { position: a.position, name: a.areaName },
+        { position: b.position, name: b.areaName },
+      ),
+    );
+    for (const area of sortedAreas) {
+      area.topics.sort((a, b) =>
+        byPosThenName(
+          { position: a.position, name: a.topicName ?? "￿" },
+          { position: b.position, name: b.topicName ?? "￿" },
+        ),
+      );
+      for (const topic of area.topics) {
+        topic.groups.sort((a, b) =>
+          byPosThenName(
+            { position: a.position, name: a.groupName ?? "￿" },
+            { position: b.position, name: b.groupName ?? "￿" },
+          ),
+        );
+        for (const group of topic.groups) {
+          group.lessons.sort((a, b) =>
+            byPosThenName(
+              { position: a.lesson.position, name: a.name },
+              { position: b.lesson.position, name: b.name },
+            ),
+          );
+        }
+      }
     }
-    return groups;
+    return sortedAreas;
   }, [lessons, search, selectedAreas, selectedTopics, selectedGroups, locale, t]);
 
   const anyFilterActive =
@@ -208,15 +335,6 @@ export function LessonCombobox<TFormValues extends FieldValues>({
     const group = findAncestor(l, "GROUP");
     const parts: string[] = [];
     if (area) parts.push(pickName(area.translations, locale));
-    if (topic) parts.push(pickName(topic.translations, locale));
-    if (group) parts.push(pickName(group.translations, locale));
-    return parts.join(BREADCRUMB_SEP);
-  };
-
-  const topicGroupSubtitle = (l: LessonOption): string => {
-    const topic = findAncestor(l, "TOPIC");
-    const group = findAncestor(l, "GROUP");
-    const parts: string[] = [];
     if (topic) parts.push(pickName(topic.translations, locale));
     if (group) parts.push(pickName(group.translations, locale));
     return parts.join(BREADCRUMB_SEP);
@@ -333,40 +451,72 @@ export function LessonCombobox<TFormValues extends FieldValues>({
                   />
                   <CommandList className="max-h-80">
                     <CommandEmpty>{t("noLessonsFound")}</CommandEmpty>
-                    {groupedFiltered.map((g) => (
-                      <CommandGroup key={g.areaId} heading={g.areaName}>
-                        {g.items.map((l) => {
-                          const lessonName = pickName(l.translations, locale);
-                          const subtitle = topicGroupSubtitle(l);
-                          const isSelected = field.value === l.id;
-                          return (
-                            <CommandItem
-                              key={l.id}
-                              value={l.id}
-                              onSelect={() => {
-                                field.onChange(l.id);
-                                setOpen(false);
-                              }}
-                              className="flex items-start gap-2"
-                            >
-                              <div className="flex flex-col min-w-0 flex-1">
-                                <span className="truncate">{lessonName}</span>
-                                {subtitle && (
-                                  <span className="truncate text-[10px] text-muted-foreground">
-                                    {subtitle}
-                                  </span>
-                                )}
+                    {groupedFiltered.map((area) => (
+                      <div
+                        key={area.areaKey}
+                        className="flex flex-col gap-1 px-2 py-2"
+                      >
+                        <div className="text-xs font-semibold text-foreground/90">
+                          {area.areaName}
+                        </div>
+                        {area.topics.map((topic) => (
+                          <div
+                            key={topic.topicKey}
+                            className="flex flex-col gap-1 pl-2 border-l-2 border-border/70"
+                          >
+                            {topic.topicName && (
+                              <div className="text-[11px] font-semibold text-foreground/80 pt-0.5">
+                                {topic.topicName}
                               </div>
-                              <Check
-                                className={cn(
-                                  "ml-auto h-4 w-4 shrink-0",
-                                  isSelected ? "opacity-100" : "opacity-0",
+                            )}
+                            {topic.groups.map((group) => (
+                              <div
+                                key={group.groupKey}
+                                className="flex flex-col gap-0.5 pl-2 border-l border-border/60"
+                              >
+                                {group.groupName && (
+                                  <div className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground/80 pt-0.5">
+                                    {group.groupName}
+                                  </div>
                                 )}
-                              />
-                            </CommandItem>
-                          );
-                        })}
-                      </CommandGroup>
+                                <CommandGroup className="p-0">
+                                  {group.lessons.map(({ lesson, name }) => {
+                                    const isSelected =
+                                      field.value === lesson.id;
+                                    return (
+                                      <CommandItem
+                                        key={lesson.id}
+                                        value={lesson.id}
+                                        onSelect={() => {
+                                          field.onChange(lesson.id);
+                                          setOpen(false);
+                                        }}
+                                        className="flex items-center gap-2 py-1"
+                                      >
+                                        <span
+                                          aria-hidden="true"
+                                          className="h-1.5 w-1.5 rounded-full bg-foreground/30 shrink-0"
+                                        />
+                                        <span className="text-sm truncate flex-1">
+                                          {name}
+                                        </span>
+                                        <Check
+                                          className={cn(
+                                            "ml-auto h-4 w-4 shrink-0",
+                                            isSelected
+                                              ? "opacity-100"
+                                              : "opacity-0",
+                                          )}
+                                        />
+                                      </CommandItem>
+                                    );
+                                  })}
+                                </CommandGroup>
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
                     ))}
                   </CommandList>
                 </Command>

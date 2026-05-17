@@ -6,6 +6,8 @@ import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { NotFoundException, UseGuards } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { EntityManager } from 'typeorm';
+import { InjectEntityManager } from '@nestjs/typeorm';
 import { CreateUserInput } from './dto/create-user.input';
 import { UpdateUserInput } from './dto/update-user.input';
 import { AuthContextOutput } from './dto/auth-context.output';
@@ -15,7 +17,10 @@ import { UsersService } from './users.service';
 @Resolver(() => User)
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
 export class UsersResolver {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    @InjectEntityManager() private readonly em: EntityManager,
+  ) {}
 
   @Mutation(() => User)
   @SuperAdminOnly()
@@ -59,6 +64,28 @@ export class UsersResolver {
   @Permissions('EMPLOYEE_WRITE')
   updateUser(@Args('updateUserInput') updateUserInput: UpdateUserInput) {
     return this.usersService.update(updateUserInput);
+  }
+
+  /**
+   * Translates a Restart `users.id` (UUID) into the corresponding
+   * better-auth `user.id` (text). Joins via shared email — the two tables
+   * are otherwise independent. SuperAdmin only since the only consumer is
+   * the impersonation flow.
+   */
+  @Query(() => String, { name: 'authUserIdByUserId', nullable: true })
+  @SuperAdminOnly()
+  async authUserIdByUserId(
+    @Args('userId', { type: () => ID }) userId: string,
+  ): Promise<string | null> {
+    const rows: Array<{ id: string }> = await this.em.query(
+      `SELECT au.id
+         FROM "user" au
+         INNER JOIN user_emails ue ON LOWER(ue.email) = LOWER(au.email)
+         WHERE ue.user_id = $1
+         LIMIT 1`,
+      [userId],
+    );
+    return rows[0]?.id ?? null;
   }
 
   @Mutation(() => User)
