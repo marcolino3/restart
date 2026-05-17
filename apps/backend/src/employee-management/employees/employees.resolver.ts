@@ -48,6 +48,12 @@ export class EmployeesResolver {
     return this.employeesService.findEmployeesByOrgId(organizationId);
   }
 
+  @Query(() => [Employee], { name: 'teachersByOrgId' })
+  @Permissions('SCHOOL_CLASS_READ')
+  async findTeachersByOrgId(@CurrentOrgId() organizationId: string) {
+    return this.employeesService.findTeachersByOrgId(organizationId);
+  }
+
   @Query(() => Employee, { name: 'employeeById' })
   @Permissions('EMPLOYEE_READ')
   async findEmployeeById(

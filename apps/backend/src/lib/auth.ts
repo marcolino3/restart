@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth';
-import { customSession } from 'better-auth/plugins';
+import { APIError, createAuthMiddleware } from 'better-auth/api';
+import { admin, customSession } from 'better-auth/plugins';
 import { expo } from '@better-auth/expo';
 import * as jwt from 'jsonwebtoken';
 import { Pool } from 'pg';
@@ -129,8 +130,39 @@ export const auth = betterAuth({
       const activeOrganizationId = raw && UUID_RE.test(raw) ? raw : null;
       return { user, session, activeOrganizationId };
     }),
+    // Admin plugin enables impersonation (`/api/auth/admin/impersonate-user`)
+    // and stop-impersonating (`/api/auth/admin/stop-impersonating`). The
+    // plugin's built-in role check is bypassed via the before-hook below —
+    // we authorize against our own `isSuperAdmin` flag, not better-auth's
+    // optional `role` column.
+    admin({
+      impersonationSessionDuration: 60 * 60, // 1 hour
+    }),
     expo(),
   ],
+  hooks: {
+    // Gate `/admin/impersonate-user` and `/admin/stop-impersonating` to
+    // SuperAdmins only. We don't use better-auth's optional `role` column —
+    // authorization runs against our own `isSuperAdmin` flag on the user.
+    before: createAuthMiddleware(async (ctx) => {
+      if (
+        ctx.path !== '/admin/impersonate-user' &&
+        ctx.path !== '/admin/stop-impersonating'
+      ) {
+        return;
+      }
+      const session = (
+        ctx.context as {
+          session?: { user?: { isSuperAdmin?: boolean } } | null;
+        }
+      ).session;
+      if (!session?.user?.isSuperAdmin) {
+        throw new APIError('FORBIDDEN', {
+          message: 'SuperAdmin only',
+        });
+      }
+    }),
+  },
 });
 
 export type Auth = typeof auth;

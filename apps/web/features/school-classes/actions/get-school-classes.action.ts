@@ -7,6 +7,12 @@ export type SchoolClassListItem = {
   id: string;
   name: string;
   gradeLevels?: { id: string; name: string }[];
+  teachers?: {
+    id: string;
+    membership: {
+      user?: { firstName: string; lastName: string } | null;
+    };
+  }[];
   color?: string | null;
   description?: string | null;
   sortOrder: number;
@@ -27,6 +33,15 @@ const GetSchoolClassesDocument = gql`
       gradeLevels {
         id
         name
+      }
+      teachers {
+        id
+        membership {
+          user {
+            firstName
+            lastName
+          }
+        }
       }
       color
       description

@@ -19,16 +19,20 @@ import {
 } from "../schemas/update-school-class-form.schema";
 import { updateSchoolClassAction } from "../actions/update-school-class.action";
 import { SchoolClassDetail } from "../actions/get-school-class-by-id.action";
+import { TeacherOption } from "../actions/get-teachers.action";
 import { GradeLevelItem } from "@/features/grade-levels/actions/get-grade-levels.action";
+import { TeacherImpersonateList } from "@/features/auth/components/TeacherImpersonateList";
 
 interface Props {
   schoolClass: SchoolClassDetail;
   gradeLevels: GradeLevelItem[];
+  teachers: TeacherOption[];
 }
 
 export default function EditSchoolClassPageForm({
   schoolClass,
   gradeLevels,
+  teachers,
 }: Props) {
   const tS = useTranslations("SchoolClasses");
   const locale = useLocale();
@@ -39,12 +43,32 @@ export default function EditSchoolClassPageForm({
     value: gl.id,
   }));
 
+  const teacherOptions = teachers.map((t) => ({
+    label: `${t.firstName} ${t.lastName}`.trim(),
+    value: t.id,
+  }));
+
+  // Build the impersonatable list from the teachers currently assigned to the class.
+  // Looks up the userId via the org-wide teachers list we already have.
+  const assignedTeacherIds = new Set(
+    schoolClass.teachers?.map((t) => t.id) ?? [],
+  );
+  const impersonatableTeachers = teachers
+    .filter((t) => assignedTeacherIds.has(t.id))
+    .map((t) => ({
+      employeeId: t.id,
+      userId: t.userId ?? null,
+      firstName: t.firstName,
+      lastName: t.lastName,
+    }));
+
   const form = useForm({
     resolver: zodResolver(UpdateSchoolClassFormSchema),
     defaultValues: {
       id: schoolClass.id,
       name: schoolClass.name,
       gradeLevelIds: schoolClass.gradeLevels?.map((gl) => gl.id) ?? [],
+      teacherIds: schoolClass.teachers?.map((t) => t.id) ?? [],
       color: schoolClass.color ?? "",
       description: schoolClass.description ?? "",
       sortOrder: schoolClass.sortOrder,
@@ -82,6 +106,15 @@ export default function EditSchoolClassPageForm({
               translateOptions={false}
               width="w-full"
             />
+            <ComboboxFormField
+              name="teacherIds"
+              label="teachers"
+              namespace="SchoolClasses"
+              options={teacherOptions}
+              multiple
+              translateOptions={false}
+              width="w-full"
+            />
             <InputFormField name="description" label="description" />
             <div className="flex gap-4">
               <InputFormField
@@ -112,6 +145,12 @@ export default function EditSchoolClassPageForm({
           onCancel={() => router.push(ROUTES.admin.schoolClasses(locale))}
         />
       </form>
+
+      {/* SuperAdmin-only impersonation panel. The component renders nothing
+          for non-SuperAdmin users — no PII leak. */}
+      <div className="mt-6">
+        <TeacherImpersonateList teachers={impersonatableTeachers} />
+      </div>
     </Form>
   );
 }

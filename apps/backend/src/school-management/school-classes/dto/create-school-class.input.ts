@@ -23,6 +23,12 @@ export class CreateSchoolClassInput {
   @IsOptional()
   gradeLevelIds?: string[];
 
+  @Field(() => [ID], { nullable: true })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @IsOptional()
+  teacherIds?: string[];
+
   @Field(() => String, { nullable: true })
   @IsString()
   @IsOptional()

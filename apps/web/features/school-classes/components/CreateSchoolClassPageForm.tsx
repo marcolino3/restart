@@ -18,13 +18,18 @@ import {
   CreateSchoolClassFormOutput,
 } from "../schemas/create-school-class-form.schema";
 import { createSchoolClassAction } from "../actions/create-school-class.action";
+import { TeacherOption } from "../actions/get-teachers.action";
 import { GradeLevelItem } from "@/features/grade-levels/actions/get-grade-levels.action";
 
 interface Props {
   gradeLevels: GradeLevelItem[];
+  teachers: TeacherOption[];
 }
 
-export default function CreateSchoolClassPageForm({ gradeLevels }: Props) {
+export default function CreateSchoolClassPageForm({
+  gradeLevels,
+  teachers,
+}: Props) {
   const tS = useTranslations("SchoolClasses");
   const locale = useLocale();
   const router = useRouter();
@@ -34,11 +39,17 @@ export default function CreateSchoolClassPageForm({ gradeLevels }: Props) {
     value: gl.id,
   }));
 
+  const teacherOptions = teachers.map((t) => ({
+    label: `${t.firstName} ${t.lastName}`.trim(),
+    value: t.id,
+  }));
+
   const form = useForm({
     resolver: zodResolver(CreateSchoolClassFormSchema),
     defaultValues: {
       name: "",
       gradeLevelIds: [] as string[],
+      teacherIds: [] as string[],
       color: "",
       description: "",
       sortOrder: 0,
@@ -72,6 +83,15 @@ export default function CreateSchoolClassPageForm({ gradeLevels }: Props) {
               name="gradeLevelIds"
               label="gradeLevel"
               options={gradeLevelOptions}
+              multiple
+              translateOptions={false}
+              width="w-full"
+            />
+            <ComboboxFormField
+              name="teacherIds"
+              label="teachers"
+              namespace="SchoolClasses"
+              options={teacherOptions}
               multiple
               translateOptions={false}
               width="w-full"

@@ -4,6 +4,8 @@ import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
+import { CurrentUser } from '@/auth/decorators/current-user.decorator';
+import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { StudentsService } from './students.service';
 import { Student } from './entities/student.entity';
 import { CreateStudentInput } from './dto/create-student.input';
@@ -16,8 +18,16 @@ export class StudentsResolver {
 
   @Query(() => [Student], { name: 'studentsByOrgId' })
   @Permissions('SCHOOL_CLASS_READ')
-  findAll(@CurrentOrgId() orgId: string) {
-    return this.studentsService.findAllByOrgId(orgId);
+  findAll(
+    @CurrentOrgId() orgId: string,
+    @CurrentUser() user: TokenPayload,
+  ) {
+    return this.studentsService.findVisibleByUser(
+      user.sub,
+      user.roles ?? [],
+      user.isSuperAdmin ?? false,
+      orgId,
+    );
   }
 
   @Query(() => Student, { name: 'studentById' })

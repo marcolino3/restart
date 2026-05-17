@@ -46,6 +46,63 @@ export class StudentsService {
     });
   }
 
+  /**
+   * Row-level scope: returns only students the calling user is allowed to see.
+   *
+   * - SuperAdmin or admin-level roles (ORG_OWNER, ORG_ADMIN, HR_MANAGER, OFFICE):
+   *   sees all students of the org (same as findAllByOrgId).
+   * - Otherwise (e.g. EMPLOYEE / TEACHER): sees only students who have an
+   *   active enrollment (left_at IS NULL) in a school class where the user
+   *   is assigned as teacher (via school_class_teachers → employees ←
+   *   memberships ← users).
+   * - Anyone else with no class assignment: empty list.
+   */
+  async findVisibleByUser(
+    userId: string,
+    roles: string[],
+    isSuperAdmin: boolean,
+    organizationId: string,
+  ): Promise<Student[]> {
+    const ADMIN_ROLES = new Set([
+      'ORG_OWNER',
+      'ORG_ADMIN',
+      'HR_MANAGER',
+      'OFFICE',
+    ]);
+    const hasAdminRole = roles?.some((r) => ADMIN_ROLES.has(r)) ?? false;
+    if (isSuperAdmin || hasAdminRole) {
+      return this.findAllByOrgId(organizationId);
+    }
+
+    return this.studentRepo
+      .createQueryBuilder('s')
+      .innerJoin(
+        `(
+          SELECT DISTINCT e.student_id
+          FROM "school_class_enrollments" e
+          INNER JOIN "school_class_teachers" sct
+            ON sct.school_class_id = e.school_class_id
+          INNER JOIN "memberships" m
+            ON m.employee_id = sct.employee_id
+          WHERE m.user_id = :uid
+            AND m.organization_id = :orgId
+            AND m."isActive" = true
+            AND e.organization_id = :orgId
+            AND e."isActive" = true
+            AND e.left_at IS NULL
+        )`,
+        'visible_students',
+        'visible_students.student_id = s.id',
+      )
+      .leftJoinAndSelect('s.admissionStage', 'admissionStage')
+      .where('s.organization_id = :orgId', { orgId: organizationId })
+      .andWhere('s."isActive" = true')
+      .setParameter('uid', userId)
+      .orderBy('s."lastName"', 'ASC')
+      .addOrderBy('s."firstName"', 'ASC')
+      .getMany();
+  }
+
   async findOne(id: string, organizationId: string): Promise<Student> {
     const student = await this.studentRepo.findOne({
       where: { id, organizationId, isActive: true },

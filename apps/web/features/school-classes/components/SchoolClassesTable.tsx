@@ -144,6 +144,33 @@ const useColumns = (): ColumnDef<SchoolClassListItem>[] => {
       },
     },
     {
+      id: "teachers",
+      accessorFn: (row) =>
+        row.teachers
+          ?.map((te) =>
+            `${te.membership?.user?.firstName ?? ""} ${te.membership?.user?.lastName ?? ""}`.trim()
+          )
+          .filter(Boolean)
+          .join(", ") ?? "",
+      header: tS("teachers"),
+      cell: ({ row }) => {
+        const teachers = row.original.teachers;
+        if (!teachers?.length) return null;
+        return (
+          <div className="flex flex-wrap gap-1">
+            {teachers.map((te) => {
+              const name = `${te.membership?.user?.firstName ?? ""} ${te.membership?.user?.lastName ?? ""}`.trim();
+              return (
+                <Badge key={te.id} variant="outline">
+                  {name || te.id}
+                </Badge>
+              );
+            })}
+          </div>
+        );
+      },
+    },
+    {
       id: "room",
       accessorKey: "room",
       header: t("room"),

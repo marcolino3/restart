@@ -35,6 +35,9 @@ export const createSchoolClassAction = async (
     ...(parsed.gradeLevelIds?.length
       ? { gradeLevelIds: parsed.gradeLevelIds }
       : {}),
+    ...(parsed.teacherIds?.length
+      ? { teacherIds: parsed.teacherIds }
+      : {}),
     ...(parsed.color ? { color: parsed.color } : {}),
     ...(parsed.description ? { description: parsed.description } : {}),
     ...(parsed.maxCapacity && parsed.maxCapacity !== ""

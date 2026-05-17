@@ -1,3 +1,4 @@
+import { Persona } from '@/common/enums/persona.enum';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { User } from '@/users/entities/user.entity';
@@ -327,6 +328,24 @@ export class EmployeesService {
       throw new InternalServerErrorException('Load Employees failed');
 
     return employees;
+  }
+
+  async findTeachersByOrgId(organizationId: string) {
+    return this.employeesService.find({
+      relations: {
+        membership: {
+          user: true,
+        },
+      },
+      where: {
+        isActive: true,
+        membership: {
+          organizationId,
+          persona: Persona.TEACHER,
+          isActive: true,
+        },
+      },
+    });
   }
 
   async findEmployeeById(

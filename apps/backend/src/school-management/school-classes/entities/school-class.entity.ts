@@ -1,4 +1,5 @@
 import { AbstractEntity } from '@/database/abstract.entity';
+import { Employee } from '@/employee-management/employees/entities/employee.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { GradeLevel } from '@/school-management/grade-levels/entities/grade-level.entity';
 import { ObjectType, Field, Int } from '@nestjs/graphql';
@@ -29,6 +30,15 @@ export class SchoolClass
   @ManyToMany(() => GradeLevel)
   @JoinTable({ name: 'school_class_grade_levels' })
   gradeLevels?: GradeLevel[];
+
+  @Field(() => [Employee], { nullable: true })
+  @ManyToMany(() => Employee)
+  @JoinTable({
+    name: 'school_class_teachers',
+    joinColumn: { name: 'school_class_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'employee_id', referencedColumnName: 'id' },
+  })
+  teachers?: Employee[];
 
   @Field(() => String, { nullable: true })
   @Column('varchar', { length: 7, nullable: true })

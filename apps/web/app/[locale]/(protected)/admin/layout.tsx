@@ -7,16 +7,19 @@ import { getOrganizationsAction } from "@/features/organizations/actions/get-org
 import { UserProvider } from "@/features/users/context/current-user.context";
 import { getCountryInputTemplatesAction } from "@/features/country-input-templates/actions/get-country-input-templates.action";
 import { CountryInputTemplatesProvider } from "@/features/country-input-templates/CountryInputTemplatesProvider";
+import { getImpersonationInfoAction } from "@/features/auth/actions/get-impersonation-info.action";
+import { ImpersonationBanner } from "@/features/auth/components/ImpersonationBanner";
 import { getLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
 import React from "react";
 
 const AdminLayout = async ({ children }: { children: React.ReactNode }) => {
   const locale = await getLocale();
-  const [res, orgsRes, templatesRes] = await Promise.all([
+  const [res, orgsRes, templatesRes, impersonationInfo] = await Promise.all([
     getCurrentUserAction(),
     getOrganizationsAction(),
     getCountryInputTemplatesAction(),
+    getImpersonationInfoAction(),
   ]);
 
   if (!res?.success) redirect(`/${locale}/sign-in`);
@@ -44,6 +47,9 @@ const AdminLayout = async ({ children }: { children: React.ReactNode }) => {
         <AppSidebar variant="inset" organizations={organizations} />
         <SheetProvider>
           <SidebarInset>
+            {impersonationInfo.isImpersonating && (
+              <ImpersonationBanner asUserName={impersonationInfo.asUserName} />
+            )}
             <SiteHeader />
             <div className="flex flex-1 flex-col">
               <div className="@container/main flex flex-1 flex-col gap-2">
