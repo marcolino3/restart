@@ -4,6 +4,8 @@ import { getSchoolClassesAction } from "@/features/school-classes/actions/get-sc
 import { getStudentContactPersonsAction } from "@/features/contact-persons/actions/get-student-contact-persons.action";
 import { getContactPersonsAction } from "@/features/contact-persons/actions/get-contact-persons.action";
 import { getStudentNotesAction } from "@/features/student-notes/actions/get-student-notes.action";
+import { getStudentLessonRecordsAction } from "@/features/record-keeping/actions/get-student-lesson-records.action";
+import { getNextLessonsForStudentAction } from "@/features/record-keeping/actions/get-next-lessons-for-student.action";
 import StudentViewPage from "@/features/students/components/StudentViewPage";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -23,6 +25,8 @@ const ViewStudentPage = async ({ params }: Props) => {
     contactPersonLinksResult,
     allContactPersonsResult,
     notesResult,
+    lessonRecordsResult,
+    nextLessonsResult,
   ] = await Promise.all([
     getStudentByIdAction(studentId),
     getStudentEnrollmentsAction(studentId),
@@ -30,6 +34,8 @@ const ViewStudentPage = async ({ params }: Props) => {
     getStudentContactPersonsAction(studentId),
     getContactPersonsAction(),
     getStudentNotesAction(studentId),
+    getStudentLessonRecordsAction(studentId),
+    getNextLessonsForStudentAction(studentId, 10),
   ]);
 
   if (!studentResult.success || !studentResult.data) {
@@ -50,6 +56,12 @@ const ViewStudentPage = async ({ params }: Props) => {
     ? (allContactPersonsResult.data ?? [])
     : [];
   const notes = notesResult.success ? (notesResult.data ?? []) : [];
+  const lessonRecords = lessonRecordsResult.success
+    ? (lessonRecordsResult.data ?? [])
+    : [];
+  const nextLessons = nextLessonsResult.success
+    ? (nextLessonsResult.data ?? [])
+    : [];
   const studentName = `${student.firstName} ${student.lastName}`.trim() || t("students");
 
   return (
@@ -62,6 +74,8 @@ const ViewStudentPage = async ({ params }: Props) => {
         allContactPersons={allContactPersons}
         notes={notes}
         studentName={studentName}
+        lessonRecords={lessonRecords}
+        nextLessons={nextLessons}
       />
     </div>
   );

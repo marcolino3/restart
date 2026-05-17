@@ -22,6 +22,9 @@ import { StudentContactPersonsList } from "./StudentContactPersonsList";
 import StudentNotesFeed from "@/features/student-notes/components/StudentNotesFeed";
 import StudentNotesTimeline from "@/features/student-notes/components/StudentNotesTimeline";
 import CreateStudentNoteInline from "@/features/student-notes/components/CreateStudentNoteInline";
+import { StudentProgressTab } from "@/features/record-keeping/components/StudentProgressTab";
+import type { StudentLessonRecordItem } from "@/features/record-keeping/actions/get-student-lesson-records.action";
+import type { LessonOption } from "@/features/record-keeping/types";
 
 interface StudentViewPageProps {
   student: StudentDetail;
@@ -31,6 +34,8 @@ interface StudentViewPageProps {
   allContactPersons: ContactPersonListItem[];
   notes: StudentNoteItem[];
   studentName: string;
+  lessonRecords?: StudentLessonRecordItem[];
+  nextLessons?: LessonOption[];
 }
 
 function getInitials(firstName?: string, lastName?: string): string {
@@ -48,10 +53,13 @@ export default function StudentViewPage({
   allContactPersons,
   notes,
   studentName,
+  lessonRecords = [],
+  nextLessons = [],
 }: StudentViewPageProps) {
   const t = useTranslations("Common");
   const tS = useTranslations("Students");
   const tN = useTranslations("StudentNotes");
+  const tR = useTranslations("RecordKeeping");
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
@@ -135,6 +143,7 @@ export default function StudentViewPage({
               <TabsTrigger value="enrollments">
                 {tS("enrollments")}
               </TabsTrigger>
+              <TabsTrigger value="progress">{tR("title")}</TabsTrigger>
               <TabsTrigger value="contactPersons">
                 {tS("contactPersons")}
               </TabsTrigger>
@@ -232,6 +241,14 @@ export default function StudentViewPage({
                 studentId={student.id}
                 enrollments={enrollments}
                 schoolClasses={schoolClasses}
+              />
+            </TabsContent>
+
+            {/* Progress */}
+            <TabsContent value="progress">
+              <StudentProgressTab
+                records={lessonRecords}
+                nextLessons={nextLessons}
               />
             </TabsContent>
 

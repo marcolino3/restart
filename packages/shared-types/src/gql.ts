@@ -84,6 +84,8 @@ type Documents = {
     "\n  query GetClassroomStudents($schoolClassId: ID!) {\n    activeEnrollmentsBySchoolClassId(schoolClassId: $schoolClassId) {\n      id\n      student {\n        id\n        firstName\n        lastName\n      }\n    }\n  }\n": typeof types.GetClassroomStudentsDocument,
     "\n  query GetLessonPrerequisites($lessonId: ID!) {\n    lessonPrerequisites(lessonId: $lessonId) {\n      id\n      position\n      lessonType\n      lessonScale\n      translations {\n        locale\n        name\n      }\n    }\n  }\n": typeof types.GetLessonPrerequisitesDocument,
     "\n  query GetLessonsForRecordKeeping {\n    lessonsByOrg(includeArchived: false) {\n      id\n      position\n      lessonType\n      lessonScale\n      translations {\n        locale\n        name\n      }\n    }\n  }\n": typeof types.GetLessonsForRecordKeepingDocument,
+    "\n  query NextLessonsForStudent($studentId: ID!, $limit: Int) {\n    nextLessonsForStudent(studentId: $studentId, limit: $limit) {\n      id\n      position\n      lessonType\n      lessonScale\n      translations {\n        locale\n        name\n      }\n    }\n  }\n": typeof types.NextLessonsForStudentDocument,
+    "\n  query GetStudentLessonRecords($filter: LessonRecordsFilterInput) {\n    lessonRecords(filter: $filter) {\n      id\n      lessonId\n      recordedAt\n      status\n      note\n      lesson {\n        id\n        translations {\n          locale\n          name\n        }\n      }\n      recordedBy {\n        id\n        firstName\n        lastName\n      }\n    }\n  }\n": typeof types.GetStudentLessonRecordsDocument,
     "\n  mutation SetLessonPrerequisites($input: SetLessonPrerequisitesInput!) {\n    setLessonPrerequisites(input: $input) {\n      id\n    }\n  }\n": typeof types.SetLessonPrerequisitesDocument,
     "\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n": typeof types.GetPermissionsDocument,
     "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n": typeof types.GetRolesByOrgIdDocument,
@@ -99,7 +101,6 @@ type Documents = {
     "\n  query KanbanUnassignedStudents {\n    unassignedStudents {\n      id\n      firstName\n      lastName\n    }\n  }\n": typeof types.KanbanUnassignedStudentsDocument,
     "\n  query KanbanClassroomStudents($schoolClassId: ID!) {\n    activeEnrollmentsBySchoolClassId(schoolClassId: $schoolClassId) {\n      id\n      student {\n        id\n        firstName\n        lastName\n      }\n    }\n  }\n": typeof types.KanbanClassroomStudentsDocument,
     "\n  mutation TransferStudent($input: TransferStudentInput!) {\n    transferStudentToSchoolClass(input: $input) {\n      id\n    }\n  }\n": typeof types.TransferStudentDocument,
-    "\n  mutation CreateEnrollment($input: CreateSchoolClassEnrollmentInput!) {\n    createEnrollment(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateEnrollmentDocument,
     "\n  mutation CreateStudent($input: CreateStudentInput!) {\n    createStudent(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateStudentDocument,
     "\n  mutation DeleteStudent($id: ID!) {\n    deleteStudent(id: $id)\n  }\n": typeof types.DeleteStudentDocument,
     "\n  query GetStudentById($id: ID!) {\n    studentById(id: $id) {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      gender\n      enrollmentDate\n      exitDate\n      notes\n      isActive\n    }\n  }\n": typeof types.GetStudentByIdDocument,
@@ -197,6 +198,8 @@ const documents: Documents = {
     "\n  query GetClassroomStudents($schoolClassId: ID!) {\n    activeEnrollmentsBySchoolClassId(schoolClassId: $schoolClassId) {\n      id\n      student {\n        id\n        firstName\n        lastName\n      }\n    }\n  }\n": types.GetClassroomStudentsDocument,
     "\n  query GetLessonPrerequisites($lessonId: ID!) {\n    lessonPrerequisites(lessonId: $lessonId) {\n      id\n      position\n      lessonType\n      lessonScale\n      translations {\n        locale\n        name\n      }\n    }\n  }\n": types.GetLessonPrerequisitesDocument,
     "\n  query GetLessonsForRecordKeeping {\n    lessonsByOrg(includeArchived: false) {\n      id\n      position\n      lessonType\n      lessonScale\n      translations {\n        locale\n        name\n      }\n    }\n  }\n": types.GetLessonsForRecordKeepingDocument,
+    "\n  query NextLessonsForStudent($studentId: ID!, $limit: Int) {\n    nextLessonsForStudent(studentId: $studentId, limit: $limit) {\n      id\n      position\n      lessonType\n      lessonScale\n      translations {\n        locale\n        name\n      }\n    }\n  }\n": types.NextLessonsForStudentDocument,
+    "\n  query GetStudentLessonRecords($filter: LessonRecordsFilterInput) {\n    lessonRecords(filter: $filter) {\n      id\n      lessonId\n      recordedAt\n      status\n      note\n      lesson {\n        id\n        translations {\n          locale\n          name\n        }\n      }\n      recordedBy {\n        id\n        firstName\n        lastName\n      }\n    }\n  }\n": types.GetStudentLessonRecordsDocument,
     "\n  mutation SetLessonPrerequisites($input: SetLessonPrerequisitesInput!) {\n    setLessonPrerequisites(input: $input) {\n      id\n    }\n  }\n": types.SetLessonPrerequisitesDocument,
     "\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n": types.GetPermissionsDocument,
     "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n": types.GetRolesByOrgIdDocument,
@@ -212,7 +215,6 @@ const documents: Documents = {
     "\n  query KanbanUnassignedStudents {\n    unassignedStudents {\n      id\n      firstName\n      lastName\n    }\n  }\n": types.KanbanUnassignedStudentsDocument,
     "\n  query KanbanClassroomStudents($schoolClassId: ID!) {\n    activeEnrollmentsBySchoolClassId(schoolClassId: $schoolClassId) {\n      id\n      student {\n        id\n        firstName\n        lastName\n      }\n    }\n  }\n": types.KanbanClassroomStudentsDocument,
     "\n  mutation TransferStudent($input: TransferStudentInput!) {\n    transferStudentToSchoolClass(input: $input) {\n      id\n    }\n  }\n": types.TransferStudentDocument,
-    "\n  mutation CreateEnrollment($input: CreateSchoolClassEnrollmentInput!) {\n    createEnrollment(input: $input) {\n      id\n    }\n  }\n": types.CreateEnrollmentDocument,
     "\n  mutation CreateStudent($input: CreateStudentInput!) {\n    createStudent(input: $input) {\n      id\n    }\n  }\n": types.CreateStudentDocument,
     "\n  mutation DeleteStudent($id: ID!) {\n    deleteStudent(id: $id)\n  }\n": types.DeleteStudentDocument,
     "\n  query GetStudentById($id: ID!) {\n    studentById(id: $id) {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      gender\n      enrollmentDate\n      exitDate\n      notes\n      isActive\n    }\n  }\n": types.GetStudentByIdDocument,
@@ -537,6 +539,14 @@ export function graphql(source: "\n  query GetLessonsForRecordKeeping {\n    les
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n  query NextLessonsForStudent($studentId: ID!, $limit: Int) {\n    nextLessonsForStudent(studentId: $studentId, limit: $limit) {\n      id\n      position\n      lessonType\n      lessonScale\n      translations {\n        locale\n        name\n      }\n    }\n  }\n"): (typeof documents)["\n  query NextLessonsForStudent($studentId: ID!, $limit: Int) {\n    nextLessonsForStudent(studentId: $studentId, limit: $limit) {\n      id\n      position\n      lessonType\n      lessonScale\n      translations {\n        locale\n        name\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetStudentLessonRecords($filter: LessonRecordsFilterInput) {\n    lessonRecords(filter: $filter) {\n      id\n      lessonId\n      recordedAt\n      status\n      note\n      lesson {\n        id\n        translations {\n          locale\n          name\n        }\n      }\n      recordedBy {\n        id\n        firstName\n        lastName\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetStudentLessonRecords($filter: LessonRecordsFilterInput) {\n    lessonRecords(filter: $filter) {\n      id\n      lessonId\n      recordedAt\n      status\n      note\n      lesson {\n        id\n        translations {\n          locale\n          name\n        }\n      }\n      recordedBy {\n        id\n        firstName\n        lastName\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n  mutation SetLessonPrerequisites($input: SetLessonPrerequisitesInput!) {\n    setLessonPrerequisites(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation SetLessonPrerequisites($input: SetLessonPrerequisitesInput!) {\n    setLessonPrerequisites(input: $input) {\n      id\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
@@ -594,10 +604,6 @@ export function graphql(source: "\n  query KanbanClassroomStudents($schoolClassI
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation TransferStudent($input: TransferStudentInput!) {\n    transferStudentToSchoolClass(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation TransferStudent($input: TransferStudentInput!) {\n    transferStudentToSchoolClass(input: $input) {\n      id\n    }\n  }\n"];
-/**
- * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
- */
-export function graphql(source: "\n  mutation CreateEnrollment($input: CreateSchoolClassEnrollmentInput!) {\n    createEnrollment(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateEnrollment($input: CreateSchoolClassEnrollmentInput!) {\n    createEnrollment(input: $input) {\n      id\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

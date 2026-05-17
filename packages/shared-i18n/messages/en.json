@@ -14,7 +14,9 @@
     "organizations": "Organizations",
     "users": "Users",
     "countryTemplates": "Country Templates",
-    "settings": "Settings"
+    "settings": "Settings",
+    "organizationGroup": "Organization",
+    "superAdminGroup": "SuperAdmin"
   },
   "Common": {
     "name": "Name",

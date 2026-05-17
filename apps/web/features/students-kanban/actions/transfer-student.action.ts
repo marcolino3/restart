@@ -1,7 +1,9 @@
 "use server";
 
+import { updateTag } from "next/cache";
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
+import { studentEnrollmentsTag } from "@/features/students/lib/enrollment-cache-tags";
 
 export type TransferStudentInput = {
   studentId: string;
@@ -30,6 +32,11 @@ export const transferStudentAction = async (input: TransferStudentInput) => {
       Document,
       { input },
     );
+
+    // Invalidiere die Enrollment-Cache für diesen Schüler.
+    // updateTag (Next 16) = read-your-own-writes für Server Actions.
+    updateTag(studentEnrollmentsTag(input.studentId));
+
     return {
       success: true as const,
       data: transferStudentToSchoolClass,

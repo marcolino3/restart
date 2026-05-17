@@ -21,8 +21,8 @@ import { Form } from "@/components/ui/form";
 import { SelectFormFieldWithoutTranslations } from "@/components/form/form-fields/SelectFormFieldWithoutTranslations";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
 import { EnrollmentItem } from "../actions/get-student-enrollments.action";
-import { createEnrollmentAction } from "../actions/create-enrollment.action";
 import { updateEnrollmentAction } from "../actions/update-enrollment.action";
+import { transferStudentAction } from "@/features/students-kanban/actions/transfer-student.action";
 import { handleAction } from "@/lib/actions/handle-action";
 import { SchoolClassListItem } from "@/features/school-classes/actions/get-school-classes.action";
 
@@ -62,15 +62,23 @@ export function StudentEnrollmentsList({
   const handleAssign = async (values: EnrollmentFormValues) => {
     const enrolledAtStr = values.enrolledAt.toISOString().split("T")[0];
 
+    // Transfer-Semantik: aktive Einschreibung(en) werden auf transferDate
+    // beendet, neue wird ab transferDate erstellt — alles in einer Tx.
+    // Idempotent bei Re-Zuweisung auf dieselbe Klasse.
     await handleAction({
       action: () =>
-        createEnrollmentAction(studentId, values.schoolClassId, enrolledAtStr),
+        transferStudentAction({
+          studentId,
+          targetSchoolClassId: values.schoolClassId,
+          transferDate: enrolledAtStr,
+        }),
       successMessage: tS("enrollmentCreated"),
       errorMessage: tS("enrollmentCreateError"),
       onSuccess: () => {
         setDialogOpen(false);
         form.reset({ schoolClassId: "", enrolledAt: new Date() });
-        window.location.reload();
+        // Server-Action ruft revalidateTag(studentEnrollmentsTag(studentId)) auf —
+        // Next refresht das RSC-Segment automatisch.
       },
     });
   };
@@ -79,7 +87,7 @@ export function StudentEnrollmentsList({
     const today = new Date().toISOString().split("T")[0];
 
     await handleAction({
-      action: () => updateEnrollmentAction(enrollmentId, today),
+      action: () => updateEnrollmentAction(enrollmentId, today, studentId),
       successMessage: tS("enrollmentUpdated"),
       errorMessage: tS("enrollmentUpdateError"),
       onSuccess: () => {

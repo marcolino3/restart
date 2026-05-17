@@ -1,9 +1,9 @@
 "use server";
 
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
-import { revalidatePath } from "next/cache";
-import { getLocale } from "next-intl/server";
+import { updateTag } from "next/cache";
 import { gql } from "graphql-request";
+import { studentEnrollmentsTag } from "../lib/enrollment-cache-tags";
 
 const UpdateEnrollmentDocument = gql`
   mutation UpdateEnrollment($input: UpdateSchoolClassEnrollmentInput!) {
@@ -13,14 +13,17 @@ const UpdateEnrollmentDocument = gql`
   }
 `;
 
-export const updateEnrollmentAction = async (id: string, leftAt: string) => {
-  const locale = await getLocale();
+export const updateEnrollmentAction = async (
+  id: string,
+  leftAt: string,
+  studentId: string,
+) => {
   const client = await serverCookieGqlClient();
   try {
     const { updateEnrollment } = await client.request<{
       updateEnrollment: { id: string };
     }>(UpdateEnrollmentDocument, { input: { id, leftAt } });
-    revalidatePath(`/${locale}/admin/students`);
+    updateTag(studentEnrollmentsTag(studentId));
     return { success: true as const, data: updateEnrollment };
   } catch (error) {
     console.error(error);

@@ -14,7 +14,9 @@
     "organizations": "Organisationen",
     "users": "Benutzer",
     "countryTemplates": "Länder-Templates",
-    "settings": "Einstellungen"
+    "settings": "Einstellungen",
+    "organizationGroup": "Organisation",
+    "superAdminGroup": "SuperAdmin"
   },
   "Common": {
     "name": "Name",
