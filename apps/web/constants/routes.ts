@@ -44,6 +44,7 @@ export const ROUTES = {
     studentsCreate: (locale: string) => `/${locale}/admin/students/edit`,
     studentsEdit: (locale: string, id: string) =>
       `/${locale}/admin/students/edit/${id}`,
+    studentsKanban: (locale: string) => `/${locale}/admin/students/kanban`,
 
     // Contact Persons
     contactPersons: (locale: string) => `/${locale}/admin/contact-persons`,

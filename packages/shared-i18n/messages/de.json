@@ -1008,6 +1008,18 @@
     "deleteSuccess": "Setting \"{key}\" wurde gelöscht",
     "deleteError": "Fehler beim Löschen"
   },
+  "StudentsKanban": {
+    "title": "Klassen-Zuweisung",
+    "subtitle": "Ziehe ein Kind in eine andere Klasse. Die alte Einschreibung wird zum heutigen Datum beendet, die neue beginnt heute.",
+    "backToStudents": "Zurück zur Schüler-Liste",
+    "openKanban": "Klassen-Zuweisung (Kanban)",
+    "unassigned": "Nicht zugewiesen",
+    "searchStudent": "Kind suchen…",
+    "filterByGrade": "Stufe:",
+    "transferOk": "Klasse aktualisiert",
+    "transferError": "Wechsel fehlgeschlagen",
+    "capacityExceededWarn": "{className}: jetzt {count} von {max} – Kapazität überschritten"
+  },
   "RecordKeeping": {
     "title": "Fortschritts-Eintragung",
     "subtitle": "Wähle eine Lektion, dann die Kinder einer Klasse, die teilgenommen haben, und setze den Status.",

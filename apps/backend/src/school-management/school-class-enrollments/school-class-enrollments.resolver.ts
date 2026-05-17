@@ -4,9 +4,11 @@ import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
+import { Student } from '@/school-management/students/entities/student.entity';
 import { SchoolClassEnrollmentsService } from './school-class-enrollments.service';
 import { SchoolClassEnrollment } from './entities/school-class-enrollment.entity';
 import { CreateSchoolClassEnrollmentInput } from './dto/create-school-class-enrollment.input';
+import { TransferStudentInput } from './dto/transfer-student.input';
 import { UpdateSchoolClassEnrollmentInput } from './dto/update-school-class-enrollment.input';
 
 @Resolver(() => SchoolClassEnrollment)
@@ -64,5 +66,23 @@ export class SchoolClassEnrollmentsResolver {
     @CurrentOrgId() orgId: string,
   ) {
     return this.enrollmentsService.remove(id, orgId);
+  }
+
+  @Query(() => [Student], { name: 'unassignedStudents' })
+  @Permissions('SCHOOL_CLASS_READ')
+  findUnassignedStudents(@CurrentOrgId() orgId: string) {
+    return this.enrollmentsService.findUnassignedStudents(orgId);
+  }
+
+  @Mutation(() => SchoolClassEnrollment, {
+    name: 'transferStudentToSchoolClass',
+    nullable: true,
+  })
+  @Permissions('SCHOOL_CLASS_WRITE')
+  transferStudent(
+    @Args('input') input: TransferStudentInput,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.enrollmentsService.transferStudent(input, orgId);
   }
 }

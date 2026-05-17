@@ -1008,6 +1008,18 @@
     "deleteSuccess": "Setting \"{key}\" was deleted",
     "deleteError": "Failed to delete"
   },
+  "StudentsKanban": {
+    "title": "Classroom Assignment",
+    "subtitle": "Drag a child to a different classroom. The current enrollment ends today; the new one starts today.",
+    "backToStudents": "Back to students",
+    "openKanban": "Classroom assignment (Kanban)",
+    "unassigned": "Unassigned",
+    "searchStudent": "Search child…",
+    "filterByGrade": "Grade:",
+    "transferOk": "Classroom updated",
+    "transferError": "Transfer failed",
+    "capacityExceededWarn": "{className}: now {count} of {max} – over capacity"
+  },
   "RecordKeeping": {
     "title": "Record Keeping",
     "subtitle": "Pick a lesson, then choose the children from a classroom who took part, and set the status.",
