@@ -16,6 +16,11 @@ export type StudentLessonRecordItem = {
   lesson?: {
     id: string;
     translations: { locale: string; name: string }[];
+    ancestors?: Array<{
+      id: string;
+      nodeType: "AREA" | "TOPIC" | "GROUP" | "LESSON";
+      translations: { locale: string; name: string }[];
+    }>;
   } | null;
   recordedBy?: { id: string; firstName?: string; lastName?: string } | null;
 };
@@ -37,6 +42,14 @@ const Document = gql`
         translations {
           locale
           name
+        }
+        ancestors {
+          id
+          nodeType
+          translations {
+            locale
+            name
+          }
         }
       }
       recordedBy {

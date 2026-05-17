@@ -310,6 +310,34 @@ export class CurriculumNodesService {
   }
 
   /**
+   * Eltern-Chain eines Nodes bis zur Wurzel.
+   * Reihenfolge: nächster Parent zuerst, AREA zuletzt.
+   * Z.B. fuer LESSON: [GROUP, TOPIC, AREA].
+   */
+  async getAncestors(
+    nodeId: string,
+    organizationId: string,
+  ): Promise<CurriculumNode[]> {
+    const chain: CurriculumNode[] = [];
+    let currentId: string | null | undefined = nodeId;
+    // Initial node selbst NICHT in den Output (nur Vorfahren).
+    let isFirst = true;
+    while (currentId) {
+      const n: CurriculumNode | null = await this.nodesRepo.findOne({
+        where: { id: currentId, organizationId },
+        relations: ['translations'],
+      });
+      if (!n) break;
+      if (!isFirst) chain.push(n);
+      isFirst = false;
+      currentId = n.parentId ?? null;
+      // Schutz vor unwahrscheinlichen Loops (max 8 — sollte praxis-far überreichen)
+      if (chain.length > 8) break;
+    }
+    return chain;
+  }
+
+  /**
    * Alle LESSON-Nodes der Org, mit Translations.
    * Für UI-Pickers (RecordKeeping Bulk-Entry, Prerequisites-Editor).
    */

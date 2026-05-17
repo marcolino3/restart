@@ -1,4 +1,13 @@
-import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  ID,
+  Int,
+  Mutation,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
@@ -138,5 +147,18 @@ export class CurriculumNodesResolver {
     @Args('limit', { type: () => Int, nullable: true }) limit?: number,
   ) {
     return this.service.getNextLessonsForStudent(studentId, orgId, limit ?? 20);
+  }
+
+  /**
+   * Eltern-Chain von diesem Node bis zur Wurzel (AREA → TOPIC → GROUP → LESSON
+   * → ancestors = [GROUP, TOPIC, AREA], geordnet vom nächsten Parent bis Root).
+   * Praktisch fuer UI-Gruppierung (z.B. Lektionen nach AREA gruppieren).
+   */
+  @ResolveField(() => [CurriculumNode], { name: 'ancestors' })
+  ancestors(
+    @Parent() node: CurriculumNode,
+    @CurrentOrgId() orgId: string,
+  ): Promise<CurriculumNode[]> {
+    return this.service.getAncestors(node.id, orgId);
   }
 }

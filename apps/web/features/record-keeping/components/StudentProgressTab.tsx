@@ -1,14 +1,27 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { CalendarDays, Sparkles, ClipboardList } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronDown,
+  ChevronRight,
+  ClipboardList,
+  Layers,
+  Sparkles,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 import type { StudentLessonRecordItem } from "../actions/get-student-lesson-records.action";
-import type { LessonOption, LessonRecordStatus } from "../types";
+import {
+  LESSON_RECORD_STATUSES,
+  type LessonOption,
+  type LessonRecordStatus,
+} from "../types";
 
 interface Props {
   records: StudentLessonRecordItem[];
@@ -42,9 +55,26 @@ const formatDate = (iso: string): string =>
     day: "2-digit",
   });
 
+type AreaGroup = {
+  areaId: string;
+  areaName: string;
+  /** Map lessonId → latest record (the "current status"). */
+  lessons: Array<{
+    lessonId: string;
+    lessonName: string;
+    record: StudentLessonRecordItem;
+  }>;
+};
+
+const UNGROUPED_AREA_ID = "__ungrouped__";
+
 export function StudentProgressTab({ records, nextLessons }: Props) {
   const t = useTranslations("RecordKeeping");
   const locale = useLocale();
+  const [statusFilter, setStatusFilter] = useState<LessonRecordStatus | null>(
+    null,
+  );
+  const [collapsedAreas, setCollapsedAreas] = useState<Set<string>>(new Set());
 
   // Aktueller Status pro Lektion = neuester Eintrag.
   const currentByLesson = useMemo(() => {
@@ -62,7 +92,7 @@ export function StudentProgressTab({ records, nextLessons }: Props) {
     return map;
   }, [records]);
 
-  // Zähler pro Status (für die Übersichtskarten oben)
+  // Zähler pro Status
   const statusCounts = useMemo(() => {
     const counts: Record<LessonRecordStatus, number> = {
       PLANNING: 0,
@@ -71,11 +101,43 @@ export function StudentProgressTab({ records, nextLessons }: Props) {
       MASTERED: 0,
       NEEDS_MORE: 0,
     };
-    for (const r of currentByLesson.values()) {
-      counts[r.status] += 1;
-    }
+    for (const r of currentByLesson.values()) counts[r.status] += 1;
     return counts;
   }, [currentByLesson]);
+
+  // Per-Area-Gruppierung (basierend auf ancestors)
+  const areaGroups = useMemo(() => {
+    const map = new Map<string, AreaGroup>();
+    for (const record of currentByLesson.values()) {
+      if (statusFilter && record.status !== statusFilter) continue;
+      const lesson = record.lesson;
+      const area = lesson?.ancestors?.find((a) => a.nodeType === "AREA");
+      const areaId = area?.id ?? UNGROUPED_AREA_ID;
+      const areaName = area
+        ? pickName(area.translations, locale)
+        : t("title");
+      const lessonName = lesson
+        ? pickName(lesson.translations, locale)
+        : record.lessonId;
+
+      if (!map.has(areaId)) {
+        map.set(areaId, { areaId, areaName, lessons: [] });
+      }
+      map.get(areaId)!.lessons.push({
+        lessonId: record.lessonId,
+        lessonName,
+        record,
+      });
+    }
+    // Sortierung Areas alphabetisch, Lessons innerhalb alphabetisch
+    const sorted = Array.from(map.values()).sort((a, b) =>
+      a.areaName.localeCompare(b.areaName),
+    );
+    for (const g of sorted) {
+      g.lessons.sort((a, b) => a.lessonName.localeCompare(b.lessonName));
+    }
+    return sorted;
+  }, [currentByLesson, statusFilter, locale, t]);
 
   const recentRecords = useMemo(
     () =>
@@ -89,34 +151,114 @@ export function StudentProgressTab({ records, nextLessons }: Props) {
     [records],
   );
 
+  const toggleArea = (id: string) =>
+    setCollapsedAreas((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
   return (
     <div className="flex flex-col gap-6">
-      {/* Status-Summary */}
+      {/* Status-Summary mit Filter-Toggle */}
       <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
-        {(
-          [
-            "PLANNING",
-            "INTRODUCED",
-            "PRACTICED",
-            "MASTERED",
-            "NEEDS_MORE",
-          ] as LessonRecordStatus[]
-        ).map((s) => (
-          <Card key={s}>
-            <CardContent className="flex flex-col items-start gap-1 p-3">
+        {LESSON_RECORD_STATUSES.map((s) => {
+          const active = statusFilter === s;
+          return (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setStatusFilter(active ? null : s)}
+              className={cn(
+                "text-left rounded-lg border bg-card p-3 transition-colors hover:bg-accent",
+                active && "ring-2 ring-primary",
+              )}
+            >
               <Badge
                 variant="outline"
                 className={`text-[10px] uppercase ${STATUS_CLS[s]}`}
               >
                 {t(s)}
               </Badge>
-              <span className="text-2xl font-semibold tabular-nums">
+              <div className="text-2xl font-semibold tabular-nums mt-1">
                 {statusCounts[s]}
-              </span>
-            </CardContent>
-          </Card>
-        ))}
+              </div>
+            </button>
+          );
+        })}
       </div>
+
+      {/* Per-Area-Gruppierung */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Layers className="h-4 w-4" />
+            {t("title")}
+            {statusFilter && (
+              <Badge
+                variant="outline"
+                className={`text-[10px] ${STATUS_CLS[statusFilter]}`}
+              >
+                {t(statusFilter)}
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {areaGroups.length === 0 ? (
+            <p className="text-sm text-muted-foreground">—</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {areaGroups.map((g) => {
+                const collapsed = collapsedAreas.has(g.areaId);
+                return (
+                  <div key={g.areaId} className="rounded-md border">
+                    <button
+                      type="button"
+                      onClick={() => toggleArea(g.areaId)}
+                      className="flex w-full items-center gap-2 px-3 py-2 hover:bg-accent rounded-md"
+                    >
+                      {collapsed ? (
+                        <ChevronRight className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                      <span className="font-medium text-sm">{g.areaName}</span>
+                      <Badge variant="secondary" className="ml-auto text-[10px]">
+                        {g.lessons.length}
+                      </Badge>
+                    </button>
+                    {!collapsed && (
+                      <ul className="flex flex-col gap-0.5 px-2 pb-2">
+                        {g.lessons.map(({ lessonId, lessonName, record }) => (
+                          <li
+                            key={lessonId}
+                            className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-accent"
+                          >
+                            <span className="text-sm flex-1 truncate">
+                              {lessonName}
+                            </span>
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] uppercase ${STATUS_CLS[record.status]}`}
+                            >
+                              {t(record.status)}
+                            </Badge>
+                            <span className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap">
+                              {formatDate(record.recordedAt)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Recent Activity */}
@@ -124,9 +266,6 @@ export function StudentProgressTab({ records, nextLessons }: Props) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <CalendarDays className="h-4 w-4" />
-              {t("nextLessons") /* re-use as section title fallback */
-                ? null
-                : null}
               {t("title")}
             </CardTitle>
           </CardHeader>
@@ -211,6 +350,20 @@ export function StudentProgressTab({ records, nextLessons }: Props) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Hint: clear-filter via Status-Pill click */}
+      {statusFilter && (
+        <div className="flex items-center justify-center">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setStatusFilter(null)}
+          >
+            ✕ {t("title")} ({t(statusFilter)})
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
