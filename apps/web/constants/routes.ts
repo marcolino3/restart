@@ -61,6 +61,8 @@ export const ROUTES = {
 
     // Record Keeping
     recordKeeping: (locale: string) => `/${locale}/admin/record-keeping`,
+    recordKeepingHeatmap: (locale: string) =>
+      `/${locale}/admin/record-keeping/heatmap`,
 
     // Admission Stages
     admissionStages: (locale: string) =>

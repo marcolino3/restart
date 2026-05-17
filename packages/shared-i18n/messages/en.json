@@ -209,6 +209,7 @@
     "sortOrder": "Sort Order",
     "maxCapacity": "Max. Students",
     "room": "Room",
+    "teachers": "Teachers",
     "filterName": "Filter name...",
     "createSchoolClass": "Create School Class",
     "createStudent": "Create Student",
@@ -557,7 +558,8 @@
     "gradeLevelDeleted": "Grade level deleted successfully",
     "gradeLevelDeleteError": "Error deleting grade level",
     "inUse": "In use",
-    "gradeLevelInUseTooltip": "This grade level is assigned to a class and cannot be deleted"
+    "gradeLevelInUseTooltip": "This grade level is assigned to a class and cannot be deleted",
+    "teachers": "Teachers"
   },
   "Teams": {
     "teams": "Teams",
@@ -1059,6 +1061,13 @@
     "lessonTypeE": "E (Extension)",
     "lessonTypeM": "M (Material Series)",
     "lessonTypeS": "S (Game)",
+    "filterByArea": "Area",
+    "filterByTopic": "Topic",
+    "filterByGroup": "Group",
+    "allAreas": "Search area…",
+    "allTopics": "Search topic…",
+    "allGroups": "Search group…",
+    "resetFilters": "Reset filters",
     "prerequisites": "Prerequisites",
     "prerequisitesEditor": "Edit prerequisites",
     "prerequisitesDescription": "Define which lessons must be completed before this one is suggested.",
@@ -1070,7 +1079,13 @@
     "prerequisitesSaveError": "Failed to save prerequisites",
     "cycleDetected": "This selection would create a cycle.",
     "nextLessons": "Suggested next lessons",
-    "noNextLessons": "No open lessons — all prerequisites available or mastered."
+    "noNextLessons": "No open lessons — all prerequisites available or mastered.",
+    "heatmapTitle": "Classroom Heatmap",
+    "heatmapSubtitle": "Overview of each child's progress per area in a classroom. Numbers show mastered / tracked lessons.",
+    "openHeatmap": "Open classroom heatmap",
+    "radarTitle": "Area overview",
+    "radarSubtitle": "Share of mastered lessons per area (0-100%).",
+    "radarNotEnoughData": "Not enough areas with entries yet for a radar view (at least 3 needed)."
   },
   "Auth": {
     "emailPlaceholder": "name@example.com",

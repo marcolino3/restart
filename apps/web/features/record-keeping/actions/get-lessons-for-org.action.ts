@@ -2,7 +2,13 @@
 
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
-import type { LessonOption } from "../types";
+import type { CurriculumNodeType, LessonOption } from "../types";
+
+type RawAncestor = {
+  id: string;
+  nodeType: string;
+  translations: { locale: string; name: string }[];
+};
 
 type Response = {
   lessonsByOrg: Array<{
@@ -11,6 +17,7 @@ type Response = {
     lessonType?: string | null;
     lessonScale?: string | null;
     translations: { locale: string; name: string }[];
+    ancestors?: RawAncestor[] | null;
   }>;
 };
 
@@ -25,9 +32,20 @@ const Document = gql`
         locale
         name
       }
+      ancestors {
+        id
+        nodeType
+        translations {
+          locale
+          name
+        }
+      }
     }
   }
 `;
+
+const toLocale = (s: string) =>
+  s as LessonOption["translations"][number]["locale"];
 
 export const getLessonsForOrgAction = async (): Promise<
   | { success: true; data: LessonOption[] }
@@ -42,8 +60,16 @@ export const getLessonsForOrgAction = async (): Promise<
       lessonType: n.lessonType as LessonOption["lessonType"],
       lessonScale: n.lessonScale as LessonOption["lessonScale"],
       translations: n.translations.map((t) => ({
-        locale: t.locale as LessonOption["translations"][number]["locale"],
+        locale: toLocale(t.locale),
         name: t.name,
+      })),
+      ancestors: (n.ancestors ?? []).map((a) => ({
+        id: a.id,
+        nodeType: a.nodeType as CurriculumNodeType,
+        translations: a.translations.map((t) => ({
+          locale: toLocale(t.locale),
+          name: t.name,
+        })),
       })),
     }));
     return { success: true as const, data: lessons };

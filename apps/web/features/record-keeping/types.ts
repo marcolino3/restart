@@ -23,12 +23,22 @@ export type LessonTranslationDTO = {
   name: string;
 };
 
+export type CurriculumNodeType = "AREA" | "TOPIC" | "GROUP" | "LESSON";
+
+export type LessonAncestor = {
+  id: string;
+  nodeType: CurriculumNodeType;
+  translations: LessonTranslationDTO[];
+};
+
 export type LessonOption = {
   id: string;
   position: number;
   lessonType?: LessonType | null;
   lessonScale?: LessonScale | null;
   translations: LessonTranslationDTO[];
+  /** Parent chain from immediate parent up to root (e.g. [GROUP, TOPIC, AREA]). */
+  ancestors?: LessonAncestor[];
 };
 
 export type ClassroomStudentDTO = {

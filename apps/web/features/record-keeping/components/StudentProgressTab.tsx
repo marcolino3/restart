@@ -17,6 +17,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 import type { StudentLessonRecordItem } from "../actions/get-student-lesson-records.action";
+import type { AreaOption } from "../actions/get-org-areas.action";
+import { StudentAreaRadar } from "./StudentAreaRadar";
 import {
   LESSON_RECORD_STATUSES,
   type LessonOption,
@@ -26,6 +28,7 @@ import {
 interface Props {
   records: StudentLessonRecordItem[];
   nextLessons: LessonOption[];
+  allAreas?: AreaOption[];
 }
 
 const STATUS_CLS: Record<LessonRecordStatus, string> = {
@@ -68,7 +71,11 @@ type AreaGroup = {
 
 const UNGROUPED_AREA_ID = "__ungrouped__";
 
-export function StudentProgressTab({ records, nextLessons }: Props) {
+export function StudentProgressTab({
+  records,
+  nextLessons,
+  allAreas = [],
+}: Props) {
   const t = useTranslations("RecordKeeping");
   const locale = useLocale();
   const [statusFilter, setStatusFilter] = useState<LessonRecordStatus | null>(
@@ -259,6 +266,9 @@ export function StudentProgressTab({ records, nextLessons }: Props) {
           )}
         </CardContent>
       </Card>
+
+      {/* Radar pro Bereich */}
+      <StudentAreaRadar records={records} allAreas={allAreas} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Recent Activity */}

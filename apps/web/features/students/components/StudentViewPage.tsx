@@ -24,6 +24,7 @@ import StudentNotesTimeline from "@/features/student-notes/components/StudentNot
 import CreateStudentNoteInline from "@/features/student-notes/components/CreateStudentNoteInline";
 import { StudentProgressTab } from "@/features/record-keeping/components/StudentProgressTab";
 import type { StudentLessonRecordItem } from "@/features/record-keeping/actions/get-student-lesson-records.action";
+import type { AreaOption } from "@/features/record-keeping/actions/get-org-areas.action";
 import type { LessonOption } from "@/features/record-keeping/types";
 
 interface StudentViewPageProps {
@@ -36,6 +37,7 @@ interface StudentViewPageProps {
   studentName: string;
   lessonRecords?: StudentLessonRecordItem[];
   nextLessons?: LessonOption[];
+  allAreas?: AreaOption[];
 }
 
 function getInitials(firstName?: string, lastName?: string): string {
@@ -55,6 +57,7 @@ export default function StudentViewPage({
   studentName,
   lessonRecords = [],
   nextLessons = [],
+  allAreas = [],
 }: StudentViewPageProps) {
   const t = useTranslations("Common");
   const tS = useTranslations("Students");
@@ -249,6 +252,7 @@ export default function StudentViewPage({
               <StudentProgressTab
                 records={lessonRecords}
                 nextLessons={nextLessons}
+                allAreas={allAreas}
               />
             </TabsContent>
 

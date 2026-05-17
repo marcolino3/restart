@@ -63,6 +63,16 @@ export class CurriculumNodesResolver {
     return this.service.findAllLessons(orgId, includeArchived ?? false);
   }
 
+  @Query(() => [CurriculumNode], { name: 'areasByOrg' })
+  @Permissions('CURRICULUM_READ')
+  findAllAreas(
+    @CurrentOrgId() orgId: string,
+    @Args('includeArchived', { type: () => Boolean, nullable: true })
+    includeArchived?: boolean,
+  ) {
+    return this.service.findAllAreas(orgId, includeArchived ?? false);
+  }
+
   @Mutation(() => CurriculumNode)
   @Permissions('CURRICULUM_MANAGE')
   createCurriculumNode(

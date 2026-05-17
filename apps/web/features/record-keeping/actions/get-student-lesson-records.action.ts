@@ -2,7 +2,10 @@
 
 import { unstable_cache } from "next/cache";
 import { gql } from "graphql-request";
-import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
+import {
+  createGqlClientWithCookieHeader,
+  readSessionCookieHeader,
+} from "@/lib/graphql/server-cookie-graphql-client";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 import { studentLessonRecordsTag } from "../lib/cache-tags";
 import type { LessonRecordStatus } from "../types";
@@ -63,8 +66,9 @@ const Document = gql`
 
 const fetchRecords = async (
   studentId: string,
+  cookieHeader: string,
 ): Promise<StudentLessonRecordItem[]> => {
-  const client = await serverCookieGqlClient();
+  const client = createGqlClientWithCookieHeader(cookieHeader);
   const { lessonRecords } = await client.request<Response>(Document, {
     filter: { studentId },
   });
@@ -78,11 +82,14 @@ export const getStudentLessonRecordsAction = async (
   | { success: false; error?: string }
 > => {
   try {
-    const userRes = await getCurrentUserAction();
+    const [userRes, cookieHeader] = await Promise.all([
+      getCurrentUserAction(),
+      readSessionCookieHeader(),
+    ]);
     const orgId = userRes?.data?.orgId ?? "no-org";
 
     const cached = unstable_cache(
-      async (sid: string, _orgKey: string) => fetchRecords(sid),
+      async (sid: string, _orgKey: string) => fetchRecords(sid, cookieHeader),
       ["student-lesson-records", studentId, orgId],
       { tags: [studentLessonRecordsTag(studentId)] },
     );

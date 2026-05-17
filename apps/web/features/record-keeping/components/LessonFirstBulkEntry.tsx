@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -28,6 +28,7 @@ import {
   type LessonOption,
   type LessonRecordStatus,
 } from "../types";
+import { LessonCombobox } from "./LessonCombobox";
 
 type SchoolClassOption = { id: string; name: string };
 
@@ -35,15 +36,6 @@ interface Props {
   lessons: LessonOption[];
   classrooms: SchoolClassOption[];
 }
-
-const pickName = (lesson: LessonOption, locale: string): string => {
-  const normalized = locale.toUpperCase();
-  return (
-    lesson.translations.find((t) => t.locale === normalized)?.name ??
-    lesson.translations[0]?.name ??
-    lesson.id
-  );
-};
 
 const todayISO = () => {
   const d = new Date();
@@ -55,7 +47,6 @@ const todayISO = () => {
 
 export const LessonFirstBulkEntry = ({ lessons, classrooms }: Props) => {
   const t = useTranslations("RecordKeeping");
-  const locale = useLocale();
   const [isPending, startTransition] = useTransition();
   const [students, setStudents] = useState<ClassroomStudentDTO[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
@@ -74,15 +65,6 @@ export const LessonFirstBulkEntry = ({ lessons, classrooms }: Props) => {
 
   const schoolClassId = form.watch("schoolClassId");
   const studentIds = form.watch("studentIds");
-
-  const lessonOptions = useMemo(
-    () =>
-      lessons.map((l) => ({
-        value: l.id,
-        label: pickName(l, locale),
-      })),
-    [lessons, locale],
-  );
 
   const classroomOptions = useMemo(
     () =>
@@ -186,16 +168,10 @@ export const LessonFirstBulkEntry = ({ lessons, classrooms }: Props) => {
             className="flex flex-col gap-6"
           >
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <ComboboxFormFieldWithoutTranslation
+              <LessonCombobox
                 name="lessonId"
-                label="lesson"
-                placeholder="selectLesson"
-                searchPlaceholder="searchLessons"
-                emptyText="noLessonsFound"
-                namespace="RecordKeeping"
-                options={lessonOptions}
-                width="w-full"
-                clearable
+                lessons={lessons}
+                label={t("lesson")}
               />
 
               <ComboboxFormFieldWithoutTranslation
@@ -292,6 +268,19 @@ export const LessonFirstBulkEntry = ({ lessons, classrooms }: Props) => {
                 rows={3}
               />
             </div>
+
+            {/* Generisches Form-Error-Display fuer das Falle, dass eine Field
+                ohne sichtbares Error-Element fehlschlaegt (z.B. lessonId-Combobox). */}
+            {Object.keys(form.formState.errors).length > 0 && (
+              <p className="text-sm text-destructive">
+                {Object.entries(form.formState.errors)
+                  .map(
+                    ([k, v]) =>
+                      `${k}: ${(v as { message?: string }).message ?? "invalid"}`,
+                  )
+                  .join(" · ")}
+              </p>
+            )}
 
             <div className="flex justify-end">
               <Button type="submit" disabled={isPending}>

@@ -209,6 +209,7 @@
     "sortOrder": "Reihenfolge",
     "maxCapacity": "Max. Schüler",
     "room": "Raum",
+    "teachers": "Lehrkräfte",
     "filterName": "Name filtern...",
     "createSchoolClass": "Schulklasse erstellen",
     "createStudent": "Schüler erstellen",
@@ -557,7 +558,8 @@
     "gradeLevelDeleted": "Stufe erfolgreich gelöscht",
     "gradeLevelDeleteError": "Fehler beim Löschen der Stufe",
     "inUse": "In Verwendung",
-    "gradeLevelInUseTooltip": "Diese Stufe ist einer Klasse zugewiesen und kann nicht gelöscht werden"
+    "gradeLevelInUseTooltip": "Diese Stufe ist einer Klasse zugewiesen und kann nicht gelöscht werden",
+    "teachers": "Lehrkräfte"
   },
   "Teams": {
     "teams": "Teams",
@@ -1059,6 +1061,13 @@
     "lessonTypeE": "E (Erweiterung)",
     "lessonTypeM": "M (Material-Serie)",
     "lessonTypeS": "S (Spiel)",
+    "filterByArea": "Bereich",
+    "filterByTopic": "Thema",
+    "filterByGroup": "Lerneinheit",
+    "allAreas": "Bereich suchen…",
+    "allTopics": "Thema suchen…",
+    "allGroups": "Lerneinheit suchen…",
+    "resetFilters": "Filter zurücksetzen",
     "prerequisites": "Voraussetzungen",
     "prerequisitesEditor": "Voraussetzungen pflegen",
     "prerequisitesDescription": "Lege fest, welche Lektionen erfüllt sein müssen, bevor diese Lektion vorgeschlagen wird.",
@@ -1070,7 +1079,13 @@
     "prerequisitesSaveError": "Voraussetzungen konnten nicht gespeichert werden",
     "cycleDetected": "Diese Auswahl würde einen Zyklus erzeugen.",
     "nextLessons": "Vorgeschlagene nächste Lektionen",
-    "noNextLessons": "Keine offenen Lektionen — alle Voraussetzungen verfügbar oder gemeistert."
+    "noNextLessons": "Keine offenen Lektionen — alle Voraussetzungen verfügbar oder gemeistert.",
+    "heatmapTitle": "Klassen-Heatmap",
+    "heatmapSubtitle": "Übersicht über den Fortschritt aller Kinder einer Klasse pro Bereich. Zahlen zeigen gemeisterte / getrackte Lektionen.",
+    "openHeatmap": "Klassen-Heatmap öffnen",
+    "radarTitle": "Bereichs-Übersicht",
+    "radarSubtitle": "Anteil gemeisterter Lektionen pro Bereich (0-100%).",
+    "radarNotEnoughData": "Noch zu wenige Bereiche mit Eintragungen für eine Radar-Darstellung (mind. 3 nötig)."
   },
   "Auth": {
     "emailPlaceholder": "name@beispiel.ch",

@@ -1,7 +1,10 @@
 "use server";
 
 import { unstable_cache } from "next/cache";
-import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
+import {
+  createGqlClientWithCookieHeader,
+  readSessionCookieHeader,
+} from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 import { studentEnrollmentsTag } from "../lib/enrollment-cache-tags";
@@ -40,12 +43,14 @@ const GetEnrollmentsDocument = gql`
 `;
 
 /**
- * Inner uncached fetch. Cookies are read here (cannot run inside unstable_cache).
+ * Inner cached fetch. The cookie header is passed in from the caller so that
+ * Next's `unstable_cache` does not see a dynamic `cookies()` call inside.
  */
 const fetchEnrollments = async (
   studentId: string,
+  cookieHeader: string,
 ): Promise<EnrollmentItem[]> => {
-  const client = await serverCookieGqlClient();
+  const client = createGqlClientWithCookieHeader(cookieHeader);
   const { enrollmentsByStudentId } =
     await client.request<GetEnrollmentsResponse>(GetEnrollmentsDocument, {
       studentId,
@@ -56,11 +61,16 @@ const fetchEnrollments = async (
 export const getStudentEnrollmentsAction = async (studentId: string) => {
   try {
     // Multi-Tenant-Safety: orgId muss Teil des Cache-Keys sein.
-    const userRes = await getCurrentUserAction();
+    // cookies() darf NICHT innerhalb unstable_cache laufen — daher hier lesen.
+    const [userRes, cookieHeader] = await Promise.all([
+      getCurrentUserAction(),
+      readSessionCookieHeader(),
+    ]);
     const orgId = userRes?.data?.orgId ?? "no-org";
 
     const cached = unstable_cache(
-      async (sid: string, _orgKey: string) => fetchEnrollments(sid),
+      async (sid: string, _orgKey: string) =>
+        fetchEnrollments(sid, cookieHeader),
       ["student-enrollments", studentId, orgId],
       { tags: [studentEnrollmentsTag(studentId)] },
     );

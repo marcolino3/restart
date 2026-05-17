@@ -356,6 +356,25 @@ export class CurriculumNodesService {
     });
   }
 
+  /**
+   * Alle AREA-Nodes der Org. Wird vom Kind-Profil-Radar genutzt
+   * (alle Bereiche als Achsen, auch ohne Eintragungen).
+   */
+  async findAllAreas(
+    organizationId: string,
+    includeArchived = false,
+  ): Promise<CurriculumNode[]> {
+    return this.nodesRepo.find({
+      where: {
+        organizationId,
+        nodeType: CurriculumNodeType.AREA,
+        ...(includeArchived ? {} : { isArchived: false }),
+      },
+      relations: ['translations'],
+      order: { position: 'ASC', createdAt: 'ASC' },
+    });
+  }
+
   // ─────────────────────────────────────────────────────────────────
   // Prerequisites (Self-M2M auf LESSON-Nodes)
   // ─────────────────────────────────────────────────────────────────
@@ -499,7 +518,7 @@ export class CurriculumNodesService {
       .andWhere('n.node_type = :lessonType', {
         lessonType: CurriculumNodeType.LESSON,
       })
-      .andWhere('n.is_archived = false')
+      .andWhere('n."isArchived" = false')
       .orderBy('n.position', 'ASC')
       .getMany();
 
