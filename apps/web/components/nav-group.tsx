@@ -13,20 +13,21 @@ import {
 } from "@/components/ui/sidebar";
 import { isNavItemActive } from "@/lib/navigation/is-nav-item-active";
 
-export function NavSuperAdmin({
-  items,
-}: {
+interface NavGroupProps {
+  label: string;
   items: {
     title: string;
     url: string;
     icon: Icon;
   }[];
-}) {
+}
+
+export function NavGroup({ label, items }: NavGroupProps) {
   const pathname = usePathname();
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>SuperAdmin</SidebarGroupLabel>
+      <SidebarGroupLabel>{label}</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.title}>

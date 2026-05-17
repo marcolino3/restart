@@ -51,7 +51,7 @@ export default function EmployeeNotesTimeline({
 
   return (
     <div className="bg-card px-4 py-5 shadow-sm sm:rounded-lg sm:px-6 border">
-      <h2 className="text-lg font-medium text-foreground">Timeline</h2>
+      <h2 className="text-lg font-medium text-foreground">{tC("timeline")}</h2>
 
       <div className="mt-6 flow-root">
         {notes.length === 0 ? (

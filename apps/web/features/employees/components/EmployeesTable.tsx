@@ -54,6 +54,7 @@ import {
 } from "@/components/ui/table";
 import { ROUTES } from "@/constants/routes";
 import { EmployeeListItem } from "../actions/get-employees.action";
+import { EmployeeActionsCell } from "./EmployeeActionsCell";
 
 interface Props {
   data: EmployeeListItem[];
@@ -166,37 +167,7 @@ const useColumns = (): ColumnDef<EmployeeListItem>[] => {
     {
       id: "actions",
       enableHiding: false,
-      cell: ({ row }) => {
-        const employee = row.original.membership.employee;
-        const user = row.original.membership.user;
-        const name = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim();
-
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">{t("openMenu")}</span>
-                <MoreHorizontal />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link
-                  href={ROUTES.admin.employeesEdit(locale, employee?.id ?? "")}
-                  className="flex gap-2"
-                >
-                  <Pencil className="h-4 w-4" /> {t("edit")}
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive focus:text-destructive cursor-pointer">
-                <Trash2 className="h-4 w-4 mr-2" />
-                {t("delete")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
+      cell: ({ row }) => <EmployeeActionsCell row={row.original} />,
     },
   ];
 };

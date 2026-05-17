@@ -13,6 +13,7 @@ import {
 import { deleteOrganizationSettingAction } from "../actions/delete-setting.action";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { OrganizationSetting } from "../actions/get-settings.action";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -31,6 +32,8 @@ export const DeleteSettingDialog = ({
   onOpenChange,
 }: Props) => {
   const router = useRouter();
+  const t = useTranslations("OrganizationSettings");
+  const tCommon = useTranslations("Common");
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
@@ -46,11 +49,13 @@ export const DeleteSettingDialog = ({
     setIsDeleting(false);
 
     if (result.success) {
-      toast.success(`Setting "${setting.key}" wurde gelöscht`);
+      toast.success(t("deleteSuccess", { key: setting.key }));
       router.refresh();
       onOpenChange(false);
     } else {
-      toast.error(result.error || "Fehler beim Löschen");
+      toast.error(
+        typeof result.error === "string" ? result.error : t("deleteError"),
+      );
     }
   };
 
@@ -58,22 +63,26 @@ export const DeleteSettingDialog = ({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Setting löschen?</AlertDialogTitle>
+          <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
-            Bist du sicher, dass du das Setting{" "}
-            <code className="bg-muted rounded px-1 font-mono">{setting?.key}</code>{" "}
-            löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.
+            {t("deleteDescriptionStart")}{" "}
+            <code className="bg-muted rounded px-1 font-mono">
+              {setting?.key}
+            </code>{" "}
+            {t("deleteDescriptionEnd")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>Abbrechen</AlertDialogCancel>
+          <AlertDialogCancel disabled={isDeleting}>
+            {tCommon("cancel")}
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             disabled={isDeleting}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Löschen
+            {tCommon("delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

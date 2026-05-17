@@ -1,5 +1,5 @@
 import { Globe } from "lucide-react";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
@@ -8,6 +8,7 @@ import { CountryTemplatesList } from "@/features/country-input-templates/compone
 
 const CountryTemplatesPage = async () => {
   const locale = await getLocale();
+  const t = await getTranslations("CountryTemplates");
   const userRes = await getCurrentUserAction();
 
   if (!userRes?.success) {
@@ -26,11 +27,8 @@ const CountryTemplatesPage = async () => {
           <Globe className="text-primary h-6 w-6" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Country Input Templates</h1>
-          <p className="text-muted-foreground text-sm">
-            Länderliste — wähle ein Land, um Masken für Telefon, SSN und PLZ zu
-            pflegen. IBAN ist global standardisiert und hartcodiert.
-          </p>
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
+          <p className="text-muted-foreground text-sm">{t("subtitle")}</p>
         </div>
       </div>
 

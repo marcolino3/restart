@@ -9,7 +9,6 @@ import { ArrowLeft, Eye } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,6 +31,7 @@ import {
   StudentFormOutput,
 } from "../schemas/student-form.schema";
 import { updateStudentAction } from "../actions/update-student.action";
+import { StudentAvatar } from "./StudentAvatar";
 import { StudentEnrollmentsList } from "./StudentEnrollmentsList";
 import { StudentContactPersonsList } from "./StudentContactPersonsList";
 import StudentNotesFeed from "@/features/student-notes/components/StudentNotesFeed";
@@ -46,13 +46,6 @@ interface Props {
   allContactPersons: ContactPersonListItem[];
   notes: StudentNoteItem[];
   studentName: string;
-}
-
-function getInitials(firstName?: string, lastName?: string): string {
-  return (
-    (firstName?.charAt(0)?.toUpperCase() ?? "") +
-      (lastName?.charAt(0)?.toUpperCase() ?? "") || "?"
-  );
 }
 
 export default function StudentEditView({
@@ -135,11 +128,13 @@ export default function StudentEditView({
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="shrink-0">
-              <Avatar className="h-16 w-16">
-                <AvatarFallback className="bg-primary text-primary-foreground text-xl font-semibold">
-                  {getInitials(student.firstName, student.lastName)}
-                </AvatarFallback>
-              </Avatar>
+              <StudentAvatar
+                studentId={student.id}
+                firstName={student.firstName}
+                lastName={student.lastName}
+                className="h-16 w-16"
+                fallbackClassName="text-xl"
+              />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground">

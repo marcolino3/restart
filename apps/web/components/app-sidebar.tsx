@@ -25,9 +25,9 @@ import {
 } from "@tabler/icons-react";
 
 import { NavDocuments } from "@/components/nav-documents";
+import { NavGroup } from "@/components/nav-group";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
-import { NavSuperAdmin } from "@/components/nav-super-admin";
 import { NavUser } from "@/components/nav-user";
 import { OrgSwitcher } from "@/components/org-switcher";
 import {
@@ -87,6 +87,35 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
         url: ROUTES.admin.employees(locale),
         icon: IconUsers,
       },
+      ...(hasPermission("SCHOOL_CLASS_READ")
+        ? [
+            {
+              title: t("students"),
+              url: ROUTES.admin.students(locale),
+              icon: IconUsers,
+            },
+          ]
+        : []),
+      ...(hasPermission("CONTACT_PERSON_READ")
+        ? [
+            {
+              title: t("contactPersons"),
+              url: ROUTES.admin.contactPersons(locale),
+              icon: IconUsers,
+            },
+          ]
+        : []),
+      ...(hasPermission("RECORD_KEEPING_READ")
+        ? [
+            {
+              title: t("recordKeeping"),
+              url: ROUTES.admin.recordKeeping(locale),
+              icon: IconChecklist,
+            },
+          ]
+        : []),
+    ],
+    navOrg: [
       {
         title: t("teams"),
         url: ROUTES.admin.teams(locale),
@@ -104,20 +133,6 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
               url: ROUTES.admin.gradeLevels(locale),
               icon: IconLayersIntersect,
             },
-            {
-              title: t("students"),
-              url: ROUTES.admin.students(locale),
-              icon: IconUsers,
-            },
-          ]
-        : []),
-      ...(hasPermission("CONTACT_PERSON_READ")
-        ? [
-            {
-              title: t("contactPersons"),
-              url: ROUTES.admin.contactPersons(locale),
-              icon: IconUsers,
-            },
           ]
         : []),
       ...(hasPermission("CURRICULUM_READ")
@@ -126,15 +141,6 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
               title: t("curricula"),
               url: ROUTES.admin.curricula(locale),
               icon: IconBook,
-            },
-          ]
-        : []),
-      ...(hasPermission("RECORD_KEEPING_READ")
-        ? [
-            {
-              title: t("recordKeeping"),
-              url: ROUTES.admin.recordKeeping(locale),
-              icon: IconChecklist,
             },
           ]
         : []),
@@ -278,8 +284,14 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
+        {data.navOrg.length > 0 && (
+          <NavGroup label={t("organizationGroup")} items={data.navOrg} />
+        )}
         {isSuperAdmin && data.navSuperAdmin && (
-          <NavSuperAdmin items={data.navSuperAdmin} />
+          <NavGroup
+            label={t("superAdminGroup")}
+            items={data.navSuperAdmin}
+          />
         )}
         <NavDocuments items={data.documents} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />

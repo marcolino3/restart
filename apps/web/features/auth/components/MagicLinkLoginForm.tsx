@@ -18,8 +18,11 @@ import {
   MagicLinkLoginFormType,
 } from "../schemas/magic-link-login-form.schema";
 import { Loader2, MailCheck } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export const MagicLinkLoginForm = () => {
+  const t = useTranslations("Auth");
+  const tCommon = useTranslations("Common");
   const [sent, setSent] = useState(false);
   const [sentEmail, setSentEmail] = useState("");
 
@@ -51,10 +54,11 @@ export const MagicLinkLoginForm = () => {
           <MailCheck className="h-6 w-6 text-green-600 dark:text-green-400" />
         </div>
         <div className="space-y-1">
-          <p className="text-sm font-medium">Login-Link gesendet</p>
+          <p className="text-sm font-medium">{t("magicLinkSent")}</p>
           <p className="text-sm text-muted-foreground">
-            Wir haben dir einen Link an{" "}
-            <strong className="text-foreground">{sentEmail}</strong> gesendet.
+            {t("magicLinkSentDescriptionStart")}{" "}
+            <strong className="text-foreground">{sentEmail}</strong>{" "}
+            {t("magicLinkSentDescriptionEnd")}
           </p>
         </div>
       </div>
@@ -72,13 +76,13 @@ export const MagicLinkLoginForm = () => {
           control={form.control}
           render={({ field }) => (
             <FormItem className="grid gap-2">
-              <Label htmlFor="magic-link-email">E-Mail</Label>
+              <Label htmlFor="magic-link-email">{tCommon("email")}</Label>
               <FormControl>
                 <Input
                   {...field}
                   id="magic-link-email"
                   type="email"
-                  placeholder="name@beispiel.de"
+                  placeholder={t("emailPlaceholder")}
                   autoComplete="email"
                 />
               </FormControl>
@@ -95,7 +99,7 @@ export const MagicLinkLoginForm = () => {
           {form.formState.isSubmitting && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
-          Magic Link senden
+          {t("magicLinkSend")}
         </Button>
       </form>
     </Form>

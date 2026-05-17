@@ -1,6 +1,50 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { gql } from "graphql-request";
+import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
+
+/**
+ * Restart `users.id` (UUID) → better-auth `user.id` (text).
+ * The impersonate endpoint looks up users in better-auth's own user table
+ * which has separate ids from our domain `users` table. Translation runs
+ * via shared email; the backend query is SuperAdmin-only.
+ */
+const TranslateUserIdDocument = gql`
+  query AuthUserIdByUserId($userId: ID!) {
+    authUserIdByUserId(userId: $userId)
+  }
+`;
+
+const resolveAuthUserId = async (
+  restartUserId: string,
+): Promise<string | null> => {
+  try {
+    const client = await serverCookieGqlClient();
+    const { authUserIdByUserId } = await client.request<{
+      authUserIdByUserId: string | null;
+    }>(TranslateUserIdDocument, { userId: restartUserId });
+    return authUserIdByUserId ?? null;
+  } catch (error) {
+    console.error("authUserIdByUserId lookup failed", error);
+    return null;
+  }
+};
+
+/**
+ * Resolves an Origin header value that better-auth will accept (trusted
+ * origin). Prefers the current request's Origin (server-action runs inside
+ * the user's request lifecycle); falls back to `NEXT_PUBLIC_BASE_URL`
+ * or `http://localhost:4000` for dev.
+ */
+const resolveOrigin = async (): Promise<string> => {
+  const h = await headers();
+  return (
+    h.get("origin") ??
+    process.env.NEXT_PUBLIC_BASE_URL ??
+    "http://localhost:4000"
+  );
+};
 
 /**
  * SuperAdmin-only: starts an impersonation session for the given target user.
@@ -27,15 +71,29 @@ export const impersonateUserAction = async (
     .map((c) => `${c.name}=${c.value}`)
     .join("; ");
 
+  const origin = await resolveOrigin();
+
+  // Translate Restart user id (UUID) → better-auth user id (text).
+  const authUserId = await resolveAuthUserId(userId);
+  if (!authUserId) {
+    return {
+      success: false,
+      error: "Target user has no linked auth account",
+    };
+  }
+
   let res: Response;
   try {
     res = await fetch(`${url}/api/auth/admin/impersonate-user`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        // better-auth's CSRF check requires a matching `Origin` from
+        // `trustedOrigins`. Server-action fetch wouldn't send one by default.
+        origin,
         cookie: cookieHeader,
       },
-      body: JSON.stringify({ userId }),
+      body: JSON.stringify({ userId: authUserId }),
       cache: "no-store",
       redirect: "manual",
     });
@@ -99,9 +157,14 @@ export const stopImpersonatingAction = async (): Promise<
     .map((c) => `${c.name}=${c.value}`)
     .join("; ");
 
+  const origin = await resolveOrigin();
   const res = await fetch(`${url}/api/auth/admin/stop-impersonating`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", cookie: cookieHeader },
+    headers: {
+      "Content-Type": "application/json",
+      origin,
+      cookie: cookieHeader,
+    },
     cache: "no-store",
     redirect: "manual",
   });

@@ -13,6 +13,7 @@ import {
 import { createOrganizationSettingAction } from "../actions/create-setting.action";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 
 interface Props {
@@ -22,6 +23,7 @@ interface Props {
 
 export const CreateSettingForm = ({ organizationId, onSuccess }: Props) => {
   const router = useRouter();
+  const t = useTranslations("OrganizationSettings");
 
   const form = useForm<SettingFormValues>({
     resolver: zodResolver(settingFormSchema),
@@ -42,12 +44,14 @@ export const CreateSettingForm = ({ organizationId, onSuccess }: Props) => {
     });
 
     if (result.success) {
-      toast.success(`Setting "${values.key}" wurde erstellt`);
+      toast.success(t("createSuccess", { key: values.key }));
       form.reset();
       router.refresh();
       onSuccess?.();
     } else {
-      toast.error(result.error || "Fehler beim Erstellen");
+      toast.error(
+        typeof result.error === "string" ? result.error : t("createError"),
+      );
     }
   };
 
@@ -71,14 +75,14 @@ export const CreateSettingForm = ({ organizationId, onSuccess }: Props) => {
           name="description"
           label="descriptionLabel"
           namespace="OrganizationSettings"
-          placeholder="Wofür wird dieser Key verwendet?"
+          placeholder={t("descriptionPlaceholder")}
         />
 
         <Button type="submit" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
-          Setting erstellen
+          {t("createButton")}
         </Button>
       </form>
     </Form>

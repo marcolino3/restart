@@ -11,6 +11,7 @@ const ROUTE_TITLE_MAP: Record<string, string> = {
   "/admin/school-classes": "schoolClasses",
   "/admin/students": "students",
   "/admin/contact-persons": "contactPersons",
+  "/admin/record-keeping": "recordKeeping",
   "/admin/roles": "roles",
   "/admin/organizations": "organizations",
   "/admin/users": "users",

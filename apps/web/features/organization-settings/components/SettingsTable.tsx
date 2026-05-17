@@ -12,6 +12,7 @@ import {
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
+import { useLocale, useTranslations } from "next-intl";
 import { ArrowUpDown, Eye, EyeOff, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,9 @@ interface Props {
 }
 
 export const SettingsTable = ({ data, organizationId, onEdit, onDelete }: Props) => {
+  const t = useTranslations("OrganizationSettings");
+  const tCommon = useTranslations("Common");
+  const locale = useLocale();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [revealedValues, setRevealedValues] = React.useState<Record<string, string>>({});
@@ -85,7 +89,7 @@ export const SettingsTable = ({ data, organizationId, onEdit, onDelete }: Props)
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Key
+          {t("key")}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -97,7 +101,7 @@ export const SettingsTable = ({ data, organizationId, onEdit, onDelete }: Props)
     },
     {
       id: "value",
-      header: "Wert",
+      header: t("valueHeader"),
       cell: ({ row }) => {
         const key = row.original.key;
         const isLoading = loadingKeys.has(key);
@@ -129,7 +133,7 @@ export const SettingsTable = ({ data, organizationId, onEdit, onDelete }: Props)
     },
     {
       accessorKey: "description",
-      header: "Beschreibung",
+      header: t("descriptionLabel"),
       cell: ({ row }) => (
         <span className="text-muted-foreground text-sm">
           {row.getValue("description") || "-"}
@@ -138,12 +142,12 @@ export const SettingsTable = ({ data, organizationId, onEdit, onDelete }: Props)
     },
     {
       accessorKey: "updatedAt",
-      header: "Aktualisiert",
+      header: t("updatedHeader"),
       cell: ({ row }) => {
         const date = new Date(row.getValue("updatedAt"));
         return (
           <span className="text-muted-foreground text-sm">
-            {date.toLocaleDateString("de-DE", {
+            {date.toLocaleDateString(locale, {
               day: "2-digit",
               month: "2-digit",
               year: "numeric",
@@ -164,23 +168,23 @@ export const SettingsTable = ({ data, organizationId, onEdit, onDelete }: Props)
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Menu</span>
+                <span className="sr-only">{tCommon("openMenu")}</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Aktionen</DropdownMenuLabel>
+              <DropdownMenuLabel>{tCommon("actions")}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onEdit(setting)}>
                 <Pencil className="mr-2 h-4 w-4" />
-                Bearbeiten
+                {tCommon("edit")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => onDelete(setting)}
                 className="text-destructive"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Löschen
+                {tCommon("delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -208,7 +212,7 @@ export const SettingsTable = ({ data, organizationId, onEdit, onDelete }: Props)
     <div className="w-full">
       <div className="flex items-center py-4">
         <Input
-          placeholder="Settings filtern..."
+          placeholder={t("filterPlaceholder")}
           value={(table.getColumn("key")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn("key")?.setFilterValue(event.target.value)
@@ -216,7 +220,7 @@ export const SettingsTable = ({ data, organizationId, onEdit, onDelete }: Props)
           className="max-w-sm"
         />
         <Badge variant="secondary" className="ml-auto">
-          {data.length} Setting{data.length !== 1 ? "s" : ""}
+          {t("settingsCount", { count: data.length })}
         </Badge>
       </div>
       <div className="overflow-hidden rounded-md border">
@@ -257,7 +261,7 @@ export const SettingsTable = ({ data, organizationId, onEdit, onDelete }: Props)
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  Keine Settings vorhanden.
+                  {t("noSettings")}
                 </TableCell>
               </TableRow>
             )}
@@ -272,7 +276,7 @@ export const SettingsTable = ({ data, organizationId, onEdit, onDelete }: Props)
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            Zurück
+            {tCommon("previous")}
           </Button>
           <Button
             variant="outline"
@@ -280,7 +284,7 @@ export const SettingsTable = ({ data, organizationId, onEdit, onDelete }: Props)
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            Weiter
+            {tCommon("next")}
           </Button>
         </div>
       )}

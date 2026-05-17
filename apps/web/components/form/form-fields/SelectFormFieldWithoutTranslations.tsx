@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useFormContext } from "react-hook-form";
 
 import {
@@ -22,7 +23,7 @@ interface Props {
   label?: string;
   description?: string;
   placeholder?: string;
-  options: { label: string; value: string }[];
+  options: { label: ReactNode; value: string }[];
   width?: string;
 }
 

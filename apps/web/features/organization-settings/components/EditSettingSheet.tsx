@@ -39,6 +39,7 @@ export const EditSettingSheet = ({
   onOpenChange,
 }: Props) => {
   const router = useRouter();
+  const t = useTranslations("OrganizationSettings");
   const tC = useTranslations("Common");
 
   const form = useForm<UpdateSettingFormValues>({
@@ -72,11 +73,13 @@ export const EditSettingSheet = ({
     });
 
     if (result.success) {
-      toast.success(`Setting "${setting.key}" wurde aktualisiert`);
+      toast.success(t("updateSuccess", { key: setting.key }));
       router.refresh();
       onOpenChange(false);
     } else {
-      toast.error(result.error || "Fehler beim Aktualisieren");
+      toast.error(
+        typeof result.error === "string" ? result.error : t("updateError"),
+      );
     }
   };
 
@@ -84,9 +87,9 @@ export const EditSettingSheet = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>Setting bearbeiten</SheetTitle>
+          <SheetTitle>{t("editTitle")}</SheetTitle>
           <SheetDescription>
-            Aktualisiere den Wert oder die Beschreibung für{" "}
+            {t("editDescription")}{" "}
             <code className="bg-muted rounded px-1">{setting?.key}</code>
           </SheetDescription>
         </SheetHeader>
@@ -101,14 +104,14 @@ export const EditSettingSheet = ({
               label="valueLabel"
               namespace="OrganizationSettings"
               type="password"
-              placeholder="Leer lassen um nicht zu ändern"
+              placeholder={t("valuePlaceholder")}
               description="valueDescription"
             />
             <TextareaFormField
               name="description"
               label="descriptionLabel"
               namespace="OrganizationSettings"
-              placeholder="Wofür wird dieser Key verwendet?"
+              placeholder={t("descriptionPlaceholder")}
             />
 
             <div className="flex gap-2">

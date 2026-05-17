@@ -39,10 +39,10 @@ export const getImpersonationInfoAction =
       if (!impersonatedBy) return { isImpersonating: false };
       const asUserName =
         body?.user?.name ??
-        [body?.user?.firstName, body?.user?.lastName]
+        ([body?.user?.firstName, body?.user?.lastName]
           .filter(Boolean)
           .join(" ") ||
-        undefined;
+          undefined);
       return { isImpersonating: true, impersonatedBy, asUserName };
     } catch {
       return { isImpersonating: false };

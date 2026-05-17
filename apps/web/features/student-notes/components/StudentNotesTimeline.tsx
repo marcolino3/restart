@@ -40,6 +40,7 @@ export default function StudentNotesTimeline({
   notes,
 }: StudentNotesTimelineProps) {
   const t = useTranslations("StudentNotes");
+  const tC = useTranslations("Common");
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("de-CH", {
@@ -50,7 +51,7 @@ export default function StudentNotesTimeline({
 
   return (
     <div className="bg-card px-4 py-5 shadow-sm sm:rounded-lg sm:px-6 border">
-      <h2 className="text-lg font-medium text-foreground">Timeline</h2>
+      <h2 className="text-lg font-medium text-foreground">{tC("timeline")}</h2>
 
       <div className="mt-6 flow-root">
         {notes.length === 0 ? (

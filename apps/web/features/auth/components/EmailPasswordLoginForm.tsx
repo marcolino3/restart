@@ -16,13 +16,15 @@ import { useForm } from "react-hook-form";
 import { LoginFormSchema, LoginFormType } from "../schemas/login-form.schema";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { authClient } from "@/lib/auth-client";
 
 export const EmailPasswordLoginForm = () => {
   const [error, setError] = useState("");
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations("Auth");
+  const tCommon = useTranslations("Common");
 
   const form = useForm<LoginFormType>({
     resolver: zodResolver(LoginFormSchema),
@@ -43,7 +45,7 @@ export const EmailPasswordLoginForm = () => {
     });
 
     if (authError) {
-      setError(authError.message ?? "E-Mail oder Passwort ist falsch.");
+      setError(authError.message ?? t("signInError"));
       return;
     }
     router.push(`/${locale}/admin`);
@@ -60,13 +62,13 @@ export const EmailPasswordLoginForm = () => {
           control={form.control}
           render={({ field }) => (
             <FormItem className="grid gap-2">
-              <Label htmlFor="login-email">E-Mail</Label>
+              <Label htmlFor="login-email">{tCommon("email")}</Label>
               <FormControl>
                 <Input
                   {...field}
                   id="login-email"
                   type="email"
-                  placeholder="name@beispiel.de"
+                  placeholder={t("emailPlaceholder")}
                   autoComplete="email"
                 />
               </FormControl>
@@ -80,12 +82,12 @@ export const EmailPasswordLoginForm = () => {
           render={({ field }) => (
             <FormItem className="grid gap-2">
               <div className="flex items-center">
-                <Label htmlFor="login-password">Passwort</Label>
+                <Label htmlFor="login-password">{tCommon("password")}</Label>
                 <a
                   href="#"
                   className="ml-auto text-sm underline-offset-4 hover:underline"
                 >
-                  Passwort vergessen?
+                  {t("forgotPassword")}
                 </a>
               </div>
               <FormControl>
@@ -109,7 +111,7 @@ export const EmailPasswordLoginForm = () => {
           {form.formState.isSubmitting && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
-          Anmelden
+          {t("signIn")}
         </Button>
       </form>
     </Form>

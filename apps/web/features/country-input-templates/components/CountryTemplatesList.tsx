@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ChevronRight, Plus, Check } from "lucide-react";
 
 import {
@@ -49,6 +50,7 @@ export const CountryTemplatesList = ({
   locale: string;
 }) => {
   const router = useRouter();
+  const t = useTranslations("CountryTemplates");
   const [addOpen, setAddOpen] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -88,16 +90,16 @@ export const CountryTemplatesList = ({
     <div>
       <div className="mb-4 flex justify-end">
         <Button onClick={() => setAddOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Land hinzufügen
+          <Plus className="mr-2 h-4 w-4" /> {t("addCountry")}
         </Button>
       </div>
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Land</TableHead>
-            <TableHead>Code</TableHead>
-            <TableHead>Konfigurierte Felder</TableHead>
+            <TableHead>{t("country")}</TableHead>
+            <TableHead>{t("code")}</TableHead>
+            <TableHead>{t("configuredFields")}</TableHead>
             <TableHead className="w-12" />
           </TableRow>
         </TableHeader>
@@ -108,7 +110,7 @@ export const CountryTemplatesList = ({
                 colSpan={4}
                 className="text-muted-foreground py-8 text-center"
               >
-                Noch keine Länder konfiguriert.
+                {t("noCountries")}
               </TableCell>
             </TableRow>
           ) : (
@@ -139,17 +141,14 @@ export const CountryTemplatesList = ({
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Land hinzufügen</DialogTitle>
-            <DialogDescription>
-              Wähle ein Land aus der Liste. Du gelangst danach zur Detail-Seite,
-              um Masken pro Feld zu pflegen.
-            </DialogDescription>
+            <DialogTitle>{t("addCountry")}</DialogTitle>
+            <DialogDescription>{t("addCountryDescription")}</DialogDescription>
           </DialogHeader>
 
           <Command>
-            <CommandInput placeholder="Land suchen…" />
+            <CommandInput placeholder={t("searchCountry")} />
             <CommandList>
-              <CommandEmpty>Keine Treffer</CommandEmpty>
+              <CommandEmpty>{t("noMatches")}</CommandEmpty>
               <CommandGroup>
                 {allCountries.map((c) => {
                   const exists = existingCodes.has(c.code);
@@ -169,7 +168,7 @@ export const CountryTemplatesList = ({
                       )}
                       {exists && (
                         <span className="text-muted-foreground ml-2 text-xs">
-                          (vorhanden)
+                          {t("exists")}
                         </span>
                       )}
                     </CommandItem>
@@ -181,10 +180,10 @@ export const CountryTemplatesList = ({
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddOpen(false)}>
-              Abbrechen
+              {t("cancel")}
             </Button>
             <Button onClick={confirmAdd} disabled={!selected}>
-              Weiter
+              {t("next")}
             </Button>
           </DialogFooter>
         </DialogContent>

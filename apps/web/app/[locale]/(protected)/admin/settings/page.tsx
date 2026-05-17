@@ -1,9 +1,12 @@
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
 import { OpenSheetButton } from "@/components/buttons/OpenSheetButton";
 import { getOrganizationSettingsAction } from "@/features/organization-settings/actions/get-settings.action";
 import { CreateSettingForm } from "@/features/organization-settings/components/CreateSettingForm";
 import { SettingsPageClient } from "@/features/organization-settings/components/SettingsPageClient";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
-import { KeyRound, PlusIcon } from "lucide-react";
+import { KeyRound, PlusIcon, Sliders } from "lucide-react";
 import { getLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
 
@@ -59,6 +62,34 @@ const SettingsPage = async () => {
       </div>
 
       <SettingsPageClient settings={settings} organizationId={organizationId} />
+
+      <div className="mt-8 grid grid-cols-1 gap-3 md:grid-cols-2">
+        <Link
+          href={`/${locale}/admin/settings/record-keeping`}
+          className="hover:bg-accent flex items-start gap-3 rounded-lg border p-4 transition-colors"
+        >
+          <Sliders className="text-primary mt-0.5 h-5 w-5" />
+          <div>
+            <div className="font-medium">Aufmerksamkeits-Schwellen</div>
+            <p className="text-muted-foreground text-sm">
+              Tage-Schwellen für die «Braucht-Aufmerksamkeit»-Liste in den
+              Fortschritts-Ansichten.
+            </p>
+          </div>
+        </Link>
+        <Link
+          href={`/${locale}/admin/settings/country-templates`}
+          className="hover:bg-accent flex items-start gap-3 rounded-lg border p-4 transition-colors"
+        >
+          <KeyRound className="text-primary mt-0.5 h-5 w-5" />
+          <div>
+            <div className="font-medium">Länder-Templates</div>
+            <p className="text-muted-foreground text-sm">
+              Telefon-, AHV- und Land-spezifische Eingabe-Masken.
+            </p>
+          </div>
+        </Link>
+      </div>
     </div>
   );
 };
