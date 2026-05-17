@@ -10,6 +10,7 @@ import { getCurriculumNodesAction } from "@/features/curricula/actions/get-curri
 import { CurriculumForm } from "@/features/curricula/components/CurriculumForm";
 import { CurriculumLevelTree } from "@/features/curricula/components/CurriculumLevelTree";
 import { CurriculumLevelsTable } from "@/features/curricula/components/CurriculumLevelsTable";
+import { getLessonsForOrgAction } from "@/features/record-keeping/actions/get-lessons-for-org.action";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   pickTranslation,
@@ -26,9 +27,10 @@ const EditCurriculumPage = async ({ params }: PageProps) => {
   const t = await getTranslations("Curricula");
   const localeUpper = locale.toUpperCase() as CurriculumLocale;
 
-  const [curriculumRes, levelsRes] = await Promise.all([
+  const [curriculumRes, levelsRes, lessonsRes] = await Promise.all([
     getCurriculumByIdAction(curriculumId),
     getCurriculumLevelsAction(curriculumId),
+    getLessonsForOrgAction(),
   ]);
 
   if (!curriculumRes.success || !curriculumRes.data) notFound();
@@ -36,6 +38,7 @@ const EditCurriculumPage = async ({ params }: PageProps) => {
   const levels = (levelsRes.success && levelsRes.data ? levelsRes.data : [])
     .filter((l) => !l.isArchived)
     .sort((a, b) => a.position - b.position);
+  const allLessons = lessonsRes.success ? lessonsRes.data : [];
 
   const levelNodes = await Promise.all(
     levels.map(async (l) => {
@@ -74,12 +77,14 @@ const EditCurriculumPage = async ({ params }: PageProps) => {
               curriculumId={curriculumId}
               levelId={levels[0].id}
               initialNodes={nodesByLevel.get(levels[0].id) ?? []}
+              allLessons={allLessons}
             />
           ) : (
             <CurriculumLevelsTable
               curriculumId={curriculumId}
               levels={levels}
               initialNodesByLevel={nodesByLevel}
+              allLessons={allLessons}
             />
           )}
         </TabsContent>

@@ -2,14 +2,19 @@ import { AbstractEntity } from '@/database/abstract.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
 import {
+  Check,
   Column,
   Entity,
   Index,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToMany,
 } from 'typeorm';
 import { CurriculumNodeType } from '../enums/curriculum-node-type.enum';
+import { LessonScale } from '../enums/lesson-scale.enum';
+import { LessonType } from '../enums/lesson-type.enum';
 import { ICurriculumNode } from '../interfaces/curriculum-node.interface';
 import { Curriculum } from './curriculum.entity';
 import { CurriculumLevel } from './curriculum-level.entity';
@@ -21,6 +26,10 @@ import { CurriculumNodeTranslation } from './curriculum-node-translation.entity'
 @Index('idx_curriculum_nodes_curriculum', ['curriculumId'])
 @Index('idx_curriculum_nodes_level', ['levelId'])
 @Index('idx_curriculum_nodes_parent', ['parentId'])
+@Check(
+  'chk_curriculum_nodes_lesson_attrs_only_for_lesson',
+  `(node_type = 'LESSON') OR (lesson_type IS NULL AND lesson_scale IS NULL)`,
+)
 export class CurriculumNode
   extends AbstractEntity<CurriculumNode>
   implements ICurriculumNode
@@ -60,6 +69,34 @@ export class CurriculumNode
   @Field(() => Int)
   @Column('int', { default: 0 })
   position: number;
+
+  @Field(() => LessonType, { nullable: true })
+  @Column('enum', {
+    enum: LessonType,
+    name: 'lesson_type',
+    nullable: true,
+  })
+  lessonType?: LessonType | null;
+
+  @Field(() => LessonScale, { nullable: true })
+  @Column('enum', {
+    enum: LessonScale,
+    name: 'lesson_scale',
+    nullable: true,
+  })
+  lessonScale?: LessonScale | null;
+
+  @Field(() => [CurriculumNode], { nullable: true })
+  @ManyToMany(() => CurriculumNode)
+  @JoinTable({
+    name: 'curriculum_lesson_prerequisites',
+    joinColumn: { name: 'lesson_id', referencedColumnName: 'id' },
+    inverseJoinColumn: {
+      name: 'prerequisite_id',
+      referencedColumnName: 'id',
+    },
+  })
+  prerequisites?: CurriculumNode[];
 
   @Field(() => String)
   @Column('uuid', { name: 'organization_id' })

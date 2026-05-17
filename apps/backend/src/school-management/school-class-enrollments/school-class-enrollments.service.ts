@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { SchoolClassEnrollment } from './entities/school-class-enrollment.entity';
 import { CreateSchoolClassEnrollmentInput } from './dto/create-school-class-enrollment.input';
 import { UpdateSchoolClassEnrollmentInput } from './dto/update-school-class-enrollment.input';
@@ -32,6 +32,26 @@ export class SchoolClassEnrollmentsService {
       where: { studentId, organizationId, isActive: true },
       relations: ['schoolClass', 'schoolClass.gradeLevels'],
       order: { enrolledAt: 'DESC' },
+    });
+  }
+
+  /**
+   * Aktive Einschreibungen einer Klasse (leftAt IS NULL).
+   * Wird für die Lesson-First Bulk-Eingabe gebraucht: "Wer ist gerade in dieser Klasse?"
+   */
+  async findActiveBySchoolClassId(
+    schoolClassId: string,
+    organizationId: string,
+  ): Promise<SchoolClassEnrollment[]> {
+    return this.enrollmentRepo.find({
+      where: {
+        schoolClassId,
+        organizationId,
+        isActive: true,
+        leftAt: IsNull(),
+      },
+      relations: ['student'],
+      order: { enrolledAt: 'ASC' },
     });
   }
 

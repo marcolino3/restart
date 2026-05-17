@@ -25,6 +25,20 @@ export class SchoolClassEnrollmentsResolver {
     return this.enrollmentsService.findByStudentId(studentId, orgId);
   }
 
+  @Query(() => [SchoolClassEnrollment], {
+    name: 'activeEnrollmentsBySchoolClassId',
+  })
+  @Permissions('SCHOOL_CLASS_READ')
+  findActiveBySchoolClassId(
+    @Args('schoolClassId', { type: () => ID }) schoolClassId: string,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.enrollmentsService.findActiveBySchoolClassId(
+      schoolClassId,
+      orgId,
+    );
+  }
+
   @Mutation(() => SchoolClassEnrollment)
   @Permissions('SCHOOL_CLASS_WRITE')
   createEnrollment(

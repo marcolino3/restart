@@ -58,6 +58,9 @@ export const ROUTES = {
     curriculaEdit: (locale: string, id: string) =>
       `/${locale}/admin/curricula/edit/${id}`,
 
+    // Record Keeping
+    recordKeeping: (locale: string) => `/${locale}/admin/record-keeping`,
+
     // Admission Stages
     admissionStages: (locale: string) =>
       `/${locale}/admin/settings/admission-stages`,

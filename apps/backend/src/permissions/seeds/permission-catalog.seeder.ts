@@ -44,6 +44,14 @@ const PERMISSION_CATALOG: Array<{
   },
   { code: PermissionCode.CURRICULUM_READ, name: 'Curriculum lesen' },
   { code: PermissionCode.CURRICULUM_MANAGE, name: 'Curriculum verwalten' },
+  {
+    code: PermissionCode.RECORD_KEEPING_READ,
+    name: 'Fortschritts-Eintraege lesen',
+  },
+  {
+    code: PermissionCode.RECORD_KEEPING_WRITE,
+    name: 'Fortschritts-Eintraege schreiben',
+  },
   { code: PermissionCode.ADDRESS_READ, name: 'Adresse lesen' },
   { code: PermissionCode.ADDRESS_WRITE, name: 'Adresse schreiben' },
   { code: PermissionCode.ADDRESS_DELETE, name: 'Adresse loeschen' },

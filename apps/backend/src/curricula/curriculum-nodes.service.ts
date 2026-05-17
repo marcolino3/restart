@@ -7,9 +7,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, FindOptionsWhere, In, IsNull, Repository } from 'typeorm';
 import { CreateCurriculumNodeInput } from './dto/create-curriculum-node.input';
 import { ReorderCurriculumNodesInput } from './dto/reorder-curriculum-nodes.input';
+import { SetLessonPrerequisitesInput } from './dto/set-lesson-prerequisites.input';
 import { UpdateCurriculumNodeInput } from './dto/update-curriculum-node.input';
 import { UpsertCurriculumNodeTranslationInput } from './dto/upsert-curriculum-node-translation.input';
 import { CurriculumNodeType } from './enums/curriculum-node-type.enum';
+import { LessonRecordStatus } from './enums/lesson-record-status.enum';
+import { LessonRecord } from './record-keeping/entities/lesson-record.entity';
 import { CurriculumLevel } from './entities/curriculum-level.entity';
 import { CurriculumNodeTranslation } from './entities/curriculum-node-translation.entity';
 import { CurriculumNode } from './entities/curriculum-node.entity';
@@ -188,6 +191,24 @@ export class CurriculumNodesService {
     node.nodeType = nextType;
     if (input.position !== undefined) node.position = input.position;
 
+    // lessonType / lessonScale dürfen nur für LESSON-Nodes gesetzt sein.
+    if (input.lessonType !== undefined || input.lessonScale !== undefined) {
+      if (nextType !== CurriculumNodeType.LESSON) {
+        if (input.lessonType || input.lessonScale) {
+          throw new BadRequestException(
+            'lessonType / lessonScale dürfen nur für LESSON-Nodes gesetzt sein',
+          );
+        }
+      }
+      if (input.lessonType !== undefined) node.lessonType = input.lessonType;
+      if (input.lessonScale !== undefined) node.lessonScale = input.lessonScale;
+    }
+    // Bei Typ-Wechsel weg von LESSON: lesson-Attribute auf null setzen
+    if (nextType !== CurriculumNodeType.LESSON) {
+      node.lessonType = null;
+      node.lessonScale = null;
+    }
+
     if (input.translations && input.translations.length > 0) {
       this.assertUniqueLocales(input.translations.map((t) => t.locale));
       await this.dataSource.transaction(async (m) => {
@@ -286,6 +307,246 @@ export class CurriculumNodesService {
       },
     });
     return translation!;
+  }
+
+  /**
+   * Alle LESSON-Nodes der Org, mit Translations.
+   * Für UI-Pickers (RecordKeeping Bulk-Entry, Prerequisites-Editor).
+   */
+  async findAllLessons(
+    organizationId: string,
+    includeArchived = false,
+  ): Promise<CurriculumNode[]> {
+    return this.nodesRepo.find({
+      where: {
+        organizationId,
+        nodeType: CurriculumNodeType.LESSON,
+        ...(includeArchived ? {} : { isArchived: false }),
+      },
+      relations: ['translations'],
+      order: { position: 'ASC', createdAt: 'ASC' },
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // Prerequisites (Self-M2M auf LESSON-Nodes)
+  // ─────────────────────────────────────────────────────────────────
+
+  async getPrerequisites(
+    lessonId: string,
+    organizationId: string,
+  ): Promise<CurriculumNode[]> {
+    await this.assertLessonInOrg(lessonId, organizationId);
+    const lesson = await this.nodesRepo.findOne({
+      where: { id: lessonId, organizationId },
+      relations: ['prerequisites', 'prerequisites.translations'],
+    });
+    return lesson?.prerequisites ?? [];
+  }
+
+  async setLessonPrerequisites(
+    input: SetLessonPrerequisitesInput,
+    organizationId: string,
+  ): Promise<CurriculumNode> {
+    const lesson = await this.assertLessonInOrg(input.lessonId, organizationId);
+
+    if (input.prerequisiteIds.includes(input.lessonId)) {
+      throw new BadRequestException('A lesson cannot be its own prerequisite');
+    }
+
+    if (input.prerequisiteIds.length > 0) {
+      const prereqs = await this.nodesRepo.find({
+        where: {
+          id: In(input.prerequisiteIds),
+          organizationId,
+        },
+      });
+      if (prereqs.length !== input.prerequisiteIds.length) {
+        throw new BadRequestException(
+          'One or more prerequisite lessons not found in this organization',
+        );
+      }
+      for (const p of prereqs) {
+        if (p.nodeType !== CurriculumNodeType.LESSON) {
+          throw new BadRequestException(
+            `Prerequisite ${p.id} must be a LESSON (got ${p.nodeType})`,
+          );
+        }
+      }
+
+      // Zyklen-Schutz: lessonId darf NICHT erreichbar sein über die
+      // transitive Hülle der prerequisiteIds.
+      await this.assertNoPrerequisiteCycle(
+        input.lessonId,
+        input.prerequisiteIds,
+        organizationId,
+      );
+    }
+
+    await this.dataSource.transaction(async (m) => {
+      await m.query(
+        `DELETE FROM "curriculum_lesson_prerequisites" WHERE "lesson_id" = $1`,
+        [input.lessonId],
+      );
+      if (input.prerequisiteIds.length > 0) {
+        const values = input.prerequisiteIds
+          .map((_, i) => `($1, $${i + 2})`)
+          .join(', ');
+        await m.query(
+          `INSERT INTO "curriculum_lesson_prerequisites"
+             ("lesson_id", "prerequisite_id")
+           VALUES ${values}
+           ON CONFLICT DO NOTHING`,
+          [input.lessonId, ...input.prerequisiteIds],
+        );
+      }
+    });
+
+    const reloaded = await this.nodesRepo.findOne({
+      where: { id: lesson.id, organizationId },
+      relations: ['prerequisites', 'prerequisites.translations', 'translations'],
+    });
+    return reloaded!;
+  }
+
+  /**
+   * "Was kommt als naechstes" für ein Kind.
+   *
+   * Eine Lektion ist "verfügbar" wenn:
+   *  - sie LESSON-Type ist und nicht archiviert
+   *  - das Kind noch keinen Record mit status ∈ {INTRODUCED, PRACTICED, MASTERED}
+   *    für diese Lektion hat
+   *  - alle ihre Prerequisites einen Record mit status ∈ {INTRODUCED, PRACTICED, MASTERED, NEEDS_MORE}
+   *    für dieses Kind haben (PLANNING zählt NICHT als erfüllt)
+   *
+   * Sortierung: curriculumLevel-Order (über parent), dann position.
+   */
+  async getNextLessonsForStudent(
+    studentId: string,
+    organizationId: string,
+    limit = 20,
+  ): Promise<CurriculumNode[]> {
+    const STARTED_STATUSES: LessonRecordStatus[] = [
+      LessonRecordStatus.INTRODUCED,
+      LessonRecordStatus.PRACTICED,
+      LessonRecordStatus.MASTERED,
+    ];
+    const PREREQ_MET_STATUSES: LessonRecordStatus[] = [
+      LessonRecordStatus.INTRODUCED,
+      LessonRecordStatus.PRACTICED,
+      LessonRecordStatus.MASTERED,
+      LessonRecordStatus.NEEDS_MORE,
+    ];
+
+    const lessonRecordRepo = this.dataSource.getRepository(LessonRecord);
+
+    // 1. Bereits begonnene Lessons für dieses Kind (zum Ausschluss).
+    const started = await lessonRecordRepo
+      .createQueryBuilder('r')
+      .select('DISTINCT r.lesson_id', 'lessonId')
+      .where('r.organization_id = :orgId', { orgId: organizationId })
+      .andWhere('r.student_id = :sId', { sId: studentId })
+      .andWhere('r.status IN (:...statuses)', { statuses: STARTED_STATUSES })
+      .getRawMany<{ lessonId: string }>();
+    const startedIds = new Set(started.map((r) => r.lessonId));
+
+    // 2. Erfüllte Prerequisites (Lessons mit Record-Status >= INTRODUCED oder NEEDS_MORE).
+    const metRows = await lessonRecordRepo
+      .createQueryBuilder('r')
+      .select('DISTINCT r.lesson_id', 'lessonId')
+      .where('r.organization_id = :orgId', { orgId: organizationId })
+      .andWhere('r.student_id = :sId', { sId: studentId })
+      .andWhere('r.status IN (:...statuses)', {
+        statuses: PREREQ_MET_STATUSES,
+      })
+      .getRawMany<{ lessonId: string }>();
+    const metIds = new Set(metRows.map((r) => r.lessonId));
+
+    // 3. Alle nicht-archivierten LESSON-Nodes der Org laden, inkl. prereqs.
+    const candidates = await this.nodesRepo
+      .createQueryBuilder('n')
+      .leftJoinAndSelect('n.translations', 't')
+      .leftJoinAndSelect('n.prerequisites', 'p')
+      .where('n.organization_id = :orgId', { orgId: organizationId })
+      .andWhere('n.node_type = :lessonType', {
+        lessonType: CurriculumNodeType.LESSON,
+      })
+      .andWhere('n.is_archived = false')
+      .orderBy('n.position', 'ASC')
+      .getMany();
+
+    const result: CurriculumNode[] = [];
+    for (const c of candidates) {
+      if (startedIds.has(c.id)) continue;
+      const prereqs = c.prerequisites ?? [];
+      const allMet = prereqs.every((p) => metIds.has(p.id));
+      if (!allMet) continue;
+      result.push(c);
+      if (result.length >= limit) break;
+    }
+    return result;
+  }
+
+  private async assertLessonInOrg(
+    lessonId: string,
+    organizationId: string,
+  ): Promise<CurriculumNode> {
+    const lesson = await this.nodesRepo.findOne({
+      where: { id: lessonId, organizationId },
+    });
+    if (!lesson) {
+      throw new NotFoundException(`Lesson ${lessonId} not found`);
+    }
+    if (lesson.nodeType !== CurriculumNodeType.LESSON) {
+      throw new BadRequestException(
+        `Node ${lessonId} is ${lesson.nodeType}, expected LESSON`,
+      );
+    }
+    return lesson;
+  }
+
+  /**
+   * BFS über die Prerequisite-Kanten der vorgeschlagenen Prerequisites.
+   * Wenn lessonId in deren transitiver Hülle erreichbar ist → Zyklus.
+   */
+  private async assertNoPrerequisiteCycle(
+    lessonId: string,
+    proposedPrerequisiteIds: string[],
+    organizationId: string,
+  ): Promise<void> {
+    const visited = new Set<string>(proposedPrerequisiteIds);
+    let frontier = [...proposedPrerequisiteIds];
+    while (frontier.length > 0) {
+      if (visited.has(lessonId)) {
+        throw new BadRequestException(
+          'Setting these prerequisites would create a cycle',
+        );
+      }
+      // Cross-Org-Sicherheit: über JOIN auf curriculum_nodes filtern,
+      // damit Prerequisites aus fremden Orgs nicht in den Cycle-Check fallen.
+      const rows: Array<{ prerequisite_id: string }> = await this.dataSource
+        .query(
+          `SELECT clp."prerequisite_id"
+             FROM "curriculum_lesson_prerequisites" clp
+             INNER JOIN "curriculum_nodes" l ON l."id" = clp."lesson_id"
+            WHERE l."organization_id" = $1
+              AND clp."lesson_id" = ANY($2::uuid[])`,
+          [organizationId, frontier],
+        );
+      const next: string[] = [];
+      for (const r of rows) {
+        if (r.prerequisite_id === lessonId) {
+          throw new BadRequestException(
+            'Setting these prerequisites would create a cycle',
+          );
+        }
+        if (!visited.has(r.prerequisite_id)) {
+          visited.add(r.prerequisite_id);
+          next.push(r.prerequisite_id);
+        }
+      }
+      frontier = next;
+    }
   }
 
   private async assertCurriculumInOrg(

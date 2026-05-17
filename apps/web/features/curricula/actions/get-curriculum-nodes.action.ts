@@ -24,6 +24,8 @@ const Document = gql`
       nodeType
       position
       isArchived
+      lessonType
+      lessonScale
       translations {
         locale
         name

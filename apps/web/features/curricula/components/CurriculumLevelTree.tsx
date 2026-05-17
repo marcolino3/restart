@@ -42,6 +42,10 @@ import {
   type CurriculumTreeNode,
 } from "../types";
 import { CurriculumNodeTranslationsDialog } from "./CurriculumNodeTranslationsDialog";
+import { LessonClassificationBadges } from "./LessonClassificationBadges";
+import { PrerequisitesEditor } from "@/features/record-keeping/components/PrerequisitesEditor";
+import type { LessonOption } from "@/features/record-keeping/types";
+import type { LessonScale, LessonType } from "../types";
 
 interface Props {
   curriculumId: string;
@@ -55,6 +59,8 @@ interface Props {
   externalFilter?: string;
   /** Hide internal toolbar (filter input + expand-all button) when parent provides its own. */
   hideToolbar?: boolean;
+  /** All LESSON-nodes of the org. When provided, LESSON rows expose a Prerequisites button. */
+  allLessons?: LessonOption[];
 }
 
 const NODE_TYPE_I18N_KEY: Record<CurriculumTreeNode["nodeType"], string> = {
@@ -79,6 +85,7 @@ export function CurriculumLevelTree({
   collapseSignal,
   externalFilter,
   hideToolbar,
+  allLessons,
 }: Props) {
   const t = useTranslations("Curricula");
   const router = useRouter();
@@ -216,6 +223,27 @@ export function CurriculumLevelTree({
     });
   };
 
+  const handleClassificationChange = (
+    nodeId: string,
+    next: { lessonType?: LessonType | null; lessonScale?: LessonScale | null },
+  ) => {
+    setNodes((prev) =>
+      prev.map((n) =>
+        n.id === nodeId
+          ? {
+              ...n,
+              ...(next.lessonType !== undefined
+                ? { lessonType: next.lessonType }
+                : {}),
+              ...(next.lessonScale !== undefined
+                ? { lessonScale: next.lessonScale }
+                : {}),
+            }
+          : n,
+      ),
+    );
+  };
+
   const handleUnarchive = async (id: string) => {
     setNodes((prev) => {
       const subtree = new Set<string>([id]);
@@ -287,7 +315,9 @@ export function CurriculumLevelTree({
             onArchive={handleArchive}
             onUnarchive={handleUnarchive}
             onEdit={setEditingNode}
+            onClassificationChange={handleClassificationChange}
             dragDisabled={filterActive}
+            allLessons={allLessons}
           />
         </div>
       )}
@@ -350,7 +380,12 @@ interface SortableGroupProps {
   onArchive: (id: string) => void;
   onUnarchive: (id: string) => void;
   onEdit: (node: CurriculumNodeDTO) => void;
+  onClassificationChange: (
+    nodeId: string,
+    next: { lessonType?: LessonType | null; lessonScale?: LessonScale | null },
+  ) => void;
   dragDisabled: boolean;
+  allLessons?: LessonOption[];
 }
 
 function SortableGroup({
@@ -365,7 +400,9 @@ function SortableGroup({
   onArchive,
   onUnarchive,
   onEdit,
+  onClassificationChange,
   dragDisabled,
+  allLessons,
 }: SortableGroupProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -411,7 +448,9 @@ function SortableGroup({
               onArchive={onArchive}
               onUnarchive={onUnarchive}
               onEdit={onEdit}
+              onClassificationChange={onClassificationChange}
               dragDisabled={dragDisabled}
+              allLessons={allLessons}
             >
               {node.children.length > 0 && expanded && (
                 <SortableGroup
@@ -426,7 +465,9 @@ function SortableGroup({
                   onArchive={onArchive}
                   onUnarchive={onUnarchive}
                   onEdit={onEdit}
+                  onClassificationChange={onClassificationChange}
                   dragDisabled={dragDisabled}
+                  allLessons={allLessons}
                 />
               )}
             </SortableNodeRow>
@@ -446,7 +487,12 @@ interface SortableNodeRowProps {
   onArchive: (id: string) => void;
   onUnarchive: (id: string) => void;
   onEdit: (node: CurriculumNodeDTO) => void;
+  onClassificationChange: (
+    nodeId: string,
+    next: { lessonType?: LessonType | null; lessonScale?: LessonScale | null },
+  ) => void;
   dragDisabled: boolean;
+  allLessons?: LessonOption[];
   children?: React.ReactNode;
 }
 
@@ -459,7 +505,9 @@ function SortableNodeRow({
   onArchive,
   onUnarchive,
   onEdit,
+  onClassificationChange,
   dragDisabled,
+  allLessons,
   children,
 }: SortableNodeRowProps) {
   const {
@@ -525,6 +573,14 @@ function SortableNodeRow({
           {t(NODE_TYPE_I18N_KEY[node.nodeType])}
         </span>
         <span className="flex-1 truncate text-sm">{name}</span>
+        {node.nodeType === "LESSON" && !archivedRow && (
+          <LessonClassificationBadges
+            nodeId={node.id}
+            lessonType={node.lessonType}
+            lessonScale={node.lessonScale}
+            onChange={(next) => onClassificationChange(node.id, next)}
+          />
+        )}
         <span className="flex items-center gap-1">
           {ALL_LOCALES.map((loc) => {
             const present = availableLocales.has(loc);
@@ -550,6 +606,14 @@ function SortableNodeRow({
             );
           })}
         </span>
+        {node.nodeType === "LESSON" && allLessons && !archivedRow && (
+          <span
+            className="opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <PrerequisitesEditor lessonId={node.id} allLessons={allLessons} />
+          </span>
+        )}
         {archivedRow ? (
           <Button
             variant="ghost"

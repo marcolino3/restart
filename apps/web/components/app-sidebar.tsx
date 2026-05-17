@@ -14,6 +14,7 @@ import {
   IconListDetails,
   IconReport,
   IconBook,
+  IconChecklist,
   IconLayersIntersect,
   IconSchool,
   IconSearch,
@@ -43,7 +44,7 @@ import {
   usePermissions,
   useUser,
 } from "@/features/users/context/current-user.context";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 type Organization = {
   id: string;
@@ -57,6 +58,8 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 
 export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
   const locale = useLocale();
+  const t = useTranslations("SiteHeader");
+  const tCommon = useTranslations("Common");
   const { hasPermission } = usePermissions();
   const user = useUser();
 
@@ -70,39 +73,39 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
     },
     navMain: [
       {
-        title: "Dashboard",
+        title: t("dashboard"),
         url: "#",
         icon: IconDashboard,
       },
       {
-        title: "Time Tracking",
+        title: t("timeTracking"),
         url: ROUTES.admin.myTimeTracking(locale),
         icon: IconListDetails,
       },
       {
-        title: "Employees",
+        title: t("employees"),
         url: ROUTES.admin.employees(locale),
         icon: IconUsers,
       },
       {
-        title: "Team",
+        title: t("teams"),
         url: ROUTES.admin.teams(locale),
         icon: IconUsers,
       },
       ...(hasPermission("SCHOOL_CLASS_READ")
         ? [
             {
-              title: "Schulklassen",
+              title: t("schoolClasses"),
               url: ROUTES.admin.schoolClasses(locale),
               icon: IconSchool,
             },
             {
-              title: "Stufen",
+              title: t("gradeLevels"),
               url: ROUTES.admin.gradeLevels(locale),
               icon: IconLayersIntersect,
             },
             {
-              title: "Schüler",
+              title: t("students"),
               url: ROUTES.admin.students(locale),
               icon: IconUsers,
             },
@@ -111,7 +114,7 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
       ...(hasPermission("CONTACT_PERSON_READ")
         ? [
             {
-              title: "Bezugspersonen",
+              title: t("contactPersons"),
               url: ROUTES.admin.contactPersons(locale),
               icon: IconUsers,
             },
@@ -120,16 +123,25 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
       ...(hasPermission("CURRICULUM_READ")
         ? [
             {
-              title: "Curricula",
+              title: t("curricula"),
               url: ROUTES.admin.curricula(locale),
               icon: IconBook,
+            },
+          ]
+        : []),
+      ...(hasPermission("RECORD_KEEPING_READ")
+        ? [
+            {
+              title: t("recordKeeping"),
+              url: ROUTES.admin.recordKeeping(locale),
+              icon: IconChecklist,
             },
           ]
         : []),
       ...(hasPermission("ROLE_ASSIGN")
         ? [
             {
-              title: "Rollen & Berechtigungen",
+              title: t("roles"),
               url: ROUTES.admin.roles(locale),
               icon: IconShieldLock,
             },
@@ -140,17 +152,17 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
       ? {
           navSuperAdmin: [
             {
-              title: "Organizations",
+              title: t("organizations"),
               url: ROUTES.admin.organizations(locale),
               icon: IconBuilding,
             },
             {
-              title: "Users",
+              title: t("users"),
               url: ROUTES.admin.users(locale),
               icon: IconUsers,
             },
             {
-              title: "Country Templates",
+              title: t("countryTemplates"),
               url: ROUTES.admin.countryTemplates(locale),
               icon: IconWorld,
             },
@@ -207,34 +219,34 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
     ],
     navSecondary: [
       {
-        title: "Settings",
+        title: tCommon("settings"),
         url: "#",
         icon: IconSettings,
       },
       {
-        title: "Get Help",
+        title: tCommon("getHelp"),
         url: "#",
         icon: IconHelp,
       },
       {
-        title: "Search",
+        title: tCommon("search"),
         url: "#",
         icon: IconSearch,
       },
     ],
     documents: [
       {
-        name: "Data Library",
+        name: tCommon("dataLibrary"),
         url: "#",
         icon: IconDatabase,
       },
       {
-        name: "Reports",
+        name: tCommon("reports"),
         url: "#",
         icon: IconReport,
       },
       {
-        name: "Word Assistant",
+        name: tCommon("wordAssistant"),
         url: "#",
         icon: IconFileWord,
       },

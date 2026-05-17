@@ -45,6 +45,7 @@ interface Props {
   levels: CurriculumLevelDTO[];
   initialNodesByLevel?: Map<string, CurriculumNodeDTO[]>;
   includeArchived?: boolean;
+  allLessons?: import("@/features/record-keeping/types").LessonOption[];
 }
 
 type LevelRow = CurriculumLevelDTO & { name: string };
@@ -54,6 +55,7 @@ export function CurriculumLevelsTable({
   levels,
   initialNodesByLevel,
   includeArchived = false,
+  allLessons,
 }: Props) {
   const t = useTranslations("Curricula");
   const tCommon = useTranslations("Common");
@@ -326,6 +328,7 @@ export function CurriculumLevelsTable({
                             collapseSignal={treeCollapseSignal}
                             externalFilter={filterLc ? globalFilter : undefined}
                             hideToolbar={!!filterLc}
+                            allLessons={allLessons}
                           />
                         )}
                       </TableCell>

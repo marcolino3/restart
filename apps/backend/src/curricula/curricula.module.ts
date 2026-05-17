@@ -11,6 +11,8 @@ import { CurriculumNodesService } from './curriculum-nodes.service';
 import { CurriculaImportController } from './import/curricula-import.controller';
 import { CurriculaImportResolver } from './import/curricula-import.resolver';
 import { CurriculaImportService } from './import/curricula-import.service';
+import { LessonRecordsResolver } from './record-keeping/lesson-records.resolver';
+import { LessonRecordsService } from './record-keeping/lesson-records.service';
 
 @Module({
   imports: [CommonModule, DatabaseModule, UsersModule],
@@ -24,12 +26,15 @@ import { CurriculaImportService } from './import/curricula-import.service';
     CurriculumNodesService,
     CurriculaImportService,
     CurriculaImportResolver,
+    LessonRecordsResolver,
+    LessonRecordsService,
   ],
   exports: [
     CurriculumLevelsService,
     CurriculaService,
     CurriculumNodesService,
     CurriculaImportService,
+    LessonRecordsService,
   ],
 })
 export class CurriculaModule {}

@@ -44,6 +44,12 @@ export type CurriculumDTO = {
   translations: CurriculumTranslationDTO[];
 };
 
+export type LessonType = "P" | "THREE_PL" | "E" | "M" | "S";
+export type LessonScale = "MASTERABLE" | "ONGOING";
+
+export const LESSON_TYPES: LessonType[] = ["P", "THREE_PL", "E", "M", "S"];
+export const LESSON_SCALES: LessonScale[] = ["MASTERABLE", "ONGOING"];
+
 export type CurriculumNodeDTO = {
   id: string;
   curriculumId: string;
@@ -52,6 +58,8 @@ export type CurriculumNodeDTO = {
   nodeType: CurriculumNodeType;
   position: number;
   isArchived: boolean;
+  lessonType?: LessonType | null;
+  lessonScale?: LessonScale | null;
   translations: CurriculumNodeTranslationDTO[];
 };
 

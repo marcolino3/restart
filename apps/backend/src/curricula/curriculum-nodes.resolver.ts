@@ -1,4 +1,4 @@
-import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
@@ -7,6 +7,7 @@ import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { CurriculumNodesService } from './curriculum-nodes.service';
 import { CreateCurriculumNodeInput } from './dto/create-curriculum-node.input';
 import { ReorderCurriculumNodesInput } from './dto/reorder-curriculum-nodes.input';
+import { SetLessonPrerequisitesInput } from './dto/set-lesson-prerequisites.input';
 import { UpdateCurriculumNodeInput } from './dto/update-curriculum-node.input';
 import { UpsertCurriculumNodeTranslationInput } from './dto/upsert-curriculum-node-translation.input';
 import { CurriculumNodeTranslation } from './entities/curriculum-node-translation.entity';
@@ -41,6 +42,16 @@ export class CurriculumNodesResolver {
     @CurrentOrgId() orgId: string,
   ) {
     return this.service.findOne(id, orgId);
+  }
+
+  @Query(() => [CurriculumNode], { name: 'lessonsByOrg' })
+  @Permissions('CURRICULUM_READ')
+  findAllLessons(
+    @CurrentOrgId() orgId: string,
+    @Args('includeArchived', { type: () => Boolean, nullable: true })
+    includeArchived?: boolean,
+  ) {
+    return this.service.findAllLessons(orgId, includeArchived ?? false);
   }
 
   @Mutation(() => CurriculumNode)
@@ -95,5 +106,37 @@ export class CurriculumNodesResolver {
     @CurrentOrgId() orgId: string,
   ) {
     return this.service.upsertTranslation(input, orgId);
+  }
+
+  // ─── Prerequisites ──────────────────────────────────────────────
+
+  @Query(() => [CurriculumNode], { name: 'lessonPrerequisites' })
+  @Permissions('CURRICULUM_READ')
+  lessonPrerequisites(
+    @Args('lessonId', { type: () => ID }) lessonId: string,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.service.getPrerequisites(lessonId, orgId);
+  }
+
+  @Mutation(() => CurriculumNode)
+  @Permissions('CURRICULUM_MANAGE')
+  setLessonPrerequisites(
+    @Args('input') input: SetLessonPrerequisitesInput,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.service.setLessonPrerequisites(input, orgId);
+  }
+
+  // ─── "Was kommt als naechstes" ─────────────────────────────────
+
+  @Query(() => [CurriculumNode], { name: 'nextLessonsForStudent' })
+  @Permissions('RECORD_KEEPING_READ')
+  nextLessonsForStudent(
+    @Args('studentId', { type: () => ID }) studentId: string,
+    @CurrentOrgId() orgId: string,
+    @Args('limit', { type: () => Int, nullable: true }) limit?: number,
+  ) {
+    return this.service.getNextLessonsForStudent(studentId, orgId, limit ?? 20);
   }
 }
