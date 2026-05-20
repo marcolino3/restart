@@ -10,23 +10,32 @@ const CreateGradeLevelDocument = gql`
     createGradeLevel(input: $input) {
       id
       name
+      color
       sortOrder
     }
   }
 `;
 
 type CreateGradeLevelResponse = {
-  createGradeLevel: { id: string; name: string; sortOrder: number };
+  createGradeLevel: {
+    id: string;
+    name: string;
+    color: string | null;
+    sortOrder: number;
+  };
 };
 
-export const createGradeLevelAction = async (name: string) => {
+export const createGradeLevelAction = async (
+  name: string,
+  color?: string | null,
+) => {
   const locale = await getLocale();
   const client = await serverCookieGqlClient();
 
   try {
     const { createGradeLevel } = await client.request<CreateGradeLevelResponse>(
       CreateGradeLevelDocument,
-      { input: { name } },
+      { input: { name, ...(color ? { color } : {}) } },
     );
     revalidatePath(`/${locale}/admin/grade-levels`);
     revalidatePath(`/${locale}/admin/school-classes`);

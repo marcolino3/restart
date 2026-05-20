@@ -16,6 +16,10 @@ export class GradeLevel
   @Column('text')
   name: string;
 
+  @Field(() => String, { nullable: true })
+  @Column('text', { nullable: true })
+  color?: string | null;
+
   @Field(() => Int)
   @Column('integer', { default: 0 })
   sortOrder: number;

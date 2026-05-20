@@ -70,6 +70,36 @@ const NODE_TYPE_I18N_KEY: Record<CurriculumTreeNode["nodeType"], string> = {
   LESSON: "nodeTypeLesson",
 };
 
+/**
+ * Returns true when two node arrays describe the same tree from DnD's
+ * point of view: same ids, parents, positions, classification, archive
+ * state. Translation deltas are intentionally ignored — they change on
+ * every locale switch and would otherwise force a full state reset that
+ * tears down `@dnd-kit`'s sortable items.
+ */
+function nodesStructurallyEqual(
+  a: CurriculumNodeDTO[],
+  b: CurriculumNodeDTO[],
+): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const x = a[i];
+    const y = b[i];
+    if (
+      x.id !== y.id ||
+      x.parentId !== y.parentId ||
+      x.position !== y.position ||
+      x.isArchived !== y.isArchived ||
+      x.lessonType !== y.lessonType ||
+      x.lessonScale !== y.lessonScale ||
+      x.nodeType !== y.nodeType
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 const LOCALE_PRESENT_CLS: Record<CurriculumLocale, string> = {
   DE: "bg-amber-600 text-white",
   FR: "bg-blue-600 text-white",
@@ -99,8 +129,14 @@ export function CurriculumLevelTree({
   const [internalFilter, setInternalFilter] = useState("");
   const [manualExpanded, setManualExpanded] = useState<Set<string>>(new Set());
 
+  // Only swap the local state when the server data actually changed in a way
+  // that matters for rendering/DnD. Otherwise we'd churn refs on every
+  // locale-switch / router.refresh and tear down @dnd-kit's sortable items,
+  // which kills the active drag and breaks the grip-handle after navigation.
   useEffect(() => {
-    setNodes(initialNodes);
+    setNodes((prev) =>
+      nodesStructurallyEqual(prev, initialNodes) ? prev : initialNodes,
+    );
   }, [initialNodes]);
 
   const lastExpandSignal = useRef(expandSignal);

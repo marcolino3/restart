@@ -34,7 +34,37 @@ import {
   type FeatureKey,
   type GroupedCategory,
   groupCatalog,
+  isAdminOnlyCategory,
 } from "../permission-catalog";
+
+// System roles tied to admin personas (ADMIN, HR, OFFICE). These are the
+// only system roles for which the org/userManagement/teams categories are
+// offered by default. TEAM_LEAD/EMPLOYEE and all custom roles are filtered
+// out unless they already hold a permission from such a category — keeps
+// TEAM_LEAD's TEAM_MANAGE editable without exposing TEAM_CREATE/_DELETE.
+const ADMIN_ROLE_SYSTEM_CODES: ReadonlySet<string> = new Set([
+  "ORG_OWNER",
+  "ORG_ADMIN",
+  "HR_MANAGER",
+  "OFFICE",
+]);
+
+function isAdminRole(role: RoleWithPermissions): boolean {
+  return !!role.systemCode && ADMIN_ROLE_SYSTEM_CODES.has(role.systemCode);
+}
+
+function categoriesForRole(
+  role: RoleWithPermissions,
+  allGrouped: GroupedCategory[],
+): GroupedCategory[] {
+  const adminRole = isAdminRole(role);
+  if (adminRole) return allGrouped;
+  const roleCodes = new Set(role.permissions?.map((p) => p.code) ?? []);
+  return allGrouped.filter((g) => {
+    if (!isAdminOnlyCategory(g.category)) return true;
+    return g.codes.some((c) => roleCodes.has(c));
+  });
+}
 
 type Props = {
   roles: RoleWithPermissions[];
@@ -59,12 +89,6 @@ export function RolePermissionMatrix({
     () => groupCatalog(availableCodes),
     [availableCodes]
   );
-
-  const visibleCodes = useMemo(
-    () => new Set(groupedCategories.flatMap((g) => g.codes)),
-    [groupedCategories]
-  );
-  const totalPermissions = visibleCodes.size;
 
   function toggleRow(roleId: string) {
     setOpenRoleIds((prev) => {
@@ -164,8 +188,13 @@ export function RolePermissionMatrix({
             <TableBody>
               {roles.map((role) => {
                 const isOpen = openRoleIds.has(role.id);
+                const roleCategories = categoriesForRole(role, groupedCategories);
+                const roleVisibleCodes = new Set(
+                  roleCategories.flatMap((g) => g.codes),
+                );
+                const totalPermissions = roleVisibleCodes.size;
                 const count =
-                  role.permissions?.filter((p) => visibleCodes.has(p.code))
+                  role.permissions?.filter((p) => roleVisibleCodes.has(p.code))
                     .length ?? 0;
                 return (
                   <Fragment key={role.id}>
@@ -208,7 +237,7 @@ export function RolePermissionMatrix({
                         <TableCell colSpan={3} className="bg-muted/30 p-4">
                           <RolePermissionEditor
                             role={role}
-                            groupedCategories={groupedCategories}
+                            groupedCategories={roleCategories}
                             pendingCodes={pendingCodes}
                             onTogglePermission={(code) =>
                               togglePermission(role, code)

@@ -6,6 +6,8 @@
 
 **Fokus: Sicherheit** - Multi-Tenant-Isolation, RBAC mit feingranularen Permissions, JWT httpOnly Cookies, OAuth2, verschlüsselte Org-Settings.
 
+**Pädagogisches Ziel:** Lehrkräften die bestmöglichen Inputs liefern, um den Lernfortschritt jedes Kindes individuell zu begleiten und den grössten Impact auf das Lernen zu erzielen (Hattie: "Know thy impact"). Die Plattform soll nicht nur dokumentieren, sondern aktiv aufzeigen, *wo* die Lehrkraft als Nächstes ansetzen sollte — über sichtbar gemachte Muster in Einführungs-Rhythmus, Engagement, Konzentration, Persistenz und Selbstvertrauen.
+
 **Referenz-Architektur:** Orientiert sich am Projekt **Periparto** (`/Users/marcomarranchelli/Desktop/Projekte/periparto/periparto-frontend/`). Bei Unsicherheiten als Vorlage heranziehen.
 
 **Komponenten-Wiederverwendung:** Bevor neue Frontend-Komponenten (Form-Fields, UI-Bausteine, Hooks) gebaut werden, **immer zuerst in Periparto** unter `src/components/` und `src/hooks/` nach existierenden Implementierungen suchen und diese 1:1 übernehmen oder als Basis verwenden. Nur wenn Periparto nichts Passendes hat, eigene Komponenten erstellen. Periparto-Patterns (Schemas, Actions, Form-Aufbau) gelten als verbindliche Vorlage.

@@ -1,6 +1,7 @@
 import { AbstractEntity } from '@/database/abstract.entity';
 import { EmployeeAbsence } from '@/employee-management/employee-absences/entities/employee-absence.entity';
 import { EmployeeNote } from '@/employee-management/employee-notes/entities/employee-note.entity';
+import { TeamMember } from '@/employee-management/team-members/entities/team-member.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { Field, ObjectType } from '@nestjs/graphql';
 import { Column, Entity, OneToMany, OneToOne } from 'typeorm';
@@ -31,4 +32,10 @@ export class Employee extends AbstractEntity<Employee> {
     { nullable: true },
   )
   notes?: EmployeeNote[];
+
+  @Field(() => [TeamMember], { nullable: true })
+  @OneToMany(() => TeamMember, (teamMember) => teamMember.employee, {
+    nullable: true,
+  })
+  teamMembers?: TeamMember[];
 }

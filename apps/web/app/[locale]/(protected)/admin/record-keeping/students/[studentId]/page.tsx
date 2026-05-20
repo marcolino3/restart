@@ -94,6 +94,7 @@ const StudentDetailPage = async ({ params }: PageProps) => {
       </div>
 
       <StudentProgressTab
+        studentId={studentId}
         records={lessonRecords}
         nextLessons={nextLessons}
         allAreas={allAreas}

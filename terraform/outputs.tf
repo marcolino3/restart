@@ -1,14 +1,15 @@
 output "cluster_name" {
   description = "Kubernetes cluster name"
-  value       = infomaniak_kubernetes.cluster.name
+  value       = infomaniak_kaas.cluster.name
 }
 
-output "database_host" {
-  description = "PostgreSQL database host"
-  value       = infomaniak_database.postgres.hostname
+output "kubeconfig" {
+  description = "Cluster kubeconfig content (YAML)"
+  value       = infomaniak_kaas.cluster.kubeconfig
+  sensitive   = true
 }
 
-output "database_name" {
-  description = "PostgreSQL database name"
-  value       = infomaniak_database.postgres.name
-}
+# Postgres-Connection-Details kommen NICHT aus Terraform, sondern aus dem
+# Secret, das CloudNativePG automatisch erzeugt:
+#   kubectl get secret restart-db-app -n restart-${environment} -o yaml
+# Inhalt: username, password, host, port, dbname, jdbc-uri, uri

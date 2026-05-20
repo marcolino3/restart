@@ -20,7 +20,14 @@ export type EmployeeListItem = {
       }[];
     } | null;
     persona: string;
+    contactPhone?: string | null;
   };
+  teamMembers?: {
+    team?: {
+      id: string;
+      name: string;
+    } | null;
+  }[] | null;
 };
 
 type GetEmployeesResponse = {
@@ -46,6 +53,13 @@ const GetEmployeesDocument = gql`
           }
         }
         persona
+        contactPhone
+      }
+      teamMembers {
+        team {
+          id
+          name
+        }
       }
     }
   }

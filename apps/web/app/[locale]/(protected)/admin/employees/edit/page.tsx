@@ -1,8 +1,10 @@
 import EmployeeForm from "@/features/employees/components/EmployeeForm";
 import { getActiveOrganizationAction } from "@/features/organizations/actions/get-active-organization.action";
+import { requireAdminPersona } from "@/features/users/guards/require-admin-persona";
 import { getTranslations } from "next-intl/server";
 
 export default async function CreateEmployeePage() {
+  await requireAdminPersona();
   const t = await getTranslations("Employees");
   const orgRes = await getActiveOrganizationAction();
   const orgCountry = orgRes.success ? (orgRes.data?.country ?? null) : null;

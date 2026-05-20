@@ -15,6 +15,7 @@ import {
   IconReport,
   IconBook,
   IconChecklist,
+  IconClipboardCheck,
   IconLayersIntersect,
   IconSchool,
   IconSearch,
@@ -22,6 +23,7 @@ import {
   IconShieldLock,
   IconUsers,
   IconWorld,
+  IconCalendarOff,
 } from "@tabler/icons-react";
 
 import { NavDocuments } from "@/components/nav-documents";
@@ -41,6 +43,7 @@ import {
 } from "@/components/ui/sidebar";
 import { ROUTES } from "@/constants/routes";
 import {
+  isAdminPersona,
   usePermissions,
   useUser,
 } from "@/features/users/context/current-user.context";
@@ -64,6 +67,10 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
   const user = useUser();
 
   const isSuperAdmin = user?.isSuperAdmin ?? false;
+  // SuperAdmin always sees the org-admin block; otherwise persona must be
+  // one of ADMIN/HR/OFFICE. Teacher/Student/Parent/Employee personas are
+  // hard-blocked from the navOrg sidebar group regardless of permissions.
+  const canSeeOrgAdmin = isSuperAdmin || isAdminPersona(user?.persona);
 
   const data = {
     user: {
@@ -114,46 +121,66 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
             },
           ]
         : []),
-    ],
-    navOrg: [
-      {
-        title: t("teams"),
-        url: ROUTES.admin.teams(locale),
-        icon: IconUsers,
-      },
-      ...(hasPermission("SCHOOL_CLASS_READ")
+      ...(hasPermission("ADMISSION_APPLICATION_READ")
         ? [
             {
-              title: t("schoolClasses"),
-              url: ROUTES.admin.schoolClasses(locale),
-              icon: IconSchool,
-            },
-            {
-              title: t("gradeLevels"),
-              url: ROUTES.admin.gradeLevels(locale),
-              icon: IconLayersIntersect,
-            },
-          ]
-        : []),
-      ...(hasPermission("CURRICULUM_READ")
-        ? [
-            {
-              title: t("curricula"),
-              url: ROUTES.admin.curricula(locale),
-              icon: IconBook,
-            },
-          ]
-        : []),
-      ...(hasPermission("ROLE_ASSIGN")
-        ? [
-            {
-              title: t("roles"),
-              url: ROUTES.admin.roles(locale),
-              icon: IconShieldLock,
+              title: t("admissions"),
+              url: ROUTES.admin.admissionsKanban(locale),
+              icon: IconClipboardCheck,
             },
           ]
         : []),
     ],
+    navOrg: canSeeOrgAdmin
+      ? [
+          {
+            title: t("teams"),
+            url: ROUTES.admin.teams(locale),
+            icon: IconUsers,
+          },
+          ...(hasPermission("SCHOOL_CLASS_READ")
+            ? [
+                {
+                  title: t("schoolClasses"),
+                  url: ROUTES.admin.schoolClasses(locale),
+                  icon: IconSchool,
+                },
+                {
+                  title: t("gradeLevels"),
+                  url: ROUTES.admin.gradeLevels(locale),
+                  icon: IconLayersIntersect,
+                },
+              ]
+            : []),
+          ...(hasPermission("CURRICULUM_READ")
+            ? [
+                {
+                  title: t("curricula"),
+                  url: ROUTES.admin.curricula(locale),
+                  icon: IconBook,
+                },
+              ]
+            : []),
+          ...(hasPermission("EMPLOYEE_ABSENCE_CATEGORY_MANAGE")
+            ? [
+                {
+                  title: t("absenceCategories"),
+                  url: ROUTES.admin.absenceCategories(locale),
+                  icon: IconCalendarOff,
+                },
+              ]
+            : []),
+          ...(hasPermission("ROLE_ASSIGN")
+            ? [
+                {
+                  title: t("roles"),
+                  url: ROUTES.admin.roles(locale),
+                  icon: IconShieldLock,
+                },
+              ]
+            : []),
+        ]
+      : [],
     ...(isSuperAdmin
       ? {
           navSuperAdmin: [

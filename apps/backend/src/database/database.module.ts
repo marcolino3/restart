@@ -3,6 +3,7 @@ import { AuthAccount } from '@/auth-accounts/entities/auth-account.entity';
 import { Country } from '@/countries/entities/country.entity';
 import { CountryInputTemplate } from '@/country-input-templates/entities/country-input-template.entity';
 import { EmployeeAbsenceCategory } from '@/employee-management/employee-absence-categories/entities/employee-absence-category.entity';
+import { EmployeeAbsenceCategoryTranslation } from '@/employee-management/employee-absence-categories/entities/employee-absence-category-translation.entity';
 import { EmployeeAbsenceDay } from '@/employee-management/employee-absences/entities/employee-absence-days.entity';
 import { EmployeeAbsence } from '@/employee-management/employee-absences/entities/employee-absence.entity';
 import { EmployeeAuditLog } from '@/employee-management/employee-audit-log/entities/employee-audit-log.entity';
@@ -15,8 +16,13 @@ import { TeamMember } from '@/employee-management/team-members/entities/team-mem
 import { Team } from '@/employee-management/teams/entities/team.entity';
 import { TimeTracking } from '@/employee-management/time-tracking/entities/time-tracking.entity';
 import { AdmissionStage } from '@/school-management/admission-stages/entities/admission-stage.entity';
+import { AdmissionActivity } from '@/school-management/admissions/entities/admission-activity.entity';
+import { AdmissionApplication } from '@/school-management/admissions/entities/admission-application.entity';
+import { AdmissionAuditLog } from '@/school-management/admissions/entities/admission-audit-log.entity';
+import { AdmissionReminder } from '@/school-management/admissions/entities/admission-reminder.entity';
 import { ContactPerson } from '@/school-management/contact-persons/entities/contact-person.entity';
 import { StudentContactPerson } from '@/school-management/contact-persons/entities/student-contact-person.entity';
+import { Family } from '@/school-management/families/entities/family.entity';
 import { GradeLevel } from '@/school-management/grade-levels/entities/grade-level.entity';
 import { SchoolClassEnrollment } from '@/school-management/school-class-enrollments/entities/school-class-enrollment.entity';
 import { SchoolClass } from '@/school-management/school-classes/entities/school-class.entity';
@@ -58,6 +64,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       TimeTracking,
       AuthAccount,
       EmployeeAbsenceCategory,
+      EmployeeAbsenceCategoryTranslation,
       EmployeeAbsence,
       EmployeeAbsenceDay,
       EmployeeNote,
@@ -70,8 +77,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       Student,
       StudentNote,
       AdmissionStage,
+      AdmissionApplication,
+      AdmissionAuditLog,
+      AdmissionActivity,
+      AdmissionReminder,
       ContactPerson,
       StudentContactPerson,
+      Family,
       CurriculumLevel,
       CurriculumLevelTranslation,
       Curriculum,

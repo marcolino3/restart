@@ -1,8 +1,11 @@
 import { z } from "zod";
 import {
+  LESSON_RECORD_CONCENTRATIONS,
   LESSON_RECORD_DIFFICULTIES,
   LESSON_RECORD_ENGAGEMENTS,
+  LESSON_RECORD_PERSISTENCES,
   LESSON_RECORD_SELF_ASSESSMENTS,
+  LESSON_RECORD_SELF_CONFIDENCES,
   LESSON_RECORD_SOCIAL_FORMS,
   LESSON_RECORD_STATUSES,
   ROOM_MOODS,
@@ -41,6 +44,18 @@ export const observationSchema = z.object({
     .enum(TEACHER_STRESS_LEVELS as [string, ...string[]])
     .nullable()
     .optional(),
+  selfConfidence: z
+    .enum(LESSON_RECORD_SELF_CONFIDENCES as [string, ...string[]])
+    .nullable()
+    .optional(),
+  persistence: z
+    .enum(LESSON_RECORD_PERSISTENCES as [string, ...string[]])
+    .nullable()
+    .optional(),
+  concentration: z
+    .enum(LESSON_RECORD_CONCENTRATIONS as [string, ...string[]])
+    .nullable()
+    .optional(),
 });
 
 /**
@@ -64,6 +79,9 @@ export const lessonRecordsBulkSchema = z.object({
   note: z.string().trim().max(2000).optional().nullable(),
   observation: observationSchema.optional(),
   perChildObservations: z.record(z.string().uuid(), observationSchema).optional(),
+  perChildNotes: z
+    .record(z.string().uuid(), z.string().trim().max(2000))
+    .optional(),
 });
 
 export type LessonRecordsBulkFormValues = z.infer<

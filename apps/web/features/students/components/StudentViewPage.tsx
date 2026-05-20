@@ -410,6 +410,7 @@ export default function StudentViewPage({
             <TabsContent value="progress">
               {progressTab.data ? (
                 <StudentProgressTab
+                  studentId={student.id}
                   records={progressTab.data.lessonRecords}
                   nextLessons={progressTab.data.nextLessons}
                   allAreas={progressTab.data.allAreas}

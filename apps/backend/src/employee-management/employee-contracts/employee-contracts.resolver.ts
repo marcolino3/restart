@@ -2,6 +2,7 @@ import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
+import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { EmployeeContractsService } from './employee-contracts.service';
@@ -11,6 +12,7 @@ import { UpdateEmployeeContractInput } from './dto/update-employee-contract.inpu
 
 @Resolver(() => EmployeeContract)
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
+@AdminPersonaOnly()
 export class EmployeeContractsResolver {
   constructor(
     private readonly employeeContractsService: EmployeeContractsService,

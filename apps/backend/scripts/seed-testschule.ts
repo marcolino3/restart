@@ -84,10 +84,22 @@ const STAGES = [
 ];
 
 const NEW_GRADE_LEVELS = [
-  { name: 'Vorschule',   sortOrder: 0 },
-  { name: 'Primarstufe', sortOrder: 10 },
-  { name: 'Oberstufe',   sortOrder: 30 },
+  { name: 'Vorschule',   sortOrder: 0,  color: '#FBBF24' },
+  { name: 'Primarstufe', sortOrder: 10, color: '#6366F1' },
+  { name: 'Oberstufe',   sortOrder: 30, color: '#8B5CF6' },
 ];
+
+// Colour palette used to backfill grade-levels that already exist (e.g. the
+// `Kindergarten`/`Unterstufe`/`Mittelstufe` rows the seed inherits from a
+// pre-existing org). Idempotent — only fills rows where colour is still NULL.
+const GRADE_LEVEL_COLOR_DEFAULTS: Record<string, string> = {
+  Vorschule:    '#FBBF24',
+  Kindergarten: '#F97316',
+  Unterstufe:   '#06B6D4',
+  Mittelstufe:  '#3B82F6',
+  Primarstufe:  '#6366F1',
+  Oberstufe:    '#8B5CF6',
+};
 
 const NEW_CLASSES = [
   { name: 'Klasse KG1', color: '#fbbf24', room: 'KG-1', maxCapacity: 18, gradeLevel: 'Kindergarten' },
@@ -103,6 +115,10 @@ const ROLE_PERMS: Record<string, string[]> = {
     'SCHOOL_CLASS_READ', 'SCHOOL_CLASS_WRITE', 'SCHOOL_CLASS_DELETE',
     'CONTACT_PERSON_READ', 'CONTACT_PERSON_WRITE', 'CONTACT_PERSON_DELETE',
     'ADMISSION_STAGE_READ', 'ADMISSION_STAGE_MANAGE',
+    'ADMISSION_APPLICATION_READ', 'ADMISSION_APPLICATION_WRITE',
+    'ADMISSION_APPLICATION_MOVE', 'ADMISSION_APPLICATION_ENROLL',
+    'ADMISSION_APPLICATION_DELETE',
+    'FAMILY_READ', 'FAMILY_WRITE',
     'CURRICULUM_LEVEL_READ', 'CURRICULUM_LEVEL_MANAGE',
     'CURRICULUM_READ', 'CURRICULUM_MANAGE',
     'ADDRESS_READ', 'ADDRESS_WRITE', 'ADDRESS_DELETE',
@@ -111,14 +127,22 @@ const ROLE_PERMS: Record<string, string[]> = {
     'SCHOOL_CLASS_READ', 'SCHOOL_CLASS_WRITE', 'SCHOOL_CLASS_DELETE',
     'CONTACT_PERSON_READ', 'CONTACT_PERSON_WRITE', 'CONTACT_PERSON_DELETE',
     'ADMISSION_STAGE_READ', 'ADMISSION_STAGE_MANAGE',
+    'ADMISSION_APPLICATION_READ', 'ADMISSION_APPLICATION_WRITE',
+    'ADMISSION_APPLICATION_MOVE', 'ADMISSION_APPLICATION_ENROLL',
+    'ADMISSION_APPLICATION_DELETE',
+    'FAMILY_READ', 'FAMILY_WRITE',
     'CURRICULUM_LEVEL_READ', 'CURRICULUM_LEVEL_MANAGE',
     'CURRICULUM_READ', 'CURRICULUM_MANAGE',
     'ADDRESS_READ', 'ADDRESS_WRITE', 'ADDRESS_DELETE',
   ],
   OFFICE: [
     'SCHOOL_CLASS_READ',
-    'CONTACT_PERSON_READ', 'CONTACT_PERSON_WRITE',
+    'CONTACT_PERSON_READ', 'CONTACT_PERSON_WRITE', 'CONTACT_PERSON_DELETE',
     'ADMISSION_STAGE_READ', 'ADMISSION_STAGE_MANAGE',
+    'ADMISSION_APPLICATION_READ', 'ADMISSION_APPLICATION_WRITE',
+    'ADMISSION_APPLICATION_MOVE', 'ADMISSION_APPLICATION_ENROLL',
+    'ADMISSION_APPLICATION_DELETE',
+    'FAMILY_READ', 'FAMILY_WRITE',
     'CURRICULUM_READ',
     'ADDRESS_READ', 'ADDRESS_WRITE',
   ],
@@ -130,6 +154,155 @@ const ROLE_PERMS: Record<string, string[]> = {
   ],
   TEAM_LEAD: ['SCHOOL_CLASS_READ', 'CONTACT_PERSON_READ'],
 };
+
+// -------------------------------------------------------------------------
+// Admission pipeline test data: families with parents + applications across
+// every stage so the Aufnahmeprozess Kanban has realistic content on first
+// launch (~30 cards distributed over the configured stages, with some sibling
+// constellations sharing a Family / contact persons).
+// -------------------------------------------------------------------------
+
+type ApplicantChild = {
+  firstName: string;
+  lastName: string;
+  /** ISO date `YYYY-MM-DD`. */
+  dateOfBirth: string;
+  gender: 'MALE' | 'FEMALE' | 'OTHER';
+  /** Stage slug from the STAGES list. */
+  stage:
+    | 'anfrage'
+    | 'hospitation'
+    | 'aufnahmegespraech'
+    | 'vertrag'
+    | 'abgelehnt';
+  source?: 'MANUAL' | 'PUBLIC_FORM' | 'OPEN_DAY' | 'REFERRAL' | 'OTHER';
+  notes?: string;
+  /** Days since the card entered the current stage — drives "X d in stage". */
+  daysInStage?: number;
+};
+
+type ApplicantParent = {
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  salutation: 'MR' | 'MRS' | 'DIVERSE' | 'NONE';
+  relationship:
+    | 'MOTHER'
+    | 'FATHER'
+    | 'STEP_MOTHER'
+    | 'STEP_FATHER'
+    | 'GRANDMOTHER'
+    | 'GRANDFATHER'
+    | 'LEGAL_GUARDIAN'
+    | 'NANNY'
+    | 'AUNT_UNCLE';
+  isPrimary?: boolean;
+  occupation?: string;
+};
+
+type ApplicantFamily = {
+  familyName: string;
+  parents: ApplicantParent[];
+  children: ApplicantChild[];
+};
+
+const APPLICANT_FAMILIES: ApplicantFamily[] = [
+  // -- Single-child families --
+  { familyName: 'Familie Frei',     parents: [{ firstName: 'Carmen',    lastName: 'Frei',     email: 'carmen.frei@example.ch',     phone: '+41 79 300 11 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, occupation: 'Pflegefachfrau' }], children: [{ firstName: 'Lina',   lastName: 'Frei',     dateOfBirth: '2019-04-12', gender: 'FEMALE', stage: 'anfrage',           source: 'PUBLIC_FORM', daysInStage: 2 }] },
+  { familyName: 'Familie Wenger',   parents: [{ firstName: 'Stefanie', lastName: 'Wenger',   email: 'stefanie.wenger@example.ch', phone: '+41 79 300 12 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, occupation: 'Architektin' }, { firstName: 'Beat', lastName: 'Wenger', email: 'beat.wenger@example.ch', phone: '+41 79 300 12 02', salutation: 'MR', relationship: 'FATHER', occupation: 'IT-Consultant' }], children: [{ firstName: 'Noah',   lastName: 'Wenger',   dateOfBirth: '2018-09-05', gender: 'MALE',   stage: 'anfrage',           source: 'OPEN_DAY',    daysInStage: 5 }] },
+  { familyName: 'Familie Lüthi',    parents: [{ firstName: 'Daniela',  lastName: 'Lüthi',    email: 'daniela.luethi@example.ch',  phone: '+41 79 300 13 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, occupation: 'Lehrerin' }], children: [{ firstName: 'Mia',    lastName: 'Lüthi',    dateOfBirth: '2020-01-22', gender: 'FEMALE', stage: 'anfrage',           source: 'REFERRAL',    daysInStage: 11 }] },
+  { familyName: 'Familie Bär',      parents: [{ firstName: 'Patrick',  lastName: 'Bär',      email: 'patrick.baer@example.ch',    phone: '+41 79 300 14 01', salutation: 'MR',  relationship: 'FATHER', isPrimary: true, occupation: 'Treuhänder' }, { firstName: 'Isabelle', lastName: 'Bär', email: 'isabelle.baer@example.ch', phone: '+41 79 300 14 02', salutation: 'MRS', relationship: 'MOTHER', occupation: 'Marketing-Managerin' }], children: [{ firstName: 'Liam',   lastName: 'Bär',      dateOfBirth: '2017-07-18', gender: 'MALE',   stage: 'hospitation',       source: 'MANUAL',      daysInStage: 8 }] },
+  { familyName: 'Familie Ott',      parents: [{ firstName: 'Reto',     lastName: 'Ott',      email: 'reto.ott@example.ch',        phone: '+41 79 300 15 01', salutation: 'MR',  relationship: 'FATHER', isPrimary: true }], children: [{ firstName: 'Sofia',  lastName: 'Ott',      dateOfBirth: '2019-11-30', gender: 'FEMALE', stage: 'hospitation',       source: 'PUBLIC_FORM', daysInStage: 14 }] },
+  { familyName: 'Familie Marti',    parents: [{ firstName: 'Yvonne',   lastName: 'Marti',    email: 'yvonne.marti@example.ch',    phone: '+41 79 300 16 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, occupation: 'Sozialpädagogin' }, { firstName: 'Tobias', lastName: 'Marti', email: 'tobias.marti@example.ch', phone: '+41 79 300 16 02', salutation: 'MR', relationship: 'FATHER' }], children: [{ firstName: 'Elias',  lastName: 'Marti',    dateOfBirth: '2018-03-09', gender: 'MALE',   stage: 'aufnahmegespraech', source: 'MANUAL',      daysInStage: 4 }] },
+  { familyName: 'Familie Roth',     parents: [{ firstName: 'Corinne',  lastName: 'Roth',     email: 'corinne.roth@example.ch',    phone: '+41 79 300 17 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, occupation: 'Hebamme' }], children: [{ firstName: 'Anouk',  lastName: 'Roth',     dateOfBirth: '2017-12-02', gender: 'FEMALE', stage: 'aufnahmegespraech', source: 'REFERRAL',    daysInStage: 9 }] },
+  { familyName: 'Familie Imhof',    parents: [{ firstName: 'Michael',  lastName: 'Imhof',    email: 'michael.imhof@example.ch',   phone: '+41 79 300 18 01', salutation: 'MR',  relationship: 'FATHER', isPrimary: true, occupation: 'Ingenieur' }, { firstName: 'Franziska', lastName: 'Imhof', email: 'franziska.imhof@example.ch', phone: '+41 79 300 18 02', salutation: 'MRS', relationship: 'MOTHER' }], children: [{ firstName: 'Theo',   lastName: 'Imhof',    dateOfBirth: '2016-08-21', gender: 'MALE',   stage: 'vertrag',           source: 'OPEN_DAY',    daysInStage: 21 }] },
+  { familyName: 'Familie Walter',   parents: [{ firstName: 'Nicole',   lastName: 'Walter',   email: 'nicole.walter@example.ch',   phone: '+41 79 300 19 01', salutation: 'MRS', relationship: 'LEGAL_GUARDIAN', isPrimary: true, occupation: 'Anwältin' }], children: [{ firstName: 'Lara',   lastName: 'Walter',   dateOfBirth: '2019-06-14', gender: 'FEMALE', stage: 'vertrag',           source: 'MANUAL',      daysInStage: 16 }] },
+  { familyName: 'Familie Tanner',   parents: [{ firstName: 'Tanja',    lastName: 'Tanner',   email: 'tanja.tanner@example.ch',    phone: '+41 79 300 20 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true }], children: [{ firstName: 'Linus',  lastName: 'Tanner',   dateOfBirth: '2020-02-28', gender: 'MALE',   stage: 'anfrage',           source: 'PUBLIC_FORM', daysInStage: 1 }] },
+  { familyName: 'Familie Hofmann',  parents: [{ firstName: 'Andreas',  lastName: 'Hofmann',  email: 'andreas.hofmann@example.ch', phone: '+41 79 300 21 01', salutation: 'MR',  relationship: 'FATHER', isPrimary: true, occupation: 'Tischler' }], children: [{ firstName: 'Selma',  lastName: 'Hofmann',  dateOfBirth: '2018-05-17', gender: 'FEMALE', stage: 'anfrage',           source: 'OPEN_DAY',    daysInStage: 7 }] },
+  { familyName: 'Familie Vogel',    parents: [{ firstName: 'Manuela',  lastName: 'Vogel',    email: 'manuela.vogel@example.ch',   phone: '+41 79 300 22 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true }, { firstName: 'Philipp', lastName: 'Vogel', email: 'philipp.vogel@example.ch', phone: '+41 79 300 22 02', salutation: 'MR', relationship: 'FATHER' }], children: [{ firstName: 'Ella',   lastName: 'Vogel',    dateOfBirth: '2019-10-09', gender: 'FEMALE', stage: 'hospitation',       source: 'REFERRAL',    daysInStage: 6, notes: 'Mit Hund kommt vor Hospitation klären.' }] },
+  { familyName: 'Familie Jenni',    parents: [{ firstName: 'Christian', lastName: 'Jenni',   email: 'christian.jenni@example.ch', phone: '+41 79 300 23 01', salutation: 'MR',  relationship: 'FATHER', isPrimary: true, occupation: 'Pilot' }], children: [{ firstName: 'Matteo', lastName: 'Jenni',    dateOfBirth: '2017-04-03', gender: 'MALE',   stage: 'abgelehnt',         source: 'MANUAL',      daysInStage: 18 }] },
+
+  // -- Two-child families (siblings share a Family + contact persons) --
+  {
+    familyName: 'Familie Steiner',
+    parents: [
+      { firstName: 'Petra',  lastName: 'Steiner', email: 'petra.steiner@example.ch',  phone: '+41 79 301 01 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, occupation: 'Ärztin' },
+      { firstName: 'Daniel', lastName: 'Steiner', email: 'daniel.steiner@example.ch', phone: '+41 79 301 01 02', salutation: 'MR',  relationship: 'FATHER',                  occupation: 'Banker' },
+    ],
+    children: [
+      { firstName: 'Emma',   lastName: 'Steiner', dateOfBirth: '2018-02-11', gender: 'FEMALE', stage: 'aufnahmegespraech', source: 'PUBLIC_FORM', daysInStage: 12 },
+      { firstName: 'Luca',   lastName: 'Steiner', dateOfBirth: '2020-08-30', gender: 'MALE',   stage: 'aufnahmegespraech', source: 'PUBLIC_FORM', daysInStage: 12 },
+    ],
+  },
+  {
+    familyName: 'Familie Bachmann',
+    parents: [
+      { firstName: 'Sabine',  lastName: 'Bachmann', email: 'sabine.bachmann@example.ch', phone: '+41 79 301 02 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, occupation: 'Sozialarbeiterin' },
+      { firstName: 'Marco',   lastName: 'Bachmann', email: 'marco.bachmann@example.ch',  phone: '+41 79 301 02 02', salutation: 'MR',  relationship: 'FATHER',                  occupation: 'Schreiner' },
+    ],
+    children: [
+      { firstName: 'Nora',   lastName: 'Bachmann', dateOfBirth: '2017-11-20', gender: 'FEMALE', stage: 'vertrag',           source: 'REFERRAL', daysInStage: 19 },
+      { firstName: 'Jonas',  lastName: 'Bachmann', dateOfBirth: '2020-03-15', gender: 'MALE',   stage: 'hospitation',       source: 'REFERRAL', daysInStage: 3 },
+    ],
+  },
+  {
+    familyName: 'Familie Suter',
+    parents: [
+      { firstName: 'Andrea',  lastName: 'Suter', email: 'andrea.suter@example.ch', phone: '+41 79 301 03 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true },
+    ],
+    children: [
+      { firstName: 'Finn',   lastName: 'Suter', dateOfBirth: '2016-12-22', gender: 'MALE',   stage: 'anfrage',           source: 'OPEN_DAY',    daysInStage: 4 },
+      { firstName: 'Lia',    lastName: 'Suter', dateOfBirth: '2019-07-08', gender: 'FEMALE', stage: 'anfrage',           source: 'OPEN_DAY',    daysInStage: 4 },
+    ],
+  },
+  {
+    familyName: 'Familie Wyss',
+    parents: [
+      { firstName: 'Karin',  lastName: 'Wyss', email: 'karin.wyss@example.ch', phone: '+41 79 301 04 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, occupation: 'Logopädin' },
+      { firstName: 'Stefan', lastName: 'Wyss', email: 'stefan.wyss@example.ch', phone: '+41 79 301 04 02', salutation: 'MR',  relationship: 'FATHER' },
+    ],
+    children: [
+      { firstName: 'Anna',   lastName: 'Wyss', dateOfBirth: '2017-09-29', gender: 'FEMALE', stage: 'hospitation',       source: 'MANUAL',      daysInStage: 10 },
+      { firstName: 'Tim',    lastName: 'Wyss', dateOfBirth: '2019-12-05', gender: 'MALE',   stage: 'anfrage',           source: 'MANUAL',      daysInStage: 2 },
+    ],
+  },
+
+  // -- More single-child families to reach 30+ applications --
+  { familyName: 'Familie Bauer',    parents: [{ firstName: 'Simone',  lastName: 'Bauer',    email: 'simone.bauer@example.ch',    phone: '+41 79 301 11 01', salutation: 'MRS', relationship: 'MOTHER',         isPrimary: true, occupation: 'Yoga-Lehrerin' }], children: [{ firstName: 'Levin', lastName: 'Bauer',    dateOfBirth: '2018-10-08', gender: 'MALE',   stage: 'anfrage',           source: 'PUBLIC_FORM', daysInStage: 6 }] },
+  { familyName: 'Familie Zürcher',  parents: [{ firstName: 'Roman',   lastName: 'Zürcher',  email: 'roman.zuercher@example.ch',  phone: '+41 79 301 12 01', salutation: 'MR',  relationship: 'FATHER',         isPrimary: true, occupation: 'Pflegefachmann' }, { firstName: 'Nadja', lastName: 'Zürcher', email: 'nadja.zuercher@example.ch', phone: '+41 79 301 12 02', salutation: 'MRS', relationship: 'MOTHER' }], children: [{ firstName: 'Helga', lastName: 'Zürcher', dateOfBirth: '2019-02-19', gender: 'FEMALE', stage: 'hospitation',       source: 'MANUAL',      daysInStage: 9 }] },
+  { familyName: 'Familie Maurer',   parents: [{ firstName: 'Lukas',   lastName: 'Maurer',   email: 'lukas.maurer@example.ch',    phone: '+41 79 301 13 01', salutation: 'MR',  relationship: 'FATHER',         isPrimary: true }], children: [{ firstName: 'Jana',  lastName: 'Maurer',   dateOfBirth: '2017-06-25', gender: 'FEMALE', stage: 'aufnahmegespraech', source: 'OPEN_DAY',    daysInStage: 5 }] },
+  { familyName: 'Familie Berger',   parents: [{ firstName: 'Eva',     lastName: 'Berger',   email: 'eva.berger@example.ch',      phone: '+41 79 301 14 01', salutation: 'MRS', relationship: 'MOTHER',         isPrimary: true, occupation: 'Designerin' }], children: [{ firstName: 'Liam',  lastName: 'Berger',   dateOfBirth: '2020-05-12', gender: 'MALE',   stage: 'anfrage',           source: 'REFERRAL',    daysInStage: 3 }] },
+  { familyName: 'Familie Studer',   parents: [{ firstName: 'Jonas',   lastName: 'Studer',   email: 'jonas.studer@example.ch',    phone: '+41 79 301 15 01', salutation: 'MR',  relationship: 'LEGAL_GUARDIAN', isPrimary: true }], children: [{ firstName: 'Aaron', lastName: 'Studer',   dateOfBirth: '2018-12-14', gender: 'MALE',   stage: 'vertrag',           source: 'MANUAL',      daysInStage: 17 }] },
+  { familyName: 'Familie Schenk',   parents: [{ firstName: 'Ramona',  lastName: 'Schenk',   email: 'ramona.schenk@example.ch',   phone: '+41 79 301 16 01', salutation: 'MRS', relationship: 'MOTHER',         isPrimary: true }], children: [{ firstName: 'Maja',  lastName: 'Schenk',   dateOfBirth: '2019-08-02', gender: 'FEMALE', stage: 'abgelehnt',         source: 'PUBLIC_FORM', daysInStage: 25 }] },
+
+  // -- One more two-child family --
+  {
+    familyName: 'Familie Eberle',
+    parents: [
+      { firstName: 'Pia',    lastName: 'Eberle', email: 'pia.eberle@example.ch', phone: '+41 79 301 17 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, occupation: 'Journalistin' },
+      { firstName: 'Sven',   lastName: 'Eberle', email: 'sven.eberle@example.ch', phone: '+41 79 301 17 02', salutation: 'MR',  relationship: 'FATHER',                  occupation: 'Mediziner' },
+    ],
+    children: [
+      { firstName: 'Lena',   lastName: 'Eberle', dateOfBirth: '2017-01-30', gender: 'FEMALE', stage: 'hospitation',       source: 'MANUAL',      daysInStage: 15 },
+      { firstName: 'Samuel', lastName: 'Eberle', dateOfBirth: '2019-09-16', gender: 'MALE',   stage: 'aufnahmegespraech', source: 'MANUAL',      daysInStage: 8 },
+    ],
+  },
+
+  // -- Three-child family --
+  {
+    familyName: 'Familie Räber',
+    parents: [
+      { firstName: 'Claudia', lastName: 'Räber', email: 'claudia.raeber@example.ch', phone: '+41 79 301 05 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true },
+      { firstName: 'Thomas',  lastName: 'Räber', email: 'thomas.raeber@example.ch',  phone: '+41 79 301 05 02', salutation: 'MR',  relationship: 'FATHER',                  occupation: 'Polizist' },
+    ],
+    children: [
+      { firstName: 'Helena', lastName: 'Räber', dateOfBirth: '2015-06-17', gender: 'FEMALE', stage: 'vertrag',           source: 'REFERRAL', daysInStage: 22 },
+      { firstName: 'Felix',  lastName: 'Räber', dateOfBirth: '2018-01-25', gender: 'MALE',   stage: 'aufnahmegespraech', source: 'REFERRAL', daysInStage: 7 },
+      { firstName: 'Mira',   lastName: 'Räber', dateOfBirth: '2021-04-04', gender: 'FEMALE', stage: 'anfrage',           source: 'REFERRAL', daysInStage: 1 },
+    ],
+  },
+];
 
 // Contact persons (parents/guardians) to add — keyed by student lastname so we
 // can wire up the relationship below.
@@ -255,13 +428,30 @@ async function main() {
   for (const g of NEW_GRADE_LEVELS) {
     await c.query(
       `INSERT INTO grade_levels (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
-            name, "sortOrder", organization_id)
-       VALUES ($1, 1, true, false, now(), now(), $2, $3, $4)
+            name, color, "sortOrder", organization_id)
+       VALUES ($1, 1, true, false, now(), now(), $2, $3, $4, $5)
        ON CONFLICT (organization_id, name) DO NOTHING`,
-      [randomUUID(), g.name, g.sortOrder, ORG_ID],
+      [randomUUID(), g.name, g.color, g.sortOrder, ORG_ID],
     );
   }
   console.log(`✓ Grade levels (+${NEW_GRADE_LEVELS.length})`);
+
+  // Backfill colours for grade-levels that exist but have NULL/empty color.
+  let glColorsBackfilled = 0;
+  for (const [name, color] of Object.entries(GRADE_LEVEL_COLOR_DEFAULTS)) {
+    const { rowCount } = await c.query(
+      `UPDATE grade_levels
+          SET color = $1
+        WHERE organization_id = $2
+          AND name = $3
+          AND (color IS NULL OR color = '')`,
+      [color, ORG_ID, name],
+    );
+    glColorsBackfilled += rowCount ?? 0;
+  }
+  if (glColorsBackfilled > 0) {
+    console.log(`✓ Grade-level colours backfilled (+${glColorsBackfilled})`);
+  }
 
   // -------- 5. School classes --------
   for (const cls of NEW_CLASSES) {
@@ -1180,11 +1370,726 @@ async function main() {
         `+${classmateBackfillAdded} backfills, ` +
         `+${classmatePracticeAdded} practice sessions`,
     );
+
+    // -------- 9g. Beobachtungs-Achsen (Hattie/Montessori) -----------------
+    // Befüllt engagement, difficulty, socialForm, selfAssessment,
+    // persistence, concentration, selfConfidence auf allen Klasse-PA-
+    // Records deterministisch via md5(record_id || axis).
+    //
+    // - Idempotent: gleiche Werte bei jedem Run.
+    // - Realistische Lücken: nicht jede Achse ist auf jedem Record gesetzt
+    //   (Lehrer:innen tracken in echt selten alle 7 Felder).
+    // - Engagement bekommt einen leichten saisonalen Knick (Winterloch +
+    //   Pre-Sommer-Dip) damit der Klassen-Verlauf nicht flach aussieht.
+    //
+    // SQL-Pattern: `get_byte(decode(md5(id::text || 'salt'), 'hex'), 0)`
+    // liefert pro Record einen deterministischen 0..255-Wert; mod 100 mappt
+    // auf Perzentil-Schwellen.
+    const paStudentIdRows = await c.query<{ id: string }>(
+      `SELECT s.id
+         FROM students s
+         JOIN school_class_enrollments sce
+           ON sce.student_id = s.id
+          AND sce."isActive" = true
+          AND sce.left_at IS NULL
+         JOIN school_classes sc ON sc.id = sce.school_class_id
+        WHERE sc.organization_id = $1
+          AND sc.name = $2`,
+      [ORG_ID, PA_CLASS_NAME],
+    );
+    const paStudentIds = paStudentIdRows.rows.map((r) => r.id);
+
+    if (paStudentIds.length > 0) {
+      const SEED_NOTE_OBS = '__seed_obs__';
+
+      // 9g.1 engagement (~80% coverage, positiv-geneigt, mit Saison-Knick)
+      // Buckets 0..79 sind nicht-null (20% bleibt NULL = 80% coverage).
+      // Saisonfaktor: Winterloch (KW 5..10) und Sommerdip (KW 25..29)
+      // drücken den Score nach unten → mehr MECHANICAL/RESISTANT.
+      // Verteilung ohne Saison (bucket 0..79):
+      //   0..6   →  7%  RESISTANT
+      //   7..24  → 18%  MECHANICAL
+      //   25..54 → 30%  INTERESTED
+      //   55..79 → 25%  FOCUSED
+      const engagementUpdate = await c.query(
+        `UPDATE lesson_records lr
+            SET engagement = CASE
+              WHEN bucket >= 80 THEN NULL
+              WHEN (bucket + season) <  7 THEN 'RESISTANT'::lesson_records_engagement_enum
+              WHEN (bucket + season) < 25 THEN 'MECHANICAL'::lesson_records_engagement_enum
+              WHEN (bucket + season) < 55 THEN 'INTERESTED'::lesson_records_engagement_enum
+              ELSE                              'FOCUSED'::lesson_records_engagement_enum
+            END
+           FROM (
+             SELECT id,
+                    get_byte(decode(md5(id::text || 'engagement'), 'hex'), 0) % 100 AS bucket,
+                    CASE
+                      WHEN EXTRACT(WEEK FROM recorded_at)::int BETWEEN 5 AND 10 THEN -10
+                      WHEN EXTRACT(WEEK FROM recorded_at)::int BETWEEN 25 AND 29 THEN -15
+                      WHEN EXTRACT(WEEK FROM recorded_at)::int BETWEEN 36 AND 45 THEN  8
+                      ELSE 0
+                    END AS season
+               FROM lesson_records
+              WHERE organization_id = $1
+                AND student_id = ANY($2::uuid[])
+           ) s
+          WHERE lr.id = s.id`,
+        [ORG_ID, paStudentIds],
+      );
+
+      // 9g.2 difficulty (~65% coverage, JUST_RIGHT-Mehrheit = Montessori-Ideal)
+      const difficultyUpdate = await c.query(
+        `UPDATE lesson_records lr
+            SET difficulty = CASE
+              WHEN bucket >= 65 THEN NULL
+              WHEN bucket < 10 THEN 'TOO_HARD'::lesson_records_difficulty_enum
+              WHEN bucket < 26 THEN 'TOO_EASY'::lesson_records_difficulty_enum
+              ELSE                 'JUST_RIGHT'::lesson_records_difficulty_enum
+            END
+           FROM (
+             SELECT id,
+                    get_byte(decode(md5(id::text || 'difficulty'), 'hex'), 0) % 100 AS bucket
+               FROM lesson_records
+              WHERE organization_id = $1
+                AND student_id = ANY($2::uuid[])
+           ) s
+          WHERE lr.id = s.id`,
+        [ORG_ID, paStudentIds],
+      );
+
+      // 9g.3 socialForm (~55% coverage, ALONE-heavy)
+      const socialUpdate = await c.query(
+        `UPDATE lesson_records lr
+            SET social_form = CASE
+              WHEN bucket >= 55 THEN NULL
+              WHEN bucket <  4 THEN 'WITH_GUIDE'::lesson_records_social_form_enum
+              WHEN bucket < 13 THEN 'SMALL_GROUP'::lesson_records_social_form_enum
+              WHEN bucket < 29 THEN 'WITH_PARTNER'::lesson_records_social_form_enum
+              ELSE                 'ALONE'::lesson_records_social_form_enum
+            END
+           FROM (
+             SELECT id,
+                    get_byte(decode(md5(id::text || 'socialForm'), 'hex'), 0) % 100 AS bucket
+               FROM lesson_records
+              WHERE organization_id = $1
+                AND student_id = ANY($2::uuid[])
+           ) s
+          WHERE lr.id = s.id`,
+        [ORG_ID, paStudentIds],
+      );
+
+      // 9g.4 selfAssessment (~32% coverage, UNDERSTOOD-Mehrheit)
+      const selfAssessmentUpdate = await c.query(
+        `UPDATE lesson_records lr
+            SET self_assessment = CASE
+              WHEN bucket >= 32 THEN NULL
+              WHEN bucket <  3 THEN 'NEEDS_REPEAT'::lesson_records_self_assessment_enum
+              WHEN bucket <  9 THEN 'PARTIAL'::lesson_records_self_assessment_enum
+              ELSE                 'UNDERSTOOD'::lesson_records_self_assessment_enum
+            END
+           FROM (
+             SELECT id,
+                    get_byte(decode(md5(id::text || 'selfAssessment'), 'hex'), 0) % 100 AS bucket
+               FROM lesson_records
+              WHERE organization_id = $1
+                AND student_id = ANY($2::uuid[])
+           ) s
+          WHERE lr.id = s.id`,
+        [ORG_ID, paStudentIds],
+      );
+
+      // 9g.5 persistence (~58% coverage, PERSISTS-Mehrheit)
+      const persistenceUpdate = await c.query(
+        `UPDATE lesson_records lr
+            SET persistence = CASE
+              WHEN bucket >= 58 THEN NULL
+              WHEN bucket <  5 THEN 'GIVES_UP'::lesson_records_persistence_enum
+              WHEN bucket < 17 THEN 'SEEKS_HELP'::lesson_records_persistence_enum
+              ELSE                 'PERSISTS'::lesson_records_persistence_enum
+            END
+           FROM (
+             SELECT id,
+                    get_byte(decode(md5(id::text || 'persistence'), 'hex'), 0) % 100 AS bucket
+               FROM lesson_records
+              WHERE organization_id = $1
+                AND student_id = ANY($2::uuid[])
+           ) s
+          WHERE lr.id = s.id`,
+        [ORG_ID, paStudentIds],
+      );
+
+      // 9g.6 concentration (~62% coverage, FLOW-Mehrheit)
+      const concentrationUpdate = await c.query(
+        `UPDATE lesson_records lr
+            SET concentration = CASE
+              WHEN bucket >= 62 THEN NULL
+              WHEN bucket <  8 THEN 'INTERRUPTED'::lesson_records_concentration_enum
+              WHEN bucket < 24 THEN 'PARTIAL_FOCUS'::lesson_records_concentration_enum
+              ELSE                 'FLOW'::lesson_records_concentration_enum
+            END
+           FROM (
+             SELECT id,
+                    get_byte(decode(md5(id::text || 'concentration'), 'hex'), 0) % 100 AS bucket
+               FROM lesson_records
+              WHERE organization_id = $1
+                AND student_id = ANY($2::uuid[])
+           ) s
+          WHERE lr.id = s.id`,
+        [ORG_ID, paStudentIds],
+      );
+
+      // 9g.7 selfConfidence (~48% coverage, CONFIDENT-Mehrheit)
+      const selfConfidenceUpdate = await c.query(
+        `UPDATE lesson_records lr
+            SET self_confidence = CASE
+              WHEN bucket >= 48 THEN NULL
+              WHEN bucket <  4 THEN 'INSECURE'::lesson_records_self_confidence_enum
+              WHEN bucket < 16 THEN 'TENTATIVE'::lesson_records_self_confidence_enum
+              ELSE                 'CONFIDENT'::lesson_records_self_confidence_enum
+            END
+           FROM (
+             SELECT id,
+                    get_byte(decode(md5(id::text || 'selfConfidence'), 'hex'), 0) % 100 AS bucket
+               FROM lesson_records
+              WHERE organization_id = $1
+                AND student_id = ANY($2::uuid[])
+           ) s
+          WHERE lr.id = s.id`,
+        [ORG_ID, paStudentIds],
+      );
+
+      // Marker für Stichprobe — etwa jeder 10. Record bekommt eine kurze
+      // Notiz, damit die Notes-Timeline im Aktivitäts-Tab nicht leer ist.
+      const NOTES = [
+        'Sehr konzentriert gearbeitet.',
+        'Hat heute eigenständig Material ausgewählt.',
+        'Brauchte am Anfang Unterstützung, dann selbständig.',
+        'Mehrmals abgelenkt, aber zurückgekehrt.',
+        'Hat einem anderen Kind die Übung erklärt.',
+        'Sichtlich frustriert — Material zu früh.',
+        'Tiefe Polarisation der Aufmerksamkeit.',
+        'Heute wenig Energie — kurze Sequenz.',
+        'Wiederholung hat geholfen.',
+        'Sehr stolz nach Abschluss.',
+      ];
+      const notesUpdate = await c.query<{ id: string; idx: number }>(
+        `SELECT id,
+                get_byte(decode(md5(id::text || 'noteIdx'), 'hex'), 0) % ${NOTES.length} AS idx
+           FROM lesson_records
+          WHERE organization_id = $1
+            AND student_id = ANY($2::uuid[])
+            AND note IS NULL
+            AND get_byte(decode(md5(id::text || 'noteFlag'), 'hex'), 0) % 100 < 12`,
+        [ORG_ID, paStudentIds],
+      );
+      for (const row of notesUpdate.rows) {
+        await c.query(
+          `UPDATE lesson_records SET note = $1 WHERE id = $2`,
+          [`${SEED_NOTE_OBS} ${NOTES[Number(row.idx)]}`, row.id],
+        );
+      }
+
+      // 9g.8 Frische Records der letzten 6 Wochen — pro Schüler 3..7 neue
+      // Einträge pro Woche mit gemischtem Status, damit der 30-Tage-Chart
+      // nicht leer aussieht. Lektionen werden nur ausgewählt, wenn der
+      // Schüler sie noch nicht erfasst hat. Tag wird deterministisch aus
+      // student_id × Wochen-Index berechnet → idempotent.
+      const RECENT_NOTE = '__seed_recent__';
+      // Stale recent records erst entfernen, damit re-runs frische Daten
+      // gegen das aktuelle CURRENT_DATE erzeugen.
+      await c.query(
+        `DELETE FROM lesson_records WHERE organization_id = $1 AND note = $2`,
+        [ORG_ID, RECENT_NOTE],
+      );
+
+      // Status-Mix: 25% INTRODUCED, 45% PRACTICED, 20% MASTERED, 10% NEEDS_MORE
+      const recentStatus = (rand: number): string => {
+        if (rand < 25) return 'INTRODUCED';
+        if (rand < 70) return 'PRACTICED';
+        if (rand < 90) return 'MASTERED';
+        return 'NEEDS_MORE';
+      };
+      // Engagement-Mix für die frischen Records (eigene Verteilung,
+      // unabhängig vom 9g.1 SQL-CASE — wir setzen den Wert direkt beim
+      // INSERT, damit auch die letzten 30 Tage echte Engagement-Daten haben).
+      const recentEngagement = (rand: number): string => {
+        if (rand < 25) return 'FOCUSED';
+        if (rand < 60) return 'INTERESTED';
+        if (rand < 85) return 'MECHANICAL';
+        return 'RESISTANT';
+      };
+
+      let recentAdded = 0;
+      for (const studentId of paStudentIds) {
+        // Pool: alle LESSON-Knoten der Org, die der Schüler noch NICHT erfasst hat.
+        const { rows: freshLessons } = await c.query<{ id: string }>(
+          `SELECT n.id
+             FROM curriculum_nodes n
+            WHERE n.organization_id = $1
+              AND n.node_type = 'LESSON'
+              AND NOT EXISTS (
+                SELECT 1 FROM lesson_records lr
+                 WHERE lr.student_id = $2 AND lr.lesson_id = n.id
+              )
+            ORDER BY n.position
+            LIMIT 60`,
+          [ORG_ID, studentId],
+        );
+        if (freshLessons.length === 0) continue;
+
+        let lessonIdx = 0;
+        // 6 Wochen × pro Woche 3..7 Records
+        for (let week = 0; week < 6; week++) {
+          const perWeek = pickInRange(`${studentId}:${week}`, 'recCount', 3, 7);
+          for (let i = 0; i < perWeek; i++) {
+            if (lessonIdx >= freshLessons.length) break;
+            const lessonId = freshLessons[lessonIdx++].id;
+
+            // Datum: 0..6 Tage innerhalb der Woche, deterministisch
+            const daysAgo =
+              week * 7 +
+              pickInRange(`${studentId}:${week}:${i}`, 'dayInWeek', 0, 6);
+            const d = new Date();
+            d.setUTCHours(0, 0, 0, 0);
+            d.setUTCDate(d.getUTCDate() - daysAgo);
+            const dateStr = d.toISOString().slice(0, 10);
+
+            const statusBucket = pickInRange(
+              `${studentId}:${lessonId}`,
+              'recStatus',
+              0,
+              99,
+            );
+            const engagementBucket = pickInRange(
+              `${studentId}:${lessonId}`,
+              'recEng',
+              0,
+              99,
+            );
+            const status = recentStatus(statusBucket);
+            const engagement = recentEngagement(engagementBucket);
+
+            await c.query(
+              `INSERT INTO lesson_records (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+                    student_id, lesson_id, recorded_at, status, organization_id, note, engagement)
+               VALUES ($1, 1, true, false, now(), now(),
+                    $2, $3, $4::date, $5::lesson_records_status_enum,
+                    $6, $7, $8::lesson_records_engagement_enum)`,
+              [
+                randomUUID(),
+                studentId,
+                lessonId,
+                dateStr,
+                status,
+                ORG_ID,
+                RECENT_NOTE,
+                engagement,
+              ],
+            );
+            recentAdded++;
+          }
+        }
+      }
+
+      console.log(
+        `✓ Recent (last 6 weeks) records for Klasse-PA: +${recentAdded}`,
+      );
+
+      console.log(
+        `✓ Observation axes seeded for Klasse-PA: ` +
+          `engagement +${engagementUpdate.rowCount}, ` +
+          `difficulty +${difficultyUpdate.rowCount}, ` +
+          `social +${socialUpdate.rowCount}, ` +
+          `selfAssessment +${selfAssessmentUpdate.rowCount}, ` +
+          `persistence +${persistenceUpdate.rowCount}, ` +
+          `concentration +${concentrationUpdate.rowCount}, ` +
+          `selfConfidence +${selfConfidenceUpdate.rowCount}, ` +
+          `notes +${notesUpdate.rowCount}`,
+      );
+    }
   }
+
+  // -------- Admission pipeline (Families + ContactPersons + Applications) --
+  // Map stage slug -> id once.
+  const { rows: stageRows } = await c.query<{ id: string; slug: string }>(
+    `SELECT id, slug FROM admission_stages WHERE organization_id = $1`,
+    [ORG_ID],
+  );
+  const stageBySlug = new Map(stageRows.map((r) => [r.slug, r.id]));
+
+  // Detect Postgres enum type names at runtime — TypeORM auto-names enums on
+  // `synchronize`, while our migration uses explicit names; reading from
+  // information_schema works in both environments.
+  const findEnum = async (
+    table: string,
+    column: string,
+  ): Promise<string | null> => {
+    const { rows } = await c.query<{ udt_name: string }>(
+      `SELECT udt_name FROM information_schema.columns
+        WHERE table_name = $1 AND column_name = $2`,
+      [table, column],
+    );
+    // Array columns are reported as `_enumname` — strip the leading underscore.
+    return rows[0]?.udt_name?.replace(/^_/, '') ?? null;
+  };
+  const rolesEnumType = await findEnum('contact_persons', 'roles');
+  const appStatusEnum = await findEnum('admission_applications', 'status');
+  const appSourceEnum = await findEnum('admission_applications', 'source');
+  const appGenderEnum = await findEnum('admission_applications', 'child_gender');
+  if (!appStatusEnum || !appSourceEnum || !appGenderEnum) {
+    console.warn(
+      '  ! admission_applications enum types not found — make sure the backend has run once with the new entities.',
+    );
+  }
+
+  // Map birth-year to a desired grade level for the seeded applications. The
+  // Testschule org has different grade-level names than a default install, so
+  // we resolve each by name (Kindergarten / Unterstufe / Mittelstufe /
+  // Oberstufe — or fall back to the org-specific Vorschule / Primarstufe).
+  const { rows: gradeLevelRows } = await c.query<{ id: string; name: string }>(
+    `SELECT id, name FROM grade_levels WHERE organization_id = $1 AND "isArchived" = false`,
+    [ORG_ID],
+  );
+  const gradeLevelByName = new Map(gradeLevelRows.map((g) => [g.name, g.id]));
+  const findGradeLevelId = (preferred: string[]): string | null => {
+    for (const name of preferred) {
+      const id = gradeLevelByName.get(name);
+      if (id) return id;
+    }
+    return null;
+  };
+  const gradeLevelForBirthYear = (yyyy: number): string | null => {
+    const age = new Date().getFullYear() - yyyy;
+    if (age <= 4) return findGradeLevelId(['Vorschule', 'Kindergarten']);
+    if (age <= 6) return findGradeLevelId(['Kindergarten', 'Vorschule']);
+    if (age <= 9) return findGradeLevelId(['Unterstufe', 'Primarstufe']);
+    if (age <= 12) return findGradeLevelId(['Mittelstufe', 'Primarstufe']);
+    return findGradeLevelId(['Oberstufe']);
+  };
+
+  let familiesCreated = 0;
+  let parentsCreated = 0;
+  let applicationsCreated = 0;
+  // Track per-stage position so seeded cards keep a sensible order.
+  const stagePositions: Record<string, number> = {};
+
+  for (const fam of APPLICANT_FAMILIES) {
+    // Family — idempotent by (org, name)
+    let familyId: string;
+    const { rows: famRows } = await c.query<{ id: string }>(
+      `SELECT id FROM families WHERE organization_id = $1 AND name = $2`,
+      [ORG_ID, fam.familyName],
+    );
+    if (famRows[0]) {
+      familyId = famRows[0].id;
+    } else {
+      familyId = randomUUID();
+      await c.query(
+        `INSERT INTO families (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+              name, organization_id)
+         VALUES ($1, 1, true, false, now(), now(), $2, $3)`,
+        [familyId, fam.familyName, ORG_ID],
+      );
+      familiesCreated++;
+    }
+
+    // Parents — idempotent by (family_id, first_name, last_name)
+    for (const p of fam.parents) {
+      const { rows: existingP } = await c.query<{ id: string }>(
+        `SELECT id FROM contact_persons
+           WHERE organization_id = $1 AND family_id = $2
+             AND first_name = $3 AND last_name = $4`,
+        [ORG_ID, familyId, p.firstName, p.lastName],
+      );
+      if (existingP[0]) continue;
+      const cpId = randomUUID();
+      await c.query(
+        `INSERT INTO contact_persons
+           (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+            salutation, first_name, last_name, email, phone, occupation,
+            family_id, organization_id)
+         VALUES ($1, 1, true, false, now(), now(),
+            $2, $3, $4, $5, $6, $7,
+            $8, $9)`,
+        [
+          cpId,
+          p.salutation,
+          p.firstName,
+          p.lastName,
+          p.email ?? null,
+          p.phone ?? null,
+          p.occupation ?? null,
+          familyId,
+          ORG_ID,
+        ],
+      );
+      // Populate the roles array (only if the enum type was detected).
+      if (rolesEnumType) {
+        await c.query(
+          `UPDATE contact_persons SET roles = ARRAY[$1]::${rolesEnumType}[] WHERE id = $2`,
+          [p.relationship, cpId],
+        );
+      }
+      parentsCreated++;
+    }
+
+    // Applications (one per child)
+    for (const child of fam.children) {
+      const stageId = stageBySlug.get(child.stage);
+      if (!stageId) {
+        console.warn(
+          `  · Stage "${child.stage}" not found for ${child.firstName} ${child.lastName} — skipping`,
+        );
+        continue;
+      }
+
+      const { rows: existingApp } = await c.query<{ id: string }>(
+        `SELECT id FROM admission_applications
+           WHERE organization_id = $1 AND family_id = $2
+             AND child_first_name = $3 AND child_last_name = $4`,
+        [ORG_ID, familyId, child.firstName, child.lastName],
+      );
+      if (existingApp[0]) continue;
+
+      const position = stagePositions[stageId] ?? 0;
+      stagePositions[stageId] = position + 1;
+
+      const days = child.daysInStage ?? 0;
+      const stageEnteredAt = new Date(Date.now() - days * 86_400_000);
+      const status = child.stage === 'abgelehnt' ? 'REJECTED' : 'ACTIVE';
+
+      const birthYear = Number(child.dateOfBirth.slice(0, 4));
+      const gradeLevelId = Number.isFinite(birthYear)
+        ? gradeLevelForBirthYear(birthYear)
+        : null;
+      await c.query(
+        `INSERT INTO admission_applications
+           (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+            organization_id, family_id, admission_stage_id,
+            child_first_name, child_last_name, child_date_of_birth, child_gender,
+            child_notes, status, source, stage_entered_at, position,
+            desired_grade_level_id)
+         VALUES ($1, 1, true, false, $9::timestamptz, $9::timestamptz,
+            $2, $3, $4,
+            $5, $6, $7::date, $8::${appGenderEnum},
+            $10, $11::${appStatusEnum}, $12::${appSourceEnum},
+            $9::timestamptz, $13,
+            $14)`,
+        [
+          randomUUID(),
+          ORG_ID,
+          familyId,
+          stageId,
+          child.firstName,
+          child.lastName,
+          child.dateOfBirth,
+          child.gender,
+          stageEnteredAt.toISOString(),
+          child.notes ?? null,
+          status,
+          child.source ?? 'MANUAL',
+          position,
+          gradeLevelId,
+        ],
+      );
+      applicationsCreated++;
+    }
+  }
+  console.log(
+    `✓ Admission pipeline: families +${familiesCreated}, parents +${parentsCreated}, applications +${applicationsCreated}`,
+  );
+
+  // Backfill desired_grade_level_id for existing rows that are still NULL.
+  // The mapping mirrors `gradeLevelForBirthYear` above and is safe to re-run.
+  // pg returns DATE columns as `Date` objects — coerce explicitly to YYYY-MM-DD.
+  let backfilled = 0;
+  const { rows: missing } = await c.query<{
+    id: string;
+    child_date_of_birth: Date | string | null;
+  }>(
+    `SELECT id, child_date_of_birth FROM admission_applications
+      WHERE organization_id = $1 AND desired_grade_level_id IS NULL`,
+    [ORG_ID],
+  );
+  for (const row of missing) {
+    if (!row.child_date_of_birth) continue;
+    const iso =
+      row.child_date_of_birth instanceof Date
+        ? row.child_date_of_birth.toISOString().slice(0, 10)
+        : String(row.child_date_of_birth).slice(0, 10);
+    const year = Number(iso.slice(0, 4));
+    if (!Number.isFinite(year)) continue;
+    const gradeLevelId = gradeLevelForBirthYear(year);
+    if (!gradeLevelId) continue;
+    await c.query(
+      `UPDATE admission_applications SET desired_grade_level_id = $1 WHERE id = $2`,
+      [gradeLevelId, row.id],
+    );
+    backfilled++;
+  }
+  if (backfilled > 0) {
+    console.log(`✓ Admission applications: grade-level backfilled (+${backfilled})`);
+  }
+
+  // -------- N. Resync System Absence Category Translations --------
+  await resyncSystemAbsenceCategoryTranslations(c);
 
   await c.end();
   console.log('\n✨ Done. Login with any of these (password: test1234):');
   USERS.forEach((u) => console.log(`   ${u.email}  →  ${u.persona} / ${u.roleCode}`));
+}
+
+/**
+ * One-shot resync: schreibt die aktuellen DE/FR/IT/EN-Defaults fuer alle
+ * System-Absenzkategorien der Testschule. Custom-Kategorien werden nicht
+ * angeruehrt. Idempotent — bei jedem Lauf werden die Translations auf den
+ * Stand der Code-Defaults gebracht.
+ *
+ * Quelle der Defaults: apps/backend/src/employee-management/employee-absence-categories/
+ *   seeds/system-employee-absence-categories.ts
+ */
+async function resyncSystemAbsenceCategoryTranslations(c: Client) {
+  type T = { name: string; description: string | null };
+  const SYS: Record<string, { DE: T; FR: T; IT: T; EN: T }> = {
+    SICKNESS: {
+      DE: {
+        name: 'Krankheit',
+        description: 'Ab dem 3. Tag ist ein Arztzeugnis erforderlich (Schweizer Standard).',
+      },
+      FR: {
+        name: 'Maladie',
+        description: 'Certificat médical requis dès le 3e jour (standard suisse).',
+      },
+      IT: {
+        name: 'Malattia',
+        description: 'Certificato medico richiesto dal 3° giorno (standard svizzero).',
+      },
+      EN: {
+        name: 'Sick leave',
+        description: 'Medical certificate required from day 3 (Swiss standard).',
+      },
+    },
+    ACCIDENT: {
+      DE: {
+        name: 'Unfall',
+        description: 'Unfallmeldung erforderlich; Lohnfortzahlung gemäss UVG.',
+      },
+      FR: {
+        name: 'Accident',
+        description: 'Déclaration d’accident requise; maintien du salaire selon la LAA.',
+      },
+      IT: {
+        name: 'Infortunio',
+        description: 'Notifica d’infortunio richiesta; salario garantito secondo la LAINF.',
+      },
+      EN: {
+        name: 'Accident',
+        description:
+          'Accident report required; salary continuation per Swiss accident insurance (UVG/LAA/LAINF).',
+      },
+    },
+    CHILDCARE_SICK: {
+      DE: {
+        name: 'Kind krank',
+        description: 'Betreuung kranker Kinder: max. 3 Tage pro Ereignis (Art. 36 ArG).',
+      },
+      FR: {
+        name: 'Enfant malade',
+        description: 'Soins à un enfant malade: max. 3 jours par évènement (art. 36 LTr).',
+      },
+      IT: {
+        name: 'Figlio malato',
+        description: 'Assistenza a un figlio malato: max. 3 giorni per evento (art. 36 LL).',
+      },
+      EN: {
+        name: 'Sick child care',
+        description: 'Care for a sick child: max. 3 days per event (Swiss Labor Act art. 36).',
+      },
+    },
+    TRAINING: {
+      DE: { name: 'Weiterbildung', description: 'Externe oder interne berufliche Weiterbildung.' },
+      FR: { name: 'Formation continue', description: 'Formation continue interne ou externe.' },
+      IT: { name: 'Formazione continua', description: 'Formazione continua interna o esterna.' },
+      EN: { name: 'Training', description: 'Internal or external professional training.' },
+    },
+    FUNERAL: {
+      DE: { name: 'Trauerfall', description: 'Todesfall in der nahen Familie; bis zu 3 Tage bezahlte Absenz.' },
+      FR: { name: 'Décès', description: 'Décès d’un proche; jusqu’à 3 jours d’absence rémunérée.' },
+      IT: { name: 'Lutto', description: 'Decesso di un familiare prossimo; fino a 3 giorni di assenza retribuita.' },
+      EN: { name: 'Bereavement', description: 'Death of a close family member; up to 3 days of paid leave.' },
+    },
+    MOVE: {
+      DE: { name: 'Umzug', description: 'Tag des Wohnungsumzugs; 1 bezahlter Tag pro Jahr.' },
+      FR: { name: 'Déménagement', description: 'Jour de déménagement; 1 jour rémunéré par an.' },
+      IT: { name: 'Trasloco', description: 'Giorno del trasloco; 1 giorno retribuito all’anno.' },
+      EN: { name: 'Moving day', description: 'Day of residential move; 1 paid day per year.' },
+    },
+    MILITARY_SERVICE: {
+      DE: {
+        name: 'Militärdienst',
+        description: 'Obligatorische Dienstpflicht; Lohnfortzahlung via Erwerbsersatzordnung (EO).',
+      },
+      FR: {
+        name: 'Service militaire',
+        description:
+          'Service militaire obligatoire; compensation via les Allocations pour perte de gain (APG).',
+      },
+      IT: {
+        name: 'Servizio militare',
+        description:
+          'Servizio militare obbligatorio; indennità tramite l’Indennità di perdita di guadagno (IPG).',
+      },
+      EN: {
+        name: 'Military service',
+        description: 'Mandatory Swiss military service; income compensation via EO/APG/IPG.',
+      },
+    },
+    CIVIL_SERVICE: {
+      DE: { name: 'Zivildienst', description: 'Ersatzdienst statt Militärdienst; Lohnfortzahlung via EO.' },
+      FR: {
+        name: 'Service civil',
+        description: 'Service civil en remplacement du service militaire; compensation via APG.',
+      },
+      IT: {
+        name: 'Servizio civile',
+        description: 'Servizio civile in sostituzione del servizio militare; indennità tramite IPG.',
+      },
+      EN: {
+        name: 'Civil service',
+        description: 'Civil service in lieu of military duty; income compensation via EO/APG/IPG.',
+      },
+    },
+    OTHER: {
+      DE: { name: 'Sonstiges', description: 'Andere bezahlte oder unbezahlte Abwesenheit; Genehmigung erforderlich.' },
+      FR: { name: 'Autre', description: 'Autre absence rémunérée ou non rémunérée; approbation requise.' },
+      IT: { name: 'Altro', description: 'Altra assenza retribuita o non retribuita; approvazione richiesta.' },
+      EN: { name: 'Other', description: 'Other paid or unpaid absence; requires approval.' },
+    },
+  };
+
+  const cats = await c.query(
+    `SELECT id, system_code FROM employee_absence_categories
+     WHERE organization_id = $1 AND is_system = true`,
+    [ORG_ID],
+  );
+  let count = 0;
+  for (const row of cats.rows as Array<{ id: string; system_code: string }>) {
+    const defs = SYS[row.system_code];
+    if (!defs) continue;
+    for (const locale of ['DE', 'FR', 'IT', 'EN'] as const) {
+      const t = defs[locale];
+      await c.query(
+        `INSERT INTO employee_absence_category_translations
+           (category_id, locale, name, description)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (category_id, locale)
+         DO UPDATE SET name = EXCLUDED.name, description = EXCLUDED.description, "updatedAt" = now()`,
+        [row.id, locale, t.name, t.description],
+      );
+      count++;
+    }
+  }
+  console.log(`✓ Resynced ${count} system absence-category translations`);
 }
 
 main().catch((err) => {

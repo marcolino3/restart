@@ -21,6 +21,14 @@ const PERMISSION_CATALOG: Array<{
   { code: PermissionCode.TEAM_MANAGE, name: 'Team verwalten' },
   { code: PermissionCode.EMPLOYEE_READ, name: 'Mitarbeiter lesen' },
   { code: PermissionCode.EMPLOYEE_WRITE, name: 'Mitarbeiter schreiben' },
+  {
+    code: PermissionCode.EMPLOYEE_ABSENCE_CATEGORY_READ,
+    name: 'Absenzkategorien lesen',
+  },
+  {
+    code: PermissionCode.EMPLOYEE_ABSENCE_CATEGORY_MANAGE,
+    name: 'Absenzkategorien verwalten',
+  },
   { code: PermissionCode.TIMESHEET_READ, name: 'Stundenzettel lesen' },
   { code: PermissionCode.TIMESHEET_WRITE, name: 'Stundenzettel schreiben' },
   { code: PermissionCode.SCHOOL_CLASS_READ, name: 'Schulklasse lesen' },
@@ -34,6 +42,28 @@ const PERMISSION_CATALOG: Array<{
     code: PermissionCode.ADMISSION_STAGE_MANAGE,
     name: 'Aufnahmestufen verwalten',
   },
+  {
+    code: PermissionCode.ADMISSION_APPLICATION_READ,
+    name: 'Aufnahme-Bewerbung lesen',
+  },
+  {
+    code: PermissionCode.ADMISSION_APPLICATION_WRITE,
+    name: 'Aufnahme-Bewerbung bearbeiten',
+  },
+  {
+    code: PermissionCode.ADMISSION_APPLICATION_MOVE,
+    name: 'Aufnahme-Bewerbung verschieben (Stage)',
+  },
+  {
+    code: PermissionCode.ADMISSION_APPLICATION_ENROLL,
+    name: 'Aufnahme finalisieren (Einschreibung)',
+  },
+  {
+    code: PermissionCode.ADMISSION_APPLICATION_DELETE,
+    name: 'Aufnahme-Bewerbung archivieren/ablehnen',
+  },
+  { code: PermissionCode.FAMILY_READ, name: 'Familie lesen' },
+  { code: PermissionCode.FAMILY_WRITE, name: 'Familie bearbeiten' },
   {
     code: PermissionCode.CURRICULUM_LEVEL_READ,
     name: 'Curriculum-Stufe lesen',

@@ -1,8 +1,11 @@
 import { Field, InputType } from '@nestjs/graphql';
 import { IsBoolean, IsEnum, IsOptional } from 'class-validator';
+import { LessonRecordConcentration } from '../../enums/lesson-record-concentration.enum';
 import { LessonRecordDifficulty } from '../../enums/lesson-record-difficulty.enum';
 import { LessonRecordEngagement } from '../../enums/lesson-record-engagement.enum';
+import { LessonRecordPersistence } from '../../enums/lesson-record-persistence.enum';
 import { LessonRecordSelfAssessment } from '../../enums/lesson-record-self-assessment.enum';
+import { LessonRecordSelfConfidence } from '../../enums/lesson-record-self-confidence.enum';
 import { LessonRecordSocialForm } from '../../enums/lesson-record-social-form.enum';
 import { RoomMood } from '../../enums/room-mood.enum';
 import { TeacherPreparation } from '../../enums/teacher-preparation.enum';
@@ -66,4 +69,19 @@ export class LessonRecordObservationInput {
   @IsOptional()
   @IsEnum(TeacherStressLevel)
   teacherStressLevel?: TeacherStressLevel | null;
+
+  @Field(() => LessonRecordSelfConfidence, { nullable: true })
+  @IsOptional()
+  @IsEnum(LessonRecordSelfConfidence)
+  selfConfidence?: LessonRecordSelfConfidence | null;
+
+  @Field(() => LessonRecordPersistence, { nullable: true })
+  @IsOptional()
+  @IsEnum(LessonRecordPersistence)
+  persistence?: LessonRecordPersistence | null;
+
+  @Field(() => LessonRecordConcentration, { nullable: true })
+  @IsOptional()
+  @IsEnum(LessonRecordConcentration)
+  concentration?: LessonRecordConcentration | null;
 }

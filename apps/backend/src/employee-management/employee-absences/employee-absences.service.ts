@@ -22,8 +22,14 @@ export class EmployeeAbsencesService {
     input: CreateEmployeeAbsenceNoticeInput,
     user: TokenPayload,
   ) {
-    const { startDate, endDate, note, absenceCategoryId, isTeamInformed } =
-      input;
+    const {
+      startDate,
+      endDate,
+      note,
+      absenceCategoryId,
+      isTeamInformed,
+      isVacationCapable,
+    } = input;
     const { orgId, membershipId } = user;
     return this.entityManager.transaction(async (manager) => {
       const organization = await manager.findOne(Organization, {
@@ -33,10 +39,11 @@ export class EmployeeAbsencesService {
       });
       if (!organization) throw new NotFoundException('Organization not found!');
 
-      // Find Absence Category
+      // Find Absence Category — org-scoped (Multi-Tenant)
       const absenceCategory = await manager.findOne(EmployeeAbsenceCategory, {
         where: {
           id: absenceCategoryId,
+          organizationId: orgId,
         },
       });
       if (!absenceCategory)
@@ -60,6 +67,9 @@ export class EmployeeAbsencesService {
         endDate: new Date(endDate ?? startDate),
         note,
         isTeamInformed,
+        // Ferienfaehigkeit: explizite Eingabe gewinnt, sonst Kategorie-Default
+        isVacationCapable:
+          isVacationCapable ?? absenceCategory.defaultIsVacationCapable,
       });
       const employeeAbsenceSaved = await manager.save(employeeAbsence);
 

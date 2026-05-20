@@ -1,6 +1,7 @@
 import { Address } from '@/addresses/entities/address.entity';
 import { AbstractEntity } from '@/database/abstract.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
+import { Family } from '@/school-management/families/entities/family.entity';
 import { Field, ID, ObjectType } from '@nestjs/graphql';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { RelationshipType } from '../enums/relationship-type.enum';
@@ -11,6 +12,7 @@ import { IContactPerson } from '../interfaces/contact-person.interface';
 @Entity('contact_persons')
 @Index('idx_contact_persons_org', ['organizationId'])
 @Index('idx_contact_persons_email', ['organizationId', 'email'])
+@Index('idx_contact_persons_family', ['familyId'])
 export class ContactPerson
   extends AbstractEntity<ContactPerson>
   implements IContactPerson
@@ -98,6 +100,15 @@ export class ContactPerson
   @Field(() => ID, { nullable: true })
   @Column('uuid', { name: 'user_id', nullable: true })
   userId?: string | null;
+
+  @Field(() => ID, { nullable: true })
+  @Column('uuid', { name: 'family_id', nullable: true })
+  familyId?: string | null;
+
+  @Field(() => Family, { nullable: true })
+  @ManyToOne(() => Family, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'family_id' })
+  family?: Family | null;
 
   @Field(() => String)
   @Column('uuid', { name: 'organization_id' })

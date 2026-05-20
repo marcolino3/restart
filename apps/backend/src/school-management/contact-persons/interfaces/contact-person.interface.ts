@@ -20,5 +20,6 @@ export interface IContactPerson extends IBase {
   notes?: string | null;
   addressId?: string | null;
   userId?: string | null;
+  familyId?: string | null;
   organizationId: string;
 }

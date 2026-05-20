@@ -18,4 +18,21 @@ export class GqlThrottlerGuard extends ThrottlerGuard {
     }
     return super.getRequestResponse(context);
   }
+
+  // SSR sammelt alle Server-Component-Queries einer Seite unter derselben
+  // Loopback-IP — bei aktivem Fast Refresh schlägt das sofort gegen `short:
+  // 10/s`. Außerhalb von Production deshalb Localhost vom Limit ausnehmen.
+  protected async shouldSkip(context: ExecutionContext): Promise<boolean> {
+    if (process.env.NODE_ENV === 'production') {
+      return super.shouldSkip(context);
+    }
+    const { req } = this.getRequestResponse(context);
+    const ip =
+      (req as { ip?: string; ips?: string[] }).ip ??
+      (req as { ips?: string[] }).ips?.[0];
+    if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') {
+      return true;
+    }
+    return super.shouldSkip(context);
+  }
 }

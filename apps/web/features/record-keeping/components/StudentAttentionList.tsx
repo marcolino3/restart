@@ -27,6 +27,10 @@ const REASON_CLS: Record<AttentionReason, string> = {
   STUCK_PRACTICED: "bg-amber-100 text-amber-800 border-amber-300",
   STUCK_INTRODUCED: "bg-sky-100 text-sky-800 border-sky-300",
   BIG_GAP_INTRO_TO_PRACTICED: "bg-slate-100 text-slate-700 border-slate-300",
+  LOW_CONFIDENCE: "bg-rose-100 text-rose-800 border-rose-300",
+  GIVES_UP_PATTERN: "bg-rose-50 text-rose-700 border-rose-200",
+  MATERIAL_TOO_HARD: "bg-amber-100 text-amber-800 border-amber-300",
+  CONFIDENCE_DROP: "bg-rose-100 text-rose-800 border-rose-300",
 };
 
 function StudentAttentionListImpl({

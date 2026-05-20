@@ -1,3 +1,4 @@
+import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
@@ -18,6 +19,7 @@ export class EmployeesResolver {
 
   @Mutation(() => Employee, { name: 'createEmployee' })
   @Permissions('EMPLOYEE_WRITE')
+  @AdminPersonaOnly()
   createEmployee(
     @Args('createEmployeeInput') createEmployeeInput: CreateEmployeeInput,
     @CurrentOrgId() orgId: string,
@@ -30,6 +32,7 @@ export class EmployeesResolver {
 
   @Mutation(() => Employee, { name: 'updateEmployee' })
   @Permissions('EMPLOYEE_WRITE')
+  @AdminPersonaOnly()
   updateEmployee(
     @Args('updateEmployeeInput') updateEmployeeInput: UpdateEmployeeInput,
     @CurrentOrgId() orgId: string,
@@ -56,6 +59,7 @@ export class EmployeesResolver {
 
   @Query(() => Employee, { name: 'employeeById' })
   @Permissions('EMPLOYEE_READ')
+  @AdminPersonaOnly()
   async findEmployeeById(
     @Args('employeeId', { type: () => ID }) employeeId: string,
     @CurrentOrgId() organizationId: string,

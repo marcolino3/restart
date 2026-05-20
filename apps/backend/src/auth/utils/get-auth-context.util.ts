@@ -8,11 +8,13 @@ import { Membership } from '@/memberships/entities/membership.entity';
 import { Role } from '@/roles/entities/role.entity';
 import { Permission } from '@/permissions/entities/permission.entity';
 import { Employee } from '@/employee-management/employees/entities/employee.entity';
+import { Persona } from '@/common/enums/persona.enum';
 
 export type AuthContext = {
   user: User;
   org: Organization;
   membership: Membership;
+  persona: Persona | null;
   roles: Role[];
   permissions: string[]; // Permission.code
   // teams: Team[];
@@ -75,6 +77,7 @@ export async function getAuthContext(
     user,
     org,
     membership: membership ?? ({} as Membership),
+    persona: membership?.persona ?? null,
     roles,
     permissions,
     employee: employee ?? null,

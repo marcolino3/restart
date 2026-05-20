@@ -23,6 +23,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Pencil, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -38,6 +39,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
+import { ColorPickerFormField } from "@/components/form/form-fields/ColorPickerFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { handleAction } from "@/lib/actions/handle-action";
@@ -82,26 +84,55 @@ export function GradeLevelsTable({
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   );
 
+  const [newColor, setNewColor] = React.useState<string | null>(null);
+
   const handleCreate = async () => {
     const name = newName.trim();
     if (!name) return;
     setIsCreating(true);
     await handleAction({
-      action: () => createGradeLevelAction(name),
+      action: () => createGradeLevelAction(name, newColor ?? undefined),
       successMessage: t("gradeLevelCreated"),
       errorMessage: t("gradeLevelCreateError"),
       onSuccess: (data) => {
         if (data) {
           setItems((prev) => [
             ...prev,
-            { id: data.id, name: data.name, sortOrder: data.sortOrder },
+            {
+              id: data.id,
+              name: data.name,
+              color: data.color,
+              sortOrder: data.sortOrder,
+            },
           ]);
         }
         setNewName("");
+        setNewColor(null);
         router.refresh();
       },
     });
     setIsCreating(false);
+  };
+
+  const handleColorChange = async (id: string, color: string | null) => {
+    const original = items.find((i) => i.id === id);
+    if (!original || original.color === color) return;
+    setItems((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, color } : it)),
+    );
+    const result = await handleAction({
+      action: () => updateGradeLevelAction({ id, color }),
+      successMessage: t("gradeLevelUpdated"),
+      errorMessage: t("gradeLevelUpdateError"),
+      onSuccess: () => router.refresh(),
+    });
+    if (!result.success) {
+      setItems((prev) =>
+        prev.map((it) =>
+          it.id === id ? { ...it, color: original.color } : it,
+        ),
+      );
+    }
   };
 
   const handleCreateKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -135,14 +166,20 @@ export function GradeLevelsTable({
     if (!editing) return;
     await handleAction({
       action: () =>
-        updateGradeLevelAction({ id: editing.id, name: values.name }),
+        updateGradeLevelAction({
+          id: editing.id,
+          name: values.name,
+          color: values.color ?? null,
+        }),
       successMessage: t("gradeLevelUpdated"),
       errorMessage: t("gradeLevelUpdateError"),
       onSuccess: (data) => {
         if (data) {
           setItems((prev) =>
             prev.map((it) =>
-              it.id === data.id ? { ...it, name: data.name } : it,
+              it.id === data.id
+                ? { ...it, name: data.name, color: data.color }
+                : it,
             ),
           );
         }
@@ -170,6 +207,12 @@ export function GradeLevelsTable({
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={handleCreateKeyDown}
           aria-label={t("name")}
+        />
+        <ColorPicker
+          value={newColor}
+          onChange={setNewColor}
+          allowClear
+          ariaLabel={t("color")}
         />
         <Button
           onClick={() => void handleCreate()}
@@ -202,6 +245,7 @@ export function GradeLevelsTable({
                   inUse={usedIds.has(item.id)}
                   onEdit={() => setEditing(item)}
                   onDelete={() => handleDelete(item.id)}
+                  onColorChange={(c) => void handleColorChange(item.id, c)}
                 />
               ))}
             </ul>
@@ -225,9 +269,16 @@ interface SortableRowProps {
   inUse: boolean;
   onEdit: () => void;
   onDelete: () => Promise<{ success: boolean; error?: unknown }>;
+  onColorChange: (color: string | null) => void;
 }
 
-function SortableRow({ item, inUse, onEdit, onDelete }: SortableRowProps) {
+function SortableRow({
+  item,
+  inUse,
+  onEdit,
+  onDelete,
+  onColorChange,
+}: SortableRowProps) {
   const t = useTranslations("GradeLevels");
   const {
     attributes,
@@ -258,6 +309,13 @@ function SortableRow({ item, inUse, onEdit, onDelete }: SortableRowProps) {
         >
           <GripVertical className="h-4 w-4" />
         </span>
+        <ColorPicker
+          size="sm"
+          value={item.color}
+          onChange={onColorChange}
+          allowClear
+          ariaLabel={t("color")}
+        />
         <span className="flex-1 truncate text-sm font-medium">{item.name}</span>
         {inUse && (
           <Badge variant="secondary" className="text-xs">
@@ -309,7 +367,7 @@ function EditGradeLevelDialog({ item, onOpenChange, onSubmit }: EditDialogProps)
 
   const form = useForm<GradeLevelFormType>({
     resolver: zodResolver(GradeLevelFormSchema),
-    defaultValues: { name: item.name },
+    defaultValues: { name: item.name, color: item.color ?? null },
   });
 
   return (
@@ -325,6 +383,11 @@ function EditGradeLevelDialog({ item, onOpenChange, onSubmit }: EditDialogProps)
             id="edit-grade-level-form"
           >
             <InputFormField name="name" label="name" namespace="GradeLevels" />
+            <ColorPickerFormField
+              name="color"
+              label="color"
+              namespace="GradeLevels"
+            />
           </form>
         </Form>
         <DialogFooter>

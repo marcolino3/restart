@@ -5,8 +5,10 @@ import { updateTag } from "next/cache";
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import {
   classroomAttentionTag,
+  classroomEngagementTimelineTag,
   classroomHeatmapTag,
   studentLessonRecordsTag,
+  studentTimelineTag,
 } from "../lib/cache-tags";
 import type {
   LessonRecordDTO,
@@ -58,10 +60,12 @@ export const updateLessonRecordAction = async (
 
     if (updateLessonRecord?.studentId) {
       updateTag(studentLessonRecordsTag(updateLessonRecord.studentId));
+      updateTag(studentTimelineTag(updateLessonRecord.studentId));
     }
     if (schoolClassId) {
       updateTag(classroomAttentionTag(schoolClassId));
       updateTag(classroomHeatmapTag(schoolClassId));
+      updateTag(classroomEngagementTimelineTag(schoolClassId));
     }
 
     return { success: true as const, data: updateLessonRecord };

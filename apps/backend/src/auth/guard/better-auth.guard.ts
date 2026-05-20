@@ -15,6 +15,11 @@ import { EntityManager } from 'typeorm';
 import { PERMS_KEY } from '@/auth/decorators/permissions.decorator';
 import { ROLES_KEY } from '@/auth/decorators/roles.decorator';
 import { SUPER_ADMIN_KEY } from '@/auth/decorators/super-admin.decorator';
+import { ADMIN_PERSONA_KEY } from '@/auth/decorators/admin-persona-only.decorator';
+import {
+  isAdminPersona,
+  requiresAdminPersona,
+} from '@/auth/constants/admin-persona.const';
 import { getAuthContext } from '@/auth/utils/get-auth-context.util';
 import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { auth } from '@/lib/auth';
@@ -58,6 +63,7 @@ export class BetterAuthGuard implements CanActivate {
         sub: dbUser.id,
         orgId,
         membershipId: ctx.membership?.id,
+        persona: ctx.persona ?? undefined,
         roles: ctx.roles
           .map((r) => r.name)
           .filter((n): n is string => Boolean(n)),
@@ -78,16 +84,27 @@ export class BetterAuthGuard implements CanActivate {
     const superAdminOnly =
       this.reflector.getAllAndOverride<boolean>(SUPER_ADMIN_KEY, handlers) ??
       false;
+    const adminPersonaOnly =
+      this.reflector.getAllAndOverride<boolean>(ADMIN_PERSONA_KEY, handlers) ??
+      false;
     const rolesReq =
       this.reflector.getAllAndOverride<SystemRole[]>(ROLES_KEY, handlers) ?? [];
     const permsReq =
       this.reflector.getAllAndOverride<string[]>(PERMS_KEY, handlers) ?? [];
 
-    if (!superAdminOnly && rolesReq.length === 0 && permsReq.length === 0) {
+    if (
+      !superAdminOnly &&
+      !adminPersonaOnly &&
+      rolesReq.length === 0 &&
+      permsReq.length === 0
+    ) {
       return true;
     }
     if (payload.isSuperAdmin) return true;
     if (superAdminOnly) throw new ForbiddenException('SuperAdmin only');
+    if (adminPersonaOnly && !isAdminPersona(payload.persona)) {
+      throw new ForbiddenException('Access denied (admin persona required)');
+    }
 
     const roleOk =
       rolesReq.length === 0 ||
@@ -100,6 +117,10 @@ export class BetterAuthGuard implements CanActivate {
 
     if (!roleOk && !permOk) {
       throw new ForbiddenException('Access denied (roles/permissions)');
+    }
+
+    if (requiresAdminPersona(permsReq) && !isAdminPersona(payload.persona)) {
+      throw new ForbiddenException('Access denied (admin persona required)');
     }
     return true;
   }

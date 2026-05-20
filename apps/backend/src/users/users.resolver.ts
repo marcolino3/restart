@@ -44,6 +44,7 @@ export class UsersResolver {
       roles: user.roles ?? [],
       permissions: user.permissions ?? [],
       orgId: user.orgId,
+      persona: user.persona,
       isSuperAdmin: user.isSuperAdmin ?? false,
     };
   }

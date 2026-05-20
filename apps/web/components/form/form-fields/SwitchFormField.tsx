@@ -18,6 +18,7 @@ interface Props {
   description?: string;
   width?: string;
   className?: string;
+  disabled?: boolean;
   /** i18n namespace for `label` + `description`. Default `"Common"`. */
   namespace?: string;
 }
@@ -28,6 +29,7 @@ export const SwitchFormField = ({
   description,
   width = "w-full",
   className,
+  disabled = false,
   namespace = "Common",
 }: Props) => {
   const t = useTranslations(namespace);
@@ -38,13 +40,21 @@ export const SwitchFormField = ({
       name={name}
       control={control}
       render={({ field }) => (
-        <FormItem className={cn(className, width, "flex flex-col gap-2")}>
+        <FormItem
+          className={cn(
+            className,
+            width,
+            "flex flex-col gap-2",
+            disabled && "opacity-60",
+          )}
+        >
           <div className="flex items-center space-x-3">
             <FormControl>
               <Switch
                 id={name}
                 checked={field.value}
                 onCheckedChange={field.onChange}
+                disabled={disabled}
               />
             </FormControl>
             <div className="grid gap-1.5">
@@ -57,7 +67,7 @@ export const SwitchFormField = ({
                 </FormLabel>
               )}
               {description && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {t(description)}
                 </p>
               )}

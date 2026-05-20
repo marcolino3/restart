@@ -29,4 +29,10 @@ export class CreateEmployeeAbsenceNoticeInput {
   @Field(() => Boolean)
   @IsBoolean()
   isTeamInformed: boolean;
+
+  // Optional: ueberschreibt den Kategorie-Default (z.B. trotz Krankheit ferienfaehig)
+  @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  isVacationCapable?: boolean;
 }

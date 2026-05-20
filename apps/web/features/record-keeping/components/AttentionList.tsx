@@ -27,6 +27,10 @@ const REASON_CLS: Record<AttentionReason, string> = {
   STUCK_PRACTICED: "bg-amber-100 text-amber-800 border-amber-300",
   STUCK_INTRODUCED: "bg-sky-100 text-sky-800 border-sky-300",
   BIG_GAP_INTRO_TO_PRACTICED: "bg-slate-100 text-slate-700 border-slate-300",
+  LOW_CONFIDENCE: "bg-rose-100 text-rose-800 border-rose-300",
+  GIVES_UP_PATTERN: "bg-rose-50 text-rose-700 border-rose-200",
+  MATERIAL_TOO_HARD: "bg-amber-100 text-amber-800 border-amber-300",
+  CONFIDENCE_DROP: "bg-rose-100 text-rose-800 border-rose-300",
 };
 
 function AttentionListImpl({
@@ -62,6 +66,7 @@ function AttentionListImpl({
           <ul className="flex flex-col gap-2">
             {visible.map((item) => {
               const reasonText = renderReason(t, item);
+              const titleText = item.lessonName || t(`attentionTitle_${item.reason}` as const);
               return (
                 <li
                   key={`${item.lessonId}-${item.reason}`}
@@ -69,7 +74,7 @@ function AttentionListImpl({
                 >
                   <div className="flex items-start gap-2 flex-wrap">
                     <span className="text-sm font-medium flex-1 min-w-0 truncate">
-                      {item.lessonName}
+                      {titleText}
                     </span>
                     <Badge
                       variant="outline"
@@ -81,7 +86,9 @@ function AttentionListImpl({
                       {reasonText}
                     </Badge>
                   </div>
-                  <LessonBreadcrumb ancestors={item.ancestors} />
+                  {item.ancestors.length > 0 && (
+                    <LessonBreadcrumb ancestors={item.ancestors} />
+                  )}
                 </li>
               );
             })}
@@ -134,5 +141,13 @@ function renderReason(
       return t("attentionReasonStuckIntroduced", { days: item.days ?? 0 });
     case "BIG_GAP_INTRO_TO_PRACTICED":
       return t("attentionReasonBigGap", { days: item.days ?? 0 });
+    case "LOW_CONFIDENCE":
+      return t("attentionReasonLowConfidence", { pct: item.days ?? 0 });
+    case "GIVES_UP_PATTERN":
+      return t("attentionReasonGivesUp", { pct: item.days ?? 0 });
+    case "MATERIAL_TOO_HARD":
+      return t("attentionReasonMaterialTooHard", { pct: item.days ?? 0 });
+    case "CONFIDENCE_DROP":
+      return t("attentionReasonConfidenceDrop");
   }
 }

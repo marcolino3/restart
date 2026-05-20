@@ -77,6 +77,7 @@ export class GqlBetterAuthGuard implements CanActivate {
         sub: dbUser.id,
         orgId,
         membershipId: ctx.membership?.id,
+        persona: ctx.persona ?? undefined,
         roles: ctx.roles
           .map((r) => r.name)
           .filter((n): n is string => Boolean(n)),

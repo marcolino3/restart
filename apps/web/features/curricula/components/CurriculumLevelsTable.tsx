@@ -50,6 +50,29 @@ interface Props {
 
 type LevelRow = CurriculumLevelDTO & { name: string };
 
+function nodeListsStructurallyEqual(
+  a: CurriculumNodeDTO[],
+  b: CurriculumNodeDTO[],
+): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const x = a[i];
+    const y = b[i];
+    if (
+      x.id !== y.id ||
+      x.parentId !== y.parentId ||
+      x.position !== y.position ||
+      x.isArchived !== y.isArchived ||
+      x.lessonType !== y.lessonType ||
+      x.lessonScale !== y.lessonScale ||
+      x.nodeType !== y.nodeType
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function CurriculumLevelsTable({
   curriculumId,
   levels,
@@ -77,8 +100,22 @@ export function CurriculumLevelsTable({
   const [treeExpandSignal, setTreeExpandSignal] = useState(0);
   const [treeCollapseSignal, setTreeCollapseSignal] = useState(0);
 
+  // Only swap when the server data actually changed structurally. Locale
+  // switches / router.refresh re-emit fresh Map refs but the underlying
+  // node lists are identical — replacing them would tear down the child
+  // CurriculumLevelTree's @dnd-kit sortable items and kill drag.
   useEffect(() => {
-    if (initialNodesByLevel) setNodesByLevel(initialNodesByLevel);
+    if (!initialNodesByLevel) return;
+    setNodesByLevel((prev) => {
+      if (prev.size !== initialNodesByLevel.size) return initialNodesByLevel;
+      for (const [levelId, nextNodes] of initialNodesByLevel) {
+        const prevNodes = prev.get(levelId);
+        if (!prevNodes || !nodeListsStructurallyEqual(prevNodes, nextNodes)) {
+          return initialNodesByLevel;
+        }
+      }
+      return prev;
+    });
   }, [initialNodesByLevel]);
 
   const data = useMemo<LevelRow[]>(

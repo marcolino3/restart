@@ -2,6 +2,7 @@ import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
+import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { UseGuards } from '@nestjs/common';
@@ -13,6 +14,7 @@ import { UpsertEmployeeEmergencyProfileInput } from './dto/upsert-employee-emerg
 
 @Resolver(() => EmployeeEmergencyProfile)
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
+@AdminPersonaOnly()
 export class EmployeeEmergencyResolver {
   constructor(private readonly service: EmployeeEmergencyService) {}
 

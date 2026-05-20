@@ -1,6 +1,8 @@
 import { getEmployeesAction } from "@/features/employees/actions/get-employees.action";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
+import { isAdminPersona } from "@/features/users/lib/admin-persona";
 import { EmployeesTable } from "@/features/employees/components/EmployeesTable";
+import { EmployeesCardGrid } from "@/features/employees/components/EmployeesCardGrid";
 import { EmployeesCsvUpload } from "@/features/employees/components/EmployeesCsvUpload";
 import { ROUTES } from "@/constants/routes";
 import { Button } from "@/components/ui/button";
@@ -22,24 +24,32 @@ const EmployeesPage = async () => {
     );
   }
 
+  const canSeeDetails =
+    userRes.data.isSuperAdmin || isAdminPersona(userRes.data.persona);
   const { success, data } = await getEmployeesAction();
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">{t("employees")}</h1>
-        <div className="flex items-center gap-2">
-          <EmployeesCsvUpload />
-          <Button asChild>
-            <Link href={ROUTES.admin.employeesCreate(locale)}>
-              <PlusIcon className="mr-2 h-4 w-4" />
-              {tC("createEmployee")}
-            </Link>
-          </Button>
-        </div>
+        {canSeeDetails && (
+          <div className="flex items-center gap-2">
+            <EmployeesCsvUpload />
+            <Button asChild>
+              <Link href={ROUTES.admin.employeesCreate(locale)}>
+                <PlusIcon className="mr-2 h-4 w-4" />
+                {tC("createEmployee")}
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
       {success && data && data.length > 0 ? (
-        <EmployeesTable data={data} />
+        canSeeDetails ? (
+          <EmployeesTable data={data} />
+        ) : (
+          <EmployeesCardGrid data={data} />
+        )
       ) : (
         <p className="text-muted-foreground">{t("noEmployeesFound")}</p>
       )}

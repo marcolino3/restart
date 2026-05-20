@@ -74,6 +74,7 @@ export const LessonFirstBulkEntry = ({ lessons }: Props) => {
       note: "",
       observation: EMPTY_OBSERVATION,
       perChildObservations: {},
+      perChildNotes: {},
     },
   });
 
@@ -85,6 +86,8 @@ export const LessonFirstBulkEntry = ({ lessons }: Props) => {
     (form.watch("perChildObservations") as
       | Record<string, LessonRecordObservation>
       | undefined) ?? {};
+  const perChildNotes =
+    (form.watch("perChildNotes") as Record<string, string> | undefined) ?? {};
   const selectedStudents = useMemo(
     () => students.filter((s) => studentIds.includes(s.studentId)),
     [students, studentIds],
@@ -171,6 +174,10 @@ export const LessonFirstBulkEntry = ({ lessons }: Props) => {
         string,
         LessonRecordObservation
       >;
+      const noteOverrides = (values.perChildNotes ?? {}) as Record<
+        string,
+        string
+      >;
 
       const res = await createLessonRecordsBulkAction(
         {
@@ -192,17 +199,30 @@ export const LessonFirstBulkEntry = ({ lessons }: Props) => {
       // Apply per-child overrides as individual updates against the just-
       // created records. Best-effort: report partial failures via toast,
       // never block the success of the bulk-create itself.
-      const overrideEntries = Object.entries(overrides).filter(
-        ([, obs]) => obs && Object.values(obs).some((v) => v != null && v !== false),
-      );
-      if (overrideEntries.length > 0) {
+      const obsHasValues = (obs: LessonRecordObservation | undefined) =>
+        !!obs && Object.values(obs).some((v) => v != null && v !== false);
+      const overrideStudentIds = new Set<string>([
+        ...Object.entries(overrides)
+          .filter(([, obs]) => obsHasValues(obs))
+          .map(([sid]) => sid),
+        ...Object.entries(noteOverrides)
+          .filter(([, note]) => (note ?? "").trim().length > 0)
+          .map(([sid]) => sid),
+      ]);
+      if (overrideStudentIds.size > 0) {
         const byStudent = new Map(res.data.map((r) => [r.studentId, r.id]));
         const results = await Promise.all(
-          overrideEntries.map(([sid, obs]) => {
+          Array.from(overrideStudentIds).map((sid) => {
             const recordId = byStudent.get(sid);
             if (!recordId) return Promise.resolve({ success: false } as const);
+            const obs = overrides[sid];
+            const note = noteOverrides[sid]?.trim();
             return updateLessonRecordAction(
-              { id: recordId, observation: obs },
+              {
+                id: recordId,
+                ...(obsHasValues(obs) ? { observation: obs } : {}),
+                ...(note ? { note } : {}),
+              },
               schoolClassId,
             );
           }),
@@ -214,7 +234,7 @@ export const LessonFirstBulkEntry = ({ lessons }: Props) => {
           );
         } else {
           toast.warning(t("observationOverridesPartialFailureToast"), {
-            description: `${failed}/${overrideEntries.length}`,
+            description: `${failed}/${overrideStudentIds.size}`,
           });
         }
       }
@@ -223,6 +243,7 @@ export const LessonFirstBulkEntry = ({ lessons }: Props) => {
       form.setValue("studentIds", []);
       form.setValue("note", "");
       form.setValue("perChildObservations", {});
+      form.setValue("perChildNotes", {});
     });
   };
 
@@ -353,6 +374,7 @@ export const LessonFirstBulkEntry = ({ lessons }: Props) => {
                 </span>
               </div>
               <ObservationBadgeRow
+                collapsibleChildren
                 value={observation}
                 onChange={(next) =>
                   form.setValue("observation", next, { shouldDirty: true })
@@ -366,6 +388,12 @@ export const LessonFirstBulkEntry = ({ lessons }: Props) => {
                 overrides={perChildObservations}
                 onChange={(next) =>
                   form.setValue("perChildObservations", next, {
+                    shouldDirty: true,
+                  })
+                }
+                notes={perChildNotes}
+                onNotesChange={(next) =>
+                  form.setValue("perChildNotes", next, {
                     shouldDirty: true,
                   })
                 }

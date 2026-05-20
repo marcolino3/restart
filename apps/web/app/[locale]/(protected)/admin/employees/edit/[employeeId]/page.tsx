@@ -4,6 +4,7 @@ import { getEmployeeAuditLogAction } from "@/features/employees/actions/get-empl
 import { getEmployeeHrProfileAction } from "@/features/employees/actions/get-employee-hr-profile.action";
 import { getEmployeeEmergencyProfileAction } from "@/features/employees/actions/get-employee-emergency-profile.action";
 import { getEmployeeContractsAction } from "@/features/employees/actions/employee-contracts.actions";
+import { requireAdminPersona } from "@/features/users/guards/require-admin-persona";
 import EmployeeEditView from "@/features/employees/components/EmployeeEditView";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -13,6 +14,7 @@ interface Props {
 }
 
 const EditEmployeePage = async ({ params }: Props) => {
+  await requireAdminPersona();
   const { employeeId } = await params;
   const t = await getTranslations("Employees");
 

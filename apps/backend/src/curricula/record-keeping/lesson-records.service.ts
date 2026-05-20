@@ -24,6 +24,11 @@ import {
   HeatmapCellOutput,
   HeatmapStudentOutput,
 } from './dto/classroom-heatmap.output';
+import {
+  EngagementTimelineOutput,
+  StudentTimelineOutput,
+  TimelineGranularity,
+} from './dto/timeline.output';
 import { LessonRecordStatus } from '../enums/lesson-record-status.enum';
 import { LessonRecord } from './entities/lesson-record.entity';
 import {
@@ -645,6 +650,232 @@ export class LessonRecordsService {
     return { students, areas, cells };
   }
 
+  /**
+   * Pro Kind aggregierte Timeline der Lesson-Records, gebuckt nach
+   * date_trunc(granularity). Liefert pro Bucket die Counts pro Status.
+   *
+   * Multi-Tenant: organizationId-Filter. Row-Level-Visibility prüft der
+   * Resolver vorab via studentsService.assertStudentVisibleToUser.
+   */
+  async getStudentTimeline(
+    studentId: string,
+    organizationId: string,
+    from: string,
+    to: string,
+    granularity: TimelineGranularity,
+  ): Promise<StudentTimelineOutput> {
+    const pgUnit = this.toPgDateTruncUnit(granularity);
+
+    const rows = await this.recordsRepo.query<
+      Array<{
+        bucket_start: string;
+        status: string;
+        count: string;
+      }>
+    >(
+      `SELECT date_trunc($1, r.recorded_at)::date::text AS bucket_start,
+              r.status::text AS status,
+              COUNT(*)::int AS count
+         FROM lesson_records r
+        WHERE r.organization_id = $2
+          AND r.student_id = $3
+          AND r.recorded_at >= $4::date
+          AND r.recorded_at <= $5::date
+        GROUP BY 1, 2
+        ORDER BY 1 ASC`,
+      [pgUnit, organizationId, studentId, from, to],
+    );
+
+    const byBucket = new Map<
+      string,
+      {
+        planning: number;
+        introduced: number;
+        practiced: number;
+        mastered: number;
+        needsMore: number;
+      }
+    >();
+    for (const row of rows) {
+      const bucket = byBucket.get(row.bucket_start) ?? {
+        planning: 0,
+        introduced: 0,
+        practiced: 0,
+        mastered: 0,
+        needsMore: 0,
+      };
+      const count = Number(row.count);
+      switch (row.status as LessonRecordStatus) {
+        case LessonRecordStatus.PLANNING:
+          bucket.planning += count;
+          break;
+        case LessonRecordStatus.INTRODUCED:
+          bucket.introduced += count;
+          break;
+        case LessonRecordStatus.PRACTICED:
+          bucket.practiced += count;
+          break;
+        case LessonRecordStatus.MASTERED:
+          bucket.mastered += count;
+          break;
+        case LessonRecordStatus.NEEDS_MORE:
+          bucket.needsMore += count;
+          break;
+      }
+      byBucket.set(row.bucket_start, bucket);
+    }
+
+    const buckets = Array.from(byBucket.entries())
+      .map(([bucketStart, counts]) => ({
+        bucketStart,
+        ...counts,
+        total:
+          counts.planning +
+          counts.introduced +
+          counts.practiced +
+          counts.mastered +
+          counts.needsMore,
+      }))
+      .sort((a, b) => a.bucketStart.localeCompare(b.bucketStart));
+
+    const totalIntroductionsInRange = buckets.reduce(
+      (sum, b) => sum + b.introduced,
+      0,
+    );
+
+    // Letzte INTRODUCED-Aufzeichnung — unabhängig vom range (für die
+    // Impact-Warnung "seit X Tagen keine Einführung").
+    const lastIntro = await this.recordsRepo
+      .createQueryBuilder('r')
+      .select('MAX(r.recorded_at)', 'last')
+      .where('r.organization_id = :orgId', { orgId: organizationId })
+      .andWhere('r.student_id = :sid', { sid: studentId })
+      .andWhere('r.status = :st', { st: LessonRecordStatus.INTRODUCED })
+      .getRawOne<{ last: string | null }>();
+
+    let daysSinceLastIntroduction: number | null = null;
+    if (lastIntro?.last) {
+      const lastDate = new Date(lastIntro.last);
+      const today = new Date();
+      const diffMs = today.getTime() - lastDate.getTime();
+      daysSinceLastIntroduction = Math.max(
+        0,
+        Math.floor(diffMs / (1000 * 60 * 60 * 24)),
+      );
+    }
+
+    return {
+      buckets,
+      totalIntroductionsInRange,
+      daysSinceLastIntroduction,
+    };
+  }
+
+  /**
+   * Engagement-Verlauf der Klasse: pro Bucket die Anzahl Records pro
+   * Engagement-Level (NULL-Werte fliessen nicht ein).
+   *
+   * Multi-Tenant: organizationId-Filter; Visibility prüft der Resolver.
+   */
+  async getClassroomEngagementTimeline(
+    schoolClassId: string,
+    organizationId: string,
+    from: string,
+    to: string,
+    granularity: TimelineGranularity,
+  ): Promise<EngagementTimelineOutput> {
+    const pgUnit = this.toPgDateTruncUnit(granularity);
+
+    const rows = await this.recordsRepo.query<
+      Array<{
+        bucket_start: string;
+        engagement: string;
+        count: string;
+      }>
+    >(
+      `SELECT date_trunc($1, r.recorded_at)::date::text AS bucket_start,
+              r.engagement::text AS engagement,
+              COUNT(*)::int AS count
+         FROM lesson_records r
+        WHERE r.organization_id = $2
+          AND r.engagement IS NOT NULL
+          AND r.recorded_at >= $3::date
+          AND r.recorded_at <= $4::date
+          AND r.student_id IN (
+            SELECT DISTINCT e.student_id
+              FROM school_class_enrollments e
+             WHERE e.school_class_id = $5
+               AND e.organization_id = $2
+               AND e."isActive" = true
+               AND (e.left_at IS NULL OR e.left_at >= $3::date)
+          )
+        GROUP BY 1, 2
+        ORDER BY 1 ASC`,
+      [pgUnit, organizationId, from, to, schoolClassId],
+    );
+
+    const byBucket = new Map<
+      string,
+      {
+        focused: number;
+        interested: number;
+        mechanical: number;
+        resistant: number;
+      }
+    >();
+    for (const row of rows) {
+      const bucket = byBucket.get(row.bucket_start) ?? {
+        focused: 0,
+        interested: 0,
+        mechanical: 0,
+        resistant: 0,
+      };
+      const count = Number(row.count);
+      switch (row.engagement) {
+        case 'FOCUSED':
+          bucket.focused += count;
+          break;
+        case 'INTERESTED':
+          bucket.interested += count;
+          break;
+        case 'MECHANICAL':
+          bucket.mechanical += count;
+          break;
+        case 'RESISTANT':
+          bucket.resistant += count;
+          break;
+      }
+      byBucket.set(row.bucket_start, bucket);
+    }
+
+    const buckets = Array.from(byBucket.entries())
+      .map(([bucketStart, counts]) => ({
+        bucketStart,
+        ...counts,
+        total:
+          counts.focused +
+          counts.interested +
+          counts.mechanical +
+          counts.resistant,
+      }))
+      .sort((a, b) => a.bucketStart.localeCompare(b.bucketStart));
+
+    const totalObserved = buckets.reduce((sum, b) => sum + b.total, 0);
+
+    return { buckets, totalObserved };
+  }
+
+  private toPgDateTruncUnit(g: TimelineGranularity): 'day' | 'week' | 'month' {
+    switch (g) {
+      case TimelineGranularity.DAY:
+        return 'day';
+      case TimelineGranularity.WEEK:
+        return 'week';
+      case TimelineGranularity.MONTH:
+        return 'month';
+    }
+  }
+
   private async assertLessonInOrg(
     lessonId: string,
     organizationId: string,
@@ -705,6 +936,9 @@ export class LessonRecordsService {
       teacherPreparation: input.teacherPreparation ?? null,
       roomMood: input.roomMood ?? null,
       teacherStressLevel: input.teacherStressLevel ?? null,
+      selfConfidence: input.selfConfidence ?? null,
+      persistence: input.persistence ?? null,
+      concentration: input.concentration ?? null,
     };
     if (input.selfAssessmentByChild !== undefined) {
       slice.selfAssessmentByChild = input.selfAssessmentByChild;
@@ -734,6 +968,9 @@ export class LessonRecordsService {
       record.teacherPreparation = null;
       record.roomMood = null;
       record.teacherStressLevel = null;
+      record.selfConfidence = null;
+      record.persistence = null;
+      record.concentration = null;
       return;
     }
     if (input.engagement !== undefined) record.engagement = input.engagement;
@@ -754,6 +991,13 @@ export class LessonRecordsService {
     if (input.roomMood !== undefined) record.roomMood = input.roomMood;
     if (input.teacherStressLevel !== undefined) {
       record.teacherStressLevel = input.teacherStressLevel;
+    }
+    if (input.selfConfidence !== undefined) {
+      record.selfConfidence = input.selfConfidence;
+    }
+    if (input.persistence !== undefined) record.persistence = input.persistence;
+    if (input.concentration !== undefined) {
+      record.concentration = input.concentration;
     }
     this.assertSelfAssessmentSourceConsistent(
       record.selfAssessmentByChild,

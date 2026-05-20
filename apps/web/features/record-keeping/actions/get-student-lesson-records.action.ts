@@ -8,7 +8,16 @@ import {
 } from "@/lib/graphql/server-cookie-graphql-client";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 import { studentLessonRecordsTag } from "../lib/cache-tags";
-import type { LessonRecordStatus } from "../types";
+import type {
+  LessonRecordConcentration,
+  LessonRecordDifficulty,
+  LessonRecordEngagement,
+  LessonRecordPersistence,
+  LessonRecordSelfAssessment,
+  LessonRecordSelfConfidence,
+  LessonRecordSocialForm,
+  LessonRecordStatus,
+} from "../types";
 
 export type StudentLessonRecordItem = {
   id: string;
@@ -16,6 +25,16 @@ export type StudentLessonRecordItem = {
   recordedAt: string;
   status: LessonRecordStatus;
   note?: string | null;
+  // Per-child Hattie-/Montessori-Beobachtungsbadges (alle optional).
+  engagement?: LessonRecordEngagement | null;
+  difficulty?: LessonRecordDifficulty | null;
+  socialForm?: LessonRecordSocialForm | null;
+  selfAssessment?: LessonRecordSelfAssessment | null;
+  selfAssessmentByChild?: boolean | null;
+  lessonClarityConfirmed?: boolean | null;
+  selfConfidence?: LessonRecordSelfConfidence | null;
+  persistence?: LessonRecordPersistence | null;
+  concentration?: LessonRecordConcentration | null;
   lesson?: {
     id: string;
     position: number;
@@ -42,6 +61,15 @@ const Document = gql`
       recordedAt
       status
       note
+      engagement
+      difficulty
+      socialForm
+      selfAssessment
+      selfAssessmentByChild
+      lessonClarityConfirmed
+      selfConfidence
+      persistence
+      concentration
       lesson {
         id
         position

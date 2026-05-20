@@ -10,18 +10,25 @@ const UpdateGradeLevelDocument = gql`
     updateGradeLevel(input: $input) {
       id
       name
+      color
       sortOrder
     }
   }
 `;
 
 type UpdateGradeLevelResponse = {
-  updateGradeLevel: { id: string; name: string; sortOrder: number };
+  updateGradeLevel: {
+    id: string;
+    name: string;
+    color: string | null;
+    sortOrder: number;
+  };
 };
 
 export const updateGradeLevelAction = async (input: {
   id: string;
-  name: string;
+  name?: string;
+  color?: string | null;
 }) => {
   const locale = await getLocale();
   const client = await serverCookieGqlClient();

@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
@@ -42,6 +43,9 @@ export function SiteHeader() {
           className="mx-2 data-[orientation=vertical]:h-4"
         />
         <h1 className="text-base font-medium">{t(titleKey)}</h1>
+        <div className="ml-auto flex items-center gap-2">
+          <LanguageSwitcher />
+        </div>
       </div>
     </header>
   );

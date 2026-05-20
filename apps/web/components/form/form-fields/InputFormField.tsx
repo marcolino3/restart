@@ -21,6 +21,7 @@ interface Props {
   type?: string;
   width?: string;
   className?: string;
+  disabled?: boolean;
   onChange?: () => void;
   onBlur?: () => void;
   /**
@@ -40,6 +41,7 @@ export const InputFormField = ({
   type = "text",
   width = "w-full",
   className,
+  disabled = false,
   onChange: onChangeProp,
   onBlur: onBlurProp,
   namespace = "Common",
@@ -52,18 +54,19 @@ export const InputFormField = ({
       name={name}
       control={control}
       render={({ field }) => (
-        <FormItem className={cn(className, width)}>
+        <FormItem className={cn(className, width, disabled && "opacity-60")}>
           {label && <FormLabel>{t(label)}</FormLabel>}
           <FormControl>
             <Input
               {...field}
               type={type}
               placeholder={placeholder}
+              disabled={disabled}
               onChange={(e) => {
                 field.onChange(e);
                 onChangeProp?.();
               }}
-              onBlur={(e) => {
+              onBlur={() => {
                 field.onBlur();
                 onBlurProp?.();
               }}

@@ -50,6 +50,10 @@ export class Student extends AbstractEntity<Student> implements IStudent {
   @JoinColumn({ name: 'admission_stage_id' })
   admissionStage?: AdmissionStage | null;
 
+  @Field(() => ID, { nullable: true })
+  @Column('uuid', { name: 'admission_application_id', nullable: true })
+  admissionApplicationId?: string | null;
+
   @Field(() => String)
   @Column('uuid', { name: 'organization_id' })
   organizationId: string;

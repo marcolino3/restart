@@ -3,7 +3,8 @@ terraform {
 
   required_providers {
     infomaniak = {
-      source = "infomaniak/infomaniak"
+      source  = "Infomaniak/infomaniak"
+      version = "~> 1.4"
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"

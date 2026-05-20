@@ -6,9 +6,12 @@ import { User } from '@/users/entities/user.entity';
 import { Field, ID, ObjectType } from '@nestjs/graphql';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { CurriculumNode } from '../../entities/curriculum-node.entity';
+import { LessonRecordConcentration } from '../../enums/lesson-record-concentration.enum';
 import { LessonRecordDifficulty } from '../../enums/lesson-record-difficulty.enum';
 import { LessonRecordEngagement } from '../../enums/lesson-record-engagement.enum';
+import { LessonRecordPersistence } from '../../enums/lesson-record-persistence.enum';
 import { LessonRecordSelfAssessment } from '../../enums/lesson-record-self-assessment.enum';
+import { LessonRecordSelfConfidence } from '../../enums/lesson-record-self-confidence.enum';
 import { LessonRecordSocialForm } from '../../enums/lesson-record-social-form.enum';
 import { LessonRecordStatus } from '../../enums/lesson-record-status.enum';
 import { RoomMood } from '../../enums/room-mood.enum';
@@ -171,4 +174,31 @@ export class LessonRecord
     nullable: true,
   })
   teacherStressLevel?: TeacherStressLevel | null;
+
+  // ─── Erweiterte Hattie-/Montessori-Achsen (per Kind)
+
+  @Field(() => LessonRecordSelfConfidence, { nullable: true })
+  @Column('enum', {
+    enum: LessonRecordSelfConfidence,
+    enumName: 'lesson_records_self_confidence_enum',
+    name: 'self_confidence',
+    nullable: true,
+  })
+  selfConfidence?: LessonRecordSelfConfidence | null;
+
+  @Field(() => LessonRecordPersistence, { nullable: true })
+  @Column('enum', {
+    enum: LessonRecordPersistence,
+    enumName: 'lesson_records_persistence_enum',
+    nullable: true,
+  })
+  persistence?: LessonRecordPersistence | null;
+
+  @Field(() => LessonRecordConcentration, { nullable: true })
+  @Column('enum', {
+    enum: LessonRecordConcentration,
+    enumName: 'lesson_records_concentration_enum',
+    nullable: true,
+  })
+  concentration?: LessonRecordConcentration | null;
 }

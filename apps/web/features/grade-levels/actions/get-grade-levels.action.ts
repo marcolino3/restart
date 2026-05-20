@@ -6,6 +6,7 @@ import { gql } from "graphql-request";
 export type GradeLevelItem = {
   id: string;
   name: string;
+  color: string | null;
   sortOrder: number;
 };
 
@@ -18,6 +19,7 @@ const GetGradeLevelsDocument = gql`
     gradeLevelsByOrgId {
       id
       name
+      color
       sortOrder
     }
   }

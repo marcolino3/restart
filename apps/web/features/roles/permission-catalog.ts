@@ -91,6 +91,21 @@ export const CATEGORY_ORDER: CategoryKey[] = [
   "general",
 ];
 
+// Categories reserved for admin-personas (ADMIN, HR, OFFICE). In the role
+// matrix they are only offered to admin-system-roles (ORG_OWNER, ORG_ADMIN,
+// HR_MANAGER, OFFICE) or to roles that already hold a permission from the
+// category — so an operative role like TEAM_LEAD keeps TEAM_MANAGE editable.
+// Kept in sync with ADMIN_ONLY_PERMISSION_CODES in apps/backend.
+export const ADMIN_ONLY_CATEGORIES: ReadonlySet<CategoryKey> = new Set<CategoryKey>([
+  "organization",
+  "userManagement",
+  "teams",
+]);
+
+export function isAdminOnlyCategory(category: CategoryKey): boolean {
+  return ADMIN_ONLY_CATEGORIES.has(category);
+}
+
 export type GroupedFeature = {
   feature: FeatureKey;
   actions: { code: string; action: ActionKey }[];

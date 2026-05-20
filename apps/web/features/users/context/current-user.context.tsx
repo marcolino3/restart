@@ -2,6 +2,13 @@
 
 import { createContext, useCallback, useContext, useMemo } from "react";
 
+export {
+  ADMIN_PERSONAS,
+  isAdminPersona,
+  type Persona,
+} from "@/features/users/lib/admin-persona";
+import type { Persona } from "@/features/users/lib/admin-persona";
+
 export type CurrentUser = {
   id: string;
   firstName: string;
@@ -10,6 +17,7 @@ export type CurrentUser = {
   roles: string[];
   permissions: string[];
   orgId?: string;
+  persona?: Persona;
   isSuperAdmin: boolean;
 };
 

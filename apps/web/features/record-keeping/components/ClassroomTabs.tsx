@@ -11,6 +11,7 @@ import { getClassroomAttentionAction } from "../actions/get-classroom-attention.
 import { getClassroomHeatmapAction } from "../actions/get-classroom-heatmap.action";
 import type { HeatmapData } from "../actions/get-classroom-heatmap.action";
 import type { StudentAttentionSummary } from "../actions/get-classroom-attention.action";
+import { ClassroomEngagementTimelineChart } from "./ClassroomEngagementTimelineChart";
 import { ClassroomHeatmap } from "./ClassroomHeatmap";
 import { StudentAttentionList } from "./StudentAttentionList";
 
@@ -27,7 +28,8 @@ interface Props {
 /** Tab keys are stable URL params — don't rename without backwards-compat. */
 const TAB_ATTENTION = "attention";
 const TAB_HEATMAP = "heatmap";
-const KNOWN_TABS = new Set([TAB_ATTENTION, TAB_HEATMAP]);
+const TAB_ENGAGEMENT = "engagement";
+const KNOWN_TABS = new Set([TAB_ATTENTION, TAB_HEATMAP, TAB_ENGAGEMENT]);
 
 export function ClassroomTabs({
   schoolClassId,
@@ -120,6 +122,9 @@ export function ClassroomTabs({
         >
           {t("subtabHeatmap")}
         </TabsTrigger>
+        <TabsTrigger value={TAB_ENGAGEMENT}>
+          {t("subtabEngagementTimeline")}
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value={TAB_ATTENTION}>
@@ -142,6 +147,10 @@ export function ClassroomTabs({
         ) : (
           <ClassroomHeatmap data={heatmap} />
         )}
+      </TabsContent>
+
+      <TabsContent value={TAB_ENGAGEMENT}>
+        <ClassroomEngagementTimelineChart schoolClassId={schoolClassId} />
       </TabsContent>
     </Tabs>
   );

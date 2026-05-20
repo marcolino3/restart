@@ -1,7 +1,10 @@
 import { IBase } from '@/database/interfaces/base.interface';
+import { LessonRecordConcentration } from '../../enums/lesson-record-concentration.enum';
 import { LessonRecordDifficulty } from '../../enums/lesson-record-difficulty.enum';
 import { LessonRecordEngagement } from '../../enums/lesson-record-engagement.enum';
+import { LessonRecordPersistence } from '../../enums/lesson-record-persistence.enum';
 import { LessonRecordSelfAssessment } from '../../enums/lesson-record-self-assessment.enum';
+import { LessonRecordSelfConfidence } from '../../enums/lesson-record-self-confidence.enum';
 import { LessonRecordSocialForm } from '../../enums/lesson-record-social-form.enum';
 import { LessonRecordStatus } from '../../enums/lesson-record-status.enum';
 import { RoomMood } from '../../enums/room-mood.enum';
@@ -26,4 +29,7 @@ export interface ILessonRecord extends IBase {
   teacherPreparation?: TeacherPreparation | null;
   roomMood?: RoomMood | null;
   teacherStressLevel?: TeacherStressLevel | null;
+  selfConfidence?: LessonRecordSelfConfidence | null;
+  persistence?: LessonRecordPersistence | null;
+  concentration?: LessonRecordConcentration | null;
 }

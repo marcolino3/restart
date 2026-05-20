@@ -72,4 +72,10 @@ export class EmployeeAbsence extends AbstractEntity<EmployeeAbsence> {
   @Field(() => Boolean)
   @Column({ default: false })
   isTeamInformed: boolean;
+
+  // Ferienfaehigkeit: false = ueberlappende Ferientage werden gutgeschrieben.
+  // Initial aus EmployeeAbsenceCategory.defaultIsVacationCapable; pro Fall ueberschreibbar.
+  @Field(() => Boolean)
+  @Column('boolean', { name: 'is_vacation_capable', default: true })
+  isVacationCapable: boolean;
 }

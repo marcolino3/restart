@@ -316,6 +316,9 @@ export class EmployeesService {
           employee: true,
           user: { userEmails: true },
         },
+        teamMembers: {
+          team: true,
+        },
       },
       where: {
         membership: {

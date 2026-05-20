@@ -1,10 +1,12 @@
+import { Field, ID, InputType, PartialType } from '@nestjs/graphql';
+import { IsUUID } from 'class-validator';
 import { CreateEmployeeAbsenceCategoryInput } from './create-employee-absence-category.input';
-import { InputType, Field, Int, PartialType } from '@nestjs/graphql';
 
 @InputType()
 export class UpdateEmployeeAbsenceCategoryInput extends PartialType(
   CreateEmployeeAbsenceCategoryInput,
 ) {
-  @Field(() => Int)
-  id: number;
+  @Field(() => ID)
+  @IsUUID()
+  id: string;
 }

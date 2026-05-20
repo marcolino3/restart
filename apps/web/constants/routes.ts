@@ -74,6 +74,21 @@ export const ROUTES = {
     admissionStages: (locale: string) =>
       `/${locale}/admin/settings/admission-stages`,
 
+    // Admissions Kanban
+    admissions: (locale: string) => `/${locale}/admin/admissions`,
+    admissionsKanban: (locale: string) =>
+      `/${locale}/admin/admissions/kanban`,
+    admissionsReminders: (locale: string) =>
+      `/${locale}/admin/admissions/reminders`,
+
+    // Absence Categories (HR)
+    absenceCategories: (locale: string) =>
+      `/${locale}/admin/absence-categories`,
+    absenceCategoriesCreate: (locale: string) =>
+      `/${locale}/admin/absence-categories/edit`,
+    absenceCategoriesEdit: (locale: string, id: string) =>
+      `/${locale}/admin/absence-categories/edit/${id}`,
+
     // Country Input Templates
     countryTemplates: (locale: string) =>
       `/${locale}/admin/settings/country-templates`,
@@ -82,6 +97,10 @@ export const ROUTES = {
 
     // Roles
     roles: (locale: string) => `/${locale}/admin/roles`,
+
+    // Forbidden landing for persona-blocked admin routes
+    dashboard: (locale: string) => `/${locale}/admin`,
+    forbidden: (locale: string) => `/${locale}/admin/forbidden`,
 
     // Users
     users: (locale: string) => `/${locale}/admin/users`,

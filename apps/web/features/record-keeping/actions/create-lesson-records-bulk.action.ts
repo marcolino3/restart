@@ -5,8 +5,10 @@ import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-clien
 import { gql } from "graphql-request";
 import {
   classroomAttentionTag,
+  classroomEngagementTimelineTag,
   classroomHeatmapTag,
   studentLessonRecordsTag,
+  studentTimelineTag,
 } from "../lib/cache-tags";
 import type {
   LessonRecordDTO,
@@ -63,6 +65,7 @@ export const createLessonRecordsBulkAction = async (
     // so their progress tab reflects the new entries immediately.
     for (const studentId of input.studentIds) {
       updateTag(studentLessonRecordsTag(studentId));
+      updateTag(studentTimelineTag(studentId));
     }
 
     // Classroom-level caches (heatmap + attention) — only invalidate the
@@ -70,6 +73,7 @@ export const createLessonRecordsBulkAction = async (
     if (schoolClassId) {
       updateTag(classroomAttentionTag(schoolClassId));
       updateTag(classroomHeatmapTag(schoolClassId));
+      updateTag(classroomEngagementTimelineTag(schoolClassId));
     }
 
     return { success: true as const, data: createLessonRecordsBulk };

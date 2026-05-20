@@ -7,12 +7,13 @@ import { registerEnumType } from '@nestjs/graphql';
 export enum LessonRecordEngagement {
   FOCUSED = 'FOCUSED',
   INTERESTED = 'INTERESTED',
-  DUTIFUL = 'DUTIFUL',
+  /** Surface engagement per Hattie — child complies without inner buy-in. */
+  MECHANICAL = 'MECHANICAL',
   RESISTANT = 'RESISTANT',
 }
 
 registerEnumType(LessonRecordEngagement, {
   name: 'LessonRecordEngagement',
   description:
-    'Beobachtetes Engagement: FOCUSED / INTERESTED / DUTIFUL / RESISTANT.',
+    'Beobachtetes Engagement: FOCUSED / INTERESTED / MECHANICAL / RESISTANT.',
 });

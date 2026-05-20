@@ -1,29 +1,36 @@
-# Infomaniak Managed Kubernetes Cluster
-# Note: Resource names may vary depending on the Infomaniak Terraform provider version.
-# Consult https://developer.infomaniak.com for the latest API/resource documentation.
+# Infomaniak Managed Kubernetes (kKS / KaaS)
+# Docs: https://github.com/Infomaniak/terraform-provider-infomaniak
 
-resource "infomaniak_kubernetes" "cluster" {
-  name     = var.cluster_name
-  location = "dc3-a" # Infomaniak Swiss datacenter
+resource "infomaniak_kaas" "cluster" {
+  public_cloud_id         = var.infomaniak.cloud_id
+  public_cloud_project_id = var.infomaniak.project_id
 
-  node_pool {
-    name       = "default"
-    flavor     = var.node_flavor
-    node_count = var.node_count
+  name               = var.cluster_name
+  pack_name          = var.cluster_pack
+  kubernetes_version = var.kubernetes_version
+  region             = var.cluster_region
+}
+
+resource "infomaniak_kaas_instance_pool" "default" {
+  public_cloud_id         = infomaniak_kaas.cluster.public_cloud_id
+  public_cloud_project_id = infomaniak_kaas.cluster.public_cloud_project_id
+  kaas_id                 = infomaniak_kaas.cluster.id
+
+  name              = "${var.cluster_name}-default"
+  flavor_name       = var.pool_flavor
+  availability_zone = var.pool_az
+  min_instances     = var.pool_min
+  max_instances     = var.pool_max
+
+  labels = {
+    "node-role.kubernetes.io/worker" = "true"
   }
 }
 
-# Namespaces
-resource "kubernetes_namespace" "staging" {
+# Namespaces (created in-cluster via kubeconfig from kaas resource)
+resource "kubernetes_namespace" "app" {
   metadata {
-    name = "restart-staging"
+    name = "restart-${var.environment}"
   }
-  depends_on = [infomaniak_kubernetes.cluster]
-}
-
-resource "kubernetes_namespace" "production" {
-  metadata {
-    name = "restart-production"
-  }
-  depends_on = [infomaniak_kubernetes.cluster]
+  depends_on = [infomaniak_kaas_instance_pool.default]
 }

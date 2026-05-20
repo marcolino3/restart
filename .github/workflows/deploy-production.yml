@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: "Image tag to deploy (commit SHA, default: latest from staging)"
+        description: "Image tag (commit SHA). Leer lassen → promotet, was aktuell auf Staging läuft."
         required: false
-        default: "latest"
+        default: ""
       skip_migrations:
         description: "Skip DB migration job (NUR im Notfall — überspringen führt zu Schema-Drift)"
         type: boolean
@@ -18,10 +18,131 @@ env:
   BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/restart-backend
   FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/restart-frontend
   NAMESPACE: restart-production
+  STAGING_NAMESPACE: restart-staging
+
+# Serialisiert Prod-Deploys — verhindert dass zwei parallele Promotions die
+# Audit-Log-Datei in `.github/promotions.jsonl` zerschiessen oder den Cluster
+# in einen inkonsistenten Zustand bringen.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
 jobs:
+  resolve:
+    name: Resolve & Validate Promotion Target
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      image_tag: ${{ steps.resolve.outputs.image_tag }}
+      current_prod_tag: ${{ steps.current.outputs.current_prod_tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Volle History für `git log` im Promotion-Summary.
+          fetch-depth: 0
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+
+      # Auto-Resolve: wenn der Operator keinen image_tag (oder den Alias
+      # 'latest'/'staging') angibt, ziehen wir die SHA, die JETZT auf Staging
+      # läuft — das ist die einzige verlässliche "was wurde getestet" Aussage.
+      - name: Resolve target image tag
+        id: resolve
+        env:
+          INPUT_TAG: ${{ inputs.image_tag }}
+        run: |
+          set -e
+          TAG="$INPUT_TAG"
+          if [ -z "$TAG" ] || [ "$TAG" = "latest" ] || [ "$TAG" = "staging" ]; then
+            echo "::notice::Resolving from staging cluster ($STAGING_NAMESPACE/backend)…"
+            IMAGE=$(kubectl get deployment backend -n "$STAGING_NAMESPACE" \
+              -o jsonpath='{.spec.template.spec.containers[0].image}')
+            TAG="${IMAGE##*:}"
+            if [ -z "$TAG" ] || [ "$TAG" = "latest" ]; then
+              echo "::error::Staging-Deployment trägt keinen pinned SHA-Tag (gefunden: '$TAG'). Promotion abgebrochen."
+              exit 1
+            fi
+          fi
+          echo "image_tag=$TAG" >> $GITHUB_OUTPUT
+          echo "::notice::Promotion target: $TAG"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Vorab-Validierung: beide Images müssen in GHCR existieren, sonst
+      # bricht der migrate-Job mitten im Apply mit unklarer Fehlermeldung ab.
+      - name: Validate images exist in GHCR
+        env:
+          TAG: ${{ steps.resolve.outputs.image_tag }}
+        run: |
+          set -e
+          for IMG in "${{ env.BACKEND_IMAGE }}" "${{ env.FRONTEND_IMAGE }}"; do
+            if ! docker buildx imagetools inspect "$IMG:$TAG" > /dev/null 2>&1; then
+              echo "::error::Image nicht in GHCR gefunden: $IMG:$TAG"
+              exit 1
+            fi
+            echo "::notice::OK $IMG:$TAG"
+          done
+
+      # Aktuell auf Produktion laufende SHA für den Diff.
+      - name: Read current production tag
+        id: current
+        run: |
+          IMAGE=$(kubectl get deployment backend -n "$NAMESPACE" \
+            -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || echo "")
+          CURRENT_TAG="${IMAGE##*:}"
+          if [ -z "$CURRENT_TAG" ]; then
+            CURRENT_TAG="(none)"
+          fi
+          echo "current_prod_tag=$CURRENT_TAG" >> $GITHUB_OUTPUT
+          echo "::notice::Current production: $CURRENT_TAG"
+
+      # Promotion-Summary in den Step-Summary-Tab schreiben (oben im UI sichtbar).
+      - name: Write promotion summary
+        env:
+          TARGET: ${{ steps.resolve.outputs.image_tag }}
+          CURRENT: ${{ steps.current.outputs.current_prod_tag }}
+          SKIP_MIGRATIONS: ${{ inputs.skip_migrations }}
+        run: |
+          {
+            echo "## 🚀 Production Promotion"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| **Target SHA** | \`$TARGET\` |"
+            echo "| **Current Prod SHA** | \`$CURRENT\` |"
+            echo "| **Operator** | @${{ github.actor }} |"
+            echo "| **Migrations** | $([ "$SKIP_MIGRATIONS" = "true" ] && echo "⚠️ SKIPPED" || echo "Will run") |"
+            echo ""
+            if [ "$CURRENT" = "$TARGET" ]; then
+              echo "ℹ️  Target = Current — Promotion ist no-op (rollout wird angestossen, ändert aber nichts)."
+            elif [ "$CURRENT" = "(none)" ]; then
+              echo "ℹ️  Erstes Deployment — kein Diff vorhanden."
+            else
+              echo "### Commits between current prod and target"
+              echo ""
+              # Falls SHAs nicht reachable sind (z.B. force-push gelöscht), nicht abbrechen.
+              echo '```'
+              git log --oneline --no-decorate "$CURRENT".."$TARGET" 2>/dev/null \
+                || echo "(Diff nicht ermittelbar — SHAs nicht in History reachable.)"
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
   migrate:
     name: Run DB Migrations
+    needs: [resolve]
     runs-on: ubuntu-latest
     environment: production
     if: ${{ !inputs.skip_migrations }}
@@ -40,22 +161,18 @@ jobs:
       - name: Apply migration job
         env:
           IMAGE_OWNER: ${{ github.repository_owner }}
-          INPUT_TAG: ${{ inputs.image_tag }}
+          RESOLVED_TAG: ${{ needs.resolve.outputs.image_tag }}
         run: |
           export IMAGE_OWNER=$(echo "$IMAGE_OWNER" | tr '[:upper:]' '[:lower:]')
-          # Job-Suffix: bei Commit-SHA die ersten 12 Zeichen, sonst Tag-Name + Timestamp
-          if [ "$INPUT_TAG" = "latest" ]; then
-            JOB_SUFFIX="latest-$(date +%s)"
-          else
-            JOB_SUFFIX=$(echo "$INPUT_TAG" | cut -c1-12 | tr '[:upper:]' '[:lower:]')
-          fi
-          # Template hat ${IMAGE_TAG} an zwei Stellen (Job-Name UND Image-Tag).
-          # Wir wollen sie auseinander halten: zuerst Job-Name setzen via envsubst,
-          # dann den Image-Tag im resultierenden YAML korrigieren.
+          # Job-Suffix: Tag in Kleinbuchstaben, auf 12 Zeichen gekürzt (k8s Name-Limit).
+          JOB_SUFFIX=$(echo "$RESOLVED_TAG" | cut -c1-12 | tr '[:upper:]' '[:lower:]')
+          # migrate-job.yaml hat ${IMAGE_TAG} an zwei Stellen (Job-Name + Image-Tag).
+          # Wir brauchen für den Job-Namen das gekürzte Suffix, für das Image den
+          # vollen Tag — daher zuerst envsubst mit gekürztem Wert, dann sed.
           export IMAGE_TAG="$JOB_SUFFIX"
           JOB_NAME="migrate-${JOB_SUFFIX}"
           envsubst < k8s/base/jobs/migrate-job.yaml \
-            | sed "s|restart-backend:${JOB_SUFFIX}|restart-backend:${INPUT_TAG}|g" \
+            | sed "s|restart-backend:${JOB_SUFFIX}|restart-backend:${RESOLVED_TAG}|g" \
             | kubectl apply -n "$NAMESPACE" -f -
 
           echo "Waiting for $JOB_NAME to complete…"
@@ -84,9 +201,14 @@ jobs:
     name: Deploy to Production
     runs-on: ubuntu-latest
     environment: production
-    needs: [migrate]
+    permissions:
+      # `contents: write` ist nötig, damit der Audit-Log-Commit am Ende
+      # auf main pushen kann.
+      contents: write
+      packages: write
+    needs: [resolve, migrate]
     # Damit der Deploy auch dann läuft, wenn migrate übersprungen wurde:
-    if: always() && (needs.migrate.result == 'success' || needs.migrate.result == 'skipped')
+    if: always() && needs.resolve.result == 'success' && (needs.migrate.result == 'success' || needs.migrate.result == 'skipped')
 
     steps:
       - uses: actions/checkout@v4
@@ -100,8 +222,9 @@ jobs:
           echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
 
       - name: Deploy to production
+        env:
+          TAG: ${{ needs.resolve.outputs.image_tag }}
         run: |
-          TAG="${{ inputs.image_tag }}"
           kubectl set image deployment/backend \
             backend=${{ env.BACKEND_IMAGE }}:${TAG} \
             -n "$NAMESPACE"
@@ -141,4 +264,77 @@ jobs:
           echo "::error::Smoke test failed — rolling back"
           kubectl rollout undo deployment/backend -n "$NAMESPACE" || true
           kubectl rollout undo deployment/frontend -n "$NAMESPACE" || true
+          exit 1
+
+      # Promotion-Anker für schnellen Rollback / "was läuft gerade?"-Abfragen.
+      # Erst NACH erfolgreichem Smoke-Test taggen, damit ':production-current'
+      # nicht auf ein kaputtes Image zeigt.
+      - name: Log in to GHCR for tagging
+        if: steps.smoke.outcome == 'success'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tag images as production-current
+        if: steps.smoke.outcome == 'success'
+        env:
+          TAG: ${{ needs.resolve.outputs.image_tag }}
+        run: |
+          docker buildx imagetools create \
+            --tag ${{ env.BACKEND_IMAGE }}:production-current \
+            ${{ env.BACKEND_IMAGE }}:${TAG}
+          docker buildx imagetools create \
+            --tag ${{ env.FRONTEND_IMAGE }}:production-current \
+            ${{ env.FRONTEND_IMAGE }}:${TAG}
+          echo "::notice::Tagged $TAG as production-current"
+
+      # Audit-Log: jede erfolgreiche Promotion bekommt einen Commit auf main.
+      # Format: JSON-Lines (eine Zeile pro Promotion) — append-only, parse-bar,
+      # konfliktarm. Datei: .github/promotions.jsonl.
+      #
+      # `[skip ci]` im Commit-Subject ist Pflicht, sonst triggert der Commit
+      # eine Staging-Redeploy-Schleife (deploy-staging.yml lauscht auf push:main).
+      - name: Append promotion to audit log
+        if: steps.smoke.outcome == 'success'
+        env:
+          TARGET: ${{ needs.resolve.outputs.image_tag }}
+          PREVIOUS: ${{ needs.resolve.outputs.current_prod_tag }}
+          SKIP_MIGRATIONS: ${{ inputs.skip_migrations }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -e
+          ENTRY=$(jq -nc \
+            --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg actor "${{ github.actor }}" \
+            --arg target "$TARGET" \
+            --arg previous "$PREVIOUS" \
+            --argjson skip_migrations "$SKIP_MIGRATIONS" \
+            --arg run_url "$RUN_URL" \
+            '{timestamp:$ts, actor:$actor, target_sha:$target, previous_sha:$previous, skip_migrations:$skip_migrations, run_url:$run_url}')
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          touch .github/promotions.jsonl
+          echo "$ENTRY" >> .github/promotions.jsonl
+
+          git add .github/promotions.jsonl
+          git commit -m "audit(deploy): production promotion ${TARGET:0:12} [skip ci]" \
+            -m "Previous: $PREVIOUS" \
+            -m "Run: $RUN_URL"
+
+          # Retry-Loop falls in der Zwischenzeit ein anderer Commit auf main
+          # gelandet ist (sehr unwahrscheinlich dank concurrency-group, aber
+          # nicht unmöglich — z.B. PR-Merge zur gleichen Zeit).
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "::notice::Audit-Log committed (attempt $attempt)"
+              exit 0
+            fi
+            echo "::warning::Push fehlgeschlagen (attempt $attempt) — pull --rebase + retry"
+            git pull --rebase origin main
+          done
+          echo "::error::Audit-Log push nach 3 Versuchen fehlgeschlagen"
           exit 1

@@ -37,5 +37,5 @@ resource "helm_release" "sealed_secrets" {
     value = "720h"
   }
 
-  depends_on = [infomaniak_kubernetes.cluster]
+  depends_on = [infomaniak_kaas_instance_pool.default]
 }

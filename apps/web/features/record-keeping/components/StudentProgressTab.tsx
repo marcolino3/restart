@@ -21,11 +21,14 @@ import type { StudentLessonRecordItem } from "../actions/get-student-lesson-reco
 import type { AreaOption } from "../actions/get-org-areas.action";
 import type { AreaLessonCount } from "../actions/get-area-lesson-counts.action";
 import { StudentAreaRadar } from "./StudentAreaRadar";
+import { StudentIntroductionTimelineChart } from "./StudentIntroductionTimelineChart";
 import { LessonBreadcrumb } from "./LessonBreadcrumb";
 import { LessonLifecycleCharts } from "./LessonLifecycleCharts";
 import { LessonLifecycleInsights } from "./LessonLifecycleInsights";
 import { LessonLifecycleSummaryCards } from "./LessonLifecycleSummaryCards";
 import { AttentionList } from "./AttentionList";
+import { LearningStanceTab } from "./LearningStanceTab";
+import { ChildObservationNotesTimeline } from "./ChildObservationNotesTimeline";
 import {
   deriveLessonLifecycles,
   deriveLifecycleAggregates,
@@ -42,6 +45,7 @@ import {
 } from "../types";
 
 interface Props {
+  studentId: string;
   records: StudentLessonRecordItem[];
   nextLessons: LessonOption[];
   allAreas?: AreaOption[];
@@ -83,6 +87,7 @@ const formatDate = (iso: string): string =>
 type CurrentByLesson = Map<string, StudentLessonRecordItem>;
 
 export function StudentProgressTab({
+  studentId,
   records,
   nextLessons,
   allAreas = [],
@@ -133,7 +138,9 @@ export function StudentProgressTab({
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="overview">{t("subtabOverview")}</TabsTrigger>
+          <TabsTrigger value="timeline">{t("subtabTimeline")}</TabsTrigger>
           <TabsTrigger value="attention">{t("subtabAttention")}</TabsTrigger>
+          <TabsTrigger value="stance">{t("subtabLearningStance")}</TabsTrigger>
           <TabsTrigger value="areas">{t("subtabAreas")}</TabsTrigger>
           <TabsTrigger value="lifecycle">{t("subtabLifecycle")}</TabsTrigger>
           <TabsTrigger value="activity">{t("subtabActivity")}</TabsTrigger>
@@ -148,12 +155,20 @@ export function StudentProgressTab({
           />
         </TabsContent>
 
+        <TabsContent value="timeline" className="mt-6">
+          <StudentIntroductionTimelineChart studentId={studentId} />
+        </TabsContent>
+
         <TabsContent value="attention" className="mt-6">
           <AttentionSection
             records={records}
             locale={locale}
             attentionThresholds={attentionThresholds}
           />
+        </TabsContent>
+
+        <TabsContent value="stance" className="mt-6">
+          <LearningStanceTab records={records} />
         </TabsContent>
 
         <TabsContent value="areas" className="mt-6">
@@ -648,8 +663,14 @@ function AttentionSection({
     [records, locale],
   );
   const attentionItems = useMemo(
-    () => deriveAttentionItems(lifecycles, attentionThresholds),
-    [lifecycles, attentionThresholds],
+    () =>
+      deriveAttentionItems(
+        lifecycles,
+        attentionThresholds,
+        new Date(),
+        records,
+      ),
+    [lifecycles, attentionThresholds, records],
   );
 
   if (attentionItems.length === 0) {
@@ -711,6 +732,7 @@ function ActivitySection({ records, nextLessons }: ActivitySectionProps) {
   );
 
   return (
+    <div className="flex flex-col gap-6">
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {/* Recent Activity */}
       <Card>
@@ -801,6 +823,8 @@ function ActivitySection({ records, nextLessons }: ActivitySectionProps) {
           )}
         </CardContent>
       </Card>
+    </div>
+    <ChildObservationNotesTimeline records={records} />
     </div>
   );
 }

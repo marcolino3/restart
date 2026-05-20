@@ -15,8 +15,11 @@ export default getRequestConfig(async ({ requestLocale }) => {
     ? requested
     : routing.defaultLocale;
 
+  // FR and IT don't have their own UI message bundle yet — fall back to EN so
+  // the chrome stays readable. Curriculum content still loads in the
+  // requested locale because translations live in the database.
   return {
     locale,
-    messages: MESSAGES[locale],
+    messages: MESSAGES[locale] ?? MESSAGES.en,
   };
 });

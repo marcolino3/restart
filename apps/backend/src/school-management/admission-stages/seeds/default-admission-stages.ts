@@ -13,52 +13,12 @@ export interface DefaultAdmissionStageSeed {
 
 export const DEFAULT_ADMISSION_STAGES: DefaultAdmissionStageSeed[] = [
   {
-    slug: 'interest',
-    name: 'Interesse',
-    color: '#64748B',
+    slug: 'lead',
+    name: 'Leads',
+    color: '#94A3B8',
     position: 0,
     stageType: AdmissionStageType.INITIAL,
     isDefault: true,
-  },
-  {
-    slug: 'application',
-    name: 'Bewerbung',
-    color: '#0EA5E9',
-    position: 1,
-    stageType: AdmissionStageType.IN_PROGRESS,
-    isDefault: false,
-  },
-  {
-    slug: 'interview',
-    name: 'Aufnahmegespräch',
-    color: '#6366F1',
-    position: 2,
-    stageType: AdmissionStageType.IN_PROGRESS,
-    isDefault: false,
-  },
-  {
-    slug: 'accepted',
-    name: 'Aufgenommen',
-    color: '#22C55E',
-    position: 3,
-    stageType: AdmissionStageType.ACCEPTED,
-    isDefault: false,
-  },
-  {
-    slug: 'enrolled',
-    name: 'Eingeschrieben',
-    color: '#16A34A',
-    position: 4,
-    stageType: AdmissionStageType.ENROLLED,
-    isDefault: false,
-  },
-  {
-    slug: 'rejected',
-    name: 'Abgelehnt',
-    color: '#EF4444',
-    position: 5,
-    stageType: AdmissionStageType.REJECTED,
-    isDefault: false,
   },
 ];
 

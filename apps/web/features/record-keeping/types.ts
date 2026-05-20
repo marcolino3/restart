@@ -66,13 +66,13 @@ export type LessonRecordDTO = {
 export type LessonRecordEngagement =
   | "FOCUSED"
   | "INTERESTED"
-  | "DUTIFUL"
+  | "MECHANICAL"
   | "RESISTANT";
 
 export const LESSON_RECORD_ENGAGEMENTS: LessonRecordEngagement[] = [
   "FOCUSED",
   "INTERESTED",
-  "DUTIFUL",
+  "MECHANICAL",
   "RESISTANT",
 ];
 
@@ -131,6 +131,39 @@ export const TEACHER_STRESS_LEVELS: TeacherStressLevel[] = [
   "STRESSED",
 ];
 
+// Hattie: Self-efficacy (d ≈ 0.92).
+export type LessonRecordSelfConfidence =
+  | "CONFIDENT"
+  | "TENTATIVE"
+  | "INSECURE";
+export const LESSON_RECORD_SELF_CONFIDENCES: LessonRecordSelfConfidence[] = [
+  "CONFIDENT",
+  "TENTATIVE",
+  "INSECURE",
+];
+
+// Hattie: Persistence/Effort (d ≈ 0.54) + Help-seeking (d ≈ 0.72).
+export type LessonRecordPersistence =
+  | "PERSISTS"
+  | "SEEKS_HELP"
+  | "GIVES_UP";
+export const LESSON_RECORD_PERSISTENCES: LessonRecordPersistence[] = [
+  "PERSISTS",
+  "SEEKS_HELP",
+  "GIVES_UP",
+];
+
+// Montessori: Normalisation / Polarisation der Aufmerksamkeit.
+export type LessonRecordConcentration =
+  | "FLOW"
+  | "PARTIAL_FOCUS"
+  | "INTERRUPTED";
+export const LESSON_RECORD_CONCENTRATIONS: LessonRecordConcentration[] = [
+  "FLOW",
+  "PARTIAL_FOCUS",
+  "INTERRUPTED",
+];
+
 export type LessonRecordObservation = {
   engagement?: LessonRecordEngagement | null;
   difficulty?: LessonRecordDifficulty | null;
@@ -141,6 +174,9 @@ export type LessonRecordObservation = {
   teacherPreparation?: TeacherPreparation | null;
   roomMood?: RoomMood | null;
   teacherStressLevel?: TeacherStressLevel | null;
+  selfConfidence?: LessonRecordSelfConfidence | null;
+  persistence?: LessonRecordPersistence | null;
+  concentration?: LessonRecordConcentration | null;
 };
 
 export const EMPTY_OBSERVATION: LessonRecordObservation = {
@@ -153,6 +189,9 @@ export const EMPTY_OBSERVATION: LessonRecordObservation = {
   teacherPreparation: null,
   roomMood: null,
   teacherStressLevel: null,
+  selfConfidence: null,
+  persistence: null,
+  concentration: null,
 };
 
 export const isObservationEmpty = (o: LessonRecordObservation): boolean =>
@@ -164,4 +203,7 @@ export const isObservationEmpty = (o: LessonRecordObservation): boolean =>
   o.lessonClarityConfirmed == null &&
   !o.teacherPreparation &&
   !o.roomMood &&
-  !o.teacherStressLevel;
+  !o.teacherStressLevel &&
+  !o.selfConfidence &&
+  !o.persistence &&
+  !o.concentration;

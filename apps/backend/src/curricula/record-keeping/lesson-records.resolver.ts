@@ -13,6 +13,11 @@ import { LessonRecordsFilterInput } from './dto/lesson-records-filter.input';
 import { UpdateLessonRecordInput } from './dto/update-lesson-record.input';
 import { StudentAttentionSummaryOutput } from './dto/attention-summary.output';
 import { ClassroomHeatmapDataOutput } from './dto/classroom-heatmap.output';
+import {
+  EngagementTimelineOutput,
+  StudentTimelineOutput,
+  TimelineGranularity,
+} from './dto/timeline.output';
 import { LessonRecord } from './entities/lesson-record.entity';
 import { LessonRecordsService } from './lesson-records.service';
 import { RecordKeepingSettingsService } from './record-keeping-settings.service';
@@ -53,6 +58,68 @@ export class LessonRecordsResolver {
         practicedStuckDays: settings.practicedStuckDays,
         bigGapDays: settings.bigGapDays,
       },
+    );
+  }
+
+  @Query(() => StudentTimelineOutput, { name: 'studentLessonRecordTimeline' })
+  @Permissions('RECORD_KEEPING_READ')
+  async studentLessonRecordTimeline(
+    @Args('studentId', { type: () => ID }) studentId: string,
+    @Args('from', { type: () => String }) from: string,
+    @Args('to', { type: () => String }) to: string,
+    @Args('granularity', {
+      type: () => TimelineGranularity,
+      defaultValue: TimelineGranularity.WEEK,
+    })
+    granularity: TimelineGranularity,
+    @CurrentOrgId() orgId: string,
+    @CurrentUser() user: TokenPayload,
+  ): Promise<StudentTimelineOutput> {
+    await this.studentsService.assertStudentVisibleToUser(
+      studentId,
+      user.sub,
+      user.roles ?? [],
+      user.isSuperAdmin ?? false,
+      orgId,
+    );
+    return this.service.getStudentTimeline(
+      studentId,
+      orgId,
+      from,
+      to,
+      granularity,
+    );
+  }
+
+  @Query(() => EngagementTimelineOutput, {
+    name: 'classroomEngagementTimeline',
+  })
+  @Permissions('RECORD_KEEPING_READ')
+  async classroomEngagementTimeline(
+    @Args('schoolClassId', { type: () => ID }) schoolClassId: string,
+    @Args('from', { type: () => String }) from: string,
+    @Args('to', { type: () => String }) to: string,
+    @Args('granularity', {
+      type: () => TimelineGranularity,
+      defaultValue: TimelineGranularity.WEEK,
+    })
+    granularity: TimelineGranularity,
+    @CurrentOrgId() orgId: string,
+    @CurrentUser() user: TokenPayload,
+  ): Promise<EngagementTimelineOutput> {
+    await this.studentsService.assertSchoolClassVisibleToUser(
+      schoolClassId,
+      user.sub,
+      user.roles ?? [],
+      user.isSuperAdmin ?? false,
+      orgId,
+    );
+    return this.service.getClassroomEngagementTimeline(
+      schoolClassId,
+      orgId,
+      from,
+      to,
+      granularity,
     );
   }
 

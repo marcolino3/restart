@@ -21,6 +21,14 @@ type AuthContextResponse = {
     roles: string[];
     permissions: string[];
     orgId?: string;
+    persona?:
+      | "ADMIN"
+      | "HR"
+      | "OFFICE"
+      | "TEACHER"
+      | "PARENT"
+      | "STUDENT"
+      | "EMPLOYEE";
     isSuperAdmin: boolean;
   };
 };
@@ -42,6 +50,7 @@ const GetAuthContextDocument = gql`
       roles
       permissions
       orgId
+      persona
       isSuperAdmin
     }
   }
@@ -66,6 +75,7 @@ export const getCurrentUserAction = async () => {
         roles: data.authContext.roles,
         permissions: data.authContext.permissions,
         orgId: data.authContext.orgId,
+        persona: data.authContext.persona,
         isSuperAdmin: data.authContext.isSuperAdmin,
       },
     };

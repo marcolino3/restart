@@ -2,9 +2,13 @@
 
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+const AUTO_EXPAND_MAX = 3;
 
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { StudentAvatar } from "@/features/students/components/StudentAvatar";
 
@@ -20,15 +24,39 @@ type Props = {
   selectedStudents: ClassroomStudentDTO[];
   overrides: Record<string, LessonRecordObservation>;
   onChange: (next: Record<string, LessonRecordObservation>) => void;
+  notes: Record<string, string>;
+  onNotesChange: (next: Record<string, string>) => void;
 };
 
 export const PerChildObservationAccordion = ({
   selectedStudents,
   overrides,
   onChange,
+  notes,
+  onNotesChange,
 }: Props) => {
   const t = useTranslations("RecordKeeping");
   const [openIds, setOpenIds] = useState<Set<string>>(new Set());
+
+  // Auto-expand all sections when only a few children are selected.
+  // We re-sync whenever the selection set itself changes; manual toggles
+  // between selection changes are preserved.
+  const lastSelectionKey = useRef<string>("");
+  useEffect(() => {
+    const key = selectedStudents
+      .map((s) => s.studentId)
+      .slice()
+      .sort()
+      .join(",");
+    if (key === lastSelectionKey.current) return;
+    lastSelectionKey.current = key;
+    if (
+      selectedStudents.length > 0 &&
+      selectedStudents.length <= AUTO_EXPAND_MAX
+    ) {
+      setOpenIds(new Set(selectedStudents.map((s) => s.studentId)));
+    }
+  }, [selectedStudents]);
 
   if (selectedStudents.length === 0) return null;
 
@@ -52,6 +80,16 @@ export const PerChildObservationAccordion = ({
     onChange({ ...overrides, [studentId]: nextObs });
   };
 
+  const setNote = (studentId: string, value: string) => {
+    const trimmed = value.trimStart();
+    if (trimmed.length === 0) {
+      const { [studentId]: _drop, ...rest } = notes;
+      onNotesChange(rest);
+      return;
+    }
+    onNotesChange({ ...notes, [studentId]: value });
+  };
+
   return (
     <div className="flex flex-col gap-2 rounded-lg border bg-muted/30 p-3">
       <div className="flex flex-col gap-0.5">
@@ -67,7 +105,10 @@ export const PerChildObservationAccordion = ({
         {selectedStudents.map((s) => {
           const isOpen = openIds.has(s.studentId);
           const override = overrides[s.studentId];
-          const hasOverride = !!override && !isObservationEmpty(override);
+          const note = notes[s.studentId] ?? "";
+          const hasNote = note.trim().length > 0;
+          const hasObsOverride = !!override && !isObservationEmpty(override);
+          const hasOverride = hasObsOverride || hasNote;
 
           return (
             <li key={s.studentId} className="py-2">
@@ -107,19 +148,39 @@ export const PerChildObservationAccordion = ({
               </button>
 
               {isOpen && (
-                <div className="mt-2 flex flex-col gap-2 pl-11 pr-2">
+                <div className="mt-2 flex flex-col gap-3 pl-11 pr-2">
                   <ObservationBadgeRow
                     compact
+                    hideTeacherSelf
                     value={override ?? EMPTY_OBSERVATION}
                     onChange={(next) => setOverride(s.studentId, next)}
                   />
+                  <div className="flex flex-col gap-1.5">
+                    <Label
+                      htmlFor={`per-child-note-${s.studentId}`}
+                      className="text-xs font-medium text-muted-foreground"
+                    >
+                      {t("observationPerChildNoteLabel")}
+                    </Label>
+                    <Textarea
+                      id={`per-child-note-${s.studentId}`}
+                      value={note}
+                      onChange={(e) => setNote(s.studentId, e.target.value)}
+                      placeholder={t("observationPerChildNotePlaceholder")}
+                      rows={2}
+                      maxLength={2000}
+                    />
+                  </div>
                   {hasOverride && (
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       className="self-end text-xs"
-                      onClick={() => setOverride(s.studentId, EMPTY_OBSERVATION)}
+                      onClick={() => {
+                        setOverride(s.studentId, EMPTY_OBSERVATION);
+                        setNote(s.studentId, "");
+                      }}
                     >
                       {t("observationClear")}
                     </Button>

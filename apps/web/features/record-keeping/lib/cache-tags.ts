@@ -9,3 +9,11 @@ export const classroomAttentionTag = (schoolClassId: string) =>
 /** Cache tag for a classroom's heatmap aggregate. */
 export const classroomHeatmapTag = (schoolClassId: string) =>
   `classroom-heatmap:${schoolClassId}`;
+
+/** Cache tag for a student's record-timeline aggregate. */
+export const studentTimelineTag = (studentId: string) =>
+  `student-timeline:${studentId}`;
+
+/** Cache tag for a classroom's engagement-timeline aggregate. */
+export const classroomEngagementTimelineTag = (schoolClassId: string) =>
+  `classroom-engagement-timeline:${schoolClassId}`;

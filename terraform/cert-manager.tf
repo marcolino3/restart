@@ -12,10 +12,11 @@ resource "helm_release" "cert_manager" {
     value = "true"
   }
 
-  depends_on = [infomaniak_kubernetes.cluster]
+  depends_on = [infomaniak_kaas_instance_pool.default]
 }
 
 # Install NGINX Ingress Controller via Helm
+# Service type=LoadBalancer triggers Octavia LB provisioning + Floating-IP
 resource "helm_release" "nginx_ingress" {
   name             = "ingress-nginx"
   repository       = "https://kubernetes.github.io/ingress-nginx"
@@ -23,36 +24,10 @@ resource "helm_release" "nginx_ingress" {
   namespace        = "ingress-nginx"
   create_namespace = true
 
-  depends_on = [infomaniak_kubernetes.cluster]
+  depends_on = [infomaniak_kaas_instance_pool.default]
 }
 
-# ClusterIssuer for Let's Encrypt
-resource "kubernetes_manifest" "letsencrypt_issuer" {
-  manifest = {
-    apiVersion = "cert-manager.io/v1"
-    kind       = "ClusterIssuer"
-    metadata = {
-      name = "letsencrypt-prod"
-    }
-    spec = {
-      acme = {
-        server = "https://acme-v02.api.letsencrypt.org/directory"
-        email  = var.letsencrypt_email
-        privateKeySecretRef = {
-          name = "letsencrypt-prod"
-        }
-        solvers = [
-          {
-            http01 = {
-              ingress = {
-                class = "nginx"
-              }
-            }
-          }
-        ]
-      }
-    }
-  }
-
-  depends_on = [helm_release.cert_manager]
-}
+# ClusterIssuer wird via Kustomize deployed (k8s/base/cluster-issuer.yaml),
+# nicht via Terraform — kubernetes_manifest würde während `terraform plan`
+# eine Live-Cluster-Verbindung erfordern, die es bei erstem Apply noch nicht
+# gibt. Saubere Trennung: Infra = Terraform, App-Manifeste = Kustomize.
