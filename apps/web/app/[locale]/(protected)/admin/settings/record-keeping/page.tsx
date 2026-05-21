@@ -3,7 +3,6 @@ import { ChevronLeft, Sliders } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { Button } from "@/components/ui/button";
-import { ROUTES } from "@/constants/routes";
 import { getRecordKeepingSettingsAction } from "@/features/record-keeping-settings/actions/get-record-keeping-settings.action";
 import { RecordKeepingSettingsForm } from "@/features/record-keeping-settings/components/RecordKeepingSettingsForm";
 

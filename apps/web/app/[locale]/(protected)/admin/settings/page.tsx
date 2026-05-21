@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
 import { OpenSheetButton } from "@/components/buttons/OpenSheetButton";
 import { getOrganizationSettingsAction } from "@/features/organization-settings/actions/get-settings.action";
 import { CreateSettingForm } from "@/features/organization-settings/components/CreateSettingForm";

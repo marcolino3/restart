@@ -33,7 +33,7 @@ export const CheckboxGroupFormField = ({
   items,
   onSave,
 }: Props) => {
-  const { control, getValues } = useFormContext();
+  const { control } = useFormContext();
   const [status, setStatus] = useState<"idle" | "saving" | "success" | "error">(
     "idle"
   );

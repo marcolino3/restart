@@ -15,7 +15,6 @@ import {
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectLabel,
 } from "@/components/ui/select";
 import { useFormContext } from "react-hook-form";
 import { useState } from "react";

@@ -15,8 +15,7 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Loader2, Check, XCircle, CalendarIcon } from "lucide-react";
+import { Loader2, Check, XCircle } from "lucide-react";
 import { format } from "date-fns";
 
 interface Props {
@@ -26,7 +25,7 @@ interface Props {
 }
 
 export const CalendarDateFormField = ({ name, label, onSave }: Props) => {
-  const { control, getValues } = useFormContext();
+  const { control } = useFormContext();
   const [status, setStatus] = useState<"idle" | "saving" | "success" | "error">(
     "idle"
   );

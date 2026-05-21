@@ -28,7 +28,7 @@ export const RadioGroupFormField = ({
   options,
   onSave,
 }: Props) => {
-  const { control, getValues, setValue } = useFormContext();
+  const { control, setValue } = useFormContext();
   const [status, setStatus] = useState<"idle" | "saving" | "success" | "error">(
     "idle"
   );
