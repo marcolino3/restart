@@ -77,7 +77,7 @@
     "tailwind-merge": "^3.5.0",
     "use-mask-input": "^3.10.1",
     "vaul": "^1.1.2",
-    "xlsx": "^0.18.5",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zod": "^4.3.6"
   },
   "devDependencies": {
