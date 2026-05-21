@@ -48,24 +48,20 @@ spec:
           port: 53
         - protocol: TCP
           port: 53
-    # K8s-API-Server (initdb/operator-checks)
+    # K8s-API-Server (initdb/operator-checks) — ipBlock 0.0.0.0/0
+    # ohne except, weil 10.96.0.1 (kube-apiserver-VIP) im Cluster-internen
+    # Bereich liegt. Egress nur auf Port 443 ist eng genug.
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0
-            except:
-              - 10.0.0.0/8
-              - 172.16.0.0/12
-              - 192.168.0.0/16
       ports:
         - protocol: TCP
           port: 443
-    # Cluster-internal traffic (CNPG operator + replicas)
+        - protocol: TCP
+          port: 6443
+    # Cluster-internal CNPG-replica-Traffic auf 5432
     - to:
         - namespaceSelector: {}
       ports:
         - protocol: TCP
           port: 5432
-        - protocol: TCP
-          port: 443
-        - protocol: TCP
-          port: 6443
