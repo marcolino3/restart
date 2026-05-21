@@ -25,7 +25,7 @@ spec:
   # Persistent Storage über Infomaniak Public Cloud Block Storage
   storage:
     size: 10Gi
-    storageClass: csi-cinder-high-speed # Infomaniak default-class
+    storageClass: csi-cinder-sc-retain # Infomaniak verfügbar: csi-cinder-sc-retain (default) | csi-cinder-sc-delete
 
   # Production-Settings — fuer Staging konservativ
   resources:

@@ -14,16 +14,9 @@ metadata:
     nginx.ingress.kubernetes.io/limit-rps: "20"
     nginx.ingress.kubernetes.io/limit-rpm: "600"
     nginx.ingress.kubernetes.io/limit-connections: "20"
-    # Security-Header: schützen gegen Clickjacking, MIME-Sniffing, Mixed-Content.
-    # HSTS preload-fähig (1 Jahr). CSP bewusst nicht hier — gehört in Next.js,
-    # weil dynamische Nonces nötig sind (Inline-Scripts in Server-Components).
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains";
-      more_set_headers "X-Frame-Options: DENY";
-      more_set_headers "X-Content-Type-Options: nosniff";
-      more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
-      more_set_headers "Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=()";
-      more_set_headers "X-Robots-Tag: noindex, nofollow";
+    # Security-Header: bewusst in Next.js (next.config.ts) statt im Ingress,
+    # weil moderne nginx-ingress 'snippet'-Annotations standardmässig deaktiviert
+    # (CVE-2023-5043). Für Production ggf. ControllerConfig anpassen.
 spec:
   ingressClassName: nginx
   tls:

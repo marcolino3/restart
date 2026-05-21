@@ -6,12 +6,8 @@ namespace: restart-staging
 resources:
   - ../base
   - ingress.yaml
-  # SealedSecrets werden via Bootstrap-Skript erzeugt — siehe
-  # k8s/staging/sealed-secrets/README.md. Solange das Verzeichnis leer ist,
-  # wird hier nichts referenziert. Sobald die ersten SealedSecrets existieren,
-  # gezielt eintragen:
-  #   - sealed-secrets/backend-secrets.yaml
-  #   - sealed-secrets/frontend-secrets.yaml
+  - sealed-secrets/backend-secrets.yaml
+  - sealed-secrets/frontend-secrets.yaml
 
 patches:
   # HPA: staging fährt kleiner — 1 bis 2 Replicas reichen für Smoketests.
