@@ -102,14 +102,14 @@ jobs:
 
       - name: Upload backend image scan results
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "trivy-backend.sarif"
           category: "trivy-image-backend"
 
       - name: Upload frontend image scan results
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "trivy-frontend.sarif"
           category: "trivy-image-frontend"
