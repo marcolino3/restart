@@ -569,8 +569,8 @@ importers:
         specifier: ^3.5.0
         version: 3.6.0
       use-mask-input:
-        specifier: ^3.10.0
-        version: 3.10.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+        specifier: ^3.10.1
+        version: 3.10.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       vaul:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -11127,8 +11127,8 @@ packages:
     peerDependencies:
       react: '>=16.8'
 
-  use-mask-input@3.10.0:
-    resolution: {integrity: sha512-mlgmEuGYLJDjkTjRZIYwdWDLjkZu4f+zdHDv9UnuFKUYkoPTASHx5GLg0CVbMTUG4c6j3OKpNwd5Q3jkIIRbDQ==}
+  use-mask-input@3.10.1:
+    resolution: {integrity: sha512-dKtb0LVbnN64vQebRTJoHAv1949NTjr/Uq2RjCtJrh/KFfCwlcmhPoSirhv5uWeE3kpQQs4bOHLN3pqwDn1Zmg==}
     engines: {node: '>=16', npm: '>=7'}
     peerDependencies:
       react: '>=17'
@@ -18886,7 +18886,7 @@ snapshots:
       eslint: 9.39.4(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))
-      eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))
+      eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.39.4(jiti@2.7.0))
       eslint-plugin-react: 7.37.5(eslint@9.39.4(jiti@2.7.0))
       eslint-plugin-react-hooks: 7.1.1(eslint@9.39.4(jiti@2.7.0))
@@ -18923,7 +18923,7 @@ snapshots:
       tinyglobby: 0.2.16
       unrs-resolver: 1.11.1
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))
+      eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0))
     transitivePeerDependencies:
       - supports-color
 
@@ -18937,7 +18937,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.32.0(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)):
+  eslint-plugin-import@2.32.0(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9
@@ -24715,7 +24715,7 @@ snapshots:
       react: 19.2.6
     optional: true
 
-  use-mask-input@3.10.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
+  use-mask-input@3.10.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
     dependencies:
       react: 19.2.6
       react-dom: 19.2.6(react@19.2.6)
