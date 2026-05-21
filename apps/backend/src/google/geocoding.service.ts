@@ -1,9 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  Client,
-  GeocodeResponse,
-} from '@googlemaps/google-maps-services-js';
+import { Client, GeocodeResponse } from '@googlemaps/google-maps-services-js';
 
 export interface GeocodingAddress {
   street?: string;

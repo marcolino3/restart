@@ -16,9 +16,7 @@ import { UpdateEmployeeNoteInput } from './dto/update-employee-note.input';
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
 @AdminPersonaOnly()
 export class EmployeeNotesResolver {
-  constructor(
-    private readonly employeeNotesService: EmployeeNotesService,
-  ) {}
+  constructor(private readonly employeeNotesService: EmployeeNotesService) {}
 
   @Mutation(() => EmployeeNote, { name: 'createEmployeeNote' })
   @Permissions('EMPLOYEE_WRITE')

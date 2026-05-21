@@ -17,22 +17,24 @@ export function isAdminPersona(persona: Persona | undefined | null): boolean {
 // Permission codes that may only be granted to / exercised by admin personas.
 // Mirrors the "organization", "userManagement", and "teams" categories in
 // apps/web/features/roles/permission-catalog.ts. Keep in sync.
-export const ADMIN_ONLY_PERMISSION_CODES: ReadonlySet<string> = new Set<string>([
-  // organization
-  'ORG_DELETE',
-  'ORG_TRANSFER_OWNERSHIP',
-  'BILLING_MANAGE',
-  // userManagement
-  'USER_INVITE',
-  'USER_REMOVE',
-  'ROLE_CREATE',
-  'ROLE_DELETE',
-  'ROLE_ASSIGN',
-  // teams
-  'TEAM_CREATE',
-  'TEAM_DELETE',
-  'TEAM_MANAGE',
-]);
+export const ADMIN_ONLY_PERMISSION_CODES: ReadonlySet<string> = new Set<string>(
+  [
+    // organization
+    'ORG_DELETE',
+    'ORG_TRANSFER_OWNERSHIP',
+    'BILLING_MANAGE',
+    // userManagement
+    'USER_INVITE',
+    'USER_REMOVE',
+    'ROLE_CREATE',
+    'ROLE_DELETE',
+    'ROLE_ASSIGN',
+    // teams
+    'TEAM_CREATE',
+    'TEAM_DELETE',
+    'TEAM_MANAGE',
+  ],
+);
 
 export function requiresAdminPersona(permissionCodes: string[]): boolean {
   return permissionCodes.some((p) => ADMIN_ONLY_PERMISSION_CODES.has(p));

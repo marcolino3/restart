@@ -150,7 +150,7 @@ export const auth = betterAuth({
     // the Restart `users` table where `is_super_admin` lives), so the
     // session.user shape doesn't carry that flag — we look it up directly
     // in our domain DB by email.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     before: createAuthMiddleware(async (ctx: any) => {
       if (
         ctx.path !== '/admin/impersonate-user' &&
@@ -159,7 +159,7 @@ export const auth = betterAuth({
         return;
       }
       // Explicitly load the session — before-hooks don't auto-populate it.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const session = (await getSessionFromCtx(ctx)) as any;
       const email = session?.user?.email as string | undefined;
       if (!email) {

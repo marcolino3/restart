@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateCurriculumLessonPrerequisites1779200100000
-  implements MigrationInterface
-{
+export class CreateCurriculumLessonPrerequisites1779200100000 implements MigrationInterface {
   name = 'CreateCurriculumLessonPrerequisites1779200100000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

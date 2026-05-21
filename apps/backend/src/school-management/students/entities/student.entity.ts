@@ -9,9 +9,13 @@ import { IStudent } from '../interfaces/student.interface';
 @ObjectType()
 @Entity('students')
 @Index('idx_students_org', ['organizationId'])
-@Index('UQ_student_org_name_dob', ['organizationId', 'firstName', 'lastName', 'dateOfBirth'], {
-  unique: true,
-})
+@Index(
+  'UQ_student_org_name_dob',
+  ['organizationId', 'firstName', 'lastName', 'dateOfBirth'],
+  {
+    unique: true,
+  },
+)
 export class Student extends AbstractEntity<Student> implements IStudent {
   @Field(() => String)
   @Column('text')

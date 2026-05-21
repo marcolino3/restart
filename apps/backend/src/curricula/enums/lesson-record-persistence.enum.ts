@@ -14,6 +14,5 @@ export enum LessonRecordPersistence {
 
 registerEnumType(LessonRecordPersistence, {
   name: 'LessonRecordPersistence',
-  description:
-    'Umgang mit Schwierigkeit: PERSISTS / SEEKS_HELP / GIVES_UP.',
+  description: 'Umgang mit Schwierigkeit: PERSISTS / SEEKS_HELP / GIVES_UP.',
 });

@@ -489,7 +489,11 @@ export class CurriculumNodesService {
 
     const reloaded = await this.nodesRepo.findOne({
       where: { id: lesson.id, organizationId },
-      relations: ['prerequisites', 'prerequisites.translations', 'translations'],
+      relations: [
+        'prerequisites',
+        'prerequisites.translations',
+        'translations',
+      ],
     });
     return reloaded!;
   }
@@ -609,8 +613,8 @@ export class CurriculumNodesService {
       }
       // Cross-Org-Sicherheit: über JOIN auf curriculum_nodes filtern,
       // damit Prerequisites aus fremden Orgs nicht in den Cycle-Check fallen.
-      const rows: Array<{ prerequisite_id: string }> = await this.dataSource
-        .query(
+      const rows: Array<{ prerequisite_id: string }> =
+        await this.dataSource.query(
           `SELECT clp."prerequisite_id"
              FROM "curriculum_lesson_prerequisites" clp
              INNER JOIN "curriculum_nodes" l ON l."id" = clp."lesson_id"

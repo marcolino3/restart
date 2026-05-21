@@ -18,6 +18,11 @@ const eslintConfig = [
       "react-hooks/refs": "warn",
       "react-hooks/immutability": "warn",
       "react-hooks/preserve-manual-memoization": "warn",
+      // Allow underscore-prefixed unused params (Periparto/Restart convention)
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
     },
   },
 ];

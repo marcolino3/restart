@@ -10,10 +10,7 @@ import { AdmissionApplication } from './admission-application.entity';
 @ObjectType()
 @Entity('admission_activities')
 @Index('idx_admission_activities_org', ['organizationId'])
-@Index('idx_admission_activities_app_occurred', [
-  'applicationId',
-  'occurredAt',
-])
+@Index('idx_admission_activities_app_occurred', ['applicationId', 'occurredAt'])
 export class AdmissionActivity extends AbstractEntity<AdmissionActivity> {
   @Field(() => String)
   @Column('uuid', { name: 'organization_id' })

@@ -247,14 +247,14 @@ describe('OrganizationsService', () => {
       orgRepo.save.mockResolvedValue({ ...org, isActive: false });
 
       const result = await service.removeOrganization('org-1');
-      expect((result as Organization).isActive).toBe(false);
+      expect(result.isActive).toBe(false);
     });
 
     it('should throw NotFoundException for missing org', async () => {
       orgRepo.findOne.mockResolvedValue(null);
-      await expect(
-        service.removeOrganization('nonexistent'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.removeOrganization('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

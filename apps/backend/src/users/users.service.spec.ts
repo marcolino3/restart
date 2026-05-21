@@ -63,7 +63,9 @@ describe('UsersService', () => {
     };
 
     userEmailsService = {
-      create: jest.fn().mockResolvedValue({ id: 'ue-1', email: 'test@example.com' }),
+      create: jest
+        .fn()
+        .mockResolvedValue({ id: 'ue-1', email: 'test@example.com' }),
       findByEmail: jest.fn(),
       findByUserId: jest.fn(),
     };
@@ -127,7 +129,9 @@ describe('UsersService', () => {
     });
 
     it('should throw ConflictException if email already exists', async () => {
-      userEmailsService.create.mockRejectedValue(new ConflictException('Email already in use'));
+      userEmailsService.create.mockRejectedValue(
+        new ConflictException('Email already in use'),
+      );
 
       await expect(
         service.create({

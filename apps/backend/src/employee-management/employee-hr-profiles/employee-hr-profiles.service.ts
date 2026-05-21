@@ -7,6 +7,17 @@ import { EmployeeAuditLogEntityType } from '../employee-audit-log/entities/emplo
 import { EmployeeHrProfile } from './entities/employee-hr-profile.entity';
 import { UpsertEmployeeHrProfileInput } from './dto/upsert-employee-hr-profile.input';
 
+/** Audit-Log-Felder sind text. Narrow auf primitive — die Entity-Spalten sind
+ * varchar/enum/text/date, alles andere via JSON.stringify. */
+function toAuditString(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean')
+    return String(value);
+  if (value instanceof Date) return value.toISOString();
+  return JSON.stringify(value);
+}
+
 @Injectable()
 export class EmployeeHrProfilesService {
   constructor(
@@ -57,9 +68,9 @@ export class EmployeeHrProfilesService {
         const current = profile ? (profile[field] ?? null) : null;
         if (current !== normalized) {
           changes.push({
-            fieldName: field as string,
-            oldValue: current == null ? null : String(current),
-            newValue: normalized == null ? null : String(normalized),
+            fieldName: field,
+            oldValue: toAuditString(current),
+            newValue: toAuditString(normalized),
           });
         }
       };

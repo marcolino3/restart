@@ -240,7 +240,9 @@ export function parseCurriculumFile(
     const masterSeqs = new Set(
       masterRows.filter((r) => r.sequence !== null).map((r) => r.sequence),
     );
-    if (masterSeqs.size !== masterRows.filter((r) => r.sequence !== null).length) {
+    if (
+      masterSeqs.size !== masterRows.filter((r) => r.sequence !== null).length
+    ) {
       throw new Error(
         'Master sheet (DE) has duplicate "Sequence" values — sequences must be globally unique',
       );

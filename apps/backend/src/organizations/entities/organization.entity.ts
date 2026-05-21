@@ -30,7 +30,13 @@ export class Organization
   subdomain?: string;
 
   @Field({ nullable: true })
-  @Column({ name: 'domain', type: 'varchar', length: 255, unique: true, nullable: true })
+  @Column({
+    name: 'domain',
+    type: 'varchar',
+    length: 255,
+    unique: true,
+    nullable: true,
+  })
   domain?: string;
 
   @Field({ nullable: true })
@@ -105,7 +111,12 @@ export class Organization
 
   // --- Versicherungen ---
   @Field({ nullable: true })
-  @Column({ name: 'bvg_provider', type: 'varchar', length: 200, nullable: true })
+  @Column({
+    name: 'bvg_provider',
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
   bvgProvider?: string;
 
   @Field({ nullable: true })
@@ -118,7 +129,12 @@ export class Organization
   bvgContactPhone?: string;
 
   @Field({ nullable: true })
-  @Column({ name: 'uvg_provider', type: 'varchar', length: 200, nullable: true })
+  @Column({
+    name: 'uvg_provider',
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
   uvgProvider?: string;
 
   @Field({ nullable: true })

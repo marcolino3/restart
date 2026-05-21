@@ -26,11 +26,9 @@ export class Employee extends AbstractEntity<Employee> {
   absences?: EmployeeAbsence[];
 
   @Field(() => [EmployeeNote], { nullable: true })
-  @OneToMany(
-    () => EmployeeNote,
-    (employeeNote) => employeeNote.employee,
-    { nullable: true },
-  )
+  @OneToMany(() => EmployeeNote, (employeeNote) => employeeNote.employee, {
+    nullable: true,
+  })
   notes?: EmployeeNote[];
 
   @Field(() => [TeamMember], { nullable: true })

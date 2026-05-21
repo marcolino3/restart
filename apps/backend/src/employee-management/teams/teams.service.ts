@@ -17,10 +17,7 @@ export class TeamsService {
     private readonly teamsRepo: Repository<Team>,
   ) {}
 
-  async create(
-    input: CreateTeamInput,
-    organizationId: string,
-  ): Promise<Team> {
+  async create(input: CreateTeamInput, organizationId: string): Promise<Team> {
     const name = input.name.trim();
     const existing = await this.teamsRepo.findOne({
       where: { organizationId, name },
@@ -52,10 +49,7 @@ export class TeamsService {
     return team;
   }
 
-  async update(
-    input: UpdateTeamInput,
-    organizationId: string,
-  ): Promise<Team> {
+  async update(input: UpdateTeamInput, organizationId: string): Promise<Team> {
     const team = await this.findOne(input.id, organizationId);
     if (input.name !== undefined) {
       const name = input.name.trim();

@@ -81,7 +81,6 @@ async function bootstrap() {
 }
 
 bootstrap().catch((err) => {
-  // eslint-disable-next-line no-console -- Bootstrap-Fehler: Logger noch nicht initialisiert
   console.error('Fatal startup error', err);
   process.exit(1);
 });

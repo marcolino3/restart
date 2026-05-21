@@ -9,7 +9,10 @@ import AppleStrategy from 'passport-apple';
 import { decode } from 'jsonwebtoken';
 
 @Injectable()
-export class AppleAuthStrategy extends PassportStrategy(AppleStrategy, 'apple') {
+export class AppleAuthStrategy extends PassportStrategy(
+  AppleStrategy,
+  'apple',
+) {
   constructor(
     configService: ConfigService,
     private readonly usersService: UsersService,

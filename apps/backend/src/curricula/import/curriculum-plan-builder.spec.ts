@@ -41,7 +41,14 @@ describe('buildImportPlan', () => {
     const plan = buildImportPlan(
       buildParsed({
         DE: [
-          row(1, 'Unterstufe', 'Mathe', 'Algebra', 'Gleichungen', 'Lineare Gl.'),
+          row(
+            1,
+            'Unterstufe',
+            'Mathe',
+            'Algebra',
+            'Gleichungen',
+            'Lineare Gl.',
+          ),
           row(2, 'Unterstufe', 'Mathe', 'Algebra', 'Gleichungen', 'Quadr. Gl.'),
         ],
       }),
@@ -59,7 +66,14 @@ describe('buildImportPlan', () => {
     const plan = buildImportPlan(
       buildParsed({
         DE: [
-          row(1, 'Unterstufe', 'Mathe', 'Algebra', 'Gleichungen', 'Lineare Gl.'),
+          row(
+            1,
+            'Unterstufe',
+            'Mathe',
+            'Algebra',
+            'Gleichungen',
+            'Lineare Gl.',
+          ),
         ],
         FR: [
           row(1, 'Inférieur', 'Maths', 'Algèbre', 'Équations', 'Eq. linéaire'),
@@ -146,8 +160,11 @@ describe('buildImportPlan', () => {
     );
     const lesson = plan.levels[0].roots[0];
     expect(lesson.translations).toHaveLength(4);
-    expect(
-      lesson.translations.map((t) => t.locale).sort(),
-    ).toEqual(['DE', 'EN', 'FR', 'IT']);
+    expect(lesson.translations.map((t) => t.locale).sort()).toEqual([
+      'DE',
+      'EN',
+      'FR',
+      'IT',
+    ]);
   });
 });

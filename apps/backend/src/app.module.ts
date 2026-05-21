@@ -66,7 +66,8 @@ import { join } from 'path';
         // Schema-Update den Rollout blockiert. In Dev/Staging laufen sie beim Boot.
         const migrationsRun =
           configService.get<string>('DB_MIGRATIONS_RUN') === 'true' ||
-          (!isProd && configService.get<string>('DB_MIGRATIONS_RUN') !== 'false');
+          (!isProd &&
+            configService.get<string>('DB_MIGRATIONS_RUN') !== 'false');
 
         return {
           type: 'postgres',

@@ -13,7 +13,10 @@ import { MailService } from '@/mail/mail.service';
 import { TokenPayload } from './interfaces/token-payload.interface';
 import { getAuthContext } from './utils/get-auth-context.util';
 import { SafeUser } from './interfaces/safe-user.type';
-import { AUTH_COOKIE_NAME, REFRESH_COOKIE_NAME } from './constants/cookie-names';
+import {
+  AUTH_COOKIE_NAME,
+  REFRESH_COOKIE_NAME,
+} from './constants/cookie-names';
 
 @Injectable()
 export class AuthService {
@@ -51,7 +54,7 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    return user as SafeUser;
+    return user;
   }
 
   /**

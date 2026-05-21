@@ -26,7 +26,10 @@ export class RecordKeepingSettingsService {
   async getForOrg(organizationId: string): Promise<RecordKeepingSettings> {
     const found = await this.repo.findOne({ where: { organizationId } });
     if (found) return found;
-    return this.repo.create({ organizationId, ...RECORD_KEEPING_SETTINGS_DEFAULTS });
+    return this.repo.create({
+      organizationId,
+      ...RECORD_KEEPING_SETTINGS_DEFAULTS,
+    });
   }
 
   async upsertForOrg(

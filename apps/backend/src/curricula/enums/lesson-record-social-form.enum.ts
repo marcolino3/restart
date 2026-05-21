@@ -12,6 +12,5 @@ export enum LessonRecordSocialForm {
 
 registerEnumType(LessonRecordSocialForm, {
   name: 'LessonRecordSocialForm',
-  description:
-    'Sozialform: ALONE / WITH_PARTNER / SMALL_GROUP / WITH_GUIDE.',
+  description: 'Sozialform: ALONE / WITH_PARTNER / SMALL_GROUP / WITH_GUIDE.',
 });

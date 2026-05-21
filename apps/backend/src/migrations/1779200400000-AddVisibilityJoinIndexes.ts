@@ -9,9 +9,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * `memberships` and `school_class_teachers` — the main reason that
  * page felt slow.
  */
-export class AddVisibilityJoinIndexes1779200400000
-  implements MigrationInterface
-{
+export class AddVisibilityJoinIndexes1779200400000 implements MigrationInterface {
   name = 'AddVisibilityJoinIndexes1779200400000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

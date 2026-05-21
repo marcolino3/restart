@@ -1,9 +1,4 @@
-import {
-  MigrationInterface,
-  QueryRunner,
-  Table,
-  TableIndex,
-} from 'typeorm';
+import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
 
 type Seed = {
   countryCode: string;
@@ -69,9 +64,7 @@ const SEEDS: Seed[] = [
   },
 ];
 
-export class CreateCountryInputTemplates1779120000000
-  implements MigrationInterface
-{
+export class CreateCountryInputTemplates1779120000000 implements MigrationInterface {
   name = 'CreateCountryInputTemplates1779120000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

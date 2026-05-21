@@ -46,10 +46,7 @@ export class EmployeeContractsService {
     });
   }
 
-  async findOne(
-    id: string,
-    organizationId: string,
-  ): Promise<EmployeeContract> {
+  async findOne(id: string, organizationId: string): Promise<EmployeeContract> {
     const contract = await this.contractRepo.findOne({
       where: { id, organizationId, isActive: true },
       relations: ['employee'],

@@ -16,9 +16,7 @@ import { AddressSuggestion } from './dto/address-suggestion.type';
 @Resolver(() => ContactPerson)
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
 export class ContactPersonsResolver {
-  constructor(
-    private readonly contactPersonsService: ContactPersonsService,
-  ) {}
+  constructor(private readonly contactPersonsService: ContactPersonsService) {}
 
   @Query(() => [ContactPerson], { name: 'contactPersonsByOrgId' })
   @Permissions('CONTACT_PERSON_READ')

@@ -44,7 +44,11 @@ export class SuperAdminBootstrapService implements OnApplicationBootstrap {
               passEnv,
               Number(process.env.BCRYPT_ROUNDS ?? 10),
             );
-            await tx.update(UserEmail, { id: userEmail.id }, { passwordHash: newHash });
+            await tx.update(
+              UserEmail,
+              { id: userEmail.id },
+              { passwordHash: newHash },
+            );
           }
 
           // SuperAdmin-Flag sicherstellen

@@ -6,9 +6,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  *
  * `ALTER TYPE ... RENAME VALUE` (PG10+) preserves existing rows automatically.
  */
-export class RenameEngagementDutifulToMechanical1779200700000
-  implements MigrationInterface
-{
+export class RenameEngagementDutifulToMechanical1779200700000 implements MigrationInterface {
   name = 'RenameEngagementDutifulToMechanical1779200700000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

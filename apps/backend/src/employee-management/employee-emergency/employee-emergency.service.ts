@@ -7,6 +7,17 @@ import { EmployeeAuditLogEntityType } from '../employee-audit-log/entities/emplo
 import { EmployeeEmergencyProfile } from './entities/employee-emergency-profile.entity';
 import { UpsertEmployeeEmergencyProfileInput } from './dto/upsert-employee-emergency-profile.input';
 
+/** Audit-Log-Felder sind text. Narrow auf primitive — die Entity-Spalten sind
+ * varchar/enum/text, also string oder Date; alles andere via JSON.stringify. */
+function toAuditString(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean')
+    return String(value);
+  if (value instanceof Date) return value.toISOString();
+  return JSON.stringify(value);
+}
+
 @Injectable()
 export class EmployeeEmergencyService {
   constructor(
@@ -57,9 +68,9 @@ export class EmployeeEmergencyService {
         const current = profile ? (profile[field] ?? null) : null;
         if (current !== normalized) {
           changes.push({
-            fieldName: field as string,
-            oldValue: current == null ? null : String(current),
-            newValue: normalized == null ? null : String(normalized),
+            fieldName: field,
+            oldValue: toAuditString(current),
+            newValue: toAuditString(normalized),
           });
         }
       };
@@ -93,8 +104,7 @@ export class EmployeeEmergencyService {
           contact1Phone: input.contact1Phone?.trim() || null,
         }),
         ...(input.contact1Email !== undefined && {
-          contact1Email:
-            input.contact1Email?.trim().toLowerCase() || null,
+          contact1Email: input.contact1Email?.trim().toLowerCase() || null,
         }),
         ...(input.contact2Name !== undefined && {
           contact2Name: input.contact2Name?.trim() || null,
@@ -106,8 +116,7 @@ export class EmployeeEmergencyService {
           contact2Phone: input.contact2Phone?.trim() || null,
         }),
         ...(input.contact2Email !== undefined && {
-          contact2Email:
-            input.contact2Email?.trim().toLowerCase() || null,
+          contact2Email: input.contact2Email?.trim().toLowerCase() || null,
         }),
         ...(input.bloodType !== undefined && { bloodType: input.bloodType }),
         ...(input.allergies !== undefined && {

@@ -34,6 +34,11 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-member-access': 'warn',
       '@typescript-eslint/no-unsafe-return': 'warn',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      // APIError aus better-auth ist eine echte Error-Subklasse, aber die
+      // d.ts-Typings (InstanceType-Pattern) verstecken die Vererbung vor
+      // typescript-eslint. Whitelisten ist hier sauber, weil throw new APIError
+      // die offizielle better-auth-API ist.
+      '@typescript-eslint/only-throw-error': ['error', { allow: ['APIError'] }],
     },
   },
 );

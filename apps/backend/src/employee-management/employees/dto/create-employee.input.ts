@@ -1,11 +1,6 @@
 import { Persona } from '@/common/enums/persona.enum';
 import { InputType, Field } from '@nestjs/graphql';
-import {
-  IsBoolean,
-  IsEnum,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
 
 @InputType()
 export class CreateEmployeeInput {

@@ -20,9 +20,7 @@ export class FamiliesService {
     search?: string | null,
   ): Promise<Family[]> {
     const where = search?.trim()
-      ? [
-          { organizationId, isArchived: false, name: ILike(`%${search}%`) },
-        ]
+      ? [{ organizationId, isArchived: false, name: ILike(`%${search}%`) }]
       : { organizationId, isArchived: false };
     return this.familyRepo.find({
       where,

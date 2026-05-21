@@ -188,10 +188,7 @@ export class AdmissionRemindersService {
     const rows = await this.repo
       .createQueryBuilder('r')
       .select('r.application_id', 'applicationId')
-      .addSelect(
-        'COUNT(*) FILTER (WHERE r.due_at < :now)::int',
-        'overdueCount',
-      )
+      .addSelect('COUNT(*) FILTER (WHERE r.due_at < :now)::int', 'overdueCount')
       .addSelect('COUNT(*)::int', 'openCount')
       .where('r.organization_id = :organizationId', { organizationId })
       .andWhere('r.application_id IN (:...ids)', { ids: applicationIds })

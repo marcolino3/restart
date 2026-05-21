@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { EntityManager, Repository } from 'typeorm';
 import { hash } from 'bcrypt';
 

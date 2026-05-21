@@ -75,7 +75,9 @@ export class CurriculumNodeLoaders {
 
   constructor(private readonly dataSource: DataSource) {}
 
-  ancestorsLoader(organizationId: string): DataLoader<string, CurriculumNode[]> {
+  ancestorsLoader(
+    organizationId: string,
+  ): DataLoader<string, CurriculumNode[]> {
     let loader = this.ancestorsLoaderByOrg.get(organizationId);
     if (!loader) {
       loader = new DataLoader<string, CurriculumNode[]>((nodeIds) =>

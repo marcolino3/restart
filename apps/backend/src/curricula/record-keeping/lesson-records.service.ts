@@ -260,13 +260,11 @@ export class LessonRecordsService {
       student_first_name: string;
       student_last_name: string;
       lesson_translations: { locale: string; name: string }[] | null;
-      ancestors:
-        | Array<{
-            id: string;
-            nodeType: string;
-            translations: { locale: string; name: string }[];
-          }>
-        | null;
+      ancestors: Array<{
+        id: string;
+        nodeType: string;
+        translations: { locale: string; name: string }[];
+      }> | null;
     }> = await this.recordsRepo.query(
       `
       WITH RECURSIVE class_students AS (
@@ -391,11 +389,7 @@ export class LessonRecordsService {
 
     const summaries: StudentAttentionSummaryOutput[] = [];
     for (const [studentId, { firstName, lastName, records }] of byStudent) {
-      const items = deriveStudentAttentionItems(
-        records,
-        locale,
-        thresholds,
-      );
+      const items = deriveStudentAttentionItems(records, locale, thresholds);
       if (items.length === 0) continue;
 
       const byReason = {

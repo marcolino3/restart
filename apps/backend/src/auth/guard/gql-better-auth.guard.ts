@@ -41,13 +41,9 @@ export class GqlBetterAuthGuard implements CanActivate {
     const gqlCtx = GqlExecutionContext.create(context).getContext<GqlContext>();
     const req = gqlCtx.req;
 
-    const session = (await auth.api.getSession({
+    const session = await auth.api.getSession({
       headers: req.headers as unknown as Headers,
-    })) as
-      | (Awaited<ReturnType<typeof auth.api.getSession>> & {
-          activeOrganizationId?: string | null;
-        })
-      | null;
+    });
     if (!session?.user) {
       throw new UnauthorizedException('No active session');
     }

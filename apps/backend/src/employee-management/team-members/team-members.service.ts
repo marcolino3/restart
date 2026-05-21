@@ -32,9 +32,7 @@ export class TeamMembersService {
         existing.isActive = true;
         return this.teamMemberRepo.save(existing);
       }
-      throw new ConflictException(
-        `Employee is already a member of this team`,
-      );
+      throw new ConflictException(`Employee is already a member of this team`);
     }
 
     const teamMember = this.teamMemberRepo.create({

@@ -220,10 +220,7 @@ describe('LessonRecordsService', () => {
     it('clears all observation fields when observation=null', async () => {
       recordsRepo.findOne.mockResolvedValue({ ...existing });
 
-      await service.update(
-        { id: 'rec-1', observation: null },
-        'org-1',
-      );
+      await service.update({ id: 'rec-1', observation: null }, 'org-1');
 
       expect(recordsRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({

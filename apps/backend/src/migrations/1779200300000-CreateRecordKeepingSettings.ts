@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateRecordKeepingSettings1779200300000
-  implements MigrationInterface
-{
+export class CreateRecordKeepingSettings1779200300000 implements MigrationInterface {
   name = 'CreateRecordKeepingSettings1779200300000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -32,8 +30,6 @@ export class CreateRecordKeepingSettings1779200300000
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `DROP TABLE IF EXISTS "record_keeping_settings"`,
-    );
+    await queryRunner.query(`DROP TABLE IF EXISTS "record_keeping_settings"`);
   }
 }

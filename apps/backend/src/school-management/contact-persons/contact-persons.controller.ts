@@ -48,7 +48,7 @@ function parseCsv(text: string): CsvRow[] {
     headers.forEach((header, i) => {
       row[header] = values[i] ?? '';
     });
-    return row as CsvRow;
+    return row;
   });
 }
 
@@ -62,9 +62,7 @@ function parsePipeList(value: string | undefined): string[] {
 
 @Controller('contact-persons')
 export class ContactPersonsController {
-  constructor(
-    private readonly contactPersonsService: ContactPersonsService,
-  ) {}
+  constructor(private readonly contactPersonsService: ContactPersonsService) {}
 
   @Post('upload')
   @UseGuards(JwtAuthGuard)

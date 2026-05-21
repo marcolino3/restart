@@ -58,8 +58,7 @@ export class GraphQLAccessGuard implements CanActivate {
     const user = gqlCtx.req.user;
     if (user?.isSuperAdmin) return true;
 
-    if (superAdminOnly)
-      throw new ForbiddenException('SuperAdmin only');
+    if (superAdminOnly) throw new ForbiddenException('SuperAdmin only');
 
     if (!user) throw new ForbiddenException('Unauthenticated');
 

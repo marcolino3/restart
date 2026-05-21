@@ -11,9 +11,13 @@ import { ISchoolClassEnrollment } from '../interfaces/school-class-enrollment.in
 @Index('idx_enrollment_org', ['organizationId'])
 @Index('idx_enrollment_student', ['studentId'])
 @Index('idx_enrollment_class', ['schoolClassId'])
-@Index('UQ_enrollment_student_class_date', ['studentId', 'schoolClassId', 'enrolledAt'], {
-  unique: true,
-})
+@Index(
+  'UQ_enrollment_student_class_date',
+  ['studentId', 'schoolClassId', 'enrolledAt'],
+  {
+    unique: true,
+  },
+)
 export class SchoolClassEnrollment
   extends AbstractEntity<SchoolClassEnrollment>
   implements ISchoolClassEnrollment

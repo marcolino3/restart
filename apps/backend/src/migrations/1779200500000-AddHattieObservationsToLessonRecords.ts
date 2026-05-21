@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddHattieObservationsToLessonRecords1779200500000
-  implements MigrationInterface
-{
+export class AddHattieObservationsToLessonRecords1779200500000 implements MigrationInterface {
   name = 'AddHattieObservationsToLessonRecords1779200500000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -67,9 +65,17 @@ export class AddHattieObservationsToLessonRecords1779200500000
         DROP COLUMN IF EXISTS "difficulty",
         DROP COLUMN IF EXISTS "engagement"
     `);
-    await queryRunner.query(`DROP TYPE IF EXISTS "lesson_records_self_assessment_enum"`);
-    await queryRunner.query(`DROP TYPE IF EXISTS "lesson_records_social_form_enum"`);
-    await queryRunner.query(`DROP TYPE IF EXISTS "lesson_records_difficulty_enum"`);
-    await queryRunner.query(`DROP TYPE IF EXISTS "lesson_records_engagement_enum"`);
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "lesson_records_self_assessment_enum"`,
+    );
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "lesson_records_social_form_enum"`,
+    );
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "lesson_records_difficulty_enum"`,
+    );
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "lesson_records_engagement_enum"`,
+    );
   }
 }

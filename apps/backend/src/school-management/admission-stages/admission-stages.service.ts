@@ -40,9 +40,7 @@ export class AdmissionStagesService {
     return stage;
   }
 
-  async findDefault(
-    organizationId: string,
-  ): Promise<AdmissionStage | null> {
+  async findDefault(organizationId: string): Promise<AdmissionStage | null> {
     return this.stagesRepo.findOne({
       where: { organizationId, isDefault: true, isArchived: false },
     });

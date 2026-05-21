@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, IsNull, Repository } from 'typeorm';
 import { SchoolClass } from '@/school-management/school-classes/entities/school-class.entity';
@@ -157,7 +153,7 @@ export class SchoolClassEnrollmentsService {
       }
     }
 
-    const today = (input.transferDate ?? new Date().toISOString().slice(0, 10));
+    const today = input.transferDate ?? new Date().toISOString().slice(0, 10);
 
     return this.dataSource.transaction(async (m) => {
       const repo = m.getRepository(SchoolClassEnrollment);

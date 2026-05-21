@@ -72,7 +72,12 @@ export class Membership extends AbstractEntity<Membership> {
 
   // Contact phone for this org context
   @Field(() => String, { nullable: true })
-  @Column({ name: 'contact_phone', type: 'varchar', length: 30, nullable: true })
+  @Column({
+    name: 'contact_phone',
+    type: 'varchar',
+    length: 30,
+    nullable: true,
+  })
   contactPhone?: string;
 
   // Employee

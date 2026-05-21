@@ -4,7 +4,7 @@
 // transitively touch `@/lib/auth`.
 export const betterAuth = () => ({
   api: {
-    getSession: async () => null,
+    getSession: () => Promise.resolve(null),
   },
-  handler: async () => new Response('', { status: 404 }),
+  handler: () => Promise.resolve(new Response('', { status: 404 })),
 });

@@ -49,7 +49,12 @@ export class User extends AbstractEntity<User> {
   houseNumber?: string | null;
 
   @Field(() => String, { nullable: true })
-  @Column({ name: 'address_line_2', type: 'varchar', length: 200, nullable: true })
+  @Column({
+    name: 'address_line_2',
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
   addressLine2?: string | null;
 
   @Field(() => String, { nullable: true })

@@ -6,7 +6,8 @@ import type { Params } from 'nestjs-pino';
 import type { IncomingMessage } from 'http';
 import { randomUUID } from 'crypto';
 
-const isDev = process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'staging';
+const isDev =
+  process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'staging';
 
 export const loggerConfig: Params = {
   pinoHttp: {
@@ -22,7 +23,8 @@ export const loggerConfig: Params = {
             colorize: true,
             translateTime: 'SYS:HH:MM:ss.l',
             ignore: 'pid,hostname,req,res,responseTime',
-            messageFormat: '{msg} {req.method} {req.url} {res.statusCode} ({responseTime}ms)',
+            messageFormat:
+              '{msg} {req.method} {req.url} {res.statusCode} ({responseTime}ms)',
           },
         }
       : undefined,
@@ -59,7 +61,12 @@ export const loggerConfig: Params = {
 
     // Pro Log-Eintrag: Methode + Pfad + Status + Dauer; Body wird NICHT geloggt.
     serializers: {
-      req: (req: { id: string; method: string; url: string; headers: Record<string, unknown> }) => ({
+      req: (req: {
+        id: string;
+        method: string;
+        url: string;
+        headers: Record<string, unknown>;
+      }) => ({
         id: req.id,
         method: req.method,
         url: req.url,

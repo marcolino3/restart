@@ -18,10 +18,7 @@ export class StudentsResolver {
 
   @Query(() => [Student], { name: 'studentsByOrgId' })
   @Permissions('SCHOOL_CLASS_READ')
-  findAll(
-    @CurrentOrgId() orgId: string,
-    @CurrentUser() user: TokenPayload,
-  ) {
+  findAll(@CurrentOrgId() orgId: string, @CurrentUser() user: TokenPayload) {
     return this.studentsService.findVisibleByUser(
       user.sub,
       user.roles ?? [],

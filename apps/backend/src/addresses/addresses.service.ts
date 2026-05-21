@@ -20,7 +20,7 @@ export class AddressesService {
     const address = this.addressRepo.create({
       ...rest,
       organizationId,
-      ...(countryId ? { country: { id: countryId } as any } : {}),
+      ...(countryId ? { country: { id: countryId } } : {}),
     });
     const saved = await this.addressRepo.save(address);
     return this.findOne(saved.id, organizationId);

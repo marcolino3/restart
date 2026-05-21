@@ -5,9 +5,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * TypeORM-Auto-Sync entstand (DB_SYNCHRONIZE=true), fehlt der
  * Self-Reference-CHECK. Diese Migration ergänzt ihn idempotent.
  */
-export class AddCheckToCurriculumLessonPrerequisites1779200150000
-  implements MigrationInterface
-{
+export class AddCheckToCurriculumLessonPrerequisites1779200150000 implements MigrationInterface {
   name = 'AddCheckToCurriculumLessonPrerequisites1779200150000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

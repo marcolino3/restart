@@ -21,7 +21,8 @@ export const CurrentMembershipIdOptional = createParamDecorator(
         'CurrentMembershipIdOptional decorator only supports GraphQL context',
       );
     }
-    const { req } = GqlExecutionContext.create(context).getContext<GqlContext>();
+    const { req } =
+      GqlExecutionContext.create(context).getContext<GqlContext>();
     return req.user?.membershipId ?? null;
   },
 );

@@ -1,11 +1,5 @@
 import { Field, ID, InputType } from '@nestjs/graphql';
-import {
-  IsEmail,
-  IsEnum,
-  IsOptional,
-  IsString,
-  IsUUID,
-} from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 import {
   BloodType,
   EmergencyContactRelationship,

@@ -213,7 +213,7 @@ export class EmployeesService {
         if (current !== normalized) {
           changes.push({
             entityType: EmployeeAuditLogEntityType.USER,
-            fieldName: field as string,
+            fieldName: field,
             oldValue: current,
             newValue: normalized,
           });
@@ -235,7 +235,10 @@ export class EmployeesService {
       if (city !== undefined) trackUser('city', city);
       if (country !== undefined) trackUser('country', country);
 
-      if (user && changes.some((c) => c.entityType === EmployeeAuditLogEntityType.USER)) {
+      if (
+        user &&
+        changes.some((c) => c.entityType === EmployeeAuditLogEntityType.USER)
+      ) {
         await manager.save(User, user);
       }
 
@@ -264,7 +267,11 @@ export class EmployeesService {
         }
       }
 
-      if (changes.some((c) => c.entityType === EmployeeAuditLogEntityType.MEMBERSHIP)) {
+      if (
+        changes.some(
+          (c) => c.entityType === EmployeeAuditLogEntityType.MEMBERSHIP,
+        )
+      ) {
         await manager.save(Membership, membership);
       }
 

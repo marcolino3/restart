@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddTeacherSelfObservationToLessonRecords1779200600000
-  implements MigrationInterface
-{
+export class AddTeacherSelfObservationToLessonRecords1779200600000 implements MigrationInterface {
   name = 'AddTeacherSelfObservationToLessonRecords1779200600000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

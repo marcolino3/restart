@@ -9,9 +9,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  *
  * All columns are nullable — observation badges remain fully optional.
  */
-export class AddSelfConfidencePersistenceConcentrationToLessonRecords1779200800000
-  implements MigrationInterface
-{
+export class AddSelfConfidencePersistenceConcentrationToLessonRecords1779200800000 implements MigrationInterface {
   name =
     'AddSelfConfidencePersistenceConcentrationToLessonRecords1779200800000';
 

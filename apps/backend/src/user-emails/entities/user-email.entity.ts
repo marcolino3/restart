@@ -1,5 +1,12 @@
 import { ObjectType, Field, ID, HideField } from '@nestjs/graphql';
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { AbstractEntity } from '@/database/abstract.entity';
 import { User } from '@/users/entities/user.entity';
 import { AuthAccount } from '@/auth-accounts/entities/auth-account.entity';
@@ -30,7 +37,12 @@ export class UserEmail extends AbstractEntity<UserEmail> {
   isVerified!: boolean;
 
   @HideField()
-  @Column({ name: 'password_hash', type: 'text', select: false, nullable: true })
+  @Column({
+    name: 'password_hash',
+    type: 'text',
+    select: false,
+    nullable: true,
+  })
   passwordHash?: string | null;
 
   @HideField()

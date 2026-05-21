@@ -58,7 +58,6 @@ export default function ContactPersonForm({
   const tC = useTranslations("ContactPersons");
   const tCountries = useTranslations("Countries");
   const tLanguages = useTranslations("Languages");
-  const tCommon = useTranslations("Common");
   const locale = useLocale();
   const router = useRouter();
   const isEdit = Boolean(contactPerson);

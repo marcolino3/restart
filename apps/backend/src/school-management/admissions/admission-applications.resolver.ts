@@ -149,6 +149,10 @@ export class AdmissionApplicationsResolver {
     @CurrentOrgId() orgId: string,
     @CurrentMembershipIdOptional() actorMembershipId: string | null,
   ) {
-    return this.applications.finalizeEnrollment(input, orgId, actorMembershipId);
+    return this.applications.finalizeEnrollment(
+      input,
+      orgId,
+      actorMembershipId,
+    );
   }
 }

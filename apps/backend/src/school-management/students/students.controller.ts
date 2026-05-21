@@ -40,7 +40,7 @@ function parseCsv(text: string): CsvRow[] {
     headers.forEach((header, i) => {
       row[header] = values[i] ?? '';
     });
-    return row as CsvRow;
+    return row;
   });
 }
 

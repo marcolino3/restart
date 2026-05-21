@@ -1,4 +1,10 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey, TableIndex } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+  TableIndex,
+} from 'typeorm';
 
 export class CreateStudentNotes1778932800000 implements MigrationInterface {
   name = 'CreateStudentNotes1778932800000';
@@ -118,6 +124,8 @@ export class CreateStudentNotes1778932800000 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.dropTable('student_notes', true);
-    await queryRunner.query(`DROP TYPE IF EXISTS "student_notes_category_enum"`);
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "student_notes_category_enum"`,
+    );
   }
 }

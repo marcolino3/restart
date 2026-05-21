@@ -128,7 +128,7 @@ export function deriveStudentAttentionItems(
       earliestByStatus.get(LessonRecordStatus.INTRODUCED) ?? null;
     const practicedAt =
       earliestByStatus.get(LessonRecordStatus.PRACTICED) ?? null;
-    const masteredAt =
+    const _masteredAt =
       earliestByStatus.get(LessonRecordStatus.MASTERED) ?? null;
 
     let lastNeedsMoreAt: string | null = null;
@@ -164,7 +164,12 @@ export function deriveStudentAttentionItems(
     };
 
     if (needsMore && lastNeedsMoreAt) {
-      push('NEEDS_MORE_CURRENT', 1, daysBetween(lastNeedsMoreAt, today), lastNeedsMoreAt);
+      push(
+        'NEEDS_MORE_CURRENT',
+        1,
+        daysBetween(lastNeedsMoreAt, today),
+        lastNeedsMoreAt,
+      );
       continue;
     }
 

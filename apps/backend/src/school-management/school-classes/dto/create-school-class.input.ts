@@ -32,7 +32,9 @@ export class CreateSchoolClassInput {
   @Field(() => String, { nullable: true })
   @IsString()
   @IsOptional()
-  @Matches(/^#[0-9A-Fa-f]{6}$/, { message: 'color must be a hex color (e.g. #FF5733)' })
+  @Matches(/^#[0-9A-Fa-f]{6}$/, {
+    message: 'color must be a hex color (e.g. #FF5733)',
+  })
   color?: string;
 
   @Field(() => String, { nullable: true })

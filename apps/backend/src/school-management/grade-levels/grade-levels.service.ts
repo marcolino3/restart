@@ -32,9 +32,7 @@ export class GradeLevelsService {
         existing.isActive = true;
         return this.gradeLevelRepo.save(existing);
       }
-      throw new ConflictException(
-        `Grade level "${input.name}" already exists`,
-      );
+      throw new ConflictException(`Grade level "${input.name}" already exists`);
     }
 
     const gradeLevel = this.gradeLevelRepo.create({

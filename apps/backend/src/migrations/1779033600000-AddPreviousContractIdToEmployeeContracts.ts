@@ -1,8 +1,12 @@
-import { MigrationInterface, QueryRunner, TableColumn, TableForeignKey, TableIndex } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  TableColumn,
+  TableForeignKey,
+  TableIndex,
+} from 'typeorm';
 
-export class AddPreviousContractIdToEmployeeContracts1779033600000
-  implements MigrationInterface
-{
+export class AddPreviousContractIdToEmployeeContracts1779033600000 implements MigrationInterface {
   name = 'AddPreviousContractIdToEmployeeContracts1779033600000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -63,7 +67,10 @@ export class AddPreviousContractIdToEmployeeContracts1779033600000
     }
 
     if (table.findColumnByName('previous_contract_id')) {
-      await queryRunner.dropColumn('employee_contracts', 'previous_contract_id');
+      await queryRunner.dropColumn(
+        'employee_contracts',
+        'previous_contract_id',
+      );
     }
   }
 }

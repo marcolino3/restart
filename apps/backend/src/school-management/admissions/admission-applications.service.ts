@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, In, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { AdmissionStage } from '../admission-stages/entities/admission-stage.entity';
 import { AdmissionStageType } from '../admission-stages/enums/admission-stage-type.enum';
 import { ContactPerson } from '../contact-persons/entities/contact-person.entity';
@@ -394,10 +394,7 @@ export class AdmissionApplicationsService {
    * (cascade via FK). Refused if an enrolled student already references it —
    * the user should archive in that case.
    */
-  async hardDelete(
-    id: string,
-    organizationId: string,
-  ): Promise<boolean> {
+  async hardDelete(id: string, organizationId: string): Promise<boolean> {
     const application = await this.findOne(id, organizationId);
     if (application.enrolledStudentId) {
       throw new BadRequestException(
@@ -488,9 +485,7 @@ export class AdmissionApplicationsService {
         where: { id: application.familyId, organizationId },
       });
       if (!family) {
-        throw new NotFoundException(
-          `Family ${application.familyId} not found`,
-        );
+        throw new NotFoundException(`Family ${application.familyId} not found`);
       }
 
       // Resolve target ENROLLED stage (if available)
