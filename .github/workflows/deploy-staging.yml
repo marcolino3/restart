@@ -23,7 +23,7 @@ jobs:
       has_kubeconfig: ${{ steps.check.outputs.has_kubeconfig }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Check if KUBE_CONFIG exists
         id: check
@@ -121,7 +121,7 @@ jobs:
     if: needs.build.outputs.has_kubeconfig == 'true'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3

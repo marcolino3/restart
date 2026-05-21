@@ -37,7 +37,7 @@ jobs:
       current_prod_tag: ${{ steps.current.outputs.current_prod_tag }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           # Volle History für `git log` im Promotion-Summary.
           fetch-depth: 0
@@ -148,7 +148,7 @@ jobs:
     if: ${{ !inputs.skip_migrations }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
@@ -211,7 +211,7 @@ jobs:
     if: always() && needs.resolve.result == 'success' && (needs.migrate.result == 'success' || needs.migrate.result == 'skipped')
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
