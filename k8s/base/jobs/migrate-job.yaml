@@ -4,7 +4,9 @@ metadata:
   # Name + Image werden zur Deploy-Zeit per `envsubst` ersetzt, damit jeder
   # Deploy einen eigenen Job bekommt (Jobs sind immutable und Namen müssen
   # eindeutig sein, sonst schlägt `kubectl apply` fehl).
-  name: migrate-${IMAGE_TAG}
+  # JOB_NAME_SUFFIX = 12-char SHA (k8s-Namen ≤ 63 chars); IMAGE_TAG = voller SHA
+  # damit das Image gefunden wird (Build pusht :${{ github.sha }}).
+  name: migrate-${JOB_NAME_SUFFIX}
   labels:
     app: backend
     component: migration

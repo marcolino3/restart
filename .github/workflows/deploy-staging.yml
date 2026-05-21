@@ -134,13 +134,14 @@ jobs:
       - name: Apply migration job
         env:
           IMAGE_OWNER: ${{ github.repository_owner }}
-          # Job-Namen dürfen keine Grossbuchstaben und max. 63 Zeichen haben.
-          # SHA in Kleinbuchstaben + auf 12 Zeichen kürzen.
+          # IMAGE_TAG = vollständiger SHA (matched das gepushte Image).
+          # JOB_NAME_SUFFIX = gekürzt, weil k8s-Job-Namen max. 63 Zeichen.
           IMAGE_TAG: ${{ github.sha }}
         run: |
           export IMAGE_OWNER=$(echo "$IMAGE_OWNER" | tr '[:upper:]' '[:lower:]')
-          export IMAGE_TAG=$(echo "$IMAGE_TAG" | cut -c1-12)
-          JOB_NAME="migrate-${IMAGE_TAG}"
+          JOB_NAME_SUFFIX=$(echo "$IMAGE_TAG" | cut -c1-12)
+          JOB_NAME="migrate-${JOB_NAME_SUFFIX}"
+          export JOB_NAME_SUFFIX
           envsubst < k8s/base/jobs/migrate-job.yaml | kubectl apply -n "$NAMESPACE" -f -
 
           echo "Waiting for $JOB_NAME to complete…"
