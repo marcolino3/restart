@@ -14,8 +14,13 @@ spec:
             matchLabels:
               kubernetes.io/metadata.name: kube-system
           podSelector:
-            matchLabels:
-              k8s-app: kube-dns
+            # Infomaniak Managed K8s nutzt Label `k8s-app: coredns`,
+            # nicht den Vanilla-K8s-Default `k8s-app: kube-dns`.
+            # matchExpressions In-List ist robust gegen beide.
+            matchExpressions:
+              - key: k8s-app
+                operator: In
+                values: ["kube-dns", "coredns"]
       ports:
         - protocol: UDP
           port: 53
