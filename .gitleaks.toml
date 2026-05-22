@@ -27,6 +27,10 @@ paths = [
   '''e2e/.*''',
   '''apps/backend/test/.*''',
   '''apps/.*\.spec\.ts''',
+  # SealedSecrets sind per Definition asymmetrisch verschlüsselt — nur der
+  # bitnami sealed-secrets-controller im Cluster kann sie entschlüsseln.
+  # Hohe Entropy der base64-Ciphertext-Strings triggert sonst false positives.
+  '''k8s/.*/sealed-secrets/.*\.yaml''',
 ]
 
 regexes = [
@@ -46,6 +50,13 @@ stopwords = [
   "dummy",
   "test",
   "sample",
+]
+
+# Historische Findings aus alten Tutorial-Snippets (auth.ts, README.md) —
+# kein echter Secret-Leak. Per Fingerprint allowlisten statt history rewriten.
+commits = [
+  "38c539fe15c4a8e7ed52b107013bccbfba4ef465",
+  "4e34efd1a6b8418748ed6c5b87e19eea58521eb6",
 ]
 
 # Eigene Regel: Better-Auth Cookies erkennen, falls jemand sie versehentlich
