@@ -4,7 +4,8 @@ import {
   createAuthMiddleware,
   getSessionFromCtx,
 } from 'better-auth/api';
-import { admin, customSession } from 'better-auth/plugins';
+import { admin, customSession, magicLink } from 'better-auth/plugins';
+import { mailer } from './mailer';
 import { expo } from '@better-auth/expo';
 import * as jwt from 'jsonwebtoken';
 import { Pool } from 'pg';
@@ -141,6 +142,23 @@ export const auth = betterAuth({
     // optional `role` column.
     admin({
       impersonationSessionDuration: 60 * 60, // 1 hour
+    }),
+    // Magic-Link plugin: client ruft authClient.signIn.magicLink({ email }),
+    // better-auth speichert Token im `verification`-Table (15min Default),
+    // sendMagicLink-Callback verschickt die Mail mit dem callback-URL.
+    // Verify-Endpoint ist /api/auth/magic-link/verify?token=... — better-auth
+    // setzt automatisch die Session-Cookie und redirected zu callbackURL.
+    magicLink({
+      expiresIn: 60 * 15, // 15 minutes
+      sendMagicLink: async ({ email, url }) => {
+        try {
+          await mailer.sendMagicLink(email, url);
+        } catch (err) {
+          // Don't surface SMTP errors to the client — would leak
+          // whether an email exists. Log instead.
+          console.error('[magic-link] sendMail failed:', err);
+        }
+      },
     }),
     expo(),
   ],

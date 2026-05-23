@@ -7,7 +7,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { JwtAuthGuard } from '@/auth/guard/jwt-auth.guard';
+import { BetterAuthGuard } from '@/auth/guard/better-auth.guard';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { StudentsService } from './students.service';
@@ -49,7 +49,7 @@ export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}
 
   @Post('upload')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(BetterAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async uploadCsv(
     @UploadedFile() file: Express.Multer.File,

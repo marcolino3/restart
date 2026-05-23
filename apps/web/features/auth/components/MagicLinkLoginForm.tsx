@@ -18,11 +18,13 @@ import {
   MagicLinkLoginFormType,
 } from "../schemas/magic-link-login-form.schema";
 import { Loader2, MailCheck } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { authClient } from "@/lib/auth-client";
 
 export const MagicLinkLoginForm = () => {
   const t = useTranslations("Auth");
   const tCommon = useTranslations("Common");
+  const locale = useLocale();
   const [sent, setSent] = useState(false);
   const [sentEmail, setSentEmail] = useState("");
 
@@ -35,15 +37,18 @@ export const MagicLinkLoginForm = () => {
   });
 
   const onSubmit = async (values: MagicLinkLoginFormType) => {
-    const res = await fetch("/api/auth/magic-link/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: values.email }),
+    // better-auth: verschickt die Mail mit URL ${baseURL}/api/auth/magic-link/verify
+    // Nach Klick legt better-auth eine Session an + redirected zu callbackURL.
+    const { error } = await authClient.signIn.magicLink({
+      email: values.email,
+      callbackURL: `${window.location.origin}/${locale}/admin`,
     });
 
-    if (res.ok) {
+    if (!error) {
       setSentEmail(values.email);
       setSent(true);
+    } else {
+      form.setError("email", { message: error.message ?? t("magicLinkError") });
     }
   };
 
