@@ -216,49 +216,38 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
                 label="countsAsWorkTimeLabel"
                 description="countsAsWorkTimeHelp"
                 namespace="AbsenceCategories"
-                disabled={isSystem}
               />
               <SwitchFormField
                 name="isPaid"
                 label="isPaidLabel"
                 description="isPaidHelp"
                 namespace="AbsenceCategories"
-                disabled={isSystem}
               />
               <SwitchFormField
                 name="affectsVacationBalance"
                 label="affectsVacationBalanceLabel"
                 description="affectsVacationBalanceHelp"
                 namespace="AbsenceCategories"
-                disabled={isSystem}
               />
               <SwitchFormField
                 name="defaultIsVacationCapable"
                 label="defaultIsVacationCapableLabel"
                 description="defaultIsVacationCapableHelp"
                 namespace="AbsenceCategories"
-                disabled={isSystem}
               />
               <SwitchFormField
                 name="requiresApproval"
                 label="requiresApprovalLabel"
                 description="requiresApprovalHelp"
                 namespace="AbsenceCategories"
-                disabled={isSystem}
               />
               <SwitchFormField
                 name="requiresCertificate"
                 label="requiresCertificateLabel"
                 description="requiresCertificateHelp"
                 namespace="AbsenceCategories"
-                disabled={isSystem}
               />
             </div>
-            {isSystem && (
-              <p className="text-muted-foreground mt-3 text-xs">
-                {t("systemBehaviorLocked")}
-              </p>
-            )}
           </CardContent>
         </Card>
 
@@ -277,7 +266,6 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
                 max={100}
                 nullable={false}
                 namespace="AbsenceCategories"
-                disabled={isSystem}
               />
               <NumberFormField
                 name="maxDaysPerYear"
@@ -286,7 +274,6 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
                 min={1}
                 max={365}
                 namespace="AbsenceCategories"
-                disabled={isSystem}
               />
               <NumberFormField
                 name="certificateRequiredFromDay"
@@ -295,7 +282,6 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
                 min={1}
                 max={90}
                 namespace="AbsenceCategories"
-                disabled={isSystem}
               />
               <NumberFormField
                 name="reducesVacationEntitlementAfterDays"
@@ -304,7 +290,6 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
                 min={1}
                 max={365}
                 namespace="AbsenceCategories"
-                disabled={isSystem}
               />
             </div>
           </CardContent>

@@ -1600,8 +1600,7 @@
     "colActive": "Active",
 
     "systemLocked": "System category — cannot be deleted",
-    "systemCategoryNote": "System category: behavior is fixed, only translations and display options are editable.",
-    "systemBehaviorLocked": "These switches are locked for system categories.",
+    "systemCategoryNote": "System category: cannot be deleted, but behavior, limits, translations and display can all be customised.",
 
     "translationsTitle": "Translations",
     "germanRequired": "DE required",

@@ -1600,8 +1600,7 @@
     "colActive": "Aktiv",
 
     "systemLocked": "System-Kategorie — nicht löschbar",
-    "systemCategoryNote": "System-Kategorie: Verhalten ist fix, nur Übersetzungen und Anzeige sind editierbar.",
-    "systemBehaviorLocked": "Diese Schalter sind bei System-Kategorien gesperrt.",
+    "systemCategoryNote": "System-Kategorie: nicht löschbar, aber Verhalten, Limits, Übersetzungen und Anzeige können angepasst werden.",
 
     "translationsTitle": "Übersetzungen",
     "germanRequired": "DE Pflicht",

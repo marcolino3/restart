@@ -174,33 +174,30 @@ export class EmployeeAbsenceCategoriesService {
   ): Promise<EmployeeAbsenceCategory> {
     const category = await this.findOne(input.id, organizationId);
 
-    // System-Kategorien: nur Translations + UI-Felder editierbar, Verhalten gelockt
-    const assignBehavior = !category.isSystem;
-
-    if (assignBehavior) {
-      if (input.countsAsWorkTime !== undefined)
-        category.countsAsWorkTime = input.countsAsWorkTime;
-      if (input.isPaid !== undefined) category.isPaid = input.isPaid;
-      if (input.affectsVacationBalance !== undefined)
-        category.affectsVacationBalance = input.affectsVacationBalance;
-      if (input.defaultIsVacationCapable !== undefined)
-        category.defaultIsVacationCapable = input.defaultIsVacationCapable;
-      if (input.reducesVacationEntitlementAfterDays !== undefined)
-        category.reducesVacationEntitlementAfterDays =
-          input.reducesVacationEntitlementAfterDays;
-      if (input.requiresCertificate !== undefined)
-        category.requiresCertificate = input.requiresCertificate;
-      if (input.certificateRequiredFromDay !== undefined)
-        category.certificateRequiredFromDay = input.certificateRequiredFromDay;
-      if (input.maxDaysPerYear !== undefined)
-        category.maxDaysPerYear = input.maxDaysPerYear;
-      if (input.defaultPercentage !== undefined)
-        category.defaultPercentage = input.defaultPercentage;
-      if (input.requiresApproval !== undefined)
-        category.requiresApproval = input.requiresApproval;
-    }
-
-    // UI-Felder duerfen auch bei System-Kategorien angepasst werden
+    // System-Kategorien koennen genauso konfiguriert werden wie Custom-Kategorien.
+    // `isSystem=true` bedeutet ausschliesslich: nicht loeschbar (wuerde Audit-
+    // Trails alter Absenz-Buchungen reissen). OrgAdmin/HR/SuperAdmin duerfen
+    // Verhalten, Limits, Translations und UI-Felder anpassen.
+    if (input.countsAsWorkTime !== undefined)
+      category.countsAsWorkTime = input.countsAsWorkTime;
+    if (input.isPaid !== undefined) category.isPaid = input.isPaid;
+    if (input.affectsVacationBalance !== undefined)
+      category.affectsVacationBalance = input.affectsVacationBalance;
+    if (input.defaultIsVacationCapable !== undefined)
+      category.defaultIsVacationCapable = input.defaultIsVacationCapable;
+    if (input.reducesVacationEntitlementAfterDays !== undefined)
+      category.reducesVacationEntitlementAfterDays =
+        input.reducesVacationEntitlementAfterDays;
+    if (input.requiresCertificate !== undefined)
+      category.requiresCertificate = input.requiresCertificate;
+    if (input.certificateRequiredFromDay !== undefined)
+      category.certificateRequiredFromDay = input.certificateRequiredFromDay;
+    if (input.maxDaysPerYear !== undefined)
+      category.maxDaysPerYear = input.maxDaysPerYear;
+    if (input.defaultPercentage !== undefined)
+      category.defaultPercentage = input.defaultPercentage;
+    if (input.requiresApproval !== undefined)
+      category.requiresApproval = input.requiresApproval;
     if (input.color !== undefined) category.color = input.color;
     if (input.iconName !== undefined) category.iconName = input.iconName;
     // sortOrder wird ausschliesslich ueber reorderEmployeeAbsenceCategories
