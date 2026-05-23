@@ -5,8 +5,10 @@ resources:
   # cert-manager ClusterIssuer (Let's Encrypt prod)
   - cluster-issuer.yaml
 
-  # PostgreSQL Cluster (CloudNativePG)
-  - database.yaml
+  # Postgres läuft als externe VM (Infomaniak Public Cloud Instance) statt CNPG,
+  # weil das Infomaniak Managed K8s den kube-apiserver-VIP (10.96.0.1) nicht
+  # zuverlässig aus den Pods routet — CNPG initdb timeouted dauerhaft.
+  # DB-Host steht in backend-secrets (DB_HOST=<floating-ip>).
 
   # Backend
   - backend/deployment.yaml
@@ -30,4 +32,3 @@ resources:
   - network-policies/frontend.yaml
   - network-policies/backend.yaml
   - network-policies/migrate-job.yaml
-  - network-policies/database.yaml
