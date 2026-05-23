@@ -72,10 +72,10 @@ export const MagicLinkLoginForm = () => {
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="grid gap-6"
-      >
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+        <p className="text-sm text-muted-foreground">
+          {t("magicLinkDescription")}
+        </p>
         <FormField
           name="email"
           control={form.control}

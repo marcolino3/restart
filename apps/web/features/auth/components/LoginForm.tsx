@@ -9,8 +9,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { GoogleLoginButton } from "./GoogleLoginButton";
 import { EmailPasswordLoginForm } from "./EmailPasswordLoginForm";
+import { MagicLinkLoginForm } from "./MagicLinkLoginForm";
 
 export function LoginForm({
   className,
@@ -26,10 +33,8 @@ export function LoginForm({
         </CardHeader>
         <CardContent>
           <div className="grid gap-6">
-            {/* Social Login */}
-            <div className="flex flex-col gap-4">
-              <GoogleLoginButton />
-            </div>
+            {/* Google OAuth */}
+            <GoogleLoginButton />
 
             {/* Divider */}
             <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
@@ -38,8 +43,21 @@ export function LoginForm({
               </span>
             </div>
 
-            {/* Email/Password */}
-            <EmailPasswordLoginForm />
+            {/* Tabs: Passwort | Magic Link */}
+            <Tabs defaultValue="password" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="password">{t("tabPassword")}</TabsTrigger>
+                <TabsTrigger value="magic-link">
+                  {t("tabMagicLink")}
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="password" className="mt-4">
+                <EmailPasswordLoginForm />
+              </TabsContent>
+              <TabsContent value="magic-link" className="mt-4">
+                <MagicLinkLoginForm />
+              </TabsContent>
+            </Tabs>
           </div>
         </CardContent>
       </Card>
