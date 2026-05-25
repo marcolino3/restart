@@ -61,7 +61,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "google-auth-library": "^10.6.2",
-    "googleapis": "^171.4.0",
+    "googleapis": "^172.0.0",
     "graphql": "^16.13.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
