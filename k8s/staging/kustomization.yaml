@@ -75,6 +75,11 @@ configMapGenerator:
     literals:
       - NODE_ENV=staging
       - DB_HOST=postgres-postgresql.restart-staging.svc.cluster.local
+      # PROD-BLOCKER: bleibt true, bis eine Baseline-Migration (InitialSchema)
+      # existiert. Aktuell baut nur synchronize das Kern-Schema auf; die 18
+      # Migrationen in apps/backend/src/migrations/ sind rein inkrementell.
+      # Vor Production-Launch: Baseline generieren, dann hier (und in prod,
+      # wo bereits false steht) ausschliesslich ueber Migrationen fahren.
       - DB_SYNCHRONIZE=true
       - ALLOWED_ORIGINS=https://staging.colibri-app.ch
       - GOOGLE_AUTH_REDIRECT_URI=https://staging.colibri-app.ch/api/auth/google/callback

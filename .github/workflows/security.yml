@@ -47,7 +47,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Run Trivy filesystem scan
+      # Stufe 1 — REPORT: CRITICAL + HIGH ins GitHub-Security-Tab.
+      # Blockt NICHT (exit-code 0), damit bekannte, nicht ohne Breaking-Change
+      # fixbare transitive HIGH-CVEs (z. B. immutable < 4.3.8 via graphql-codegen,
+      # siehe MEMORY.md) den Build nicht dauerhaft rot färben. Sichtbar bleiben sie.
+      - name: Run Trivy filesystem scan (report)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: "fs"
@@ -58,9 +62,6 @@ jobs:
           # - Dockerfile-Issues (latest-Tag, COPY chown, USER root)
           scanners: "vuln,misconfig,secret"
           severity: "CRITICAL,HIGH"
-          # Build bricht bei CRITICAL/HIGH ab — bewusst streng.
-          # Bei False-Positives in .trivyignore oder per CVE ausblenden.
-          # TODO: zurück auf "1" sobald Findings aufgeräumt sind.
           exit-code: "0"
           ignore-unfixed: true
           format: "sarif"
@@ -72,6 +73,20 @@ jobs:
         with:
           sarif_file: "trivy-fs-results.sarif"
           category: "trivy-fs"
+
+      # Stufe 2 — GATE: fixbare CRITICAL brechen den Build ab.
+      # Nutzt den lokalen Trivy-Cache aus Stufe 1 (kein erneuter DB-Download).
+      # Akzeptierte Findings via .trivyignore (CVE-ID + Begründung) ausblenden.
+      - name: Trivy filesystem scan (CRITICAL gate)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          scanners: "vuln,misconfig,secret"
+          severity: "CRITICAL"
+          exit-code: "1"
+          ignore-unfixed: true
+          format: "table"
 
   pnpm-audit:
     name: pnpm audit
