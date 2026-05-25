@@ -24,5 +24,4 @@ configMapGenerator:
       - ALLOWED_ORIGINS=https://app.colibri-app.ch
       - GOOGLE_AUTH_REDIRECT_URI=https://app.colibri-app.ch/api/auth/google/callback
       - AUTH_UI_REDIRECT=https://app.colibri-app.ch
-      - SENTRY_ENVIRONMENT=production
       - LOG_LEVEL=info

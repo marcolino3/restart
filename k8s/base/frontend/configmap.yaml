@@ -4,7 +4,3 @@ metadata:
   name: frontend-config
 data:
   BACKEND_URL: "http://backend:3001"
-  # Server-seitige Sentry-Vars (NICHT public — werden vom Next.js Server-Code
-  # gelesen, nicht vom Browser). NEXT_PUBLIC_* sind im Browser-Bundle und
-  # werden via Docker-Build-Args reingebaked.
-  SENTRY_TRACES_SAMPLE_RATE: "0.1"

@@ -36,8 +36,6 @@ paths = [
 regexes = [
   # CI-Test-Secrets aus .github/workflows/ci.yml — bewusst hardcoded.
   '''ci-test-(access|refresh|google|mail)-(secret|client|refresh|token)-?(key|id)?''',
-  # Sentry-DSNs sind keine Geheimnisse (Public-Key, kein Auth).
-  '''https://[a-f0-9]+@o\d+\.ingest\.(de|us|eu)\.sentry\.io/\d+''',
   # Beispiel-Encryption-Key aus CI (0123456789abcdef…).
   '''0123456789abcdef[0-9a-f]+''',
   # PLACEHOLDER-Strings.
