@@ -11,8 +11,15 @@ env:
   NAMESPACE: restart-staging
 
 jobs:
+  # CI-Gate: lint, test, build, E2E. Schlägt einer fehl, werden gar keine
+  # Images gebaut/gepusht und nichts deployed (build hat `needs: [ci]`).
+  ci:
+    name: CI Gate
+    uses: ./.github/workflows/ci.yml
+
   build:
     name: Build & Push Images
+    needs: [ci]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -48,8 +55,6 @@ jobs:
           context: .
           file: ./apps/backend/Dockerfile
           push: true
-          build-args: |
-            SENTRY_RELEASE=${{ github.sha }}
           tags: |
             ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
             ${{ env.BACKEND_IMAGE }}:latest
@@ -60,18 +65,8 @@ jobs:
           context: .
           file: ./apps/web/Dockerfile
           push: true
-          # Sentry-Build-Args: DSN + Release werden ins Browser-Bundle inlined.
-          # SENTRY_AUTH_TOKEN ist nur für den Source-Map-Upload nötig (optional).
           build-args: |
             BACKEND_URL=http://backend:3001
-            NEXT_PUBLIC_SENTRY_DSN=${{ secrets.SENTRY_DSN_FRONTEND }}
-            NEXT_PUBLIC_SENTRY_ENVIRONMENT=staging
-            NEXT_PUBLIC_SENTRY_RELEASE=${{ github.sha }}
-            SENTRY_ORG=${{ vars.SENTRY_ORG }}
-            SENTRY_PROJECT=${{ vars.SENTRY_PROJECT_FRONTEND }}
-            SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
-            NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.POSTHOG_KEY_STAGING }}
-            NEXT_PUBLIC_POSTHOG_HOST=/ingest
           tags: |
             ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
             ${{ env.FRONTEND_IMAGE }}:latest

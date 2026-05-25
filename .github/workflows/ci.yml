@@ -1,10 +1,12 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+  # Auf main läuft CI nicht mehr standalone, sondern als Gate VOR dem Deploy:
+  # deploy-staging.yml ruft diesen Workflow via `needs` auf (workflow_call).
+  # So werden Images erst gebaut/deployed, wenn Lint/Test/Build/E2E grün sind.
+  workflow_call:
 
 env:
   TURBO_TELEMETRY_DISABLED: 1
