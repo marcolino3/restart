@@ -112,6 +112,65 @@ NICHT erlaubt — Ausnahme: explizit globale Operationen über
 
 ---
 
+## Qualitäts- & Release-Standards (VERBINDLICH)
+
+**Grundsatz:** Restart/Colibri ist ein **Production-Ready Real-World-Projekt**, kein
+Prototyp. Jede Änderung wird so gebaut, als ginge sie morgen in Produktion. Der
+folgende Flow gilt **immer** — auch bei vermeintlich kleinen Änderungen.
+
+### Branch- & PR-Workflow
+- **Kein direkter Push auf `main`.** `main` ist branch-protected.
+- Ablauf: Feature-Branch → Commit(s) → **Pull Request** → CI grün + Review → Squash-Merge.
+- PR-Template (`.github/pull_request_template.md`) vollständig ausfüllen.
+- Branch-Naming: `feat/…`, `fix/…`, `chore/…`, `refactor/…`, `ci/…` (Conventional-Commit-Präfix).
+- CODEOWNERS-Review ist für sicherheits-/infra-kritische Pfade Pflicht.
+
+### Testing-Pflicht (kein Feature ohne Tests)
+- **Neue Business-Logik → Unit-Tests.** Backend: Jest (`*.spec.ts`). Frontend: Vitest.
+- **Neue/role-geschützte Resolver & Guards → Tests** für Permission- *und*
+  Multi-Tenant-Isolation (Zugriff fremder Org muss fehlschlagen).
+- **Kritische User-Flows → Playwright E2E** (`e2e/`): Login, Org-Switch, jeder neue
+  CRUD-Hauptpfad. Mindestens ein Happy-Path + ein Negativ-/Auth-Fall.
+- Bugfix → zuerst ein **Regressions-Test**, der den Bug reproduziert, dann der Fix.
+- Tests laufen lokal grün **bevor** der PR aufgemacht wird (`pnpm turbo run lint test build`,
+  E2E via `pnpm --filter @restart/e2e test:e2e`).
+
+### CI-Gates (müssen grün sein — werden erzwungen)
+Bei jedem PR und vor jedem Deploy:
+- `CI`: lint · typecheck (über `build` mit tsc) · unit-tests · build · **Playwright E2E**
+- `CodeQL` (security-extended + quality)
+- `Security`: gitleaks (Secrets) · Trivy (Vulns/Misconfig) · pnpm-audit — **blockierend**
+- Schlägt ein Gate fehl → **kein Build, kein Deploy**.
+
+### Security (Dauer-Anforderung)
+- Secrets nur als K8s-/Environment-Secrets, nie im Code/Repo (gitleaks gated).
+- Multi-Tenant-Isolation in jeder org-scoped Query (siehe oben) — testen.
+- Mutations hinter `@Permissions()`/`@SuperAdminOnly()`.
+- **Keine US-Vendors** für Daten-/Infra-Dienste (DSGVO/Cloud-Act) — CH oder echtes Self-Hosting.
+- Trivy/CodeQL-Findings werden behoben oder bewusst per `.trivyignore`/Suppression dokumentiert.
+
+### Dependency-Aktualität
+- **Dependabot** wöchentlich (Mo, Europe/Zurich), gruppiert pro Ökosystem.
+- Auto-Merge nur für *safe* Updates (Patch / Dev-Minor / Actions / Docker non-major).
+- Major-Updates: manuell, mit Test-Lauf + Changelog-Sichtung. Bewusste Pins respektieren
+  (siehe `MEMORY.md` „Bekannte Issues").
+
+### Deploy-Flow
+- **Staging** (`staging.colibri-app.ch`): automatisch bei Merge auf `main`, **nach** dem CI-Gate.
+  Pipeline: CI-Gate → Build/Push → Trivy → Migrate → Deploy → Smoke-Test → `:staging-current`.
+- **Production** (`app.colibri-app.ch`): **manuell** (`workflow_dispatch`) mit Approval-Gate
+  (`environment: production`). Promotet den **exakt auf Staging getesteten SHA** — kein Rebuild.
+  Pipeline: resolve → validate → Migrate → Deploy → Smoke → Rollback-on-fail → `:production-current` → Audit-Log.
+- **DB-Schema** nur über TypeORM-Migrationen (`apps/backend/src/migrations/`), nie via `synchronize` in Staging/Prod.
+  Migrationen forward-only / expand-contract (Rollback rollt Schema nicht zurück).
+
+### Definition of Done
+Eine Änderung ist erst fertig, wenn: Tests geschrieben & grün · lint/build/E2E grün ·
+Security-Gates grün · i18n (DE+EN) ergänzt · Migration vorhanden (bei Schema-Änderung) ·
+PR-Checkliste abgehakt · auf Staging verifiziert.
+
+---
+
 ## Sprache
 
 - Code, Variablen, Commits: **Englisch**
