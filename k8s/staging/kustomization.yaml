@@ -79,5 +79,4 @@ configMapGenerator:
       - ALLOWED_ORIGINS=https://staging.colibri-app.ch
       - GOOGLE_AUTH_REDIRECT_URI=https://staging.colibri-app.ch/api/auth/google/callback
       - AUTH_UI_REDIRECT=https://staging.colibri-app.ch
-      - SENTRY_ENVIRONMENT=staging
       - LOG_LEVEL=info
