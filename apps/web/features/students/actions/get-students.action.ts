@@ -9,9 +9,14 @@ export type StudentListItem = {
   lastName: string;
   dateOfBirth?: string | null;
   gender?: string | null;
-  enrollmentDate?: string | null;
   exitDate?: string | null;
   isActive: boolean;
+  currentClass?: {
+    id: string;
+    name: string;
+    color?: string | null;
+    gradeLevels?: { id: string; name: string; color?: string | null }[] | null;
+  } | null;
 };
 
 type GetStudentsResponse = {
@@ -26,9 +31,18 @@ const GetStudentsDocument = gql`
       lastName
       dateOfBirth
       gender
-      enrollmentDate
       exitDate
       isActive
+      currentClass {
+        id
+        name
+        color
+        gradeLevels {
+          id
+          name
+          color
+        }
+      }
     }
   }
 `;

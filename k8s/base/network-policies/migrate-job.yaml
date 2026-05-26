@@ -1,5 +1,5 @@
-# Migration-Job: gleicher Egress wie Backend (er braucht DB-Zugriff,
-# Sentry-Egress optional). Kein Ingress nötig — niemand spricht den Job an.
+# Migration-Job: braucht nur DB-Zugriff (PostgreSQL). Kein Ingress nötig —
+# niemand spricht den Job an.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -17,9 +17,3 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
-    - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-      ports:
-        - protocol: TCP
-          port: 443
