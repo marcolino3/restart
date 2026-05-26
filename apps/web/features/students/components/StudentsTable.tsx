@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
+  FilterFn,
   SortingState,
   VisibilityState,
   flexRender,
@@ -32,6 +33,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DataTableFacetedFilter } from "@/components/common/DataTableFacetedFilter";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -72,6 +74,17 @@ const GENDER_META: Record<string, { icon: LucideIcon; className: string }> = {
     icon: VenusAndMars,
     className: "text-purple-600 dark:text-purple-400",
   },
+};
+
+/** Multi-select facet match for a scalar cell value against a list of picks. */
+const multiSelectFilter: FilterFn<StudentListItem> = (
+  row,
+  columnId,
+  filterValue,
+) => {
+  const picks = filterValue as string[] | undefined;
+  if (!picks?.length) return true;
+  return picks.includes(row.getValue<string>(columnId));
 };
 
 const useColumns = (): ColumnDef<StudentListItem>[] => {
@@ -161,7 +174,7 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
           </span>
         );
       },
-      filterFn: "equalsString",
+      filterFn: multiSelectFilter,
     },
     {
       id: "class",
@@ -182,7 +195,7 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
           </Badge>
         );
       },
-      filterFn: "equalsString",
+      filterFn: multiSelectFilter,
     },
     {
       id: "gradeLevel",
@@ -210,7 +223,7 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
           <span className="text-muted-foreground">–</span>
         );
       },
-      filterFn: "arrIncludes",
+      filterFn: "arrIncludesSome",
     },
     {
       id: "actions",
@@ -270,26 +283,29 @@ export const StudentsTable = ({ data }: Props) => {
       ),
     [data],
   );
-  const classOptions = React.useMemo(
-    () =>
-      Array.from(
-        new Set(
-          data.map((s) => s.currentClass?.name).filter((n): n is string => !!n),
-        ),
-      ).sort((a, b) => a.localeCompare(b)),
-    [data],
-  );
-  const gradeLevelOptions = React.useMemo(
-    () =>
-      Array.from(
-        new Set(
-          data.flatMap((s) =>
-            (s.currentClass?.gradeLevels ?? []).map((gl) => gl.name),
-          ),
-        ),
-      ).sort((a, b) => a.localeCompare(b)),
-    [data],
-  );
+  const classOptions = React.useMemo(() => {
+    const byName = new Map<string, string | null>();
+    for (const s of data) {
+      const cls = s.currentClass;
+      if (cls?.name && !byName.has(cls.name)) {
+        byName.set(cls.name, cls.color ?? null);
+      }
+    }
+    return Array.from(byName, ([name, color]) => ({ name, color })).sort(
+      (a, b) => a.name.localeCompare(b.name),
+    );
+  }, [data]);
+  const gradeLevelOptions = React.useMemo(() => {
+    const byName = new Map<string, string | null>();
+    for (const s of data) {
+      for (const gl of s.currentClass?.gradeLevels ?? []) {
+        if (!byName.has(gl.name)) byName.set(gl.name, gl.color ?? null);
+      }
+    }
+    return Array.from(byName, ([name, color]) => ({ name, color })).sort(
+      (a, b) => a.name.localeCompare(b.name),
+    );
+  }, [data]);
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] =
@@ -352,89 +368,91 @@ export const StudentsTable = ({ data }: Props) => {
           className="max-w-[180px]"
         />
         {genderOptions.length > 0 && (
-          <Select
-            value={
-              (table.getColumn("gender")?.getFilterValue() as string) ?? "all"
+          <DataTableFacetedFilter
+            title={t("gender")}
+            selected={
+              (table.getColumn("gender")?.getFilterValue() as string[]) ?? []
             }
-            onValueChange={(value) =>
+            onChange={(next) =>
               table
                 .getColumn("gender")
-                ?.setFilterValue(value === "all" ? undefined : value)
+                ?.setFilterValue(next.length ? next : undefined)
             }
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder={t("gender")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("allGenders")}</SelectItem>
-              {genderOptions.map((g) => {
-                const meta = GENDER_META[g];
-                const Icon = meta?.icon;
-                return (
-                  <SelectItem key={g} value={g}>
-                    <span className="flex items-center gap-2">
-                      {Icon && (
-                        <Icon
-                          className={`h-4 w-4 ${meta.className}`}
-                          aria-hidden
-                        />
-                      )}
-                      {t(g)}
-                    </span>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+            options={genderOptions.map((g) => {
+              const meta = GENDER_META[g];
+              const Icon = meta?.icon;
+              return {
+                value: g,
+                searchValue: t(g),
+                label: (
+                  <span className="flex items-center gap-2">
+                    {Icon && (
+                      <Icon
+                        className={`h-4 w-4 ${meta.className}`}
+                        aria-hidden
+                      />
+                    )}
+                    {t(g)}
+                  </span>
+                ),
+              };
+            })}
+          />
         )}
         {classOptions.length > 0 && (
-          <Select
-            value={
-              (table.getColumn("class")?.getFilterValue() as string) ?? "all"
+          <DataTableFacetedFilter
+            title={t("class")}
+            selected={
+              (table.getColumn("class")?.getFilterValue() as string[]) ?? []
             }
-            onValueChange={(value) =>
+            onChange={(next) =>
               table
                 .getColumn("class")
-                ?.setFilterValue(value === "all" ? undefined : value)
+                ?.setFilterValue(next.length ? next : undefined)
             }
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder={t("class")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("allClasses")}</SelectItem>
-              {classOptions.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            options={classOptions.map((c) => ({
+              value: c.name,
+              searchValue: c.name,
+              label: (
+                <span className="flex items-center gap-2">
+                  <span
+                    aria-hidden
+                    className="inline-block h-2 w-2 shrink-0 rounded-full ring-1 ring-border"
+                    style={{ backgroundColor: c.color ?? "var(--muted)" }}
+                  />
+                  {c.name}
+                </span>
+              ),
+            }))}
+          />
         )}
         {gradeLevelOptions.length > 0 && (
-          <Select
-            value={
-              (table.getColumn("gradeLevel")?.getFilterValue() as string) ??
-              "all"
+          <DataTableFacetedFilter
+            title={t("gradeLevel")}
+            selected={
+              (table.getColumn("gradeLevel")?.getFilterValue() as string[]) ??
+              []
             }
-            onValueChange={(value) =>
+            onChange={(next) =>
               table
                 .getColumn("gradeLevel")
-                ?.setFilterValue(value === "all" ? undefined : value)
+                ?.setFilterValue(next.length ? next : undefined)
             }
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder={t("gradeLevel")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("allGradeLevels")}</SelectItem>
-              {gradeLevelOptions.map((gl) => (
-                <SelectItem key={gl} value={gl}>
-                  {gl}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            options={gradeLevelOptions.map((gl) => ({
+              value: gl.name,
+              searchValue: gl.name,
+              label: (
+                <span className="flex items-center gap-2">
+                  <span
+                    aria-hidden
+                    className="inline-block h-2 w-2 shrink-0 rounded-full ring-1 ring-border"
+                    style={{ backgroundColor: gl.color ?? "var(--muted)" }}
+                  />
+                  {gl.name}
+                </span>
+              ),
+            }))}
+          />
         )}
         <Select
           value={
