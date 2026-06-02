@@ -73,7 +73,10 @@ jobs:
           DB_NAME: colibri_test
           DB_USERNAME: test
           DB_PASSWORD: test
-          DB_SYNCHRONIZE: "true"
+          # Schema entsteht über die Migrationen (InitialSchema-Baseline +
+          # CreateBetterAuthTables), nicht über synchronize — testet den echten
+          # Production-Pfad. migrationsRun läuft in NODE_ENV=test automatisch.
+          DB_SYNCHRONIZE: "false"
           # App
           NODE_ENV: test
           PORT: 4001
