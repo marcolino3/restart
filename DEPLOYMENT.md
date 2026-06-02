@@ -140,6 +140,101 @@ kubectl get svc -n ingress-nginx
 ./scripts/deploy-production.sh <image-tag>
 ```
 
+## Production Launch Runbook (einmalig)
+
+> Schema-Verwaltung ist auf **Migrationen-only** umgestellt. `synchronize` ist in
+> staging/production per `app.module`-Guard hart gesperrt; `DB_SYNCHRONIZE=true`
+> bricht dort den Boot ab. Das Kern-Schema entsteht ausschliesslich aus der
+> `InitialSchema`-Baseline + inkrementellen Migrationen, die better-auth-Tabellen
+> aus `CreateBetterAuthTables` (`apps/backend/src/migrations/`).
+
+### A. Staging-Cutover (zusammen mit dem Merge dieses PRs)
+
+Die bestehende Staging-DB hat ihr Schema via `synchronize` bekommen und die alten
+(jetzt gesquashten) Migrationen als applied registriert. Nach dem Umstieg ist die
+neue `InitialSchema` „pending" und würde gegen das bestehende Schema laufen
+(`relation already exists`). Da Staging nur Testdaten hält: **DB einmalig leeren,
+unmittelbar bevor der Merge-getriggerte Staging-Deploy läuft.**
+
+```bash
+# 1) DB leeren (nur Testdaten!) — Reihenfolge: erst leeren, DANN PR mergen,
+#    damit der auto-getriggerte migrate-Job gegen die leere DB baseline-t.
+kubectl exec -n restart-staging deploy/postgres -- \
+  psql -U restart -d restart -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
+
+# 2) PR mergen → deploy-staging.yml läuft: CI-Gate → build → migrate (baseline
+#    + better-auth) → deploy → smoke.
+# 3) Verifizieren:
+kubectl logs -n restart-staging job/migrate-<sha12>          # beide Migrationen "executed"
+curl -s -o /dev/null -w '%{http_code}\n' https://staging.colibri-app.ch/api/health   # 200
+# 4) Login + Org-Switch manuell durchklicken.
+```
+
+> Falls ein Wipe unerwünscht ist: stattdessen die Baseline auf der bestehenden DB
+> als applied markieren (kein realer Run):
+> `INSERT INTO typeorm_migrations (timestamp, name) VALUES (1777000000000,'InitialSchema1777000000000'),(1777000000001,'CreateBetterAuthTables1777000000001');`
+> — der Wipe ist aber sauberer und verifiziert den Migration-only-Pfad direkt.
+
+### B. Production-Voraussetzungen (vor dem ersten Prod-Deploy)
+
+**B1 — Prod-Postgres provisionieren (CH, getrennt von Staging).**
+Eigene DB/VM, Postgres ≥ 13 (wegen `gen_random_uuid()`/`uuid-ossp`). Als Superuser
+einmalig die Extension anlegen, damit der migrate-Job kein CREATE-Recht braucht:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+```
+
+Host/Port/User/Passwort/DB-Name notieren → fliessen in B3 + die Prod-ConfigMap.
+
+**B2 — Prod-Namespace + Cluster-Prereqs.**
+
+```bash
+kubectl create namespace restart-production
+# GHCR-imagePull-Secret (Token mit read:packages):
+kubectl create secret docker-registry ghcr-secret \
+  --docker-server=ghcr.io --docker-username=<gh-user> \
+  --docker-password=<gh-pat> -n restart-production
+# sealed-secrets-Controller muss clusterweit laufen (kube-system) — bei
+# Shared-Cluster mit Staging bereits vorhanden.
+```
+
+**B3 — Prod-SealedSecrets erzeugen + verdrahten.**
+
+```bash
+# Sealing-Keys VORHER sichern (sonst sind verschlüsselte Secrets unrettbar):
+AGE_RECIPIENT=<dein-age-pubkey> ./scripts/backup-sealing-keys.sh ~/secure-backup/
+# .env.production (BETTER_AUTH_SECRET, DB-Creds aus B1, OAuth, Mailer, …) anlegen,
+# dann versiegeln:
+./scripts/bootstrap-secrets.sh production
+```
+
+Danach in `k8s/production/kustomization.yaml`:
+- die `sealed-secrets/{backend,frontend}-secrets.yaml`-Resources einkommentieren,
+- `DB_HOST=PRODUCTION_DB_HOST_PLACEHOLDER` durch den echten Host aus B1 ersetzen,
+- committen, und einmalig `kubectl apply -k k8s/production/` (legt Deployments,
+  Services, Ingress, NetworkPolicies, Secrets an).
+
+**B4 — GitHub `production`-Environment.**
+Settings → Environments → `production`: Required Reviewers (Approval-Gate) setzen,
+`KUBE_CONFIG`-Secret prüfen (`cat ~/.kube/config | base64`). `deploy-production.yml`
+nutzt `environment: production` bereits.
+
+### C. Erster Production-Deploy
+
+GitHub → Actions → **Deploy Production** → *Run workflow*. `image_tag` leer lassen
+→ promotet automatisch den aktuell auf Staging laufenden SHA (`:staging-current`).
+Ablauf: resolve/validate → migrate (frische Prod-DB → Baseline + better-auth) →
+deploy → smoke (`app.colibri-app.ch/api/health`) → Rollback-on-fail →
+`:production-current`-Tag → GitHub-Deployment-Record (Audit, im Deployments-Tab).
+
+```bash
+# Nach erfolgreichem Run prüfen:
+kubectl get pods -n restart-production
+curl -s -o /dev/null -w '%{http_code}\n' https://app.colibri-app.ch/api/health   # 200
+# Login + Org-Switch manuell verifizieren.
+```
+
 ## Rollback
 
 ```bash

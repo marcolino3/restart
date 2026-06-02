@@ -10,6 +10,7 @@ import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
 import { LoggerModule } from 'nestjs-pino';
 import { DataSource, EntityManager } from 'typeorm';
 import { loggerConfig } from './logger.config';
+import { resolveSynchronize } from './database/resolve-synchronize';
 import { AddressesModule } from './addresses/addresses.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -69,23 +70,13 @@ import { join } from 'path';
           (!isProd &&
             configService.get<string>('DB_MIGRATIONS_RUN') !== 'false');
 
-        // synchronize ist destruktiv (kann Spalten/Tabellen ohne Vorwarnung
-        // ändern) und darf NIE in einer geteilten Umgebung laufen — dort wird
-        // das Schema ausschliesslich über Migrationen verwaltet. Fail-closed:
-        // synchronize nur ausserhalb von production/staging; eine Fehlkonfig
-        // (DB_SYNCHRONIZE=true in prod/staging) bricht den Boot laut ab, statt
-        // still ignoriert zu werden.
-        const wantSynchronize =
-          configService.get<string>('DB_SYNCHRONIZE') === 'true';
-        const synchronizeAllowed =
-          nodeEnv !== 'production' && nodeEnv !== 'staging';
-        if (wantSynchronize && !synchronizeAllowed) {
-          throw new Error(
-            `DB_SYNCHRONIZE=true ist in NODE_ENV='${nodeEnv}' nicht erlaubt — ` +
-              'Schema-Änderungen laufen hier nur über Migrationen. ' +
-              'Setze DB_SYNCHRONIZE=false.',
-          );
-        }
+        // synchronize fail-closed: in production/staging hart gesperrt, eine
+        // Fehlkonfig (DB_SYNCHRONIZE=true) bricht den Boot ab. Siehe
+        // resolve-synchronize.ts (+ Tests).
+        const synchronize = resolveSynchronize(
+          nodeEnv,
+          configService.get<string>('DB_SYNCHRONIZE'),
+        );
 
         return {
           type: 'postgres',
@@ -95,7 +86,7 @@ import { join } from 'path';
           password: configService.getOrThrow('DB_PASSWORD'),
           database: configService.getOrThrow('DB_NAME'),
           autoLoadEntities: true,
-          synchronize: wantSynchronize && synchronizeAllowed,
+          synchronize,
           ssl: isProd ? { rejectUnauthorized: false } : false,
           autoSchemaFile: true,
           migrationsRun,
