@@ -69,6 +69,24 @@ import { join } from 'path';
           (!isProd &&
             configService.get<string>('DB_MIGRATIONS_RUN') !== 'false');
 
+        // synchronize ist destruktiv (kann Spalten/Tabellen ohne Vorwarnung
+        // ändern) und darf NIE in einer geteilten Umgebung laufen — dort wird
+        // das Schema ausschliesslich über Migrationen verwaltet. Fail-closed:
+        // synchronize nur ausserhalb von production/staging; eine Fehlkonfig
+        // (DB_SYNCHRONIZE=true in prod/staging) bricht den Boot laut ab, statt
+        // still ignoriert zu werden.
+        const wantSynchronize =
+          configService.get<string>('DB_SYNCHRONIZE') === 'true';
+        const synchronizeAllowed =
+          nodeEnv !== 'production' && nodeEnv !== 'staging';
+        if (wantSynchronize && !synchronizeAllowed) {
+          throw new Error(
+            `DB_SYNCHRONIZE=true ist in NODE_ENV='${nodeEnv}' nicht erlaubt — ` +
+              'Schema-Änderungen laufen hier nur über Migrationen. ' +
+              'Setze DB_SYNCHRONIZE=false.',
+          );
+        }
+
         return {
           type: 'postgres',
           host: configService.getOrThrow('DB_HOST'),
@@ -77,7 +95,7 @@ import { join } from 'path';
           password: configService.getOrThrow('DB_PASSWORD'),
           database: configService.getOrThrow('DB_NAME'),
           autoLoadEntities: true,
-          synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
+          synchronize: wantSynchronize && synchronizeAllowed,
           ssl: isProd ? { rejectUnauthorized: false } : false,
           autoSchemaFile: true,
           migrationsRun,
