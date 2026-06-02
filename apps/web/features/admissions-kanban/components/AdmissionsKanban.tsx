@@ -30,6 +30,7 @@ import {
   Layers,
   LayoutList,
   Bell,
+  Mail,
   Plus,
   Users2,
 } from "lucide-react";
@@ -408,6 +409,14 @@ export function AdmissionsKanban({
                 {overdueRemindersTotal}
               </span>
             )}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => router.push(`/admin/admissions/email-templates`)}
+          >
+            <Mail className="mr-1 h-4 w-4" />
+            {t("emailTemplatesNavLabel")}
           </Button>
           {canManageStages && (
             <Button
