@@ -2,7 +2,17 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { ArrowDown, ArrowUp, ArrowUpDown, Globe, PartyPopper, UserPlus2, Users2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Bell,
+  BellRing,
+  Globe,
+  PartyPopper,
+  UserPlus2,
+  Users2,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -16,18 +26,29 @@ import {
 import { StudentAvatar } from "@/features/students/components/StudentAvatar";
 import { cn } from "@/lib/utils";
 
+import {
+  resolveTableColumns,
+  TABLE_COLUMN_LABEL,
+  type TableColumnKey,
+} from "../field-registry";
 import type { KanbanApplication, KanbanStage } from "../types";
 
 interface Props {
   stages: KanbanStage[];
+  /** Org-global column selection; `null` ⇒ default set. */
+  tableColumns: string[] | null;
   applications: KanbanApplication[];
   onOpenCard: (id: string) => void;
 }
 
-type SortKey = "child" | "stage" | "gradeLevel" | "family" | "days" | "source";
+/** `"child"` is the fixed leading column; the rest are configurable. */
+type SortKey = "child" | TableColumnKey;
 type SortDir = "asc" | "desc";
 
-const SOURCE_ICON: Record<KanbanApplication["source"], React.ComponentType<{ className?: string }> | null> = {
+const SOURCE_ICON: Record<
+  KanbanApplication["source"],
+  React.ComponentType<{ className?: string }> | null
+> = {
   PUBLIC_FORM: Globe,
   OPEN_DAY: PartyPopper,
   REFERRAL: UserPlus2,
@@ -35,9 +56,22 @@ const SOURCE_ICON: Record<KanbanApplication["source"], React.ComponentType<{ cla
   OTHER: null,
 };
 
-export function AdmissionsList({ stages, applications, onOpenCard }: Props) {
+const GENDER_GLYPH: Record<NonNullable<KanbanApplication["childGender"]>, string> =
+  {
+    MALE: "♂",
+    FEMALE: "♀",
+    OTHER: "⚧",
+  };
+
+export function AdmissionsList({
+  stages,
+  tableColumns,
+  applications,
+  onOpenCard,
+}: Props) {
   const t = useTranslations("Admissions");
-  const [sortKey, setSortKey] = useState<SortKey>("stage");
+  const columns = resolveTableColumns(tableColumns);
+  const [sortKey, setSortKey] = useState<SortKey>("child");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   const stageById = useMemo(
@@ -57,43 +91,45 @@ export function AdmissionsList({ stages, applications, onOpenCard }: Props) {
     return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
   };
 
+  // A comparable sort value for any column. Numbers sort numerically, strings
+  // via localeCompare (handled in the sorter below).
+  const sortValue = (key: SortKey, a: KanbanApplication): string | number => {
+    switch (key) {
+      case "child":
+        return `${a.childLastName} ${a.childFirstName}`;
+      case "stage":
+        return stagePosById.get(a.admissionStageId) ?? 999;
+      case "gradeLevel":
+        return a.desiredGradeLevelName ?? "ZZZ";
+      case "family":
+        return a.family.name ?? "";
+      case "gender":
+        return a.childGender ?? "ZZZ";
+      case "source":
+        return a.source;
+      case "status":
+        return a.status;
+      case "days":
+        return daysInStageFor(a);
+      case "contact":
+        return a.family.contactNames[0] ?? "ZZZ";
+      case "reminders":
+        return a.openRemindersCount;
+      default:
+        return "";
+    }
+  };
+
   const sorted = useMemo(() => {
     const dir = sortDir === "asc" ? 1 : -1;
     const arr = [...applications];
     arr.sort((a, b) => {
-      switch (sortKey) {
-        case "child":
-          return (
-            dir *
-            `${a.childLastName} ${a.childFirstName}`.localeCompare(
-              `${b.childLastName} ${b.childFirstName}`,
-            )
-          );
-        case "stage":
-          return (
-            dir *
-            ((stagePosById.get(a.admissionStageId) ?? 999) -
-              (stagePosById.get(b.admissionStageId) ?? 999))
-          );
-        case "gradeLevel":
-          return (
-            dir *
-            (a.desiredGradeLevelName ?? "ZZZ").localeCompare(
-              b.desiredGradeLevelName ?? "ZZZ",
-            )
-          );
-        case "family":
-          return (
-            dir *
-            (a.family.name ?? "").localeCompare(b.family.name ?? "")
-          );
-        case "days":
-          return dir * (daysInStageFor(a) - daysInStageFor(b));
-        case "source":
-          return dir * a.source.localeCompare(b.source);
-        default:
-          return 0;
+      const va = sortValue(sortKey, a);
+      const vb = sortValue(sortKey, b);
+      if (typeof va === "number" && typeof vb === "number") {
+        return dir * (va - vb);
       }
+      return dir * String(va).localeCompare(String(vb));
     });
     return arr;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -117,6 +153,144 @@ export function AdmissionsList({ stages, applications, onOpenCard }: Props) {
       <ArrowDown className="ml-1 h-3 w-3" />
     );
 
+  const numericCols = new Set<TableColumnKey>(["days", "reminders"]);
+
+  const renderCell = (key: TableColumnKey, a: KanbanApplication) => {
+    switch (key) {
+      case "stage": {
+        const stage = stageById.get(a.admissionStageId);
+        return (
+          <TableCell key={key}>
+            {stage && (
+              <Badge
+                variant="outline"
+                style={
+                  stage.color
+                    ? { borderColor: stage.color, color: stage.color }
+                    : undefined
+                }
+              >
+                {stage.name}
+              </Badge>
+            )}
+          </TableCell>
+        );
+      }
+      case "gradeLevel":
+        return (
+          <TableCell key={key} className="text-sm">
+            {a.desiredGradeLevelName ? (
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  aria-hidden
+                  className="inline-block h-2 w-2 shrink-0 rounded-full ring-1 ring-border"
+                  style={{
+                    backgroundColor:
+                      a.desiredGradeLevelColor ?? "var(--muted)",
+                  }}
+                />
+                <span className="truncate">{a.desiredGradeLevelName}</span>
+              </span>
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            )}
+          </TableCell>
+        );
+      case "family":
+        return (
+          <TableCell key={key} className="text-sm">
+            <div className="flex items-center gap-1.5">
+              <span className="truncate">{a.family.name ?? "—"}</span>
+              {a.family.childrenCount > 1 && (
+                <Badge variant="secondary" className="gap-0.5 text-[10px]">
+                  <Users2 className="h-2.5 w-2.5" />
+                  {a.family.childrenCount}
+                </Badge>
+              )}
+            </div>
+          </TableCell>
+        );
+      case "gender":
+        return (
+          <TableCell key={key} className="text-sm">
+            {a.childGender ? (
+              <span title={t("fieldGender")}>
+                {GENDER_GLYPH[a.childGender]}
+              </span>
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            )}
+          </TableCell>
+        );
+      case "source": {
+        const Icon = SOURCE_ICON[a.source];
+        return (
+          <TableCell key={key}>
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              {Icon && <Icon className="h-3.5 w-3.5" />}
+              {sourceLabel(a.source, t)}
+            </span>
+          </TableCell>
+        );
+      }
+      case "status":
+        return (
+          <TableCell key={key} className="text-sm">
+            <Badge variant="outline">{t(statusKey(a.status))}</Badge>
+          </TableCell>
+        );
+      case "days": {
+        const days = daysInStageFor(a);
+        return (
+          <TableCell key={key} className="text-right">
+            <Badge
+              variant={days > 14 ? "destructive" : "outline"}
+              className="text-[10px]"
+            >
+              {days}d
+            </Badge>
+          </TableCell>
+        );
+      }
+      case "contact":
+        return (
+          <TableCell key={key} className="text-sm">
+            <span className="truncate">
+              {a.family.contactNames[0] ?? "—"}
+            </span>
+          </TableCell>
+        );
+      case "reminders":
+        return (
+          <TableCell key={key} className="text-right">
+            {a.openRemindersCount > 0 ? (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-0.5 rounded px-1 text-xs font-medium",
+                  a.overdueRemindersCount > 0
+                    ? "text-destructive"
+                    : "text-amber-700",
+                )}
+              >
+                {a.overdueRemindersCount > 0 ? (
+                  <BellRing className="h-3.5 w-3.5" />
+                ) : (
+                  <Bell className="h-3.5 w-3.5" />
+                )}
+                {a.openRemindersCount}
+              </span>
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            )}
+          </TableCell>
+        );
+      default:
+        return <TableCell key={key} />;
+    }
+  };
+
+  const colCount = columns.length + 1;
+
   return (
     <div className="rounded-md border bg-card">
       <Table>
@@ -129,49 +303,24 @@ export function AdmissionsList({ stages, applications, onOpenCard }: Props) {
               dir={sortDir}
               IconC={SortIcon}
             />
-            <ColHead
-              label={t("listColStage")}
-              onClick={() => toggle("stage")}
-              active={sortKey === "stage"}
-              dir={sortDir}
-              IconC={SortIcon}
-            />
-            <ColHead
-              label={t("listColGrade")}
-              onClick={() => toggle("gradeLevel")}
-              active={sortKey === "gradeLevel"}
-              dir={sortDir}
-              IconC={SortIcon}
-            />
-            <ColHead
-              label={t("listColFamily")}
-              onClick={() => toggle("family")}
-              active={sortKey === "family"}
-              dir={sortDir}
-              IconC={SortIcon}
-            />
-            <ColHead
-              label={t("listColDays")}
-              onClick={() => toggle("days")}
-              active={sortKey === "days"}
-              dir={sortDir}
-              IconC={SortIcon}
-              numeric
-            />
-            <ColHead
-              label={t("listColSource")}
-              onClick={() => toggle("source")}
-              active={sortKey === "source"}
-              dir={sortDir}
-              IconC={SortIcon}
-            />
+            {columns.map((key) => (
+              <ColHead
+                key={key}
+                label={t(TABLE_COLUMN_LABEL[key])}
+                onClick={() => toggle(key)}
+                active={sortKey === key}
+                dir={sortDir}
+                IconC={SortIcon}
+                numeric={numericCols.has(key)}
+              />
+            ))}
           </TableRow>
         </TableHeader>
         <TableBody>
           {sorted.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={6}
+                colSpan={colCount}
                 className="py-8 text-center text-xs italic text-muted-foreground"
               >
                 {t("listEmpty")}
@@ -179,9 +328,6 @@ export function AdmissionsList({ stages, applications, onOpenCard }: Props) {
             </TableRow>
           ) : (
             sorted.map((a) => {
-              const stage = stageById.get(a.admissionStageId);
-              const days = daysInStageFor(a);
-              const Icon = SOURCE_ICON[a.source];
               const birthYear = a.childDateOfBirth?.slice(0, 4);
               return (
                 <TableRow
@@ -210,70 +356,7 @@ export function AdmissionsList({ stages, applications, onOpenCard }: Props) {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    {stage && (
-                      <Badge
-                        variant="outline"
-                        style={
-                          stage.color
-                            ? { borderColor: stage.color, color: stage.color }
-                            : undefined
-                        }
-                      >
-                        {stage.name}
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {a.desiredGradeLevelName ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <span
-                          aria-hidden
-                          className="inline-block h-2 w-2 shrink-0 rounded-full ring-1 ring-border"
-                          style={{
-                            backgroundColor:
-                              a.desiredGradeLevelColor ?? "var(--muted)",
-                          }}
-                        />
-                        <span className="truncate">
-                          {a.desiredGradeLevelName}
-                        </span>
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    <div className="flex items-center gap-1.5">
-                      <span className="truncate">{a.family.name ?? "—"}</span>
-                      {a.family.childrenCount > 1 && (
-                        <Badge variant="secondary" className="gap-0.5 text-[10px]">
-                          <Users2 className="h-2.5 w-2.5" />
-                          {a.family.childrenCount}
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Badge
-                      variant={days > 14 ? "destructive" : "outline"}
-                      className="text-[10px]"
-                    >
-                      {days}d
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {Icon ? (
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Icon className="h-3.5 w-3.5" />
-                        {sourceLabel(a.source, t)}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        {sourceLabel(a.source, t)}
-                      </span>
-                    )}
-                  </TableCell>
+                  {columns.map((key) => renderCell(key, a))}
                 </TableRow>
               );
             })
@@ -314,6 +397,20 @@ function ColHead({
       </button>
     </TableHead>
   );
+}
+
+function statusKey(status: KanbanApplication["status"]): string {
+  switch (status) {
+    case "ACTIVE":
+      return "statusActive";
+    case "REJECTED":
+      return "statusRejected";
+    case "ENROLLED":
+      return "statusEnrolled";
+    case "ARCHIVED":
+    default:
+      return "statusArchived";
+  }
 }
 
 function sourceLabel(

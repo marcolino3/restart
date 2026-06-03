@@ -41,6 +41,8 @@ const AdmissionsKanbanPage = async () => {
       <AdmissionsKanban
         initialStages={data.data.stages}
         initialApplications={data.data.applications}
+        initialTableColumns={data.data.boardSettings.tableColumns}
+        initialRejectionReasons={data.data.rejectionReasons}
         canCreate={has(permissions, "ADMISSION_APPLICATION_WRITE", isSuperAdmin)}
         canMove={has(permissions, "ADMISSION_APPLICATION_MOVE", isSuperAdmin)}
         canEnroll={has(permissions, "ADMISSION_APPLICATION_ENROLL", isSuperAdmin)}
