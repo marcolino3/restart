@@ -159,8 +159,13 @@ unmittelbar bevor der Merge-getriggerte Staging-Deploy läuft.**
 ```bash
 # 1) DB leeren (nur Testdaten!) — Reihenfolge: erst leeren, DANN PR mergen,
 #    damit der auto-getriggerte migrate-Job gegen die leere DB baseline-t.
-kubectl exec -n restart-staging deploy/postgres -- \
-  psql -U restart -d restart -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
+#    Hinweis: Staging-Postgres läuft auf einer EXTERNEN VM (nicht in-cluster),
+#    daher kein `kubectl exec deploy/postgres`. Wir starten einen kurzlebigen
+#    psql-Pod, der die DB-Verbindung aus demselben Secret (`backend-secrets`)
+#    zieht wie der migrate-Job — funktioniert unabhängig davon, wo die DB liegt.
+kubectl run pg-wipe -n restart-staging --rm -i --restart=Never \
+  --image=postgres:16-alpine \
+  --overrides='{"spec":{"containers":[{"name":"pg-wipe","image":"postgres:16-alpine","command":["sh","-c","PGPASSWORD=\"$DB_PASSWORD\" psql -h \"$DB_HOST\" -p \"${DB_PORT:-5432}\" -U \"$DB_USERNAME\" -d \"$DB_NAME\" -v ON_ERROR_STOP=1 -c \"DROP SCHEMA public CASCADE; CREATE SCHEMA public;\""],"envFrom":[{"secretRef":{"name":"backend-secrets"}}]}]}}'
 
 # 2) PR mergen → deploy-staging.yml läuft: CI-Gate → build → migrate (baseline
 #    + better-auth + Admissions: card/board, rejection-reasons, rejectedBy,
