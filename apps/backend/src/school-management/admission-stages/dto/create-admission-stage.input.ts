@@ -1,7 +1,10 @@
 import { Field, InputType, Int } from '@nestjs/graphql';
 import {
+  ArrayUnique,
+  IsArray,
   IsBoolean,
   IsEnum,
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -11,6 +14,7 @@ import {
   Min,
 } from 'class-validator';
 import { AdmissionStageType } from '../enums/admission-stage-type.enum';
+import { ADMISSION_CARD_FIELD_KEYS } from '../admission-field-keys';
 
 @InputType()
 export class CreateAdmissionStageInput {
@@ -56,4 +60,11 @@ export class CreateAdmissionStageInput {
   @IsOptional()
   @IsBoolean()
   isDefault?: boolean;
+
+  @Field(() => [String], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsIn([...ADMISSION_CARD_FIELD_KEYS], { each: true })
+  cardFields?: string[];
 }

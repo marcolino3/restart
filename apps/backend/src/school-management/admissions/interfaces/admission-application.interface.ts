@@ -21,4 +21,6 @@ export interface IAdmissionApplication extends IBase {
   stageEnteredAt: Date;
   position: number;
   rejectionReason?: string | null;
+  rejectionReasonId?: string | null;
+  rejectedBy?: string | null;
 }

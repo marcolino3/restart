@@ -62,6 +62,14 @@ const PERMISSION_CATALOG: Array<{
     code: PermissionCode.ADMISSION_APPLICATION_DELETE,
     name: 'Aufnahme-Bewerbung archivieren/ablehnen',
   },
+  {
+    code: PermissionCode.ADMISSION_EMAIL_TEMPLATE_MANAGE,
+    name: 'Aufnahme-E-Mail-Vorlagen verwalten',
+  },
+  {
+    code: PermissionCode.ADMISSION_EMAIL_SEND,
+    name: 'Aufnahme-E-Mail versenden',
+  },
   { code: PermissionCode.FAMILY_READ, name: 'Familie lesen' },
   { code: PermissionCode.FAMILY_WRITE, name: 'Familie bearbeiten' },
   {

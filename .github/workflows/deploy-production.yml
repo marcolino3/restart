@@ -20,9 +20,9 @@ env:
   NAMESPACE: restart-production
   STAGING_NAMESPACE: restart-staging
 
-# Serialisiert Prod-Deploys — verhindert dass zwei parallele Promotions die
-# Audit-Log-Datei in `.github/promotions.jsonl` zerschiessen oder den Cluster
-# in einen inkonsistenten Zustand bringen.
+# Serialisiert Prod-Deploys — verhindert, dass zwei parallele Promotions
+# überlappende Rollouts fahren und den Cluster in einen inkonsistenten Zustand
+# bringen. Nicht abbrechen, damit ein laufender Migrate/Rollout sauber endet.
 concurrency:
   group: deploy-production
   cancel-in-progress: false
@@ -202,9 +202,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     permissions:
-      # `contents: write` ist nötig, damit der Audit-Log-Commit am Ende
-      # auf main pushen kann.
-      contents: write
+      # `deployments: write` für den GitHub-Deployment-Record am Ende (Audit).
+      # KEIN `contents: write` — wir pushen nichts auf das (branch-protected) main.
+      deployments: write
+      contents: read
       packages: write
     needs: [resolve, migrate]
     # Damit der Deploy auch dann läuft, wenn migrate übersprungen wurde:
@@ -290,51 +291,49 @@ jobs:
             ${{ env.FRONTEND_IMAGE }}:${TAG}
           echo "::notice::Tagged $TAG as production-current"
 
-      # Audit-Log: jede erfolgreiche Promotion bekommt einen Commit auf main.
-      # Format: JSON-Lines (eine Zeile pro Promotion) — append-only, parse-bar,
-      # konfliktarm. Datei: .github/promotions.jsonl.
-      #
-      # `[skip ci]` im Commit-Subject ist Pflicht, sonst triggert der Commit
-      # eine Staging-Redeploy-Schleife (deploy-staging.yml lauscht auf push:main).
-      - name: Append promotion to audit log
+      # Audit-Log: jede erfolgreiche Promotion wird als GitHub-Deployment-Record
+      # festgehalten (sichtbar im Deployments-Tab des Repos). Kein Commit/Push
+      # auf das branch-protected `main` — der Record trägt Ziel-SHA, Vorgänger,
+      # Operator, Migrations-Flag und Run-URL. Promotion-History ergibt sich
+      # zusätzlich aus dem `:production-current`-Image-Tag und diesem Run-Log.
+      - name: Record promotion as GitHub Deployment
         if: steps.smoke.outcome == 'success'
+        uses: actions/github-script@v7
         env:
           TARGET: ${{ needs.resolve.outputs.image_tag }}
           PREVIOUS: ${{ needs.resolve.outputs.current_prod_tag }}
           SKIP_MIGRATIONS: ${{ inputs.skip_migrations }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          set -e
-          ENTRY=$(jq -nc \
-            --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            --arg actor "${{ github.actor }}" \
-            --arg target "$TARGET" \
-            --arg previous "$PREVIOUS" \
-            --argjson skip_migrations "$SKIP_MIGRATIONS" \
-            --arg run_url "$RUN_URL" \
-            '{timestamp:$ts, actor:$actor, target_sha:$target, previous_sha:$previous, skip_migrations:$skip_migrations, run_url:$run_url}')
+        with:
+          script: |
+            const { TARGET, PREVIOUS, SKIP_MIGRATIONS } = process.env;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const description =
+              `prod promotion ${TARGET.slice(0, 12)} (prev ${PREVIOUS}) ` +
+              `by @${context.actor}` +
+              (SKIP_MIGRATIONS === 'true' ? ' [migrations SKIPPED]' : '');
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              // Ziel-SHA als ref — der Record verweist exakt auf den promoteten Stand.
+              ref: TARGET,
+              environment: 'production',
+              description,
+              auto_merge: false,
+              required_contexts: [],
+              production_environment: true,
+              transient_environment: false,
+            });
 
-          touch .github/promotions.jsonl
-          echo "$ENTRY" >> .github/promotions.jsonl
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: deployment.data.id,
+              state: 'success',
+              environment: 'production',
+              environment_url: 'https://app.colibri-app.ch',
+              log_url: runUrl,
+              description,
+            });
 
-          git add .github/promotions.jsonl
-          git commit -m "audit(deploy): production promotion ${TARGET:0:12} [skip ci]" \
-            -m "Previous: $PREVIOUS" \
-            -m "Run: $RUN_URL"
-
-          # Retry-Loop falls in der Zwischenzeit ein anderer Commit auf main
-          # gelandet ist (sehr unwahrscheinlich dank concurrency-group, aber
-          # nicht unmöglich — z.B. PR-Merge zur gleichen Zeit).
-          for attempt in 1 2 3; do
-            if git push origin HEAD:main; then
-              echo "::notice::Audit-Log committed (attempt $attempt)"
-              exit 0
-            fi
-            echo "::warning::Push fehlgeschlagen (attempt $attempt) — pull --rebase + retry"
-            git pull --rebase origin main
-          done
-          echo "::error::Audit-Log push nach 3 Versuchen fehlgeschlagen"
-          exit 1
+            core.notice(`Promotion als Deployment #${deployment.data.id} festgehalten: ${description}`);

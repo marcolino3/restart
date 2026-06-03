@@ -10,6 +10,7 @@ import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
 import { LoggerModule } from 'nestjs-pino';
 import { DataSource, EntityManager } from 'typeorm';
 import { loggerConfig } from './logger.config';
+import { resolveSynchronize } from './database/resolve-synchronize';
 import { AddressesModule } from './addresses/addresses.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -25,6 +26,7 @@ import { EmployeeManagementModule } from './employee-management/employee-managem
 import { SchoolManagementModule } from './school-management/school-management.module';
 import { CurriculaModule } from './curricula/curricula.module';
 import { CurriculumNodeLoaders } from './curricula/loaders/curriculum-node-loaders';
+import { StudentEnrollmentLoaders } from './school-management/students/loaders/student-enrollment-loaders';
 import { MembershipsModule } from './memberships/memberships.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { PermissionsModule } from './permissions/permissions.module';
@@ -69,6 +71,14 @@ import { join } from 'path';
           (!isProd &&
             configService.get<string>('DB_MIGRATIONS_RUN') !== 'false');
 
+        // synchronize fail-closed: in production/staging hart gesperrt, eine
+        // Fehlkonfig (DB_SYNCHRONIZE=true) bricht den Boot ab. Siehe
+        // resolve-synchronize.ts (+ Tests).
+        const synchronize = resolveSynchronize(
+          nodeEnv,
+          configService.get<string>('DB_SYNCHRONIZE'),
+        );
+
         return {
           type: 'postgres',
           host: configService.getOrThrow('DB_HOST'),
@@ -77,7 +87,7 @@ import { join } from 'path';
           password: configService.getOrThrow('DB_PASSWORD'),
           database: configService.getOrThrow('DB_NAME'),
           autoLoadEntities: true,
-          synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
+          synchronize,
           ssl: isProd ? { rejectUnauthorized: false } : false,
           autoSchemaFile: true,
           migrationsRun,
@@ -106,6 +116,7 @@ import { join } from 'path';
           entityManager: dataSource.manager, // 💡 wichtig für deine Decorators
           loaders: {
             curriculumNodes: new CurriculumNodeLoaders(dataSource),
+            studentEnrollments: new StudentEnrollmentLoaders(dataSource),
           },
         }),
         plugins: [ApolloServerPluginLandingPageLocalDefault()],

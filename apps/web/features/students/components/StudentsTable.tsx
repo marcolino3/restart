@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
+  FilterFn,
   SortingState,
   VisibilityState,
   flexRender,
@@ -16,17 +17,23 @@ import {
 import {
   ArrowUpDown,
   ChevronDown,
+  Mars,
   MoreHorizontal,
   Pencil,
   Trash2,
+  Venus,
+  VenusAndMars,
   X,
+  type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DataTableFacetedFilter } from "@/components/common/DataTableFacetedFilter";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -59,6 +66,26 @@ import { handleAction } from "@/lib/actions/handle-action";
 interface Props {
   data: StudentListItem[];
 }
+
+const GENDER_META: Record<string, { icon: LucideIcon; className: string }> = {
+  MALE: { icon: Mars, className: "text-blue-600 dark:text-blue-400" },
+  FEMALE: { icon: Venus, className: "text-pink-600 dark:text-pink-400" },
+  OTHER: {
+    icon: VenusAndMars,
+    className: "text-purple-600 dark:text-purple-400",
+  },
+};
+
+/** Multi-select facet match for a scalar cell value against a list of picks. */
+const multiSelectFilter: FilterFn<StudentListItem> = (
+  row,
+  columnId,
+  filterValue,
+) => {
+  const picks = filterValue as string[] | undefined;
+  if (!picks?.length) return true;
+  return picks.includes(row.getValue<string>(columnId));
+};
 
 const useColumns = (): ColumnDef<StudentListItem>[] => {
   const t = useTranslations("Common");
@@ -137,19 +164,66 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
       header: t("gender"),
       cell: ({ getValue }) => {
         const value = getValue<string | null>();
-        return value ? <div>{t(value)}</div> : null;
+        if (!value) return null;
+        const meta = GENDER_META[value];
+        if (!meta) return null;
+        const Icon = meta.icon;
+        return (
+          <span title={t(value)} aria-label={t(value)}>
+            <Icon className={`h-4 w-4 ${meta.className}`} aria-hidden />
+          </span>
+        );
       },
+      filterFn: multiSelectFilter,
     },
     {
-      id: "enrollmentDate",
-      accessorKey: "enrollmentDate",
-      header: tS("enrollmentDate"),
-      cell: ({ getValue }) => {
-        const value = getValue<string | null>();
-        return value ? (
-          <div>{new Date(value).toLocaleDateString("de-CH")}</div>
-        ) : null;
+      id: "class",
+      accessorFn: (row) => row.currentClass?.name ?? "",
+      header: t("class"),
+      cell: ({ row }) => {
+        const cls = row.original.currentClass;
+        if (!cls?.name) {
+          return <span className="text-muted-foreground">–</span>;
+        }
+        return (
+          <Badge
+            variant="default"
+            className={cls.color ? "border-transparent text-white" : undefined}
+            style={cls.color ? { backgroundColor: cls.color } : undefined}
+          >
+            {cls.name}
+          </Badge>
+        );
       },
+      filterFn: multiSelectFilter,
+    },
+    {
+      id: "gradeLevel",
+      accessorFn: (row) =>
+        (row.currentClass?.gradeLevels ?? []).map((gl) => gl.name),
+      header: t("gradeLevel"),
+      cell: ({ row }) => {
+        const gradeLevels = row.original.currentClass?.gradeLevels ?? [];
+        return gradeLevels.length ? (
+          <div className="flex flex-wrap gap-1">
+            {gradeLevels.map((gl) => (
+              <Badge
+                key={gl.id}
+                variant="default"
+                className={
+                  gl.color ? "border-transparent text-white" : undefined
+                }
+                style={gl.color ? { backgroundColor: gl.color } : undefined}
+              >
+                {gl.name}
+              </Badge>
+            ))}
+          </div>
+        ) : (
+          <span className="text-muted-foreground">–</span>
+        );
+      },
+      filterFn: "arrIncludesSome",
     },
     {
       id: "actions",
@@ -200,6 +274,38 @@ export const StudentsTable = ({ data }: Props) => {
   const locale = useLocale();
   const router = useRouter();
   const columns = useColumns();
+
+  // Distinct option lists for the categorical filters, derived from the data.
+  const genderOptions = React.useMemo(
+    () =>
+      Array.from(
+        new Set(data.map((s) => s.gender).filter((g): g is string => !!g)),
+      ),
+    [data],
+  );
+  const classOptions = React.useMemo(() => {
+    const byName = new Map<string, string | null>();
+    for (const s of data) {
+      const cls = s.currentClass;
+      if (cls?.name && !byName.has(cls.name)) {
+        byName.set(cls.name, cls.color ?? null);
+      }
+    }
+    return Array.from(byName, ([name, color]) => ({ name, color })).sort(
+      (a, b) => a.name.localeCompare(b.name),
+    );
+  }, [data]);
+  const gradeLevelOptions = React.useMemo(() => {
+    const byName = new Map<string, string | null>();
+    for (const s of data) {
+      for (const gl of s.currentClass?.gradeLevels ?? []) {
+        if (!byName.has(gl.name)) byName.set(gl.name, gl.color ?? null);
+      }
+    }
+    return Array.from(byName, ([name, color]) => ({ name, color })).sort(
+      (a, b) => a.name.localeCompare(b.name),
+    );
+  }, [data]);
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] =
@@ -261,6 +367,93 @@ export const StudentsTable = ({ data }: Props) => {
           }
           className="max-w-[180px]"
         />
+        {genderOptions.length > 0 && (
+          <DataTableFacetedFilter
+            title={t("gender")}
+            selected={
+              (table.getColumn("gender")?.getFilterValue() as string[]) ?? []
+            }
+            onChange={(next) =>
+              table
+                .getColumn("gender")
+                ?.setFilterValue(next.length ? next : undefined)
+            }
+            options={genderOptions.map((g) => {
+              const meta = GENDER_META[g];
+              const Icon = meta?.icon;
+              return {
+                value: g,
+                searchValue: t(g),
+                label: (
+                  <span className="flex items-center gap-2">
+                    {Icon && (
+                      <Icon
+                        className={`h-4 w-4 ${meta.className}`}
+                        aria-hidden
+                      />
+                    )}
+                    {t(g)}
+                  </span>
+                ),
+              };
+            })}
+          />
+        )}
+        {classOptions.length > 0 && (
+          <DataTableFacetedFilter
+            title={t("class")}
+            selected={
+              (table.getColumn("class")?.getFilterValue() as string[]) ?? []
+            }
+            onChange={(next) =>
+              table
+                .getColumn("class")
+                ?.setFilterValue(next.length ? next : undefined)
+            }
+            options={classOptions.map((c) => ({
+              value: c.name,
+              searchValue: c.name,
+              label: (
+                <span className="flex items-center gap-2">
+                  <span
+                    aria-hidden
+                    className="inline-block h-2 w-2 shrink-0 rounded-full ring-1 ring-border"
+                    style={{ backgroundColor: c.color ?? "var(--muted)" }}
+                  />
+                  {c.name}
+                </span>
+              ),
+            }))}
+          />
+        )}
+        {gradeLevelOptions.length > 0 && (
+          <DataTableFacetedFilter
+            title={t("gradeLevel")}
+            selected={
+              (table.getColumn("gradeLevel")?.getFilterValue() as string[]) ??
+              []
+            }
+            onChange={(next) =>
+              table
+                .getColumn("gradeLevel")
+                ?.setFilterValue(next.length ? next : undefined)
+            }
+            options={gradeLevelOptions.map((gl) => ({
+              value: gl.name,
+              searchValue: gl.name,
+              label: (
+                <span className="flex items-center gap-2">
+                  <span
+                    aria-hidden
+                    className="inline-block h-2 w-2 shrink-0 rounded-full ring-1 ring-border"
+                    style={{ backgroundColor: gl.color ?? "var(--muted)" }}
+                  />
+                  {gl.name}
+                </span>
+              ),
+            }))}
+          />
+        )}
         <Select
           value={
             pagination.pageSize >= data.length

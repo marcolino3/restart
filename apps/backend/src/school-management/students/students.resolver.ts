@@ -1,4 +1,13 @@
-import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import {
+  Resolver,
+  Query,
+  Mutation,
+  Args,
+  ID,
+  ResolveField,
+  Parent,
+  Context,
+} from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
@@ -6,10 +15,12 @@ import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
+import { SchoolClass } from '@/school-management/school-classes/entities/school-class.entity';
 import { StudentsService } from './students.service';
 import { Student } from './entities/student.entity';
 import { CreateStudentInput } from './dto/create-student.input';
 import { UpdateStudentInput } from './dto/update-student.input';
+import { StudentEnrollmentLoaders } from './loaders/student-enrollment-loaders';
 
 @Resolver(() => Student)
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
@@ -103,5 +114,22 @@ export class StudentsResolver {
       orgId,
     );
     return this.studentsService.moveToStage(studentId, stageId, orgId);
+  }
+
+  /**
+   * Aktuelle (aktive) Klasse eines Schülers — für die Klasse-/Stufe-Spalten der
+   * Schülerliste. Per-Request via DataLoader gebatcht (eine Query je Request
+   * statt N+1), org-scoped über den nach orgId gekeyten Loader.
+   */
+  @ResolveField(() => SchoolClass, { name: 'currentClass', nullable: true })
+  currentClass(
+    @Parent() student: Student,
+    @CurrentOrgId() orgId: string,
+    @Context()
+    ctx: { loaders: { studentEnrollments: StudentEnrollmentLoaders } },
+  ): Promise<SchoolClass | null> {
+    return ctx.loaders.studentEnrollments
+      .currentClassLoader(orgId)
+      .load(student.id);
   }
 }

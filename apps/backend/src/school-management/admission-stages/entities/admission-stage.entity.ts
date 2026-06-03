@@ -47,6 +47,14 @@ export class AdmissionStage
   @Column('boolean', { name: 'is_default', default: false })
   isDefault: boolean;
 
+  /**
+   * Per-stage list of optional card field keys to display on the Kanban card.
+   * `null` falls back to the frontend default set. See `admission-field-keys.ts`.
+   */
+  @Field(() => [String], { nullable: true })
+  @Column('jsonb', { name: 'card_fields', nullable: true })
+  cardFields?: string[] | null;
+
   @Field(() => String)
   @Column('uuid', { name: 'organization_id' })
   organizationId: string;

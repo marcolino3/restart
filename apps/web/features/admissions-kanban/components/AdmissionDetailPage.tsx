@@ -5,10 +5,12 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  Ban,
   ClipboardList,
   History,
   Mail,
   Phone,
+  Send,
   Users2,
 } from "lucide-react";
 
@@ -20,32 +22,47 @@ import { cn } from "@/lib/utils";
 
 import { getAdmissionActivitiesAction } from "../actions/get-admission-activities.action";
 import { getAdmissionRemindersAction } from "../actions/get-admission-reminders.action";
+import { getAdmissionEmailsAction } from "../actions/get-admission-emails.action";
 import type {
   AdmissionApplicationDetail,
   AdmissionDetailContact,
 } from "../actions/get-application-detail.action";
 import type { AdmissionActivity } from "../actions/get-admission-activities.action";
 import type { AdmissionReminder } from "../actions/get-admission-reminders.action";
-import type { KanbanStage } from "../types";
+import type { AdmissionEmail } from "../actions/get-admission-emails.action";
+import type { AdmissionRejectionReason, KanbanStage } from "../types";
 import { ActivityComposer } from "./ActivityComposer";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { AdmissionRemindersBlock } from "./AdmissionRemindersBlock";
+import { AdmissionEmailHistory } from "./AdmissionEmailHistory";
+import { RejectApplicationDialog } from "./RejectApplicationDialog";
+import { SendEmailDialog, type SendableTemplate } from "./SendEmailDialog";
 
 interface Props {
   detail: AdmissionApplicationDetail;
   stages: KanbanStage[];
+  rejectionReasons: AdmissionRejectionReason[];
   initialActivities: AdmissionActivity[];
   initialReminders: AdmissionReminder[];
+  initialEmails: AdmissionEmail[];
+  emailTemplates: SendableTemplate[];
   canEdit: boolean;
   canEnroll: boolean;
+  canSendEmail: boolean;
+  canReject: boolean;
 }
 
 export function AdmissionDetailPage({
   detail,
   stages,
+  rejectionReasons,
   initialActivities,
   initialReminders,
+  initialEmails,
+  emailTemplates,
   canEdit,
+  canSendEmail,
+  canReject,
 }: Props) {
   const t = useTranslations("Admissions");
   const router = useRouter();
@@ -53,9 +70,21 @@ export function AdmissionDetailPage({
     useState<AdmissionActivity[]>(initialActivities);
   const [reminders, setReminders] =
     useState<AdmissionReminder[]>(initialReminders);
+  const [emails, setEmails] = useState<AdmissionEmail[]>(initialEmails);
+  const [sendOpen, setSendOpen] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
   const [, startTransition] = useTransition();
 
   const stage = stages.find((s) => s.id === detail.admissionStageId);
+  const emailContacts = detail.contactPersons
+    .filter((c) => c.email)
+    .map((c) => ({
+      id: c.id,
+      name: `${c.firstName} ${c.lastName}`.trim(),
+      email: c.email as string,
+      role: c.roles?.[0] ?? null,
+    }));
+  const defaultContact = emailContacts[0] ?? null;
 
   const refreshActivities = () => {
     startTransition(async () => {
@@ -69,6 +98,14 @@ export function AdmissionDetailPage({
     startTransition(async () => {
       const res = await getAdmissionRemindersAction(detail.id);
       if (res.success) setReminders(res.data);
+      router.refresh();
+    });
+  };
+
+  const refreshEmails = () => {
+    startTransition(async () => {
+      const res = await getAdmissionEmailsAction(detail.id);
+      if (res.success) setEmails(res.data);
       router.refresh();
     });
   };
@@ -93,6 +130,28 @@ export function AdmissionDetailPage({
             {t("detailBack")}
           </Button>
           <div className="flex-1" />
+          {canSendEmail && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setSendOpen(true)}
+            >
+              <Send className="h-4 w-4" />
+              {t("emailSend")}
+            </Button>
+          )}
+          {canReject && detail.status === "ACTIVE" && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-destructive hover:text-destructive"
+              onClick={() => setRejectOpen(true)}
+            >
+              <Ban className="h-4 w-4" />
+              {t("rejectApplication")}
+            </Button>
+          )}
           {stage && (
             <Badge
               variant="outline"
@@ -217,6 +276,13 @@ export function AdmissionDetailPage({
                   {activities.length}
                 </span>
               </TabsTrigger>
+              <TabsTrigger value="emails" className="gap-1.5">
+                <Mail className="h-3.5 w-3.5" />
+                {t("tabEmails")}
+                <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                  {emails.length}
+                </span>
+              </TabsTrigger>
               <TabsTrigger value="family" className="gap-1.5">
                 <Users2 className="h-3.5 w-3.5" />
                 {t("tabFamily")}
@@ -239,6 +305,27 @@ export function AdmissionDetailPage({
                 activities={activities}
                 canEdit={canEdit}
                 onChanged={refreshActivities}
+              />
+            </TabsContent>
+
+            <TabsContent value="emails" className="space-y-4 pt-4">
+              {canSendEmail && (
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => setSendOpen(true)}
+                  >
+                    <Send className="h-4 w-4" />
+                    {t("emailSend")}
+                  </Button>
+                </div>
+              )}
+              <AdmissionEmailHistory
+                applicationId={detail.id}
+                emails={emails}
+                canManage={canSendEmail}
+                onChanged={refreshEmails}
               />
             </TabsContent>
 
@@ -300,6 +387,27 @@ export function AdmissionDetailPage({
           </Tabs>
         </main>
       </div>
+
+      {canSendEmail && sendOpen && (
+        <SendEmailDialog
+          open
+          onOpenChange={setSendOpen}
+          applicationId={detail.id}
+          templates={emailTemplates}
+          contacts={emailContacts}
+          defaultToEmail={defaultContact?.email ?? null}
+          defaultToName={defaultContact?.name ?? null}
+          onSent={refreshEmails}
+        />
+      )}
+
+      {canReject && rejectOpen && (
+        <RejectApplicationDialog
+          applicationId={detail.id}
+          reasons={rejectionReasons}
+          onClose={() => setRejectOpen(false)}
+        />
+      )}
     </div>
   );
 }

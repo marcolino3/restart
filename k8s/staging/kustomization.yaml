@@ -75,9 +75,13 @@ configMapGenerator:
     literals:
       - NODE_ENV=staging
       - DB_HOST=postgres-postgresql.restart-staging.svc.cluster.local
-      - DB_SYNCHRONIZE=true
+      # Schema wird ausschliesslich ueber Migrationen verwaltet (InitialSchema-
+      # Baseline + inkrementelle). synchronize ist hier hart deaktiviert — der
+      # app.module-Guard bricht den Boot ab, falls jemand es doch auf true setzt.
+      # ACHTUNG: Beim Umstieg von synchronize auf Migrationen muss die bestehende
+      # Staging-DB einmalig geleert werden (nur Testdaten), siehe DEPLOYMENT.md.
+      - DB_SYNCHRONIZE=false
       - ALLOWED_ORIGINS=https://staging.colibri-app.ch
       - GOOGLE_AUTH_REDIRECT_URI=https://staging.colibri-app.ch/api/auth/google/callback
       - AUTH_UI_REDIRECT=https://staging.colibri-app.ch
-      - SENTRY_ENVIRONMENT=staging
       - LOG_LEVEL=info

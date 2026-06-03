@@ -10,9 +10,23 @@ env:
   FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/restart-frontend
   NAMESPACE: restart-staging
 
+# Serialisiert Staging-Deploys: bei schnell aufeinanderfolgenden Merges nicht
+# zwei Rollouts parallel fahren. Nicht abbrechen (cancel-in-progress: false),
+# damit ein laufender Migrate/Rollout den Cluster nicht halbfertig verlässt.
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
 jobs:
+  # CI-Gate: lint, test, build, E2E. Schlägt einer fehl, werden gar keine
+  # Images gebaut/gepusht und nichts deployed (build hat `needs: [ci]`).
+  ci:
+    name: CI Gate
+    uses: ./.github/workflows/ci.yml
+
   build:
     name: Build & Push Images
+    needs: [ci]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -48,8 +62,6 @@ jobs:
           context: .
           file: ./apps/backend/Dockerfile
           push: true
-          build-args: |
-            SENTRY_RELEASE=${{ github.sha }}
           tags: |
             ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
             ${{ env.BACKEND_IMAGE }}:latest
@@ -60,18 +72,8 @@ jobs:
           context: .
           file: ./apps/web/Dockerfile
           push: true
-          # Sentry-Build-Args: DSN + Release werden ins Browser-Bundle inlined.
-          # SENTRY_AUTH_TOKEN ist nur für den Source-Map-Upload nötig (optional).
           build-args: |
             BACKEND_URL=http://backend:3001
-            NEXT_PUBLIC_SENTRY_DSN=${{ secrets.SENTRY_DSN_FRONTEND }}
-            NEXT_PUBLIC_SENTRY_ENVIRONMENT=staging
-            NEXT_PUBLIC_SENTRY_RELEASE=${{ github.sha }}
-            SENTRY_ORG=${{ vars.SENTRY_ORG }}
-            SENTRY_PROJECT=${{ vars.SENTRY_PROJECT_FRONTEND }}
-            SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
-            NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.POSTHOG_KEY_STAGING }}
-            NEXT_PUBLIC_POSTHOG_HOST=/ingest
           tags: |
             ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
             ${{ env.FRONTEND_IMAGE }}:latest
@@ -85,7 +87,8 @@ jobs:
         with:
           image-ref: ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
           severity: "CRITICAL"
-          exit-code: "0"
+          # Gate: ein fixbares CRITICAL im Image bricht den Deploy ab.
+          exit-code: "1"
           ignore-unfixed: true
           format: "sarif"
           output: "trivy-backend.sarif"
@@ -95,7 +98,8 @@ jobs:
         with:
           image-ref: ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
           severity: "CRITICAL"
-          exit-code: "0"
+          # Gate: ein fixbares CRITICAL im Image bricht den Deploy ab.
+          exit-code: "1"
           ignore-unfixed: true
           format: "sarif"
           output: "trivy-frontend.sarif"
@@ -199,12 +203,33 @@ jobs:
           kubectl rollout status deployment/backend -n "$NAMESPACE" --timeout=300s
           kubectl rollout status deployment/frontend -n "$NAMESPACE" --timeout=300s
 
-      - name: Rollback on failure
+      - name: Rollback on rollout failure
         if: failure() && steps.rollout.outcome == 'failure'
         run: |
           echo "::warning::Rollout failed — rolling back deployments"
           kubectl rollout undo deployment/backend -n "$NAMESPACE" || true
           kubectl rollout undo deployment/frontend -n "$NAMESPACE" || true
+
+      # Health-Check gegen die öffentliche Staging-URL — verifiziert, dass der
+      # neue Stand wirklich Requests beantwortet (nicht nur „Pods Ready").
+      - name: Smoke test
+        id: smoke
+        run: |
+          sleep 10
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://staging.colibri-app.ch/api/health)
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Staging smoke test failed! HTTP status: $STATUS"
+            exit 1
+          fi
+          echo "::notice::Staging smoke test passed (HTTP $STATUS)"
+
+      - name: Rollback on smoke test failure
+        if: failure() && steps.smoke.outcome == 'failure'
+        run: |
+          echo "::error::Smoke test failed — rolling back"
+          kubectl rollout undo deployment/backend -n "$NAMESPACE" || true
+          kubectl rollout undo deployment/frontend -n "$NAMESPACE" || true
+          exit 1
 
       # Promotion-Anker: das jetzt auf Staging laufende Image-Paar zusätzlich
       # als ':staging-current' taggen. deploy-production.yml liest diesen Tag,
@@ -212,7 +237,7 @@ jobs:
       # `docker buildx imagetools create` kopiert nur das Manifest (kein Re-Pull
       # der Layer) und ist tag-only.
       - name: Log in to GHCR for tagging
-        if: steps.rollout.outcome == 'success'
+        if: steps.smoke.outcome == 'success'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -220,7 +245,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Tag images as staging-current
-        if: steps.rollout.outcome == 'success'
+        if: steps.smoke.outcome == 'success'
         run: |
           docker buildx imagetools create \
             --tag ${{ env.BACKEND_IMAGE }}:staging-current \
