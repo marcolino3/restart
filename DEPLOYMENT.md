@@ -163,9 +163,13 @@ kubectl exec -n restart-staging deploy/postgres -- \
   psql -U restart -d restart -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
 
 # 2) PR mergen → deploy-staging.yml läuft: CI-Gate → build → migrate (baseline
-#    + better-auth) → deploy → smoke.
+#    + better-auth + Admissions: card/board, rejection-reasons, rejectedBy,
+#    email-templates, email-permission-enum) → deploy → smoke.
 # 3) Verifizieren:
-kubectl logs -n restart-staging job/migrate-<sha12>          # beide Migrationen "executed"
+kubectl logs -n restart-staging job/migrate-<sha12>          # alle 7 Migrationen "executed"
+#    (InitialSchema, CreateBetterAuthTables, AdmissionCardAndBoardSettings,
+#     CreateEmailTemplatesAndAdmissionEmails, AdmissionRejectionReasons,
+#     AdmissionRejectedBy, AddAdmissionEmailPermissions)
 curl -s -o /dev/null -w '%{http_code}\n' https://staging.colibri-app.ch/api/health   # 200
 # 4) Login + Org-Switch manuell durchklicken.
 ```
