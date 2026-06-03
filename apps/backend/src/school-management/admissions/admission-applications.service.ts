@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
+import { AdmissionRejectionReason } from '../admission-rejection-reasons/entities/admission-rejection-reason.entity';
 import { AdmissionStage } from '../admission-stages/entities/admission-stage.entity';
 import { AdmissionStageType } from '../admission-stages/enums/admission-stage-type.enum';
 import { ContactPerson } from '../contact-persons/entities/contact-person.entity';
@@ -36,6 +37,8 @@ export class AdmissionApplicationsService {
     private readonly applicationsRepo: Repository<AdmissionApplication>,
     @InjectRepository(AdmissionStage)
     private readonly stagesRepo: Repository<AdmissionStage>,
+    @InjectRepository(AdmissionRejectionReason)
+    private readonly rejectionReasonsRepo: Repository<AdmissionRejectionReason>,
     @InjectRepository(Family)
     private readonly familyRepo: Repository<Family>,
     @InjectRepository(ContactPerson)
@@ -413,6 +416,23 @@ export class AdmissionApplicationsService {
     const application = await this.findOne(input.id, organizationId);
     application.status = AdmissionApplicationStatus.REJECTED;
     application.rejectionReason = input.reason ?? null;
+
+    // Validate the chosen reason belongs to this org (multi-tenant safety).
+    if (input.rejectionReasonId) {
+      const reason = await this.rejectionReasonsRepo.findOne({
+        where: { id: input.rejectionReasonId, organizationId },
+      });
+      if (!reason) {
+        throw new NotFoundException(
+          `Rejection reason ${input.rejectionReasonId} not found`,
+        );
+      }
+      application.rejectionReasonId = reason.id;
+    } else {
+      application.rejectionReasonId = null;
+    }
+
+    application.rejectedBy = input.rejectedBy ?? null;
 
     // best-effort: move to a REJECTED stage if exists
     const rejectedStage = await this.stagesRepo.findOne({

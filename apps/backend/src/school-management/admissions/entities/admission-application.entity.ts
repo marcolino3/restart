@@ -1,6 +1,7 @@
 import { AbstractEntity } from '@/database/abstract.entity';
 import { Gender } from '@/database/enums/gender.enum';
 import { Organization } from '@/organizations/entities/organization.entity';
+import { AdmissionRejectionReason } from '@/school-management/admission-rejection-reasons/entities/admission-rejection-reason.entity';
 import { AdmissionStage } from '@/school-management/admission-stages/entities/admission-stage.entity';
 import { Family } from '@/school-management/families/entities/family.entity';
 import { GradeLevel } from '@/school-management/grade-levels/entities/grade-level.entity';
@@ -10,6 +11,7 @@ import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { AdmissionApplicationSource } from '../enums/admission-application-source.enum';
 import { AdmissionApplicationStatus } from '../enums/admission-application-status.enum';
+import { AdmissionRejectedBy } from '../enums/admission-rejected-by.enum';
 import { IAdmissionApplication } from '../interfaces/admission-application.interface';
 
 @ObjectType()
@@ -137,4 +139,17 @@ export class AdmissionApplication
   @Field(() => String, { nullable: true })
   @Column('text', { name: 'rejection_reason', nullable: true })
   rejectionReason?: string | null;
+
+  @Field(() => ID, { nullable: true })
+  @Column('uuid', { name: 'rejection_reason_id', nullable: true })
+  rejectionReasonId?: string | null;
+
+  @Field(() => AdmissionRejectionReason, { nullable: true })
+  @ManyToOne(() => AdmissionRejectionReason, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'rejection_reason_id' })
+  rejectionReasonRef?: AdmissionRejectionReason | null;
+
+  @Field(() => AdmissionRejectedBy, { nullable: true })
+  @Column('text', { name: 'rejected_by', nullable: true })
+  rejectedBy?: AdmissionRejectedBy | null;
 }
