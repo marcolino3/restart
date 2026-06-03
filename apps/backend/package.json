@@ -30,7 +30,9 @@
     "migration:run": "pnpm typeorm migration:run -d src/data-source.ts",
     "migration:revert": "pnpm typeorm migration:revert -d src/data-source.ts",
     "migration:show": "pnpm typeorm migration:show -d src/data-source.ts",
-    "migration:run:prod": "node dist/src/migrate.js"
+    "migration:run:prod": "node dist/src/migrate.js",
+    "auth:migrate": "ts-node --transpile-only src/migrate-auth.ts",
+    "auth:migrate:prod": "node dist/src/migrate-auth.js"
   },
   "dependencies": {
     "@apollo/server": "^5.4.0",
