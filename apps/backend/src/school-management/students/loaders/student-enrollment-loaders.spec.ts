@@ -60,7 +60,8 @@ describe('StudentEnrollmentLoaders', () => {
 
     await loaders.currentClassLoader(ORG).load('s1');
 
-    const options = find.mock.calls[0][0] as FindManyOptions<SchoolClassEnrollment>;
+    const options = find.mock
+      .calls[0][0] as FindManyOptions<SchoolClassEnrollment>;
     const where = options.where as Record<string, unknown>;
     expect(where.organizationId).toBe(ORG);
     expect(where.isActive).toBe(true);
@@ -70,7 +71,7 @@ describe('StudentEnrollmentLoaders', () => {
     expect(options.relations).toContain('schoolClass.gradeLevels');
   });
 
-  it('keeps a separate loader per org so tenants cannot share a cache', async () => {
+  it('keeps a separate loader per org so tenants cannot share a cache', () => {
     const { dataSource } = makeDataSource([]);
     const loaders = new StudentEnrollmentLoaders(dataSource);
 
