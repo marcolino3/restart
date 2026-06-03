@@ -30,7 +30,9 @@
     "migration:run": "pnpm typeorm migration:run -d src/data-source.ts",
     "migration:revert": "pnpm typeorm migration:revert -d src/data-source.ts",
     "migration:show": "pnpm typeorm migration:show -d src/data-source.ts",
-    "migration:run:prod": "node dist/src/migrate.js"
+    "migration:run:prod": "node dist/src/migrate.js",
+    "auth:migrate": "ts-node --transpile-only src/migrate-auth.ts",
+    "auth:migrate:prod": "node dist/src/migrate-auth.js"
   },
   "dependencies": {
     "@apollo/server": "^5.4.0",
@@ -76,6 +78,7 @@
     "pino-http": "^11.0.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
+    "sanitize-html": "^2.17.4",
     "sharp": "^0.34.5",
     "typeorm": "^0.3.28",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
@@ -99,6 +102,7 @@
     "@types/nodemailer": "^7.0.11",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
+    "@types/sanitize-html": "^2.16.1",
     "@types/supertest": "^7.2.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.1.8",
