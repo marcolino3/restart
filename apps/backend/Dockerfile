@@ -27,12 +27,6 @@ RUN corepack enable
 COPY --from=deps /app/ ./
 COPY --from=pruner /app/out/full/ ./
 
-# SENTRY_RELEASE wird beim CI-Build mit dem Git-SHA gesetzt, sodass Sentry
-# pro Release weiss, welcher Commit deployed ist. Wird zu einer ENV im
-# Production-Image, damit instrument.ts es zur Laufzeit liest.
-ARG SENTRY_RELEASE
-ENV SENTRY_RELEASE=$SENTRY_RELEASE
-
 RUN pnpm turbo run build --filter=@restart/backend
 RUN pnpm --filter @restart/backend deploy --prod /prod/backend
 
@@ -45,10 +39,6 @@ RUN addgroup -g 1001 -S nodejs && \
 COPY --from=build --chown=nestjs:nodejs /prod/backend/dist ./dist
 COPY --from=build --chown=nestjs:nodejs /prod/backend/node_modules ./node_modules
 COPY --from=build --chown=nestjs:nodejs /prod/backend/package.json ./package.json
-
-# Release-Tag durchreichen (siehe ARG in Stage 3).
-ARG SENTRY_RELEASE
-ENV SENTRY_RELEASE=$SENTRY_RELEASE
 
 USER nestjs
 

@@ -15,31 +15,39 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  */
 type Documents = {
     "\n  mutation ArchiveAdmissionApplication($id: ID!) {\n    archiveAdmissionApplication(id: $id)\n  }\n": typeof types.ArchiveAdmissionApplicationDocument,
-    "\n  mutation RejectAdmissionApplication(\n    $input: RejectAdmissionApplicationInput!\n  ) {\n    rejectAdmissionApplication(input: $input) {\n      id\n      status\n      rejectionReason\n    }\n  }\n": typeof types.RejectAdmissionApplicationDocument,
+    "\n  mutation RejectAdmissionApplication(\n    $input: RejectAdmissionApplicationInput!\n  ) {\n    rejectAdmissionApplication(input: $input) {\n      id\n      status\n      rejectionReason\n      rejectionReasonId\n    }\n  }\n": typeof types.RejectAdmissionApplicationDocument,
     "\n  mutation DeleteAdmissionApplication($id: ID!) {\n    deleteAdmissionApplication(id: $id)\n  }\n": typeof types.DeleteAdmissionApplicationDocument,
     "\n  mutation RestoreAdmissionApplication($id: ID!) {\n    restoreAdmissionApplication(id: $id) {\n      id\n      status\n    }\n  }\n": typeof types.RestoreAdmissionApplicationDocument,
+    "\n  mutation UpdateAdmissionBoardSettings(\n    $input: UpdateAdmissionBoardSettingsInput!\n  ) {\n    updateAdmissionBoardSettings(input: $input) {\n      tableColumns\n    }\n  }\n": typeof types.UpdateAdmissionBoardSettingsDocument,
     "\n  mutation CreateAdmissionActivity($input: CreateAdmissionActivityInput!) {\n    createAdmissionActivity(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateAdmissionActivityDocument,
     "\n  mutation CreateAdmissionApplication(\n    $input: CreateAdmissionApplicationInput!\n  ) {\n    createAdmissionApplication(input: $input) {\n      id\n      admissionStageId\n      familyId\n    }\n  }\n": typeof types.CreateAdmissionApplicationDocument,
     "\n  mutation DeleteAdmissionActivity($id: ID!) {\n    deleteAdmissionActivity(id: $id)\n  }\n": typeof types.DeleteAdmissionActivityDocument,
     "\n  mutation FinalizeAdmissionEnrollment($input: FinalizeEnrollmentInput!) {\n    finalizeAdmissionEnrollment(input: $input) {\n      application {\n        id\n        status\n        enrolledStudentId\n      }\n      student {\n        id\n        firstName\n        lastName\n      }\n    }\n  }\n": typeof types.FinalizeAdmissionEnrollmentDocument,
     "\n  query AdmissionActivities($applicationId: ID!) {\n    admissionActivities(applicationId: $applicationId) {\n      id\n      applicationId\n      type\n      occurredAt\n      subject\n      body\n      direction\n      durationMinutes\n      location\n      createdAt\n      updatedAt\n      createdByMembershipId\n      createdByMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": typeof types.AdmissionActivitiesDocument,
+    "\n  query AdmissionEmails($applicationId: ID!) {\n    admissionEmails(applicationId: $applicationId) {\n      id\n      toEmail\n      toName\n      subject\n      bodyHtml\n      status\n      errorMessage\n      sentAt\n      template {\n        id\n        name\n      }\n      sentByMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": typeof types.AdmissionEmailsDocument,
     "\n  query AdmissionReminders($applicationId: ID!) {\n    admissionReminders(applicationId: $applicationId) {\n      id\n      applicationId\n      dueAt\n      title\n      note\n      assignedToMembershipId\n      assignedToMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n      completedAt\n      createdAt\n    }\n  }\n": typeof types.AdmissionRemindersDocument,
     "\n  query AdmissionsKanbanReminders {\n    orgAdmissionReminders(filter: OPEN) {\n      id\n      applicationId\n      dueAt\n    }\n  }\n": typeof types.AdmissionsKanbanRemindersDocument,
-    "\n  query AdmissionsKanbanStages {\n    admissionStages {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n      isArchived\n    }\n  }\n": typeof types.AdmissionsKanbanStagesDocument,
+    "\n  query AdmissionsKanbanStages {\n    admissionStages {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n      isArchived\n      cardFields\n    }\n  }\n": typeof types.AdmissionsKanbanStagesDocument,
+    "\n  query AdmissionsBoardSettings {\n    admissionBoardSettings {\n      tableColumns\n    }\n  }\n": typeof types.AdmissionsBoardSettingsDocument,
+    "\n  query AdmissionsKanbanRejectionReasons {\n    admissionRejectionReasons {\n      id\n      label\n      color\n      position\n    }\n  }\n": typeof types.AdmissionsKanbanRejectionReasonsDocument,
     "\n  query AdmissionsKanbanApplications {\n    admissionApplications {\n      id\n      admissionStageId\n      position\n      childFirstName\n      childLastName\n      childDateOfBirth\n      childGender\n      status\n      source\n      stageEnteredAt\n      familyId\n      enrolledStudentId\n      desiredGradeLevelId\n      desiredGradeLevel {\n        id\n        name\n        color\n      }\n      family {\n        id\n        name\n        contactPersons {\n          id\n          firstName\n          lastName\n          email\n          phone\n          mobile\n          roles\n        }\n      }\n    }\n  }\n": typeof types.AdmissionsKanbanApplicationsDocument,
     "\n  query AdmissionApplicationDetail($id: ID!) {\n    admissionApplicationById(id: $id) {\n      id\n      organizationId\n      admissionStageId\n      status\n      source\n      stageEnteredAt\n      position\n      childFirstName\n      childLastName\n      childDateOfBirth\n      childGender\n      childNotes\n      desiredGradeLevelId\n      desiredSchoolClassId\n      desiredEnrollmentDate\n      enrolledStudentId\n      familyId\n      family {\n        id\n        name\n        notes\n        contactPersons {\n          id\n          salutation\n          firstName\n          lastName\n          email\n          phone\n          mobile\n          roles\n          occupation\n        }\n      }\n      admissionStage {\n        id\n        name\n        stageType\n      }\n      desiredSchoolClass {\n        id\n        name\n      }\n      desiredGradeLevel {\n        id\n        name\n        color\n      }\n    }\n    admissionAuditLogs(applicationId: $id) {\n      id\n      action\n      createdAt\n      fieldName\n      oldValue\n      newValue\n      fromStage {\n        id\n        name\n      }\n      toStage {\n        id\n        name\n      }\n      actorMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n    admissionApplicationsByFamily(\n      familyId: \"00000000-0000-0000-0000-000000000000\"\n    ) @skip(if: true) {\n      id\n    }\n  }\n": typeof types.AdmissionApplicationDetailDocument,
     "\n  query AdmissionApplicationSiblings($familyId: ID!) {\n    admissionApplicationsByFamily(familyId: $familyId) {\n      id\n      childFirstName\n      childLastName\n      childDateOfBirth\n      status\n      admissionStage {\n        id\n        name\n        color\n      }\n    }\n  }\n": typeof types.AdmissionApplicationSiblingsDocument,
     "\n  query OrgAdmissionReminders($filter: AdmissionReminderFilter) {\n    orgAdmissionReminders(filter: $filter) {\n      id\n      applicationId\n      dueAt\n      title\n      note\n      completedAt\n      application {\n        id\n        childFirstName\n        childLastName\n      }\n      assignedToMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": typeof types.OrgAdmissionRemindersDocument,
     "\n  query AdmissionsEnrollmentClasses {\n    schoolClassesByOrgId {\n      id\n      name\n      isActive\n      gradeLevels {\n        id\n        name\n      }\n    }\n  }\n": typeof types.AdmissionsEnrollmentClassesDocument,
     "\n  mutation MoveAdmissionApplication($input: MoveAdmissionApplicationInput!) {\n    moveAdmissionApplication(input: $input) {\n      id\n      admissionStageId\n      position\n      stageEnteredAt\n    }\n  }\n": typeof types.MoveAdmissionApplicationDocument,
+    "\n  mutation ResendAdmissionEmail($id: ID!) {\n    resendAdmissionEmail(id: $id) {\n      id\n      status\n      errorMessage\n    }\n  }\n": typeof types.ResendAdmissionEmailDocument,
+    "\n  mutation DeleteAdmissionEmail($id: ID!) {\n    deleteAdmissionEmail(id: $id)\n  }\n": typeof types.DeleteAdmissionEmailDocument,
     "\n  mutation CreateAdmissionReminder($input: CreateAdmissionReminderInput!) {\n    createAdmissionReminder(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateAdmissionReminderDocument,
     "\n  mutation UpdateAdmissionReminder($input: UpdateAdmissionReminderInput!) {\n    updateAdmissionReminder(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateAdmissionReminderDocument,
     "\n  mutation CompleteAdmissionReminder($id: ID!) {\n    completeAdmissionReminder(id: $id) {\n      id\n    }\n  }\n": typeof types.CompleteAdmissionReminderDocument,
     "\n  mutation UncompleteAdmissionReminder($id: ID!) {\n    uncompleteAdmissionReminder(id: $id) {\n      id\n    }\n  }\n": typeof types.UncompleteAdmissionReminderDocument,
     "\n  mutation DeleteAdmissionReminder($id: ID!) {\n    deleteAdmissionReminder(id: $id)\n  }\n": typeof types.DeleteAdmissionReminderDocument,
+    "\n  query PreviewAdmissionEmail($applicationId: ID!, $templateId: ID!) {\n    previewAdmissionEmail(\n      applicationId: $applicationId\n      templateId: $templateId\n    ) {\n      subject\n      bodyHtml\n      toEmail\n      toName\n      availableVariables\n    }\n  }\n": typeof types.PreviewAdmissionEmailDocument,
     "\n  mutation ReorderAdmissionApplications(\n    $input: ReorderAdmissionApplicationsInput!\n  ) {\n    reorderAdmissionApplications(input: $input) {\n      id\n      position\n    }\n  }\n": typeof types.ReorderAdmissionApplicationsDocument,
-    "\n  mutation CreateAdmissionStage($input: CreateAdmissionStageInput!) {\n    createAdmissionStage(input: $input) {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n    }\n  }\n": typeof types.CreateAdmissionStageDocument,
-    "\n  mutation UpdateAdmissionStage($input: UpdateAdmissionStageInput!) {\n    updateAdmissionStage(input: $input) {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n    }\n  }\n": typeof types.UpdateAdmissionStageDocument,
+    "\n  mutation SendAdmissionEmail($input: SendAdmissionEmailInput!) {\n    sendAdmissionEmail(input: $input) {\n      id\n      status\n      errorMessage\n    }\n  }\n": typeof types.SendAdmissionEmailDocument,
+    "\n  mutation CreateAdmissionStage($input: CreateAdmissionStageInput!) {\n    createAdmissionStage(input: $input) {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n      cardFields\n    }\n  }\n": typeof types.CreateAdmissionStageDocument,
+    "\n  mutation UpdateAdmissionStage($input: UpdateAdmissionStageInput!) {\n    updateAdmissionStage(input: $input) {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n      cardFields\n    }\n  }\n": typeof types.UpdateAdmissionStageDocument,
     "\n  mutation ArchiveAdmissionStage($id: ID!) {\n    archiveAdmissionStage(id: $id)\n  }\n": typeof types.ArchiveAdmissionStageDocument,
     "\n  mutation ReorderAdmissionStages($input: ReorderAdmissionStagesInput!) {\n    reorderAdmissionStages(input: $input) {\n      id\n      position\n    }\n  }\n": typeof types.ReorderAdmissionStagesDocument,
     "\n  mutation UpdateAdmissionActivity($input: UpdateAdmissionActivityInput!) {\n    updateAdmissionActivity(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateAdmissionActivityDocument,
@@ -77,6 +85,10 @@ type Documents = {
     "\n  mutation UpdateLessonClassification($input: UpdateCurriculumNodeInput!) {\n    updateCurriculumNode(input: $input) {\n      id\n      lessonType\n      lessonScale\n    }\n  }\n": typeof types.UpdateLessonClassificationDocument,
     "\n  mutation UpsertCurriculumLevelTranslation(\n    $input: UpsertCurriculumLevelTranslationInput!\n  ) {\n    upsertCurriculumLevelTranslation(input: $input) {\n      locale\n      name\n    }\n  }\n": typeof types.UpsertCurriculumLevelTranslationDocument,
     "\n  mutation UpsertCurriculumNodeTranslation(\n    $input: UpsertCurriculumNodeTranslationInput!\n  ) {\n    upsertCurriculumNodeTranslation(input: $input) {\n      locale\n      name\n      notes\n    }\n  }\n": typeof types.UpsertCurriculumNodeTranslationDocument,
+    "\n  query EmailTemplates($category: EmailTemplateCategory) {\n    emailTemplates(category: $category) {\n      id\n      name\n      category\n      subject\n      bodyHtml\n      description\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.EmailTemplatesDocument,
+    "\n  mutation CreateEmailTemplate($input: CreateEmailTemplateInput!) {\n    createEmailTemplate(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateEmailTemplateDocument,
+    "\n  mutation UpdateEmailTemplate($input: UpdateEmailTemplateInput!) {\n    updateEmailTemplate(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateEmailTemplateDocument,
+    "\n  mutation DeleteEmailTemplate($id: ID!) {\n    deleteEmailTemplate(id: $id)\n  }\n": typeof types.DeleteEmailTemplateDocument,
     "\n  mutation ArchiveEmployeeAbsenceCategory($id: ID!) {\n    archiveEmployeeAbsenceCategory(id: $id)\n  }\n": typeof types.ArchiveEmployeeAbsenceCategoryDocument,
     "\n  mutation CreateEmployeeAbsenceCategory(\n    $input: CreateEmployeeAbsenceCategoryInput!\n  ) {\n    createEmployeeAbsenceCategory(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateEmployeeAbsenceCategoryDocument,
     "\n  query EmployeeAbsenceCategoriesByOrgIdFull {\n    employeeAbsenceCategoriesByOrgId {\n      id\n      systemCode\n      isSystem\n      isActive\n      countsAsWorkTime\n      isPaid\n      affectsVacationBalance\n      defaultIsVacationCapable\n      reducesVacationEntitlementAfterDays\n      requiresCertificate\n      certificateRequiredFromDay\n      maxDaysPerYear\n      defaultPercentage\n      requiresApproval\n      color\n      iconName\n      sortOrder\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n": typeof types.EmployeeAbsenceCategoriesByOrgIdFullDocument,
@@ -154,7 +166,7 @@ type Documents = {
     "\n  mutation DeleteStudent($id: ID!) {\n    deleteStudent(id: $id)\n  }\n": typeof types.DeleteStudentDocument,
     "\n  query GetStudentById($id: ID!) {\n    studentById(id: $id) {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      gender\n      enrollmentDate\n      exitDate\n      notes\n      isActive\n    }\n  }\n": typeof types.GetStudentByIdDocument,
     "\n  query GetEnrollmentsByStudentId($studentId: ID!) {\n    enrollmentsByStudentId(studentId: $studentId) {\n      id\n      enrolledAt\n      leftAt\n      schoolClass {\n        id\n        name\n        gradeLevels {\n          id\n          name\n        }\n      }\n    }\n  }\n": typeof types.GetEnrollmentsByStudentIdDocument,
-    "\n  query GetStudents {\n    studentsByOrgId {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      gender\n      enrollmentDate\n      exitDate\n      isActive\n    }\n  }\n": typeof types.GetStudentsDocument,
+    "\n  query GetStudents {\n    studentsByOrgId {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      gender\n      exitDate\n      isActive\n      currentClass {\n        id\n        name\n        color\n        gradeLevels {\n          id\n          name\n          color\n        }\n      }\n    }\n  }\n": typeof types.GetStudentsDocument,
     "\n  mutation UpdateEnrollment($input: UpdateSchoolClassEnrollmentInput!) {\n    updateEnrollment(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateEnrollmentDocument,
     "\n  mutation UpdateStudent($input: UpdateStudentInput!) {\n    updateStudent(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateStudentDocument,
     "\n  mutation AddTeamMember($input: CreateTeamMemberInput!) {\n    createTeamMember(input: $input) {\n      id\n    }\n  }\n": typeof types.AddTeamMemberDocument,
@@ -178,31 +190,39 @@ type Documents = {
 };
 const documents: Documents = {
     "\n  mutation ArchiveAdmissionApplication($id: ID!) {\n    archiveAdmissionApplication(id: $id)\n  }\n": types.ArchiveAdmissionApplicationDocument,
-    "\n  mutation RejectAdmissionApplication(\n    $input: RejectAdmissionApplicationInput!\n  ) {\n    rejectAdmissionApplication(input: $input) {\n      id\n      status\n      rejectionReason\n    }\n  }\n": types.RejectAdmissionApplicationDocument,
+    "\n  mutation RejectAdmissionApplication(\n    $input: RejectAdmissionApplicationInput!\n  ) {\n    rejectAdmissionApplication(input: $input) {\n      id\n      status\n      rejectionReason\n      rejectionReasonId\n    }\n  }\n": types.RejectAdmissionApplicationDocument,
     "\n  mutation DeleteAdmissionApplication($id: ID!) {\n    deleteAdmissionApplication(id: $id)\n  }\n": types.DeleteAdmissionApplicationDocument,
     "\n  mutation RestoreAdmissionApplication($id: ID!) {\n    restoreAdmissionApplication(id: $id) {\n      id\n      status\n    }\n  }\n": types.RestoreAdmissionApplicationDocument,
+    "\n  mutation UpdateAdmissionBoardSettings(\n    $input: UpdateAdmissionBoardSettingsInput!\n  ) {\n    updateAdmissionBoardSettings(input: $input) {\n      tableColumns\n    }\n  }\n": types.UpdateAdmissionBoardSettingsDocument,
     "\n  mutation CreateAdmissionActivity($input: CreateAdmissionActivityInput!) {\n    createAdmissionActivity(input: $input) {\n      id\n    }\n  }\n": types.CreateAdmissionActivityDocument,
     "\n  mutation CreateAdmissionApplication(\n    $input: CreateAdmissionApplicationInput!\n  ) {\n    createAdmissionApplication(input: $input) {\n      id\n      admissionStageId\n      familyId\n    }\n  }\n": types.CreateAdmissionApplicationDocument,
     "\n  mutation DeleteAdmissionActivity($id: ID!) {\n    deleteAdmissionActivity(id: $id)\n  }\n": types.DeleteAdmissionActivityDocument,
     "\n  mutation FinalizeAdmissionEnrollment($input: FinalizeEnrollmentInput!) {\n    finalizeAdmissionEnrollment(input: $input) {\n      application {\n        id\n        status\n        enrolledStudentId\n      }\n      student {\n        id\n        firstName\n        lastName\n      }\n    }\n  }\n": types.FinalizeAdmissionEnrollmentDocument,
     "\n  query AdmissionActivities($applicationId: ID!) {\n    admissionActivities(applicationId: $applicationId) {\n      id\n      applicationId\n      type\n      occurredAt\n      subject\n      body\n      direction\n      durationMinutes\n      location\n      createdAt\n      updatedAt\n      createdByMembershipId\n      createdByMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": types.AdmissionActivitiesDocument,
+    "\n  query AdmissionEmails($applicationId: ID!) {\n    admissionEmails(applicationId: $applicationId) {\n      id\n      toEmail\n      toName\n      subject\n      bodyHtml\n      status\n      errorMessage\n      sentAt\n      template {\n        id\n        name\n      }\n      sentByMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": types.AdmissionEmailsDocument,
     "\n  query AdmissionReminders($applicationId: ID!) {\n    admissionReminders(applicationId: $applicationId) {\n      id\n      applicationId\n      dueAt\n      title\n      note\n      assignedToMembershipId\n      assignedToMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n      completedAt\n      createdAt\n    }\n  }\n": types.AdmissionRemindersDocument,
     "\n  query AdmissionsKanbanReminders {\n    orgAdmissionReminders(filter: OPEN) {\n      id\n      applicationId\n      dueAt\n    }\n  }\n": types.AdmissionsKanbanRemindersDocument,
-    "\n  query AdmissionsKanbanStages {\n    admissionStages {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n      isArchived\n    }\n  }\n": types.AdmissionsKanbanStagesDocument,
+    "\n  query AdmissionsKanbanStages {\n    admissionStages {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n      isArchived\n      cardFields\n    }\n  }\n": types.AdmissionsKanbanStagesDocument,
+    "\n  query AdmissionsBoardSettings {\n    admissionBoardSettings {\n      tableColumns\n    }\n  }\n": types.AdmissionsBoardSettingsDocument,
+    "\n  query AdmissionsKanbanRejectionReasons {\n    admissionRejectionReasons {\n      id\n      label\n      color\n      position\n    }\n  }\n": types.AdmissionsKanbanRejectionReasonsDocument,
     "\n  query AdmissionsKanbanApplications {\n    admissionApplications {\n      id\n      admissionStageId\n      position\n      childFirstName\n      childLastName\n      childDateOfBirth\n      childGender\n      status\n      source\n      stageEnteredAt\n      familyId\n      enrolledStudentId\n      desiredGradeLevelId\n      desiredGradeLevel {\n        id\n        name\n        color\n      }\n      family {\n        id\n        name\n        contactPersons {\n          id\n          firstName\n          lastName\n          email\n          phone\n          mobile\n          roles\n        }\n      }\n    }\n  }\n": types.AdmissionsKanbanApplicationsDocument,
     "\n  query AdmissionApplicationDetail($id: ID!) {\n    admissionApplicationById(id: $id) {\n      id\n      organizationId\n      admissionStageId\n      status\n      source\n      stageEnteredAt\n      position\n      childFirstName\n      childLastName\n      childDateOfBirth\n      childGender\n      childNotes\n      desiredGradeLevelId\n      desiredSchoolClassId\n      desiredEnrollmentDate\n      enrolledStudentId\n      familyId\n      family {\n        id\n        name\n        notes\n        contactPersons {\n          id\n          salutation\n          firstName\n          lastName\n          email\n          phone\n          mobile\n          roles\n          occupation\n        }\n      }\n      admissionStage {\n        id\n        name\n        stageType\n      }\n      desiredSchoolClass {\n        id\n        name\n      }\n      desiredGradeLevel {\n        id\n        name\n        color\n      }\n    }\n    admissionAuditLogs(applicationId: $id) {\n      id\n      action\n      createdAt\n      fieldName\n      oldValue\n      newValue\n      fromStage {\n        id\n        name\n      }\n      toStage {\n        id\n        name\n      }\n      actorMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n    admissionApplicationsByFamily(\n      familyId: \"00000000-0000-0000-0000-000000000000\"\n    ) @skip(if: true) {\n      id\n    }\n  }\n": types.AdmissionApplicationDetailDocument,
     "\n  query AdmissionApplicationSiblings($familyId: ID!) {\n    admissionApplicationsByFamily(familyId: $familyId) {\n      id\n      childFirstName\n      childLastName\n      childDateOfBirth\n      status\n      admissionStage {\n        id\n        name\n        color\n      }\n    }\n  }\n": types.AdmissionApplicationSiblingsDocument,
     "\n  query OrgAdmissionReminders($filter: AdmissionReminderFilter) {\n    orgAdmissionReminders(filter: $filter) {\n      id\n      applicationId\n      dueAt\n      title\n      note\n      completedAt\n      application {\n        id\n        childFirstName\n        childLastName\n      }\n      assignedToMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": types.OrgAdmissionRemindersDocument,
     "\n  query AdmissionsEnrollmentClasses {\n    schoolClassesByOrgId {\n      id\n      name\n      isActive\n      gradeLevels {\n        id\n        name\n      }\n    }\n  }\n": types.AdmissionsEnrollmentClassesDocument,
     "\n  mutation MoveAdmissionApplication($input: MoveAdmissionApplicationInput!) {\n    moveAdmissionApplication(input: $input) {\n      id\n      admissionStageId\n      position\n      stageEnteredAt\n    }\n  }\n": types.MoveAdmissionApplicationDocument,
+    "\n  mutation ResendAdmissionEmail($id: ID!) {\n    resendAdmissionEmail(id: $id) {\n      id\n      status\n      errorMessage\n    }\n  }\n": types.ResendAdmissionEmailDocument,
+    "\n  mutation DeleteAdmissionEmail($id: ID!) {\n    deleteAdmissionEmail(id: $id)\n  }\n": types.DeleteAdmissionEmailDocument,
     "\n  mutation CreateAdmissionReminder($input: CreateAdmissionReminderInput!) {\n    createAdmissionReminder(input: $input) {\n      id\n    }\n  }\n": types.CreateAdmissionReminderDocument,
     "\n  mutation UpdateAdmissionReminder($input: UpdateAdmissionReminderInput!) {\n    updateAdmissionReminder(input: $input) {\n      id\n    }\n  }\n": types.UpdateAdmissionReminderDocument,
     "\n  mutation CompleteAdmissionReminder($id: ID!) {\n    completeAdmissionReminder(id: $id) {\n      id\n    }\n  }\n": types.CompleteAdmissionReminderDocument,
     "\n  mutation UncompleteAdmissionReminder($id: ID!) {\n    uncompleteAdmissionReminder(id: $id) {\n      id\n    }\n  }\n": types.UncompleteAdmissionReminderDocument,
     "\n  mutation DeleteAdmissionReminder($id: ID!) {\n    deleteAdmissionReminder(id: $id)\n  }\n": types.DeleteAdmissionReminderDocument,
+    "\n  query PreviewAdmissionEmail($applicationId: ID!, $templateId: ID!) {\n    previewAdmissionEmail(\n      applicationId: $applicationId\n      templateId: $templateId\n    ) {\n      subject\n      bodyHtml\n      toEmail\n      toName\n      availableVariables\n    }\n  }\n": types.PreviewAdmissionEmailDocument,
     "\n  mutation ReorderAdmissionApplications(\n    $input: ReorderAdmissionApplicationsInput!\n  ) {\n    reorderAdmissionApplications(input: $input) {\n      id\n      position\n    }\n  }\n": types.ReorderAdmissionApplicationsDocument,
-    "\n  mutation CreateAdmissionStage($input: CreateAdmissionStageInput!) {\n    createAdmissionStage(input: $input) {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n    }\n  }\n": types.CreateAdmissionStageDocument,
-    "\n  mutation UpdateAdmissionStage($input: UpdateAdmissionStageInput!) {\n    updateAdmissionStage(input: $input) {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n    }\n  }\n": types.UpdateAdmissionStageDocument,
+    "\n  mutation SendAdmissionEmail($input: SendAdmissionEmailInput!) {\n    sendAdmissionEmail(input: $input) {\n      id\n      status\n      errorMessage\n    }\n  }\n": types.SendAdmissionEmailDocument,
+    "\n  mutation CreateAdmissionStage($input: CreateAdmissionStageInput!) {\n    createAdmissionStage(input: $input) {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n      cardFields\n    }\n  }\n": types.CreateAdmissionStageDocument,
+    "\n  mutation UpdateAdmissionStage($input: UpdateAdmissionStageInput!) {\n    updateAdmissionStage(input: $input) {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n      cardFields\n    }\n  }\n": types.UpdateAdmissionStageDocument,
     "\n  mutation ArchiveAdmissionStage($id: ID!) {\n    archiveAdmissionStage(id: $id)\n  }\n": types.ArchiveAdmissionStageDocument,
     "\n  mutation ReorderAdmissionStages($input: ReorderAdmissionStagesInput!) {\n    reorderAdmissionStages(input: $input) {\n      id\n      position\n    }\n  }\n": types.ReorderAdmissionStagesDocument,
     "\n  mutation UpdateAdmissionActivity($input: UpdateAdmissionActivityInput!) {\n    updateAdmissionActivity(input: $input) {\n      id\n    }\n  }\n": types.UpdateAdmissionActivityDocument,
@@ -240,6 +260,10 @@ const documents: Documents = {
     "\n  mutation UpdateLessonClassification($input: UpdateCurriculumNodeInput!) {\n    updateCurriculumNode(input: $input) {\n      id\n      lessonType\n      lessonScale\n    }\n  }\n": types.UpdateLessonClassificationDocument,
     "\n  mutation UpsertCurriculumLevelTranslation(\n    $input: UpsertCurriculumLevelTranslationInput!\n  ) {\n    upsertCurriculumLevelTranslation(input: $input) {\n      locale\n      name\n    }\n  }\n": types.UpsertCurriculumLevelTranslationDocument,
     "\n  mutation UpsertCurriculumNodeTranslation(\n    $input: UpsertCurriculumNodeTranslationInput!\n  ) {\n    upsertCurriculumNodeTranslation(input: $input) {\n      locale\n      name\n      notes\n    }\n  }\n": types.UpsertCurriculumNodeTranslationDocument,
+    "\n  query EmailTemplates($category: EmailTemplateCategory) {\n    emailTemplates(category: $category) {\n      id\n      name\n      category\n      subject\n      bodyHtml\n      description\n      createdAt\n      updatedAt\n    }\n  }\n": types.EmailTemplatesDocument,
+    "\n  mutation CreateEmailTemplate($input: CreateEmailTemplateInput!) {\n    createEmailTemplate(input: $input) {\n      id\n    }\n  }\n": types.CreateEmailTemplateDocument,
+    "\n  mutation UpdateEmailTemplate($input: UpdateEmailTemplateInput!) {\n    updateEmailTemplate(input: $input) {\n      id\n    }\n  }\n": types.UpdateEmailTemplateDocument,
+    "\n  mutation DeleteEmailTemplate($id: ID!) {\n    deleteEmailTemplate(id: $id)\n  }\n": types.DeleteEmailTemplateDocument,
     "\n  mutation ArchiveEmployeeAbsenceCategory($id: ID!) {\n    archiveEmployeeAbsenceCategory(id: $id)\n  }\n": types.ArchiveEmployeeAbsenceCategoryDocument,
     "\n  mutation CreateEmployeeAbsenceCategory(\n    $input: CreateEmployeeAbsenceCategoryInput!\n  ) {\n    createEmployeeAbsenceCategory(input: $input) {\n      id\n    }\n  }\n": types.CreateEmployeeAbsenceCategoryDocument,
     "\n  query EmployeeAbsenceCategoriesByOrgIdFull {\n    employeeAbsenceCategoriesByOrgId {\n      id\n      systemCode\n      isSystem\n      isActive\n      countsAsWorkTime\n      isPaid\n      affectsVacationBalance\n      defaultIsVacationCapable\n      reducesVacationEntitlementAfterDays\n      requiresCertificate\n      certificateRequiredFromDay\n      maxDaysPerYear\n      defaultPercentage\n      requiresApproval\n      color\n      iconName\n      sortOrder\n      translations {\n        locale\n        name\n        description\n      }\n    }\n  }\n": types.EmployeeAbsenceCategoriesByOrgIdFullDocument,
@@ -317,7 +341,7 @@ const documents: Documents = {
     "\n  mutation DeleteStudent($id: ID!) {\n    deleteStudent(id: $id)\n  }\n": types.DeleteStudentDocument,
     "\n  query GetStudentById($id: ID!) {\n    studentById(id: $id) {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      gender\n      enrollmentDate\n      exitDate\n      notes\n      isActive\n    }\n  }\n": types.GetStudentByIdDocument,
     "\n  query GetEnrollmentsByStudentId($studentId: ID!) {\n    enrollmentsByStudentId(studentId: $studentId) {\n      id\n      enrolledAt\n      leftAt\n      schoolClass {\n        id\n        name\n        gradeLevels {\n          id\n          name\n        }\n      }\n    }\n  }\n": types.GetEnrollmentsByStudentIdDocument,
-    "\n  query GetStudents {\n    studentsByOrgId {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      gender\n      enrollmentDate\n      exitDate\n      isActive\n    }\n  }\n": types.GetStudentsDocument,
+    "\n  query GetStudents {\n    studentsByOrgId {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      gender\n      exitDate\n      isActive\n      currentClass {\n        id\n        name\n        color\n        gradeLevels {\n          id\n          name\n          color\n        }\n      }\n    }\n  }\n": types.GetStudentsDocument,
     "\n  mutation UpdateEnrollment($input: UpdateSchoolClassEnrollmentInput!) {\n    updateEnrollment(input: $input) {\n      id\n    }\n  }\n": types.UpdateEnrollmentDocument,
     "\n  mutation UpdateStudent($input: UpdateStudentInput!) {\n    updateStudent(input: $input) {\n      id\n    }\n  }\n": types.UpdateStudentDocument,
     "\n  mutation AddTeamMember($input: CreateTeamMemberInput!) {\n    createTeamMember(input: $input) {\n      id\n    }\n  }\n": types.AddTeamMemberDocument,
@@ -361,7 +385,7 @@ export function graphql(source: "\n  mutation ArchiveAdmissionApplication($id: I
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  mutation RejectAdmissionApplication(\n    $input: RejectAdmissionApplicationInput!\n  ) {\n    rejectAdmissionApplication(input: $input) {\n      id\n      status\n      rejectionReason\n    }\n  }\n"): (typeof documents)["\n  mutation RejectAdmissionApplication(\n    $input: RejectAdmissionApplicationInput!\n  ) {\n    rejectAdmissionApplication(input: $input) {\n      id\n      status\n      rejectionReason\n    }\n  }\n"];
+export function graphql(source: "\n  mutation RejectAdmissionApplication(\n    $input: RejectAdmissionApplicationInput!\n  ) {\n    rejectAdmissionApplication(input: $input) {\n      id\n      status\n      rejectionReason\n      rejectionReasonId\n    }\n  }\n"): (typeof documents)["\n  mutation RejectAdmissionApplication(\n    $input: RejectAdmissionApplicationInput!\n  ) {\n    rejectAdmissionApplication(input: $input) {\n      id\n      status\n      rejectionReason\n      rejectionReasonId\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -370,6 +394,10 @@ export function graphql(source: "\n  mutation DeleteAdmissionApplication($id: ID
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation RestoreAdmissionApplication($id: ID!) {\n    restoreAdmissionApplication(id: $id) {\n      id\n      status\n    }\n  }\n"): (typeof documents)["\n  mutation RestoreAdmissionApplication($id: ID!) {\n    restoreAdmissionApplication(id: $id) {\n      id\n      status\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateAdmissionBoardSettings(\n    $input: UpdateAdmissionBoardSettingsInput!\n  ) {\n    updateAdmissionBoardSettings(input: $input) {\n      tableColumns\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateAdmissionBoardSettings(\n    $input: UpdateAdmissionBoardSettingsInput!\n  ) {\n    updateAdmissionBoardSettings(input: $input) {\n      tableColumns\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -393,6 +421,10 @@ export function graphql(source: "\n  query AdmissionActivities($applicationId: I
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n  query AdmissionEmails($applicationId: ID!) {\n    admissionEmails(applicationId: $applicationId) {\n      id\n      toEmail\n      toName\n      subject\n      bodyHtml\n      status\n      errorMessage\n      sentAt\n      template {\n        id\n        name\n      }\n      sentByMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n"): (typeof documents)["\n  query AdmissionEmails($applicationId: ID!) {\n    admissionEmails(applicationId: $applicationId) {\n      id\n      toEmail\n      toName\n      subject\n      bodyHtml\n      status\n      errorMessage\n      sentAt\n      template {\n        id\n        name\n      }\n      sentByMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n  query AdmissionReminders($applicationId: ID!) {\n    admissionReminders(applicationId: $applicationId) {\n      id\n      applicationId\n      dueAt\n      title\n      note\n      assignedToMembershipId\n      assignedToMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n      completedAt\n      createdAt\n    }\n  }\n"): (typeof documents)["\n  query AdmissionReminders($applicationId: ID!) {\n    admissionReminders(applicationId: $applicationId) {\n      id\n      applicationId\n      dueAt\n      title\n      note\n      assignedToMembershipId\n      assignedToMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n      completedAt\n      createdAt\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
@@ -401,7 +433,15 @@ export function graphql(source: "\n  query AdmissionsKanbanReminders {\n    orgA
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query AdmissionsKanbanStages {\n    admissionStages {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n      isArchived\n    }\n  }\n"): (typeof documents)["\n  query AdmissionsKanbanStages {\n    admissionStages {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n      isArchived\n    }\n  }\n"];
+export function graphql(source: "\n  query AdmissionsKanbanStages {\n    admissionStages {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n      isArchived\n      cardFields\n    }\n  }\n"): (typeof documents)["\n  query AdmissionsKanbanStages {\n    admissionStages {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n      isArchived\n      cardFields\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query AdmissionsBoardSettings {\n    admissionBoardSettings {\n      tableColumns\n    }\n  }\n"): (typeof documents)["\n  query AdmissionsBoardSettings {\n    admissionBoardSettings {\n      tableColumns\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query AdmissionsKanbanRejectionReasons {\n    admissionRejectionReasons {\n      id\n      label\n      color\n      position\n    }\n  }\n"): (typeof documents)["\n  query AdmissionsKanbanRejectionReasons {\n    admissionRejectionReasons {\n      id\n      label\n      color\n      position\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -429,6 +469,14 @@ export function graphql(source: "\n  mutation MoveAdmissionApplication($input: M
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n  mutation ResendAdmissionEmail($id: ID!) {\n    resendAdmissionEmail(id: $id) {\n      id\n      status\n      errorMessage\n    }\n  }\n"): (typeof documents)["\n  mutation ResendAdmissionEmail($id: ID!) {\n    resendAdmissionEmail(id: $id) {\n      id\n      status\n      errorMessage\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation DeleteAdmissionEmail($id: ID!) {\n    deleteAdmissionEmail(id: $id)\n  }\n"): (typeof documents)["\n  mutation DeleteAdmissionEmail($id: ID!) {\n    deleteAdmissionEmail(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n  mutation CreateAdmissionReminder($input: CreateAdmissionReminderInput!) {\n    createAdmissionReminder(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateAdmissionReminder($input: CreateAdmissionReminderInput!) {\n    createAdmissionReminder(input: $input) {\n      id\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
@@ -449,15 +497,23 @@ export function graphql(source: "\n  mutation DeleteAdmissionReminder($id: ID!) 
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n  query PreviewAdmissionEmail($applicationId: ID!, $templateId: ID!) {\n    previewAdmissionEmail(\n      applicationId: $applicationId\n      templateId: $templateId\n    ) {\n      subject\n      bodyHtml\n      toEmail\n      toName\n      availableVariables\n    }\n  }\n"): (typeof documents)["\n  query PreviewAdmissionEmail($applicationId: ID!, $templateId: ID!) {\n    previewAdmissionEmail(\n      applicationId: $applicationId\n      templateId: $templateId\n    ) {\n      subject\n      bodyHtml\n      toEmail\n      toName\n      availableVariables\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n  mutation ReorderAdmissionApplications(\n    $input: ReorderAdmissionApplicationsInput!\n  ) {\n    reorderAdmissionApplications(input: $input) {\n      id\n      position\n    }\n  }\n"): (typeof documents)["\n  mutation ReorderAdmissionApplications(\n    $input: ReorderAdmissionApplicationsInput!\n  ) {\n    reorderAdmissionApplications(input: $input) {\n      id\n      position\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  mutation CreateAdmissionStage($input: CreateAdmissionStageInput!) {\n    createAdmissionStage(input: $input) {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n    }\n  }\n"): (typeof documents)["\n  mutation CreateAdmissionStage($input: CreateAdmissionStageInput!) {\n    createAdmissionStage(input: $input) {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n    }\n  }\n"];
+export function graphql(source: "\n  mutation SendAdmissionEmail($input: SendAdmissionEmailInput!) {\n    sendAdmissionEmail(input: $input) {\n      id\n      status\n      errorMessage\n    }\n  }\n"): (typeof documents)["\n  mutation SendAdmissionEmail($input: SendAdmissionEmailInput!) {\n    sendAdmissionEmail(input: $input) {\n      id\n      status\n      errorMessage\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  mutation UpdateAdmissionStage($input: UpdateAdmissionStageInput!) {\n    updateAdmissionStage(input: $input) {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateAdmissionStage($input: UpdateAdmissionStageInput!) {\n    updateAdmissionStage(input: $input) {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n    }\n  }\n"];
+export function graphql(source: "\n  mutation CreateAdmissionStage($input: CreateAdmissionStageInput!) {\n    createAdmissionStage(input: $input) {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n      cardFields\n    }\n  }\n"): (typeof documents)["\n  mutation CreateAdmissionStage($input: CreateAdmissionStageInput!) {\n    createAdmissionStage(input: $input) {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n      cardFields\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateAdmissionStage($input: UpdateAdmissionStageInput!) {\n    updateAdmissionStage(input: $input) {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n      cardFields\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateAdmissionStage($input: UpdateAdmissionStageInput!) {\n    updateAdmissionStage(input: $input) {\n      id\n      name\n      slug\n      color\n      position\n      stageType\n      isDefault\n      cardFields\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -606,6 +662,22 @@ export function graphql(source: "\n  mutation UpsertCurriculumLevelTranslation(\
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation UpsertCurriculumNodeTranslation(\n    $input: UpsertCurriculumNodeTranslationInput!\n  ) {\n    upsertCurriculumNodeTranslation(input: $input) {\n      locale\n      name\n      notes\n    }\n  }\n"): (typeof documents)["\n  mutation UpsertCurriculumNodeTranslation(\n    $input: UpsertCurriculumNodeTranslationInput!\n  ) {\n    upsertCurriculumNodeTranslation(input: $input) {\n      locale\n      name\n      notes\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query EmailTemplates($category: EmailTemplateCategory) {\n    emailTemplates(category: $category) {\n      id\n      name\n      category\n      subject\n      bodyHtml\n      description\n      createdAt\n      updatedAt\n    }\n  }\n"): (typeof documents)["\n  query EmailTemplates($category: EmailTemplateCategory) {\n    emailTemplates(category: $category) {\n      id\n      name\n      category\n      subject\n      bodyHtml\n      description\n      createdAt\n      updatedAt\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation CreateEmailTemplate($input: CreateEmailTemplateInput!) {\n    createEmailTemplate(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateEmailTemplate($input: CreateEmailTemplateInput!) {\n    createEmailTemplate(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateEmailTemplate($input: UpdateEmailTemplateInput!) {\n    updateEmailTemplate(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateEmailTemplate($input: UpdateEmailTemplateInput!) {\n    updateEmailTemplate(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation DeleteEmailTemplate($id: ID!) {\n    deleteEmailTemplate(id: $id)\n  }\n"): (typeof documents)["\n  mutation DeleteEmailTemplate($id: ID!) {\n    deleteEmailTemplate(id: $id)\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -917,7 +989,7 @@ export function graphql(source: "\n  query GetEnrollmentsByStudentId($studentId:
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query GetStudents {\n    studentsByOrgId {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      gender\n      enrollmentDate\n      exitDate\n      isActive\n    }\n  }\n"): (typeof documents)["\n  query GetStudents {\n    studentsByOrgId {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      gender\n      enrollmentDate\n      exitDate\n      isActive\n    }\n  }\n"];
+export function graphql(source: "\n  query GetStudents {\n    studentsByOrgId {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      gender\n      exitDate\n      isActive\n      currentClass {\n        id\n        name\n        color\n        gradeLevels {\n          id\n          name\n          color\n        }\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetStudents {\n    studentsByOrgId {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      gender\n      exitDate\n      isActive\n      currentClass {\n        id\n        name\n        color\n        gradeLevels {\n          id\n          name\n          color\n        }\n      }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

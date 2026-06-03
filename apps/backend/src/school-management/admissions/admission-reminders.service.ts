@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, IsNull, LessThan, Repository } from 'typeorm';
+import { Between, IsNull, LessThan, Not, Repository } from 'typeorm';
 import { CreateAdmissionReminderInput } from './dto/create-admission-reminder.input';
 import { UpdateAdmissionReminderInput } from './dto/update-admission-reminder.input';
 import { AdmissionApplication } from './entities/admission-application.entity';
@@ -66,7 +66,8 @@ export class AdmissionRemindersService {
         baseWhere.completedAt = IsNull();
         break;
       case AdmissionReminderFilter.COMPLETED:
-        // Completed: completedAt is set — order DESC by completedAt below.
+        // Completed: only reminders that have been marked done.
+        baseWhere.completedAt = Not(IsNull());
         break;
     }
 

@@ -1,10 +1,12 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+  # Auf main läuft CI nicht mehr standalone, sondern als Gate VOR dem Deploy:
+  # deploy-staging.yml ruft diesen Workflow via `needs` auf (workflow_call).
+  # So werden Images erst gebaut/deployed, wenn Lint/Test/Build/E2E grün sind.
+  workflow_call:
 
 env:
   TURBO_TELEMETRY_DISABLED: 1
@@ -62,6 +64,20 @@ jobs:
       - name: Install Playwright Browsers
         run: pnpm --filter @restart/e2e exec playwright install --with-deps chromium
 
+      # better-auth verwaltet seine Tabellen (user/session/account/verification)
+      # ausserhalb von TypeORM – synchronize erzeugt sie nicht. Ohne diesen Schritt
+      # schlägt die Sign-in-Seite mit `relation "session" does not exist` fehl.
+      - name: Prepare better-auth schema
+        run: pnpm --filter @restart/backend run auth:migrate
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: colibri_test
+          DB_USERNAME: test
+          DB_PASSWORD: test
+          NODE_ENV: test
+          ALLOWED_ORIGINS: http://localhost:4000
+
       - name: Run E2E Tests
         run: pnpm --filter @restart/e2e exec playwright test
         env:
@@ -72,6 +88,12 @@ jobs:
           DB_USERNAME: test
           DB_PASSWORD: test
           DB_SYNCHRONIZE: "true"
+          # Schema wird in E2E ausschliesslich via synchronize aus den Entities
+          # gebaut. Migrationen sind der Prod-Pfad und setzen eine Baseline (z. B.
+          # die students-Tabelle) voraus, die es als Migration nicht gibt – sie
+          # würden gegen die leere Test-DB laufen und mit
+          # `relation "students" does not exist` fehlschlagen.
+          DB_MIGRATIONS_RUN: "false"
           # App
           NODE_ENV: test
           PORT: 4001

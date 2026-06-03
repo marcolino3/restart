@@ -58,7 +58,7 @@ Answer questions about NestJS and its first-party ecosystem correctly by consult
    - CORS: explicit allowed origins
 - **Multi-tenant isolation (KRITISCH)**: every authenticated query/mutation MUST filter by `req.user.orgId` from the better-auth session (`Active-Org` cookie → `session.activeOrganizationId`). Resolvers on org-scoped entities (Membership, Employee, Student, Curriculum, etc.) must enforce `WHERE organizationId = req.user.orgId`. Only `@SuperAdminOnly()` operations are exempt
 - **Testing**: Jest unit + Jest e2e (`test/`). Several test suites currently failing due to DI mocks — flag (don't fix unrelated tests on the fly)
-- **Sentry**: `@sentry/nestjs` + `@sentry/profiling-node` wired — preserve when refactoring `main.ts`
+- **Monitoring**: deaktiviert — kein Sentry/PostHog (US-Vendors, nicht DSGVO/Cloud-Act-konform). Schweizer Self-Host-Ersatz später. Keine Monitoring-SDKs in `main.ts` einbauen
 
 ### NestJS 11 / ecosystem gotchas worth flagging
 

@@ -2,24 +2,67 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Bell, BellRing, Users2 } from "lucide-react";
+import { Bell, BellRing, Mail, Phone, User2, Users2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { StudentAvatar } from "@/features/students/components/StudentAvatar";
 import { cn } from "@/lib/utils";
+import {
+  resolveCardFields,
+  type CardFieldKey,
+} from "../field-registry";
 import type { KanbanApplication } from "../types";
 
 interface Props {
   application: KanbanApplication;
   /** Vertical color strip (matches the column's stage colour). */
   stageColor?: string | null;
+  /** Per-stage field selection; `null`/omitted ⇒ default set. */
+  cardFields?: string[] | null;
   dragging?: boolean;
   onOpen?: (id: string) => void;
   className?: string;
 }
 
+const GENDER_GLYPH: Record<NonNullable<KanbanApplication["childGender"]>, string> = {
+  MALE: "♂",
+  FEMALE: "♀",
+  OTHER: "⚧",
+};
+
+const statusKey = (status: KanbanApplication["status"]): string => {
+  switch (status) {
+    case "ACTIVE":
+      return "statusActive";
+    case "REJECTED":
+      return "statusRejected";
+    case "ENROLLED":
+      return "statusEnrolled";
+    case "ARCHIVED":
+    default:
+      return "statusArchived";
+  }
+};
+
+const sourceKey = (source: KanbanApplication["source"]): string => {
+  switch (source) {
+    case "PUBLIC_FORM":
+      return "sourcePublicForm";
+    case "OPEN_DAY":
+      return "sourceOpenDay";
+    case "REFERRAL":
+      return "sourceReferral";
+    case "OTHER":
+      return "sourceOther";
+    case "MANUAL":
+    default:
+      return "sourceManual";
+  }
+};
+
 export function AdmissionCardVisual({
   application,
   stageColor,
+  cardFields,
   dragging,
   onOpen,
   className,
@@ -40,11 +83,147 @@ export function AdmissionCardVisual({
     );
   }, [application.stageEnteredAt]);
 
-  const familyLabel =
-    application.family.name ?? `${t("family")} ${application.childLastName}`;
+  const fields = resolveCardFields(cardFields);
   const birthYear = application.childDateOfBirth
     ? application.childDateOfBirth.slice(0, 4)
     : null;
+
+  const chip = (key: CardFieldKey): React.ReactNode => {
+    switch (key) {
+      case "birthYear":
+        return birthYear ? (
+          <span key={key} title={t("fieldBirthYear")}>{`Jg. ${birthYear}`}</span>
+        ) : null;
+      case "age": {
+        if (!application.childDateOfBirth) return null;
+        const dob = new Date(application.childDateOfBirth);
+        const now = new Date();
+        let age = now.getFullYear() - dob.getFullYear();
+        const m = now.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age -= 1;
+        if (age < 0) return null;
+        return (
+          <span key={key} title={t("fieldAge")}>
+            {t("ageYears", { count: age })}
+          </span>
+        );
+      }
+      case "gender":
+        return application.childGender ? (
+          <span key={key} title={t("fieldGender")}>
+            {GENDER_GLYPH[application.childGender]}
+          </span>
+        ) : null;
+      case "gradeLevel":
+        return application.desiredGradeLevelName ? (
+          <span
+            key={key}
+            className="inline-flex items-center gap-1"
+            title={application.desiredGradeLevelName}
+          >
+            <span
+              aria-hidden
+              className="inline-block h-2 w-2 shrink-0 rounded-full ring-1 ring-border"
+              style={{
+                backgroundColor:
+                  application.desiredGradeLevelColor ?? "var(--muted)",
+              }}
+            />
+            <span className="truncate">{application.desiredGradeLevelName}</span>
+          </span>
+        ) : null;
+      case "source":
+        return (
+          <span key={key} title={t("fieldSource")}>
+            {t(sourceKey(application.source))}
+          </span>
+        );
+      case "status":
+        return (
+          <span key={key} title={t("fieldStatus")}>
+            {t(statusKey(application.status))}
+          </span>
+        );
+      case "familyName":
+        return application.family.name ? (
+          <span key={key} className="truncate" title={t("fieldFamilyName")}>
+            {application.family.name}
+          </span>
+        ) : null;
+      case "siblings":
+        return application.family.childrenCount > 1 ? (
+          <span
+            key={key}
+            className="inline-flex items-center gap-0.5 rounded bg-primary/10 px-1 text-primary"
+            title={t("fieldSiblings")}
+          >
+            <Users2 className="h-2.5 w-2.5" />
+            {application.family.childrenCount}
+          </span>
+        ) : null;
+      case "contactName": {
+        const name = application.family.contactNames[0];
+        return name ? (
+          <span key={key} className="inline-flex items-center gap-0.5 truncate">
+            <User2 className="h-2.5 w-2.5 shrink-0" />
+            <span className="truncate">{name}</span>
+          </span>
+        ) : null;
+      }
+      case "contactEmail":
+        return application.family.primaryEmail ? (
+          <span key={key} className="inline-flex items-center gap-0.5 truncate">
+            <Mail className="h-2.5 w-2.5 shrink-0" />
+            <span className="truncate">{application.family.primaryEmail}</span>
+          </span>
+        ) : null;
+      case "contactPhone":
+        return application.family.primaryPhone ? (
+          <span key={key} className="inline-flex items-center gap-0.5">
+            <Phone className="h-2.5 w-2.5 shrink-0" />
+            {application.family.primaryPhone}
+          </span>
+        ) : null;
+      case "daysInStage":
+        return daysInStage !== null && daysInStage > 0 ? (
+          <Badge
+            key={key}
+            variant={daysInStage > 14 ? "destructive" : "outline"}
+            className="px-1.5 text-[10px] leading-none"
+            title={t("daysShort", { count: daysInStage })}
+          >
+            {daysInStage}d
+          </Badge>
+        ) : null;
+      case "reminders":
+        return application.openRemindersCount > 0 ? (
+          <span
+            key={key}
+            className={cn(
+              "inline-flex items-center gap-0.5 rounded px-1 font-medium",
+              application.overdueRemindersCount > 0
+                ? "bg-destructive/10 text-destructive"
+                : "bg-amber-500/15 text-amber-700",
+            )}
+            title={t("openRemindersTitle", {
+              open: application.openRemindersCount,
+              overdue: application.overdueRemindersCount,
+            })}
+          >
+            {application.overdueRemindersCount > 0 ? (
+              <BellRing className="h-2.5 w-2.5" />
+            ) : (
+              <Bell className="h-2.5 w-2.5" />
+            )}
+            {application.openRemindersCount}
+          </span>
+        ) : null;
+      default:
+        return null;
+    }
+  };
+
+  const chips = fields.map(chip).filter(Boolean);
 
   return (
     <div
@@ -77,65 +256,10 @@ export function AdmissionCardVisual({
           <div className="truncate text-sm font-semibold leading-tight">
             {application.childFirstName} {application.childLastName}
           </div>
-          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted-foreground">
-            {birthYear && (
-              <span title={t("childDateOfBirth")}>{`Jg. ${birthYear}`}</span>
-            )}
-            {application.family.childrenCount > 1 && (
-              <span
-                className="inline-flex items-center gap-0.5 rounded bg-primary/10 px-1 text-primary"
-                title={familyLabel}
-              >
-                <Users2 className="h-2.5 w-2.5" />
-                {application.family.childrenCount}
-              </span>
-            )}
-            {application.openRemindersCount > 0 && (
-              <span
-                className={cn(
-                  "inline-flex items-center gap-0.5 rounded px-1 font-medium",
-                  application.overdueRemindersCount > 0
-                    ? "bg-destructive/10 text-destructive"
-                    : "bg-amber-500/15 text-amber-700",
-                )}
-                title={`${application.openRemindersCount} offene Erinnerungen${
-                  application.overdueRemindersCount > 0
-                    ? `, ${application.overdueRemindersCount} überfällig`
-                    : ""
-                }`}
-              >
-                {application.overdueRemindersCount > 0 ? (
-                  <BellRing className="h-2.5 w-2.5" />
-                ) : (
-                  <Bell className="h-2.5 w-2.5" />
-                )}
-                {application.openRemindersCount}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          {daysInStage !== null && daysInStage > 0 && (
-            <Badge
-              variant={daysInStage > 14 ? "destructive" : "outline"}
-              className="px-1.5 text-[10px] leading-none"
-              title={t("daysShort", { count: daysInStage })}
-            >
-              {daysInStage}d
-            </Badge>
-          )}
-          {application.desiredGradeLevelName && (
-            <span
-              aria-hidden={false}
-              className="inline-block h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-border"
-              style={{
-                backgroundColor:
-                  application.desiredGradeLevelColor ?? "var(--muted)",
-              }}
-              title={application.desiredGradeLevelName}
-              aria-label={application.desiredGradeLevelName}
-            />
+          {chips.length > 0 && (
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted-foreground">
+              {chips}
+            </div>
           )}
         </div>
       </div>

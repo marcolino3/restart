@@ -20,6 +20,23 @@ export type AdmissionApplicationSource =
 
 export type Gender = "MALE" | "FEMALE" | "OTHER";
 
+/** Party that initiated a rejection. */
+export type AdmissionRejectedBy = "SCHOOL" | "PARENTS" | "OTHER";
+
+/** A rejected application row for the rejections list page. */
+export type RejectedApplication = {
+  id: string;
+  childFirstName: string;
+  childLastName: string;
+  familyName: string | null;
+  desiredGradeLevelName: string | null;
+  rejectionReason: string | null;
+  rejectionReasonLabel: string | null;
+  rejectionReasonColor: string | null;
+  rejectedBy: AdmissionRejectedBy | null;
+  rejectedAt: string;
+};
+
 export type KanbanStage = {
   id: string;
   name: string;
@@ -28,6 +45,21 @@ export type KanbanStage = {
   position: number;
   stageType: AdmissionStageType;
   isDefault: boolean;
+  /** Per-stage card field selection; `null` ⇒ default set. */
+  cardFields: string[] | null;
+};
+
+/** Org-global admissions board settings (table column selection). */
+export type AdmissionBoardSettings = {
+  tableColumns: string[] | null;
+};
+
+/** Org-configurable rejection reason (Absagegrund). */
+export type AdmissionRejectionReason = {
+  id: string;
+  label: string;
+  color: string | null;
+  position: number;
 };
 
 export type KanbanFamilySnippet = {
