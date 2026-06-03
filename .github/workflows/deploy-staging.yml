@@ -90,6 +90,9 @@ jobs:
           # Gate: ein fixbares CRITICAL im Image bricht den Deploy ab.
           exit-code: "1"
           ignore-unfixed: true
+          # Default-Timeout (5m) reicht beim grossen node_modules-Baum nicht und
+          # führte zu `context deadline exceeded` (Exit 1, kein echtes Finding).
+          timeout: "15m"
           format: "sarif"
           output: "trivy-backend.sarif"
 
@@ -101,6 +104,7 @@ jobs:
           # Gate: ein fixbares CRITICAL im Image bricht den Deploy ab.
           exit-code: "1"
           ignore-unfixed: true
+          timeout: "15m"
           format: "sarif"
           output: "trivy-frontend.sarif"
 
