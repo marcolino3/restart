@@ -140,8 +140,6 @@
       "src/roles/roles.resolver.spec.ts",
       "src/employee-management/employees/employees.service.spec.ts",
       "src/employee-management/employees/employees.resolver.spec.ts",
-      "src/employee-management/teams/teams.service.spec.ts",
-      "src/employee-management/teams/teams.resolver.spec.ts",
       "src/employee-management/employee-absences/employee-absences.resolver.spec.ts",
       "src/employee-management/employee-absence-categories/employee-absence-categories.resolver.spec.ts"
     ],

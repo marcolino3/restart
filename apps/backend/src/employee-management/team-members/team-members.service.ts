@@ -30,6 +30,7 @@ export class TeamMembersService {
     if (existing) {
       if (!existing.isActive) {
         existing.isActive = true;
+        if (input.role) existing.role = input.role;
         return this.teamMemberRepo.save(existing);
       }
       throw new ConflictException(`Employee is already a member of this team`);

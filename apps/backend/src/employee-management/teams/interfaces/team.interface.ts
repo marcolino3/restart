@@ -6,4 +6,5 @@ export interface ITeam extends IBase {
   sortOrder: number;
   organizationId: string;
   organization?: IOrganization | null;
+  parentId?: string | null;
 }

@@ -1,5 +1,6 @@
 import { Field, ID, InputType } from '@nestjs/graphql';
-import { IsUUID } from 'class-validator';
+import { IsEnum, IsOptional, IsUUID } from 'class-validator';
+import { TeamMemberRole } from '../entities/team-member-role.enum';
 
 @InputType()
 export class CreateTeamMemberInput {
@@ -10,4 +11,9 @@ export class CreateTeamMemberInput {
   @Field(() => ID)
   @IsUUID()
   employeeId: string;
+
+  @Field(() => TeamMemberRole, { nullable: true })
+  @IsOptional()
+  @IsEnum(TeamMemberRole)
+  role?: TeamMemberRole;
 }

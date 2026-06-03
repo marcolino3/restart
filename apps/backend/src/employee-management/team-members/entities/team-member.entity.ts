@@ -4,6 +4,7 @@ import { Team } from '@/employee-management/teams/entities/team.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { Field, ObjectType } from '@nestjs/graphql';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { TeamMemberRole } from './team-member-role.enum';
 
 @ObjectType()
 @Entity('team_members')
@@ -37,4 +38,12 @@ export class TeamMember extends AbstractEntity<TeamMember> {
   @ManyToOne(() => Employee)
   @JoinColumn({ name: 'employee_id' })
   employee: Employee;
+
+  @Field(() => TeamMemberRole)
+  @Column({
+    type: 'enum',
+    enum: TeamMemberRole,
+    default: TeamMemberRole.MEMBER,
+  })
+  role: TeamMemberRole;
 }
