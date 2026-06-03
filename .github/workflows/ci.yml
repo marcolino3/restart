@@ -87,13 +87,11 @@ jobs:
           DB_NAME: colibri_test
           DB_USERNAME: test
           DB_PASSWORD: test
-          DB_SYNCHRONIZE: "true"
-          # Schema wird in E2E ausschliesslich via synchronize aus den Entities
-          # gebaut. Migrationen sind der Prod-Pfad und setzen eine Baseline (z. B.
-          # die students-Tabelle) voraus, die es als Migration nicht gibt – sie
-          # würden gegen die leere Test-DB laufen und mit
-          # `relation "students" does not exist` fehlschlagen.
-          DB_MIGRATIONS_RUN: "false"
+          # Schema entsteht über die Migrationen (InitialSchema-Baseline +
+          # CreateBetterAuthTables + Feature-Migrationen inkl. Admissions),
+          # nicht über synchronize — testet den echten Production-Pfad.
+          # migrationsRun läuft in NODE_ENV=test automatisch.
+          DB_SYNCHRONIZE: "false"
           # App
           NODE_ENV: test
           PORT: 4001
