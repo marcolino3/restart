@@ -6,8 +6,9 @@ namespace: restart-production
 resources:
   - ../base
   - ingress.yaml
-  # SealedSecrets — via ./scripts/bootstrap-secrets.sh production erzeugen.
-  # Sobald die Dateien existieren, hier explizit eintragen, z. B.:
+  # SealedSecrets — Bootstrap-Schritte siehe DEPLOYMENT.md (Production-Runbook).
+  # Erzeugen via `./scripts/bootstrap-secrets.sh production`; sobald die Dateien
+  # existieren, hier einkommentieren (vorher schlägt `kustomize build` fehl):
   #   - sealed-secrets/backend-secrets.yaml
   #   - sealed-secrets/frontend-secrets.yaml
 
@@ -19,10 +20,13 @@ configMapGenerator:
     behavior: merge
     literals:
       - NODE_ENV=production
+      # Vor dem ersten Prod-Deploy auf den echten Prod-Postgres-Host setzen
+      # (separate CH-DB, NICHT die Staging-DB) — siehe DEPLOYMENT.md.
       - DB_HOST=PRODUCTION_DB_HOST_PLACEHOLDER
+      # Schema nur über Migrationen; synchronize ist per app.module-Guard
+      # in production zusätzlich hart gesperrt.
       - DB_SYNCHRONIZE=false
       - ALLOWED_ORIGINS=https://app.colibri-app.ch
       - GOOGLE_AUTH_REDIRECT_URI=https://app.colibri-app.ch/api/auth/google/callback
       - AUTH_UI_REDIRECT=https://app.colibri-app.ch
-      - SENTRY_ENVIRONMENT=production
       - LOG_LEVEL=info

@@ -23,6 +23,10 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
 import {
+  ArrowDownAZ,
+  ArrowUpAZ,
+  ArrowUpDown,
+  Ban,
   ChevronLeft,
   ChevronRight,
   GripVertical,
@@ -30,6 +34,7 @@ import {
   Layers,
   LayoutList,
   Bell,
+  Mail,
   Plus,
   Users2,
 } from "lucide-react";
@@ -37,23 +42,121 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 import { moveApplicationAction } from "../actions/move-application.action";
 import { reorderAdmissionStagesAction } from "../actions/stage-actions";
-import type { KanbanApplication, KanbanStage } from "../types";
+import type {
+  AdmissionRejectionReason,
+  KanbanApplication,
+  KanbanStage,
+} from "../types";
 import { AdmissionCardVisual } from "./AdmissionCard";
 import { AdmissionsList } from "./AdmissionsList";
 import { CreateApplicationDialog } from "./CreateApplicationDialog";
+import { ManageRejectionReasonsDialog } from "./ManageRejectionReasonsDialog";
 import { ManageStagesDialog } from "./ManageStagesDialog";
 
 const COLLAPSED_KEY = "admissions-kanban:collapsed-stages";
 const VIEW_KEY = "admissions-kanban:view";
+const STAGE_SORT_KEY = "admissions-kanban:stage-sorts";
+
+/** Fields a column's cards can be sorted by. `manual` ⇒ backend position. */
+type StageSortField =
+  | "manual"
+  | "name"
+  | "birthYear"
+  | "gender"
+  | "gradeLevel"
+  | "family"
+  | "source"
+  | "status"
+  | "daysInStage"
+  | "reminders";
+
+type StageSort = { field: StageSortField; dir: "asc" | "desc" };
+
+/** i18n label key per sort field (reuses existing `field*` keys where possible). */
+const STAGE_SORT_LABEL: Record<StageSortField, string> = {
+  manual: "sortManual",
+  name: "fieldChildName",
+  birthYear: "fieldBirthYear",
+  gender: "fieldGender",
+  gradeLevel: "fieldGradeLevel",
+  family: "fieldFamilyName",
+  source: "fieldSource",
+  status: "fieldStatus",
+  daysInStage: "fieldDaysInStage",
+  reminders: "fieldReminders",
+};
+
+const STAGE_SORT_FIELDS = Object.keys(
+  STAGE_SORT_LABEL,
+) as StageSortField[];
+
+/** Comparable value for a card under a given sort field. */
+const stageSortValue = (
+  field: StageSortField,
+  a: KanbanApplication,
+): string | number => {
+  switch (field) {
+    case "name":
+      return `${a.childLastName} ${a.childFirstName}`.toLowerCase();
+    case "birthYear":
+      return a.childDateOfBirth ?? "9999";
+    case "gender":
+      return a.childGender ?? "ZZZ";
+    case "gradeLevel":
+      return a.desiredGradeLevelName ?? "ZZZ";
+    case "family":
+      return (a.family.name ?? "ZZZ").toLowerCase();
+    case "source":
+      return a.source;
+    case "status":
+      return a.status;
+    case "daysInStage":
+      // Older `stageEnteredAt` ⇒ more days; sort by the raw timestamp.
+      return new Date(a.stageEnteredAt).getTime();
+    case "reminders":
+      return a.openRemindersCount;
+    default:
+      return 0;
+  }
+};
+
+/** Sort a column's applications in place per the selected sort (manual = identity). */
+const sortApplications = (
+  apps: KanbanApplication[],
+  sort: StageSort | undefined,
+): KanbanApplication[] => {
+  if (!sort || sort.field === "manual") return apps;
+  const dir = sort.dir === "asc" ? 1 : -1;
+  return [...apps].sort((a, b) => {
+    const va = stageSortValue(sort.field, a);
+    const vb = stageSortValue(sort.field, b);
+    if (typeof va === "number" && typeof vb === "number") {
+      return dir * (va - vb);
+    }
+    return dir * String(va).localeCompare(String(vb));
+  });
+};
 
 interface Props {
   initialStages: KanbanStage[];
   initialApplications: KanbanApplication[];
+  /** Org-global table column selection; `null` ⇒ default set. */
+  initialTableColumns: string[] | null;
+  initialRejectionReasons: AdmissionRejectionReason[];
   canCreate: boolean;
   canMove: boolean;
   canEnroll: boolean;
@@ -71,6 +174,8 @@ const COLUMN_MIN_HEIGHT = "min-h-[300px]";
 export function AdmissionsKanban({
   initialStages,
   initialApplications,
+  initialTableColumns,
+  initialRejectionReasons,
   canCreate,
   canMove,
   canManageStages,
@@ -107,6 +212,7 @@ export function AdmissionsKanban({
   const [activeStageId, setActiveStageId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [showStages, setShowStages] = useState(false);
+  const [showReasons, setShowReasons] = useState(false);
 
   // Local stage ordering — mirrors the backend order on first render but can
   // be reordered by drag-and-drop. Persisted indirectly via the backend
@@ -118,6 +224,11 @@ export function AdmissionsKanban({
   const [view, setView] = useState<"board" | "list">("board");
   const [collapsedStages, setCollapsedStages] = useState<Set<string>>(
     () => new Set(),
+  );
+  // Per-stage card sort preference (field + direction); persisted in
+  // localStorage. Absent entry ⇒ manual (backend `position`) order.
+  const [stageSorts, setStageSorts] = useState<Record<string, StageSort>>(
+    () => ({}),
   );
 
   // @dnd-kit assigns internal ids (`aria-describedby="DndDescribedBy-N"`) via
@@ -138,6 +249,15 @@ export function AdmissionsKanban({
           /* ignore corrupt JSON */
         }
       }
+      const s = window.localStorage.getItem(STAGE_SORT_KEY);
+      if (s) {
+        try {
+          const obj = JSON.parse(s) as Record<string, StageSort>;
+          if (obj && typeof obj === "object") setStageSorts(obj);
+        } catch {
+          /* ignore corrupt JSON */
+        }
+      }
     }
   }, []);
 
@@ -153,6 +273,20 @@ export function AdmissionsKanban({
       JSON.stringify(Array.from(collapsedStages)),
     );
   }, [collapsedStages]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(STAGE_SORT_KEY, JSON.stringify(stageSorts));
+  }, [stageSorts]);
+
+  const setStageSort = (stageId: string, sort: StageSort) =>
+    setStageSorts((prev) => {
+      // Drop the entry entirely when reset to manual to keep storage tidy.
+      if (sort.field === "manual") {
+        const { [stageId]: _omit, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [stageId]: sort };
+    });
 
   // Re-sync stage order if the prop changes (e.g. after stage add/remove).
   useEffect(() => {
@@ -409,6 +543,22 @@ export function AdmissionsKanban({
               </span>
             )}
           </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => router.push(`/admin/admissions/email-templates`)}
+          >
+            <Mail className="mr-1 h-4 w-4" />
+            {t("emailTemplatesNavLabel")}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => router.push(`/admin/admissions/rejected`)}
+          >
+            <Ban className="mr-1 h-4 w-4" />
+            {t("rejectedListTitle")}
+          </Button>
           {canManageStages && (
             <Button
               size="sm"
@@ -417,6 +567,16 @@ export function AdmissionsKanban({
             >
               <Layers className="mr-1 h-4 w-4" />
               {t("manageStages")}
+            </Button>
+          )}
+          {canManageStages && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowReasons(true)}
+            >
+              <Ban className="mr-1 h-4 w-4" />
+              {t("manageRejectionReasons")}
             </Button>
           )}
           {canCreate && (
@@ -440,6 +600,7 @@ export function AdmissionsKanban({
       ) : view === "list" ? (
         <AdmissionsList
           stages={stageOrder}
+          tableColumns={initialTableColumns}
           applications={Object.values(applicationsById).filter((a) =>
             matchesSearch(a.id),
           )}
@@ -459,10 +620,14 @@ export function AdmissionsKanban({
             <div className="flex gap-3 overflow-x-auto pb-2">
               {stageOrder.map((stage) => {
                 const ids = columns[stage.id]?.appIds ?? [];
-                const visibleApps = ids
-                  .filter(matchesSearch)
-                  .map((id) => applicationsById[id])
-                  .filter(Boolean);
+                const sort = stageSorts[stage.id];
+                const visibleApps = sortApplications(
+                  ids
+                    .filter(matchesSearch)
+                    .map((id) => applicationsById[id])
+                    .filter(Boolean),
+                  sort,
+                );
                 const collapsed = collapsedStages.has(stage.id);
                 return (
                   <KanbanColumn
@@ -475,6 +640,8 @@ export function AdmissionsKanban({
                     canReorderStages={canManageStages}
                     collapsed={collapsed}
                     onToggleCollapsed={() => toggleCollapsed(stage.id)}
+                    sort={sort}
+                    onChangeSort={(next) => setStageSort(stage.id, next)}
                   />
                 );
               })}
@@ -485,6 +652,10 @@ export function AdmissionsKanban({
             {activeApp ? (
               <AdmissionCardVisual
                 application={activeApp}
+                cardFields={
+                  stageOrder.find((s) => s.id === activeApp.admissionStageId)
+                    ?.cardFields ?? null
+                }
                 dragging
                 className="rotate-1"
               />
@@ -515,7 +686,15 @@ export function AdmissionsKanban({
       {showStages && canManageStages && (
         <ManageStagesDialog
           stages={initialStages}
+          tableColumns={initialTableColumns}
           onClose={() => setShowStages(false)}
+        />
+      )}
+
+      {showReasons && canManageStages && (
+        <ManageRejectionReasonsDialog
+          reasons={initialRejectionReasons}
+          onClose={() => setShowReasons(false)}
         />
       )}
     </div>
@@ -531,6 +710,8 @@ interface ColumnProps {
   canReorderStages: boolean;
   collapsed: boolean;
   onToggleCollapsed: () => void;
+  sort: StageSort | undefined;
+  onChangeSort: (sort: StageSort) => void;
 }
 
 function KanbanColumn({
@@ -542,6 +723,8 @@ function KanbanColumn({
   canReorderStages,
   collapsed,
   onToggleCollapsed,
+  sort,
+  onChangeSort,
 }: ColumnProps) {
   const t = useTranslations("Admissions");
   // Drop-zone for Cards being dragged into this stage. Uses a prefixed id so
@@ -672,6 +855,7 @@ function KanbanColumn({
             <Badge variant="secondary" className="text-[10px]">
               {count}
             </Badge>
+            <StageSortMenu sort={sort} onChangeSort={onChangeSort} />
             <button
               type="button"
               onClick={onToggleCollapsed}
@@ -704,6 +888,7 @@ function KanbanColumn({
                 key={a.id}
                 application={a}
                 stageColor={stage.color}
+                cardFields={stage.cardFields}
                 onOpen={onOpenCard}
                 canDrag={canDrag}
               />
@@ -715,14 +900,83 @@ function KanbanColumn({
   );
 }
 
+function StageSortMenu({
+  sort,
+  onChangeSort,
+}: {
+  sort: StageSort | undefined;
+  onChangeSort: (sort: StageSort) => void;
+}) {
+  const t = useTranslations("Admissions");
+  const active = sort && sort.field !== "manual";
+  const dir = sort?.dir ?? "asc";
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "rounded text-muted-foreground/60 hover:text-foreground",
+            active && "text-primary",
+          )}
+          aria-label={t("sortBy")}
+          title={t("sortBy")}
+        >
+          <ArrowUpDown className="h-3.5 w-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuLabel>{t("sortBy")}</DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={sort?.field ?? "manual"}
+          onValueChange={(v) =>
+            onChangeSort({ field: v as StageSortField, dir })
+          }
+        >
+          {STAGE_SORT_FIELDS.map((field) => (
+            <DropdownMenuRadioItem key={field} value={field}>
+              {t(STAGE_SORT_LABEL[field])}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+        {active && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuRadioGroup
+              value={dir}
+              onValueChange={(v) =>
+                onChangeSort({
+                  field: sort?.field ?? "manual",
+                  dir: v as "asc" | "desc",
+                })
+              }
+            >
+              <DropdownMenuRadioItem value="asc">
+                <ArrowUpAZ className="mr-2 h-3.5 w-3.5" />
+                {t("sortAscending")}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="desc">
+                <ArrowDownAZ className="mr-2 h-3.5 w-3.5" />
+                {t("sortDescending")}
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function DraggableApplication({
   application,
   stageColor,
+  cardFields,
   onOpen,
   canDrag,
 }: {
   application: KanbanApplication;
   stageColor: string | null;
+  cardFields: string[] | null;
   onOpen: (id: string) => void;
   canDrag: boolean;
 }) {
@@ -743,6 +997,7 @@ function DraggableApplication({
       <AdmissionCardVisual
         application={application}
         stageColor={stageColor}
+        cardFields={cardFields}
         onOpen={onOpen}
       />
     </div>

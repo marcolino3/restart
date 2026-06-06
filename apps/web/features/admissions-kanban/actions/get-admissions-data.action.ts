@@ -2,7 +2,12 @@
 
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
-import type { KanbanApplication, KanbanStage } from "../types";
+import type {
+  AdmissionBoardSettings,
+  AdmissionRejectionReason,
+  KanbanApplication,
+  KanbanStage,
+} from "../types";
 
 const RemindersDocument = gql`
   query AdmissionsKanbanReminders {
@@ -25,6 +30,26 @@ const StagesDocument = gql`
       stageType
       isDefault
       isArchived
+      cardFields
+    }
+  }
+`;
+
+const BoardSettingsDocument = gql`
+  query AdmissionsBoardSettings {
+    admissionBoardSettings {
+      tableColumns
+    }
+  }
+`;
+
+const RejectionReasonsDocument = gql`
+  query AdmissionsKanbanRejectionReasons {
+    admissionRejectionReasons {
+      id
+      label
+      color
+      position
     }
   }
 `;
@@ -71,6 +96,10 @@ type StagesResp = {
   admissionStages: Array<KanbanStage & { isArchived: boolean }>;
 };
 
+type BoardSettingsResp = {
+  admissionBoardSettings: AdmissionBoardSettings | null;
+};
+
 type ApplicationsResp = {
   admissionApplications: Array<{
     id: string;
@@ -108,6 +137,8 @@ export type AdmissionsKanbanData = {
   applications: KanbanApplication[];
   applicationsByStage: Record<string, KanbanApplication[]>;
   familyChildCount: Record<string, number>;
+  boardSettings: AdmissionBoardSettings;
+  rejectionReasons: AdmissionRejectionReason[];
 };
 
 export const getAdmissionsDataAction = async (): Promise<
@@ -116,20 +147,33 @@ export const getAdmissionsDataAction = async (): Promise<
 > => {
   const client = await serverCookieGqlClient();
   try {
-    const [{ admissionStages }, { admissionApplications }, remindersResp] =
-      await Promise.all([
-        client.request<StagesResp>(StagesDocument),
-        client.request<ApplicationsResp>(ApplicationsDocument),
-        client
-          .request<{
-            orgAdmissionReminders: Array<{
-              id: string;
-              applicationId: string;
-              dueAt: string;
-            }>;
-          }>(RemindersDocument)
-          .catch(() => ({ orgAdmissionReminders: [] })),
-      ]);
+    const [
+      { admissionStages },
+      { admissionApplications },
+      remindersResp,
+      boardSettingsResp,
+      rejectionReasonsResp,
+    ] = await Promise.all([
+      client.request<StagesResp>(StagesDocument),
+      client.request<ApplicationsResp>(ApplicationsDocument),
+      client
+        .request<{
+          orgAdmissionReminders: Array<{
+            id: string;
+            applicationId: string;
+            dueAt: string;
+          }>;
+        }>(RemindersDocument)
+        .catch(() => ({ orgAdmissionReminders: [] })),
+      client
+        .request<BoardSettingsResp>(BoardSettingsDocument)
+        .catch(() => ({ admissionBoardSettings: null })),
+      client
+        .request<{ admissionRejectionReasons: AdmissionRejectionReason[] }>(
+          RejectionReasonsDocument,
+        )
+        .catch(() => ({ admissionRejectionReasons: [] })),
+    ]);
 
     const now = Date.now();
     const reminderCounts = new Map<
@@ -157,6 +201,7 @@ export const getAdmissionsDataAction = async (): Promise<
         position: s.position,
         stageType: s.stageType,
         isDefault: s.isDefault,
+        cardFields: s.cardFields ?? null,
       }));
 
     const familyChildCount: Record<string, number> = {};
@@ -213,7 +258,17 @@ export const getAdmissionsDataAction = async (): Promise<
 
     return {
       success: true as const,
-      data: { stages, applications, applicationsByStage, familyChildCount },
+      data: {
+        stages,
+        applications,
+        applicationsByStage,
+        familyChildCount,
+        boardSettings: {
+          tableColumns:
+            boardSettingsResp.admissionBoardSettings?.tableColumns ?? null,
+        },
+        rejectionReasons: rejectionReasonsResp.admissionRejectionReasons ?? [],
+      },
     };
   } catch (error) {
     console.error(error);

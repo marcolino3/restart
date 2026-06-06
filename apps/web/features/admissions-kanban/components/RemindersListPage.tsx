@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Bell, BellRing, Check, ExternalLink, Loader2 } from "lucide-react";
@@ -55,10 +55,17 @@ export function RemindersListPage({
     useState<OrgAdmissionReminder[]>(initialReminders);
   const [loading, setLoading] = useState(false);
   const [, startTransition] = useTransition();
+  const isFirstRender = useRef(true);
 
-  // Refetch when the filter changes — initial render uses server-fetched data.
+  // Refetch when the filter changes. Skip only the very first render — the
+  // initial tab's data is already server-fetched. Returning to the initial
+  // filter after viewing another tab must still refetch (state holds the
+  // previous tab's reminders).
   useEffect(() => {
-    if (filter === initialFilter) return;
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     let cancelled = false;
     setLoading(true);
     getOrgAdmissionRemindersAction(filter).then((res) => {
@@ -70,7 +77,6 @@ export function RemindersListPage({
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   const refresh = () => {

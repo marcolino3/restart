@@ -4,10 +4,25 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Plus, SlidersHorizontal, Trash2 } from "lucide-react";
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ColorPicker } from "@/components/ui/color-picker";
 import {
   Dialog,
@@ -25,13 +40,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { updateBoardSettingsAction } from "../actions/board-settings-actions";
 import {
   archiveAdmissionStageAction,
   createAdmissionStageAction,
   reorderAdmissionStagesAction,
   updateAdmissionStageAction,
 } from "../actions/stage-actions";
+import {
+  CARD_FIELD_KEYS,
+  CARD_FIELD_LABEL,
+  resolveCardFields,
+  resolveTableColumns,
+  TABLE_COLUMN_KEYS,
+  TABLE_COLUMN_LABEL,
+  type CardFieldKey,
+  type TableColumnKey,
+} from "../field-registry";
 import type { KanbanStage } from "../types";
+
+/** Keeps a selection in the canonical key order (v1 supports on/off, not reorder). */
+const orderedSubset = <T extends string>(
+  all: readonly T[],
+  selected: Set<T>,
+): T[] => all.filter((k) => selected.has(k));
 
 type StageType =
   | "INITIAL"
@@ -42,10 +74,15 @@ type StageType =
 
 interface Props {
   stages: KanbanStage[];
+  tableColumns: string[] | null;
   onClose: () => void;
 }
 
-export function ManageStagesDialog({ stages: initialStages, onClose }: Props) {
+export function ManageStagesDialog({
+  stages: initialStages,
+  tableColumns: initialTableColumns,
+  onClose,
+}: Props) {
   const t = useTranslations("Admissions");
   const tC = useTranslations("Common");
   const router = useRouter();
@@ -55,6 +92,47 @@ export function ManageStagesDialog({ stages: initialStages, onClose }: Props) {
   const [newColor, setNewColor] = useState("#0EA5E9");
   const [newType, setNewType] = useState<StageType>("IN_PROGRESS");
   const [busy, setBusy] = useState(false);
+
+  // Which stage's card-field editor is expanded.
+  const [editingFieldsFor, setEditingFieldsFor] = useState<string | null>(null);
+  // Org-global table columns (canonical order).
+  const [tableCols, setTableCols] = useState<TableColumnKey[]>(
+    resolveTableColumns(initialTableColumns),
+  );
+
+  const onToggleCardField = async (stage: KanbanStage, key: CardFieldKey) => {
+    const current = new Set(resolveCardFields(stage.cardFields));
+    if (current.has(key)) current.delete(key);
+    else current.add(key);
+    const next = orderedSubset(CARD_FIELD_KEYS, current);
+    const prev = stages;
+    setStages((p) =>
+      p.map((s) => (s.id === stage.id ? { ...s, cardFields: next } : s)),
+    );
+    const res = await updateAdmissionStageAction({ id: stage.id, cardFields: next });
+    if (!res.success) {
+      setStages(prev);
+      toast.error(t("stageUpdateError"), { description: res.error });
+    } else {
+      router.refresh();
+    }
+  };
+
+  const onToggleTableColumn = async (key: TableColumnKey) => {
+    const current = new Set(tableCols);
+    if (current.has(key)) current.delete(key);
+    else current.add(key);
+    const next = orderedSubset(TABLE_COLUMN_KEYS, current);
+    const prev = tableCols;
+    setTableCols(next);
+    const res = await updateBoardSettingsAction(next);
+    if (!res.success) {
+      setTableCols(prev);
+      toast.error(t("stageUpdateError"), { description: res.error });
+    } else {
+      router.refresh();
+    }
+  };
 
   const slugify = (s: string) =>
     s
@@ -110,18 +188,26 @@ export function ManageStagesDialog({ stages: initialStages, onClose }: Props) {
     }
   };
 
-  const onMove = async (id: string, direction: -1 | 1) => {
-    const idx = stages.findIndex((s) => s.id === id);
-    const swapIdx = idx + direction;
-    if (idx < 0 || swapIdx < 0 || swapIdx >= stages.length) return;
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+  );
+
+  const onDragEnd = async (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const fromIdx = stages.findIndex((s) => s.id === active.id);
+    const toIdx = stages.findIndex((s) => s.id === over.id);
+    if (fromIdx < 0 || toIdx < 0) return;
     const next = [...stages];
-    [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    const prev = stages;
     setStages(next);
     setBusy(true);
     const res = await reorderAdmissionStagesAction(next.map((s) => s.id));
     setBusy(false);
     if (!res.success) {
-      setStages(stages); // rollback
+      setStages(prev); // rollback
       toast.error(t("stageReorderError"), { description: res.error });
     } else {
       router.refresh();
@@ -224,64 +310,61 @@ export function ManageStagesDialog({ stages: initialStages, onClose }: Props) {
                 {t("noStages")}
               </p>
             ) : (
-              <div className="divide-y rounded-md border">
-                {stages.map((s, idx) => (
-                  <div
-                    key={s.id}
-                    className="flex items-center gap-2 px-3 py-2"
-                  >
-                    <ColorPicker
-                      size="sm"
-                      value={s.color}
-                      onChange={(v) => onUpdateColor(s.id, v ?? "#94A3B8")}
-                      disabled={busy}
-                    />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{s.name}</div>
-                      <div className="text-[10px] text-muted-foreground">
-                        {s.slug}
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="text-[10px]">
-                      {stageTypeOptions.find((o) => o.value === s.stageType)
-                        ?.label ?? s.stageType}
-                    </Badge>
-                    {s.isDefault && (
-                      <Badge variant="secondary" className="text-[10px]">
-                        {t("stageDefault")}
-                      </Badge>
-                    )}
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => onMove(s.id, -1)}
-                      disabled={busy || idx === 0}
-                      className="h-7 w-7"
-                    >
-                      <ArrowUp className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => onMove(s.id, 1)}
-                      disabled={busy || idx === stages.length - 1}
-                      className="h-7 w-7"
-                    >
-                      <ArrowDown className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => onArchive(s.id)}
-                      disabled={busy}
-                      className="h-7 w-7 text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={onDragEnd}
+              >
+                <SortableContext
+                  items={stages.map((s) => s.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="divide-y rounded-md border">
+                    {stages.map((s) => (
+                      <SortableStageRow
+                        key={s.id}
+                        stage={s}
+                        busy={busy}
+                        editing={editingFieldsFor === s.id}
+                        stageTypeLabel={
+                          stageTypeOptions.find((o) => o.value === s.stageType)
+                            ?.label ?? s.stageType
+                        }
+                        onToggleEditing={() =>
+                          setEditingFieldsFor(
+                            editingFieldsFor === s.id ? null : s.id,
+                          )
+                        }
+                        onUpdateColor={onUpdateColor}
+                        onArchive={onArchive}
+                        onToggleCardField={onToggleCardField}
+                      />
+                    ))}
                   </div>
-                ))}
-              </div>
+                </SortableContext>
+              </DndContext>
             )}
+          </section>
+
+          <section className="space-y-2 rounded-md border p-3">
+            <h3 className="text-sm font-semibold">{t("tableColumnsTitle")}</h3>
+            <p className="text-xs text-muted-foreground">
+              {t("tableColumnsHint")}
+            </p>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+              {TABLE_COLUMN_KEYS.map((key) => (
+                <label
+                  key={key}
+                  className="flex cursor-pointer items-center gap-2 text-xs"
+                >
+                  <Checkbox
+                    checked={tableCols.includes(key)}
+                    onCheckedChange={() => onToggleTableColumn(key)}
+                  />
+                  {t(TABLE_COLUMN_LABEL[key])}
+                </label>
+              ))}
+            </div>
           </section>
 
           <div className="flex justify-end gap-2 pt-2">
@@ -292,5 +375,122 @@ export function ManageStagesDialog({ stages: initialStages, onClose }: Props) {
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+interface SortableStageRowProps {
+  stage: KanbanStage;
+  busy: boolean;
+  editing: boolean;
+  stageTypeLabel: string;
+  onToggleEditing: () => void;
+  onUpdateColor: (id: string, color: string) => void;
+  onArchive: (id: string) => void;
+  onToggleCardField: (stage: KanbanStage, key: CardFieldKey) => void;
+}
+
+function SortableStageRow({
+  stage: s,
+  busy,
+  editing,
+  stageTypeLabel,
+  onToggleEditing,
+  onUpdateColor,
+  onArchive,
+  onToggleCardField,
+}: SortableStageRowProps) {
+  const t = useTranslations("Admissions");
+  const stageFields = new Set(resolveCardFields(s.cardFields));
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: s.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={isDragging ? "relative z-10 bg-background opacity-80" : ""}
+    >
+      <div className="flex items-center gap-2 px-3 py-2">
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          disabled={busy}
+          className="shrink-0 cursor-grab rounded text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing disabled:cursor-not-allowed"
+          aria-label={t("dragStage")}
+          title={t("dragStage")}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <ColorPicker
+          size="sm"
+          value={s.color}
+          onChange={(v) => onUpdateColor(s.id, v ?? "#94A3B8")}
+          disabled={busy}
+        />
+        <div className="flex-1">
+          <div className="text-sm font-medium">{s.name}</div>
+          <div className="text-[10px] text-muted-foreground">{s.slug}</div>
+        </div>
+        <Badge variant="outline" className="text-[10px]">
+          {stageTypeLabel}
+        </Badge>
+        {s.isDefault && (
+          <Badge variant="secondary" className="text-[10px]">
+            {t("stageDefault")}
+          </Badge>
+        )}
+        <Button
+          size="icon"
+          variant={editing ? "secondary" : "ghost"}
+          onClick={onToggleEditing}
+          className="h-7 w-7"
+          aria-label={t("cardFieldsTitle")}
+          title={t("cardFieldsTitle")}
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={() => onArchive(s.id)}
+          disabled={busy}
+          className="h-7 w-7 text-destructive hover:text-destructive"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+      {editing && (
+        <div className="bg-muted/30 px-3 py-3">
+          <p className="mb-2 text-xs text-muted-foreground">
+            {t("cardFieldsHint")}
+          </p>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+            {CARD_FIELD_KEYS.map((key) => (
+              <label
+                key={key}
+                className="flex cursor-pointer items-center gap-2 text-xs"
+              >
+                <Checkbox
+                  checked={stageFields.has(key)}
+                  onCheckedChange={() => onToggleCardField(s, key)}
+                />
+                {t(CARD_FIELD_LABEL[key])}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

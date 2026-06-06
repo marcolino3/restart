@@ -18,6 +18,8 @@ const RejectDocument = gql`
       id
       status
       rejectionReason
+      rejectionReasonId
+      rejectedBy
     }
   }
 `;
@@ -55,6 +57,8 @@ export const archiveApplicationAction = async (id: string) => {
 export const rejectApplicationAction = async (input: {
   id: string;
   reason?: string;
+  rejectionReasonId?: string;
+  rejectedBy?: "SCHOOL" | "PARENTS" | "OTHER";
 }) => {
   const client = await serverCookieGqlClient();
   try {

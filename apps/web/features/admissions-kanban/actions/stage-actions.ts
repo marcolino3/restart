@@ -15,6 +15,7 @@ const CreateDocument = gql`
       position
       stageType
       isDefault
+      cardFields
     }
   }
 `;
@@ -29,6 +30,7 @@ const UpdateDocument = gql`
       position
       stageType
       isDefault
+      cardFields
     }
   }
 `;
@@ -61,6 +63,7 @@ export type CreateStageInput = {
     | null;
   isDefault?: boolean;
   position?: number;
+  cardFields?: string[];
 };
 
 export const createAdmissionStageAction = async (input: CreateStageInput) => {
@@ -97,6 +100,7 @@ export type UpdateStageInput = {
     | "REJECTED"
     | null;
   isDefault?: boolean;
+  cardFields?: string[];
 };
 
 export const updateAdmissionStageAction = async (input: UpdateStageInput) => {

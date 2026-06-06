@@ -16,10 +16,14 @@ import { TeamMember } from '@/employee-management/team-members/entities/team-mem
 import { Team } from '@/employee-management/teams/entities/team.entity';
 import { TimeTracking } from '@/employee-management/time-tracking/entities/time-tracking.entity';
 import { AdmissionStage } from '@/school-management/admission-stages/entities/admission-stage.entity';
+import { AdmissionRejectionReason } from '@/school-management/admission-rejection-reasons/entities/admission-rejection-reason.entity';
+import { AdmissionBoardSettings } from '@/school-management/admission-board-settings/entities/admission-board-settings.entity';
 import { AdmissionActivity } from '@/school-management/admissions/entities/admission-activity.entity';
 import { AdmissionApplication } from '@/school-management/admissions/entities/admission-application.entity';
 import { AdmissionAuditLog } from '@/school-management/admissions/entities/admission-audit-log.entity';
+import { AdmissionEmail } from '@/school-management/admissions/entities/admission-email.entity';
 import { AdmissionReminder } from '@/school-management/admissions/entities/admission-reminder.entity';
+import { EmailTemplate } from '@/school-management/admissions/entities/email-template.entity';
 import { ContactPerson } from '@/school-management/contact-persons/entities/contact-person.entity';
 import { StudentContactPerson } from '@/school-management/contact-persons/entities/student-contact-person.entity';
 import { Family } from '@/school-management/families/entities/family.entity';
@@ -77,10 +81,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       Student,
       StudentNote,
       AdmissionStage,
+      AdmissionRejectionReason,
+      AdmissionBoardSettings,
       AdmissionApplication,
       AdmissionAuditLog,
       AdmissionActivity,
       AdmissionReminder,
+      AdmissionEmail,
+      EmailTemplate,
       ContactPerson,
       StudentContactPerson,
       Family,
