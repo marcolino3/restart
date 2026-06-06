@@ -115,10 +115,26 @@ export class TeamsService {
         'One or more teams not found in this organization',
       );
     }
+
+    // Optional re-parenting of the whole group (drag-to-nest). undefined keeps
+    // the existing parents (pure reorder); null moves the group to root; an id
+    // nests the group under that team — validated and cycle-checked first.
+    const reparent = input.parentId !== undefined;
+    const nextParentId = input.parentId ?? null;
+    if (reparent && nextParentId !== null) {
+      await this.assertParentInOrg(nextParentId, organizationId);
+      for (const id of input.ids) {
+        await this.assertNoCycle(id, nextParentId, organizationId);
+      }
+    }
+
     const byId = new Map(teams.map((t) => [t.id, t]));
     const toSave = input.ids.map((id, index) => {
       const team = byId.get(id)!;
       team.sortOrder = index;
+      if (reparent) {
+        team.parentId = nextParentId;
+      }
       return team;
     });
     await this.teamsRepo.save(toSave);

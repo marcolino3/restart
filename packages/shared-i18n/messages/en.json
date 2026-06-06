@@ -805,7 +805,22 @@
     "status": "Status",
     "statusActive": "Active",
     "statusInactive": "Inactive",
-    "role": "Role"
+    "role": "Role",
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all",
+    "addSubteam": "Add sub-team",
+    "subteamNamePlaceholder": "Sub-team name...",
+    "teamMoved": "Team moved",
+    "moveError": "Could not move team",
+    "rootLevel": "Top level",
+    "dropOnRowHint": "Drop onto a team to nest it, or between teams to reorder.",
+    "roleLead": "Lead",
+    "roleMember": "Member",
+    "changeRole": "Change role",
+    "makeLead": "Make lead",
+    "makeMember": "Make member",
+    "roleUpdated": "Role updated",
+    "roleUpdateError": "Could not update role"
   },
   "GradeLevels": {
     "gradeLevels": "Grade Levels",

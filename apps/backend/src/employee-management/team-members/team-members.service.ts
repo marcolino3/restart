@@ -46,7 +46,13 @@ export class TeamMembersService {
   async findAllByOrgId(organizationId: string): Promise<TeamMember[]> {
     return this.teamMemberRepo.find({
       where: { organizationId, isActive: true },
-      relations: ['team', 'employee'],
+      // Employee.membership is a non-nullable GraphQL field, so the nested
+      // membership -> user -> userEmails chain must be eagerly loaded or the
+      // query fails with "Cannot return null for non-nullable field".
+      relations: {
+        team: true,
+        employee: { membership: { user: { userEmails: true } } },
+      },
     });
   }
 
@@ -56,7 +62,9 @@ export class TeamMembersService {
   ): Promise<TeamMember[]> {
     return this.teamMemberRepo.find({
       where: { organizationId, teamId, isActive: true },
-      relations: ['employee'],
+      relations: {
+        employee: { membership: { user: { userEmails: true } } },
+      },
     });
   }
 

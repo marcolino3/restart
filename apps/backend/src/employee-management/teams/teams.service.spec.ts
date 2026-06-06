@@ -160,6 +160,79 @@ describe('TeamsService', () => {
     });
   });
 
+  describe('reorder', () => {
+    it('sets sortOrder by index and leaves parents unchanged when parentId is omitted', async () => {
+      repo.find.mockResolvedValue([
+        { id: 'a', organizationId: ORG, isActive: true, parentId: 'p' } as Team,
+        { id: 'b', organizationId: ORG, isActive: true, parentId: 'p' } as Team,
+      ]);
+
+      await service.reorder({ ids: ['b', 'a'] }, ORG);
+
+      const saved = repo.save.mock.calls[0][0] as unknown as Team[];
+      expect(saved).toEqual([
+        expect.objectContaining({ id: 'b', sortOrder: 0, parentId: 'p' }),
+        expect.objectContaining({ id: 'a', sortOrder: 1, parentId: 'p' }),
+      ]);
+    });
+
+    it('re-parents the whole group when parentId is provided', async () => {
+      repo.find.mockResolvedValue([
+        { id: 'a', organizationId: ORG, isActive: true } as Team,
+      ]);
+      // assertParentInOrg + assertNoCycle lookups → valid, no cycle.
+      repo.findOne.mockImplementation((args: FindOneArgs) =>
+        Promise.resolve(
+          args.where.id === 'newParent'
+            ? ({ id: 'newParent', organizationId: ORG, isActive: true } as Team)
+            : null,
+        ),
+      );
+
+      await service.reorder({ ids: ['a'], parentId: 'newParent' }, ORG);
+
+      const saved = repo.save.mock.calls[0][0] as unknown as Team[];
+      expect(saved).toEqual([
+        expect.objectContaining({ id: 'a', sortOrder: 0, parentId: 'newParent' }),
+      ]);
+    });
+
+    it('moves the group to root when parentId is null', async () => {
+      repo.find.mockResolvedValue([
+        { id: 'a', organizationId: ORG, isActive: true, parentId: 'p' } as Team,
+      ]);
+
+      await service.reorder({ ids: ['a'], parentId: null }, ORG);
+
+      const saved = repo.save.mock.calls[0][0] as unknown as Team[];
+      expect(saved).toEqual([
+        expect.objectContaining({ id: 'a', sortOrder: 0, parentId: null }),
+      ]);
+    });
+
+    it('rejects re-parenting that would create a cycle', async () => {
+      // Tree: a → b. Dropping a onto b ⇒ cycle.
+      repo.find.mockResolvedValue([
+        { id: 'a', organizationId: ORG, isActive: true } as Team,
+      ]);
+      repo.findOne.mockImplementation((args: FindOneArgs) => {
+        if (args.where.id === 'b')
+          return Promise.resolve({
+            id: 'b',
+            organizationId: ORG,
+            isActive: true,
+            parentId: 'a',
+          } as Team);
+        return Promise.resolve(null);
+      });
+
+      await expect(
+        service.reorder({ ids: ['a'], parentId: 'b' }, ORG),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repo.save).not.toHaveBeenCalled();
+    });
+  });
+
   describe('remove', () => {
     it('lifts children up to the removed team’s parent before soft-deleting', async () => {
       repo.findOne.mockResolvedValue({

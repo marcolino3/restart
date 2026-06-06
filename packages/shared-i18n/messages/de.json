@@ -805,7 +805,22 @@
     "status": "Status",
     "statusActive": "Aktiv",
     "statusInactive": "Inaktiv",
-    "role": "Rolle"
+    "role": "Rolle",
+    "expandAll": "Alle ausklappen",
+    "collapseAll": "Alle einklappen",
+    "addSubteam": "Unterteam hinzufügen",
+    "subteamNamePlaceholder": "Name des Unterteams...",
+    "teamMoved": "Team verschoben",
+    "moveError": "Team konnte nicht verschoben werden",
+    "rootLevel": "Oberste Ebene",
+    "dropOnRowHint": "Auf ein Team ziehen zum Verschachteln, zwischen Teams zum Sortieren.",
+    "roleLead": "Leitung",
+    "roleMember": "Mitglied",
+    "changeRole": "Rolle ändern",
+    "makeLead": "Als Leitung festlegen",
+    "makeMember": "Als Mitglied festlegen",
+    "roleUpdated": "Rolle aktualisiert",
+    "roleUpdateError": "Rolle konnte nicht aktualisiert werden"
   },
   "GradeLevels": {
     "gradeLevels": "Stufen",

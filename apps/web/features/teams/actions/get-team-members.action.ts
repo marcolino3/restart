@@ -3,8 +3,11 @@
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
 
+export type TeamMemberRole = "MEMBER" | "LEAD";
+
 export type TeamMemberItem = {
   id: string;
+  role: TeamMemberRole;
   employee: {
     id: string;
     isActive: boolean;
@@ -25,6 +28,7 @@ const Document = gql`
   query GetTeamMembers($teamId: ID!) {
     teamMembersByTeamId(teamId: $teamId) {
       id
+      role
       employee {
         id
         isActive

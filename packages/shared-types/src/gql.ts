@@ -157,14 +157,15 @@ type Documents = {
     "\n  query GetStudents {\n    studentsByOrgId {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      gender\n      enrollmentDate\n      exitDate\n      isActive\n    }\n  }\n": typeof types.GetStudentsDocument,
     "\n  mutation UpdateEnrollment($input: UpdateSchoolClassEnrollmentInput!) {\n    updateEnrollment(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateEnrollmentDocument,
     "\n  mutation UpdateStudent($input: UpdateStudentInput!) {\n    updateStudent(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateStudentDocument,
-    "\n  mutation AddTeamMember($input: CreateTeamMemberInput!) {\n    createTeamMember(input: $input) {\n      id\n    }\n  }\n": typeof types.AddTeamMemberDocument,
-    "\n  mutation CreateTeam($input: CreateTeamInput!) {\n    createTeam(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n": typeof types.CreateTeamDocument,
+    "\n  mutation AddTeamMember($input: CreateTeamMemberInput!) {\n    createTeamMember(input: $input) {\n      id\n      role\n    }\n  }\n": typeof types.AddTeamMemberDocument,
+    "\n  mutation CreateTeam($input: CreateTeamInput!) {\n    createTeam(input: $input) {\n      id\n      name\n      sortOrder\n      parentId\n    }\n  }\n": typeof types.CreateTeamDocument,
     "\n  mutation DeleteTeam($id: ID!) {\n    deleteTeam(id: $id)\n  }\n": typeof types.DeleteTeamDocument,
     "\n  query GetTeamById($id: ID!) {\n    teamById(id: $id) {\n      id\n      name\n    }\n  }\n": typeof types.GetTeamByIdDocument,
-    "\n  query GetTeamMembers($teamId: ID!) {\n    teamMembersByTeamId(teamId: $teamId) {\n      id\n      employee {\n        id\n        isActive\n        membership {\n          user {\n            id\n            firstName\n            lastName\n            userEmails {\n              email\n              isPrimary\n            }\n          }\n        }\n      }\n    }\n  }\n": typeof types.GetTeamMembersDocument,
-    "\n  query GetTeams {\n    teamsByOrgId {\n      id\n      name\n      sortOrder\n    }\n  }\n": typeof types.GetTeamsDocument,
+    "\n  query GetTeamMembers($teamId: ID!) {\n    teamMembersByTeamId(teamId: $teamId) {\n      id\n      role\n      employee {\n        id\n        isActive\n        membership {\n          user {\n            id\n            firstName\n            lastName\n            userEmails {\n              email\n              isPrimary\n            }\n          }\n        }\n      }\n    }\n  }\n": typeof types.GetTeamMembersDocument,
+    "\n  query GetTeams {\n    teamsByOrgId {\n      id\n      name\n      sortOrder\n      parentId\n    }\n  }\n": typeof types.GetTeamsDocument,
     "\n  mutation RemoveTeamMember($id: ID!) {\n    deleteTeamMember(id: $id)\n  }\n": typeof types.RemoveTeamMemberDocument,
-    "\n  mutation ReorderTeams($input: ReorderTeamsInput!) {\n    reorderTeams(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n": typeof types.ReorderTeamsDocument,
+    "\n  mutation ReorderTeams($input: ReorderTeamsInput!) {\n    reorderTeams(input: $input) {\n      id\n      name\n      sortOrder\n      parentId\n    }\n  }\n": typeof types.ReorderTeamsDocument,
+    "\n  mutation UpdateTeamMemberRole($input: UpdateTeamMemberInput!) {\n    updateTeamMember(input: $input) {\n      id\n      role\n    }\n  }\n": typeof types.UpdateTeamMemberRoleDocument,
     "\n  mutation UpdateTeam($input: UpdateTeamInput!) {\n    updateTeam(input: $input) {\n      id\n      name\n    }\n  }\n": typeof types.UpdateTeamDocument,
     "\n  mutation AddUserEmail($userId: ID!, $email: String!) {\n    addUserEmail(userId: $userId, email: $email) {\n      id\n      email\n      isPrimary\n      isVerified\n    }\n  }\n": typeof types.AddUserEmailDocument,
     "\n  mutation CreateUser($createUserInput: CreateUserInput!) {\n    createUser(createUserInput: $createUserInput) {\n      id\n    }\n  }\n": typeof types.CreateUserDocument,
@@ -320,14 +321,15 @@ const documents: Documents = {
     "\n  query GetStudents {\n    studentsByOrgId {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      gender\n      enrollmentDate\n      exitDate\n      isActive\n    }\n  }\n": types.GetStudentsDocument,
     "\n  mutation UpdateEnrollment($input: UpdateSchoolClassEnrollmentInput!) {\n    updateEnrollment(input: $input) {\n      id\n    }\n  }\n": types.UpdateEnrollmentDocument,
     "\n  mutation UpdateStudent($input: UpdateStudentInput!) {\n    updateStudent(input: $input) {\n      id\n    }\n  }\n": types.UpdateStudentDocument,
-    "\n  mutation AddTeamMember($input: CreateTeamMemberInput!) {\n    createTeamMember(input: $input) {\n      id\n    }\n  }\n": types.AddTeamMemberDocument,
-    "\n  mutation CreateTeam($input: CreateTeamInput!) {\n    createTeam(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n": types.CreateTeamDocument,
+    "\n  mutation AddTeamMember($input: CreateTeamMemberInput!) {\n    createTeamMember(input: $input) {\n      id\n      role\n    }\n  }\n": types.AddTeamMemberDocument,
+    "\n  mutation CreateTeam($input: CreateTeamInput!) {\n    createTeam(input: $input) {\n      id\n      name\n      sortOrder\n      parentId\n    }\n  }\n": types.CreateTeamDocument,
     "\n  mutation DeleteTeam($id: ID!) {\n    deleteTeam(id: $id)\n  }\n": types.DeleteTeamDocument,
     "\n  query GetTeamById($id: ID!) {\n    teamById(id: $id) {\n      id\n      name\n    }\n  }\n": types.GetTeamByIdDocument,
-    "\n  query GetTeamMembers($teamId: ID!) {\n    teamMembersByTeamId(teamId: $teamId) {\n      id\n      employee {\n        id\n        isActive\n        membership {\n          user {\n            id\n            firstName\n            lastName\n            userEmails {\n              email\n              isPrimary\n            }\n          }\n        }\n      }\n    }\n  }\n": types.GetTeamMembersDocument,
-    "\n  query GetTeams {\n    teamsByOrgId {\n      id\n      name\n      sortOrder\n    }\n  }\n": types.GetTeamsDocument,
+    "\n  query GetTeamMembers($teamId: ID!) {\n    teamMembersByTeamId(teamId: $teamId) {\n      id\n      role\n      employee {\n        id\n        isActive\n        membership {\n          user {\n            id\n            firstName\n            lastName\n            userEmails {\n              email\n              isPrimary\n            }\n          }\n        }\n      }\n    }\n  }\n": types.GetTeamMembersDocument,
+    "\n  query GetTeams {\n    teamsByOrgId {\n      id\n      name\n      sortOrder\n      parentId\n    }\n  }\n": types.GetTeamsDocument,
     "\n  mutation RemoveTeamMember($id: ID!) {\n    deleteTeamMember(id: $id)\n  }\n": types.RemoveTeamMemberDocument,
-    "\n  mutation ReorderTeams($input: ReorderTeamsInput!) {\n    reorderTeams(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n": types.ReorderTeamsDocument,
+    "\n  mutation ReorderTeams($input: ReorderTeamsInput!) {\n    reorderTeams(input: $input) {\n      id\n      name\n      sortOrder\n      parentId\n    }\n  }\n": types.ReorderTeamsDocument,
+    "\n  mutation UpdateTeamMemberRole($input: UpdateTeamMemberInput!) {\n    updateTeamMember(input: $input) {\n      id\n      role\n    }\n  }\n": types.UpdateTeamMemberRoleDocument,
     "\n  mutation UpdateTeam($input: UpdateTeamInput!) {\n    updateTeam(input: $input) {\n      id\n      name\n    }\n  }\n": types.UpdateTeamDocument,
     "\n  mutation AddUserEmail($userId: ID!, $email: String!) {\n    addUserEmail(userId: $userId, email: $email) {\n      id\n      email\n      isPrimary\n      isVerified\n    }\n  }\n": types.AddUserEmailDocument,
     "\n  mutation CreateUser($createUserInput: CreateUserInput!) {\n    createUser(createUserInput: $createUserInput) {\n      id\n    }\n  }\n": types.CreateUserDocument,
@@ -929,11 +931,11 @@ export function graphql(source: "\n  mutation UpdateStudent($input: UpdateStuden
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  mutation AddTeamMember($input: CreateTeamMemberInput!) {\n    createTeamMember(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation AddTeamMember($input: CreateTeamMemberInput!) {\n    createTeamMember(input: $input) {\n      id\n    }\n  }\n"];
+export function graphql(source: "\n  mutation AddTeamMember($input: CreateTeamMemberInput!) {\n    createTeamMember(input: $input) {\n      id\n      role\n    }\n  }\n"): (typeof documents)["\n  mutation AddTeamMember($input: CreateTeamMemberInput!) {\n    createTeamMember(input: $input) {\n      id\n      role\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  mutation CreateTeam($input: CreateTeamInput!) {\n    createTeam(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n"): (typeof documents)["\n  mutation CreateTeam($input: CreateTeamInput!) {\n    createTeam(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n"];
+export function graphql(source: "\n  mutation CreateTeam($input: CreateTeamInput!) {\n    createTeam(input: $input) {\n      id\n      name\n      sortOrder\n      parentId\n    }\n  }\n"): (typeof documents)["\n  mutation CreateTeam($input: CreateTeamInput!) {\n    createTeam(input: $input) {\n      id\n      name\n      sortOrder\n      parentId\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -945,11 +947,11 @@ export function graphql(source: "\n  query GetTeamById($id: ID!) {\n    teamById
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query GetTeamMembers($teamId: ID!) {\n    teamMembersByTeamId(teamId: $teamId) {\n      id\n      employee {\n        id\n        isActive\n        membership {\n          user {\n            id\n            firstName\n            lastName\n            userEmails {\n              email\n              isPrimary\n            }\n          }\n        }\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetTeamMembers($teamId: ID!) {\n    teamMembersByTeamId(teamId: $teamId) {\n      id\n      employee {\n        id\n        isActive\n        membership {\n          user {\n            id\n            firstName\n            lastName\n            userEmails {\n              email\n              isPrimary\n            }\n          }\n        }\n      }\n    }\n  }\n"];
+export function graphql(source: "\n  query GetTeamMembers($teamId: ID!) {\n    teamMembersByTeamId(teamId: $teamId) {\n      id\n      role\n      employee {\n        id\n        isActive\n        membership {\n          user {\n            id\n            firstName\n            lastName\n            userEmails {\n              email\n              isPrimary\n            }\n          }\n        }\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetTeamMembers($teamId: ID!) {\n    teamMembersByTeamId(teamId: $teamId) {\n      id\n      role\n      employee {\n        id\n        isActive\n        membership {\n          user {\n            id\n            firstName\n            lastName\n            userEmails {\n              email\n              isPrimary\n            }\n          }\n        }\n      }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query GetTeams {\n    teamsByOrgId {\n      id\n      name\n      sortOrder\n    }\n  }\n"): (typeof documents)["\n  query GetTeams {\n    teamsByOrgId {\n      id\n      name\n      sortOrder\n    }\n  }\n"];
+export function graphql(source: "\n  query GetTeams {\n    teamsByOrgId {\n      id\n      name\n      sortOrder\n      parentId\n    }\n  }\n"): (typeof documents)["\n  query GetTeams {\n    teamsByOrgId {\n      id\n      name\n      sortOrder\n      parentId\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -957,7 +959,11 @@ export function graphql(source: "\n  mutation RemoveTeamMember($id: ID!) {\n    
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  mutation ReorderTeams($input: ReorderTeamsInput!) {\n    reorderTeams(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n"): (typeof documents)["\n  mutation ReorderTeams($input: ReorderTeamsInput!) {\n    reorderTeams(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n"];
+export function graphql(source: "\n  mutation ReorderTeams($input: ReorderTeamsInput!) {\n    reorderTeams(input: $input) {\n      id\n      name\n      sortOrder\n      parentId\n    }\n  }\n"): (typeof documents)["\n  mutation ReorderTeams($input: ReorderTeamsInput!) {\n    reorderTeams(input: $input) {\n      id\n      name\n      sortOrder\n      parentId\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateTeamMemberRole($input: UpdateTeamMemberInput!) {\n    updateTeamMember(input: $input) {\n      id\n      role\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateTeamMemberRole($input: UpdateTeamMemberInput!) {\n    updateTeamMember(input: $input) {\n      id\n      role\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 import { getTeamsAction } from "@/features/teams/actions/get-teams.action";
-import { TeamsTable } from "@/features/teams/components/TeamsTable";
+import { TeamsHierarchyTree } from "@/features/teams/components/TeamsHierarchyTree";
 
 const TeamsPage = async () => {
   const t = await getTranslations("Teams");
@@ -27,7 +27,7 @@ const TeamsPage = async () => {
           {t("teamsDescription")}
         </p>
       </div>
-      <TeamsTable initialTeams={teams} />
+      <TeamsHierarchyTree initialTeams={teams} />
     </div>
   );
 };
