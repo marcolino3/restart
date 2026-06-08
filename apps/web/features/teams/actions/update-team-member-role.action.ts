@@ -7,29 +7,29 @@ import { gql } from "graphql-request";
 import type { TeamMemberRole } from "./get-team-members.action";
 
 const Document = gql`
-  mutation AddTeamMember($input: CreateTeamMemberInput!) {
-    createTeamMember(input: $input) {
+  mutation UpdateTeamMemberRole($input: UpdateTeamMemberInput!) {
+    updateTeamMember(input: $input) {
       id
       role
     }
   }
 `;
 
-type Response = { createTeamMember: { id: string; role: TeamMemberRole } };
+type Response = { updateTeamMember: { id: string; role: TeamMemberRole } };
 
-export const addTeamMemberAction = async (input: {
+export const updateTeamMemberRoleAction = async (input: {
+  id: string;
+  role: TeamMemberRole;
   teamId: string;
-  employeeId: string;
-  role?: TeamMemberRole;
 }) => {
   const locale = await getLocale();
   const client = await serverCookieGqlClient();
   try {
-    const { createTeamMember } = await client.request<Response>(Document, {
-      input,
+    const { updateTeamMember } = await client.request<Response>(Document, {
+      input: { id: input.id, role: input.role },
     });
     revalidatePath(`/${locale}/admin/teams/${input.teamId}`);
-    return { success: true as const, data: createTeamMember };
+    return { success: true as const, data: updateTeamMember };
   } catch (error) {
     console.error(error);
     return { success: false as const, error };

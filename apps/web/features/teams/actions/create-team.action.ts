@@ -11,20 +11,29 @@ const Document = gql`
       id
       name
       sortOrder
+      parentId
     }
   }
 `;
 
 type Response = {
-  createTeam: { id: string; name: string; sortOrder: number };
+  createTeam: {
+    id: string;
+    name: string;
+    sortOrder: number;
+    parentId: string | null;
+  };
 };
 
-export const createTeamAction = async (name: string) => {
+export const createTeamAction = async (
+  name: string,
+  parentId?: string | null,
+) => {
   const locale = await getLocale();
   const client = await serverCookieGqlClient();
   try {
     const { createTeam } = await client.request<Response>(Document, {
-      input: { name },
+      input: parentId ? { name, parentId } : { name },
     });
     revalidatePath(`/${locale}/admin/teams`);
     return { success: true as const, data: createTeam };

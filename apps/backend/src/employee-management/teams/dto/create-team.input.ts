@@ -1,5 +1,11 @@
-import { Field, InputType } from '@nestjs/graphql';
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { Field, ID, InputType } from '@nestjs/graphql';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 
 @InputType()
 export class CreateTeamInput {
@@ -8,4 +14,10 @@ export class CreateTeamInput {
   @IsNotEmpty()
   @MaxLength(120)
   name: string;
+
+  // Optional parent team for nesting. Must belong to the same organization.
+  @Field(() => ID, { nullable: true })
+  @IsOptional()
+  @IsUUID()
+  parentId?: string | null;
 }

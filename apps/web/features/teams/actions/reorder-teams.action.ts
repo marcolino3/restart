@@ -12,18 +12,28 @@ const Document = gql`
       id
       name
       sortOrder
+      parentId
     }
   }
 `;
 
 type Response = { reorderTeams: TeamItem[] };
 
-export const reorderTeamsAction = async (ids: string[]) => {
+/**
+ * Reorder one sibling group. Pass `parentId` to also re-parent the whole group
+ * (drag-to-nest): `undefined` leaves parents untouched, `null` moves to root,
+ * an id nests the group under that team.
+ */
+export const reorderTeamsAction = async (
+  ids: string[],
+  parentId?: string | null,
+) => {
   const locale = await getLocale();
   const client = await serverCookieGqlClient();
   try {
+    const input = parentId === undefined ? { ids } : { ids, parentId };
     const { reorderTeams } = await client.request<Response>(Document, {
-      input: { ids },
+      input,
     });
     revalidatePath(`/${locale}/admin/teams`);
     return { success: true as const, data: reorderTeams };

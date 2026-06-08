@@ -12,6 +12,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { ComboboxFormField } from "@/components/form/form-fields/ComboboxFormField";
+import { SelectFormFieldWithoutTranslations } from "@/components/form/form-fields/SelectFormFieldWithoutTranslations";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -35,7 +43,10 @@ import { ROUTES } from "@/constants/routes";
 import { z } from "zod";
 
 import type { TeamDetail } from "../actions/get-team-by-id.action";
-import type { TeamMemberItem } from "../actions/get-team-members.action";
+import type {
+  TeamMemberItem,
+  TeamMemberRole,
+} from "../actions/get-team-members.action";
 import type { EmployeeListItem } from "@/features/employees/actions/get-employees.action";
 import {
   TeamFormSchema,
@@ -45,9 +56,11 @@ import { updateTeamAction } from "../actions/update-team.action";
 import { deleteTeamAction } from "../actions/delete-team.action";
 import { addTeamMemberAction } from "../actions/add-team-member.action";
 import { removeTeamMemberAction } from "../actions/remove-team-member.action";
+import { updateTeamMemberRoleAction } from "../actions/update-team-member-role.action";
 
 const AddMemberSchema = z.object({
   employeeId: z.string().uuid(),
+  role: z.enum(["MEMBER", "LEAD"]),
 });
 type AddMemberType = z.infer<typeof AddMemberSchema>;
 
@@ -97,6 +110,21 @@ export function TeamDetailView({ team, initialMembers, employees }: Props) {
       errorMessage: t("memberRemoveError"),
       onSuccess: () => router.refresh(),
     }).catch(() => setMembers(previous));
+  };
+
+  const onChangeRole = async (memberId: string, role: TeamMemberRole) => {
+    const previous = members;
+    setMembers((prev) =>
+      prev.map((m) => (m.id === memberId ? { ...m, role } : m)),
+    );
+    const result = await handleAction({
+      action: () =>
+        updateTeamMemberRoleAction({ id: memberId, role, teamId: team.id }),
+      successMessage: t("roleUpdated"),
+      errorMessage: t("roleUpdateError"),
+      onSuccess: () => router.refresh(),
+    });
+    if (!result.success) setMembers(previous);
   };
 
   const memberEmployeeIds = React.useMemo(
@@ -164,6 +192,7 @@ export function TeamDetailView({ team, initialMembers, employees }: Props) {
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("name")}</TableHead>
+                    <TableHead>{t("role")}</TableHead>
                     <TableHead>{t("status")}</TableHead>
                     <TableHead className="w-12">
                       <span className="sr-only">{t("removeMember")}</span>
@@ -202,6 +231,29 @@ export function TeamDetailView({ team, initialMembers, employees }: Props) {
                               )}
                             </div>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            value={m.role}
+                            onValueChange={(value) =>
+                              onChangeRole(m.id, value as TeamMemberRole)
+                            }
+                          >
+                            <SelectTrigger
+                              className="h-8 w-[140px]"
+                              aria-label={t("changeRole")}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="LEAD">
+                                {t("roleLead")}
+                              </SelectItem>
+                              <SelectItem value="MEMBER">
+                                {t("roleMember")}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -294,7 +346,7 @@ function AddMemberDialog({
 
   const form = useForm<AddMemberType>({
     resolver: zodResolver(AddMemberSchema),
-    defaultValues: { employeeId: "" },
+    defaultValues: { employeeId: "", role: "MEMBER" },
   });
 
   const onSubmit = async (values: AddMemberType) => {
@@ -303,13 +355,18 @@ function AddMemberDialog({
     );
     await handleAction({
       action: () =>
-        addTeamMemberAction({ teamId, employeeId: values.employeeId }),
+        addTeamMemberAction({
+          teamId,
+          employeeId: values.employeeId,
+          role: values.role,
+        }),
       successMessage: t("memberAdded"),
       errorMessage: t("memberAddError"),
       onSuccess: (data) => {
         if (data && selected) {
           onAdded({
             id: data.id,
+            role: data.role,
             employee: {
               id: values.employeeId,
               isActive: selected.membership.employee?.isActive ?? true,
@@ -341,6 +398,14 @@ function AddMemberDialog({
               options={options}
               translateOptions={false}
               width="w-full"
+            />
+            <SelectFormFieldWithoutTranslations
+              name="role"
+              label={t("role")}
+              options={[
+                { value: "MEMBER", label: t("roleMember") },
+                { value: "LEAD", label: t("roleLead") },
+              ]}
             />
           </form>
         </Form>

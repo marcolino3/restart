@@ -7,6 +7,7 @@ export type TeamItem = {
   id: string;
   name: string;
   sortOrder: number;
+  parentId: string | null;
 };
 
 type Response = { teamsByOrgId: TeamItem[] };
@@ -17,6 +18,7 @@ const Document = gql`
       id
       name
       sortOrder
+      parentId
     }
   }
 `;
