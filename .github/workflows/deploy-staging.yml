@@ -92,6 +92,11 @@ jobs:
           ignore-unfixed: true
           format: "sarif"
           output: "trivy-backend.sarif"
+          # WICHTIG: Ohne dies erzwingt format=sarif intern ALLE Severities
+          # ("Building SARIF report with all severities"), wodurch exit-code=1
+          # auf JEDE Vuln (auch HIGH/MEDIUM) feuert — der Deploy bricht dann ab,
+          # obwohl 0 CRITICAL im Image sind. true koppelt die SARIF an `severity`.
+          limit-severities-for-sarif: true
 
       - name: Scan frontend image with Trivy
         uses: aquasecurity/trivy-action@v0.36.0
@@ -103,6 +108,9 @@ jobs:
           ignore-unfixed: true
           format: "sarif"
           output: "trivy-frontend.sarif"
+          # Siehe Backend-Scan: ohne dies gated der „CRITICAL"-Scan faktisch
+          # auf alle Severities.
+          limit-severities-for-sarif: true
 
       - name: Upload backend image scan results
         if: always()
