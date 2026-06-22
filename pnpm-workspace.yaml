@@ -2,3 +2,11 @@ packages:
   - "apps/*"
   - "packages/*"
   - "e2e"
+
+# Security overrides — force fixed versions of transitive deps with no
+# direct upgrade path. Document the CVE so the pin can be removed once the
+# parent package ships the fix upstream.
+overrides:
+  # CVE-2026-9277 (CRITICAL): arbitrary code execution via command injection.
+  # Pulled transitively via concurrently (apps/web devDep). Fixed in 1.8.4.
+  shell-quote: ">=1.8.4"
