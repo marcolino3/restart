@@ -4,9 +4,31 @@ packages:
   - "e2e"
 
 # Security overrides — force fixed versions of transitive deps with no
-# direct upgrade path. Document the CVE so the pin can be removed once the
-# parent package ships the fix upstream.
+# direct upgrade path. These clear the Trivy CRITICAL gate and the
+# `pnpm audit --prod --audit-level=high` gate. Range-scoped where a package
+# has multiple live major lines, so we only bump to the patched release
+# within each major instead of forcing a major upgrade on a consumer.
+# Remove a pin once the parent package ships the fix upstream.
 overrides:
   # CVE-2026-9277 (CRITICAL): arbitrary code execution via command injection.
-  # Pulled transitively via concurrently (apps/web devDep). Fixed in 1.8.4.
+  # Transitive via concurrently (apps/web devDep). Fixed in 1.8.4.
   shell-quote: ">=1.8.4"
+  # GHSA-hmw2-7cc7-3qxx (HIGH): CRLF injection. Transitive via
+  # @googlemaps/google-maps-services-js > axios. Fixed in 4.0.6.
+  form-data: "^4.0.6"
+  # NB: vite is NOT pinned here — it enters as an auto-installed *peer* of
+  # vitest (better-auth's optional peer), and pnpm overrides do not apply to
+  # auto-installed peers. It is pinned to ^8.0.16 as a direct devDependency in
+  # apps/web instead (fixes vite server.fs.deny bypass, HIGH).
+  # Multer DoS via deeply nested fields (HIGH). Transitive via
+  # @nestjs/platform-express. Fixed in 2.2.0.
+  multer: "^2.2.0"
+  # GHSA-96hv-2xvq-fx4p (HIGH): ws memory-exhaustion DoS. Transitive via the
+  # better-auth Expo plugin's CLI tooling. Caret target keeps each major line.
+  "ws@>=8.0.0 <8.21.0": "^8.21.0"
+  "ws@>=7.0.0 <7.5.11": "^7.5.11"
+  "ws@>=6.0.0 <6.2.4": "^6.2.4"
+  # undici HIGH advisories (TLS validation bypass / WebSocket DoS / request
+  # routing). Transitive via better-auth & node fetch. Caret keeps each major.
+  "undici@>=7.0.0 <7.28.0": "^7.28.0"
+  "undici@>=6.0.0 <6.27.0": "^6.27.0"
