@@ -57,7 +57,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push backend image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./apps/backend/Dockerfile
@@ -67,7 +67,7 @@ jobs:
             ${{ env.BACKEND_IMAGE }}:latest
 
       - name: Build and push frontend image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./apps/web/Dockerfile
