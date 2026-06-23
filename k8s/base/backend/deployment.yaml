@@ -43,6 +43,15 @@ spec:
                 name: backend-config
             - secretRef:
                 name: backend-secrets
+          # Fail-safe: `synchronize` darf in den k8s-Umgebungen NIE an sein
+          # (Schema läuft nur über Migrationen). Ein expliziter `env`-Eintrag
+          # gewinnt in Kubernetes IMMER über `envFrom` — so kann weder eine
+          # veraltete ConfigMap noch ein driftendes Secret DB_SYNCHRONIZE=true
+          # durchschmuggeln. Der app.module-Guard bliebe sonst der einzige
+          # Schutz und bricht den Boot hart ab (CrashLoop).
+          env:
+            - name: DB_SYNCHRONIZE
+              value: "false"
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

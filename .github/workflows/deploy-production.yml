@@ -254,6 +254,16 @@ jobs:
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
 
+      # GitOps-Sync wie im Staging-Deploy: ConfigMaps/Secrets/Manifeste auf den
+      # Repo-Stand bringen, BEVOR das Image gepinnt wird — sonst driften
+      # Config/Secrets (z.B. DB_SYNCHRONIZE) ungebremst. `apply -k` ist
+      # idempotent; `set image` direkt danach pinnt den exakten Promotion-SHA.
+      # HINWEIS: Vor dem ersten echten Prod-Deploy muss k8s/production
+      # bootstrapped sein (DB_HOST gesetzt, SealedSecrets einkommentiert),
+      # siehe DEPLOYMENT.md — sonst rendert/appliziert dieser Schritt Platzhalter.
+      - name: Sync manifests (kustomize)
+        run: kubectl apply -k k8s/production
+
       - name: Deploy to production
         env:
           TAG: ${{ needs.resolve.outputs.image_tag }}
