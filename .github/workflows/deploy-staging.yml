@@ -222,6 +222,8 @@ jobs:
       packages: write
 
     steps:
+      - uses: actions/checkout@v6
+
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
 
@@ -229,6 +231,16 @@ jobs:
         run: |
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+
+      # GitOps-Sync: ConfigMaps/Secrets/Manifeste auf den Repo-Stand bringen,
+      # BEVOR das Image gepinnt wird. Bisher deployte der Workflow nur das Image
+      # (set image), wodurch Config-/Secret-Änderungen nie ankamen — genau so
+      # blieb DB_SYNCHRONIZE=true im Cluster und liess jeden neuen Pod im Boot
+      # crashen. `apply -k` ist idempotent; das Deployment erhält hier kurz den
+      # Base-:latest-Tag, der direkt danach von `set image` auf den exakten SHA
+      # überschrieben wird.
+      - name: Sync manifests (kustomize)
+        run: kubectl apply -k k8s/staging
 
       - name: Deploy to staging
         run: |
