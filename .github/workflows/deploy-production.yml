@@ -146,6 +146,9 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     if: ${{ !inputs.skip_migrations }}
+    permissions:
+      contents: read
+      packages: read # GITHUB_TOKEN darf die privaten GHCR-Images pullen (Fallback)
 
     steps:
       - uses: actions/checkout@v6
@@ -159,21 +162,30 @@ jobs:
           echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
 
       # Siehe deploy-staging.yml: privater GHCR-Pull braucht ghcr-secret.
-      # Bei jedem Deploy frisch aus dem PAT (read:packages) erzeugt.
+      # Bevorzugt GHCR_PULL_TOKEN (langlebiger PAT, read:packages), sonst
+      # Fallback auf den eingebauten GITHUB_TOKEN (job hat packages:read).
+      # Für Production dringend einen PAT setzen — der GITHUB_TOKEN läuft nach
+      # dem Run ab, sodass spätere Pod-Neustarts/Scale-ups sonst nicht pullen.
       - name: Ensure GHCR image pull secret
         env:
           GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IMAGE_OWNER: ${{ github.repository_owner }}
+          ACTOR: ${{ github.actor }}
         run: |
-          if [ -z "$GHCR_PULL_TOKEN" ]; then
-            echo "::error::GHCR_PULL_TOKEN is not set. Create a classic PAT with read:packages scope and add it as the GHCR_PULL_TOKEN repository secret."
-            exit 1
+          if [ -n "$GHCR_PULL_TOKEN" ]; then
+            TOKEN="$GHCR_PULL_TOKEN"
+            USERNAME="$IMAGE_OWNER"
+          else
+            echo "::warning::GHCR_PULL_TOKEN not set — using the ephemeral GITHUB_TOKEN. For production, add a read:packages PAT as GHCR_PULL_TOKEN so pod restarts/scale-ups keep pulling after the run ends."
+            TOKEN="$GITHUB_TOKEN"
+            USERNAME="$ACTOR"
           fi
-          OWNER_LC=$(echo "$IMAGE_OWNER" | tr '[:upper:]' '[:lower:]')
+          OWNER_LC=$(echo "$USERNAME" | tr '[:upper:]' '[:lower:]')
           kubectl create secret docker-registry ghcr-secret \
             --docker-server=ghcr.io \
             --docker-username="$OWNER_LC" \
-            --docker-password="$GHCR_PULL_TOKEN" \
+            --docker-password="$TOKEN" \
             -n "$NAMESPACE" \
             --dry-run=client -o yaml | kubectl apply -n "$NAMESPACE" -f -
           echo "::notice::ghcr-secret ensured in $NAMESPACE"

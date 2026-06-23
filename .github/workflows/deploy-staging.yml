@@ -131,6 +131,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: needs.build.outputs.has_kubeconfig == 'true'
+    permissions:
+      contents: read
+      packages: read # GITHUB_TOKEN darf die privaten GHCR-Images pullen (Fallback)
 
     steps:
       - uses: actions/checkout@v6
@@ -144,23 +147,33 @@ jobs:
           echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
 
       # Ohne diesen Secret kann der Cluster die privaten GHCR-Images nicht
-      # ziehen (ImagePullBackOff). Bei jedem Deploy frisch aus dem PAT erzeugt,
-      # damit ein abgelaufenes Token sich selbst heilt. GHCR_PULL_TOKEN = classic
-      # PAT mit read:packages, als Repo-Secret hinterlegt.
+      # ziehen (ImagePullBackOff). Bei jedem Deploy frisch erzeugt, damit ein
+      # abgelaufenes Token sich selbst heilt.
+      #  - Bevorzugt GHCR_PULL_TOKEN (langlebiger classic PAT mit read:packages):
+      #    überlebt Pod-Neustarts/Scale-ups auch zwischen Deploys.
+      #  - Fällt sonst auf den eingebauten GITHUB_TOKEN zurück (job hat
+      #    packages:read). Funktioniert für diesen Deploy-Run, läuft aber nach
+      #    Workflow-Ende ab — für restart-resiliente Pulls den PAT hinterlegen.
       - name: Ensure GHCR image pull secret
         env:
           GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IMAGE_OWNER: ${{ github.repository_owner }}
+          ACTOR: ${{ github.actor }}
         run: |
-          if [ -z "$GHCR_PULL_TOKEN" ]; then
-            echo "::error::GHCR_PULL_TOKEN is not set. Create a classic PAT with read:packages scope and add it as the GHCR_PULL_TOKEN repository secret."
-            exit 1
+          if [ -n "$GHCR_PULL_TOKEN" ]; then
+            TOKEN="$GHCR_PULL_TOKEN"
+            USERNAME="$IMAGE_OWNER"
+          else
+            echo "::warning::GHCR_PULL_TOKEN not set — using the ephemeral GITHUB_TOKEN. Pulls work for this deploy but the token expires when the run ends; add a read:packages PAT as GHCR_PULL_TOKEN for restart-resilient pulls."
+            TOKEN="$GITHUB_TOKEN"
+            USERNAME="$ACTOR"
           fi
-          OWNER_LC=$(echo "$IMAGE_OWNER" | tr '[:upper:]' '[:lower:]')
+          OWNER_LC=$(echo "$USERNAME" | tr '[:upper:]' '[:lower:]')
           kubectl create secret docker-registry ghcr-secret \
             --docker-server=ghcr.io \
             --docker-username="$OWNER_LC" \
-            --docker-password="$GHCR_PULL_TOKEN" \
+            --docker-password="$TOKEN" \
             -n "$NAMESPACE" \
             --dry-run=client -o yaml | kubectl apply -n "$NAMESPACE" -f -
           echo "::notice::ghcr-secret ensured in $NAMESPACE"
