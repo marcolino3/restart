@@ -246,6 +246,59 @@ jobs:
           kubectl rollout status deployment/backend -n "$NAMESPACE" --timeout=300s
           kubectl rollout status deployment/frontend -n "$NAMESPACE" --timeout=300s
 
+      # Bei Rollout-Timeout den Cluster-Zustand dumpen, BEVOR der Rollback
+      # (nächster Step) den hängenden Pod samt Events wegräumt. Jeder Befehl
+      # mit `|| true`, damit die Diagnose selbst nie den Job abbricht.
+      # Zielt auf den beobachteten "old replicas pending termination"-Hänger:
+      # deletionTimestamp+finalizers zeigen einen stuck-Terminating-Pod,
+      # Node-Status einen NotReady-Node, Events den Eviction-/Kill-Grund.
+      - name: Diagnose on rollout failure
+        if: failure() && steps.rollout.outcome == 'failure'
+        run: |
+          echo "::group::Pods (wide)"
+          kubectl get pods -n "$NAMESPACE" -o wide || true
+          echo "::endgroup::"
+
+          echo "::group::ReplicaSets"
+          kubectl get rs -n "$NAMESPACE" -o wide || true
+          echo "::endgroup::"
+
+          echo "::group::Deployment backend (describe)"
+          kubectl describe deployment/backend -n "$NAMESPACE" || true
+          echo "::endgroup::"
+
+          echo "::group::Backend pods (describe — Events, State, Conditions)"
+          kubectl describe pods -n "$NAMESPACE" -l app=backend || true
+          echo "::endgroup::"
+
+          echo "::group::Terminating-Check (deletionTimestamp / finalizers / phase)"
+          kubectl get pods -n "$NAMESPACE" -l app=backend \
+            -o jsonpath='{range .items[*]}{.metadata.name}{"  deletionTimestamp="}{.metadata.deletionTimestamp}{"  finalizers="}{.metadata.finalizers}{"  phase="}{.status.phase}{"\n"}{end}' || true
+          echo ""
+          echo "::endgroup::"
+
+          echo "::group::Recent events (last 60)"
+          kubectl get events -n "$NAMESPACE" --sort-by=.lastTimestamp 2>/dev/null | tail -60 || true
+          echo "::endgroup::"
+
+          echo "::group::Nodes (wide + conditions)"
+          kubectl get nodes -o wide || true
+          kubectl describe nodes | grep -A6 -iE "^Name:|Conditions:|MemoryPressure|DiskPressure|Ready " || true
+          echo "::endgroup::"
+
+          echo "::group::PodDisruptionBudgets"
+          kubectl get pdb -n "$NAMESPACE" -o wide || true
+          echo "::endgroup::"
+
+          echo "::group::Backend pod logs (current + previous)"
+          for p in $(kubectl get pods -n "$NAMESPACE" -l app=backend -o name 2>/dev/null); do
+            echo "--- $p (current, tail 60) ---"
+            kubectl logs -n "$NAMESPACE" "$p" --tail=60 || true
+            echo "--- $p (previous, tail 60) ---"
+            kubectl logs -n "$NAMESPACE" "$p" --tail=60 --previous || true
+          done
+          echo "::endgroup::"
+
       - name: Rollback on rollout failure
         if: failure() && steps.rollout.outcome == 'failure'
         run: |
