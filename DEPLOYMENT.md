@@ -354,6 +354,46 @@ curl -s -o /dev/null -w '%{http_code}\n' https://app.colibri-app.ch/api/health  
 # Login + Org-Switch manuell verifizieren.
 ```
 
+### D. Prod-Launch-Checkliste (leicht vergessen, echte Blocker)
+
+Vor / während des ersten Prod-Deploys explizit abhaken:
+
+**🔴 Sonst kommt niemand rein / Prod kaputt**
+- [ ] **OAuth-Redirect-URIs registrieren**: `https://app.colibri-app.ch/...` in der
+      **Google Cloud Console** (Authorized redirect URIs) **und** im **Apple
+      Developer Portal** eintragen — nicht nur in den Secrets. Sonst
+      `redirect_uri_mismatch`, kein OAuth-Login.
+- [ ] **DNS vor TLS**: `app.colibri-app.ch` A-Record → Prod-Ingress-LoadBalancer-IP
+      (`kubectl get svc -n ingress-nginx`), **bevor** cert-manager das
+      Let's-Encrypt-Cert ausstellt (HTTP-01-Challenge braucht erreichbares DNS).
+      DNS bei Hostpoint.
+- [ ] **`SUPERADMIN_EMAIL` + `SUPERADMIN_PASSWORD`** in den Prod-Secrets gesetzt.
+      `SuperAdminBootstrapService` legt den Superadmin **beim App-Boot automatisch**
+      an — fehlen die Werte, wird der Seed übersprungen und **niemand kann rein**.
+- [ ] **Frontend-Secrets** (nicht nur Backend!) für Prod erstellt — siehe
+      `k8s/staging/sealed-secrets/frontend-secrets.yaml` als Key-Vorlage.
+- [ ] **Frontend „build once"**: client-seitige API-/Bild-URLs müssen
+      domain-agnostisch (same-origin) sein, sonst zeigt das promotete Prod-Image
+      auf Staging. (Wird in eigenem PR auf relative `/api`-Pfade umgestellt —
+      bis dahin offener Blocker.)
+
+**🟡 Sicherheitskritisch**
+- [ ] **Eindeutige Prod-Secrets** frisch generieren (NICHT von Staging kopieren):
+      `BETTER_AUTH_SECRET`, `ORG_SETTINGS_ENCRYPTION_KEY`, `DB_PASSWORD`.
+      `ORG_SETTINGS_ENCRYPTION_KEY` muss **stabil bleiben** (ändert er sich, sind
+      verschlüsselte Org-Settings unlesbar).
+- [ ] **Sealing-Keys des Prod-Clusters sichern** (`backup-sealing-keys.sh`)
+      **bevor** die Prod-Secrets versiegelt werden.
+- [ ] **`NODE_ENV=production`** in den Prod-Secrets (sonst greift u. a. die
+      DB-TLS-Logik nicht — siehe B1).
+- [ ] **SMTP/Mailer** für Prod konfiguriert (Admission-E-Mail-Versand).
+
+**🟢 Vor Echtdaten / Betrieb**
+- [ ] **DB-Backup** (Swiss Backup, Postgres-Snapshots) eingerichtet + **Restore-Drill**.
+- [ ] **Monitoring/Alerting** (CH-Self-Host, z. B. GlitchTip + Uptime-Kuma).
+- [ ] **Kosten** im Blick: dedizierter Cluster + Node-Pool + DB-VM + LoadBalancer
+      laufen alle gleichzeitig.
+
 ## Rollback
 
 ```bash
