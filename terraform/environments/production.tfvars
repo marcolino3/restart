@@ -26,6 +26,6 @@ letsencrypt_email = "marco@marranchelli.com"
 # (`terraform workspace new production`) — sonst überschreibt der Apply den
 # Staging-State. Siehe DEPLOYMENT.md.
 infomaniak = {
-  cloud_id   = 0 # TODO: cloud_id des Prod-Projekts (numerisch)
-  project_id = 0 # TODO: numerische project_id von restart-production
+  cloud_id   = 20126 # Public-Cloud-Produkt (geteilt mit Staging; Isolation via separates Projekt + eigenen Cluster)
+  project_id = 43863 # restart-production (OpenStack: PCP-TPSZANM)
 }
