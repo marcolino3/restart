@@ -58,16 +58,25 @@ baut nicht neu, sondern promotet exakt den auf Staging getesteten SHA
 `project_id` des **separaten** Prod-Projekts; Prod wird in einem eigenen
 Terraform-Workspace provisioniert (siehe „Initial Setup → 1." und Runbook B0).
 
-**DB-Entscheidung (2026-06-25):** Production nutzt **Infomaniak Managed
-PostgreSQL (DBaaS, CH)** — nicht die selbst-verwaltete VM wie Staging. Grund:
-automatische Backups + Restore, HA und Wartung durch Infomaniak; bei echten
-Personendaten ist ein getestetes Backup nicht verhandelbar. Extern zum Cluster
-(kein in-Cluster-/CNPG-Routing-Problem). Staging bleibt aus Kostengründen auf
-der VM.
+**DB-Entscheidung (2026-06-25):** Production nutzt eine **selbst-verwaltete
+PostgreSQL-VM (CH), identisch zum Staging-Setup** (Vorlage: `terraform/database.tf`).
+Infomaniaks Managed-Database-Service bietet aktuell nur MySQL/MariaDB — die App
+ist PostgreSQL-nativ (`uuid-ossp`, `gen_random_uuid()`, JSON-Spalten), ein
+DB-Engine-Wechsel ist ausgeschlossen. Vorteil: beide Envs laufen identisch, das
+Setup ist erprobt. **Preis dieser Wahl:** Backups/Updates/HA liegen bei uns.
 
-**Noch offen für echten Prod-Betrieb:** Monitoring/Alerting (CH-Self-Host,
-z. B. GlitchTip + Uptime-Kuma) — aktuell deaktiviert. (Prod-DB-Backups sind
-durch die Managed-DB abgedeckt; Restore-Drill trotzdem einmal durchspielen.)
+**Prod-Härtung ggü. der Staging-Vorlage (verbindlich):**
+- Postgres-Port 5432 **nicht** für `0.0.0.0/0` öffnen (so macht es Staging mit
+  Testdaten) — nur für die Prod-Cluster-Node-IPs bzw. das private Projekt-Netz.
+  Ideal: DB-VM und Cluster im selben Projekt-Netz, Verbindung über private IP
+  (dann braucht die DB-VM gar keine öffentliche Floating-IP).
+- SSH (22) nur von Admin-IP, nicht weltweit.
+- `pg_hba.conf` entsprechend eng (Quell-Subnetz statt `0.0.0.0/0`).
+
+**Noch offen für echten Prod-Betrieb:** automatisiertes, **getestetes** Backup
+(Swiss Backup mit Postgres-Snapshots) + Restore-Drill VOR den ersten Echtdaten,
+sowie Monitoring/Alerting (CH-Self-Host, z. B. GlitchTip + Uptime-Kuma) —
+aktuell deaktiviert.
 
 ## Prerequisites
 
@@ -268,27 +277,34 @@ terraform apply -var-file=environments/production.tfvars
 terraform workspace select default   # zurück auf Staging
 ```
 
-**B1 — Prod-DB: Infomaniak Managed PostgreSQL (DBaaS, CH).**
-Im Manager → Public Cloud → Projekt `restart-production` → Database Service einen
-**PostgreSQL-Cluster ≥ 13** anlegen (wegen `gen_random_uuid()`/`uuid-ossp`).
+**B1 — Prod-DB: selbst-verwaltete PostgreSQL-VM (CH), wie Staging.**
+Infomaniaks Managed-DB bietet nur MySQL → wir nutzen dieselbe externe Postgres-VM
+wie Staging. Setup-Vorlage (Compute-Instanz + Cloud-Init mit Postgres 16, DB,
+User, Extensions) steht in `terraform/database.tf`. Im Horizon des Prod-Projekts
+(`restart-production`):
 
-- DB + DB-User anlegen. SSL ist bei der Managed-DB erzwungen — das Backend
-  aktiviert TLS in Production automatisch (`NODE_ENV=production` →
-  `ssl: { rejectUnauthorized: false }` in `data-source.ts`/`app.module.ts`),
-  daher kein zusätzliches Env nötig. **Voraussetzung:** `NODE_ENV` muss in den
-  Prod-Secrets wirklich `production` sein. (Härtung später: CA pinnen statt
-  `rejectUnauthorized:false`.)
-- `uuid-ossp`-Extension aktivieren — als DB-Owner bzw. über das DBaaS-Panel:
-  ```sql
-  CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-  ```
-- Netzwerk: sicherstellen, dass der Prod-Cluster die DB erreicht (privates Netz
-  bzw. erlaubte Source-IPs/Floating-IP der Nodes).
-- Backups: durch die Managed-DB abgedeckt — trotzdem einmal einen **Restore-Drill**
-  durchspielen, bevor Echtdaten reinkommen.
+1. **Compute → Launch Instance**: Ubuntu 24.04, ≥ 2 GB RAM, Name `postgres-production`.
+2. **Cloud-Init** (Customization Script) aus `terraform/database.tf` übernehmen —
+   **Passwort ersetzen** durch ein starkes, eindeutiges Prod-Passwort.
+3. **Security Group (Prod-Härtung — NICHT die Staging-`0.0.0.0/0`-Regel!):**
+   5432/tcp nur von den Cluster-Node-IPs bzw. dem privaten Projekt-Subnetz,
+   22/tcp nur von deiner Admin-IP. Liegen DB-VM und Cluster im selben
+   Projekt-Netz → private IP nutzen, keine Floating-IP nötig.
+4. **SSL — Unterschied zu Staging, wichtig:** Das Backend erzwingt in Production
+   TLS zur DB (`NODE_ENV=production` → `ssl: { rejectUnauthorized: false }` in
+   `data-source.ts`/`app.module.ts`). Die VM-Postgres MUSS also SSL anbieten,
+   sonst schlägt schon der migrate-Job fehl. Debian/Ubuntu-Postgres aktiviert
+   SSL i. d. R. per Default (Snakeoil-Zertifikat) — **verifizieren** mit
+   `SHOW ssl;` → muss `on` sein; sonst `ssl = on` in `postgresql.conf` setzen.
+   (Staging fährt `ssl: false`, weil `NODE_ENV=staging` — dort kein Thema.)
+   Voraussetzung außerdem: `NODE_ENV` ist in den Prod-Secrets wirklich `production`.
+5. **uuid-ossp** ist im Cloud-Init enthalten; sonst als DB-Owner:
+   `CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`
+6. **Backup**: Swiss Backup mit Postgres-Snapshots einrichten + **Restore-Drill**
+   durchspielen — VOR den ersten Echtdaten.
 
-Host/Port/User/Passwort/DB-Name (+ SSL) notieren → fliessen in B3 (SealedSecrets)
-und den `DB_HOST` der Prod-ConfigMap.
+DB_HOST (private/Floating-IP), DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME notieren
+→ fliessen in B3 (SealedSecrets); DB_HOST zusätzlich in die Prod-ConfigMap.
 
 **B2 — Prod-Namespace + Cluster-Prereqs.**
 
