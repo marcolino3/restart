@@ -50,9 +50,30 @@ export INFOMANIAK_API_TOKEN="your-token"
 # Initialize Terraform
 terraform init
 
-# Plan and apply for staging
+# Plan and apply for staging (default workspace)
 terraform plan -var-file=environments/staging.tfvars -var="db_password=YOUR_SECURE_PASSWORD"
 terraform apply -var-file=environments/staging.tfvars -var="db_password=YOUR_SECURE_PASSWORD"
+```
+
+> ⚠️ **Production läuft in einem EIGENEN Terraform-Workspace.**
+> Der State ist lokal (default-Workspace = **Staging**). Ein Prod-`apply` im
+> default-Workspace würde Terraform den **Staging-State umschreiben lassen und
+> Staging zerstören/umbauen**. Production daher immer in einem getrennten
+> Workspace provisionieren (eigener State unter `terraform.tfstate.d/production/`):
+
+```bash
+# Prod-Cluster: EIGENER Workspace (einmalig anlegen, danach nur noch `select`)
+terraform workspace new production         # später: terraform workspace select production
+terraform workspace list                   # prüfen: * production
+
+# numerische cloud_id/project_id des Prod-Projekts müssen in
+# environments/production.tfvars stehen (sonst schlägt der Apply fehl)
+terraform plan  -var-file=environments/production.tfvars -var="db_password=YOUR_PROD_DB_PASSWORD"
+terraform apply -var-file=environments/production.tfvars -var="db_password=YOUR_PROD_DB_PASSWORD"
+
+# WICHTIG: danach zurück auf Staging wechseln, damit kein versehentlicher
+# Staging-Befehl im Prod-Workspace landet:
+terraform workspace select default
 ```
 
 ### 2. Configure kubectl
@@ -185,6 +206,22 @@ curl -s -o /dev/null -w '%{http_code}\n' https://staging.colibri-app.ch/api/heal
 > — der Wipe ist aber sauberer und verifiziert den Migration-only-Pfad direkt.
 
 ### B. Production-Voraussetzungen (vor dem ersten Prod-Deploy)
+
+**B0 — Prod-Cluster via Terraform provisionieren (EIGENER Workspace).**
+Der dedizierte Prod-Cluster (`environments/production.tfvars`, `pack=dedicated`)
+wird in einem **separaten Terraform-Workspace** angelegt — siehe Warnhinweis in
+„Initial Setup → 1. Provision Infrastructure". Zwingend **vor** B1–B4:
+
+```bash
+cd terraform
+# 1) numerische cloud_id + project_id des Prod-Public-Cloud-Projekts in
+#    environments/production.tfvars eintragen (aktuell Platzhalter 0/0).
+# 2) Provisionieren im eigenen Workspace (zerstört NICHT den Staging-State):
+terraform workspace new production
+terraform apply -var-file=environments/production.tfvars -var="db_password=<prod-db-pw>"
+# 3) kubeconfig des neuen Clusters aus dem Infomaniak Manager ziehen → für B2/B4.
+terraform workspace select default   # zurück auf Staging
+```
 
 **B1 — Prod-Postgres provisionieren (CH, getrennt von Staging).**
 Eigene DB/VM, Postgres ≥ 13 (wegen `gen_random_uuid()`/`uuid-ossp`). Als Superuser
