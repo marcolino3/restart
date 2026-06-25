@@ -27,21 +27,14 @@ RUN corepack enable
 COPY --from=deps /app/ ./
 COPY --from=pruner /app/out/full/ ./
 
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-
-ARG NEXT_PUBLIC_GRAPHQL_API_URL
-ENV NEXT_PUBLIC_GRAPHQL_API_URL=$NEXT_PUBLIC_GRAPHQL_API_URL
-
-ARG NEXT_PUBLIC_BACKEND_PUBLIC_URL
-ENV NEXT_PUBLIC_BACKEND_PUBLIC_URL=$NEXT_PUBLIC_BACKEND_PUBLIC_URL
-
-ARG NEXT_PUBLIC_GOOGLE_LOGIN_API
-ENV NEXT_PUBLIC_GOOGLE_LOGIN_API=$NEXT_PUBLIC_GOOGLE_LOGIN_API
-
-ARG NEXT_PUBLIC_APPLE_LOGIN_API
-ENV NEXT_PUBLIC_APPLE_LOGIN_API=$NEXT_PUBLIC_APPLE_LOGIN_API
-
+# Client-side API/image/login URLs are same-origin & relative (`/api`), so no
+# NEXT_PUBLIC_* URL is baked at build time anymore. This is what makes the image
+# domain-agnostic: the exact same SHA built on staging can be promoted to prod
+# without a rebuild. The server-side GraphQL client reads INTERNAL_GRAPHQL_API_URL
+# from the runtime environment (k8s secret), not from a build arg.
+#
+# BACKEND_URL is only used by next.config.ts rewrites (`/api/*` proxy) for the
+# local `next dev` server; in the cluster the ingress handles same-origin routing.
 ARG BACKEND_URL
 ENV BACKEND_URL=$BACKEND_URL
 
