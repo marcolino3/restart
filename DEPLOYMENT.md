@@ -58,9 +58,16 @@ baut nicht neu, sondern promotet exakt den auf Staging getesteten SHA
 `project_id` des **separaten** Prod-Projekts; Prod wird in einem eigenen
 Terraform-Workspace provisioniert (siehe „Initial Setup → 1." und Runbook B0).
 
-**Noch offen für echten Prod-Betrieb:** automatisierte Prod-DB-Backups inkl.
-Restore-Drill (vor den ersten Echtdaten) und Monitoring/Alerting (CH-Self-Host,
-z. B. GlitchTip + Uptime-Kuma) — Monitoring ist aktuell deaktiviert.
+**DB-Entscheidung (2026-06-25):** Production nutzt **Infomaniak Managed
+PostgreSQL (DBaaS, CH)** — nicht die selbst-verwaltete VM wie Staging. Grund:
+automatische Backups + Restore, HA und Wartung durch Infomaniak; bei echten
+Personendaten ist ein getestetes Backup nicht verhandelbar. Extern zum Cluster
+(kein in-Cluster-/CNPG-Routing-Problem). Staging bleibt aus Kostengründen auf
+der VM.
+
+**Noch offen für echten Prod-Betrieb:** Monitoring/Alerting (CH-Self-Host,
+z. B. GlitchTip + Uptime-Kuma) — aktuell deaktiviert. (Prod-DB-Backups sind
+durch die Managed-DB abgedeckt; Restore-Drill trotzdem einmal durchspielen.)
 
 ## Prerequisites
 
@@ -261,15 +268,27 @@ terraform apply -var-file=environments/production.tfvars
 terraform workspace select default   # zurück auf Staging
 ```
 
-**B1 — Prod-Postgres provisionieren (CH, getrennt von Staging).**
-Eigene DB/VM, Postgres ≥ 13 (wegen `gen_random_uuid()`/`uuid-ossp`). Als Superuser
-einmalig die Extension anlegen, damit der migrate-Job kein CREATE-Recht braucht:
+**B1 — Prod-DB: Infomaniak Managed PostgreSQL (DBaaS, CH).**
+Im Manager → Public Cloud → Projekt `restart-production` → Database Service einen
+**PostgreSQL-Cluster ≥ 13** anlegen (wegen `gen_random_uuid()`/`uuid-ossp`).
 
-```sql
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-```
+- DB + DB-User anlegen. SSL ist bei der Managed-DB erzwungen — das Backend
+  aktiviert TLS in Production automatisch (`NODE_ENV=production` →
+  `ssl: { rejectUnauthorized: false }` in `data-source.ts`/`app.module.ts`),
+  daher kein zusätzliches Env nötig. **Voraussetzung:** `NODE_ENV` muss in den
+  Prod-Secrets wirklich `production` sein. (Härtung später: CA pinnen statt
+  `rejectUnauthorized:false`.)
+- `uuid-ossp`-Extension aktivieren — als DB-Owner bzw. über das DBaaS-Panel:
+  ```sql
+  CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+  ```
+- Netzwerk: sicherstellen, dass der Prod-Cluster die DB erreicht (privates Netz
+  bzw. erlaubte Source-IPs/Floating-IP der Nodes).
+- Backups: durch die Managed-DB abgedeckt — trotzdem einmal einen **Restore-Drill**
+  durchspielen, bevor Echtdaten reinkommen.
 
-Host/Port/User/Passwort/DB-Name notieren → fliessen in B3 + die Prod-ConfigMap.
+Host/Port/User/Passwort/DB-Name (+ SSL) notieren → fliessen in B3 (SealedSecrets)
+und den `DB_HOST` der Prod-ConfigMap.
 
 **B2 — Prod-Namespace + Cluster-Prereqs.**
 
