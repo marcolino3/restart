@@ -13,7 +13,19 @@ letsencrypt_email = "marco@marranchelli.com"
 
 # Production läuft idealerweise in EIGENEM Public-Cloud-Projekt
 # (saubere Billing-/Netzwerk-Trennung). Dann separate IDs hier einsetzen.
+#
+# Beschaffung der numerischen IDs (siehe terraform/NEXT_STEPS.md, Schritt 1):
+#   cloud_id   = die Public-Cloud-Produkt-ID (Staging nutzt 20126; Prod = eigene
+#                ID, falls separates Cloud-Produkt — sonst dieselbe wie Staging).
+#   project_id = numerisch aus der Manager-URL des Prod-Projekts, NICHT der
+#                PCP-XXXX-Code. Alternativ via API:
+#                curl -s -H "Authorization: Bearer $INFOMANIAK_TOKEN" \
+#                  "https://api.infomaniak.com/api/v1/products/public_cloud/<cloud_id>/project" \
+#                  | jq '.data[] | {id, name, openstack_id}'
+# ACHTUNG: Prod im eigenen Terraform-Workspace provisionieren
+# (`terraform workspace new production`) — sonst überschreibt der Apply den
+# Staging-State. Siehe DEPLOYMENT.md.
 infomaniak = {
-  cloud_id   = 0 # TODO: cloud_id von restart-production
-  project_id = 0 # TODO: numerische project_id von restart-production
+  cloud_id   = 20126 # Public-Cloud-Produkt (geteilt mit Staging; Isolation via separates Projekt + eigenen Cluster)
+  project_id = 43863 # restart-production (OpenStack: PCP-TPSZANM)
 }

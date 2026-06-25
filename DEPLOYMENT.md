@@ -29,6 +29,55 @@ restart/
 | Staging | staging.colibri-app.ch | restart-staging | Push to `main` |
 | Production | app.colibri-app.ch | restart-production | Manual (GitHub Actions) |
 
+### Architektur-Entscheidung: getrennte Cloud-Projekte für Staging und Production
+
+**Entscheidung (2026-06-25):** Staging und Production laufen in **zwei getrennten
+Infomaniak Public-Cloud-Projekten** mit je **eigenem KaaS-Cluster und eigener
+Postgres-VM** — nicht in einem geteilten Projekt/Cluster mit zwei Namespaces.
+
+**Warum (stärkste Isolations-Stufe, bewusst gewählt):**
+- **Datenschutz / Blast-Radius:** Es werden perspektivisch echte Personen-/
+  Kinderdaten verarbeitet (DSGVO, hohe Sensibilität). Ein kompromittiertes oder
+  fehlkonfiguriertes Staging kann technisch **nicht** an Prod-Daten — getrennte
+  Projekte teilen weder Netzwerk noch etcd noch Nodes.
+- **Least Privilege:** Eigene API-Tokens, kubeconfigs und Secrets pro Projekt →
+  Staging-Zugriff impliziert keinen Prod-Zugriff.
+- **Kein Cross-Env-Versehen:** Staging-Workloads können die Prod-DB nicht
+  erreichen (getrennte Projekte/Netze).
+- **Billing / Quota:** Prod-Kosten und -Quota sind sauber getrennt; ein
+  Staging-Lasttest kann das Prod-Quota nicht aufbrauchen.
+
+Beide Projekte liegen bei Infomaniak in der Schweiz (DSGVO / kein US-Cloud-Act).
+
+**Promotion-Modell (unabhängig von der Isolation):** „Build once, promote the
+same artifact" — das Image wird einmal beim Staging-Deploy gebaut; Production
+baut nicht neu, sondern promotet exakt den auf Staging getesteten SHA
+(`:staging-current`) mit Approval-Gate, Smoke-Test und Auto-Rollback.
+
+**Konsequenz:** `terraform/environments/production.tfvars` trägt die `cloud_id`/
+`project_id` des **separaten** Prod-Projekts; Prod wird in einem eigenen
+Terraform-Workspace provisioniert (siehe „Initial Setup → 1." und Runbook B0).
+
+**DB-Entscheidung (2026-06-25):** Production nutzt eine **selbst-verwaltete
+PostgreSQL-VM (CH), identisch zum Staging-Setup** (Vorlage: `terraform/database.tf`).
+Infomaniaks Managed-Database-Service bietet aktuell nur MySQL/MariaDB — die App
+ist PostgreSQL-nativ (`uuid-ossp`, `gen_random_uuid()`, JSON-Spalten), ein
+DB-Engine-Wechsel ist ausgeschlossen. Vorteil: beide Envs laufen identisch, das
+Setup ist erprobt. **Preis dieser Wahl:** Backups/Updates/HA liegen bei uns.
+
+**Prod-Härtung ggü. der Staging-Vorlage (verbindlich):**
+- Postgres-Port 5432 **nicht** für `0.0.0.0/0` öffnen (so macht es Staging mit
+  Testdaten) — nur für die Prod-Cluster-Node-IPs bzw. das private Projekt-Netz.
+  Ideal: DB-VM und Cluster im selben Projekt-Netz, Verbindung über private IP
+  (dann braucht die DB-VM gar keine öffentliche Floating-IP).
+- SSH (22) nur von Admin-IP, nicht weltweit.
+- `pg_hba.conf` entsprechend eng (Quell-Subnetz statt `0.0.0.0/0`).
+
+**Noch offen für echten Prod-Betrieb:** automatisiertes, **getestetes** Backup
+(Swiss Backup mit Postgres-Snapshots) + Restore-Drill VOR den ersten Echtdaten,
+sowie Monitoring/Alerting (CH-Self-Host, z. B. GlitchTip + Uptime-Kuma) —
+aktuell deaktiviert.
+
 ## Prerequisites
 
 - [kubectl](https://kubernetes.io/docs/tasks/tools/) installed
@@ -44,15 +93,39 @@ restart/
 ```bash
 cd terraform
 
-# Set Infomaniak API token
-export INFOMANIAK_API_TOKEN="your-token"
+# Infomaniak API-Token (der Provider liest var.infomaniak_token):
+export TF_VAR_infomaniak_token="your-token"
 
 # Initialize Terraform
 terraform init
 
-# Plan and apply for staging
-terraform plan -var-file=environments/staging.tfvars -var="db_password=YOUR_SECURE_PASSWORD"
-terraform apply -var-file=environments/staging.tfvars -var="db_password=YOUR_SECURE_PASSWORD"
+# Plan and apply for staging (default workspace)
+# Terraform provisioniert NUR Cluster + Node-Pool + Namespace + Addons
+# (cert-manager, ingress-nginx, sealed-secrets) — KEINE Datenbank.
+# Die Postgres läuft als separate VM/Instanz (siehe Runbook B1).
+terraform plan  -var-file=environments/staging.tfvars
+terraform apply -var-file=environments/staging.tfvars
+```
+
+> ⚠️ **Production läuft in einem EIGENEN Terraform-Workspace.**
+> Der State ist lokal (default-Workspace = **Staging**). Ein Prod-`apply` im
+> default-Workspace würde Terraform den **Staging-State umschreiben lassen und
+> Staging zerstören/umbauen**. Production daher immer in einem getrennten
+> Workspace provisionieren (eigener State unter `terraform.tfstate.d/production/`):
+
+```bash
+# Prod-Cluster: EIGENER Workspace (einmalig anlegen, danach nur noch `select`)
+terraform workspace new production         # später: terraform workspace select production
+terraform workspace list                   # prüfen: * production
+
+# numerische cloud_id/project_id des Prod-Projekts müssen in
+# environments/production.tfvars stehen (sonst schlägt der Apply fehl)
+terraform plan  -var-file=environments/production.tfvars
+terraform apply -var-file=environments/production.tfvars
+
+# WICHTIG: danach zurück auf Staging wechseln, damit kein versehentlicher
+# Staging-Befehl im Prod-Workspace landet:
+terraform workspace select default
 ```
 
 ### 2. Configure kubectl
@@ -186,15 +259,52 @@ curl -s -o /dev/null -w '%{http_code}\n' https://staging.colibri-app.ch/api/heal
 
 ### B. Production-Voraussetzungen (vor dem ersten Prod-Deploy)
 
-**B1 — Prod-Postgres provisionieren (CH, getrennt von Staging).**
-Eigene DB/VM, Postgres ≥ 13 (wegen `gen_random_uuid()`/`uuid-ossp`). Als Superuser
-einmalig die Extension anlegen, damit der migrate-Job kein CREATE-Recht braucht:
+**B0 — Prod-Cluster via Terraform provisionieren (EIGENER Workspace).**
+Der dedizierte Prod-Cluster (`environments/production.tfvars`, `pack=dedicated`)
+wird in einem **separaten Terraform-Workspace** angelegt — siehe Warnhinweis in
+„Initial Setup → 1. Provision Infrastructure". Zwingend **vor** B1–B4:
 
-```sql
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+```bash
+cd terraform
+export TF_VAR_infomaniak_token="<prod-tauglicher-token>"
+# 1) cloud_id + project_id des Prod-Projekts stehen in production.tfvars.
+# 2) Provisionieren im eigenen Workspace (zerstört NICHT den Staging-State).
+#    Terraform legt NUR Cluster + Node-Pool + Namespace + Addons an — KEINE DB.
+terraform workspace new production
+terraform plan  -var-file=environments/production.tfvars   # Plan prüfen!
+terraform apply -var-file=environments/production.tfvars
+# 3) kubeconfig des neuen Clusters aus dem Infomaniak Manager ziehen → für B2/B4.
+terraform workspace select default   # zurück auf Staging
 ```
 
-Host/Port/User/Passwort/DB-Name notieren → fliessen in B3 + die Prod-ConfigMap.
+**B1 — Prod-DB: selbst-verwaltete PostgreSQL-VM (CH), wie Staging.**
+Infomaniaks Managed-DB bietet nur MySQL → wir nutzen dieselbe externe Postgres-VM
+wie Staging. Setup-Vorlage (Compute-Instanz + Cloud-Init mit Postgres 16, DB,
+User, Extensions) steht in `terraform/database.tf`. Im Horizon des Prod-Projekts
+(`restart-production`):
+
+1. **Compute → Launch Instance**: Ubuntu 24.04, ≥ 2 GB RAM, Name `postgres-production`.
+2. **Cloud-Init** (Customization Script) aus `terraform/database.tf` übernehmen —
+   **Passwort ersetzen** durch ein starkes, eindeutiges Prod-Passwort.
+3. **Security Group (Prod-Härtung — NICHT die Staging-`0.0.0.0/0`-Regel!):**
+   5432/tcp nur von den Cluster-Node-IPs bzw. dem privaten Projekt-Subnetz,
+   22/tcp nur von deiner Admin-IP. Liegen DB-VM und Cluster im selben
+   Projekt-Netz → private IP nutzen, keine Floating-IP nötig.
+4. **SSL — Unterschied zu Staging, wichtig:** Das Backend erzwingt in Production
+   TLS zur DB (`NODE_ENV=production` → `ssl: { rejectUnauthorized: false }` in
+   `data-source.ts`/`app.module.ts`). Die VM-Postgres MUSS also SSL anbieten,
+   sonst schlägt schon der migrate-Job fehl. Debian/Ubuntu-Postgres aktiviert
+   SSL i. d. R. per Default (Snakeoil-Zertifikat) — **verifizieren** mit
+   `SHOW ssl;` → muss `on` sein; sonst `ssl = on` in `postgresql.conf` setzen.
+   (Staging fährt `ssl: false`, weil `NODE_ENV=staging` — dort kein Thema.)
+   Voraussetzung außerdem: `NODE_ENV` ist in den Prod-Secrets wirklich `production`.
+5. **uuid-ossp** ist im Cloud-Init enthalten; sonst als DB-Owner:
+   `CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`
+6. **Backup**: Swiss Backup mit Postgres-Snapshots einrichten + **Restore-Drill**
+   durchspielen — VOR den ersten Echtdaten.
+
+DB_HOST (private/Floating-IP), DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME notieren
+→ fliessen in B3 (SealedSecrets); DB_HOST zusätzlich in die Prod-ConfigMap.
 
 **B2 — Prod-Namespace + Cluster-Prereqs.**
 
@@ -243,6 +353,46 @@ kubectl get pods -n restart-production
 curl -s -o /dev/null -w '%{http_code}\n' https://app.colibri-app.ch/api/health   # 200
 # Login + Org-Switch manuell verifizieren.
 ```
+
+### D. Prod-Launch-Checkliste (leicht vergessen, echte Blocker)
+
+Vor / während des ersten Prod-Deploys explizit abhaken:
+
+**🔴 Sonst kommt niemand rein / Prod kaputt**
+- [ ] **OAuth-Redirect-URIs registrieren**: `https://app.colibri-app.ch/...` in der
+      **Google Cloud Console** (Authorized redirect URIs) **und** im **Apple
+      Developer Portal** eintragen — nicht nur in den Secrets. Sonst
+      `redirect_uri_mismatch`, kein OAuth-Login.
+- [ ] **DNS vor TLS**: `app.colibri-app.ch` A-Record → Prod-Ingress-LoadBalancer-IP
+      (`kubectl get svc -n ingress-nginx`), **bevor** cert-manager das
+      Let's-Encrypt-Cert ausstellt (HTTP-01-Challenge braucht erreichbares DNS).
+      DNS bei Hostpoint.
+- [ ] **`SUPERADMIN_EMAIL` + `SUPERADMIN_PASSWORD`** in den Prod-Secrets gesetzt.
+      `SuperAdminBootstrapService` legt den Superadmin **beim App-Boot automatisch**
+      an — fehlen die Werte, wird der Seed übersprungen und **niemand kann rein**.
+- [ ] **Frontend-Secrets** (nicht nur Backend!) für Prod erstellt — siehe
+      `k8s/staging/sealed-secrets/frontend-secrets.yaml` als Key-Vorlage.
+- [ ] **Frontend „build once"**: client-seitige API-/Bild-URLs müssen
+      domain-agnostisch (same-origin) sein, sonst zeigt das promotete Prod-Image
+      auf Staging. (Wird in eigenem PR auf relative `/api`-Pfade umgestellt —
+      bis dahin offener Blocker.)
+
+**🟡 Sicherheitskritisch**
+- [ ] **Eindeutige Prod-Secrets** frisch generieren (NICHT von Staging kopieren):
+      `BETTER_AUTH_SECRET`, `ORG_SETTINGS_ENCRYPTION_KEY`, `DB_PASSWORD`.
+      `ORG_SETTINGS_ENCRYPTION_KEY` muss **stabil bleiben** (ändert er sich, sind
+      verschlüsselte Org-Settings unlesbar).
+- [ ] **Sealing-Keys des Prod-Clusters sichern** (`backup-sealing-keys.sh`)
+      **bevor** die Prod-Secrets versiegelt werden.
+- [ ] **`NODE_ENV=production`** in den Prod-Secrets (sonst greift u. a. die
+      DB-TLS-Logik nicht — siehe B1).
+- [ ] **SMTP/Mailer** für Prod konfiguriert (Admission-E-Mail-Versand).
+
+**🟢 Vor Echtdaten / Betrieb**
+- [ ] **DB-Backup** (Swiss Backup, Postgres-Snapshots) eingerichtet + **Restore-Drill**.
+- [ ] **Monitoring/Alerting** (CH-Self-Host, z. B. GlitchTip + Uptime-Kuma).
+- [ ] **Kosten** im Blick: dedizierter Cluster + Node-Pool + DB-VM + LoadBalancer
+      laufen alle gleichzeitig.
 
 ## Rollback
 
