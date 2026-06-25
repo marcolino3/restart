@@ -77,15 +77,18 @@ z. B. GlitchTip + Uptime-Kuma) — Monitoring ist aktuell deaktiviert.
 ```bash
 cd terraform
 
-# Set Infomaniak API token
-export INFOMANIAK_API_TOKEN="your-token"
+# Infomaniak API-Token (der Provider liest var.infomaniak_token):
+export TF_VAR_infomaniak_token="your-token"
 
 # Initialize Terraform
 terraform init
 
 # Plan and apply for staging (default workspace)
-terraform plan -var-file=environments/staging.tfvars -var="db_password=YOUR_SECURE_PASSWORD"
-terraform apply -var-file=environments/staging.tfvars -var="db_password=YOUR_SECURE_PASSWORD"
+# Terraform provisioniert NUR Cluster + Node-Pool + Namespace + Addons
+# (cert-manager, ingress-nginx, sealed-secrets) — KEINE Datenbank.
+# Die Postgres läuft als separate VM/Instanz (siehe Runbook B1).
+terraform plan  -var-file=environments/staging.tfvars
+terraform apply -var-file=environments/staging.tfvars
 ```
 
 > ⚠️ **Production läuft in einem EIGENEN Terraform-Workspace.**
@@ -101,8 +104,8 @@ terraform workspace list                   # prüfen: * production
 
 # numerische cloud_id/project_id des Prod-Projekts müssen in
 # environments/production.tfvars stehen (sonst schlägt der Apply fehl)
-terraform plan  -var-file=environments/production.tfvars -var="db_password=YOUR_PROD_DB_PASSWORD"
-terraform apply -var-file=environments/production.tfvars -var="db_password=YOUR_PROD_DB_PASSWORD"
+terraform plan  -var-file=environments/production.tfvars
+terraform apply -var-file=environments/production.tfvars
 
 # WICHTIG: danach zurück auf Staging wechseln, damit kein versehentlicher
 # Staging-Befehl im Prod-Workspace landet:
@@ -247,11 +250,13 @@ wird in einem **separaten Terraform-Workspace** angelegt — siehe Warnhinweis i
 
 ```bash
 cd terraform
-# 1) numerische cloud_id + project_id des Prod-Public-Cloud-Projekts in
-#    environments/production.tfvars eintragen (aktuell Platzhalter 0/0).
-# 2) Provisionieren im eigenen Workspace (zerstört NICHT den Staging-State):
+export TF_VAR_infomaniak_token="<prod-tauglicher-token>"
+# 1) cloud_id + project_id des Prod-Projekts stehen in production.tfvars.
+# 2) Provisionieren im eigenen Workspace (zerstört NICHT den Staging-State).
+#    Terraform legt NUR Cluster + Node-Pool + Namespace + Addons an — KEINE DB.
 terraform workspace new production
-terraform apply -var-file=environments/production.tfvars -var="db_password=<prod-db-pw>"
+terraform plan  -var-file=environments/production.tfvars   # Plan prüfen!
+terraform apply -var-file=environments/production.tfvars
 # 3) kubeconfig des neuen Clusters aus dem Infomaniak Manager ziehen → für B2/B4.
 terraform workspace select default   # zurück auf Staging
 ```
