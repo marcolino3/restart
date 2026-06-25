@@ -29,6 +29,39 @@ restart/
 | Staging | staging.colibri-app.ch | restart-staging | Push to `main` |
 | Production | app.colibri-app.ch | restart-production | Manual (GitHub Actions) |
 
+### Architektur-Entscheidung: getrennte Cloud-Projekte für Staging und Production
+
+**Entscheidung (2026-06-25):** Staging und Production laufen in **zwei getrennten
+Infomaniak Public-Cloud-Projekten** mit je **eigenem KaaS-Cluster und eigener
+Postgres-VM** — nicht in einem geteilten Projekt/Cluster mit zwei Namespaces.
+
+**Warum (stärkste Isolations-Stufe, bewusst gewählt):**
+- **Datenschutz / Blast-Radius:** Es werden perspektivisch echte Personen-/
+  Kinderdaten verarbeitet (DSGVO, hohe Sensibilität). Ein kompromittiertes oder
+  fehlkonfiguriertes Staging kann technisch **nicht** an Prod-Daten — getrennte
+  Projekte teilen weder Netzwerk noch etcd noch Nodes.
+- **Least Privilege:** Eigene API-Tokens, kubeconfigs und Secrets pro Projekt →
+  Staging-Zugriff impliziert keinen Prod-Zugriff.
+- **Kein Cross-Env-Versehen:** Staging-Workloads können die Prod-DB nicht
+  erreichen (getrennte Projekte/Netze).
+- **Billing / Quota:** Prod-Kosten und -Quota sind sauber getrennt; ein
+  Staging-Lasttest kann das Prod-Quota nicht aufbrauchen.
+
+Beide Projekte liegen bei Infomaniak in der Schweiz (DSGVO / kein US-Cloud-Act).
+
+**Promotion-Modell (unabhängig von der Isolation):** „Build once, promote the
+same artifact" — das Image wird einmal beim Staging-Deploy gebaut; Production
+baut nicht neu, sondern promotet exakt den auf Staging getesteten SHA
+(`:staging-current`) mit Approval-Gate, Smoke-Test und Auto-Rollback.
+
+**Konsequenz:** `terraform/environments/production.tfvars` trägt die `cloud_id`/
+`project_id` des **separaten** Prod-Projekts; Prod wird in einem eigenen
+Terraform-Workspace provisioniert (siehe „Initial Setup → 1." und Runbook B0).
+
+**Noch offen für echten Prod-Betrieb:** automatisierte Prod-DB-Backups inkl.
+Restore-Drill (vor den ersten Echtdaten) und Monitoring/Alerting (CH-Self-Host,
+z. B. GlitchTip + Uptime-Kuma) — Monitoring ist aktuell deaktiviert.
+
 ## Prerequisites
 
 - [kubectl](https://kubernetes.io/docs/tasks/tools/) installed
