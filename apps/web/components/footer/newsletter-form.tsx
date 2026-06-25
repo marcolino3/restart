@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "@/hooks/use-toast";
+import { API_URL } from "@/constants/api-url";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -61,7 +62,7 @@ export function NewsletterForm({ slug }: NewsletterFormProps) {
   const onSubmit = async (data: NewsletterFormValues) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/contact-forms/submit`,
+        `${API_URL}/contact-forms/submit`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

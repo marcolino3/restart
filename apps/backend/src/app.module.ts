@@ -123,9 +123,17 @@ import { join } from 'path';
       }),
     }),
 
+    // Serve uploaded images under /api/uploads so they are reachable
+    // same-origin through the ingress (/api -> backend). A dedicated sub-path
+    // (NOT bare /api) avoids overlapping the global API prefix
+    // (setGlobalPrefix('/api')) — otherwise the ServeStatic middleware can
+    // shadow controller routes (/api/upload POST, /api/health, /api/graphql).
+    // The upload controller returns URLs like `/${entity}/${id}.webp`, which
+    // the frontend prefixes with the same-origin `/api/uploads` base —
+    // resolving to `/api/uploads/${entity}/${id}.webp`, matching serveRoot.
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'public'),
-      serveRoot: '/public',
+      serveRoot: '/api/uploads',
     }),
     UploadModule,
     OrganizationsModule,
