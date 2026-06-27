@@ -19,7 +19,8 @@
     "admissions": "Aufnahmeprozess",
     "organizationGroup": "Organisation",
     "superAdminGroup": "SuperAdmin",
-    "projects": "Projekte"
+    "projects": "Projekte",
+    "myTasks": "Meine Aufgaben"
   },
   "LanguageSwitcher": {
     "label": "Sprache"
@@ -1888,6 +1889,11 @@
     "selectPlaceholder": "Auswaehlen",
     "noResults": "Keine Ergebnisse.",
     "searchPlaceholder": "Suchen...",
-    "pickADate": "Datum waehlen"
+    "pickADate": "Datum waehlen",
+    "project": "Projekt",
+    "myTasksTitle": "Meine Aufgaben",
+    "myTasksSubtitle": "Alle dir zugewiesenen Aufgaben projektuebergreifend.",
+    "noTasks": "Keine Aufgaben.",
+    "filterTitle": "Titel filtern..."
   }
 }

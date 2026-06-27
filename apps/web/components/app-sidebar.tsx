@@ -12,6 +12,7 @@ import {
   IconHelp,
   IconInnerShadowTop,
   IconLayoutKanban,
+  IconListCheck,
   IconListDetails,
   IconReport,
   IconBook,
@@ -137,6 +138,11 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
               title: t("projects"),
               url: ROUTES.admin.projects(locale),
               icon: IconLayoutKanban,
+            },
+            {
+              title: t("myTasks"),
+              url: ROUTES.admin.myTasks(locale),
+              icon: IconListCheck,
             },
           ]
         : []),

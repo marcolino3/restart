@@ -19,7 +19,8 @@
     "admissions": "Admissions",
     "organizationGroup": "Organization",
     "superAdminGroup": "SuperAdmin",
-    "projects": "Projects"
+    "projects": "Projects",
+    "myTasks": "My tasks"
   },
   "LanguageSwitcher": {
     "label": "Language"
@@ -1888,6 +1889,11 @@
     "selectPlaceholder": "Select",
     "noResults": "No results.",
     "searchPlaceholder": "Search...",
-    "pickADate": "Pick a date"
+    "pickADate": "Pick a date",
+    "project": "Project",
+    "myTasksTitle": "My tasks",
+    "myTasksSubtitle": "All tasks assigned to you across every project.",
+    "noTasks": "No tasks.",
+    "filterTitle": "Filter title..."
   }
 }
