@@ -34,8 +34,11 @@ export class ProjectAccessService {
   /** Project ids the membership is an (active) member of, within the org. */
   async getMemberProjectIds(
     organizationId: string,
-    membershipId: string,
+    membershipId: string | null,
   ): Promise<string[]> {
+    // No membership → no member projects. Guard against a null/undefined slipping
+    // into the WHERE clause (TypeORM would drop the filter and leak everything).
+    if (!membershipId) return [];
     const rows = await this.membersRepo.find({
       where: { organizationId, membershipId, isActive: true },
       select: ['projectId'],
@@ -47,8 +50,9 @@ export class ProjectAccessService {
   async getProjectRole(
     organizationId: string,
     projectId: string,
-    membershipId: string,
+    membershipId: string | null,
   ): Promise<ProjectMemberRole | null> {
+    if (!membershipId) return null;
     const member = await this.membersRepo.findOne({
       where: { organizationId, projectId, membershipId, isActive: true },
       select: ['role'],
@@ -63,7 +67,7 @@ export class ProjectAccessService {
   async assertCanView(
     organizationId: string,
     projectId: string,
-    membershipId: string,
+    membershipId: string | null,
     canSeeAll: boolean,
   ): Promise<Project> {
     const project = await this.loadActiveProject(organizationId, projectId);
@@ -84,7 +88,7 @@ export class ProjectAccessService {
   async assertCanEditTasks(
     organizationId: string,
     projectId: string,
-    membershipId: string,
+    membershipId: string | null,
     canSeeAll: boolean,
   ): Promise<Project> {
     const project = await this.loadActiveProject(organizationId, projectId);
@@ -106,7 +110,7 @@ export class ProjectAccessService {
   async assertCanManage(
     organizationId: string,
     projectId: string,
-    membershipId: string,
+    membershipId: string | null,
     canSeeAll: boolean,
   ): Promise<Project> {
     const project = await this.loadActiveProject(organizationId, projectId);

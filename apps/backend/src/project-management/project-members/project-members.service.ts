@@ -25,7 +25,7 @@ export class ProjectMembersService {
   async findByProject(
     projectId: string,
     organizationId: string,
-    actingMembershipId: string,
+    actingMembershipId: string | null,
     canSeeAll: boolean,
   ): Promise<ProjectMember[]> {
     await this.access.assertCanView(
@@ -44,7 +44,7 @@ export class ProjectMembersService {
   async add(
     input: AddProjectMemberInput,
     organizationId: string,
-    actingMembershipId: string,
+    actingMembershipId: string | null,
     canSeeAll: boolean,
   ): Promise<ProjectMember> {
     await this.access.assertCanManage(
@@ -85,7 +85,7 @@ export class ProjectMembersService {
   async updateRole(
     input: UpdateProjectMemberRoleInput,
     organizationId: string,
-    actingMembershipId: string,
+    actingMembershipId: string | null,
     canSeeAll: boolean,
   ): Promise<ProjectMember> {
     const member = await this.loadMember(input.id, organizationId);
@@ -111,7 +111,7 @@ export class ProjectMembersService {
   async remove(
     id: string,
     organizationId: string,
-    actingMembershipId: string,
+    actingMembershipId: string | null,
     canSeeAll: boolean,
   ): Promise<boolean> {
     const member = await this.loadMember(id, organizationId);

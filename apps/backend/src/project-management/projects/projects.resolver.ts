@@ -8,7 +8,7 @@ import { UseGuards } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import {
   canSeeAllProjects,
-  requireMembershipId,
+  actingMembershipId,
 } from '@/project-management/common/project-auth';
 import { CreateProjectInput } from './dto/create-project.input';
 import { UpdateProjectInput } from './dto/update-project.input';
@@ -30,7 +30,7 @@ export class ProjectsResolver {
   ): Promise<Project[]> {
     return this.projectsService.findVisible(
       orgId,
-      requireMembershipId(user),
+      actingMembershipId(user),
       canSeeAllProjects(user),
     );
   }
@@ -45,7 +45,7 @@ export class ProjectsResolver {
     return this.projectsService.findOne(
       id,
       orgId,
-      requireMembershipId(user),
+      actingMembershipId(user),
       canSeeAllProjects(user),
     );
   }
@@ -57,7 +57,7 @@ export class ProjectsResolver {
     @CurrentOrgId() orgId: string,
     @CurrentUser() user: TokenPayload,
   ): Promise<Project> {
-    return this.projectsService.create(input, orgId, requireMembershipId(user));
+    return this.projectsService.create(input, orgId, actingMembershipId(user));
   }
 
   @Mutation(() => Project)
@@ -70,7 +70,7 @@ export class ProjectsResolver {
     return this.projectsService.update(
       input,
       orgId,
-      requireMembershipId(user),
+      actingMembershipId(user),
       canSeeAllProjects(user),
     );
   }
@@ -88,7 +88,7 @@ export class ProjectsResolver {
       id,
       archived,
       orgId,
-      requireMembershipId(user),
+      actingMembershipId(user),
       canSeeAllProjects(user),
     );
   }
@@ -103,7 +103,7 @@ export class ProjectsResolver {
     return this.projectsService.remove(
       id,
       orgId,
-      requireMembershipId(user),
+      actingMembershipId(user),
       canSeeAllProjects(user),
     );
   }

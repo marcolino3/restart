@@ -8,7 +8,7 @@ import { UseGuards } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import {
   canSeeAllProjects,
-  requireMembershipId,
+  actingMembershipId,
 } from '@/project-management/common/project-auth';
 import { AddProjectMemberInput } from './dto/add-project-member.input';
 import { UpdateProjectMemberRoleInput } from './dto/update-project-member-role.input';
@@ -30,7 +30,7 @@ export class ProjectMembersResolver {
     return this.membersService.findByProject(
       projectId,
       orgId,
-      requireMembershipId(user),
+      actingMembershipId(user),
       canSeeAllProjects(user),
     );
   }
@@ -45,7 +45,7 @@ export class ProjectMembersResolver {
     return this.membersService.add(
       input,
       orgId,
-      requireMembershipId(user),
+      actingMembershipId(user),
       canSeeAllProjects(user),
     );
   }
@@ -60,7 +60,7 @@ export class ProjectMembersResolver {
     return this.membersService.updateRole(
       input,
       orgId,
-      requireMembershipId(user),
+      actingMembershipId(user),
       canSeeAllProjects(user),
     );
   }
@@ -75,7 +75,7 @@ export class ProjectMembersResolver {
     return this.membersService.remove(
       id,
       orgId,
-      requireMembershipId(user),
+      actingMembershipId(user),
       canSeeAllProjects(user),
     );
   }

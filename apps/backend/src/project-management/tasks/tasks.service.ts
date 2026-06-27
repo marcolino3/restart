@@ -33,7 +33,7 @@ export class TasksService {
   async findByProject(
     projectId: string,
     organizationId: string,
-    membershipId: string,
+    membershipId: string | null,
     canSeeAll: boolean,
   ): Promise<Task[]> {
     await this.access.assertCanView(
@@ -52,7 +52,7 @@ export class TasksService {
   async findOne(
     id: string,
     organizationId: string,
-    membershipId: string,
+    membershipId: string | null,
     canSeeAll: boolean,
   ): Promise<Task> {
     const task = await this.loadTask(id, organizationId);
@@ -71,8 +71,9 @@ export class TasksService {
   /** All tasks assigned to the caller across every project (personal to-do). */
   async findAssignedTo(
     organizationId: string,
-    membershipId: string,
+    membershipId: string | null,
   ): Promise<Task[]> {
+    if (!membershipId) return [];
     const rows = await this.assigneesRepo.find({
       where: { organizationId, membershipId, isActive: true },
       select: ['taskId'],
@@ -90,7 +91,7 @@ export class TasksService {
   async create(
     input: CreateTaskInput,
     organizationId: string,
-    membershipId: string,
+    membershipId: string | null,
     canSeeAll: boolean,
   ): Promise<Task> {
     await this.access.assertCanEditTasks(
@@ -122,7 +123,7 @@ export class TasksService {
           sortOrder,
           organizationId,
           projectId: input.projectId,
-          createdByMembershipId: membershipId,
+          createdByMembershipId: membershipId ?? null,
         }),
       );
       await this.replaceAssignees(manager, task, assigneeIds, organizationId);
@@ -133,7 +134,7 @@ export class TasksService {
   async update(
     input: UpdateTaskInput,
     organizationId: string,
-    membershipId: string,
+    membershipId: string | null,
     canSeeAll: boolean,
   ): Promise<Task> {
     const task = await this.loadTask(input.id, organizationId);
@@ -173,7 +174,7 @@ export class TasksService {
   async move(
     input: MoveTaskInput,
     organizationId: string,
-    membershipId: string,
+    membershipId: string | null,
     canSeeAll: boolean,
   ): Promise<Task> {
     const task = await this.loadTask(input.id, organizationId);
@@ -220,7 +221,7 @@ export class TasksService {
   async remove(
     id: string,
     organizationId: string,
-    membershipId: string,
+    membershipId: string | null,
     canSeeAll: boolean,
   ): Promise<boolean> {
     const task = await this.loadTask(id, organizationId);

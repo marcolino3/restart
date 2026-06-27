@@ -8,7 +8,7 @@ import { UseGuards } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import {
   canSeeAllProjects,
-  requireMembershipId,
+  actingMembershipId,
 } from '@/project-management/common/project-auth';
 import { CreateTaskInput } from './dto/create-task.input';
 import { MoveTaskInput } from './dto/move-task.input';
@@ -31,7 +31,7 @@ export class TasksResolver {
     return this.tasksService.findByProject(
       projectId,
       orgId,
-      requireMembershipId(user),
+      actingMembershipId(user),
       canSeeAllProjects(user),
     );
   }
@@ -46,7 +46,7 @@ export class TasksResolver {
     return this.tasksService.findOne(
       id,
       orgId,
-      requireMembershipId(user),
+      actingMembershipId(user),
       canSeeAllProjects(user),
     );
   }
@@ -58,7 +58,7 @@ export class TasksResolver {
     @CurrentOrgId() orgId: string,
     @CurrentUser() user: TokenPayload,
   ): Promise<Task[]> {
-    return this.tasksService.findAssignedTo(orgId, requireMembershipId(user));
+    return this.tasksService.findAssignedTo(orgId, actingMembershipId(user));
   }
 
   @Mutation(() => Task)
@@ -71,7 +71,7 @@ export class TasksResolver {
     return this.tasksService.create(
       input,
       orgId,
-      requireMembershipId(user),
+      actingMembershipId(user),
       canSeeAllProjects(user),
     );
   }
@@ -86,7 +86,7 @@ export class TasksResolver {
     return this.tasksService.update(
       input,
       orgId,
-      requireMembershipId(user),
+      actingMembershipId(user),
       canSeeAllProjects(user),
     );
   }
@@ -101,7 +101,7 @@ export class TasksResolver {
     return this.tasksService.move(
       input,
       orgId,
-      requireMembershipId(user),
+      actingMembershipId(user),
       canSeeAllProjects(user),
     );
   }
@@ -116,7 +116,7 @@ export class TasksResolver {
     return this.tasksService.remove(
       id,
       orgId,
-      requireMembershipId(user),
+      actingMembershipId(user),
       canSeeAllProjects(user),
     );
   }

@@ -44,10 +44,11 @@ export class Project extends AbstractEntity<Project> {
   organization: Organization;
 
   // The membership that created the project (its "Ersteller"). On creation the
-  // creator is also added as an OWNER project member.
-  @Field(() => ID)
-  @Column('uuid', { name: 'created_by_membership_id' })
-  createdByMembershipId: string;
+  // creator is also added as an OWNER project member. Null when created by a
+  // platform SuperAdmin without an org membership.
+  @Field(() => ID, { nullable: true })
+  @Column('uuid', { name: 'created_by_membership_id', nullable: true })
+  createdByMembershipId?: string | null;
 
   @Field(() => Membership, { nullable: true })
   @ManyToOne(() => Membership, { onDelete: 'RESTRICT' })

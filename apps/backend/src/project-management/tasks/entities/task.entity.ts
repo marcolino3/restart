@@ -65,9 +65,10 @@ export class Task extends AbstractEntity<Task> {
   @JoinColumn({ name: 'project_id' })
   project: Project;
 
-  @Field(() => ID)
-  @Column('uuid', { name: 'created_by_membership_id' })
-  createdByMembershipId: string;
+  // Null when created by a platform SuperAdmin without an org membership.
+  @Field(() => ID, { nullable: true })
+  @Column('uuid', { name: 'created_by_membership_id', nullable: true })
+  createdByMembershipId?: string | null;
 
   @Field(() => Membership, { nullable: true })
   @ManyToOne(() => Membership, { onDelete: 'RESTRICT' })

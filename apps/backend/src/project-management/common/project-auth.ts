@@ -1,4 +1,3 @@
-import { ForbiddenException } from '@nestjs/common';
 import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { PermissionCode } from '@/permissions/entities/permission-code.enum';
 
@@ -15,10 +14,14 @@ export function canSeeAllProjects(user: TokenPayload | undefined): boolean {
   );
 }
 
-/** The acting membership id, or a Forbidden if the session has no membership. */
-export function requireMembershipId(user: TokenPayload | undefined): string {
-  if (!user?.membershipId) {
-    throw new ForbiddenException('No active membership');
-  }
-  return user.membershipId;
+/**
+ * The acting membership id, or null when the session has none (e.g. a platform
+ * SuperAdmin without an org membership). Read/manage paths tolerate null — a
+ * `canSeeAll` caller is authorized regardless, and a non-member without a
+ * membership simply sees nothing.
+ */
+export function actingMembershipId(
+  user: TokenPayload | undefined,
+): string | null {
+  return user?.membershipId ?? null;
 }

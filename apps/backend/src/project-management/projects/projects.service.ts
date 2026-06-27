@@ -28,7 +28,7 @@ export class ProjectsService {
   async create(
     input: CreateProjectInput,
     organizationId: string,
-    creatorMembershipId: string,
+    creatorMembershipId: string | null,
   ): Promise<Project> {
     const extraIds = await this.validateMembershipsInOrg(
       input.memberMembershipIds ?? [],
@@ -43,20 +43,28 @@ export class ProjectsService {
           status: input.status,
           color: input.color ?? null,
           organizationId,
-          createdByMembershipId: creatorMembershipId,
+          // May be null when a platform SuperAdmin (no org membership) creates.
+          createdByMembershipId: creatorMembershipId ?? null,
         }),
       );
 
-      // Creator first (OWNER), then the rest (MEMBER) — deduped, creator wins.
+      // Creator first (OWNER) when there is one, then the rest (MEMBER) —
+      // deduped, creator wins. A membership-less creator yields no owner row;
+      // such projects are only reachable via the PROJECT_MANAGE_ALL override.
       const memberIds = new Set(extraIds);
-      memberIds.delete(creatorMembershipId);
-      const members = [
-        manager.getRepository(ProjectMember).create({
-          organizationId,
-          projectId: project.id,
-          membershipId: creatorMembershipId,
-          role: ProjectMemberRole.OWNER,
-        }),
+      const members: ProjectMember[] = [];
+      if (creatorMembershipId) {
+        memberIds.delete(creatorMembershipId);
+        members.push(
+          manager.getRepository(ProjectMember).create({
+            organizationId,
+            projectId: project.id,
+            membershipId: creatorMembershipId,
+            role: ProjectMemberRole.OWNER,
+          }),
+        );
+      }
+      members.push(
         ...[...memberIds].map((membershipId) =>
           manager.getRepository(ProjectMember).create({
             organizationId,
@@ -65,8 +73,10 @@ export class ProjectsService {
             role: ProjectMemberRole.MEMBER,
           }),
         ),
-      ];
-      await manager.getRepository(ProjectMember).save(members);
+      );
+      if (members.length > 0) {
+        await manager.getRepository(ProjectMember).save(members);
+      }
 
       return project;
     });
@@ -78,7 +88,7 @@ export class ProjectsService {
    */
   async findVisible(
     organizationId: string,
-    membershipId: string,
+    membershipId: string | null,
     canSeeAll: boolean,
   ): Promise<Project[]> {
     if (canSeeAll) {
@@ -104,7 +114,7 @@ export class ProjectsService {
   async findOne(
     id: string,
     organizationId: string,
-    membershipId: string,
+    membershipId: string | null,
     canSeeAll: boolean,
   ): Promise<Project> {
     await this.access.assertCanView(
@@ -122,7 +132,7 @@ export class ProjectsService {
   async update(
     input: UpdateProjectInput,
     organizationId: string,
-    membershipId: string,
+    membershipId: string | null,
     canSeeAll: boolean,
   ): Promise<Project> {
     const project = await this.access.assertCanManage(
@@ -145,7 +155,7 @@ export class ProjectsService {
     id: string,
     archived: boolean,
     organizationId: string,
-    membershipId: string,
+    membershipId: string | null,
     canSeeAll: boolean,
   ): Promise<Project> {
     const project = await this.access.assertCanManage(
@@ -161,7 +171,7 @@ export class ProjectsService {
   async remove(
     id: string,
     organizationId: string,
-    membershipId: string,
+    membershipId: string | null,
     canSeeAll: boolean,
   ): Promise<boolean> {
     const project = await this.access.assertCanManage(
