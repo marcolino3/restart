@@ -24,7 +24,11 @@ export const PROJECT_STATUSES: ProjectStatus[] = [
 export type MembershipRef = {
   id: string;
   userId?: string | null;
-  user?: { firstName?: string | null; lastName?: string | null } | null;
+  user?: {
+    firstName?: string | null;
+    lastName?: string | null;
+    isSuperAdmin?: boolean | null;
+  } | null;
   userEmail?: { email?: string | null } | null;
 };
 

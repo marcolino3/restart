@@ -31,10 +31,16 @@ const ProjectsPage = async () => {
     return <div className="p-4 text-sm text-destructive">{t("loadError")}</div>;
   }
 
+  // A platform SuperAdmin is only offered as a selectable member to other
+  // SuperAdmins; regular users never see them in the member picker.
+  const memberships = (
+    membershipsResult.success ? membershipsResult.data : []
+  ).filter((m) => isSuperAdmin || !m.user?.isSuperAdmin);
+
   return (
     <ProjectsList
       projects={projectsResult.data}
-      orgMemberships={membershipsResult.success ? membershipsResult.data : []}
+      orgMemberships={memberships}
       canCreate={has(permissions, "PROJECT_CREATE", isSuperAdmin)}
     />
   );

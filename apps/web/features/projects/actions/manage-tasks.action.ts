@@ -40,8 +40,8 @@ const DeleteDocument = gql`
   }
 `;
 
-const revalidate = (locale: string, projectId: string) => {
-  revalidatePath(ROUTES.admin.projectsBoard(locale, projectId));
+const revalidate = (locale: string, projectId?: string | null) => {
+  if (projectId) revalidatePath(ROUTES.admin.projectsBoard(locale, projectId));
   revalidatePath(ROUTES.admin.myTasks(locale));
 };
 
@@ -128,7 +128,10 @@ export const moveTaskAction = async (input: {
   }
 };
 
-export const deleteTaskAction = async (id: string, projectId: string) => {
+export const deleteTaskAction = async (
+  id: string,
+  projectId?: string | null
+) => {
   const locale = await getLocale();
   const client = await serverCookieGqlClient();
   try {

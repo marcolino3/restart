@@ -50,7 +50,7 @@ export class CreateProjectManagement1779201800000 implements MigrationInterface 
 
     // --- tasks ------------------------------------------------------------
     await queryRunner.query(
-      `CREATE TABLE "tasks" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "version" integer NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "isArchived" boolean NOT NULL DEFAULT false, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" date, "title" text NOT NULL, "description" text, "status" "public"."tasks_status_enum" NOT NULL DEFAULT 'OPEN', "priority" "public"."tasks_priority_enum" NOT NULL DEFAULT 'MEDIUM', "due_date" date, "sort_order" integer NOT NULL DEFAULT '0', "organization_id" uuid NOT NULL, "project_id" uuid NOT NULL, "created_by_membership_id" uuid, CONSTRAINT "PK_tasks" PRIMARY KEY ("id"))`,
+      `CREATE TABLE "tasks" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "version" integer NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "isArchived" boolean NOT NULL DEFAULT false, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" date, "title" text NOT NULL, "description" text, "status" "public"."tasks_status_enum" NOT NULL DEFAULT 'OPEN', "priority" "public"."tasks_priority_enum" NOT NULL DEFAULT 'MEDIUM', "due_date" date, "sort_order" integer NOT NULL DEFAULT '0', "organization_id" uuid NOT NULL, "project_id" uuid, "created_by_membership_id" uuid, CONSTRAINT "PK_tasks" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX "idx_tasks_org" ON "tasks" ("organization_id") `,

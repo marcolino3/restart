@@ -1894,6 +1894,8 @@
     "myTasksTitle": "Meine Aufgaben",
     "myTasksSubtitle": "Alle dir zugewiesenen Aufgaben projektuebergreifend.",
     "noTasks": "Keine Aufgaben.",
-    "filterTitle": "Titel filtern..."
+    "filterTitle": "Titel filtern...",
+    "newPersonalTask": "Neue eigene Aufgabe",
+    "personalTaskSubtitle": "Eine persoenliche Aufgabe nur fuer dich (ohne Projekt)."
   }
 }

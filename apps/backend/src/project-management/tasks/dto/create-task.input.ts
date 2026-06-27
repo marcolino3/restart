@@ -14,9 +14,12 @@ import { TaskStatus } from '../entities/task-status.enum';
 
 @InputType()
 export class CreateTaskInput {
-  @Field(() => ID)
+  // Omit for a personal task (no project board); the creator becomes the owner
+  // and sole assignee.
+  @Field(() => ID, { nullable: true })
+  @IsOptional()
   @IsUUID()
-  projectId: string;
+  projectId?: string | null;
 
   @Field(() => String)
   @IsString()

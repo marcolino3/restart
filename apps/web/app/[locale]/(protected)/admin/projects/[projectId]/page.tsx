@@ -45,11 +45,17 @@ const ProjectBoardPage = async ({ params }: Props) => {
   const canManage = canManageAll || myMember?.role === "OWNER";
   const canEdit = canManageAll || !!myMember;
 
+  // A platform SuperAdmin is only offered as a selectable member to other
+  // SuperAdmins; regular users never see them in the member picker.
+  const memberships = (
+    membershipsResult.success ? membershipsResult.data : []
+  ).filter((m) => isSuperAdmin || !m.user?.isSuperAdmin);
+
   return (
     <ProjectBoard
       project={project}
       initialTasks={tasksResult.data}
-      orgMemberships={membershipsResult.success ? membershipsResult.data : []}
+      orgMemberships={memberships}
       canEdit={canEdit}
       canManage={canManage}
     />

@@ -17,6 +17,11 @@ const TASK_RELATIONS = {
   assignees: { membership: { user: true } },
 } as const;
 
+const MY_TASK_RELATIONS = {
+  assignees: { membership: { user: true } },
+  project: true,
+} as const;
+
 @Injectable()
 export class TasksService {
   constructor(
@@ -56,34 +61,34 @@ export class TasksService {
     canSeeAll: boolean,
   ): Promise<Task> {
     const task = await this.loadTask(id, organizationId);
-    await this.access.assertCanView(
-      organizationId,
-      task.projectId,
-      membershipId,
-      canSeeAll,
-    );
+    await this.authorizeView(task, organizationId, membershipId, canSeeAll);
     return this.tasksRepo.findOneOrFail({
       where: { id, organizationId, isActive: true },
-      relations: TASK_RELATIONS,
+      relations: MY_TASK_RELATIONS,
     });
   }
 
-  /** All tasks assigned to the caller across every project (personal to-do). */
+  /**
+   * The caller's personal task list: every task assigned to them, across all
+   * sources (project tasks, personal tasks, and — later — protocol / meeting
+   * tasks). Personal tasks are auto-assigned to their creator, so they appear
+   * here too. Strictly "assigned to me" — never other tasks.
+   */
   async findAssignedTo(
     organizationId: string,
     membershipId: string | null,
   ): Promise<Task[]> {
     if (!membershipId) return [];
-    const rows = await this.assigneesRepo.find({
+    const assigned = await this.assigneesRepo.find({
       where: { organizationId, membershipId, isActive: true },
       select: ['taskId'],
     });
-    const taskIds = rows.map((r) => r.taskId);
+    const taskIds = assigned.map((r) => r.taskId);
     if (taskIds.length === 0) return [];
 
     return this.tasksRepo.find({
       where: { id: In(taskIds), organizationId, isActive: true },
-      relations: { ...TASK_RELATIONS, project: true },
+      relations: MY_TASK_RELATIONS,
       order: { dueDate: 'ASC' },
     });
   }
@@ -94,13 +99,43 @@ export class TasksService {
     membershipId: string | null,
     canSeeAll: boolean,
   ): Promise<Task> {
+    // Personal task (no project board): the creator owns it and is its assignee.
+    if (!input.projectId) {
+      if (!membershipId) {
+        throw new BadRequestException(
+          'A membership is required to create a personal task',
+        );
+      }
+      return this.dataSource.transaction(async (manager) => {
+        const task = await manager.getRepository(Task).save(
+          manager.getRepository(Task).create({
+            title: input.title.trim(),
+            description: input.description ?? null,
+            status: input.status,
+            priority: input.priority,
+            dueDate: input.dueDate ?? null,
+            sortOrder: 0,
+            organizationId,
+            projectId: null,
+            createdByMembershipId: membershipId,
+          }),
+        );
+        await this.replaceAssignees(
+          manager,
+          task,
+          [membershipId],
+          organizationId,
+        );
+        return task;
+      });
+    }
+
     await this.access.assertCanEditTasks(
       organizationId,
       input.projectId,
       membershipId,
       canSeeAll,
     );
-
     const assigneeIds = await this.validateAssignees(
       input.assigneeMembershipIds ?? [],
       input.projectId,
@@ -110,7 +145,7 @@ export class TasksService {
     return this.dataSource.transaction(async (manager) => {
       const sortOrder = await this.nextSortOrder(
         manager,
-        input.projectId,
+        input.projectId!,
         input.status ?? undefined,
       );
       const task = await manager.getRepository(Task).save(
@@ -138,15 +173,12 @@ export class TasksService {
     canSeeAll: boolean,
   ): Promise<Task> {
     const task = await this.loadTask(input.id, organizationId);
-    await this.access.assertCanEditTasks(
-      organizationId,
-      task.projectId,
-      membershipId,
-      canSeeAll,
-    );
+    await this.authorizeEdit(task, organizationId, membershipId, canSeeAll);
 
+    // Assignees can only be reassigned on project tasks (validated against the
+    // project membership). Personal tasks stay owned by their creator.
     const assigneeIds =
-      input.assigneeMembershipIds !== undefined
+      task.projectId && input.assigneeMembershipIds !== undefined
         ? await this.validateAssignees(
             input.assigneeMembershipIds,
             task.projectId,
@@ -170,7 +202,7 @@ export class TasksService {
     });
   }
 
-  /** Move a task to a status column and re-sort that column. */
+  /** Move a task to a status column and re-sort that column (project tasks only). */
   async move(
     input: MoveTaskInput,
     organizationId: string,
@@ -178,6 +210,9 @@ export class TasksService {
     canSeeAll: boolean,
   ): Promise<Task> {
     const task = await this.loadTask(input.id, organizationId);
+    if (!task.projectId) {
+      throw new BadRequestException('Personal tasks have no board to move on');
+    }
     await this.access.assertCanEditTasks(
       organizationId,
       task.projectId,
@@ -225,12 +260,7 @@ export class TasksService {
     canSeeAll: boolean,
   ): Promise<boolean> {
     const task = await this.loadTask(id, organizationId);
-    await this.access.assertCanEditTasks(
-      organizationId,
-      task.projectId,
-      membershipId,
-      canSeeAll,
-    );
+    await this.authorizeEdit(task, organizationId, membershipId, canSeeAll);
     task.isActive = false;
     await this.tasksRepo.save(task);
     return true;
@@ -242,6 +272,70 @@ export class TasksService {
     });
     if (!task) throw new NotFoundException(`Task ${id} not found`);
     return task;
+  }
+
+  /** View access: project tasks via project visibility; personal tasks by owner. */
+  private async authorizeView(
+    task: Task,
+    organizationId: string,
+    membershipId: string | null,
+    canSeeAll: boolean,
+  ): Promise<void> {
+    if (task.projectId) {
+      await this.access.assertCanView(
+        organizationId,
+        task.projectId,
+        membershipId,
+        canSeeAll,
+      );
+      return;
+    }
+    await this.assertPersonalOwner(task, organizationId, membershipId);
+  }
+
+  /** Edit access: project tasks via project membership; personal tasks by owner. */
+  private async authorizeEdit(
+    task: Task,
+    organizationId: string,
+    membershipId: string | null,
+    canSeeAll: boolean,
+  ): Promise<void> {
+    if (task.projectId) {
+      await this.access.assertCanEditTasks(
+        organizationId,
+        task.projectId,
+        membershipId,
+        canSeeAll,
+      );
+      return;
+    }
+    await this.assertPersonalOwner(task, organizationId, membershipId);
+  }
+
+  /**
+   * A personal task (no project) is private: only its creator or an assignee may
+   * see/act on it. Non-owners get NotFound (no existence leak). canSeeAll does
+   * NOT apply — personal tasks are never exposed org-wide.
+   */
+  private async assertPersonalOwner(
+    task: Task,
+    organizationId: string,
+    membershipId: string | null,
+  ): Promise<void> {
+    if (membershipId) {
+      if (task.createdByMembershipId === membershipId) return;
+      const assignee = await this.assigneesRepo.findOne({
+        where: {
+          taskId: task.id,
+          membershipId,
+          organizationId,
+          isActive: true,
+        },
+        select: ['id'],
+      });
+      if (assignee) return;
+    }
+    throw new NotFoundException(`Task ${task.id} not found`);
   }
 
   private async nextSortOrder(

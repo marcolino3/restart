@@ -14,7 +14,7 @@ import {
 } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { ArrowUpDown, X } from "lucide-react";
+import { ArrowUpDown, Plus, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import * as React from "react";
@@ -49,6 +49,7 @@ import {
   type TaskPriority,
   type TaskStatus,
 } from "../types";
+import { PersonalTaskDialog } from "./PersonalTaskDialog";
 
 const PRIORITY_CLASS: Record<TaskPriority, string> = {
   LOW: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
@@ -75,6 +76,10 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
+  const [personalDialog, setPersonalDialog] = React.useState<{
+    open: boolean;
+    task: Task | null;
+  }>({ open: false, task: null });
 
   const onChangeStatus = async (task: Task, status: TaskStatus) => {
     await updateTaskStatusAction(task.id, status, task.project?.id);
@@ -291,6 +296,14 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
             <X className="ml-2 h-4 w-4" />
           </Button>
         )}
+        <Button
+          size="sm"
+          className="ml-auto"
+          onClick={() => setPersonalDialog({ open: true, task: null })}
+        >
+          <Plus className="mr-1 h-4 w-4" />
+          {t("newTask")}
+        </Button>
       </div>
 
       <div className="rounded-md border">
@@ -325,6 +338,9 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
                           row.original.project.id
                         )
                       );
+                    } else {
+                      // Personal task (no board) → open its editor.
+                      setPersonalDialog({ open: true, task: row.original });
                     }
                   }}
                 >
@@ -378,6 +394,14 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
           {tc("next")}
         </Button>
       </div>
+
+      <PersonalTaskDialog
+        open={personalDialog.open}
+        onOpenChange={(open) =>
+          setPersonalDialog((prev) => ({ ...prev, open }))
+        }
+        task={personalDialog.task}
+      />
     </div>
   );
 }

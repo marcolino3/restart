@@ -135,7 +135,7 @@ type Documents = {
     "\n  mutation CreateProject($input: CreateProjectInput!) {\n    createProject(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateProjectDocument,
     "\n  mutation DeleteProject($id: ID!) {\n    deleteProject(id: $id)\n  }\n": typeof types.DeleteProjectDocument,
     "\n  query MyTasks {\n    myTasks {\n      id\n      title\n      description\n      status\n      priority\n      dueDate\n      sortOrder\n      project {\n        id\n        title\n        color\n      }\n      assignees {\n        id\n        membershipId\n        membership {\n          id\n          userId\n          user {\n            firstName\n            lastName\n          }\n          userEmail {\n            email\n          }\n        }\n      }\n    }\n  }\n": typeof types.MyTasksDocument,
-    "\n  query MembershipsByOrgId($organizationId: ID!) {\n    membershipsByOrgId(organizationId: $organizationId) {\n      id\n      userId\n      user {\n        firstName\n        lastName\n      }\n      userEmail {\n        email\n      }\n    }\n  }\n": typeof types.MembershipsByOrgIdDocument,
+    "\n  query MembershipsByOrgId($organizationId: ID!) {\n    membershipsByOrgId(organizationId: $organizationId) {\n      id\n      userId\n      user {\n        firstName\n        lastName\n        isSuperAdmin\n      }\n      userEmail {\n        email\n      }\n    }\n  }\n": typeof types.MembershipsByOrgIdDocument,
     "\n  query TasksByProject($projectId: ID!) {\n    tasksByProject(projectId: $projectId) {\n      id\n      title\n      description\n      status\n      priority\n      dueDate\n      sortOrder\n      assignees {\n        id\n        membershipId\n        membership {\n          id\n          userId\n          user {\n            firstName\n            lastName\n          }\n          userEmail {\n            email\n          }\n        }\n      }\n    }\n  }\n": typeof types.TasksByProjectDocument,
     "\n  query ProjectById($id: ID!) {\n    projectById(id: $id) {\n      id\n      title\n      description\n      status\n      color\n      isArchived\n      createdAt\n      members {\n        id\n        role\n        membership {\n          id\n          userId\n          user {\n            firstName\n            lastName\n          }\n          userEmail {\n            email\n          }\n        }\n      }\n    }\n  }\n": typeof types.ProjectByIdDocument,
     "\n  query MyProjects {\n    myProjects {\n      id\n      title\n      description\n      status\n      color\n      isArchived\n      createdAt\n    }\n  }\n": typeof types.MyProjectsDocument,
@@ -146,6 +146,8 @@ type Documents = {
     "\n  mutation UpdateTask($input: UpdateTaskInput!) {\n    updateTask(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateTaskDocument,
     "\n  mutation MoveTask($input: MoveTaskInput!) {\n    moveTask(input: $input) {\n      id\n      status\n      sortOrder\n    }\n  }\n": typeof types.MoveTaskDocument,
     "\n  mutation DeleteTask($id: ID!) {\n    deleteTask(id: $id)\n  }\n": typeof types.DeleteTaskDocument,
+    "\n  mutation CreatePersonalTask($input: CreateTaskInput!) {\n    createTask(input: $input) {\n      id\n    }\n  }\n": typeof types.CreatePersonalTaskDocument,
+    "\n  mutation UpdatePersonalTask($input: UpdateTaskInput!) {\n    updateTask(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdatePersonalTaskDocument,
     "\n  mutation UpdateProject($input: UpdateProjectInput!) {\n    updateProject(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateProjectDocument,
     "\n  mutation UpdateTaskStatus($input: UpdateTaskInput!) {\n    updateTask(input: $input) {\n      id\n      status\n    }\n  }\n": typeof types.UpdateTaskStatusDocument,
     "\n  query GetRecordKeepingSettings {\n    recordKeepingSettings {\n      introducedStuckDays\n      practicedStuckDays\n      bigGapDays\n    }\n  }\n": typeof types.GetRecordKeepingSettingsDocument,
@@ -329,7 +331,7 @@ const documents: Documents = {
     "\n  mutation CreateProject($input: CreateProjectInput!) {\n    createProject(input: $input) {\n      id\n    }\n  }\n": types.CreateProjectDocument,
     "\n  mutation DeleteProject($id: ID!) {\n    deleteProject(id: $id)\n  }\n": types.DeleteProjectDocument,
     "\n  query MyTasks {\n    myTasks {\n      id\n      title\n      description\n      status\n      priority\n      dueDate\n      sortOrder\n      project {\n        id\n        title\n        color\n      }\n      assignees {\n        id\n        membershipId\n        membership {\n          id\n          userId\n          user {\n            firstName\n            lastName\n          }\n          userEmail {\n            email\n          }\n        }\n      }\n    }\n  }\n": types.MyTasksDocument,
-    "\n  query MembershipsByOrgId($organizationId: ID!) {\n    membershipsByOrgId(organizationId: $organizationId) {\n      id\n      userId\n      user {\n        firstName\n        lastName\n      }\n      userEmail {\n        email\n      }\n    }\n  }\n": types.MembershipsByOrgIdDocument,
+    "\n  query MembershipsByOrgId($organizationId: ID!) {\n    membershipsByOrgId(organizationId: $organizationId) {\n      id\n      userId\n      user {\n        firstName\n        lastName\n        isSuperAdmin\n      }\n      userEmail {\n        email\n      }\n    }\n  }\n": types.MembershipsByOrgIdDocument,
     "\n  query TasksByProject($projectId: ID!) {\n    tasksByProject(projectId: $projectId) {\n      id\n      title\n      description\n      status\n      priority\n      dueDate\n      sortOrder\n      assignees {\n        id\n        membershipId\n        membership {\n          id\n          userId\n          user {\n            firstName\n            lastName\n          }\n          userEmail {\n            email\n          }\n        }\n      }\n    }\n  }\n": types.TasksByProjectDocument,
     "\n  query ProjectById($id: ID!) {\n    projectById(id: $id) {\n      id\n      title\n      description\n      status\n      color\n      isArchived\n      createdAt\n      members {\n        id\n        role\n        membership {\n          id\n          userId\n          user {\n            firstName\n            lastName\n          }\n          userEmail {\n            email\n          }\n        }\n      }\n    }\n  }\n": types.ProjectByIdDocument,
     "\n  query MyProjects {\n    myProjects {\n      id\n      title\n      description\n      status\n      color\n      isArchived\n      createdAt\n    }\n  }\n": types.MyProjectsDocument,
@@ -340,6 +342,8 @@ const documents: Documents = {
     "\n  mutation UpdateTask($input: UpdateTaskInput!) {\n    updateTask(input: $input) {\n      id\n    }\n  }\n": types.UpdateTaskDocument,
     "\n  mutation MoveTask($input: MoveTaskInput!) {\n    moveTask(input: $input) {\n      id\n      status\n      sortOrder\n    }\n  }\n": types.MoveTaskDocument,
     "\n  mutation DeleteTask($id: ID!) {\n    deleteTask(id: $id)\n  }\n": types.DeleteTaskDocument,
+    "\n  mutation CreatePersonalTask($input: CreateTaskInput!) {\n    createTask(input: $input) {\n      id\n    }\n  }\n": types.CreatePersonalTaskDocument,
+    "\n  mutation UpdatePersonalTask($input: UpdateTaskInput!) {\n    updateTask(input: $input) {\n      id\n    }\n  }\n": types.UpdatePersonalTaskDocument,
     "\n  mutation UpdateProject($input: UpdateProjectInput!) {\n    updateProject(input: $input) {\n      id\n    }\n  }\n": types.UpdateProjectDocument,
     "\n  mutation UpdateTaskStatus($input: UpdateTaskInput!) {\n    updateTask(input: $input) {\n      id\n      status\n    }\n  }\n": types.UpdateTaskStatusDocument,
     "\n  query GetRecordKeepingSettings {\n    recordKeepingSettings {\n      introducedStuckDays\n      practicedStuckDays\n      bigGapDays\n    }\n  }\n": types.GetRecordKeepingSettingsDocument,
@@ -903,7 +907,7 @@ export function graphql(source: "\n  query MyTasks {\n    myTasks {\n      id\n 
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query MembershipsByOrgId($organizationId: ID!) {\n    membershipsByOrgId(organizationId: $organizationId) {\n      id\n      userId\n      user {\n        firstName\n        lastName\n      }\n      userEmail {\n        email\n      }\n    }\n  }\n"): (typeof documents)["\n  query MembershipsByOrgId($organizationId: ID!) {\n    membershipsByOrgId(organizationId: $organizationId) {\n      id\n      userId\n      user {\n        firstName\n        lastName\n      }\n      userEmail {\n        email\n      }\n    }\n  }\n"];
+export function graphql(source: "\n  query MembershipsByOrgId($organizationId: ID!) {\n    membershipsByOrgId(organizationId: $organizationId) {\n      id\n      userId\n      user {\n        firstName\n        lastName\n        isSuperAdmin\n      }\n      userEmail {\n        email\n      }\n    }\n  }\n"): (typeof documents)["\n  query MembershipsByOrgId($organizationId: ID!) {\n    membershipsByOrgId(organizationId: $organizationId) {\n      id\n      userId\n      user {\n        firstName\n        lastName\n        isSuperAdmin\n      }\n      userEmail {\n        email\n      }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -944,6 +948,14 @@ export function graphql(source: "\n  mutation MoveTask($input: MoveTaskInput!) {
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation DeleteTask($id: ID!) {\n    deleteTask(id: $id)\n  }\n"): (typeof documents)["\n  mutation DeleteTask($id: ID!) {\n    deleteTask(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation CreatePersonalTask($input: CreateTaskInput!) {\n    createTask(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreatePersonalTask($input: CreateTaskInput!) {\n    createTask(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdatePersonalTask($input: UpdateTaskInput!) {\n    updateTask(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpdatePersonalTask($input: UpdateTaskInput!) {\n    updateTask(input: $input) {\n      id\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

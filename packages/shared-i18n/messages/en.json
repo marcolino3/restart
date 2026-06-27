@@ -1894,6 +1894,8 @@
     "myTasksTitle": "My tasks",
     "myTasksSubtitle": "All tasks assigned to you across every project.",
     "noTasks": "No tasks.",
-    "filterTitle": "Filter title..."
+    "filterTitle": "Filter title...",
+    "newPersonalTask": "New personal task",
+    "personalTaskSubtitle": "A personal task just for you (not tied to a project)."
   }
 }

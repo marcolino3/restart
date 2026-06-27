@@ -14,6 +14,7 @@ const Document = gql`
       user {
         firstName
         lastName
+        isSuperAdmin
       }
       userEmail {
         email

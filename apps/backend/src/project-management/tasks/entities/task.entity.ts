@@ -56,14 +56,15 @@ export class Task extends AbstractEntity<Task> {
   @JoinColumn({ name: 'organization_id' })
   organization: Organization;
 
-  @Field(() => ID)
-  @Column('uuid', { name: 'project_id' })
-  projectId: string;
+  // Null for a personal task (a private to-do not tied to any project board).
+  @Field(() => ID, { nullable: true })
+  @Column('uuid', { name: 'project_id', nullable: true })
+  projectId?: string | null;
 
   @Field(() => Project, { nullable: true })
-  @ManyToOne(() => Project, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Project, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'project_id' })
-  project: Project;
+  project?: Project | null;
 
   // Null when created by a platform SuperAdmin without an org membership.
   @Field(() => ID, { nullable: true })
