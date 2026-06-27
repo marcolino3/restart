@@ -24,6 +24,12 @@ export type AccessibleTeam = {
   team: Team;
 };
 
+export type AddProjectMemberInput = {
+  membershipId: Scalars['ID']['input'];
+  projectId: Scalars['ID']['input'];
+  role?: InputMaybe<ProjectMemberRole>;
+};
+
 export type Address = {
   __typename?: 'Address';
   addressLine2?: Maybe<Scalars['String']['output']>;
@@ -731,6 +737,14 @@ export type CreateOrganizationSettingInput = {
   value: Scalars['String']['input'];
 };
 
+export type CreateProjectInput = {
+  color?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  memberMembershipIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  status?: InputMaybe<ProjectStatus>;
+  title: Scalars['String']['input'];
+};
+
 export type CreateSchoolClassEnrollmentInput = {
   enrolledAt: Scalars['String']['input'];
   leftAt?: InputMaybe<Scalars['String']['input']>;
@@ -766,6 +780,16 @@ export type CreateStudentNoteInput = {
   date?: InputMaybe<Scalars['String']['input']>;
   isConfidential?: InputMaybe<Scalars['Boolean']['input']>;
   studentId: Scalars['ID']['input'];
+  title: Scalars['String']['input'];
+};
+
+export type CreateTaskInput = {
+  assigneeMembershipIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  dueDate?: InputMaybe<Scalars['String']['input']>;
+  priority?: InputMaybe<TaskPriority>;
+  projectId: Scalars['ID']['input'];
+  status?: InputMaybe<TaskStatus>;
   title: Scalars['String']['input'];
 };
 
@@ -1596,8 +1620,15 @@ export type MoveAdmissionApplicationInput = {
   toStageId: Scalars['ID']['input'];
 };
 
+export type MoveTaskInput = {
+  id: Scalars['ID']['input'];
+  orderedTaskIds: Array<Scalars['ID']['input']>;
+  status: TaskStatus;
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
+  addProjectMember: ProjectMember;
   addUserEmail: UserEmail;
   archiveAdmissionApplication: Scalars['Boolean']['output'];
   archiveAdmissionRejectionReason: Scalars['Boolean']['output'];
@@ -1608,6 +1639,7 @@ export type Mutation = {
   archiveCurriculumNode: Scalars['Boolean']['output'];
   archiveEmployeeAbsenceCategory: Scalars['Boolean']['output'];
   archiveFamily: Scalars['Boolean']['output'];
+  archiveProject: Project;
   completeAdmissionReminder: AdmissionReminder;
   createAddress: Address;
   createAdmissionActivity: AdmissionActivity;
@@ -1634,9 +1666,11 @@ export type Mutation = {
   createMembership: Membership;
   createOrganization: Organization;
   createOrganizationSetting: OrganizationSettingOutput;
+  createProject: Project;
   createSchoolClass: SchoolClass;
   createStudent: Student;
   createStudentNote: StudentNote;
+  createTask: Task;
   createTeam: Team;
   createTeamMember: TeamMember;
   createTimeTracking: TimeTracking;
@@ -1653,8 +1687,10 @@ export type Mutation = {
   deleteGradeLevel: Scalars['Boolean']['output'];
   deleteLessonRecord: Scalars['Boolean']['output'];
   deleteOrganizationSetting: Scalars['Boolean']['output'];
+  deleteProject: Scalars['Boolean']['output'];
   deleteSchoolClass: Scalars['Boolean']['output'];
   deleteStudent: Scalars['Boolean']['output'];
+  deleteTask: Scalars['Boolean']['output'];
   deleteTeam: Scalars['Boolean']['output'];
   deleteTeamMember: Scalars['Boolean']['output'];
   deleteTimeTracking: Scalars['Boolean']['output'];
@@ -1664,9 +1700,11 @@ export type Mutation = {
   linkContactPersonToStudent: StudentContactPerson;
   moveAdmissionApplication: AdmissionApplication;
   moveStudentToStage: Student;
+  moveTask: Task;
   rejectAdmissionApplication: AdmissionApplication;
   removeCountry: Country;
   removeOrganization: Organization;
+  removeProjectMember: Scalars['Boolean']['output'];
   removeUser: User;
   removeUserEmail: UserEmail;
   reorderAdmissionApplications: Array<AdmissionApplication>;
@@ -1719,12 +1757,15 @@ export type Mutation = {
   updateMembership: Membership;
   updateOrganization: Organization;
   updateOrganizationSetting: OrganizationSettingOutput;
+  updateProject: Project;
+  updateProjectMemberRole: ProjectMember;
   updateRecordKeepingSettings: RecordKeepingSettings;
   updateRolePermissions: Role;
   updateSchoolClass: SchoolClass;
   updateStudent: Student;
   updateStudentContactPersonLink: StudentContactPerson;
   updateStudentNote: StudentNote;
+  updateTask: Task;
   updateTeam: Team;
   updateTeamMember: TeamMember;
   updateTimeTracking: TimeTracking;
@@ -1736,6 +1777,11 @@ export type Mutation = {
   upsertEmployeeAbsenceCategoryTranslation: EmployeeAbsenceCategoryTranslation;
   upsertEmployeeEmergencyProfile: EmployeeEmergencyProfile;
   upsertEmployeeHrProfile: EmployeeHrProfile;
+};
+
+
+export type MutationAddProjectMemberArgs = {
+  input: AddProjectMemberInput;
 };
 
 
@@ -1786,6 +1832,12 @@ export type MutationArchiveEmployeeAbsenceCategoryArgs = {
 
 
 export type MutationArchiveFamilyArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationArchiveProjectArgs = {
+  archived?: Scalars['Boolean']['input'];
   id: Scalars['ID']['input'];
 };
 
@@ -1915,6 +1967,11 @@ export type MutationCreateOrganizationSettingArgs = {
 };
 
 
+export type MutationCreateProjectArgs = {
+  input: CreateProjectInput;
+};
+
+
 export type MutationCreateSchoolClassArgs = {
   input: CreateSchoolClassInput;
 };
@@ -1927,6 +1984,11 @@ export type MutationCreateStudentArgs = {
 
 export type MutationCreateStudentNoteArgs = {
   createStudentNoteInput: CreateStudentNoteInput;
+};
+
+
+export type MutationCreateTaskArgs = {
+  input: CreateTaskInput;
 };
 
 
@@ -2011,12 +2073,22 @@ export type MutationDeleteOrganizationSettingArgs = {
 };
 
 
+export type MutationDeleteProjectArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationDeleteSchoolClassArgs = {
   id: Scalars['ID']['input'];
 };
 
 
 export type MutationDeleteStudentArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteTaskArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -2067,6 +2139,11 @@ export type MutationMoveStudentToStageArgs = {
 };
 
 
+export type MutationMoveTaskArgs = {
+  input: MoveTaskInput;
+};
+
+
 export type MutationRejectAdmissionApplicationArgs = {
   input: RejectAdmissionApplicationInput;
 };
@@ -2079,6 +2156,11 @@ export type MutationRemoveCountryArgs = {
 
 export type MutationRemoveOrganizationArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type MutationRemoveProjectMemberArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -2343,6 +2425,16 @@ export type MutationUpdateOrganizationSettingArgs = {
 };
 
 
+export type MutationUpdateProjectArgs = {
+  input: UpdateProjectInput;
+};
+
+
+export type MutationUpdateProjectMemberRoleArgs = {
+  input: UpdateProjectMemberRoleInput;
+};
+
+
 export type MutationUpdateRecordKeepingSettingsArgs = {
   input: UpdateRecordKeepingSettingsInput;
 };
@@ -2370,6 +2462,11 @@ export type MutationUpdateStudentContactPersonLinkArgs = {
 
 export type MutationUpdateStudentNoteArgs = {
   updateStudentNoteInput: UpdateStudentNoteInput;
+};
+
+
+export type MutationUpdateTaskArgs = {
+  input: UpdateTaskInput;
 };
 
 
@@ -2519,6 +2616,10 @@ export enum PermissionCode {
   FamilyWrite = 'FAMILY_WRITE',
   OrgDelete = 'ORG_DELETE',
   OrgTransferOwnership = 'ORG_TRANSFER_OWNERSHIP',
+  ProjectCreate = 'PROJECT_CREATE',
+  ProjectManageAll = 'PROJECT_MANAGE_ALL',
+  ProjectRead = 'PROJECT_READ',
+  ProjectTemplateManage = 'PROJECT_TEMPLATE_MANAGE',
   RecordKeepingRead = 'RECORD_KEEPING_READ',
   RecordKeepingSettingsManage = 'RECORD_KEEPING_SETTINGS_MANAGE',
   RecordKeepingWrite = 'RECORD_KEEPING_WRITE',
@@ -2545,6 +2646,57 @@ export enum Persona {
   Parent = 'PARENT',
   Student = 'STUDENT',
   Teacher = 'TEACHER'
+}
+
+export type Project = {
+  __typename?: 'Project';
+  color?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  createdBy?: Maybe<Membership>;
+  createdByMembershipId: Scalars['ID']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  members?: Maybe<Array<ProjectMember>>;
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['ID']['output'];
+  status: ProjectStatus;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type ProjectMember = {
+  __typename?: 'ProjectMember';
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  membership?: Maybe<Membership>;
+  membershipId: Scalars['ID']['output'];
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['ID']['output'];
+  project?: Maybe<Project>;
+  projectId: Scalars['ID']['output'];
+  role: ProjectMemberRole;
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+/** Role of a membership within a project (OWNER or MEMBER) */
+export enum ProjectMemberRole {
+  Member = 'MEMBER',
+  Owner = 'OWNER'
+}
+
+/** Lifecycle status of a project (board) */
+export enum ProjectStatus {
+  Active = 'ACTIVE',
+  Completed = 'COMPLETED',
+  OnHold = 'ON_HOLD'
 }
 
 export type Query = {
@@ -2611,6 +2763,8 @@ export type Query = {
   lessonRecords: Array<LessonRecord>;
   lessonsByOrg: Array<CurriculumNode>;
   membershipsByOrgId: Array<Membership>;
+  myProjects: Array<Project>;
+  myTasks: Array<Task>;
   myTeachingSchoolClasses: Array<SchoolClass>;
   myTeams: Array<AccessibleTeam>;
   nextLessonsForStudent: Array<CurriculumNode>;
@@ -2621,6 +2775,8 @@ export type Query = {
   organizations: Array<Organization>;
   permissions: Array<Permission>;
   previewAdmissionEmail: AdmissionEmailPreview;
+  projectById: Project;
+  projectMembers: Array<ProjectMember>;
   recordKeepingSettings: RecordKeepingSettings;
   relatedAddressesForContactPerson: Array<AddressSuggestion>;
   rolesByOrgId: Array<Role>;
@@ -2632,6 +2788,8 @@ export type Query = {
   studentNotesByStudentId: Array<StudentNote>;
   studentsByContactPersonId: Array<StudentContactPerson>;
   studentsByOrgId: Array<Student>;
+  taskById: Task;
+  tasksByProject: Array<Task>;
   teachersByOrgId: Array<Employee>;
   teamById: Team;
   teamMemberById: TeamMember;
@@ -2943,6 +3101,16 @@ export type QueryPreviewAdmissionEmailArgs = {
 };
 
 
+export type QueryProjectByIdArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryProjectMembersArgs = {
+  projectId: Scalars['ID']['input'];
+};
+
+
 export type QueryRelatedAddressesForContactPersonArgs = {
   contactPersonId: Scalars['ID']['input'];
 };
@@ -2978,6 +3146,16 @@ export type QueryStudentNotesByStudentIdArgs = {
 
 export type QueryStudentsByContactPersonIdArgs = {
   contactPersonId: Scalars['ID']['input'];
+};
+
+
+export type QueryTaskByIdArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryTasksByProjectArgs = {
+  projectId: Scalars['ID']['input'];
 };
 
 
@@ -3306,6 +3484,63 @@ export enum SystemRole {
   OrgAdmin = 'ORG_ADMIN',
   OrgOwner = 'ORG_OWNER',
   TeamLead = 'TEAM_LEAD'
+}
+
+export type Task = {
+  __typename?: 'Task';
+  assignees?: Maybe<Array<TaskAssignee>>;
+  createdAt: Scalars['DateTime']['output'];
+  createdBy?: Maybe<Membership>;
+  createdByMembershipId: Scalars['ID']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  dueDate?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['ID']['output'];
+  priority: TaskPriority;
+  project?: Maybe<Project>;
+  projectId: Scalars['ID']['output'];
+  sortOrder: Scalars['Int']['output'];
+  status: TaskStatus;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type TaskAssignee = {
+  __typename?: 'TaskAssignee';
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  membership?: Maybe<Membership>;
+  membershipId: Scalars['ID']['output'];
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['ID']['output'];
+  task?: Maybe<Task>;
+  taskId: Scalars['ID']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+/** Priority of a task */
+export enum TaskPriority {
+  High = 'HIGH',
+  Low = 'LOW',
+  Medium = 'MEDIUM',
+  Urgent = 'URGENT'
+}
+
+/** Workflow status of a task; also the columns of the board */
+export enum TaskStatus {
+  Blocked = 'BLOCKED',
+  Done = 'DONE',
+  InProgress = 'IN_PROGRESS',
+  Open = 'OPEN'
 }
 
 /** LK-Selbsteinschätzung der Vorbereitung: WELL_PREPARED / ACCEPTABLE / RUSHED. */
@@ -3655,6 +3890,19 @@ export type UpdateOrganizationSettingInput = {
   value?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type UpdateProjectInput = {
+  color?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  status?: InputMaybe<ProjectStatus>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateProjectMemberRoleInput = {
+  id: Scalars['ID']['input'];
+  role: ProjectMemberRole;
+};
+
 export type UpdateRecordKeepingSettingsInput = {
   bigGapDays: Scalars['Int']['input'];
   introducedStuckDays: Scalars['Int']['input'];
@@ -3713,6 +3961,16 @@ export type UpdateStudentNoteInput = {
   id: Scalars['ID']['input'];
   isConfidential?: InputMaybe<Scalars['Boolean']['input']>;
   studentId?: InputMaybe<Scalars['ID']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateTaskInput = {
+  assigneeMembershipIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  dueDate?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  priority?: InputMaybe<TaskPriority>;
+  status?: InputMaybe<TaskStatus>;
   title?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -4670,6 +4928,110 @@ export type UpdateOrganizationMutationVariables = Exact<{
 
 export type UpdateOrganizationMutation = { __typename?: 'Mutation', updateOrganization: { __typename?: 'Organization', id: string, name?: string | null, subdomain?: string | null } };
 
+export type ArchiveProjectMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  archived: Scalars['Boolean']['input'];
+}>;
+
+
+export type ArchiveProjectMutation = { __typename?: 'Mutation', archiveProject: { __typename?: 'Project', id: string, isArchived: boolean } };
+
+export type CreateProjectMutationVariables = Exact<{
+  input: CreateProjectInput;
+}>;
+
+
+export type CreateProjectMutation = { __typename?: 'Mutation', createProject: { __typename?: 'Project', id: string } };
+
+export type DeleteProjectMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteProjectMutation = { __typename?: 'Mutation', deleteProject: boolean };
+
+export type MembershipsByOrgIdQueryVariables = Exact<{
+  organizationId: Scalars['ID']['input'];
+}>;
+
+
+export type MembershipsByOrgIdQuery = { __typename?: 'Query', membershipsByOrgId: Array<{ __typename?: 'Membership', id: string, userId: string, user?: { __typename?: 'User', firstName: string, lastName: string } | null, userEmail?: { __typename?: 'UserEmail', email: string } | null }> };
+
+export type TasksByProjectQueryVariables = Exact<{
+  projectId: Scalars['ID']['input'];
+}>;
+
+
+export type TasksByProjectQuery = { __typename?: 'Query', tasksByProject: Array<{ __typename?: 'Task', id: string, title: string, description?: string | null, status: TaskStatus, priority: TaskPriority, dueDate?: string | null, sortOrder: number, assignees?: Array<{ __typename?: 'TaskAssignee', id: string, membershipId: string, membership?: { __typename?: 'Membership', id: string, userId: string, user?: { __typename?: 'User', firstName: string, lastName: string } | null, userEmail?: { __typename?: 'UserEmail', email: string } | null } | null }> | null }> };
+
+export type ProjectByIdQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type ProjectByIdQuery = { __typename?: 'Query', projectById: { __typename?: 'Project', id: string, title: string, description?: string | null, status: ProjectStatus, color?: string | null, isArchived: boolean, createdAt: any, members?: Array<{ __typename?: 'ProjectMember', id: string, role: ProjectMemberRole, membership?: { __typename?: 'Membership', id: string, userId: string, user?: { __typename?: 'User', firstName: string, lastName: string } | null, userEmail?: { __typename?: 'UserEmail', email: string } | null } | null }> | null } };
+
+export type MyProjectsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MyProjectsQuery = { __typename?: 'Query', myProjects: Array<{ __typename?: 'Project', id: string, title: string, description?: string | null, status: ProjectStatus, color?: string | null, isArchived: boolean, createdAt: any }> };
+
+export type AddProjectMemberMutationVariables = Exact<{
+  input: AddProjectMemberInput;
+}>;
+
+
+export type AddProjectMemberMutation = { __typename?: 'Mutation', addProjectMember: { __typename?: 'ProjectMember', id: string } };
+
+export type UpdateProjectMemberRoleMutationVariables = Exact<{
+  input: UpdateProjectMemberRoleInput;
+}>;
+
+
+export type UpdateProjectMemberRoleMutation = { __typename?: 'Mutation', updateProjectMemberRole: { __typename?: 'ProjectMember', id: string, role: ProjectMemberRole } };
+
+export type RemoveProjectMemberMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type RemoveProjectMemberMutation = { __typename?: 'Mutation', removeProjectMember: boolean };
+
+export type CreateTaskMutationVariables = Exact<{
+  input: CreateTaskInput;
+}>;
+
+
+export type CreateTaskMutation = { __typename?: 'Mutation', createTask: { __typename?: 'Task', id: string } };
+
+export type UpdateTaskMutationVariables = Exact<{
+  input: UpdateTaskInput;
+}>;
+
+
+export type UpdateTaskMutation = { __typename?: 'Mutation', updateTask: { __typename?: 'Task', id: string } };
+
+export type MoveTaskMutationVariables = Exact<{
+  input: MoveTaskInput;
+}>;
+
+
+export type MoveTaskMutation = { __typename?: 'Mutation', moveTask: { __typename?: 'Task', id: string, status: TaskStatus, sortOrder: number } };
+
+export type DeleteTaskMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteTaskMutation = { __typename?: 'Mutation', deleteTask: boolean };
+
+export type UpdateProjectMutationVariables = Exact<{
+  input: UpdateProjectInput;
+}>;
+
+
+export type UpdateProjectMutation = { __typename?: 'Mutation', updateProject: { __typename?: 'Project', id: string } };
+
 export type GetRecordKeepingSettingsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -5174,6 +5536,21 @@ export const OrganizationDocument = {"kind":"Document","definitions":[{"kind":"O
 export const GetOrganizationsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetOrganizations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"organizations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"subdomain"}},{"kind":"Field","name":{"kind":"Name","value":"domain"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}}]}}]}}]} as unknown as DocumentNode<GetOrganizationsQuery, GetOrganizationsQueryVariables>;
 export const RemoveOrganizationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RemoveOrganization"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"removeOrganization"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<RemoveOrganizationMutation, RemoveOrganizationMutationVariables>;
 export const UpdateOrganizationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateOrganization"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"updateOrganizationInput"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateOrganizationInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateOrganization"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"updateOrganizationInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"updateOrganizationInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"subdomain"}}]}}]}}]} as unknown as DocumentNode<UpdateOrganizationMutation, UpdateOrganizationMutationVariables>;
+export const ArchiveProjectDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ArchiveProject"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"archived"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"archiveProject"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"archived"},"value":{"kind":"Variable","name":{"kind":"Name","value":"archived"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"isArchived"}}]}}]}}]} as unknown as DocumentNode<ArchiveProjectMutation, ArchiveProjectMutationVariables>;
+export const CreateProjectDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateProject"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateProjectInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createProject"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateProjectMutation, CreateProjectMutationVariables>;
+export const DeleteProjectDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteProject"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteProject"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteProjectMutation, DeleteProjectMutationVariables>;
+export const MembershipsByOrgIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"MembershipsByOrgId"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"organizationId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"membershipsByOrgId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"organizationId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"organizationId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}},{"kind":"Field","name":{"kind":"Name","value":"userEmail"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"email"}}]}}]}}]}}]} as unknown as DocumentNode<MembershipsByOrgIdQuery, MembershipsByOrgIdQueryVariables>;
+export const TasksByProjectDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TasksByProject"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"projectId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"tasksByProject"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"projectId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"projectId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}},{"kind":"Field","name":{"kind":"Name","value":"dueDate"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"assignees"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"membershipId"}},{"kind":"Field","name":{"kind":"Name","value":"membership"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}},{"kind":"Field","name":{"kind":"Name","value":"userEmail"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"email"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<TasksByProjectQuery, TasksByProjectQueryVariables>;
+export const ProjectByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ProjectById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"projectById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"isArchived"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"members"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"membership"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}},{"kind":"Field","name":{"kind":"Name","value":"userEmail"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"email"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<ProjectByIdQuery, ProjectByIdQueryVariables>;
+export const MyProjectsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"MyProjects"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"myProjects"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"isArchived"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<MyProjectsQuery, MyProjectsQueryVariables>;
+export const AddProjectMemberDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AddProjectMember"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AddProjectMemberInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"addProjectMember"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<AddProjectMemberMutation, AddProjectMemberMutationVariables>;
+export const UpdateProjectMemberRoleDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateProjectMemberRole"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateProjectMemberRoleInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateProjectMemberRole"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}}]}}]} as unknown as DocumentNode<UpdateProjectMemberRoleMutation, UpdateProjectMemberRoleMutationVariables>;
+export const RemoveProjectMemberDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RemoveProjectMember"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"removeProjectMember"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<RemoveProjectMemberMutation, RemoveProjectMemberMutationVariables>;
+export const CreateTaskDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateTask"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateTaskInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createTask"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateTaskMutation, CreateTaskMutationVariables>;
+export const UpdateTaskDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateTask"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateTaskInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateTask"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateTaskMutation, UpdateTaskMutationVariables>;
+export const MoveTaskDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"MoveTask"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"MoveTaskInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"moveTask"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}}]}}]}}]} as unknown as DocumentNode<MoveTaskMutation, MoveTaskMutationVariables>;
+export const DeleteTaskDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteTask"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteTask"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteTaskMutation, DeleteTaskMutationVariables>;
+export const UpdateProjectDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateProject"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateProjectInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateProject"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateProjectMutation, UpdateProjectMutationVariables>;
 export const GetRecordKeepingSettingsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetRecordKeepingSettings"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"recordKeepingSettings"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"introducedStuckDays"}},{"kind":"Field","name":{"kind":"Name","value":"practicedStuckDays"}},{"kind":"Field","name":{"kind":"Name","value":"bigGapDays"}}]}}]}}]} as unknown as DocumentNode<GetRecordKeepingSettingsQuery, GetRecordKeepingSettingsQueryVariables>;
 export const UpdateRecordKeepingSettingsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateRecordKeepingSettings"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateRecordKeepingSettingsInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateRecordKeepingSettings"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"introducedStuckDays"}},{"kind":"Field","name":{"kind":"Name","value":"practicedStuckDays"}},{"kind":"Field","name":{"kind":"Name","value":"bigGapDays"}}]}}]}}]} as unknown as DocumentNode<UpdateRecordKeepingSettingsMutation, UpdateRecordKeepingSettingsMutationVariables>;
 export const CreateLessonRecordsBulkDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateLessonRecordsBulk"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateLessonRecordsBulkInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createLessonRecordsBulk"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"studentId"}},{"kind":"Field","name":{"kind":"Name","value":"lessonId"}},{"kind":"Field","name":{"kind":"Name","value":"recordedAt"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"note"}}]}}]}}]} as unknown as DocumentNode<CreateLessonRecordsBulkMutation, CreateLessonRecordsBulkMutationVariables>;

@@ -11,6 +11,7 @@ import {
   IconFileWord,
   IconHelp,
   IconInnerShadowTop,
+  IconLayoutKanban,
   IconListDetails,
   IconReport,
   IconBook,
@@ -127,6 +128,15 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
               title: t("admissions"),
               url: ROUTES.admin.admissionsKanban(locale),
               icon: IconClipboardCheck,
+            },
+          ]
+        : []),
+      ...(hasPermission("PROJECT_READ")
+        ? [
+            {
+              title: t("projects"),
+              url: ROUTES.admin.projects(locale),
+              icon: IconLayoutKanban,
             },
           ]
         : []),
