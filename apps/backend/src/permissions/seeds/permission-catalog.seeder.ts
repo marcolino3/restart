@@ -97,6 +97,16 @@ const PERMISSION_CATALOG: Array<{
   { code: PermissionCode.ADDRESS_READ, name: 'Adresse lesen' },
   { code: PermissionCode.ADDRESS_WRITE, name: 'Adresse schreiben' },
   { code: PermissionCode.ADDRESS_DELETE, name: 'Adresse loeschen' },
+  { code: PermissionCode.PROJECT_READ, name: 'Projekte nutzen/lesen' },
+  { code: PermissionCode.PROJECT_CREATE, name: 'Projekt erstellen' },
+  {
+    code: PermissionCode.PROJECT_MANAGE_ALL,
+    name: 'Alle Projekte verwalten (org-weit)',
+  },
+  {
+    code: PermissionCode.PROJECT_TEMPLATE_MANAGE,
+    name: 'Projekt-Vorlagen verwalten',
+  },
 ];
 
 export async function seedPermissionCatalog(manager: EntityManager) {

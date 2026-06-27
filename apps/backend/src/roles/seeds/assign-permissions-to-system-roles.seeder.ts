@@ -49,6 +49,10 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'ADDRESS_READ',
     'ADDRESS_WRITE',
     'ADDRESS_DELETE',
+    'PROJECT_READ',
+    'PROJECT_CREATE',
+    'PROJECT_MANAGE_ALL',
+    'PROJECT_TEMPLATE_MANAGE',
   ] as PermissionCode[],
   ORG_ADMIN: [
     'USER_INVITE',
@@ -89,6 +93,10 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'ADDRESS_READ',
     'ADDRESS_WRITE',
     'ADDRESS_DELETE',
+    'PROJECT_READ',
+    'PROJECT_CREATE',
+    'PROJECT_MANAGE_ALL',
+    'PROJECT_TEMPLATE_MANAGE',
   ] as PermissionCode[],
   HR_MANAGER: [
     'EMPLOYEE_READ',
@@ -103,6 +111,8 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'CURRICULUM_LEVEL_READ',
     'CURRICULUM_READ',
     'ADDRESS_READ',
+    'PROJECT_READ',
+    'PROJECT_CREATE',
   ] as PermissionCode[],
   OFFICE: [
     'EMPLOYEE_READ',
@@ -128,6 +138,10 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'RECORD_KEEPING_WRITE',
     'ADDRESS_READ',
     'ADDRESS_WRITE',
+    'PROJECT_READ',
+    'PROJECT_CREATE',
+    'PROJECT_MANAGE_ALL',
+    'PROJECT_TEMPLATE_MANAGE',
   ] as PermissionCode[],
   TEAM_LEAD: [
     'EMPLOYEE_READ',
@@ -142,6 +156,8 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'CURRICULUM_READ',
     'RECORD_KEEPING_READ',
     'RECORD_KEEPING_WRITE',
+    'PROJECT_READ',
+    'PROJECT_CREATE',
   ] as PermissionCode[],
   EMPLOYEE: [
     'EMPLOYEE_READ',
@@ -155,6 +171,8 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'CURRICULUM_READ',
     'RECORD_KEEPING_READ',
     'RECORD_KEEPING_WRITE',
+    'PROJECT_READ',
+    'PROJECT_CREATE',
   ] as PermissionCode[],
 };
 
