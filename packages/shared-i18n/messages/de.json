@@ -1896,6 +1896,8 @@
     "noTasks": "Keine Aufgaben.",
     "filterTitle": "Titel filtern...",
     "newPersonalTask": "Neue eigene Aufgabe",
-    "personalTaskSubtitle": "Eine persönliche Aufgabe nur für dich (ohne Projekt)."
+    "personalTaskSubtitle": "Eine persönliche Aufgabe nur für dich (ohne Projekt).",
+    "personal": "Persönlich",
+    "reorderError": "Reihenfolge konnte nicht gespeichert werden."
   }
 }

@@ -1,7 +1,7 @@
 import { AbstractEntity } from '@/database/abstract.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
-import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { Task } from './task.entity';
 
@@ -38,4 +38,10 @@ export class TaskAssignee extends AbstractEntity<TaskAssignee> {
   @ManyToOne(() => Membership, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'membership_id' })
   membership: Membership;
+
+  // Per-assignee personal ordering for the "My Tasks" list (drag-and-drop).
+  // Scoped to this membership, independent of the task's board sortOrder.
+  @Field(() => Int)
+  @Column('integer', { name: 'sort_order', default: 0 })
+  sortOrder: number;
 }

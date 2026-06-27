@@ -81,16 +81,56 @@ export class TasksService {
     if (!membershipId) return [];
     const assigned = await this.assigneesRepo.find({
       where: { organizationId, membershipId, isActive: true },
-      select: ['taskId'],
+      order: { sortOrder: 'ASC' },
+      select: ['taskId', 'sortOrder'],
     });
-    const taskIds = assigned.map((r) => r.taskId);
-    if (taskIds.length === 0) return [];
+    const orderedIds = assigned.map((r) => r.taskId);
+    if (orderedIds.length === 0) return [];
 
-    return this.tasksRepo.find({
-      where: { id: In(taskIds), organizationId, isActive: true },
+    const tasks = await this.tasksRepo.find({
+      where: { id: In(orderedIds), organizationId, isActive: true },
       relations: MY_TASK_RELATIONS,
-      order: { dueDate: 'ASC' },
     });
+    // Preserve the caller's personal order (assignee.sortOrder).
+    const rank = new Map(orderedIds.map((id, i) => [id, i]));
+    return tasks.sort(
+      (a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0),
+    );
+  }
+
+  /**
+   * Persist the caller's personal ordering of their assigned tasks (drag-and-drop
+   * in "My Tasks"). Only reorders the caller's own assignee rows.
+   */
+  async reorderAssigned(
+    organizationId: string,
+    membershipId: string | null,
+    orderedTaskIds: string[],
+  ): Promise<boolean> {
+    if (!membershipId) {
+      throw new BadRequestException('No active membership');
+    }
+    const assignees = await this.assigneesRepo.find({
+      where: {
+        organizationId,
+        membershipId,
+        taskId: In(orderedTaskIds),
+        isActive: true,
+      },
+    });
+    if (assignees.length !== orderedTaskIds.length) {
+      throw new BadRequestException(
+        'One or more tasks are not assigned to you',
+      );
+    }
+    const byTask = new Map(assignees.map((a) => [a.taskId, a]));
+    const toSave = orderedTaskIds.map((taskId, index) => {
+      const assignee = byTask.get(taskId)!;
+      assignee.sortOrder = index;
+      return assignee;
+    });
+    await this.assigneesRepo.save(toSave);
+    return true;
   }
 
   async create(

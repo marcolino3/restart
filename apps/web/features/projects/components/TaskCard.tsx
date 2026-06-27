@@ -6,7 +6,6 @@ import { IconCalendar } from "@tabler/icons-react";
 import { useTranslations } from "next-intl";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -31,11 +30,14 @@ export function TaskCard({ task }: { task: Task }) {
     <div className="rounded-md border bg-card p-3 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-medium leading-snug">{task.title}</p>
-        <Badge
-          className={cn("shrink-0 border-0 text-xs", PRIORITY_CLASS[task.priority])}
+        <span
+          className={cn(
+            "shrink-0 rounded-md px-2 py-0.5 text-xs font-medium",
+            PRIORITY_CLASS[task.priority]
+          )}
         >
           {t(`priority_${task.priority}`)}
-        </Badge>
+        </span>
       </div>
 
       {task.description && (

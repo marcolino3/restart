@@ -61,7 +61,7 @@ export class CreateProjectManagement1779201800000 implements MigrationInterface 
 
     // --- task_assignees ---------------------------------------------------
     await queryRunner.query(
-      `CREATE TABLE "task_assignees" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "version" integer NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "isArchived" boolean NOT NULL DEFAULT false, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" date, "organization_id" uuid NOT NULL, "task_id" uuid NOT NULL, "membership_id" uuid NOT NULL, CONSTRAINT "PK_task_assignees" PRIMARY KEY ("id"))`,
+      `CREATE TABLE "task_assignees" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "version" integer NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "isArchived" boolean NOT NULL DEFAULT false, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" date, "organization_id" uuid NOT NULL, "task_id" uuid NOT NULL, "membership_id" uuid NOT NULL, "sort_order" integer NOT NULL DEFAULT '0', CONSTRAINT "PK_task_assignees" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE UNIQUE INDEX "UQ_task_assignee_task_membership" ON "task_assignees" ("task_id", "membership_id") `,

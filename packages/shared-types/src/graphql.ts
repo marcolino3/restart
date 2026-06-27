@@ -1715,6 +1715,7 @@ export type Mutation = {
   reorderCurriculumNodes: Array<CurriculumNode>;
   reorderEmployeeAbsenceCategories: Array<EmployeeAbsenceCategory>;
   reorderGradeLevels: Array<GradeLevel>;
+  reorderMyTasks: Scalars['Boolean']['output'];
   reorderTeams: Array<Team>;
   resendAdmissionEmail: AdmissionEmail;
   restoreAdmissionApplication: AdmissionApplication;
@@ -2211,6 +2212,11 @@ export type MutationReorderEmployeeAbsenceCategoriesArgs = {
 
 export type MutationReorderGradeLevelsArgs = {
   input: ReorderGradeLevelsInput;
+};
+
+
+export type MutationReorderMyTasksArgs = {
+  orderedTaskIds: Array<Scalars['ID']['input']>;
 };
 
 
@@ -3521,6 +3527,7 @@ export type TaskAssignee = {
   membershipId: Scalars['ID']['output'];
   organization?: Maybe<Organization>;
   organizationId: Scalars['ID']['output'];
+  sortOrder: Scalars['Int']['output'];
   task?: Maybe<Task>;
   taskId: Scalars['ID']['output'];
   updatedAt: Scalars['DateTime']['output'];
@@ -5044,6 +5051,13 @@ export type UpdatePersonalTaskMutationVariables = Exact<{
 
 export type UpdatePersonalTaskMutation = { __typename?: 'Mutation', updateTask: { __typename?: 'Task', id: string } };
 
+export type ReorderMyTasksMutationVariables = Exact<{
+  orderedTaskIds: Array<Scalars['ID']['input']> | Scalars['ID']['input'];
+}>;
+
+
+export type ReorderMyTasksMutation = { __typename?: 'Mutation', reorderMyTasks: boolean };
+
 export type UpdateProjectMutationVariables = Exact<{
   input: UpdateProjectInput;
 }>;
@@ -5579,6 +5593,7 @@ export const MoveTaskDocument = {"kind":"Document","definitions":[{"kind":"Opera
 export const DeleteTaskDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteTask"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteTask"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteTaskMutation, DeleteTaskMutationVariables>;
 export const CreatePersonalTaskDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreatePersonalTask"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateTaskInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createTask"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreatePersonalTaskMutation, CreatePersonalTaskMutationVariables>;
 export const UpdatePersonalTaskDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdatePersonalTask"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateTaskInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateTask"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdatePersonalTaskMutation, UpdatePersonalTaskMutationVariables>;
+export const ReorderMyTasksDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ReorderMyTasks"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderedTaskIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"reorderMyTasks"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderedTaskIds"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderedTaskIds"}}}]}]}}]} as unknown as DocumentNode<ReorderMyTasksMutation, ReorderMyTasksMutationVariables>;
 export const UpdateProjectDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateProject"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateProjectInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateProject"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateProjectMutation, UpdateProjectMutationVariables>;
 export const UpdateTaskStatusDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateTaskStatus"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateTaskInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateTask"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode<UpdateTaskStatusMutation, UpdateTaskStatusMutationVariables>;
 export const GetRecordKeepingSettingsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetRecordKeepingSettings"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"recordKeepingSettings"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"introducedStuckDays"}},{"kind":"Field","name":{"kind":"Name","value":"practicedStuckDays"}},{"kind":"Field","name":{"kind":"Name","value":"bigGapDays"}}]}}]}}]} as unknown as DocumentNode<GetRecordKeepingSettingsQuery, GetRecordKeepingSettingsQueryVariables>;

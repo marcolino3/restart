@@ -15,7 +15,9 @@ const ME = 'membership-me';
 describe('TasksService', () => {
   let service: TasksService;
   let tasksRepo: jest.Mocked<Pick<Repository<Task>, 'find' | 'findOne'>>;
-  let assigneesRepo: jest.Mocked<Pick<Repository<TaskAssignee>, 'find'>>;
+  let assigneesRepo: jest.Mocked<
+    Pick<Repository<TaskAssignee>, 'find' | 'save'>
+  >;
   let membersRepo: jest.Mocked<Pick<Repository<ProjectMember>, 'find'>>;
   let access: jest.Mocked<
     Pick<ProjectAccessService, 'assertCanEditTasks' | 'assertCanView'>
@@ -27,7 +29,7 @@ describe('TasksService', () => {
       find: jest.fn(),
       findOne: jest.fn(),
     };
-    assigneesRepo = { find: jest.fn() };
+    assigneesRepo = { find: jest.fn(), save: jest.fn() };
     membersRepo = { find: jest.fn() };
     access = {
       assertCanEditTasks: jest.fn().mockResolvedValue({ id: 'p1' }),
@@ -59,7 +61,7 @@ describe('TasksService', () => {
       expect(assigneesRepo.find).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { organizationId: ORG, membershipId: ME, isActive: true },
-          select: ['taskId'],
+          order: { sortOrder: 'ASC' },
         }),
       );
       expect(tasksRepo.find).toHaveBeenCalled();
@@ -72,6 +74,46 @@ describe('TasksService', () => {
 
       expect(result).toEqual([]);
       expect(tasksRepo.find).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('reorderAssigned', () => {
+    it('rejects task ids that are not assigned to the caller', async () => {
+      // Caller has only one of the two requested assignee rows.
+      assigneesRepo.find.mockResolvedValue([
+        { taskId: 't1', membershipId: ME } as TaskAssignee,
+      ]);
+
+      await expect(
+        service.reorderAssigned(ORG, ME, ['t1', 'foreign']),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('scopes the lookup to the caller and persists the new order', async () => {
+      const a1 = { taskId: 't1', membershipId: ME, sortOrder: 0 } as TaskAssignee;
+      const a2 = { taskId: 't2', membershipId: ME, sortOrder: 1 } as TaskAssignee;
+      assigneesRepo.find.mockResolvedValue([a1, a2]);
+      const saved: TaskAssignee[] = [];
+      (assigneesRepo.save as jest.Mock).mockImplementation(
+        (v: TaskAssignee[]) => {
+          saved.push(...v);
+          return Promise.resolve(v);
+        },
+      );
+
+      await service.reorderAssigned(ORG, ME, ['t2', 't1']);
+
+      expect(assigneesRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            organizationId: ORG,
+            membershipId: ME,
+            isActive: true,
+          }),
+        }),
+      );
+      expect(saved.find((a) => a.taskId === 't2')?.sortOrder).toBe(0);
+      expect(saved.find((a) => a.taskId === 't1')?.sortOrder).toBe(1);
     });
   });
 

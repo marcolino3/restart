@@ -61,6 +61,20 @@ export class TasksResolver {
     return this.tasksService.findAssignedTo(orgId, actingMembershipId(user));
   }
 
+  @Mutation(() => Boolean)
+  @Permissions('PROJECT_READ')
+  reorderMyTasks(
+    @Args('orderedTaskIds', { type: () => [ID] }) orderedTaskIds: string[],
+    @CurrentOrgId() orgId: string,
+    @CurrentUser() user: TokenPayload,
+  ): Promise<boolean> {
+    return this.tasksService.reorderAssigned(
+      orgId,
+      actingMembershipId(user),
+      orderedTaskIds,
+    );
+  }
+
   @Mutation(() => Task)
   @Permissions('PROJECT_READ')
   createTask(

@@ -1896,6 +1896,8 @@
     "noTasks": "No tasks.",
     "filterTitle": "Filter title...",
     "newPersonalTask": "New personal task",
-    "personalTaskSubtitle": "A personal task just for you (not tied to a project)."
+    "personalTaskSubtitle": "A personal task just for you (not tied to a project).",
+    "personal": "Personal",
+    "reorderError": "Could not save the new order."
   }
 }

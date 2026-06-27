@@ -1,9 +1,25 @@
 "use client";
 
 import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   type ColumnDef,
   type ColumnFiltersState,
   type FilterFn,
+  type SortingFn,
   type SortingState,
   flexRender,
   getCoreRowModel,
@@ -14,9 +30,10 @@ import {
 } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { ArrowUpDown, Plus, X } from "lucide-react";
+import { ArrowUpDown, GripVertical, Plus, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import * as React from "react";
 
 import { DataTableFacetedFilter } from "@/components/common/DataTableFacetedFilter";
@@ -41,6 +58,7 @@ import {
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
 
+import { reorderMyTasksAction } from "../actions/reorder-my-tasks.action";
 import { updateTaskStatusAction } from "../actions/update-task-status.action";
 import {
   TASK_PRIORITIES,
@@ -58,11 +76,45 @@ const PRIORITY_CLASS: Record<TaskPriority, string> = {
   URGENT: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200",
 };
 
+// Meaningful sort order (most → least), not alphabetical.
+const PRIORITY_RANK: Record<TaskPriority, number> = {
+  URGENT: 0,
+  HIGH: 1,
+  MEDIUM: 2,
+  LOW: 3,
+};
+const STATUS_RANK: Record<TaskStatus, number> = {
+  OPEN: 0,
+  IN_PROGRESS: 1,
+  BLOCKED: 2,
+  DONE: 3,
+};
+
 const multiSelectFilter: FilterFn<Task> = (row, columnId, filterValue) => {
   const picks = filterValue as string[] | undefined;
   if (!picks?.length) return true;
   return picks.includes(row.getValue<string>(columnId));
 };
+
+const prioritySort: SortingFn<Task> = (a, b) =>
+  PRIORITY_RANK[a.original.priority] - PRIORITY_RANK[b.original.priority];
+const statusSort: SortingFn<Task> = (a, b) =>
+  STATUS_RANK[a.original.status] - STATUS_RANK[b.original.status];
+
+const sortHeader = (
+  column: {
+    toggleSorting: (desc?: boolean) => void;
+    getIsSorted: () => false | "asc" | "desc";
+  },
+  label: string
+) => (
+  <Button
+    variant="ghost"
+    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+  >
+    {label} <ArrowUpDown className="ml-2 h-4 w-4" />
+  </Button>
+);
 
 export function MyTasksTable({ tasks }: { tasks: Task[] }) {
   const t = useTranslations("Projects");
@@ -70,9 +122,15 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
   const locale = useLocale();
   const router = useRouter();
 
-  const [sorting, setSorting] = React.useState<SortingState>([
-    { id: "dueDate", desc: false },
-  ]);
+  // Local order = the personal (drag-and-drop) order the server returned.
+  const [data, setData] = React.useState<Task[]>(tasks);
+  const [seededFrom, setSeededFrom] = React.useState(tasks);
+  if (seededFrom !== tasks) {
+    setSeededFrom(tasks);
+    setData(tasks);
+  }
+
+  const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
@@ -81,34 +139,60 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
     task: Task | null;
   }>({ open: false, task: null });
 
+  // Manual drag ordering only makes sense without an active column sort.
+  const dndEnabled = sorting.length === 0;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
+
   const onChangeStatus = async (task: Task, status: TaskStatus) => {
     await updateTaskStatusAction(task.id, status, task.project?.id);
     router.refresh();
   };
 
+  const persistOrder = async (ids: string[], previous: Task[]) => {
+    const result = await reorderMyTasksAction(ids);
+    if (!result.success) {
+      setData(previous);
+      toast.error(t("reorderError"));
+    } else {
+      router.refresh();
+    }
+  };
+
+  const onDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setData((prev) => {
+      const oldIndex = prev.findIndex((tk) => tk.id === active.id);
+      const newIndex = prev.findIndex((tk) => tk.id === over.id);
+      if (oldIndex < 0 || newIndex < 0) return prev;
+      const next = arrayMove(prev, oldIndex, newIndex);
+      void persistOrder(
+        next.map((tk) => tk.id),
+        prev
+      );
+      return next;
+    });
+  };
+
   const projectOptions = React.useMemo(() => {
     const map = new Map<string, string | null>();
-    for (const task of tasks) {
+    for (const task of data) {
       if (task.project) map.set(task.project.title, task.project.color ?? null);
     }
     return Array.from(map, ([title, color]) => ({ title, color })).sort((a, b) =>
       a.title.localeCompare(b.title)
     );
-  }, [tasks]);
+  }, [data]);
 
   const columns = React.useMemo<ColumnDef<Task>[]>(
     () => [
       {
         id: "title",
         accessorKey: "title",
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            {t("taskTitle")} <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-        ),
+        header: ({ column }) => sortHeader(column, t("taskTitle")),
         cell: ({ getValue }) => (
           <div className="font-medium">{getValue<string>()}</div>
         ),
@@ -117,19 +201,18 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
       {
         id: "project",
         accessorFn: (row) => row.project?.title ?? "",
-        header: t("project"),
+        header: ({ column }) => sortHeader(column, t("project")),
         cell: ({ row }) => {
           const project = row.original.project;
-          if (!project) return <span className="text-muted-foreground">–</span>;
+          if (!project)
+            return (
+              <span className="text-muted-foreground">{t("personal")}</span>
+            );
           return (
             <Badge
               variant="outline"
               className="flex w-fit items-center gap-1"
-              style={
-                project.color
-                  ? { borderColor: project.color }
-                  : undefined
-              }
+              style={project.color ? { borderColor: project.color } : undefined}
             >
               {project.color && (
                 <span
@@ -146,13 +229,17 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
       {
         id: "status",
         accessorKey: "status",
-        header: t("taskStatus"),
+        header: ({ column }) => sortHeader(column, t("taskStatus")),
+        sortingFn: statusSort,
         cell: ({ row }) => (
           <Select
             value={row.original.status}
             onValueChange={(v) => onChangeStatus(row.original, v as TaskStatus)}
           >
-            <SelectTrigger className="h-8 w-40" onClick={(e) => e.stopPropagation()}>
+            <SelectTrigger
+              className="h-8 w-40"
+              onClick={(e) => e.stopPropagation()}
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -169,13 +256,19 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
       {
         id: "priority",
         accessorKey: "priority",
-        header: t("priority"),
+        header: ({ column }) => sortHeader(column, t("priority")),
+        sortingFn: prioritySort,
         cell: ({ getValue }) => {
           const value = getValue<TaskPriority>();
           return (
-            <Badge className={cn("border-0", PRIORITY_CLASS[value])}>
+            <span
+              className={cn(
+                "inline-flex rounded-md px-2 py-0.5 text-xs font-medium",
+                PRIORITY_CLASS[value]
+              )}
+            >
               {t(`priority_${value}`)}
-            </Badge>
+            </span>
           );
         },
         filterFn: multiSelectFilter,
@@ -183,14 +276,7 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
       {
         id: "dueDate",
         accessorKey: "dueDate",
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            {t("dueDate")} <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-        ),
+        header: ({ column }) => sortHeader(column, t("dueDate")),
         cell: ({ getValue, row }) => {
           const value = getValue<string | null>();
           if (!value) return <span className="text-muted-foreground">–</span>;
@@ -209,7 +295,7 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
   );
 
   const table = useReactTable({
-    data: tasks,
+    data,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -217,9 +303,12 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getRowId: (row) => row.id,
     state: { sorting, columnFilters },
     initialState: { pagination: { pageSize: 20 } },
   });
+
+  const rows = table.getRowModel().rows;
 
   const facet = (
     columnId: string,
@@ -230,9 +319,7 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
       title={title}
       selected={(table.getColumn(columnId)?.getFilterValue() as string[]) ?? []}
       onChange={(next) =>
-        table
-          .getColumn(columnId)
-          ?.setFilterValue(next.length ? next : undefined)
+        table.getColumn(columnId)?.setFilterValue(next.length ? next : undefined)
       }
       options={options}
     />
@@ -306,72 +393,89 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
         </Button>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className="cursor-pointer"
-                  onClick={() => {
-                    if (row.original.project) {
-                      router.push(
-                        ROUTES.admin.projectsBoard(
-                          locale,
-                          row.original.project.id
-                        )
-                      );
-                    } else {
-                      // Personal task (no board) → open its editor.
-                      setPersonalDialog({ open: true, task: row.original });
-                    }
-                  }}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      onClick={(e) => {
-                        if (cell.column.id === "status") e.stopPropagation();
-                      }}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={onDragEnd}
+      >
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  <TableHead className="w-8" />
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
+              ))}
+            </TableHeader>
+            <TableBody>
+              {rows.length ? (
+                <SortableContext
+                  items={rows.map((r) => r.original.id)}
+                  strategy={verticalListSortingStrategy}
                 >
-                  {t("noTasks")}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                  {rows.map((row) => (
+                    <SortableTaskRow
+                      key={row.id}
+                      id={row.original.id}
+                      dragEnabled={dndEnabled}
+                      onOpen={() => {
+                        if (row.original.project) {
+                          router.push(
+                            ROUTES.admin.projectsBoard(
+                              locale,
+                              row.original.project.id
+                            )
+                          );
+                        } else {
+                          setPersonalDialog({
+                            open: true,
+                            task: row.original,
+                          });
+                        }
+                      }}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell
+                          key={cell.id}
+                          onClick={(e) => {
+                            if (cell.column.id === "status") {
+                              e.stopPropagation();
+                            }
+                          }}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
+                    </SortableTaskRow>
+                  ))}
+                </SortableContext>
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length + 1}
+                    className="h-24 text-center"
+                  >
+                    {t("noTasks")}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </DndContext>
 
       <div className="flex items-center justify-end gap-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
@@ -403,5 +507,53 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
         task={personalDialog.task}
       />
     </div>
+  );
+}
+
+function SortableTaskRow({
+  id,
+  dragEnabled,
+  onOpen,
+  children,
+}: {
+  id: string;
+  dragEnabled: boolean;
+  onOpen: () => void;
+  children: React.ReactNode;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id, disabled: !dragEnabled });
+
+  return (
+    <TableRow
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cn("cursor-pointer", isDragging && "opacity-50")}
+      onClick={onOpen}
+      {...attributes}
+    >
+      {/* The drag handle lives in the first ("drag") cell. */}
+      <TableCell
+        className="w-8"
+        onClick={(e) => e.stopPropagation()}
+        ref={setActivatorNodeRef}
+        {...(dragEnabled ? listeners : {})}
+      >
+        <GripVertical
+          className={cn(
+            "h-4 w-4 text-muted-foreground",
+            dragEnabled ? "cursor-grab" : "opacity-30"
+          )}
+        />
+      </TableCell>
+      {children}
+    </TableRow>
   );
 }

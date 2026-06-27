@@ -148,6 +148,7 @@ type Documents = {
     "\n  mutation DeleteTask($id: ID!) {\n    deleteTask(id: $id)\n  }\n": typeof types.DeleteTaskDocument,
     "\n  mutation CreatePersonalTask($input: CreateTaskInput!) {\n    createTask(input: $input) {\n      id\n    }\n  }\n": typeof types.CreatePersonalTaskDocument,
     "\n  mutation UpdatePersonalTask($input: UpdateTaskInput!) {\n    updateTask(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdatePersonalTaskDocument,
+    "\n  mutation ReorderMyTasks($orderedTaskIds: [ID!]!) {\n    reorderMyTasks(orderedTaskIds: $orderedTaskIds)\n  }\n": typeof types.ReorderMyTasksDocument,
     "\n  mutation UpdateProject($input: UpdateProjectInput!) {\n    updateProject(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateProjectDocument,
     "\n  mutation UpdateTaskStatus($input: UpdateTaskInput!) {\n    updateTask(input: $input) {\n      id\n      status\n    }\n  }\n": typeof types.UpdateTaskStatusDocument,
     "\n  query GetRecordKeepingSettings {\n    recordKeepingSettings {\n      introducedStuckDays\n      practicedStuckDays\n      bigGapDays\n    }\n  }\n": typeof types.GetRecordKeepingSettingsDocument,
@@ -344,6 +345,7 @@ const documents: Documents = {
     "\n  mutation DeleteTask($id: ID!) {\n    deleteTask(id: $id)\n  }\n": types.DeleteTaskDocument,
     "\n  mutation CreatePersonalTask($input: CreateTaskInput!) {\n    createTask(input: $input) {\n      id\n    }\n  }\n": types.CreatePersonalTaskDocument,
     "\n  mutation UpdatePersonalTask($input: UpdateTaskInput!) {\n    updateTask(input: $input) {\n      id\n    }\n  }\n": types.UpdatePersonalTaskDocument,
+    "\n  mutation ReorderMyTasks($orderedTaskIds: [ID!]!) {\n    reorderMyTasks(orderedTaskIds: $orderedTaskIds)\n  }\n": types.ReorderMyTasksDocument,
     "\n  mutation UpdateProject($input: UpdateProjectInput!) {\n    updateProject(input: $input) {\n      id\n    }\n  }\n": types.UpdateProjectDocument,
     "\n  mutation UpdateTaskStatus($input: UpdateTaskInput!) {\n    updateTask(input: $input) {\n      id\n      status\n    }\n  }\n": types.UpdateTaskStatusDocument,
     "\n  query GetRecordKeepingSettings {\n    recordKeepingSettings {\n      introducedStuckDays\n      practicedStuckDays\n      bigGapDays\n    }\n  }\n": types.GetRecordKeepingSettingsDocument,
@@ -956,6 +958,10 @@ export function graphql(source: "\n  mutation CreatePersonalTask($input: CreateT
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation UpdatePersonalTask($input: UpdateTaskInput!) {\n    updateTask(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpdatePersonalTask($input: UpdateTaskInput!) {\n    updateTask(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ReorderMyTasks($orderedTaskIds: [ID!]!) {\n    reorderMyTasks(orderedTaskIds: $orderedTaskIds)\n  }\n"): (typeof documents)["\n  mutation ReorderMyTasks($orderedTaskIds: [ID!]!) {\n    reorderMyTasks(orderedTaskIds: $orderedTaskIds)\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
