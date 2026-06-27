@@ -1,7 +1,7 @@
 environment        = "production"
 cluster_name       = "restart-production"
 cluster_region     = "dc4-a"
-cluster_pack       = "dedicated" # SLA 99.9%, dedizierter etcd
+cluster_pack       = "dedicated_4" # SLA 99.9%, dedizierter etcd
 kubernetes_version = "1.33"
 
 pool_flavor = "a4-ram8-disk20-perf1"

@@ -38,7 +38,7 @@ variable "cluster_region" {
 }
 
 variable "cluster_pack" {
-  description = "Control-plane tier: 'shared' (gratis, max 10 Nodes) or 'dedicated' (SLA 99.9%)"
+  description = "Control-plane tier: 'shared' (gratis, max 10 Nodes) or 'dedicated_4' / 'dedicated_8' / 'dedicated_16' (dediziert, SLA 99.9%, RAM des Control-Plane)"
   type        = string
   default     = "shared"
 }
