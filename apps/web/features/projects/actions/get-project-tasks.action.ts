@@ -16,6 +16,10 @@ const Document = gql`
       priority
       dueDate
       sortOrder
+      protocol {
+        id
+        title
+      }
       assignees {
         id
         membershipId

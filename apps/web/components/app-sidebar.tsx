@@ -10,6 +10,7 @@ import {
   IconFileDescription,
   IconFileWord,
   IconHelp,
+  IconFileText,
   IconInnerShadowTop,
   IconLayoutKanban,
   IconListCheck,
@@ -143,6 +144,15 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
               title: t("myTasks"),
               url: ROUTES.admin.myTasks(locale),
               icon: IconListCheck,
+            },
+          ]
+        : []),
+      ...(hasPermission("PROTOCOL_READ")
+        ? [
+            {
+              title: t("protocols"),
+              url: ROUTES.admin.protocols(locale),
+              icon: IconFileText,
             },
           ]
         : []),

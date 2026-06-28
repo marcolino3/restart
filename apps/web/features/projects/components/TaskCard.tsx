@@ -2,7 +2,7 @@
 
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { IconCalendar } from "@tabler/icons-react";
+import { IconCalendar, IconFileText } from "@tabler/icons-react";
 import { useTranslations } from "next-intl";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -44,6 +44,13 @@ export function TaskCard({ task }: { task: Task }) {
         <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
           {task.description}
         </p>
+      )}
+
+      {task.protocol && (
+        <span className="mt-2 inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+          <IconFileText className="h-3 w-3" />
+          {task.protocol.title}
+        </span>
       )}
 
       <div className="mt-3 flex items-center justify-between gap-2">

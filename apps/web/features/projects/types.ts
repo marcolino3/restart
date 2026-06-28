@@ -75,6 +75,70 @@ export type ProjectTemplate = {
   tasks?: ProjectTemplateTask[];
 };
 
+export type AgendaGoal = "DECISION" | "INFORMATION" | "DISCUSSION";
+export type ProtocolStatus = "DRAFT" | "FINALIZED";
+
+export const AGENDA_GOALS: AgendaGoal[] = [
+  "DECISION",
+  "INFORMATION",
+  "DISCUSSION",
+];
+
+export type AgendaItem = { no?: number | null; topic: string; goal?: AgendaGoal | null };
+export type ProtocolDecisionRow = {
+  topic: string;
+  decision?: string | null;
+  responsible?: string | null;
+  dueDate?: string | null;
+};
+export type ProtocolCommunicationRow = {
+  topic: string;
+  audience?: string | null;
+  responsible?: string | null;
+  channel?: string | null;
+  dueDate?: string | null;
+};
+export type ProtocolChallengeRow = {
+  topic: string;
+  challenge?: string | null;
+  supportNeeded?: string | null;
+};
+export type ProtocolOpenPointRow = {
+  topic: string;
+  nextStep?: string | null;
+  forNextMeeting: boolean;
+};
+
+export type ProtocolSections = {
+  agendaItems: AgendaItem[];
+  decisions: ProtocolDecisionRow[];
+  communications: ProtocolCommunicationRow[];
+  infoPoints: string[];
+  challenges: ProtocolChallengeRow[];
+  openPoints: ProtocolOpenPointRow[];
+};
+
+export type ProtocolParticipantRef = {
+  id: string;
+  membershipId: string;
+  membership?: MembershipRef | null;
+};
+
+export type ProtocolListItem = {
+  id: string;
+  title: string;
+  meetingDate?: string | null;
+  status: ProtocolStatus;
+  project?: { id: string; title: string } | null;
+};
+
+export type Protocol = ProtocolListItem & {
+  projectId?: string | null;
+  externalParticipants: string[];
+  sections: ProtocolSections;
+  participants?: ProtocolParticipantRef[];
+};
+
 export type Task = {
   id: string;
   title: string;
@@ -86,4 +150,6 @@ export type Task = {
   assignees: TaskAssignee[];
   // Present only on the personal "My Tasks" view (cross-project).
   project?: { id: string; title: string; color?: string | null } | null;
+  // Set when the task originated from a meeting protocol.
+  protocol?: { id: string; title: string } | null;
 };

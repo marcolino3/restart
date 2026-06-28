@@ -21,6 +21,10 @@ const Document = gql`
         title
         color
       }
+      protocol {
+        id
+        title
+      }
       assignees {
         id
         membershipId

@@ -193,8 +193,15 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
         id: "title",
         accessorKey: "title",
         header: ({ column }) => sortHeader(column, t("taskTitle")),
-        cell: ({ getValue }) => (
-          <div className="font-medium">{getValue<string>()}</div>
+        cell: ({ row, getValue }) => (
+          <div>
+            <div className="font-medium">{getValue<string>()}</div>
+            {row.original.protocol && (
+              <span className="text-xs text-muted-foreground">
+                {t("fromProtocol", { title: row.original.protocol.title })}
+              </span>
+            )}
+          </div>
         ),
         filterFn: "includesString",
       },

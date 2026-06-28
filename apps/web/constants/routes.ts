@@ -45,6 +45,11 @@ export const ROUTES = {
       `/${locale}/admin/projects/templates`,
     myTasks: (locale: string) => `/${locale}/admin/my-tasks`,
 
+    // Meeting protocols
+    protocols: (locale: string) => `/${locale}/admin/protocols`,
+    protocolEditor: (locale: string, id: string) =>
+      `/${locale}/admin/protocols/${id}`,
+
     // Students
     students: (locale: string) => `/${locale}/admin/students`,
     studentsView: (locale: string, id: string) =>
