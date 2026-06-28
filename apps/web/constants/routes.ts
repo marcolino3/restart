@@ -41,6 +41,8 @@ export const ROUTES = {
     projects: (locale: string) => `/${locale}/admin/projects`,
     projectsBoard: (locale: string, id: string) =>
       `/${locale}/admin/projects/${id}`,
+    projectTemplates: (locale: string) =>
+      `/${locale}/admin/projects/templates`,
     myTasks: (locale: string) => `/${locale}/admin/my-tasks`,
 
     // Students

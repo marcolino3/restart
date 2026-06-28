@@ -20,7 +20,8 @@
     "organizationGroup": "Organization",
     "superAdminGroup": "SuperAdmin",
     "projects": "Projects",
-    "myTasks": "My tasks"
+    "myTasks": "My tasks",
+    "projectTemplates": "Templates"
   },
   "LanguageSwitcher": {
     "label": "Language"
@@ -1898,6 +1899,32 @@
     "newPersonalTask": "New personal task",
     "personalTaskSubtitle": "A personal task just for you (not tied to a project).",
     "personal": "Personal",
-    "reorderError": "Could not save the new order."
+    "reorderError": "Could not save the new order.",
+    "templatesTitle": "Templates",
+    "templatesSubtitle": "Save recurring school processes as templates and spin up a project in one click.",
+    "newTemplate": "New template",
+    "editTemplate": "Edit template",
+    "templateFormSubtitle": "Title, description and the tasks contained in the template.",
+    "templateTasks": "Tasks",
+    "addTemplateTask": "Add task",
+    "noTemplateTasks": "No tasks in this template yet.",
+    "noTemplates": "No templates yet.",
+    "useTemplate": "Use",
+    "template": "Template",
+    "selectTemplate": "Select template",
+    "createFromTemplate": "From template",
+    "createFromTemplateSubtitle": "Create a new project from a template — all tasks are created automatically.",
+    "createProject": "Create project",
+    "projectTitleOptional": "Project title (optional)",
+    "projectTitlePlaceholder": "Defaults to the template title",
+    "startDateOptional": "Start date (optional)",
+    "startDateHint": "Task due dates are calculated relative to the start date.",
+    "dueOffsetDays": "Due (days)",
+    "saveAsTemplate": "Save as template",
+    "saveAsTemplateSubtitle": "Saves this project's tasks as a reusable template.",
+    "templateCreated": "Template saved.",
+    "templateUpdated": "Template updated.",
+    "templateCreateError": "Could not save the template.",
+    "templateUpdateError": "Could not update the template."
   }
 }

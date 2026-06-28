@@ -1,6 +1,11 @@
 "use client";
 
-import { IconArchive, IconPlus } from "@tabler/icons-react";
+import {
+  IconArchive,
+  IconLayoutGridAdd,
+  IconPlus,
+  IconTemplate,
+} from "@tabler/icons-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import * as React from "react";
@@ -15,8 +20,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+import { CreateFromTemplateDialog } from "./CreateFromTemplateDialog";
 import { ProjectFormDialog } from "./ProjectFormDialog";
-import type { MembershipRef, ProjectListItem, ProjectStatus } from "../types";
+import type {
+  MembershipRef,
+  ProjectListItem,
+  ProjectStatus,
+  ProjectTemplate,
+} from "../types";
 
 const STATUS_VARIANT: Record<
   ProjectStatus,
@@ -30,14 +41,23 @@ const STATUS_VARIANT: Record<
 type Props = {
   projects: ProjectListItem[];
   orgMemberships: MembershipRef[];
+  templates: ProjectTemplate[];
   canCreate: boolean;
+  canManageTemplates: boolean;
 };
 
-export function ProjectsList({ projects, orgMemberships, canCreate }: Props) {
+export function ProjectsList({
+  projects,
+  orgMemberships,
+  templates,
+  canCreate,
+  canManageTemplates,
+}: Props) {
   const t = useTranslations("Projects");
   const locale = useLocale();
   const [showArchived, setShowArchived] = React.useState(false);
   const [createOpen, setCreateOpen] = React.useState(false);
+  const [fromTemplateOpen, setFromTemplateOpen] = React.useState(false);
 
   const visible = projects.filter((p) =>
     showArchived ? p.isArchived : !p.isArchived
@@ -59,6 +79,24 @@ export function ProjectsList({ projects, orgMemberships, canCreate }: Props) {
             <IconArchive className="mr-1 h-4 w-4" />
             {showArchived ? t("showActive") : t("showArchived")}
           </Button>
+          {canManageTemplates && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={ROUTES.admin.projectTemplates(locale)}>
+                <IconTemplate className="mr-1 h-4 w-4" />
+                {t("templatesTitle")}
+              </Link>
+            </Button>
+          )}
+          {canCreate && templates.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setFromTemplateOpen(true)}
+            >
+              <IconLayoutGridAdd className="mr-1 h-4 w-4" />
+              {t("createFromTemplate")}
+            </Button>
+          )}
           {canCreate && (
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <IconPlus className="mr-1 h-4 w-4" />
@@ -113,6 +151,11 @@ export function ProjectsList({ projects, orgMemberships, canCreate }: Props) {
         onOpenChange={setCreateOpen}
         mode="create"
         orgMemberships={orgMemberships}
+      />
+      <CreateFromTemplateDialog
+        open={fromTemplateOpen}
+        onOpenChange={setFromTemplateOpen}
+        templates={templates}
       />
     </div>
   );

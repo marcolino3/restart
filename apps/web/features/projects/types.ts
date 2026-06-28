@@ -58,6 +58,23 @@ export type TaskAssignee = {
   membership?: MembershipRef | null;
 };
 
+export type ProjectTemplateTask = {
+  id?: string;
+  title: string;
+  description?: string | null;
+  priority: TaskPriority;
+  sortOrder: number;
+  dueOffsetDays?: number | null;
+};
+
+export type ProjectTemplate = {
+  id: string;
+  title: string;
+  description?: string | null;
+  createdAt: string;
+  tasks?: ProjectTemplateTask[];
+};
+
 export type Task = {
   id: string;
   title: string;

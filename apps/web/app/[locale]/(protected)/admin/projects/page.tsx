@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 import { getOrgMembershipsAction } from "@/features/projects/actions/get-org-memberships.action";
 import { getProjectsAction } from "@/features/projects/actions/get-projects.action";
+import { getTemplatesAction } from "@/features/projects/actions/get-templates.action";
 import { ProjectsList } from "@/features/projects/components/ProjectsList";
 
 const has = (permissions: string[], code: string, isSuperAdmin: boolean) =>
@@ -20,12 +21,14 @@ const ProjectsPage = async () => {
   const permissions = user.data.permissions ?? [];
   const orgId = user.data.orgId;
 
-  const [projectsResult, membershipsResult] = await Promise.all([
-    getProjectsAction(),
-    orgId
-      ? getOrgMembershipsAction(orgId)
-      : Promise.resolve({ success: true as const, data: [] }),
-  ]);
+  const [projectsResult, membershipsResult, templatesResult] =
+    await Promise.all([
+      getProjectsAction(),
+      orgId
+        ? getOrgMembershipsAction(orgId)
+        : Promise.resolve({ success: true as const, data: [] }),
+      getTemplatesAction(),
+    ]);
 
   if (!projectsResult.success) {
     return <div className="p-4 text-sm text-destructive">{t("loadError")}</div>;
@@ -41,7 +44,13 @@ const ProjectsPage = async () => {
     <ProjectsList
       projects={projectsResult.data}
       orgMemberships={memberships}
+      templates={templatesResult.success ? templatesResult.data : []}
       canCreate={has(permissions, "PROJECT_CREATE", isSuperAdmin)}
+      canManageTemplates={has(
+        permissions,
+        "PROJECT_TEMPLATE_MANAGE",
+        isSuperAdmin
+      )}
     />
   );
 };

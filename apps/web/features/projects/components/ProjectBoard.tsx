@@ -58,6 +58,7 @@ import {
 } from "../types";
 import { ProjectFormDialog } from "./ProjectFormDialog";
 import { ProjectMembersDialog } from "./ProjectMembersDialog";
+import { SaveAsTemplateDialog } from "./SaveAsTemplateDialog";
 import { TaskCard } from "./TaskCard";
 import { TaskDialog } from "./TaskDialog";
 
@@ -118,6 +119,7 @@ export function ProjectBoard({
 
   const [membersOpen, setMembersOpen] = React.useState(false);
   const [editOpen, setEditOpen] = React.useState(false);
+  const [saveTemplateOpen, setSaveTemplateOpen] = React.useState(false);
   const [taskDialog, setTaskDialog] = React.useState<{
     open: boolean;
     task: Task | null;
@@ -281,6 +283,9 @@ export function ProjectBoard({
                 <DropdownMenuItem onClick={() => setEditOpen(true)}>
                   {t("editProject")}
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSaveTemplateOpen(true)}>
+                  {t("saveAsTemplate")}
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async () => {
                     const res = await archiveProjectAction(
@@ -383,6 +388,12 @@ export function ProjectBoard({
         onOpenChange={setEditOpen}
         mode="edit"
         project={project}
+      />
+      <SaveAsTemplateDialog
+        open={saveTemplateOpen}
+        onOpenChange={setSaveTemplateOpen}
+        projectId={project.id}
+        defaultTitle={project.title}
       />
     </div>
   );

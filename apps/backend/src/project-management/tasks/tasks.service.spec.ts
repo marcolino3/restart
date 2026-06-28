@@ -90,8 +90,16 @@ describe('TasksService', () => {
     });
 
     it('scopes the lookup to the caller and persists the new order', async () => {
-      const a1 = { taskId: 't1', membershipId: ME, sortOrder: 0 } as TaskAssignee;
-      const a2 = { taskId: 't2', membershipId: ME, sortOrder: 1 } as TaskAssignee;
+      const a1 = {
+        taskId: 't1',
+        membershipId: ME,
+        sortOrder: 0,
+      } as TaskAssignee;
+      const a2 = {
+        taskId: 't2',
+        membershipId: ME,
+        sortOrder: 1,
+      } as TaskAssignee;
       assigneesRepo.find.mockResolvedValue([a1, a2]);
       const saved: TaskAssignee[] = [];
       (assigneesRepo.save as jest.Mock).mockImplementation(

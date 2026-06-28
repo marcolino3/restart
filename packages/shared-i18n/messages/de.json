@@ -20,7 +20,8 @@
     "organizationGroup": "Organisation",
     "superAdminGroup": "SuperAdmin",
     "projects": "Projekte",
-    "myTasks": "Meine Aufgaben"
+    "myTasks": "Meine Aufgaben",
+    "projectTemplates": "Vorlagen"
   },
   "LanguageSwitcher": {
     "label": "Sprache"
@@ -1898,6 +1899,32 @@
     "newPersonalTask": "Neue eigene Aufgabe",
     "personalTaskSubtitle": "Eine persönliche Aufgabe nur für dich (ohne Projekt).",
     "personal": "Persönlich",
-    "reorderError": "Reihenfolge konnte nicht gespeichert werden."
+    "reorderError": "Reihenfolge konnte nicht gespeichert werden.",
+    "templatesTitle": "Vorlagen",
+    "templatesSubtitle": "Wiederkehrende Schulprozesse als Vorlage speichern und mit einem Klick als Projekt anlegen.",
+    "newTemplate": "Neue Vorlage",
+    "editTemplate": "Vorlage bearbeiten",
+    "templateFormSubtitle": "Titel, Beschreibung und die enthaltenen Aufgaben der Vorlage.",
+    "templateTasks": "Aufgaben",
+    "addTemplateTask": "Aufgabe hinzufügen",
+    "noTemplateTasks": "Noch keine Aufgaben in dieser Vorlage.",
+    "noTemplates": "Noch keine Vorlagen.",
+    "useTemplate": "Verwenden",
+    "template": "Vorlage",
+    "selectTemplate": "Vorlage auswählen",
+    "createFromTemplate": "Aus Vorlage",
+    "createFromTemplateSubtitle": "Neues Projekt aus einer Vorlage erstellen — alle Aufgaben werden automatisch angelegt.",
+    "createProject": "Projekt erstellen",
+    "projectTitleOptional": "Projekt-Titel (optional)",
+    "projectTitlePlaceholder": "Standard: Titel der Vorlage",
+    "startDateOptional": "Startdatum (optional)",
+    "startDateHint": "Fälligkeiten der Aufgaben werden relativ zum Startdatum berechnet.",
+    "dueOffsetDays": "Fällig (Tage)",
+    "saveAsTemplate": "Als Vorlage speichern",
+    "saveAsTemplateSubtitle": "Speichert die Aufgaben dieses Projekts als wiederverwendbare Vorlage.",
+    "templateCreated": "Vorlage gespeichert.",
+    "templateUpdated": "Vorlage aktualisiert.",
+    "templateCreateError": "Vorlage konnte nicht gespeichert werden.",
+    "templateUpdateError": "Vorlage konnte nicht aktualisiert werden."
   }
 }

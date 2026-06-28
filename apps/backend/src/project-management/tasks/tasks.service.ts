@@ -93,9 +93,7 @@ export class TasksService {
     });
     // Preserve the caller's personal order (assignee.sortOrder).
     const rank = new Map(orderedIds.map((id, i) => [id, i]));
-    return tasks.sort(
-      (a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0),
-    );
+    return tasks.sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
   }
 
   /**
