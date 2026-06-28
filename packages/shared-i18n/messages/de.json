@@ -1927,7 +1927,8 @@
     "templateUpdated": "Vorlage aktualisiert.",
     "templateCreateError": "Vorlage konnte nicht gespeichert werden.",
     "templateUpdateError": "Vorlage konnte nicht aktualisiert werden.",
-    "fromProtocol": "aus Protokoll: {title}"
+    "fromProtocol": "aus Protokoll: {title}",
+    "source": "Quelle"
   },
   "Protocols": {
     "pageTitle": "Protokolle",

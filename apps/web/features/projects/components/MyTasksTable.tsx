@@ -30,7 +30,7 @@ import {
 } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { ArrowUpDown, GripVertical, Plus, X } from "lucide-react";
+import { ArrowUpDown, FileText, GripVertical, Plus, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -193,42 +193,49 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
         id: "title",
         accessorKey: "title",
         header: ({ column }) => sortHeader(column, t("taskTitle")),
-        cell: ({ row, getValue }) => (
-          <div>
-            <div className="font-medium">{getValue<string>()}</div>
-            {row.original.protocol && (
-              <span className="text-xs text-muted-foreground">
-                {t("fromProtocol", { title: row.original.protocol.title })}
-              </span>
-            )}
-          </div>
+        cell: ({ getValue }) => (
+          <div className="font-medium">{getValue<string>()}</div>
         ),
         filterFn: "includesString",
       },
       {
         id: "project",
         accessorFn: (row) => row.project?.title ?? "",
-        header: ({ column }) => sortHeader(column, t("project")),
+        header: ({ column }) => sortHeader(column, t("source")),
         cell: ({ row }) => {
-          const project = row.original.project;
-          if (!project)
-            return (
-              <span className="text-muted-foreground">{t("personal")}</span>
-            );
+          const { project, protocol } = row.original;
           return (
-            <Badge
-              variant="outline"
-              className="flex w-fit items-center gap-1"
-              style={project.color ? { borderColor: project.color } : undefined}
-            >
-              {project.color && (
-                <span
-                  className="inline-block h-2 w-2 rounded-full"
-                  style={{ backgroundColor: project.color }}
-                />
+            <div className="flex flex-col items-start gap-1">
+              {project && (
+                <Badge
+                  variant="outline"
+                  className="flex w-fit items-center gap-1"
+                  style={
+                    project.color ? { borderColor: project.color } : undefined
+                  }
+                >
+                  {project.color && (
+                    <span
+                      className="inline-block h-2 w-2 rounded-full"
+                      style={{ backgroundColor: project.color }}
+                    />
+                  )}
+                  {project.title}
+                </Badge>
               )}
-              {project.title}
-            </Badge>
+              {protocol && (
+                <Badge
+                  variant="secondary"
+                  className="flex w-fit items-center gap-1"
+                >
+                  <FileText className="h-3 w-3" />
+                  {protocol.title}
+                </Badge>
+              )}
+              {!project && !protocol && (
+                <span className="text-muted-foreground">{t("personal")}</span>
+              )}
+            </div>
           );
         },
         filterFn: multiSelectFilter,

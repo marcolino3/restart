@@ -1927,7 +1927,8 @@
     "templateUpdated": "Template updated.",
     "templateCreateError": "Could not save the template.",
     "templateUpdateError": "Could not update the template.",
-    "fromProtocol": "from protocol: {title}"
+    "fromProtocol": "from protocol: {title}",
+    "source": "Source"
   },
   "Protocols": {
     "pageTitle": "Protocols",
