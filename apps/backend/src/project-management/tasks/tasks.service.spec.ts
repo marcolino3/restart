@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
+import { Membership } from '@/memberships/entities/membership.entity';
 import { ProjectMember } from '@/project-management/project-members/entities/project-member.entity';
 import { ProjectAccessService } from '@/project-management/projects/project-access.service';
 import { TaskAssignee } from './entities/task-assignee.entity';
@@ -43,6 +44,10 @@ describe('TasksService', () => {
         { provide: getRepositoryToken(Task), useValue: tasksRepo },
         { provide: getRepositoryToken(TaskAssignee), useValue: assigneesRepo },
         { provide: getRepositoryToken(ProjectMember), useValue: membersRepo },
+        {
+          provide: getRepositoryToken(Membership),
+          useValue: { find: jest.fn() },
+        },
         { provide: ProjectAccessService, useValue: access },
         { provide: DataSource, useValue: dataSource },
       ],

@@ -51,6 +51,16 @@ export class TasksResolver {
     );
   }
 
+  // Tasks created from a meeting protocol (shown in the protocol editor).
+  @Query(() => [Task], { name: 'tasksByProtocol' })
+  @Permissions('PROTOCOL_READ')
+  tasksByProtocol(
+    @Args('protocolId', { type: () => ID }) protocolId: string,
+    @CurrentOrgId() orgId: string,
+  ): Promise<Task[]> {
+    return this.tasksService.findByProtocol(protocolId, orgId);
+  }
+
   // The caller's personal cross-project to-do list: every task assigned to them.
   @Query(() => [Task], { name: 'myTasks' })
   @Permissions('PROJECT_READ')

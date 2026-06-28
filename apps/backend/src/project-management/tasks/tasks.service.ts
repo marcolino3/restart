@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, In, Repository } from 'typeorm';
+import { Membership } from '@/memberships/entities/membership.entity';
 import { ProjectMember } from '@/project-management/project-members/entities/project-member.entity';
 import { ProjectAccessService } from '@/project-management/projects/project-access.service';
 import { CreateTaskInput } from './dto/create-task.input';
@@ -31,6 +32,8 @@ export class TasksService {
     private readonly assigneesRepo: Repository<TaskAssignee>,
     @InjectRepository(ProjectMember)
     private readonly membersRepo: Repository<ProjectMember>,
+    @InjectRepository(Membership)
+    private readonly membershipsRepo: Repository<Membership>,
     private readonly access: ProjectAccessService,
     private readonly dataSource: DataSource,
   ) {}
@@ -131,6 +134,18 @@ export class TasksService {
     return true;
   }
 
+  /** Tasks created from a given protocol (org-scoped). */
+  async findByProtocol(
+    protocolId: string,
+    organizationId: string,
+  ): Promise<Task[]> {
+    return this.tasksRepo.find({
+      where: { protocolId, organizationId, isActive: true },
+      relations: MY_TASK_RELATIONS,
+      order: { createdAt: 'ASC' },
+    });
+  }
+
   async create(
     input: CreateTaskInput,
     organizationId: string,
@@ -213,16 +228,26 @@ export class TasksService {
     const task = await this.loadTask(input.id, organizationId);
     await this.authorizeEdit(task, organizationId, membershipId, canSeeAll);
 
-    // Assignees can only be reassigned on project tasks (validated against the
-    // project membership). Personal tasks stay owned by their creator.
-    const assigneeIds =
-      task.projectId && input.assigneeMembershipIds !== undefined
+    // Reassignment is allowed on project tasks (validated against project
+    // membership) and on protocol tasks (validated against org membership —
+    // typically the meeting participants). A pure personal task stays owned by
+    // its creator.
+    let assigneeIds: string[] | undefined;
+    if (
+      input.assigneeMembershipIds !== undefined &&
+      (task.projectId || task.protocolId)
+    ) {
+      assigneeIds = task.projectId
         ? await this.validateAssignees(
             input.assigneeMembershipIds,
             task.projectId,
             organizationId,
           )
-        : undefined;
+        : await this.validateOrgMemberships(
+            input.assigneeMembershipIds,
+            organizationId,
+          );
+    }
 
     return this.dataSource.transaction(async (manager) => {
       if (input.title !== undefined) task.title = input.title.trim();
@@ -416,6 +441,25 @@ export class TasksService {
     if (members.length !== unique.length) {
       throw new BadRequestException(
         'All assignees must be members of the project',
+      );
+    }
+    return unique;
+  }
+
+  /** Assignees must belong to the organization (for protocol/personal context). */
+  private async validateOrgMemberships(
+    membershipIds: string[],
+    organizationId: string,
+  ): Promise<string[]> {
+    const unique = [...new Set(membershipIds)];
+    if (unique.length === 0) return [];
+    const found = await this.membershipsRepo.find({
+      where: { id: In(unique), organizationId },
+      select: ['id'],
+    });
+    if (found.length !== unique.length) {
+      throw new BadRequestException(
+        'One or more assignees do not belong to this organization',
       );
     }
     return unique;

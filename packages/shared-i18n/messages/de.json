@@ -1984,6 +1984,7 @@
     "tasksCreateError": "Aufgaben konnten nicht übernommen werden.",
     "selectPlaceholder": "Auswählen",
     "noResults": "Keine Ergebnisse.",
-    "searchPlaceholder": "Suchen..."
+    "searchPlaceholder": "Suchen...",
+    "existingTasks": "Bereits übernommene Aufgaben"
   }
 }

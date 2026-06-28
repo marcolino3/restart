@@ -1984,6 +1984,7 @@
     "tasksCreateError": "Could not create the tasks.",
     "selectPlaceholder": "Select",
     "noResults": "No results.",
-    "searchPlaceholder": "Search..."
+    "searchPlaceholder": "Search...",
+    "existingTasks": "Already created tasks"
   }
 }

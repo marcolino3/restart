@@ -26,6 +26,7 @@ import {
   type MembershipRef,
   type ProjectListItem,
   type Protocol,
+  type Task,
 } from "../types";
 
 const NO_PROJECT = "__none__";
@@ -63,6 +64,7 @@ type Props = {
   protocol: Protocol;
   orgMemberships: MembershipRef[];
   projects: ProjectListItem[];
+  existingTasks: Task[];
   canWrite: boolean;
 };
 
@@ -70,6 +72,7 @@ export function ProtocolEditor({
   protocol,
   orgMemberships,
   projects,
+  existingTasks,
   canWrite,
 }: Props) {
   const t = useTranslations("Protocols");
@@ -136,6 +139,9 @@ export function ProtocolEditor({
     control: form.control,
     name: "openPoints",
   });
+
+  // Todos can only be assigned to people who attend the meeting.
+  const selectedParticipantIds = form.watch("participantMembershipIds") ?? [];
 
   const onSubmit = async (values: EditorForm) => {
     const clean = (s: string) => {
@@ -366,7 +372,10 @@ export function ProtocolEditor({
           {/* Todos / Massnahmen → Tasks */}
           <ProtocolTodosPanel
             protocolId={protocol.id}
-            memberOptions={memberOptions}
+            memberOptions={memberOptions.filter((o) =>
+              selectedParticipantIds.includes(o.value)
+            )}
+            existingTasks={existingTasks}
             canWrite={canWrite}
           />
 

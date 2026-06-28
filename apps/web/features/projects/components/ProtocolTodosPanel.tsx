@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
+import { DatePicker, toIsoDate } from "@/components/form/DatePicker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,12 +19,14 @@ import {
 import { handleAction } from "@/lib/actions/handle-action";
 
 import { createTasksFromProtocolAction } from "../actions/create-tasks-from-protocol.action";
-import { TASK_PRIORITIES, type TaskPriority } from "../types";
+import { membershipName } from "../lib/membership-name";
+import { TaskDialog } from "./TaskDialog";
+import { TASK_PRIORITIES, type Task, type TaskPriority } from "../types";
 
 type Row = {
   title: string;
   priority: TaskPriority;
-  dueDate: string;
+  dueDate: Date | null;
   assigneeId: string;
 };
 
@@ -32,19 +35,21 @@ const UNASSIGNED = "__none__";
 const emptyRow = (): Row => ({
   title: "",
   priority: "MEDIUM",
-  dueDate: "",
+  dueDate: null,
   assigneeId: UNASSIGNED,
 });
 
 type Props = {
   protocolId: string;
   memberOptions: { value: string; label: string }[];
+  existingTasks: Task[];
   canWrite: boolean;
 };
 
 export function ProtocolTodosPanel({
   protocolId,
   memberOptions,
+  existingTasks,
   canWrite,
 }: Props) {
   const t = useTranslations("Protocols");
@@ -52,6 +57,7 @@ export function ProtocolTodosPanel({
   const router = useRouter();
   const [rows, setRows] = React.useState<Row[]>([emptyRow()]);
   const [submitting, setSubmitting] = React.useState(false);
+  const [editTask, setEditTask] = React.useState<Task | null>(null);
 
   const update = (i: number, patch: Partial<Row>) =>
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
@@ -62,7 +68,7 @@ export function ProtocolTodosPanel({
       .map((r) => ({
         title: r.title.trim(),
         priority: r.priority,
-        dueDate: r.dueDate || null,
+        dueDate: toIsoDate(r.dueDate),
         assigneeMembershipIds:
           r.assigneeId === UNASSIGNED ? [] : [r.assigneeId],
       }));
@@ -101,6 +107,31 @@ export function ProtocolTodosPanel({
         )}
       </CardHeader>
       <CardContent className="space-y-2">
+        {existingTasks.length > 0 && (
+          <div className="space-y-1 rounded-md border bg-muted/30 p-2">
+            <p className="text-xs font-medium text-muted-foreground">
+              {t("existingTasks")}
+            </p>
+            {existingTasks.map((task) => (
+              <button
+                key={task.id}
+                type="button"
+                onClick={() => setEditTask(task)}
+                className="flex w-full flex-wrap items-center justify-between gap-2 rounded px-1 py-1 text-left text-sm hover:bg-background"
+              >
+                <span className="font-medium">{task.title}</span>
+                <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                  {(task.assignees ?? [])
+                    .map((a) => membershipName(a.membership))
+                    .join(", ") || t("unassigned")}
+                  <span className="rounded bg-background px-1.5 py-0.5">
+                    {tp(`taskStatus_${task.status}`)}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
         <p className="text-xs text-muted-foreground">{t("todosHint")}</p>
         {rows.map((row, i) => (
           <div key={i} className="flex flex-wrap items-center gap-2">
@@ -141,11 +172,11 @@ export function ProtocolTodosPanel({
                 ))}
               </SelectContent>
             </Select>
-            <Input
-              type="date"
+            <DatePicker
               className="w-40"
               value={row.dueDate}
-              onChange={(e) => update(i, { dueDate: e.target.value })}
+              onChange={(d) => update(i, { dueDate: d })}
+              placeholder={t("colDeadline")}
             />
             {canWrite && rows.length > 1 && (
               <Button
@@ -167,6 +198,16 @@ export function ProtocolTodosPanel({
             </Button>
           </div>
         )}
+
+        <TaskDialog
+          open={!!editTask}
+          onOpenChange={(o) => !o && setEditTask(null)}
+          projectId={editTask?.project?.id ?? ""}
+          task={editTask}
+          memberOptions={memberOptions}
+          canEdit={canWrite}
+          onSaved={() => setEditTask(null)}
+        />
       </CardContent>
     </Card>
   );

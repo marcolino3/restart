@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import { ROUTES } from "@/constants/routes";
+import { DatePicker, toIsoDate } from "@/components/form/DatePicker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -42,7 +43,7 @@ export function CreateProtocolDialog({ open, onOpenChange, projects }: Props) {
   const router = useRouter();
 
   const [title, setTitle] = React.useState("");
-  const [meetingDate, setMeetingDate] = React.useState("");
+  const [meetingDate, setMeetingDate] = React.useState<Date | null>(null);
   const [projectId, setProjectId] = React.useState<string>(NO_PROJECT);
   const [submitting, setSubmitting] = React.useState(false);
 
@@ -50,7 +51,7 @@ export function CreateProtocolDialog({ open, onOpenChange, projects }: Props) {
   if (open && !wasOpen) {
     setWasOpen(true);
     setTitle("");
-    setMeetingDate("");
+    setMeetingDate(null);
     setProjectId(NO_PROJECT);
   } else if (!open && wasOpen) {
     setWasOpen(false);
@@ -63,7 +64,7 @@ export function CreateProtocolDialog({ open, onOpenChange, projects }: Props) {
       action: () =>
         createProtocolAction({
           title: title.trim(),
-          meetingDate: meetingDate || null,
+          meetingDate: toIsoDate(meetingDate),
           projectId: projectId === NO_PROJECT ? null : projectId,
         }),
       successMessage: t("protocolCreated"),
@@ -95,10 +96,10 @@ export function CreateProtocolDialog({ open, onOpenChange, projects }: Props) {
           </div>
           <div className="space-y-1">
             <Label>{t("meetingDate")}</Label>
-            <Input
-              type="date"
+            <DatePicker
               value={meetingDate}
-              onChange={(e) => setMeetingDate(e.target.value)}
+              onChange={setMeetingDate}
+              placeholder={t("meetingDate")}
             />
           </div>
           <div className="space-y-1">

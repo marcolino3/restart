@@ -4,6 +4,7 @@ import { getCurrentUserAction } from "@/features/users/actions/get-current-user.
 import { getOrgMembershipsAction } from "@/features/projects/actions/get-org-memberships.action";
 import { getProjectsAction } from "@/features/projects/actions/get-projects.action";
 import { getProtocolAction } from "@/features/projects/actions/get-protocol.action";
+import { getProtocolTasksAction } from "@/features/projects/actions/get-protocol-tasks.action";
 import { ProtocolEditor } from "@/features/projects/components/ProtocolEditor";
 
 interface Props {
@@ -25,13 +26,15 @@ const ProtocolEditorPage = async ({ params }: Props) => {
   const isSuperAdmin = user.data.isSuperAdmin ?? false;
   const orgId = user.data.orgId;
 
-  const [protocolResult, membershipsResult, projectsResult] = await Promise.all([
-    getProtocolAction(protocolId),
-    orgId
-      ? getOrgMembershipsAction(orgId)
-      : Promise.resolve({ success: true as const, data: [] }),
-    getProjectsAction(),
-  ]);
+  const [protocolResult, membershipsResult, projectsResult, tasksResult] =
+    await Promise.all([
+      getProtocolAction(protocolId),
+      orgId
+        ? getOrgMembershipsAction(orgId)
+        : Promise.resolve({ success: true as const, data: [] }),
+      getProjectsAction(),
+      getProtocolTasksAction(protocolId),
+    ]);
 
   if (!protocolResult.success) {
     return <div className="p-4 text-sm text-destructive">{t("notFound")}</div>;
@@ -46,6 +49,7 @@ const ProtocolEditorPage = async ({ params }: Props) => {
       protocol={protocolResult.data}
       orgMemberships={memberships}
       projects={projectsResult.success ? projectsResult.data : []}
+      existingTasks={tasksResult.success ? tasksResult.data : []}
       canWrite={has(user.data.permissions ?? [], "PROTOCOL_WRITE", isSuperAdmin)}
     />
   );
