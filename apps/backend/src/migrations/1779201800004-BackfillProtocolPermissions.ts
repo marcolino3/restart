@@ -7,8 +7,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  *
  * Matrix (mirrors assign-permissions-to-system-roles.seeder.ts):
  *   - PROTOCOL_READ   → all system roles
- *   - PROTOCOL_WRITE  → all except EMPLOYEE
- *   - PROTOCOL_DELETE → ORG_OWNER, ORG_ADMIN, OFFICE
+ *   - PROTOCOL_WRITE  → all system roles (every employee may create/edit)
+ *   - PROTOCOL_DELETE → ORG_OWNER, ORG_ADMIN, OFFICE (also the "manage any" flag)
  */
 export class BackfillProtocolPermissions1779201800004
   implements MigrationInterface
@@ -43,7 +43,7 @@ export class BackfillProtocolPermissions1779201800004
       FROM "roles" r
       JOIN "permissions" p ON p."code" = 'PROTOCOL_WRITE'
       WHERE r."is_system" = true
-        AND r."system_code" IN ('ORG_OWNER', 'ORG_ADMIN', 'HR_MANAGER', 'OFFICE', 'TEAM_LEAD')
+        AND r."system_code" IN ('ORG_OWNER', 'ORG_ADMIN', 'HR_MANAGER', 'OFFICE', 'TEAM_LEAD', 'EMPLOYEE')
       ON CONFLICT ("role_id", "permission_id") DO NOTHING
     `);
 

@@ -6,6 +6,7 @@ import { getProjectsAction } from "@/features/projects/actions/get-projects.acti
 import { getProtocolAction } from "@/features/projects/actions/get-protocol.action";
 import { getProtocolTasksAction } from "@/features/projects/actions/get-protocol-tasks.action";
 import { ProtocolEditor } from "@/features/projects/components/ProtocolEditor";
+import { ProtocolView } from "@/features/projects/components/ProtocolView";
 
 interface Props {
   params: Promise<{ protocolId: string }>;
@@ -44,13 +45,31 @@ const ProtocolEditorPage = async ({ params }: Props) => {
     membershipsResult.success ? membershipsResult.data : []
   ).filter((m) => isSuperAdmin || !m.user?.isSuperAdmin);
 
+  const protocol = protocolResult.data;
+  const existingTasks = tasksResult.success ? tasksResult.data : [];
+
+  // Edit rights: admins (PROTOCOL_DELETE / SuperAdmin), the creator, or a
+  // meeting participant. Everyone else gets the read-only view.
+  const permissions = user.data.permissions ?? [];
+  const canManageAll = has(permissions, "PROTOCOL_DELETE", isSuperAdmin);
+  const myUserId = user.data.id;
+  const isCreator = protocol.createdBy?.userId === myUserId;
+  const isParticipant = (protocol.participants ?? []).some(
+    (p) => p.membership?.userId === myUserId
+  );
+  const canEdit = canManageAll || isCreator || isParticipant;
+
+  if (!canEdit) {
+    return <ProtocolView protocol={protocol} tasks={existingTasks} />;
+  }
+
   return (
     <ProtocolEditor
-      protocol={protocolResult.data}
+      protocol={protocol}
       orgMemberships={memberships}
       projects={projectsResult.success ? projectsResult.data : []}
-      existingTasks={tasksResult.success ? tasksResult.data : []}
-      canWrite={has(user.data.permissions ?? [], "PROTOCOL_WRITE", isSuperAdmin)}
+      existingTasks={existingTasks}
+      canWrite
     />
   );
 };

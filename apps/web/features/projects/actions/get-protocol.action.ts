@@ -15,6 +15,10 @@ const Document = gql`
       status
       projectId
       externalParticipants
+      createdByMembershipId
+      createdBy {
+        userId
+      }
       project {
         id
         title

@@ -1986,6 +1986,7 @@
     "selectPlaceholder": "Select",
     "noResults": "No results.",
     "searchPlaceholder": "Search...",
-    "existingTasks": "Already created tasks"
+    "existingTasks": "Already created tasks",
+    "readOnly": "Read-only"
   }
 }

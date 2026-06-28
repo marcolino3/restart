@@ -8,6 +8,7 @@ import { UseGuards } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import {
   actingMembershipId,
+  canManageAllProtocols,
   canSeeAllProjects,
 } from '@/project-management/common/project-auth';
 import { Task } from '@/project-management/tasks/entities/task.entity';
@@ -64,16 +65,23 @@ export class ProtocolsResolver {
       orgId,
       actingMembershipId(user),
       canSeeAllProjects(user),
+      canManageAllProtocols(user),
     );
   }
 
   @Mutation(() => Boolean)
-  @Permissions('PROTOCOL_DELETE')
+  @Permissions('PROTOCOL_WRITE')
   deleteProtocol(
     @Args('id', { type: () => ID }) id: string,
     @CurrentOrgId() orgId: string,
+    @CurrentUser() user: TokenPayload,
   ): Promise<boolean> {
-    return this.protocolsService.remove(id, orgId);
+    return this.protocolsService.remove(
+      id,
+      orgId,
+      actingMembershipId(user),
+      canManageAllProtocols(user),
+    );
   }
 
   // Turn the protocol's todos into real tasks (assigned → appear in My Tasks).
@@ -82,7 +90,13 @@ export class ProtocolsResolver {
   createTasksFromProtocol(
     @Args('input') input: CreateTasksFromProtocolInput,
     @CurrentOrgId() orgId: string,
+    @CurrentUser() user: TokenPayload,
   ): Promise<Task[]> {
-    return this.protocolsService.createTasksFromProtocol(input, orgId);
+    return this.protocolsService.createTasksFromProtocol(
+      input,
+      orgId,
+      actingMembershipId(user),
+      canManageAllProtocols(user),
+    );
   }
 }

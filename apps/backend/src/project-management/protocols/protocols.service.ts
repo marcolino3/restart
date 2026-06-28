@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -105,8 +106,10 @@ export class ProtocolsService {
     organizationId: string,
     membershipId: string | null,
     canSeeAll: boolean,
+    canManageAll: boolean,
   ): Promise<Protocol> {
     const protocol = await this.loadProtocol(input.id, organizationId);
+    await this.assertCanEdit(protocol, membershipId, canManageAll);
 
     if (input.projectId) {
       await this.access.assertCanView(
@@ -152,8 +155,22 @@ export class ProtocolsService {
     });
   }
 
-  async remove(id: string, organizationId: string): Promise<boolean> {
+  async remove(
+    id: string,
+    organizationId: string,
+    membershipId: string | null,
+    canManageAll: boolean,
+  ): Promise<boolean> {
     const protocol = await this.loadProtocol(id, organizationId);
+    // Deletion is stricter than editing: only the creator or an admin.
+    if (
+      !canManageAll &&
+      !(membershipId && protocol.createdByMembershipId === membershipId)
+    ) {
+      throw new ForbiddenException(
+        'Only the creator or an admin can delete this protocol',
+      );
+    }
     protocol.isActive = false;
     await this.protocolsRepo.save(protocol);
     return true;
@@ -169,8 +186,11 @@ export class ProtocolsService {
   async createTasksFromProtocol(
     input: CreateTasksFromProtocolInput,
     organizationId: string,
+    membershipId: string | null,
+    canManageAll: boolean,
   ): Promise<Task[]> {
     const protocol = await this.loadProtocol(input.protocolId, organizationId);
+    await this.assertCanEdit(protocol, membershipId, canManageAll);
     const projectId = protocol.projectId ?? null;
 
     // Validate every assignee belongs to the org (across all drafts).
@@ -234,6 +254,30 @@ export class ProtocolsService {
     });
     if (!protocol) throw new NotFoundException(`Protocol ${id} not found`);
     return protocol;
+  }
+
+  /**
+   * Editing a protocol (and turning its todos into tasks) is limited to people
+   * who were involved: the creator or a meeting participant. Admins
+   * (canManageAll) may edit any. Everyone else has read-only access.
+   */
+  private async assertCanEdit(
+    protocol: Protocol,
+    membershipId: string | null,
+    canManageAll: boolean,
+  ): Promise<void> {
+    if (canManageAll) return;
+    if (membershipId && protocol.createdByMembershipId === membershipId) return;
+    if (membershipId) {
+      const participant = await this.participantsRepo.findOne({
+        where: { protocolId: protocol.id, membershipId, isActive: true },
+        select: ['id'],
+      });
+      if (participant) return;
+    }
+    throw new ForbiddenException(
+      'Only meeting participants can edit this protocol',
+    );
   }
 
   private async writeParticipants(

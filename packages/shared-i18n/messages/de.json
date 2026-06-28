@@ -1986,6 +1986,7 @@
     "selectPlaceholder": "Auswählen",
     "noResults": "Keine Ergebnisse.",
     "searchPlaceholder": "Suchen...",
-    "existingTasks": "Bereits übernommene Aufgaben"
+    "existingTasks": "Bereits übernommene Aufgaben",
+    "readOnly": "Nur Ansicht"
   }
 }

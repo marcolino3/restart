@@ -69,12 +69,14 @@ function makeManager(capture: {
 describe('ProtocolsService', () => {
   let service: ProtocolsService;
   let protocolsRepo: AnyMock;
+  let participantsRepo: AnyMock;
   let membershipsRepo: AnyMock;
   let access: { assertCanView: jest.Mock };
   let dataSource: { transaction: jest.Mock };
 
   beforeEach(async () => {
     protocolsRepo = { find: jest.fn(), findOne: jest.fn(), save: jest.fn() };
+    participantsRepo = { delete: jest.fn(), save: jest.fn(), findOne: jest.fn() };
     membershipsRepo = { find: jest.fn() };
     access = { assertCanView: jest.fn().mockResolvedValue({ id: 'p1' }) };
     dataSource = { transaction: jest.fn() };
@@ -85,7 +87,7 @@ describe('ProtocolsService', () => {
         { provide: getRepositoryToken(Protocol), useValue: protocolsRepo },
         {
           provide: getRepositoryToken(ProtocolParticipant),
-          useValue: { delete: jest.fn(), save: jest.fn() },
+          useValue: participantsRepo,
         },
         { provide: getRepositoryToken(Membership), useValue: membershipsRepo },
         {
@@ -135,6 +137,8 @@ describe('ProtocolsService', () => {
           tasks: [{ title: 'Blumen bestellen', assigneeMembershipIds: ['m1'] }],
         },
         ORG,
+        'creator',
+        true,
       );
 
       // Task carries the protocol back-reference and lands on the project board.
@@ -169,9 +173,33 @@ describe('ProtocolsService', () => {
             tasks: [{ title: 'X', assigneeMembershipIds: ['foreign'] }],
           },
           ORG,
+          'creator',
+          true,
         ),
       ).rejects.toThrow();
       expect(dataSource.transaction).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('update', () => {
+    it('rejects a non-participant non-admin (read-only access)', async () => {
+      protocolsRepo.findOne.mockResolvedValue({
+        id: 'proto1',
+        organizationId: ORG,
+        createdByMembershipId: 'someone-else',
+        isActive: true,
+      });
+      participantsRepo.findOne.mockResolvedValue(null); // not a participant
+
+      await expect(
+        service.update(
+          { id: 'proto1', title: 'x' },
+          ORG,
+          'outsider',
+          false, // canSeeAll (project link)
+          false, // canManageAll (admin)
+        ),
+      ).rejects.toThrow();
     });
   });
 

@@ -135,6 +135,8 @@ export type ProtocolListItem = {
 export type Protocol = ProtocolListItem & {
   projectId?: string | null;
   externalParticipants: string[];
+  createdByMembershipId?: string | null;
+  createdBy?: { userId?: string | null } | null;
   sections: ProtocolSections;
   participants?: ProtocolParticipantRef[];
 };

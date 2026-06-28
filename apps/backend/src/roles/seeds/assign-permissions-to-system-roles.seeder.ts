@@ -187,6 +187,7 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'PROJECT_READ',
     'PROJECT_CREATE',
     'PROTOCOL_READ',
+    'PROTOCOL_WRITE',
   ] as PermissionCode[],
 };
 

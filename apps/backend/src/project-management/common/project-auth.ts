@@ -25,3 +25,17 @@ export function actingMembershipId(
 ): string | null {
   return user?.membershipId ?? null;
 }
+
+/**
+ * Admin override for protocols: SuperAdmins and holders of PROTOCOL_DELETE
+ * (org owners/admins/office) may edit and delete ANY protocol, regardless of
+ * whether they attended the meeting. Everyone else is limited to protocols they
+ * created or participated in.
+ */
+export function canManageAllProtocols(user: TokenPayload | undefined): boolean {
+  if (!user) return false;
+  return (
+    user.isSuperAdmin === true ||
+    (user.permissions?.includes(PermissionCode.PROTOCOL_DELETE) ?? false)
+  );
+}
