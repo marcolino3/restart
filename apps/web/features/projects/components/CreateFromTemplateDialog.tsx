@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import { ROUTES } from "@/constants/routes";
+import { DatePicker, toIsoDate } from "@/components/form/DatePicker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -47,7 +48,7 @@ export function CreateFromTemplateDialog({
 
   const [templateId, setTemplateId] = React.useState(presetTemplateId ?? "");
   const [title, setTitle] = React.useState("");
-  const [startDate, setStartDate] = React.useState("");
+  const [startDate, setStartDate] = React.useState<Date | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
 
   // Seed the fields each time the dialog opens (render-time reset, no effect).
@@ -56,7 +57,7 @@ export function CreateFromTemplateDialog({
     setWasOpen(true);
     setTemplateId(presetTemplateId ?? "");
     setTitle("");
-    setStartDate("");
+    setStartDate(null);
   } else if (!open && wasOpen) {
     setWasOpen(false);
   }
@@ -69,7 +70,7 @@ export function CreateFromTemplateDialog({
         createFromTemplateAction({
           templateId,
           title: title.trim() || undefined,
-          startDate: startDate || null,
+          startDate: toIsoDate(startDate),
         }),
       successMessage: t("projectCreated"),
       errorMessage: t("projectCreateError"),
@@ -120,10 +121,10 @@ export function CreateFromTemplateDialog({
 
           <div className="space-y-1">
             <Label>{t("startDateOptional")}</Label>
-            <Input
-              type="date"
+            <DatePicker
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={setStartDate}
+              placeholder={t("startDateOptional")}
             />
             <p className="text-xs text-muted-foreground">
               {t("startDateHint")}

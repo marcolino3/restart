@@ -8,6 +8,8 @@ import * as React from "react";
 import { FormProvider, useFieldArray, useForm, useFormContext } from "react-hook-form";
 
 import { ComboboxFormField } from "@/components/form/form-fields/ComboboxFormField";
+import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
+import { fromIsoDate, toIsoDate } from "@/components/form/DatePicker";
 import { ROUTES } from "@/constants/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,7 +38,7 @@ const selectClass =
 
 type EditorForm = {
   title: string;
-  meetingDate: string;
+  meetingDate: Date | null;
   status: "DRAFT" | "FINALIZED";
   projectId: string;
   participantMembershipIds: string[];
@@ -88,7 +90,7 @@ export function ProtocolEditor({
   const form = useForm<EditorForm>({
     defaultValues: {
       title: protocol.title,
-      meetingDate: protocol.meetingDate ?? "",
+      meetingDate: fromIsoDate(protocol.meetingDate),
       status: protocol.status,
       projectId: protocol.projectId ?? NO_PROJECT,
       participantMembershipIds: (protocol.participants ?? []).map(
@@ -197,7 +199,7 @@ export function ProtocolEditor({
         updateProtocolAction({
           id: protocol.id,
           title: values.title.trim(),
-          meetingDate: values.meetingDate || null,
+          meetingDate: toIsoDate(values.meetingDate),
           status: values.status,
           projectId:
             values.projectId === NO_PROJECT ? null : values.projectId,
@@ -254,10 +256,12 @@ export function ProtocolEditor({
                 <Label>{t("title")}</Label>
                 <Input {...form.register("title")} />
               </div>
-              <div className="space-y-1">
-                <Label>{t("meetingDate")}</Label>
-                <Input type="date" {...form.register("meetingDate")} />
-              </div>
+              <DatePickerFormField
+                name="meetingDate"
+                label="meetingDate"
+                namespace="Protocols"
+                disabledDate={(d) => d < new Date("1900-01-01")}
+              />
               <div className="space-y-1">
                 <Label>{t("status")}</Label>
                 <select className={selectClass} {...form.register("status")}>
