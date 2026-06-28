@@ -107,6 +107,9 @@ const PERMISSION_CATALOG: Array<{
     code: PermissionCode.PROJECT_TEMPLATE_MANAGE,
     name: 'Projekt-Vorlagen verwalten',
   },
+  { code: PermissionCode.PROTOCOL_READ, name: 'Protokolle lesen' },
+  { code: PermissionCode.PROTOCOL_WRITE, name: 'Protokolle erstellen/bearbeiten' },
+  { code: PermissionCode.PROTOCOL_DELETE, name: 'Protokolle loeschen' },
 ];
 
 export async function seedPermissionCatalog(manager: EntityManager) {

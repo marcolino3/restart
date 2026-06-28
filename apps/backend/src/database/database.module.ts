@@ -48,6 +48,8 @@ import { Task } from '@/project-management/tasks/entities/task.entity';
 import { TaskAssignee } from '@/project-management/tasks/entities/task-assignee.entity';
 import { ProjectTemplate } from '@/project-management/templates/entities/project-template.entity';
 import { ProjectTemplateTask } from '@/project-management/templates/entities/project-template-task.entity';
+import { Protocol } from '@/project-management/protocols/entities/protocol.entity';
+import { ProtocolParticipant } from '@/project-management/protocols/entities/protocol-participant.entity';
 import { Permission } from '@/permissions/entities/permission.entity';
 import { Role } from '@/roles/entities/role.entity';
 import { UserEmail } from '@/user-emails/entities/user-email.entity';
@@ -112,6 +114,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       TaskAssignee,
       ProjectTemplate,
       ProjectTemplateTask,
+      Protocol,
+      ProtocolParticipant,
     ]),
   ],
   exports: [TypeOrmModule],

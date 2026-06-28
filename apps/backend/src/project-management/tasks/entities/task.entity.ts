@@ -2,6 +2,7 @@ import { AbstractEntity } from '@/database/abstract.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { Project } from '@/project-management/projects/entities/project.entity';
+import { Protocol } from '@/project-management/protocols/entities/protocol.entity';
 import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
 import {
   Column,
@@ -79,4 +80,16 @@ export class Task extends AbstractEntity<Task> {
   @Field(() => [TaskAssignee], { nullable: true })
   @OneToMany(() => TaskAssignee, (assignee) => assignee.task)
   assignees?: TaskAssignee[];
+
+  // Set when the task originated from a meeting protocol ("Sitzungstask"),
+  // keeping a reference back to its source. ON DELETE SET NULL: deleting a
+  // protocol detaches its tasks rather than removing them.
+  @Field(() => ID, { nullable: true })
+  @Column('uuid', { name: 'protocol_id', nullable: true })
+  protocolId?: string | null;
+
+  @Field(() => Protocol, { nullable: true })
+  @ManyToOne(() => Protocol, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'protocol_id' })
+  protocol?: Protocol | null;
 }

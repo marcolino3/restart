@@ -53,6 +53,9 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'PROJECT_CREATE',
     'PROJECT_MANAGE_ALL',
     'PROJECT_TEMPLATE_MANAGE',
+    'PROTOCOL_READ',
+    'PROTOCOL_WRITE',
+    'PROTOCOL_DELETE',
   ] as PermissionCode[],
   ORG_ADMIN: [
     'USER_INVITE',
@@ -97,6 +100,9 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'PROJECT_CREATE',
     'PROJECT_MANAGE_ALL',
     'PROJECT_TEMPLATE_MANAGE',
+    'PROTOCOL_READ',
+    'PROTOCOL_WRITE',
+    'PROTOCOL_DELETE',
   ] as PermissionCode[],
   HR_MANAGER: [
     'EMPLOYEE_READ',
@@ -113,6 +119,8 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'ADDRESS_READ',
     'PROJECT_READ',
     'PROJECT_CREATE',
+    'PROTOCOL_READ',
+    'PROTOCOL_WRITE',
   ] as PermissionCode[],
   OFFICE: [
     'EMPLOYEE_READ',
@@ -142,6 +150,9 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'PROJECT_CREATE',
     'PROJECT_MANAGE_ALL',
     'PROJECT_TEMPLATE_MANAGE',
+    'PROTOCOL_READ',
+    'PROTOCOL_WRITE',
+    'PROTOCOL_DELETE',
   ] as PermissionCode[],
   TEAM_LEAD: [
     'EMPLOYEE_READ',
@@ -158,6 +169,8 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'RECORD_KEEPING_WRITE',
     'PROJECT_READ',
     'PROJECT_CREATE',
+    'PROTOCOL_READ',
+    'PROTOCOL_WRITE',
   ] as PermissionCode[],
   EMPLOYEE: [
     'EMPLOYEE_READ',
@@ -173,6 +186,7 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'RECORD_KEEPING_WRITE',
     'PROJECT_READ',
     'PROJECT_CREATE',
+    'PROTOCOL_READ',
   ] as PermissionCode[],
 };
 
