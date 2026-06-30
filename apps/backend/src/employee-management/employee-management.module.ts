@@ -10,6 +10,7 @@ import { TimeTrackingModule } from './time-tracking/time-tracking.module';
 import { TeamMembersModule } from './team-members/team-members.module';
 import { EmployeeAbsenceCategoriesModule } from './employee-absence-categories/employee-absence-categories.module';
 import { EmployeeAbsencesModule } from './employee-absences/employee-absences.module';
+import { WorkTimeCalculationModule } from './work-time-calculation/work-time-calculation.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { EmployeeAbsencesModule } from './employee-absences/employee-absences.mo
     TimeTrackingModule,
     EmployeeAbsenceCategoriesModule,
     EmployeeAbsencesModule,
+    WorkTimeCalculationModule,
   ],
 })
 export class EmployeeManagementModule {}

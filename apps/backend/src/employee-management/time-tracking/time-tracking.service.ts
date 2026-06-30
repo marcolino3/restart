@@ -5,28 +5,69 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, IsNull, Repository } from 'typeorm';
-import { TimeTracking } from './entities/time-tracking.entity';
+import {
+  TimeTracking,
+  TimeTrackingSource,
+} from './entities/time-tracking.entity';
 import { CreateTimeTrackingInput } from './dto/create-time-tracking.input';
 import { UpdateTimeTrackingInput } from './dto/update-time-tracking.input';
+import { BalanceRecomputeService } from '../work-time-calculation/balance-recompute.service';
+
+/** 'YYYY-MM-DD' (lokaler Kalendertag) aus einem Date. */
+function toDateString(d: Date): string {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/** Netto-Arbeitsminuten (ended - started - break); null solange offen. */
+function computeWorkMinutes(
+  startedAt: Date,
+  endedAt?: Date | null,
+  breakMinutes?: number | null,
+): number | null {
+  if (!endedAt) return null;
+  const gross = Math.round((endedAt.getTime() - startedAt.getTime()) / 60000);
+  return Math.max(0, gross - (breakMinutes ?? 0));
+}
 
 @Injectable()
 export class TimeTrackingService {
   constructor(
     @InjectRepository(TimeTracking)
     private readonly timeTrackingRepo: Repository<TimeTracking>,
+    private readonly balanceRecompute: BalanceRecomputeService,
   ) {}
 
   async create(
     input: CreateTimeTrackingInput,
     organizationId: string,
   ): Promise<TimeTracking> {
+    const startedAt = new Date(input.startedAt);
+    const endedAt = input.endedAt ? new Date(input.endedAt) : undefined;
     const entry = this.timeTrackingRepo.create({
       ...input,
-      startedAt: new Date(input.startedAt),
-      endedAt: input.endedAt ? new Date(input.endedAt) : undefined,
+      startedAt,
+      endedAt,
+      entryDate: toDateString(startedAt),
+      workMinutes: computeWorkMinutes(startedAt, endedAt, input.breakMinutes),
+      source: TimeTrackingSource.MANUAL,
       organizationId,
     });
-    return this.timeTrackingRepo.save(entry);
+    const saved = await this.timeTrackingRepo.save(entry);
+    await this.recompute(saved);
+    return saved;
+  }
+
+  /** Ledger für den betroffenen Tag des Eintrags neu berechnen. */
+  private async recompute(entry: TimeTracking): Promise<void> {
+    await this.balanceRecompute.recomputeRange(
+      entry.organizationId,
+      entry.employeeId,
+      entry.entryDate,
+      entry.entryDate,
+    );
   }
 
   async start(
@@ -47,10 +88,13 @@ export class TimeTrackingService {
       );
     }
 
+    const now = new Date();
     const entry = this.timeTrackingRepo.create({
       organizationId,
       employeeId,
-      startedAt: new Date(),
+      startedAt: now,
+      entryDate: toDateString(now),
+      source: TimeTrackingSource.CLOCK,
     });
     return this.timeTrackingRepo.save(entry);
   }
@@ -73,7 +117,14 @@ export class TimeTrackingService {
       );
     }
     openEntry.endedAt = new Date();
-    return this.timeTrackingRepo.save(openEntry);
+    openEntry.workMinutes = computeWorkMinutes(
+      openEntry.startedAt,
+      openEntry.endedAt,
+      openEntry.breakMinutes,
+    );
+    const saved = await this.timeTrackingRepo.save(openEntry);
+    await this.recompute(saved);
+    return saved;
   }
 
   async findAllByEmployeeId(
@@ -109,19 +160,41 @@ export class TimeTrackingService {
     organizationId: string,
   ): Promise<TimeTracking> {
     const entry = await this.findOne(input.id, organizationId);
+    const previousEntryDate = entry.entryDate;
     const { startedAt, endedAt, ...rest } = input;
     Object.assign(entry, rest);
-    if (startedAt) entry.startedAt = new Date(startedAt);
+    if (startedAt) {
+      entry.startedAt = new Date(startedAt);
+      entry.entryDate = toDateString(entry.startedAt);
+    }
     if (endedAt !== undefined) {
       entry.endedAt = endedAt ? new Date(endedAt) : undefined;
     }
-    return this.timeTrackingRepo.save(entry);
+    entry.workMinutes = computeWorkMinutes(
+      entry.startedAt,
+      entry.endedAt,
+      entry.breakMinutes,
+    );
+    const saved = await this.timeTrackingRepo.save(entry);
+    // Falls der Tag verschoben wurde, beide betroffenen Bereiche neu rechnen.
+    const from =
+      previousEntryDate < saved.entryDate ? previousEntryDate : saved.entryDate;
+    const to =
+      previousEntryDate > saved.entryDate ? previousEntryDate : saved.entryDate;
+    await this.balanceRecompute.recomputeRange(
+      organizationId,
+      saved.employeeId,
+      from,
+      to,
+    );
+    return saved;
   }
 
   async remove(id: string, organizationId: string): Promise<boolean> {
     const entry = await this.findOne(id, organizationId);
     entry.isActive = false;
     await this.timeTrackingRepo.save(entry);
+    await this.recompute(entry);
     return true;
   }
 }
