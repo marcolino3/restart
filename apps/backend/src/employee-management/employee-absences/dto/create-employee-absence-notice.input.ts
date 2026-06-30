@@ -1,10 +1,13 @@
-import { InputType, Field, ID } from '@nestjs/graphql';
+import { InputType, Field, ID, Int } from '@nestjs/graphql';
 import {
   IsBoolean,
   IsDateString,
+  IsInt,
   IsOptional,
   IsString,
   IsUUID,
+  Max,
+  Min,
 } from 'class-validator';
 
 @InputType()
@@ -35,4 +38,12 @@ export class CreateEmployeeAbsenceNoticeInput {
   @IsOptional()
   @IsBoolean()
   isVacationCapable?: boolean;
+
+  // Abwesenheitsgrad 1–100 (Teilabsenz, z.B. 50% AU). Default: Kategorie-Default.
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  percentage?: number;
 }

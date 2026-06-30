@@ -118,14 +118,18 @@ export function calculateDays(input: CalcInput): DayResult[] {
     if (contract) {
       result.plannedMinutes = dailyPlannedMinutes(contract, weekday);
     }
-    result.isFreeDay = !isWeekend && contract != null && result.plannedMinutes === 0;
+    result.isFreeDay =
+      !isWeekend && contract != null && result.plannedMinutes === 0;
 
     // Feiertag reduziert die Sollzeit (teilbezahlt möglich) und überschreibt
     // Ferien/Absenz an diesem Tag.
     const holiday = holidayByDate.get(date);
     if (holiday) {
       result.isHoliday = true;
-      const unpaidFactor = Math.max(0, Math.min(1, 1 - holiday.paidPercentage / 100));
+      const unpaidFactor = Math.max(
+        0,
+        Math.min(1, 1 - holiday.paidPercentage / 100),
+      );
       result.plannedMinutes = Math.round(result.plannedMinutes * unpaidFactor);
     } else {
       // Ferien: der Tag ist durch Ferien gedeckt (nur an Arbeitstagen).

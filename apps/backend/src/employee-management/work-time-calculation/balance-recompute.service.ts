@@ -9,11 +9,9 @@ import { EmployeeVacation } from '@/employee-management/employee-vacations/entit
 import { CompanyVacation } from '@/employee-management/company-vacations/entities/company-vacation.entity';
 import { TimeTracking } from '@/employee-management/time-tracking/entities/time-tracking.entity';
 import { WorkDayBalance } from '@/employee-management/work-day-balances/entities/work-day-balance.entity';
+import { Employee } from '@/employee-management/employees/entities/employee.entity';
 import { calculateDays } from './work-time-calculation';
-import {
-  CalcAbsenceDay,
-  CalcVacationDay,
-} from './work-time-calculation.types';
+import { CalcAbsenceDay, CalcVacationDay } from './work-time-calculation.types';
 
 /** Alle Kalendertage [from..to] inklusive als ISO-Strings. */
 function expandDays(from: string, to: string): string[] {
@@ -50,7 +48,40 @@ export class BalanceRecomputeService {
     private readonly timeTrackingRepo: Repository<TimeTracking>,
     @InjectRepository(WorkDayBalance)
     private readonly balanceRepo: Repository<WorkDayBalance>,
+    @InjectRepository(Employee)
+    private readonly employeeRepo: Repository<Employee>,
   ) {}
+
+  /**
+   * Recompute für alle Mitarbeiter der Org mit aktivierter Zeiterfassung —
+   * für org-weite Änderungen (Feiertag, Betriebsferien). Begrenzte Parallelität
+   * statt einer Mega-Transaktion (lange Locks vermeiden).
+   */
+  async recomputeOrgRange(
+    organizationId: string,
+    fromDate: string,
+    toDate: string,
+  ): Promise<void> {
+    const employees = await this.employeeRepo
+      .createQueryBuilder('e')
+      .innerJoin('e.membership', 'm')
+      .where('m.organization_id = :organizationId', { organizationId })
+      .andWhere('e.time_tracking_enabled = true')
+      .andWhere('e."isActive" = true')
+      .andWhere('m."isActive" = true')
+      .select('e.id', 'id')
+      .getRawMany<{ id: string }>();
+
+    const concurrency = 5;
+    for (let i = 0; i < employees.length; i += concurrency) {
+      const batch = employees.slice(i, i + concurrency);
+      await Promise.all(
+        batch.map((emp) =>
+          this.recomputeRange(organizationId, emp.id, fromDate, toDate),
+        ),
+      );
+    }
+  }
 
   /**
    * Berechnet das Ledger für einen Mitarbeiter im Bereich neu. Der Bereich wird
@@ -63,36 +94,46 @@ export class BalanceRecomputeService {
     fromDate: string,
     toDate: string,
   ): Promise<void> {
-    const from = DateTime.fromISO(fromDate).startOf('week').toISODate() as string;
+    const from = DateTime.fromISO(fromDate)
+      .startOf('week')
+      .toISODate() as string;
     const to = DateTime.fromISO(toDate).endOf('week').toISODate() as string;
 
-    const [contracts, holidays, absences, vacations, companyVacations, entries] =
-      await Promise.all([
-        this.contractRepo.find({
-          where: { organizationId, employeeId, isActive: true },
-        }),
-        this.holidayRepo.find({ where: { organizationId, isActive: true } }),
-        this.absenceRepo.find({
-          where: { organizationId, employeeId, isActive: true },
-          relations: ['absenceCategory'],
-        }),
-        this.vacationRepo.find({
-          where: { organizationId, employeeId, isActive: true },
-        }),
-        this.companyVacationRepo.find({
-          where: { organizationId, isActive: true, appliesToAll: true },
-        }),
-        this.timeTrackingRepo.find({
-          where: { organizationId, employeeId, isActive: true },
-        }),
-      ]);
+    const [
+      contracts,
+      holidays,
+      absences,
+      vacations,
+      companyVacations,
+      entries,
+    ] = await Promise.all([
+      this.contractRepo.find({
+        where: { organizationId, employeeId, isActive: true },
+      }),
+      this.holidayRepo.find({ where: { organizationId, isActive: true } }),
+      this.absenceRepo.find({
+        where: { organizationId, employeeId, isActive: true },
+        relations: ['absenceCategory'],
+      }),
+      this.vacationRepo.find({
+        where: { organizationId, employeeId, isActive: true },
+      }),
+      this.companyVacationRepo.find({
+        where: { organizationId, isActive: true, appliesToAll: true },
+      }),
+      this.timeTrackingRepo.find({
+        where: { organizationId, employeeId, isActive: true },
+      }),
+    ]);
 
     // Absenzen → Tageseinträge
     const absenceDays: CalcAbsenceDay[] = [];
     for (const a of absences) {
-      const aEnd = (a.endDate
-        ? DateTime.fromJSDate(a.endDate).toISODate()
-        : DateTime.fromJSDate(a.startDate).toISODate()) as string;
+      const aEnd = (
+        a.endDate
+          ? DateTime.fromJSDate(a.endDate).toISODate()
+          : DateTime.fromJSDate(a.startDate).toISODate()
+      ) as string;
       const aStart = DateTime.fromJSDate(a.startDate).toISODate() as string;
       if (!overlaps(aStart, aEnd, from, to)) continue;
       for (const date of expandDays(aStart, aEnd)) {
@@ -169,7 +210,8 @@ export class BalanceRecomputeService {
         .createQueryBuilder()
         .delete()
         .from(WorkDayBalance)
-        .where('employee_id = :employeeId', { employeeId })
+        .where('organization_id = :organizationId', { organizationId })
+        .andWhere('employee_id = :employeeId', { employeeId })
         .andWhere('date BETWEEN :from AND :to', { from, to })
         .execute();
       if (rows.length) await manager.save(rows);
