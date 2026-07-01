@@ -66,10 +66,13 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
   const locale = useLocale();
   const t = useTranslations("SiteHeader");
   const tCommon = useTranslations("Common");
-  const { hasPermission } = usePermissions();
+  const { hasPermission, hasRole } = usePermissions();
   const user = useUser();
 
   const isSuperAdmin = user?.isSuperAdmin ?? false;
+  // Zeit-Auswertung: Admin/HR/Office-Persona ODER Teamleiter.
+  const canSeeTimeReport =
+    isSuperAdmin || isAdminPersona(user?.persona) || hasRole("TEAM_LEAD");
   // SuperAdmin always sees the org-admin block; otherwise persona must be
   // one of ADMIN/HR/OFFICE. Teacher/Student/Parent/Employee personas are
   // hard-blocked from the navOrg sidebar group regardless of permissions.
@@ -92,6 +95,15 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
         url: ROUTES.admin.myTimeTracking(locale),
         icon: IconListDetails,
       },
+      ...(canSeeTimeReport
+        ? [
+            {
+              title: t("timeTrackingReport"),
+              url: ROUTES.admin.timeTrackingReport(locale),
+              icon: IconReport,
+            },
+          ]
+        : []),
       {
         title: t("employees"),
         url: ROUTES.admin.employees(locale),
@@ -193,6 +205,11 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
                   title: t("absenceCategories"),
                   url: ROUTES.admin.absenceCategories(locale),
                   icon: IconCalendarOff,
+                },
+                {
+                  title: t("timeTrackingSettings"),
+                  url: ROUTES.admin.timeTrackingSettings(locale),
+                  icon: IconSettings,
                 },
               ]
             : []),

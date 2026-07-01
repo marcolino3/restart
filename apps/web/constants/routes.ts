@@ -22,6 +22,14 @@ export const ROUTES = {
     myTimeTrackingEdit: (locale: string, id: string) =>
       `/${locale}/admin/my-time-tracking/edit/${id}`,
 
+    // Time Tracking Report + Settings (Admin/HR/Teamleiter)
+    timeTrackingReport: (locale: string) =>
+      `/${locale}/admin/time-tracking-report`,
+    timeTrackingReportEmployee: (locale: string, id: string) =>
+      `/${locale}/admin/time-tracking-report/${id}`,
+    timeTrackingSettings: (locale: string) =>
+      `/${locale}/admin/time-tracking-settings`,
+
     // School Classes
     schoolClasses: (locale: string) => `/${locale}/admin/school-classes`,
     schoolClassesCreate: (locale: string) =>
