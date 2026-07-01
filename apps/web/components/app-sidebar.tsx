@@ -10,7 +10,10 @@ import {
   IconFileDescription,
   IconFileWord,
   IconHelp,
+  IconFileText,
   IconInnerShadowTop,
+  IconLayoutKanban,
+  IconListCheck,
   IconListDetails,
   IconReport,
   IconBook,
@@ -127,6 +130,29 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
               title: t("admissions"),
               url: ROUTES.admin.admissionsKanban(locale),
               icon: IconClipboardCheck,
+            },
+          ]
+        : []),
+      ...(hasPermission("PROJECT_READ")
+        ? [
+            {
+              title: t("projects"),
+              url: ROUTES.admin.projects(locale),
+              icon: IconLayoutKanban,
+            },
+            {
+              title: t("myTasks"),
+              url: ROUTES.admin.myTasks(locale),
+              icon: IconListCheck,
+            },
+          ]
+        : []),
+      ...(hasPermission("PROTOCOL_READ")
+        ? [
+            {
+              title: t("protocols"),
+              url: ROUTES.admin.protocols(locale),
+              icon: IconFileText,
             },
           ]
         : []),

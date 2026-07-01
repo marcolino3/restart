@@ -37,6 +37,19 @@ export const ROUTES = {
     teamsDetail: (locale: string, id: string) =>
       `/${locale}/admin/teams/${id}`,
 
+    // Projects (project management / boards)
+    projects: (locale: string) => `/${locale}/admin/projects`,
+    projectsBoard: (locale: string, id: string) =>
+      `/${locale}/admin/projects/${id}`,
+    projectTemplates: (locale: string) =>
+      `/${locale}/admin/projects/templates`,
+    myTasks: (locale: string) => `/${locale}/admin/my-tasks`,
+
+    // Meeting protocols
+    protocols: (locale: string) => `/${locale}/admin/protocols`,
+    protocolEditor: (locale: string, id: string) =>
+      `/${locale}/admin/protocols/${id}`,
+
     // Students
     students: (locale: string) => `/${locale}/admin/students`,
     studentsView: (locale: string, id: string) =>

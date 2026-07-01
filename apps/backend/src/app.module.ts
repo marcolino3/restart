@@ -24,6 +24,7 @@ import { CountryInputTemplatesModule } from './country-input-templates/country-i
 import { EmployeeContractsModule } from './employee-management/employee-contracts/employee-contracts.module';
 import { EmployeeManagementModule } from './employee-management/employee-management.module';
 import { SchoolManagementModule } from './school-management/school-management.module';
+import { ProjectManagementModule } from './project-management/project-management.module';
 import { CurriculaModule } from './curricula/curricula.module';
 import { CurriculumNodeLoaders } from './curricula/loaders/curriculum-node-loaders';
 import { StudentEnrollmentLoaders } from './school-management/students/loaders/student-enrollment-loaders';
@@ -151,6 +152,7 @@ import { join } from 'path';
     EmployeeContractsModule,
     EmployeeManagementModule,
     SchoolManagementModule,
+    ProjectManagementModule,
     CurriculaModule,
     MembershipsModule,
     MailModule,

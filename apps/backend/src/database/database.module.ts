@@ -42,6 +42,14 @@ import { LessonRecord } from '@/curricula/record-keeping/entities/lesson-record.
 import { RecordKeepingSettings } from '@/curricula/record-keeping/entities/record-keeping-settings.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
+import { Project } from '@/project-management/projects/entities/project.entity';
+import { ProjectMember } from '@/project-management/project-members/entities/project-member.entity';
+import { Task } from '@/project-management/tasks/entities/task.entity';
+import { TaskAssignee } from '@/project-management/tasks/entities/task-assignee.entity';
+import { ProjectTemplate } from '@/project-management/templates/entities/project-template.entity';
+import { ProjectTemplateTask } from '@/project-management/templates/entities/project-template-task.entity';
+import { Protocol } from '@/project-management/protocols/entities/protocol.entity';
+import { ProtocolParticipant } from '@/project-management/protocols/entities/protocol-participant.entity';
 import { Permission } from '@/permissions/entities/permission.entity';
 import { Role } from '@/roles/entities/role.entity';
 import { UserEmail } from '@/user-emails/entities/user-email.entity';
@@ -100,6 +108,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       CurriculumNodeTranslation,
       LessonRecord,
       RecordKeepingSettings,
+      Project,
+      ProjectMember,
+      Task,
+      TaskAssignee,
+      ProjectTemplate,
+      ProjectTemplateTask,
+      Protocol,
+      ProtocolParticipant,
     ]),
   ],
   exports: [TypeOrmModule],
