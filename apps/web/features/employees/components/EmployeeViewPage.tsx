@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BackButton } from "@/components/common/BackButton";
-import { ChangeEmailDialog } from "@/features/users/components/ChangeEmailDialog";
+import { UserEmailField } from "@/features/users/components/UserEmailField";
 import { ROUTES } from "@/constants/routes";
 
 import type { EmployeeDetail } from "../actions/get-employee-by-id.action";
@@ -189,13 +189,14 @@ export default function EmployeeViewPage({
                     <dt className="text-sm/6 font-medium text-foreground">
                       {t("email")}
                     </dt>
-                    <dd className="mt-1 flex items-center gap-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      <span>{primaryEmail ?? "–"}</span>
-                      {user?.id && (
-                        <ChangeEmailDialog
+                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
+                      {user?.id ? (
+                        <UserEmailField
                           userId={user.id}
                           currentEmail={primaryEmail}
                         />
+                      ) : (
+                        (primaryEmail ?? "–")
                       )}
                     </dd>
                   </div>
