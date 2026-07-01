@@ -12,6 +12,8 @@ import {
 import { CreateTimeTrackingInput } from './dto/create-time-tracking.input';
 import { UpdateTimeTrackingInput } from './dto/update-time-tracking.input';
 import { BalanceRecomputeService } from '../work-time-calculation/balance-recompute.service';
+import { TimeTrackingAccessService } from '../work-time-calculation/time-tracking-access.service';
+import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 
 /** 'YYYY-MM-DD' (lokaler Kalendertag) aus einem Date. */
 function toDateString(d: Date): string {
@@ -38,12 +40,15 @@ export class TimeTrackingService {
     @InjectRepository(TimeTracking)
     private readonly timeTrackingRepo: Repository<TimeTracking>,
     private readonly balanceRecompute: BalanceRecomputeService,
+    private readonly access: TimeTrackingAccessService,
   ) {}
 
   async create(
     input: CreateTimeTrackingInput,
     organizationId: string,
+    user: TokenPayload,
   ): Promise<TimeTracking> {
+    await this.access.assertCanManageEmployee(user, input.employeeId);
     const startedAt = new Date(input.startedAt);
     const endedAt = input.endedAt ? new Date(input.endedAt) : undefined;
     const entry = this.timeTrackingRepo.create({
@@ -73,7 +78,9 @@ export class TimeTrackingService {
   async start(
     employeeId: string,
     organizationId: string,
+    user: TokenPayload,
   ): Promise<TimeTracking> {
+    await this.access.assertCanManageEmployee(user, employeeId);
     const openEntry = await this.timeTrackingRepo.findOne({
       where: {
         organizationId,
@@ -102,7 +109,9 @@ export class TimeTrackingService {
   async stop(
     employeeId: string,
     organizationId: string,
+    user: TokenPayload,
   ): Promise<TimeTracking> {
+    await this.access.assertCanManageEmployee(user, employeeId);
     const openEntry = await this.timeTrackingRepo.findOne({
       where: {
         organizationId,
@@ -130,9 +139,11 @@ export class TimeTrackingService {
   async findAllByEmployeeId(
     employeeId: string,
     organizationId: string,
+    user: TokenPayload,
     from?: Date,
     to?: Date,
   ): Promise<TimeTracking[]> {
+    await this.access.assertCanViewEmployee(user, employeeId);
     return this.timeTrackingRepo.find({
       where: {
         organizationId,
@@ -144,7 +155,11 @@ export class TimeTrackingService {
     });
   }
 
-  async findOne(id: string, organizationId: string): Promise<TimeTracking> {
+  async findOne(
+    id: string,
+    organizationId: string,
+    user?: TokenPayload,
+  ): Promise<TimeTracking> {
     const entry = await this.timeTrackingRepo.findOne({
       where: { id, organizationId, isActive: true },
       relations: ['employee'],
@@ -152,14 +167,17 @@ export class TimeTrackingService {
     if (!entry) {
       throw new NotFoundException(`TimeTracking entry ${id} not found`);
     }
+    if (user) await this.access.assertCanViewEmployee(user, entry.employeeId);
     return entry;
   }
 
   async update(
     input: UpdateTimeTrackingInput,
     organizationId: string,
+    user: TokenPayload,
   ): Promise<TimeTracking> {
     const entry = await this.findOne(input.id, organizationId);
+    await this.access.assertCanManageEmployee(user, entry.employeeId);
     const previousEntryDate = entry.entryDate;
     const { startedAt, endedAt, ...rest } = input;
     Object.assign(entry, rest);
@@ -190,8 +208,13 @@ export class TimeTrackingService {
     return saved;
   }
 
-  async remove(id: string, organizationId: string): Promise<boolean> {
+  async remove(
+    id: string,
+    organizationId: string,
+    user: TokenPayload,
+  ): Promise<boolean> {
     const entry = await this.findOne(id, organizationId);
+    await this.access.assertCanManageEmployee(user, entry.employeeId);
     entry.isActive = false;
     await this.timeTrackingRepo.save(entry);
     await this.recompute(entry);
