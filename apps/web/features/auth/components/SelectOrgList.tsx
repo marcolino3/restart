@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useLocale } from "next-intl";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type Organization = {
   id: string;
@@ -20,33 +20,57 @@ export function SelectOrgList({ organizations }: SelectOrgListProps) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSelect(orgId: string) {
-    setBusyId(orgId);
-    setError(null);
-    try {
-      const res = await fetch("/api/org/switch", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orgId }),
-      });
-      if (!res.ok) {
-        setError(`Wechsel fehlgeschlagen (${res.status})`);
-        return;
+  const handleSelect = useCallback(
+    async (orgId: string) => {
+      setBusyId(orgId);
+      setError(null);
+      try {
+        const res = await fetch("/api/org/switch", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orgId }),
+        });
+        if (!res.ok) {
+          setError(`Wechsel fehlgeschlagen (${res.status})`);
+          return;
+        }
+        window.location.assign(`/${locale}/admin`);
+      } catch {
+        setError("Netzwerkfehler beim Wechsel der Organisation");
+      } finally {
+        setBusyId(null);
       }
-      window.location.assign(`/${locale}/admin`);
-    } catch {
-      setError("Netzwerkfehler beim Wechsel der Organisation");
-    } finally {
-      setBusyId(null);
+    },
+    [locale],
+  );
+
+  // Genau eine Mitgliedschaft → automatisch in diese Org wechseln (keine
+  // Auswahl nötig). Nur bei mehreren Orgs wird die Auswahl gezeigt.
+  const singleOrg = organizations.length === 1;
+  const autoTriggered = useRef(false);
+  useEffect(() => {
+    if (singleOrg && !autoTriggered.current) {
+      autoTriggered.current = true;
+      void handleSelect(organizations[0].id);
     }
-  }
+  }, [singleOrg, organizations, handleSelect]);
 
   if (organizations.length === 0) {
     return (
       <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
         Du bist aktuell in keiner Organisation Mitglied. Bitte kontaktiere
         deinen Administrator.
+      </div>
+    );
+  }
+
+  // Auto-Weiterleitung bei genau einer Org (solange kein Fehler auftrat).
+  if (singleOrg && !error) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Weiterleiten…
       </div>
     );
   }
