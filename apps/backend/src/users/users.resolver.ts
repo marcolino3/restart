@@ -1,5 +1,6 @@
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
+import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { SuperAdminOnly } from '@/auth/decorators/super-admin.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
@@ -10,6 +11,7 @@ import { EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { CreateUserInput } from './dto/create-user.input';
 import { UpdateUserInput } from './dto/update-user.input';
+import { ChangeUserEmailInput } from './dto/change-user-email.input';
 import { AuthContextOutput } from './dto/auth-context.output';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
@@ -65,6 +67,17 @@ export class UsersResolver {
   @Permissions('EMPLOYEE_WRITE')
   updateUser(@Args('updateUserInput') updateUserInput: UpdateUserInput) {
     return this.usersService.update(updateUserInput);
+  }
+
+  /**
+   * Ändert die primäre E-Mail eines Users synchron in TypeORM `user_emails`
+   * UND better-auth `user.email` (Login). Admin/HR only.
+   */
+  @Mutation(() => User)
+  @AdminPersonaOnly()
+  @Permissions('EMPLOYEE_WRITE')
+  changeUserEmail(@Args('input') input: ChangeUserEmailInput) {
+    return this.usersService.changeUserEmail(input.userId, input.newEmail);
   }
 
   /**
