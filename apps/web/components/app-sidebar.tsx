@@ -180,6 +180,11 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
                   url: ROUTES.admin.absenceCategories(locale),
                   icon: IconCalendarOff,
                 },
+                {
+                  title: t("timeTrackingSettings"),
+                  url: ROUTES.admin.timeTrackingSettings(locale),
+                  icon: IconSettings,
+                },
               ]
             : []),
           ...(hasPermission("ROLE_ASSIGN")
