@@ -302,7 +302,9 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
               >
                 <a href="#">
                   <IconInnerShadowTop className="!size-5" />
-                  <span className="text-base font-semibold">RMS</span>
+                  <span className="text-base font-semibold">
+                    {user?.orgName ?? "RMS"}
+                  </span>
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>

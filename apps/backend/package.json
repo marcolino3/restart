@@ -132,7 +132,6 @@
     "testPathIgnorePatterns": [
       "/node_modules/",
       "src/users/users.service.spec.ts",
-      "src/users/users.resolver.spec.ts",
       "src/auth/auth.service.spec.ts",
       "src/auth-accounts/auth-accounts.service.spec.ts",
       "src/auth-accounts/auth-accounts.resolver.spec.ts",
