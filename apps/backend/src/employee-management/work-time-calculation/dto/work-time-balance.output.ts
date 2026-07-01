@@ -91,6 +91,9 @@ export class EmployeeWorkTimeOverviewRow {
   @Field(() => ID)
   employeeId: string;
 
+  @Field(() => String, { nullable: true })
+  employeeName: string | null;
+
   @Field(() => Int)
   netBalanceMinutes: number;
 

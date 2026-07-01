@@ -2,8 +2,10 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
+import { In } from 'typeorm';
 import { EmployeeContract } from '@/employee-management/employee-contracts/entities/employee-contract.entity';
 import { EmployeePeriodOpeningBalance } from '@/employee-management/time-tracking-periods/entities/employee-period-opening-balance.entity';
+import { Membership } from '@/memberships/entities/membership.entity';
 import { TimeTrackingAccessService } from './time-tracking-access.service';
 import {
   EmployeeWorkTimeOverviewRow,
@@ -40,8 +42,29 @@ export class WorkTimeBalanceService {
     private readonly contractRepo: Repository<EmployeeContract>,
     @InjectRepository(EmployeePeriodOpeningBalance)
     private readonly openingBalanceRepo: Repository<EmployeePeriodOpeningBalance>,
+    @InjectRepository(Membership)
+    private readonly membershipRepo: Repository<Membership>,
     private readonly access: TimeTrackingAccessService,
   ) {}
+
+  /** Map employeeId → "Vorname Nachname" für die gegebenen IDs. */
+  private async employeeNames(
+    orgId: string,
+    employeeIds: string[],
+  ): Promise<Map<string, string>> {
+    if (!employeeIds.length) return new Map();
+    const memberships = await this.membershipRepo.find({
+      where: { organizationId: orgId, employeeId: In(employeeIds) },
+      relations: ['user'],
+    });
+    const map = new Map<string, string>();
+    for (const m of memberships) {
+      if (m.employeeId && m.user) {
+        map.set(m.employeeId, `${m.user.firstName} ${m.user.lastName}`.trim());
+      }
+    }
+    return map;
+  }
 
   private async ledgerSum(
     orgId: string,
@@ -285,8 +308,13 @@ export class WorkTimeBalanceService {
         GROUP BY employee_id`,
       params,
     );
+    const names = await this.employeeNames(
+      orgId,
+      rows.map((r) => r.employee_id),
+    );
     return rows.map((r) => ({
       employeeId: r.employee_id,
+      employeeName: names.get(r.employee_id) ?? null,
       netBalanceMinutes: r.net,
       vacationDaysUsed: r.vac,
     }));
