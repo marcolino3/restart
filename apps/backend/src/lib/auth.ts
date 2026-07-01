@@ -102,6 +102,17 @@ export const auth = betterAuth({
   // Web (same cookie jar) and Mobile (no cookie needed).
   account: {
     storeStateStrategy: 'database',
+    // Link a social sign-in to an existing user with the same email.
+    // Google/Apple only issue tokens for emails they have themselves
+    // verified (id_token email_verified=true), so trusting them bypasses
+    // the local emailVerified check safely and avoids `account_not_linked`
+    // when a user first signed up via email/password (credential) and later
+    // signs in with Google. `credential` is safe to trust because creating
+    // one requires the password anyway (no takeover vector).
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ['google', 'apple', 'credential'],
+    },
   },
   socialProviders: {
     google: {
