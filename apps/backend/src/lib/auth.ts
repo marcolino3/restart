@@ -107,6 +107,10 @@ export const auth = betterAuth({
     google: {
       clientId: requireEnv('GOOGLE_AUTH_CLIENT_ID'),
       clientSecret: requireEnv('GOOGLE_AUTH_CLIENT_SECRET'),
+      // Immer die Google-Kontoauswahl erzwingen. Ohne dies meldet Google nach
+      // einem Logout stillschweigend dasselbe Konto wieder an (kein Chooser),
+      // sodass man sich nicht mit einem anderen Account einloggen kann.
+      prompt: 'select_account',
       // No redirectURI override: callback lands on backend
       // (${baseURL}/api/auth/callback/google = localhost:4001 in dev),
       // which keeps the state cookie on the same origin as where it was
