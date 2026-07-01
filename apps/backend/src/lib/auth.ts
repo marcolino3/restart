@@ -187,6 +187,24 @@ export const auth = betterAuth({
       if (!email) {
         throw new APIError('UNAUTHORIZED', { message: 'No session' });
       }
+
+      // Stop-Impersonating: Während der Impersonation IST die aktive Identität
+      // der Mitarbeiter (nicht der SuperAdmin) — deshalb darf hier NICHT auf
+      // is_super_admin geprüft werden. Erlaubt ist die Rückkehr, wenn die
+      // Session eine aktive Impersonation ist (better-auth setzt
+      // session.impersonatedBy auf den ursprünglichen SuperAdmin).
+      if (ctx.path === '/admin/stop-impersonating') {
+        const impersonatedBy = session?.session?.impersonatedBy as
+          | string
+          | undefined
+          | null;
+        if (!impersonatedBy) {
+          throw new APIError('FORBIDDEN', { message: 'Not impersonating' });
+        }
+        return;
+      }
+
+      // Impersonate-User (Start): nur SuperAdmins dürfen Impersonation starten.
       const result: Array<{ is_super_admin: boolean }> = await pool
         .query(
           `SELECT u.is_super_admin
