@@ -24,6 +24,7 @@ import type { Request } from 'express';
 import { auth } from '@/lib/auth';
 import { UsersService } from '@/users/users.service';
 import { getAuthContext } from '@/auth/utils/get-auth-context.util';
+import { Organization } from '@/organizations/entities/organization.entity';
 import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 
 type GqlContext = {
@@ -66,28 +67,38 @@ export class GqlBetterAuthGuard implements CanActivate {
     // to /select-org.
     const orgId = session.activeOrganizationId ?? undefined;
 
-    let payload: TokenPayload;
+    // A present `orgId` may still be stale: the Active-Org cookie can outlive
+    // the organization it points to (DB reseed, org deleted). In that case
+    // getAuthContext throws EntityNotFoundError. We must NOT let that crash the
+    // request — the unprotected `authContext` query has to stay reachable so
+    // the frontend can route the user to /select-org. So a stale/invalid org
+    // degrades to the same empty-roles payload as "no active org".
+    let ctx: Awaited<ReturnType<typeof getAuthContext>> | null = null;
     if (orgId) {
-      const ctx = await getAuthContext(this.em, dbUser.id, orgId);
-      payload = {
-        sub: dbUser.id,
-        orgId,
-        membershipId: ctx.membership?.id,
-        persona: ctx.persona ?? undefined,
-        roles: ctx.roles
-          .map((r) => r.name)
-          .filter((n): n is string => Boolean(n)),
-        permissions: ctx.permissions,
-        isSuperAdmin: dbUser.isSuperAdmin,
-      };
-    } else {
-      payload = {
-        sub: dbUser.id,
-        isSuperAdmin: dbUser.isSuperAdmin,
-        roles: [],
-        permissions: [],
-      };
+      const orgExists = await this.em.existsBy(Organization, { id: orgId });
+      if (orgExists) {
+        ctx = await getAuthContext(this.em, dbUser.id, orgId);
+      }
     }
+
+    const payload: TokenPayload = ctx
+      ? {
+          sub: dbUser.id,
+          orgId,
+          membershipId: ctx.membership?.id,
+          persona: ctx.persona ?? undefined,
+          roles: ctx.roles
+            .map((r) => r.name)
+            .filter((n): n is string => Boolean(n)),
+          permissions: ctx.permissions,
+          isSuperAdmin: dbUser.isSuperAdmin,
+        }
+      : {
+          sub: dbUser.id,
+          isSuperAdmin: dbUser.isSuperAdmin,
+          roles: [],
+          permissions: [],
+        };
 
     req.user = payload;
     return true;
