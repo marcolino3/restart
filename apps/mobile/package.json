@@ -9,7 +9,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "echo 'Mobile linting disabled in CI — run locally with: pnpm --filter @restart/mobile exec expo lint'",
+    "lint": "expo lint",
+    "typecheck": "tsc --noEmit",
     "clean": "rm -rf .expo dist node_modules/.cache"
   },
   "dependencies": {
@@ -49,6 +50,8 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "eslint": "^9.39.1",
+    "eslint-config-expo": "~10.0.0",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "react-test-renderer": "19.2.6",
     "tailwindcss": "^3.4.19",

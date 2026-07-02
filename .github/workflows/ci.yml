@@ -41,6 +41,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm turbo run lint
+      # Explicit typecheck for packages whose build doesn't run tsc (e.g. the
+      # Expo mobile app — `expo start` never typechecks in CI).
+      - run: pnpm turbo run typecheck
       - run: pnpm turbo run test
       - run: pnpm turbo run build
 

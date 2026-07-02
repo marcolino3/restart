@@ -32,10 +32,10 @@ export const updateSchoolClassAction = async (
     teacherIds: parsed.teacherIds ?? [],
     color: parsed.color || null,
     description: parsed.description || null,
+    // maxCapacity is `number | "" | undefined` after parsing; the schema
+    // already coerces numeric strings, so only a real number is sent.
     maxCapacity:
-      parsed.maxCapacity && parsed.maxCapacity !== ""
-        ? Number(parsed.maxCapacity)
-        : null,
+      typeof parsed.maxCapacity === "number" ? parsed.maxCapacity : null,
     room: parsed.room || null,
   };
 
