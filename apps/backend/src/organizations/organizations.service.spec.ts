@@ -9,6 +9,7 @@ import { EntityManager } from 'typeorm';
 
 import { OrganizationsService } from './organizations.service';
 import { Organization } from '@/organizations/entities/organization.entity';
+import { GeocodingService } from '@/google/geocoding.service';
 import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 
 // Mock seeders to avoid deep repository calls in unit tests
@@ -24,6 +25,12 @@ jest.mock('@/roles/seeds/system-roles.seeder', () => ({
 jest.mock('@/roles/seeds/assign-permissions-to-system-roles.seeder', () => ({
   assignPermissionsToOrgSystemRoles: jest.fn().mockResolvedValue(undefined),
 }));
+jest.mock(
+  '@/school-management/admission-stages/seeds/default-admission-stages',
+  () => ({
+    seedOrgAdmissionStages: jest.fn().mockResolvedValue(undefined),
+  }),
+);
 
 // ── helpers ────────────────────────────────────────────────────────
 const mockOrg = (overrides: Partial<Organization> = {}): Organization =>
@@ -59,17 +66,23 @@ const createMockRepository = () => ({
 const createMockEntityManager = () => {
   const qb = {
     innerJoin: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
     getMany: jest.fn().mockResolvedValue([]),
   };
   return {
-    transaction: jest.fn((cb: (m: any) => any) => cb(txManager)),
+    transaction: jest.fn((cb: (m: typeof txManager) => unknown) =>
+      cb(txManager),
+    ),
     getRepository: jest.fn().mockReturnValue({
       createQueryBuilder: jest.fn().mockReturnValue(qb),
       findOne: jest.fn(),
     }),
     exists: jest.fn(),
     save: jest.fn(),
-    create: jest.fn((_, data) => ({ id: 'new-org', ...data })),
+    create: jest.fn((_: unknown, data: Record<string, unknown>) => ({
+      id: 'new-org',
+      ...data,
+    })),
     _qb: qb,
   };
 };
@@ -78,24 +91,33 @@ const createMockEntityManager = () => {
 const txManager = {
   save: jest
     .fn()
-    .mockImplementation((data) => Promise.resolve({ id: 'new-org', ...data })),
-  create: jest.fn((_, data) => data),
+    .mockImplementation((data: Record<string, unknown>) =>
+      Promise.resolve({ id: 'new-org', ...data }),
+    ),
+  create: jest.fn((_: unknown, data: Record<string, unknown>) => data),
 };
+
+const createMockGeocodingService = () => ({
+  geocode: jest.fn().mockResolvedValue(null),
+});
 
 describe('OrganizationsService', () => {
   let service: OrganizationsService;
   let orgRepo: ReturnType<typeof createMockRepository>;
   let em: ReturnType<typeof createMockEntityManager>;
+  let geocoding: ReturnType<typeof createMockGeocodingService>;
 
   beforeEach(async () => {
     orgRepo = createMockRepository();
     em = createMockEntityManager();
+    geocoding = createMockGeocodingService();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrganizationsService,
         { provide: getRepositoryToken(Organization), useValue: orgRepo },
         { provide: EntityManager, useValue: em },
+        { provide: GeocodingService, useValue: geocoding },
       ],
     }).compile();
 

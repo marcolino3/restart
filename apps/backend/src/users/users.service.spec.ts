@@ -9,7 +9,7 @@ import { PasswordService } from './password.service';
 import { UserEmailsService } from '@/user-emails/user-emails.service';
 import { Persona } from '@/common/enums/persona.enum';
 
-// Mock bcrypt
+// bcrypt.hash is used for password hashing on create — mock it deterministically.
 jest.mock('bcrypt', () => ({
   hash: jest.fn().mockResolvedValue('hashed-password'),
 }));
@@ -20,9 +20,7 @@ const mockUser = (overrides: Partial<User> = {}): User =>
     id: 'user-1',
     firstName: 'Max',
     lastName: 'Mustermann',
-    email: 'max@example.com',
     username: 'max',
-    passwordHash: 'hashed-password',
     isActive: true,
     isSuperAdmin: false,
     ...overrides,
@@ -38,18 +36,19 @@ describe('UsersService', () => {
   beforeEach(async () => {
     em = {
       findOne: jest.fn(),
-      findOneBy: jest.fn(),
       find: jest.fn(),
-      create: jest.fn((_, data) => ({ id: 'new-user', ...data })),
-      save: jest
-        .fn()
-        .mockImplementation((entity) =>
-          Promise.resolve({ id: 'new-user', ...entity }),
-        ),
+      create: jest.fn((_entity, data: Record<string, unknown>) => ({
+        id: 'new-user',
+        ...data,
+      })),
+      save: jest.fn((entity: Record<string, unknown>) =>
+        Promise.resolve({ id: 'new-user', ...entity }),
+      ),
       update: jest.fn().mockResolvedValue({ affected: 1 }),
-      findOneByOrFail: jest.fn(),
       findByIds: jest.fn().mockResolvedValue([]),
-      transaction: jest.fn((cb: (m: any) => any) => cb(em)),
+      // The service wraps writes in `entityManager.transaction(cb)`;
+      // run the callback against the same mocked manager.
+      transaction: jest.fn((cb: (m: unknown) => unknown) => cb(em)),
     };
 
     userRepo = {
@@ -85,13 +84,11 @@ describe('UsersService', () => {
 
   // ── create ───────────────────────────────────────────────────────
   describe('create', () => {
-    it('should create user with hashed password', async () => {
-      em.findOne.mockResolvedValue(null); // no email conflict
-
+    it('should create the user entity and delegate the email to UserEmailsService', async () => {
       const result = await service.create({
         firstName: 'Max',
         lastName: 'Mustermann',
-        email: 'Max@Example.com',
+        email: 'max@example.com',
         password: 'secret123',
         isActive: true,
         organizationId: 'org-1',
@@ -100,19 +97,25 @@ describe('UsersService', () => {
       });
 
       expect(em.create).toHaveBeenCalledWith(User, {
+        title: undefined,
         firstName: 'Max',
         lastName: 'Mustermann',
-        title: undefined,
         username: undefined,
         isActive: true,
       });
       expect(em.save).toHaveBeenCalled();
+      // Email creation is delegated with the hashed password + primary/verified flags.
+      expect(userEmailsService.create).toHaveBeenCalledWith(
+        'new-user',
+        'max@example.com',
+        'hashed-password',
+        true,
+        true,
+      );
       expect(result).toBeDefined();
     });
 
-    it('should generate random password when none provided', async () => {
-      em.findOne.mockResolvedValue(null);
-
+    it('should generate a random password hash when none is provided', async () => {
       await service.create({
         firstName: 'Max',
         lastName: 'Mustermann',
@@ -128,7 +131,7 @@ describe('UsersService', () => {
       );
     });
 
-    it('should throw ConflictException if email already exists', async () => {
+    it('should propagate a ConflictException from the email service', async () => {
       userEmailsService.create.mockRejectedValue(
         new ConflictException('Email already in use'),
       );
@@ -146,37 +149,31 @@ describe('UsersService', () => {
         }),
       ).rejects.toThrow(ConflictException);
     });
-
-    it('should delegate email creation to UserEmailsService', async () => {
-      em.findOne.mockResolvedValue(null);
-
-      await service.create({
-        firstName: 'Max',
-        lastName: 'Mustermann',
-        email: '  MAX@EXAMPLE.COM  ',
-        password: 'pw',
-        isActive: true,
-        organizationId: 'org-1',
-        persona: Persona.EMPLOYEE,
-        roleIds: [],
-      });
-
-      expect(userEmailsService.create).toHaveBeenCalled();
-    });
   });
 
   // ── findOne ──────────────────────────────────────────────────────
   describe('findOne', () => {
-    it('should return user by id', async () => {
+    it('should return the user with relations', async () => {
       const user = mockUser();
-      em.findOneBy.mockResolvedValue(user);
+      em.findOne.mockResolvedValue(user);
 
       const result = await service.findOne('user-1');
+
+      expect(em.findOne).toHaveBeenCalledWith(User, {
+        where: { id: 'user-1' },
+        relations: [
+          'userEmails',
+          'userEmails.authAccounts',
+          'memberships',
+          'memberships.organization',
+        ],
+      });
       expect(result).toEqual(user);
     });
 
-    it('should throw NotFoundException for missing user', async () => {
-      em.findOneBy.mockResolvedValue(null);
+    it('should throw NotFoundException for a missing user', async () => {
+      em.findOne.mockResolvedValue(null);
+
       await expect(service.findOne('nonexistent')).rejects.toThrow(
         NotFoundException,
       );
@@ -185,19 +182,17 @@ describe('UsersService', () => {
 
   // ── findOneByEmail ───────────────────────────────────────────────
   describe('findOneByEmail', () => {
-    it('should find user case-insensitively', async () => {
+    it('should resolve the user via the email lookup service', async () => {
       const user = mockUser();
+      userEmailsService.findByEmail.mockResolvedValue({ userId: 'user-1' });
       em.findOne.mockResolvedValue(user);
 
       const result = await service.findOneByEmail('MAX@EXAMPLE.COM');
-      expect(result).toEqual(user);
-    });
 
-    it('should throw NotFoundException for unknown email', async () => {
-      em.findOne.mockResolvedValue(null);
-      await expect(service.findOneByEmail('nobody@test.com')).rejects.toThrow(
-        NotFoundException,
+      expect(userEmailsService.findByEmail).toHaveBeenCalledWith(
+        'MAX@EXAMPLE.COM',
       );
+      expect(result).toEqual(user);
     });
   });
 
@@ -208,20 +203,22 @@ describe('UsersService', () => {
       em.find.mockResolvedValue(users);
 
       const result = await service.findAll();
+
       expect(result).toHaveLength(2);
     });
   });
 
   // ── findCurrentUser ──────────────────────────────────────────────
   describe('findCurrentUser', () => {
-    it('should return user with memberships relation', async () => {
+    it('should load the user with memberships and userEmails relations', async () => {
       const user = mockUser();
       userRepo.findOne.mockResolvedValue(user);
 
       const result = await service.findCurrentUser('user-1');
+
       expect(userRepo.findOne).toHaveBeenCalledWith({
         where: { id: 'user-1' },
-        relations: ['memberships'],
+        relations: ['memberships', 'userEmails'],
       });
       expect(result).toEqual(user);
     });
@@ -229,32 +226,60 @@ describe('UsersService', () => {
 
   // ── update ───────────────────────────────────────────────────────
   describe('update', () => {
-    it('should update user fields', async () => {
+    it('should patch fields and return the reloaded user', async () => {
       const updated = mockUser({ firstName: 'Moritz' });
-      em.findOne.mockResolvedValue(null); // no email conflict
-      em.findOneBy.mockResolvedValue(updated);
+      em.findOne.mockResolvedValue(updated);
 
       const result = await service.update({
         id: 'user-1',
         firstName: 'Moritz',
       });
-      expect(em.update).toHaveBeenCalled();
+
+      expect(em.update).toHaveBeenCalledWith(
+        User,
+        { id: 'user-1' },
+        { firstName: 'Moritz' },
+      );
       expect(result.firstName).toBe('Moritz');
     });
 
-    it('should throw ConflictException on email conflict', async () => {
-      em.findOne.mockResolvedValue({ id: 'other-user' }); // conflict
+    it('should trim the username before persisting', async () => {
+      em.findOne.mockResolvedValue(mockUser());
+
+      await service.update({ id: 'user-1', username: '  bob  ' });
+
+      expect(em.update).toHaveBeenCalledWith(
+        User,
+        { id: 'user-1' },
+        { username: 'bob' },
+      );
+    });
+
+    it('should throw NotFoundException when the user disappears after update', async () => {
+      em.findOne.mockResolvedValue(null);
 
       await expect(
-        service.update({ id: 'user-1', email: 'taken@test.com' }),
-      ).rejects.toThrow(ConflictException);
+        service.update({ id: 'user-1', firstName: 'Moritz' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── changeUserEmail ──────────────────────────────────────────────
+  describe('changeUserEmail', () => {
+    it('should throw NotFoundException when the user has no email', async () => {
+      em.find.mockResolvedValue([]);
+
+      await expect(
+        service.changeUserEmail('user-1', 'new@example.com'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
   // ── setRefreshToken / clearRefreshToken ──────────────────────────
   describe('token management', () => {
-    it('should set refresh token hash', async () => {
+    it('should set the refresh token hash', async () => {
       await service.setRefreshToken('user-1', 'new-hash');
+
       expect(em.update).toHaveBeenCalledWith(
         User,
         { id: 'user-1' },
@@ -262,8 +287,9 @@ describe('UsersService', () => {
       );
     });
 
-    it('should clear refresh token', async () => {
+    it('should clear the refresh token', async () => {
       await service.clearRefreshToken('user-1');
+
       expect(em.update).toHaveBeenCalledWith(
         User,
         { id: 'user-1' },
@@ -272,32 +298,11 @@ describe('UsersService', () => {
     });
   });
 
-  // ── magic link token management ──────────────────────────────────
-  describe('magic link token management', () => {
-    it('should set magic link token and expiry', async () => {
-      const expiry = new Date();
-      await service.setMagicLinkToken('user-1', 'token-hash', expiry);
-      expect(em.update).toHaveBeenCalledWith(
-        User,
-        { id: 'user-1' },
-        { magicLinkToken: 'token-hash', magicLinkExpiresAt: expiry },
-      );
-    });
-
-    it('should clear magic link token', async () => {
-      await service.clearMagicLinkToken('user-1');
-      expect(em.update).toHaveBeenCalledWith(
-        User,
-        { id: 'user-1' },
-        { magicLinkToken: null, magicLinkExpiresAt: null },
-      );
-    });
-  });
-
   // ── remove ───────────────────────────────────────────────────────
   describe('remove', () => {
-    it('should deactivate user (soft delete)', async () => {
+    it('should deactivate the user (soft delete)', async () => {
       await service.remove('user-1');
+
       expect(em.update).toHaveBeenCalledWith(
         User,
         { id: 'user-1' },
