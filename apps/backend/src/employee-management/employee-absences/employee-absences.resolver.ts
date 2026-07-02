@@ -1,10 +1,12 @@
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
+import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { UseGuards } from '@nestjs/common';
-import { Args, Mutation, Resolver } from '@nestjs/graphql';
+import { Args, ID, Mutation, Resolver } from '@nestjs/graphql';
 import { CreateEmployeeAbsenceNoticeInput } from './dto/create-employee-absence-notice.input';
+import { UpdateEmployeeAbsenceInput } from './dto/update-employee-absence.input';
 import { EmployeeAbsencesService } from './employee-absences.service';
 import { EmployeeAbsence } from './entities/employee-absence.entity';
 
@@ -25,5 +27,24 @@ export class EmployeeAbsencesResolver {
       input,
       user,
     );
+  }
+
+  @Permissions('TIMESHEET_WRITE')
+  @Mutation(() => EmployeeAbsence, { name: 'updateEmployeeAbsence' })
+  updateEmployeeAbsence(
+    @Args('updateEmployeeAbsenceInput')
+    input: UpdateEmployeeAbsenceInput,
+    @CurrentUser() user: TokenPayload,
+  ) {
+    return this.employeeAbsencesService.updateEmployeeAbsence(input, user);
+  }
+
+  @Permissions('TIMESHEET_WRITE')
+  @Mutation(() => Boolean, { name: 'deleteEmployeeAbsence' })
+  deleteEmployeeAbsence(
+    @Args('id', { type: () => ID }) id: string,
+    @CurrentUser() user: TokenPayload,
+  ) {
+    return this.employeeAbsencesService.deleteEmployeeAbsence(id, user);
   }
 }

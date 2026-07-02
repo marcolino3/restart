@@ -15,6 +15,13 @@ import { EmployeeContract } from '@/employee-management/employee-contracts/entit
 import { TeamMember } from '@/employee-management/team-members/entities/team-member.entity';
 import { Team } from '@/employee-management/teams/entities/team.entity';
 import { TimeTracking } from '@/employee-management/time-tracking/entities/time-tracking.entity';
+import { Holiday } from '@/employee-management/holidays/entities/holiday.entity';
+import { CompanyVacation } from '@/employee-management/company-vacations/entities/company-vacation.entity';
+import { EmployeeVacation } from '@/employee-management/employee-vacations/entities/employee-vacation.entity';
+import { TimeTrackingPeriod } from '@/employee-management/time-tracking-periods/entities/time-tracking-period.entity';
+import { EmployeePeriodOpeningBalance } from '@/employee-management/time-tracking-periods/entities/employee-period-opening-balance.entity';
+import { EmployeePaidOvertime } from '@/employee-management/employee-paid-overtime/entities/employee-paid-overtime.entity';
+import { WorkDayBalance } from '@/employee-management/work-day-balances/entities/work-day-balance.entity';
 import { AdmissionStage } from '@/school-management/admission-stages/entities/admission-stage.entity';
 import { AdmissionRejectionReason } from '@/school-management/admission-rejection-reasons/entities/admission-rejection-reason.entity';
 import { AdmissionBoardSettings } from '@/school-management/admission-board-settings/entities/admission-board-settings.entity';
@@ -42,6 +49,14 @@ import { LessonRecord } from '@/curricula/record-keeping/entities/lesson-record.
 import { RecordKeepingSettings } from '@/curricula/record-keeping/entities/record-keeping-settings.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
+import { Project } from '@/project-management/projects/entities/project.entity';
+import { ProjectMember } from '@/project-management/project-members/entities/project-member.entity';
+import { Task } from '@/project-management/tasks/entities/task.entity';
+import { TaskAssignee } from '@/project-management/tasks/entities/task-assignee.entity';
+import { ProjectTemplate } from '@/project-management/templates/entities/project-template.entity';
+import { ProjectTemplateTask } from '@/project-management/templates/entities/project-template-task.entity';
+import { Protocol } from '@/project-management/protocols/entities/protocol.entity';
+import { ProtocolParticipant } from '@/project-management/protocols/entities/protocol-participant.entity';
 import { Permission } from '@/permissions/entities/permission.entity';
 import { Role } from '@/roles/entities/role.entity';
 import { UserEmail } from '@/user-emails/entities/user-email.entity';
@@ -66,6 +81,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       Employee,
       EmployeeContract,
       TimeTracking,
+      Holiday,
+      CompanyVacation,
+      EmployeeVacation,
+      TimeTrackingPeriod,
+      EmployeePeriodOpeningBalance,
+      EmployeePaidOvertime,
+      WorkDayBalance,
       AuthAccount,
       EmployeeAbsenceCategory,
       EmployeeAbsenceCategoryTranslation,
@@ -100,6 +122,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       CurriculumNodeTranslation,
       LessonRecord,
       RecordKeepingSettings,
+      Project,
+      ProjectMember,
+      Task,
+      TaskAssignee,
+      ProjectTemplate,
+      ProjectTemplateTask,
+      Protocol,
+      ProtocolParticipant,
     ]),
   ],
   exports: [TypeOrmModule],

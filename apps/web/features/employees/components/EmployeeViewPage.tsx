@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BackButton } from "@/components/common/BackButton";
+import { UserEmailField } from "@/features/users/components/UserEmailField";
 import { ROUTES } from "@/constants/routes";
 
 import type { EmployeeDetail } from "../actions/get-employee-by-id.action";
@@ -189,7 +190,14 @@ export default function EmployeeViewPage({
                       {t("email")}
                     </dt>
                     <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {primaryEmail ?? "–"}
+                      {user?.id ? (
+                        <UserEmailField
+                          userId={user.id}
+                          currentEmail={primaryEmail}
+                        />
+                      ) : (
+                        (primaryEmail ?? "–")
+                      )}
                     </dd>
                   </div>
                   <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">

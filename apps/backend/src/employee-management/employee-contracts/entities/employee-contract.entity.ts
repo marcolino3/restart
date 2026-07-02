@@ -29,6 +29,24 @@ export enum EmployeePaymentInterval {
 registerEnumType(EmployeePaymentInterval, { name: 'EmployeePaymentInterval' });
 
 @ObjectType()
+export class WeekdayWorkloads {
+  @Field(() => Float, { nullable: true })
+  mon?: number | null;
+  @Field(() => Float, { nullable: true })
+  tue?: number | null;
+  @Field(() => Float, { nullable: true })
+  wed?: number | null;
+  @Field(() => Float, { nullable: true })
+  thu?: number | null;
+  @Field(() => Float, { nullable: true })
+  fri?: number | null;
+  @Field(() => Float, { nullable: true })
+  sat?: number | null;
+  @Field(() => Float, { nullable: true })
+  sun?: number | null;
+}
+
+@ObjectType()
 @Entity('employee_contracts')
 export class EmployeeContract extends AbstractEntity<EmployeeContract> {
   @Field(() => String)
@@ -104,6 +122,13 @@ export class EmployeeContract extends AbstractEntity<EmployeeContract> {
     nullable: true,
   })
   weeklyHours?: string | null;
+
+  // Ungleiche Teilzeit: Pensum pro Wochentag in Prozent
+  // { mon, tue, wed, thu, fri, sat, sun }. null = gleichmässige Verteilung
+  // von workloadPercent auf Mo–Fr (colibri pensumMonday..Sunday).
+  @Field(() => WeekdayWorkloads, { nullable: true })
+  @Column('jsonb', { name: 'weekday_workloads', nullable: true })
+  weekdayWorkloads?: WeekdayWorkloads | null;
 
   // --- Lohn ---
   @Field(() => Float, { nullable: true })
