@@ -85,6 +85,30 @@ export class VacationBalance {
   remainingDays: number;
 }
 
+/** Absenz-Aufschlüsselung nach Kategorie über einen Bereich (colibri-Parität). */
+@ObjectType()
+export class AbsenceCategorySummary {
+  @Field(() => ID)
+  categoryId: string;
+
+  @Field(() => String, { nullable: true })
+  name: string | null;
+
+  @Field(() => String, { nullable: true })
+  color: string | null;
+
+  /** Absenz-Tage mit 100 % Abwesenheitsgrad. */
+  @Field(() => Int)
+  fullDays: number;
+
+  /** Absenz-Tage mit Teilabsenz (< 100 %). */
+  @Field(() => Int)
+  partialDays: number;
+
+  @Field(() => Int)
+  totalDays: number;
+}
+
 /** Zeile der Team-Übersicht (Auswertung). */
 @ObjectType()
 export class EmployeeWorkTimeOverviewRow {

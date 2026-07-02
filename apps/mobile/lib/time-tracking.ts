@@ -79,6 +79,44 @@ const StopDocument = gql`
   }
 `;
 
+const CreateEntryDocument = gql`
+  mutation CreateTimeEntry($input: CreateTimeTrackingInput!) {
+    createTimeTracking(input: $input) {
+      id
+    }
+  }
+`;
+
+const UpdateEntryDocument = gql`
+  mutation UpdateTimeEntry($input: UpdateTimeTrackingInput!) {
+    updateTimeTracking(input: $input) {
+      id
+    }
+  }
+`;
+
+const DeleteEntryDocument = gql`
+  mutation DeleteTimeEntry($id: ID!) {
+    deleteTimeTracking(id: $id)
+  }
+`;
+
+export type CreateEntryInput = {
+  employeeId: string;
+  startedAt: string;
+  endedAt?: string | null;
+  breakMinutes?: number | null;
+  notes?: string | null;
+};
+
+export type UpdateEntryInput = {
+  id: string;
+  startedAt?: string;
+  endedAt?: string | null;
+  breakMinutes?: number | null;
+  notes?: string | null;
+};
+
 const currentYearRange = () => {
   const year = new Date().getFullYear();
   return { from: `${year}-01-01`, to: `${year}-12-31` };
@@ -122,6 +160,33 @@ export async function startClock(employeeId: string): Promise<void> {
 
 export async function stopClock(employeeId: string): Promise<void> {
   await gqlClient.request(StopDocument, { employeeId });
+}
+
+export async function createEntry(input: CreateEntryInput): Promise<void> {
+  await gqlClient.request(CreateEntryDocument, { input });
+}
+
+export async function updateEntry(input: UpdateEntryInput): Promise<void> {
+  await gqlClient.request(UpdateEntryDocument, { input });
+}
+
+export async function deleteEntry(id: string): Promise<void> {
+  await gqlClient.request(DeleteEntryDocument, { id });
+}
+
+/** Extract a human-readable message from a graphql-request error. */
+export function gqlErrorMessage(e: unknown): string {
+  const err = e as {
+    response?: { errors?: { message?: string }[] };
+    message?: string;
+  };
+  const gqlMessage = err?.response?.errors?.[0]?.message;
+  if (gqlMessage) return gqlMessage;
+  if (typeof err?.message === "string") {
+    // graphql-request prefixes the message with the full query; strip it.
+    return err.message.split(": {")[0];
+  }
+  return String(e);
 }
 
 /** Minuten → "H:MM" (Vorzeichen bleibt erhalten). */

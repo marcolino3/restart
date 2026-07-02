@@ -39,6 +39,7 @@ const MyTimeTrackingDocument = gql`
       usedDays
       remainingDays
     }
+    myMissingRecordDays(from: $from, to: $to)
     timeTrackingByEmployeeId(employeeId: $employeeId, from: $from, to: $to) {
       id
       startedAt
@@ -70,6 +71,7 @@ export const getMyTimeTrackingAction =
       vacation: null,
       entries: [],
       openEntry: null,
+      missingRecordDays: [],
       fromDate,
       toDate,
     };
@@ -83,6 +85,7 @@ export const getMyTimeTrackingAction =
       const data = await client.request<{
         myWorkTimeBalance: WorkTimeBalance;
         myVacationBalance: VacationBalance;
+        myMissingRecordDays: string[];
         timeTrackingByEmployeeId: TimeEntry[];
       }>(MyTimeTrackingDocument, { employeeId: myEmployeeId, from: fromDate, to: toDate });
 
@@ -95,6 +98,7 @@ export const getMyTimeTrackingAction =
         vacation: data.myVacationBalance,
         entries,
         openEntry,
+        missingRecordDays: data.myMissingRecordDays ?? [],
         fromDate,
         toDate,
       };

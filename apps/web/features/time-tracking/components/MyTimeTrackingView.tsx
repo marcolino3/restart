@@ -39,6 +39,18 @@ export const MyTimeTrackingView = ({ data }: Props) => {
           </span>
         )}
       </div>
+      {data.missingRecordDays.length > 0 && (
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4">
+          <h2 className="mb-1 font-semibold text-destructive">
+            {t("missingRecords", { count: data.missingRecordDays.length })}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {data.missingRecordDays
+              .map((d) => new Date(`${d}T12:00:00`).toLocaleDateString("de-CH"))
+              .join(", ")}
+          </p>
+        </div>
+      )}
       <TimeEntriesTable employeeId={data.employeeId} entries={data.entries} />
     </div>
   );

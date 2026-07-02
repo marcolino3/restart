@@ -7,6 +7,7 @@ import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { WorkTimeBalanceService } from './work-time-balance.service';
 import {
+  AbsenceCategorySummary,
   EmployeeWorkTimeOverviewRow,
   MonthlyWorkTimeSummary,
   VacationBalance,
@@ -74,6 +75,47 @@ export class WorkTimeBalanceResolver {
     @Args('to', { type: () => String }) to: string,
   ) {
     return this.balanceService.getVacationBalance(user, employeeId, from, to);
+  }
+
+  @Query(() => [String], { name: 'myMissingRecordDays' })
+  @Permissions('TIMESHEET_READ')
+  myMissingRecordDays(
+    @CurrentUser() user: TokenPayload,
+    @Args('from', { type: () => String }) from: string,
+    @Args('to', { type: () => String }) to: string,
+  ) {
+    return this.balanceService.getMyMissingRecordDays(user, from, to);
+  }
+
+  @Query(() => [String], { name: 'employeeMissingRecordDays' })
+  @Permissions('TIMESHEET_READ')
+  employeeMissingRecordDays(
+    @CurrentUser() user: TokenPayload,
+    @Args('employeeId', { type: () => ID }) employeeId: string,
+    @Args('from', { type: () => String }) from: string,
+    @Args('to', { type: () => String }) to: string,
+  ) {
+    return this.balanceService.getMissingRecordDays(user, employeeId, from, to);
+  }
+
+  @Query(() => [AbsenceCategorySummary], {
+    name: 'employeeAbsenceCategorySummary',
+  })
+  @Permissions('TIMESHEET_READ')
+  employeeAbsenceCategorySummary(
+    @CurrentUser() user: TokenPayload,
+    @Args('employeeId', { type: () => ID }) employeeId: string,
+    @Args('from', { type: () => String }) from: string,
+    @Args('to', { type: () => String }) to: string,
+    @Args('locale', { type: () => String, nullable: true }) locale?: string,
+  ) {
+    return this.balanceService.getAbsenceCategorySummaries(
+      user,
+      employeeId,
+      from,
+      to,
+      locale ?? 'DE',
+    );
   }
 
   @Query(() => [EmployeeWorkTimeOverviewRow], { name: 'teamWorkTimeOverview' })
