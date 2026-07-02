@@ -4,7 +4,10 @@ export default defineConfig({
   testDir: './tests',
   timeout: 60000,
   retries: process.env.CI ? 2 : 0,
-  reporter: process.env.CI ? 'github' : 'list',
+  // CI: github annotations + HTML report (uploaded as artifact on failure).
+  reporter: process.env.CI
+    ? [['github'], ['html', { open: 'never' }]]
+    : 'list',
   use: {
     baseURL: 'http://localhost:4000',
     trace: 'on-first-retry',

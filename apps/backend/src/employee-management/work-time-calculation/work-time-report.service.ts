@@ -321,9 +321,7 @@ export class WorkTimeReportService {
     const end = e.endedAt
       ? DateTime.fromJSDate(e.endedAt).toFormat('HH:mm')
       : '…';
-    const brk = e.breakMinutes
-      ? ` (${t.breakShort} ${e.breakMinutes}′)`
-      : '';
+    const brk = e.breakMinutes ? ` (${t.breakShort} ${e.breakMinutes}′)` : '';
     return `${start}–${end}${brk}`;
   }
 
@@ -391,10 +389,7 @@ export class WorkTimeReportService {
               color: balColor(balance.differenceMinutes),
             },
           ],
-          [
-            t.openingBalance,
-            fmtMinutes(balance.openingWorkMinutes, true),
-          ],
+          [t.openingBalance, fmtMinutes(balance.openingWorkMinutes, true)],
           [t.paidOvertime, fmtMinutes(-balance.paidOvertimeMinutes, true)],
           [
             { text: t.totalBalance, bold: true },
@@ -474,9 +469,7 @@ export class WorkTimeReportService {
         text: [
           { text: `${t.missingRecords}: `, bold: true },
           {
-            text: input.missingDays
-              .map((d) => fmtDate(d, locale))
-              .join(', '),
+            text: input.missingDays.map((d) => fmtDate(d, locale)).join(', '),
             color: COLOR_NEGATIVE,
           },
         ],
@@ -522,10 +515,7 @@ export class WorkTimeReportService {
       const monthLabel = DateTime.fromISO(`${month}-01`)
         .setLocale(locale === 'DE' ? 'de-CH' : 'en')
         .toFormat('LLLL yyyy');
-      const monthTotal = rows.reduce(
-        (s, r) => s + r.difference_minutes,
-        0,
-      );
+      const monthTotal = rows.reduce((s, r) => s + r.difference_minutes, 0);
       content.push({
         text: monthLabel,
         style: 'monthHeader',
