@@ -10,9 +10,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  *   - PROTOCOL_WRITE  → all system roles (every employee may create/edit)
  *   - PROTOCOL_DELETE → ORG_OWNER, ORG_ADMIN, OFFICE (also the "manage any" flag)
  */
-export class BackfillProtocolPermissions1779201800004
-  implements MigrationInterface
-{
+export class BackfillProtocolPermissions1779201800004 implements MigrationInterface {
   name = 'BackfillProtocolPermissions1779201800004';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
