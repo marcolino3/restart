@@ -1,5 +1,5 @@
 // src/organizations/organizations.resolver.ts
-import { UseGuards } from '@nestjs/common';
+import { NotFoundException, UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 
 import { UpdateOrganizationInput } from './dto/update-organization.input';
@@ -45,7 +45,14 @@ export class OrganizationsResolver {
   @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
   updateOrganization(
     @Args('updateOrganizationInput') input: UpdateOrganizationInput,
+    @CurrentUser() user: TokenPayload,
   ) {
+    // ORG_OWNER/ORG_ADMIN roles are not bound to a specific org — the target
+    // must be the caller's active organization. Only SuperAdmin may update
+    // arbitrary orgs. Masked as NotFound to avoid leaking org existence.
+    if (!user.isSuperAdmin && input.id !== user.orgId) {
+      throw new NotFoundException('Organization not found');
+    }
     return this.organizationsService.updateOrganization(input.id, input);
   }
 
