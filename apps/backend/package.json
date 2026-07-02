@@ -139,12 +139,10 @@
       "src/addresses/addresses.resolver.spec.ts",
       "src/memberships/memberships.resolver.spec.ts",
       "src/organizations/organizations.service.spec.ts",
-      "src/organizations/organizations.resolver.spec.ts",
       "src/permissions/permissions.resolver.spec.ts",
       "src/roles/roles.resolver.spec.ts",
       "src/employee-management/employees/employees.service.spec.ts",
       "src/employee-management/employees/employees.resolver.spec.ts",
-      "src/employee-management/employee-absences/employee-absences.resolver.spec.ts",
       "src/employee-management/employee-absence-categories/employee-absence-categories.resolver.spec.ts"
     ],
     "transform": {

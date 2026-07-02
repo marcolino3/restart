@@ -1,6 +1,7 @@
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
+import { MembershipGuard } from '@/auth/guard/membership.guard';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Resolver } from '@nestjs/graphql';
@@ -15,7 +16,11 @@ export class EmployeeAbsencesResolver {
     private readonly employeeAbsencesService: EmployeeAbsencesService,
   ) {}
 
+  // Self-service notice (always for the caller's own membership) — no
+  // permission code required, but the caller must be a verified member of
+  // the active organization.
   @Mutation(() => EmployeeAbsence, { name: 'createEmployeeAbsenceNotice' })
+  @UseGuards(MembershipGuard)
   createEmployeeAbsenceNotice(
     @Args('createEmployeeAbsenceInput')
     input: CreateEmployeeAbsenceNoticeInput,

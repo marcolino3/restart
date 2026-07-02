@@ -74,6 +74,7 @@ export const UploadFormField = ({
     const res = await fetch(`${API_URL}/upload?entity=${entity}&id=${id}`, {
       method: "POST",
       body: formData,
+      credentials: "include",
     });
 
     const result = await res.json();
@@ -92,6 +93,7 @@ export const UploadFormField = ({
     // optional: DELETE request an API zum Löschen
     await fetch(`${API_URL}/upload?entity=${entity}&id=${id}`, {
       method: "DELETE",
+      credentials: "include",
     });
 
     field.onChange(""); // Wert im Formular zurücksetzen
