@@ -23,6 +23,13 @@ export const AppDataSource = new DataSource({
   entities: [__dirname + '/**/*.entity.{ts,js}'],
   migrations: [__dirname + '/migrations/*.{ts,js}'],
   migrationsTableName: 'typeorm_migrations',
+  // 'each' statt Default 'all': Postgres 16 verbietet es, einen per
+  // ALTER TYPE ... ADD VALUE ergänzten Enum-Wert in derselben Transaktion zu
+  // verwenden (55P04). Mit einer Gesamt-Transaktion über alle Migrationen
+  // bricht ein frischer Bootstrap ab (z.B. BackfillProjectPermissions nutzt
+  // den zuvor ergänzten Wert PROJECT_READ). migrate.ts setzt 'each' bereits
+  // explizit — hier gilt es damit auch für die TypeORM-CLI (migration:run).
+  migrationsTransactionMode: 'each',
   synchronize: false,
   logging: ['error', 'warn', 'migration'],
 });
