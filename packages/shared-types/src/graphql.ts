@@ -18,6 +18,16 @@ export type Scalars = {
   DateTime: { input: any; output: any; }
 };
 
+export type AbsenceCategorySummary = {
+  __typename?: 'AbsenceCategorySummary';
+  categoryId: Scalars['ID']['output'];
+  color?: Maybe<Scalars['String']['output']>;
+  fullDays: Scalars['Int']['output'];
+  name?: Maybe<Scalars['String']['output']>;
+  partialDays: Scalars['Int']['output'];
+  totalDays: Scalars['Int']['output'];
+};
+
 export type AccessibleTeam = {
   __typename?: 'AccessibleTeam';
   effectiveRole: TeamMemberRole;
@@ -411,11 +421,13 @@ export type AuthAccount = {
 
 export type AuthContextOutput = {
   __typename?: 'AuthContextOutput';
+  isProjectMember: Scalars['Boolean']['output'];
   isSuperAdmin: Scalars['Boolean']['output'];
   orgId?: Maybe<Scalars['String']['output']>;
   permissions: Array<Scalars['String']['output']>;
   persona?: Maybe<Persona>;
   roles: Array<Scalars['String']['output']>;
+  timeTrackingEnabled: Scalars['Boolean']['output'];
   user: User;
 };
 
@@ -436,11 +448,32 @@ export enum BloodType {
   OPos = 'O_POS'
 }
 
+export type ChangeUserEmailInput = {
+  newEmail: Scalars['String']['input'];
+  userId: Scalars['ID']['input'];
+};
+
 export type ClassroomHeatmapDataOutput = {
   __typename?: 'ClassroomHeatmapDataOutput';
   areas: Array<HeatmapAreaOutput>;
   cells: Array<HeatmapCellOutput>;
   students: Array<HeatmapStudentOutput>;
+};
+
+export type CompanyVacation = {
+  __typename?: 'CompanyVacation';
+  appliesToAll: Scalars['Boolean']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  endDate: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  name: Scalars['String']['output'];
+  organizationId: Scalars['ID']['output'];
+  startDate: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
 };
 
 export type ContactPerson = {
@@ -585,6 +618,13 @@ export type CreateAdmissionStageInput = {
   stageType?: InputMaybe<AdmissionStageType>;
 };
 
+export type CreateCompanyVacationInput = {
+  appliesToAll?: InputMaybe<Scalars['Boolean']['input']>;
+  endDate: Scalars['String']['input'];
+  name: Scalars['String']['input'];
+  startDate: Scalars['String']['input'];
+};
+
 export type CreateContactPersonInput = {
   addressId?: InputMaybe<Scalars['ID']['input']>;
   dateOfBirth?: InputMaybe<Scalars['String']['input']>;
@@ -663,6 +703,7 @@ export type CreateEmployeeAbsenceNoticeInput = {
   isTeamInformed: Scalars['Boolean']['input'];
   isVacationCapable?: InputMaybe<Scalars['Boolean']['input']>;
   note: Scalars['String']['input'];
+  percentage?: InputMaybe<Scalars['Int']['input']>;
   startDate: Scalars['String']['input'];
 };
 
@@ -711,6 +752,20 @@ export type CreateEmployeeNoteInput = {
   title: Scalars['String']['input'];
 };
 
+export type CreateEmployeePaidOvertimeInput = {
+  date: Scalars['String']['input'];
+  employeeId: Scalars['ID']['input'];
+  minutes: Scalars['Int']['input'];
+  note?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type CreateEmployeeVacationInput = {
+  employeeId: Scalars['ID']['input'];
+  endDate: Scalars['String']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
+  startDate: Scalars['String']['input'];
+};
+
 export type CreateFamilyInput = {
   name?: InputMaybe<Scalars['String']['input']>;
   notes?: InputMaybe<Scalars['String']['input']>;
@@ -721,6 +776,13 @@ export type CreateGradeLevelInput = {
   color?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
   sortOrder?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type CreateHolidayInput = {
+  canton?: InputMaybe<Scalars['String']['input']>;
+  date: Scalars['String']['input'];
+  name: Scalars['String']['input'];
+  paidPercentage?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type CreateLessonRecordInput = {
@@ -1130,6 +1192,7 @@ export type EmployeeAbsence = {
   membershipId: Scalars['String']['output'];
   note: Scalars['String']['output'];
   organizationId: Scalars['String']['output'];
+  percentage: Scalars['Int']['output'];
   startDate: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
   version: Scalars['Int']['output'];
@@ -1258,6 +1321,7 @@ export type EmployeeContract = {
   supervisorMembershipId?: Maybe<Scalars['ID']['output']>;
   updatedAt: Scalars['DateTime']['output'];
   version: Scalars['Int']['output'];
+  weekdayWorkloads?: Maybe<WeekdayWorkloads>;
   weeklyHours?: Maybe<Scalars['String']['output']>;
   workloadPercent?: Maybe<Scalars['Float']['output']>;
 };
@@ -1373,10 +1437,43 @@ export enum EmployeeOnboardingStatus {
   NotStarted = 'NOT_STARTED'
 }
 
+export type EmployeePaidOvertime = {
+  __typename?: 'EmployeePaidOvertime';
+  createdAt: Scalars['DateTime']['output'];
+  createdByMembershipId?: Maybe<Scalars['ID']['output']>;
+  date: Scalars['String']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  employeeId: Scalars['ID']['output'];
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  minutes: Scalars['Int']['output'];
+  note?: Maybe<Scalars['String']['output']>;
+  organizationId: Scalars['ID']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
 export enum EmployeePaymentInterval {
   MonthlyX12 = 'MONTHLY_X12',
   MonthlyX13 = 'MONTHLY_X13'
 }
+
+export type EmployeePeriodOpeningBalance = {
+  __typename?: 'EmployeePeriodOpeningBalance';
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  employeeId: Scalars['ID']['output'];
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  openingVacationDays: Scalars['Float']['output'];
+  openingWorkMinutes: Scalars['Int']['output'];
+  organizationId: Scalars['ID']['output'];
+  periodId: Scalars['ID']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
 
 export enum EmployeeResidencePermitType {
   B = 'B',
@@ -1387,6 +1484,31 @@ export enum EmployeeResidencePermitType {
   L = 'L',
   Other = 'OTHER'
 }
+
+export type EmployeeVacation = {
+  __typename?: 'EmployeeVacation';
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  employeeId: Scalars['ID']['output'];
+  endDate: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  membershipId: Scalars['ID']['output'];
+  name?: Maybe<Scalars['String']['output']>;
+  organizationId: Scalars['ID']['output'];
+  startDate: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type EmployeeWorkTimeOverviewRow = {
+  __typename?: 'EmployeeWorkTimeOverviewRow';
+  employeeId: Scalars['ID']['output'];
+  employeeName?: Maybe<Scalars['String']['output']>;
+  netBalanceMinutes: Scalars['Int']['output'];
+  vacationDaysUsed: Scalars['Int']['output'];
+};
 
 export type EngagementTimelineBucketOutput = {
   __typename?: 'EngagementTimelineBucketOutput';
@@ -1476,6 +1598,22 @@ export type HeatmapStudentOutput = {
   firstName: Scalars['String']['output'];
   lastName: Scalars['String']['output'];
   studentId: Scalars['ID']['output'];
+};
+
+export type Holiday = {
+  __typename?: 'Holiday';
+  canton?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  date: Scalars['String']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  name: Scalars['String']['output'];
+  organizationId: Scalars['ID']['output'];
+  paidPercentage: Scalars['Int']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
 };
 
 export type ImportCurriculumPlanInput = {
@@ -1662,6 +1800,15 @@ export type Membership = {
   version: Scalars['Int']['output'];
 };
 
+export type MonthlyWorkTimeSummary = {
+  __typename?: 'MonthlyWorkTimeSummary';
+  actualMinutes: Scalars['Int']['output'];
+  differenceMinutes: Scalars['Int']['output'];
+  month: Scalars['Int']['output'];
+  plannedMinutes: Scalars['Int']['output'];
+  year: Scalars['Int']['output'];
+};
+
 export type MoveAdmissionApplicationInput = {
   id: Scalars['ID']['input'];
   position?: InputMaybe<Scalars['Int']['input']>;
@@ -1688,6 +1835,7 @@ export type Mutation = {
   archiveEmployeeAbsenceCategory: Scalars['Boolean']['output'];
   archiveFamily: Scalars['Boolean']['output'];
   archiveProject: Project;
+  changeUserEmail: User;
   completeAdmissionReminder: AdmissionReminder;
   createAddress: Address;
   createAdmissionActivity: AdmissionActivity;
@@ -1695,6 +1843,7 @@ export type Mutation = {
   createAdmissionRejectionReason: AdmissionRejectionReason;
   createAdmissionReminder: AdmissionReminder;
   createAdmissionStage: AdmissionStage;
+  createCompanyVacation: CompanyVacation;
   createContactPerson: ContactPerson;
   createCountry: Country;
   createCurriculum: Curriculum;
@@ -1706,9 +1855,12 @@ export type Mutation = {
   createEmployeeAbsenceNotice: EmployeeAbsence;
   createEmployeeContract: EmployeeContract;
   createEmployeeNote: EmployeeNote;
+  createEmployeePaidOvertime: EmployeePaidOvertime;
+  createEmployeeVacation: EmployeeVacation;
   createEnrollment: SchoolClassEnrollment;
   createFamily: Family;
   createGradeLevel: GradeLevel;
+  createHoliday: Holiday;
   createLessonRecord: LessonRecord;
   createLessonRecordsBulk: Array<LessonRecord>;
   createMembership: Membership;
@@ -1732,11 +1884,17 @@ export type Mutation = {
   deleteAdmissionApplication: Scalars['Boolean']['output'];
   deleteAdmissionEmail: Scalars['Boolean']['output'];
   deleteAdmissionReminder: Scalars['Boolean']['output'];
+  deleteCompanyVacation: Scalars['Boolean']['output'];
   deleteCountryInputTemplate: Scalars['Boolean']['output'];
   deleteEmailTemplate: Scalars['Boolean']['output'];
+  deleteEmployeeAbsence: Scalars['Boolean']['output'];
   deleteEmployeeContract: Scalars['Boolean']['output'];
+  deleteEmployeePaidOvertime: Scalars['Boolean']['output'];
+  deleteEmployeePeriodOpeningBalance: Scalars['Boolean']['output'];
+  deleteEmployeeVacation: Scalars['Boolean']['output'];
   deleteEnrollment: Scalars['Boolean']['output'];
   deleteGradeLevel: Scalars['Boolean']['output'];
+  deleteHoliday: Scalars['Boolean']['output'];
   deleteLessonRecord: Scalars['Boolean']['output'];
   deleteOrganizationSetting: Scalars['Boolean']['output'];
   deleteProject: Scalars['Boolean']['output'];
@@ -1748,6 +1906,7 @@ export type Mutation = {
   deleteTeam: Scalars['Boolean']['output'];
   deleteTeamMember: Scalars['Boolean']['output'];
   deleteTimeTracking: Scalars['Boolean']['output'];
+  ensureTimeTrackingPeriod: TimeTrackingPeriod;
   finalizeAdmissionEnrollment: FinalizeEnrollmentOutput;
   hardDeleteCurriculum: Scalars['Boolean']['output'];
   importCurriculumFromPlan: Curriculum;
@@ -1780,6 +1939,7 @@ export type Mutation = {
   setEmployeeAbsenceCategoryActive: EmployeeAbsenceCategory;
   setLessonPrerequisites: CurriculumNode;
   setPrimaryUserEmail: UserEmail;
+  setTimeTrackingPeriodStatus: TimeTrackingPeriod;
   softDeleteEmployeeNote: EmployeeNote;
   softDeleteStudentNote: StudentNote;
   startTimeTracking: TimeTracking;
@@ -1796,6 +1956,7 @@ export type Mutation = {
   updateAdmissionRejectionReason: AdmissionRejectionReason;
   updateAdmissionReminder: AdmissionReminder;
   updateAdmissionStage: AdmissionStage;
+  updateCompanyVacation: CompanyVacation;
   updateContactPerson: ContactPerson;
   updateCountry: Country;
   updateCurriculum: Curriculum;
@@ -1803,12 +1964,16 @@ export type Mutation = {
   updateCurriculumNode: CurriculumNode;
   updateEmailTemplate: EmailTemplate;
   updateEmployee: Employee;
+  updateEmployeeAbsence: EmployeeAbsence;
   updateEmployeeAbsenceCategory: EmployeeAbsenceCategory;
   updateEmployeeContract: EmployeeContract;
   updateEmployeeNote: EmployeeNote;
+  updateEmployeePaidOvertime: EmployeePaidOvertime;
+  updateEmployeeVacation: EmployeeVacation;
   updateEnrollment: SchoolClassEnrollment;
   updateFamily: Family;
   updateGradeLevel: GradeLevel;
+  updateHoliday: Holiday;
   updateLessonRecord: LessonRecord;
   updateMembership: Membership;
   updateOrganization: Organization;
@@ -1835,6 +2000,7 @@ export type Mutation = {
   upsertEmployeeAbsenceCategoryTranslation: EmployeeAbsenceCategoryTranslation;
   upsertEmployeeEmergencyProfile: EmployeeEmergencyProfile;
   upsertEmployeeHrProfile: EmployeeHrProfile;
+  upsertEmployeePeriodOpeningBalance: EmployeePeriodOpeningBalance;
 };
 
 
@@ -1900,6 +2066,11 @@ export type MutationArchiveProjectArgs = {
 };
 
 
+export type MutationChangeUserEmailArgs = {
+  input: ChangeUserEmailInput;
+};
+
+
 export type MutationCompleteAdmissionReminderArgs = {
   id: Scalars['ID']['input'];
 };
@@ -1932,6 +2103,11 @@ export type MutationCreateAdmissionReminderArgs = {
 
 export type MutationCreateAdmissionStageArgs = {
   input: CreateAdmissionStageInput;
+};
+
+
+export type MutationCreateCompanyVacationArgs = {
+  input: CreateCompanyVacationInput;
 };
 
 
@@ -1990,6 +2166,16 @@ export type MutationCreateEmployeeNoteArgs = {
 };
 
 
+export type MutationCreateEmployeePaidOvertimeArgs = {
+  input: CreateEmployeePaidOvertimeInput;
+};
+
+
+export type MutationCreateEmployeeVacationArgs = {
+  input: CreateEmployeeVacationInput;
+};
+
+
 export type MutationCreateEnrollmentArgs = {
   input: CreateSchoolClassEnrollmentInput;
 };
@@ -2002,6 +2188,11 @@ export type MutationCreateFamilyArgs = {
 
 export type MutationCreateGradeLevelArgs = {
   input: CreateGradeLevelInput;
+};
+
+
+export type MutationCreateHolidayArgs = {
+  input: CreateHolidayInput;
 };
 
 
@@ -2115,6 +2306,11 @@ export type MutationDeleteAdmissionReminderArgs = {
 };
 
 
+export type MutationDeleteCompanyVacationArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationDeleteCountryInputTemplateArgs = {
   id: Scalars['ID']['input'];
 };
@@ -2125,7 +2321,27 @@ export type MutationDeleteEmailTemplateArgs = {
 };
 
 
+export type MutationDeleteEmployeeAbsenceArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationDeleteEmployeeContractArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteEmployeePaidOvertimeArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteEmployeePeriodOpeningBalanceArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteEmployeeVacationArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -2136,6 +2352,11 @@ export type MutationDeleteEnrollmentArgs = {
 
 
 export type MutationDeleteGradeLevelArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteHolidayArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -2193,6 +2414,11 @@ export type MutationDeleteTeamMemberArgs = {
 
 export type MutationDeleteTimeTrackingArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationEnsureTimeTrackingPeriodArgs = {
+  date: Scalars['String']['input'];
 };
 
 
@@ -2358,6 +2584,12 @@ export type MutationSetPrimaryUserEmailArgs = {
 };
 
 
+export type MutationSetTimeTrackingPeriodStatusArgs = {
+  id: Scalars['ID']['input'];
+  status: TimeTrackingPeriodStatus;
+};
+
+
 export type MutationSoftDeleteEmployeeNoteArgs = {
   id: Scalars['ID']['input'];
 };
@@ -2438,6 +2670,11 @@ export type MutationUpdateAdmissionStageArgs = {
 };
 
 
+export type MutationUpdateCompanyVacationArgs = {
+  input: UpdateCompanyVacationInput;
+};
+
+
 export type MutationUpdateContactPersonArgs = {
   input: UpdateContactPersonInput;
 };
@@ -2473,6 +2710,11 @@ export type MutationUpdateEmployeeArgs = {
 };
 
 
+export type MutationUpdateEmployeeAbsenceArgs = {
+  updateEmployeeAbsenceInput: UpdateEmployeeAbsenceInput;
+};
+
+
 export type MutationUpdateEmployeeAbsenceCategoryArgs = {
   input: UpdateEmployeeAbsenceCategoryInput;
 };
@@ -2488,6 +2730,16 @@ export type MutationUpdateEmployeeNoteArgs = {
 };
 
 
+export type MutationUpdateEmployeePaidOvertimeArgs = {
+  input: UpdateEmployeePaidOvertimeInput;
+};
+
+
+export type MutationUpdateEmployeeVacationArgs = {
+  input: UpdateEmployeeVacationInput;
+};
+
+
 export type MutationUpdateEnrollmentArgs = {
   input: UpdateSchoolClassEnrollmentInput;
 };
@@ -2500,6 +2752,11 @@ export type MutationUpdateFamilyArgs = {
 
 export type MutationUpdateGradeLevelArgs = {
   input: UpdateGradeLevelInput;
+};
+
+
+export type MutationUpdateHolidayArgs = {
+  input: UpdateHolidayInput;
 };
 
 
@@ -2630,6 +2887,11 @@ export type MutationUpsertEmployeeEmergencyProfileArgs = {
 
 export type MutationUpsertEmployeeHrProfileArgs = {
   input: UpsertEmployeeHrProfileInput;
+};
+
+
+export type MutationUpsertEmployeePeriodOpeningBalanceArgs = {
+  input: UpsertEmployeePeriodOpeningBalanceInput;
 };
 
 export type Organization = {
@@ -3004,6 +3266,7 @@ export type Query = {
   classroomAttentionSummaries: Array<StudentAttentionSummaryOutput>;
   classroomEngagementTimeline: EngagementTimelineOutput;
   classroomHeatmapData: ClassroomHeatmapDataOutput;
+  companyVacations: Array<CompanyVacation>;
   contactPersonById: ContactPerson;
   contactPersonsByOrgId: Array<ContactPerson>;
   contactPersonsByStudentId: Array<StudentContactPerson>;
@@ -3023,6 +3286,7 @@ export type Query = {
   emailTemplates: Array<EmailTemplate>;
   employeeAbsenceCategoriesByOrgId: Array<EmployeeAbsenceCategory>;
   employeeAbsenceCategoryById: EmployeeAbsenceCategory;
+  employeeAbsenceCategorySummary: Array<AbsenceCategorySummary>;
   employeeAuditLog: Array<EmployeeAuditLog>;
   employeeById: Employee;
   employeeContractById: EmployeeContract;
@@ -3030,13 +3294,21 @@ export type Query = {
   employeeContractsByOrgId: Array<EmployeeContract>;
   employeeEmergencyProfile?: Maybe<EmployeeEmergencyProfile>;
   employeeHrProfile?: Maybe<EmployeeHrProfile>;
+  employeeMissingRecordDays: Array<Scalars['String']['output']>;
+  employeeMonthlyWorkTime: Array<MonthlyWorkTimeSummary>;
   employeeNotesByEmployeeId: Array<EmployeeNote>;
+  employeePaidOvertime: Array<EmployeePaidOvertime>;
+  employeePeriodOpeningBalances: Array<EmployeePeriodOpeningBalance>;
+  employeeVacationBalance: VacationBalance;
+  employeeVacations: Array<EmployeeVacation>;
+  employeeWorkTimeBalance: WorkTimeBalance;
   employeesByOrgId: Array<Employee>;
   enrollmentsByStudentId: Array<SchoolClassEnrollment>;
   families: Array<Family>;
   familyById: Family;
   gradeLevelById: GradeLevel;
   gradeLevelsByOrgId: Array<GradeLevel>;
+  holidays: Array<Holiday>;
   isOrganizationDomainAvailable: Scalars['Boolean']['output'];
   isOrganizationSubdomainAvailable: Scalars['Boolean']['output'];
   lessonPrerequisites: Array<CurriculumNode>;
@@ -3044,10 +3316,14 @@ export type Query = {
   lessonRecords: Array<LessonRecord>;
   lessonsByOrg: Array<CurriculumNode>;
   membershipsByOrgId: Array<Membership>;
+  myEmployeeId?: Maybe<Scalars['ID']['output']>;
+  myMissingRecordDays: Array<Scalars['String']['output']>;
   myProjects: Array<Project>;
   myTasks: Array<Task>;
   myTeachingSchoolClasses: Array<SchoolClass>;
   myTeams: Array<AccessibleTeam>;
+  myVacationBalance: VacationBalance;
+  myWorkTimeBalance: WorkTimeBalance;
   nextLessonsForStudent: Array<CurriculumNode>;
   orgAdmissionReminders: Array<AdmissionReminder>;
   organization: Organization;
@@ -3081,9 +3357,11 @@ export type Query = {
   teamMemberById: TeamMember;
   teamMembersByOrgId: Array<TeamMember>;
   teamMembersByTeamId: Array<TeamMember>;
+  teamWorkTimeOverview: Array<EmployeeWorkTimeOverviewRow>;
   teamsByOrgId: Array<Team>;
   timeTrackingByEmployeeId: Array<TimeTracking>;
   timeTrackingById: TimeTracking;
+  timeTrackingPeriods: Array<TimeTrackingPeriod>;
   unassignedStudents: Array<Student>;
   user: User;
   userEmail: UserEmail;
@@ -3263,6 +3541,14 @@ export type QueryEmployeeAbsenceCategoryByIdArgs = {
 };
 
 
+export type QueryEmployeeAbsenceCategorySummaryArgs = {
+  employeeId: Scalars['ID']['input'];
+  from: Scalars['String']['input'];
+  locale?: InputMaybe<Scalars['String']['input']>;
+  to: Scalars['String']['input'];
+};
+
+
 export type QueryEmployeeAuditLogArgs = {
   employeeId: Scalars['ID']['input'];
 };
@@ -3293,8 +3579,51 @@ export type QueryEmployeeHrProfileArgs = {
 };
 
 
+export type QueryEmployeeMissingRecordDaysArgs = {
+  employeeId: Scalars['ID']['input'];
+  from: Scalars['String']['input'];
+  to: Scalars['String']['input'];
+};
+
+
+export type QueryEmployeeMonthlyWorkTimeArgs = {
+  employeeId: Scalars['ID']['input'];
+  from: Scalars['String']['input'];
+  to: Scalars['String']['input'];
+};
+
+
 export type QueryEmployeeNotesByEmployeeIdArgs = {
   employeeId: Scalars['ID']['input'];
+};
+
+
+export type QueryEmployeePaidOvertimeArgs = {
+  employeeId: Scalars['ID']['input'];
+};
+
+
+export type QueryEmployeePeriodOpeningBalancesArgs = {
+  employeeId: Scalars['ID']['input'];
+};
+
+
+export type QueryEmployeeVacationBalanceArgs = {
+  employeeId: Scalars['ID']['input'];
+  from: Scalars['String']['input'];
+  to: Scalars['String']['input'];
+};
+
+
+export type QueryEmployeeVacationsArgs = {
+  employeeId: Scalars['ID']['input'];
+};
+
+
+export type QueryEmployeeWorkTimeBalanceArgs = {
+  employeeId: Scalars['ID']['input'];
+  from: Scalars['String']['input'];
+  to: Scalars['String']['input'];
 };
 
 
@@ -3350,6 +3679,24 @@ export type QueryLessonsByOrgArgs = {
 
 export type QueryMembershipsByOrgIdArgs = {
   organizationId: Scalars['ID']['input'];
+};
+
+
+export type QueryMyMissingRecordDaysArgs = {
+  from: Scalars['String']['input'];
+  to: Scalars['String']['input'];
+};
+
+
+export type QueryMyVacationBalanceArgs = {
+  from: Scalars['String']['input'];
+  to: Scalars['String']['input'];
+};
+
+
+export type QueryMyWorkTimeBalanceArgs = {
+  from: Scalars['String']['input'];
+  to: Scalars['String']['input'];
 };
 
 
@@ -3472,6 +3819,12 @@ export type QueryTeamMemberByIdArgs = {
 
 export type QueryTeamMembersByTeamIdArgs = {
   teamId: Scalars['ID']['input'];
+};
+
+
+export type QueryTeamWorkTimeOverviewArgs = {
+  from: Scalars['String']['input'];
+  to: Scalars['String']['input'];
 };
 
 
@@ -3923,16 +4276,45 @@ export type TimeTracking = {
   employee?: Maybe<Employee>;
   employeeId: Scalars['String']['output'];
   endedAt?: Maybe<Scalars['DateTime']['output']>;
+  entryDate: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   isActive: Scalars['Boolean']['output'];
   isArchived: Scalars['Boolean']['output'];
   notes?: Maybe<Scalars['String']['output']>;
   organization?: Maybe<Organization>;
   organizationId: Scalars['String']['output'];
+  source: TimeTrackingSource;
   startedAt: Scalars['DateTime']['output'];
   updatedAt: Scalars['DateTime']['output'];
   version: Scalars['Int']['output'];
+  workMinutes?: Maybe<Scalars['Int']['output']>;
 };
+
+export type TimeTrackingPeriod = {
+  __typename?: 'TimeTrackingPeriod';
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  endDate: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  label: Scalars['String']['output'];
+  organizationId: Scalars['ID']['output'];
+  startDate: Scalars['String']['output'];
+  status: TimeTrackingPeriodStatus;
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export enum TimeTrackingPeriodStatus {
+  Locked = 'LOCKED',
+  Open = 'OPEN'
+}
+
+export enum TimeTrackingSource {
+  Clock = 'CLOCK',
+  Manual = 'MANUAL'
+}
 
 /** Bucketing granularity for timeline aggregates. */
 export enum TimelineGranularity {
@@ -4010,6 +4392,14 @@ export type UpdateAdmissionStageInput = {
   position?: InputMaybe<Scalars['Int']['input']>;
   slug?: InputMaybe<Scalars['String']['input']>;
   stageType?: InputMaybe<AdmissionStageType>;
+};
+
+export type UpdateCompanyVacationInput = {
+  appliesToAll?: InputMaybe<Scalars['Boolean']['input']>;
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
+  startDate?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateContactPersonInput = {
@@ -4091,6 +4481,17 @@ export type UpdateEmployeeAbsenceCategoryInput = {
   translations?: InputMaybe<Array<EmployeeAbsenceCategoryTranslationInput>>;
 };
 
+export type UpdateEmployeeAbsenceInput = {
+  absenceCategoryId?: InputMaybe<Scalars['ID']['input']>;
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  isTeamInformed?: InputMaybe<Scalars['Boolean']['input']>;
+  isVacationCapable?: InputMaybe<Scalars['Boolean']['input']>;
+  note?: InputMaybe<Scalars['String']['input']>;
+  percentage?: InputMaybe<Scalars['Int']['input']>;
+  startDate?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type UpdateEmployeeContractInput = {
   annualVacationDays?: InputMaybe<Scalars['Int']['input']>;
   contractType?: InputMaybe<EmployeeContractType>;
@@ -4139,6 +4540,22 @@ export type UpdateEmployeeNoteInput = {
   title?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type UpdateEmployeePaidOvertimeInput = {
+  date?: InputMaybe<Scalars['String']['input']>;
+  employeeId?: InputMaybe<Scalars['ID']['input']>;
+  id: Scalars['ID']['input'];
+  minutes?: InputMaybe<Scalars['Int']['input']>;
+  note?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateEmployeeVacationInput = {
+  employeeId?: InputMaybe<Scalars['ID']['input']>;
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
+  startDate?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type UpdateFamilyInput = {
   id: Scalars['ID']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
@@ -4151,6 +4568,14 @@ export type UpdateGradeLevelInput = {
   id: Scalars['ID']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
   sortOrder?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type UpdateHolidayInput = {
+  canton?: InputMaybe<Scalars['String']['input']>;
+  date?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
+  paidPercentage?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type UpdateLessonRecordInput = {
@@ -4423,6 +4848,13 @@ export type UpsertEmployeeHrProfileInput = {
   withholdingTaxCode?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type UpsertEmployeePeriodOpeningBalanceInput = {
+  employeeId: Scalars['ID']['input'];
+  openingVacationDays: Scalars['Float']['input'];
+  openingWorkMinutes: Scalars['Int']['input'];
+  periodId: Scalars['ID']['input'];
+};
+
 export type User = {
   __typename?: 'User';
   addressLine2?: Maybe<Scalars['String']['output']>;
@@ -4464,6 +4896,43 @@ export type UserEmail = {
   user: User;
   userId: Scalars['ID']['output'];
   version: Scalars['Int']['output'];
+};
+
+export type VacationBalance = {
+  __typename?: 'VacationBalance';
+  entitlementDays: Scalars['Float']['output'];
+  openingDays: Scalars['Float']['output'];
+  remainingDays: Scalars['Float']['output'];
+  usedDays: Scalars['Float']['output'];
+};
+
+export type WeekdayWorkloads = {
+  __typename?: 'WeekdayWorkloads';
+  fri?: Maybe<Scalars['Float']['output']>;
+  mon?: Maybe<Scalars['Float']['output']>;
+  sat?: Maybe<Scalars['Float']['output']>;
+  sun?: Maybe<Scalars['Float']['output']>;
+  thu?: Maybe<Scalars['Float']['output']>;
+  tue?: Maybe<Scalars['Float']['output']>;
+  wed?: Maybe<Scalars['Float']['output']>;
+};
+
+export type WorkTimeBalance = {
+  __typename?: 'WorkTimeBalance';
+  absenceDaysCount: Scalars['Int']['output'];
+  absenceMinutes: Scalars['Int']['output'];
+  actualMinutes: Scalars['Int']['output'];
+  differenceMinutes: Scalars['Int']['output'];
+  employeeId: Scalars['ID']['output'];
+  fromDate: Scalars['String']['output'];
+  netBalanceMinutes: Scalars['Int']['output'];
+  openingWorkMinutes: Scalars['Int']['output'];
+  paidOvertimeMinutes: Scalars['Int']['output'];
+  plannedMinutes: Scalars['Int']['output'];
+  toDate: Scalars['String']['output'];
+  vacationDaysUsed: Scalars['Int']['output'];
+  vacationMinutes: Scalars['Int']['output'];
+  workedMinutes: Scalars['Int']['output'];
 };
 
 export type ArchiveAdmissionApplicationMutationVariables = Exact<{
@@ -5821,6 +6290,175 @@ export type UpdateTeamMutationVariables = Exact<{
 
 export type UpdateTeamMutation = { __typename?: 'Mutation', updateTeam: { __typename?: 'Team', id: string, name: string } };
 
+export type MyEmployeeIdQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MyEmployeeIdQuery = { __typename?: 'Query', myEmployeeId?: string | null };
+
+export type MyTimeTrackingQueryVariables = Exact<{
+  employeeId: Scalars['ID']['input'];
+  from: Scalars['String']['input'];
+  to: Scalars['String']['input'];
+}>;
+
+
+export type MyTimeTrackingQuery = { __typename?: 'Query', myMissingRecordDays: Array<string>, myWorkTimeBalance: { __typename?: 'WorkTimeBalance', employeeId: string, fromDate: string, toDate: string, plannedMinutes: number, workedMinutes: number, vacationMinutes: number, absenceMinutes: number, actualMinutes: number, differenceMinutes: number, openingWorkMinutes: number, paidOvertimeMinutes: number, netBalanceMinutes: number, vacationDaysUsed: number, absenceDaysCount: number }, myVacationBalance: { __typename?: 'VacationBalance', entitlementDays: number, openingDays: number, usedDays: number, remainingDays: number }, timeTrackingByEmployeeId: Array<{ __typename?: 'TimeTracking', id: string, startedAt: any, endedAt?: any | null, breakMinutes?: number | null, workMinutes?: number | null, notes?: string | null, entryDate: string, source: TimeTrackingSource }> };
+
+export type TeamOverviewQueryVariables = Exact<{
+  from: Scalars['String']['input'];
+  to: Scalars['String']['input'];
+}>;
+
+
+export type TeamOverviewQuery = { __typename?: 'Query', teamWorkTimeOverview: Array<{ __typename?: 'EmployeeWorkTimeOverviewRow', employeeId: string, employeeName?: string | null, netBalanceMinutes: number, vacationDaysUsed: number }> };
+
+export type EmployeeReportQueryVariables = Exact<{
+  employeeId: Scalars['ID']['input'];
+  from: Scalars['String']['input'];
+  to: Scalars['String']['input'];
+  locale?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type EmployeeReportQuery = { __typename?: 'Query', employeeMissingRecordDays: Array<string>, employeeAbsenceCategorySummary: Array<{ __typename?: 'AbsenceCategorySummary', categoryId: string, name?: string | null, color?: string | null, fullDays: number, partialDays: number, totalDays: number }>, employeeWorkTimeBalance: { __typename?: 'WorkTimeBalance', employeeId: string, plannedMinutes: number, workedMinutes: number, vacationMinutes: number, absenceMinutes: number, differenceMinutes: number, openingWorkMinutes: number, paidOvertimeMinutes: number, netBalanceMinutes: number, vacationDaysUsed: number, absenceDaysCount: number }, employeeVacationBalance: { __typename?: 'VacationBalance', entitlementDays: number, openingDays: number, usedDays: number, remainingDays: number }, employeeMonthlyWorkTime: Array<{ __typename?: 'MonthlyWorkTimeSummary', year: number, month: number, plannedMinutes: number, actualMinutes: number, differenceMinutes: number }> };
+
+export type CreateTimeTrackingMutationVariables = Exact<{
+  input: CreateTimeTrackingInput;
+}>;
+
+
+export type CreateTimeTrackingMutation = { __typename?: 'Mutation', createTimeTracking: { __typename?: 'TimeTracking', id: string } };
+
+export type UpdateTimeTrackingMutationVariables = Exact<{
+  input: UpdateTimeTrackingInput;
+}>;
+
+
+export type UpdateTimeTrackingMutation = { __typename?: 'Mutation', updateTimeTracking: { __typename?: 'TimeTracking', id: string } };
+
+export type DeleteTimeTrackingMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteTimeTrackingMutation = { __typename?: 'Mutation', deleteTimeTracking: boolean };
+
+export type StartTimeTrackingMutationVariables = Exact<{
+  employeeId: Scalars['ID']['input'];
+}>;
+
+
+export type StartTimeTrackingMutation = { __typename?: 'Mutation', startTimeTracking: { __typename?: 'TimeTracking', id: string } };
+
+export type StopTimeTrackingMutationVariables = Exact<{
+  employeeId: Scalars['ID']['input'];
+}>;
+
+
+export type StopTimeTrackingMutation = { __typename?: 'Mutation', stopTimeTracking: { __typename?: 'TimeTracking', id: string } };
+
+export type EmployeePeriodOpeningBalancesQueryVariables = Exact<{
+  employeeId: Scalars['ID']['input'];
+}>;
+
+
+export type EmployeePeriodOpeningBalancesQuery = { __typename?: 'Query', employeePeriodOpeningBalances: Array<{ __typename?: 'EmployeePeriodOpeningBalance', id: string, employeeId: string, periodId: string, openingWorkMinutes: number, openingVacationDays: number }> };
+
+export type UpsertEmployeePeriodOpeningBalanceMutationVariables = Exact<{
+  input: UpsertEmployeePeriodOpeningBalanceInput;
+}>;
+
+
+export type UpsertEmployeePeriodOpeningBalanceMutation = { __typename?: 'Mutation', upsertEmployeePeriodOpeningBalance: { __typename?: 'EmployeePeriodOpeningBalance', id: string } };
+
+export type DeleteEmployeePeriodOpeningBalanceMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteEmployeePeriodOpeningBalanceMutation = { __typename?: 'Mutation', deleteEmployeePeriodOpeningBalance: boolean };
+
+export type EmployeePaidOvertimeQueryVariables = Exact<{
+  employeeId: Scalars['ID']['input'];
+}>;
+
+
+export type EmployeePaidOvertimeQuery = { __typename?: 'Query', employeePaidOvertime: Array<{ __typename?: 'EmployeePaidOvertime', id: string, employeeId: string, date: string, minutes: number, note?: string | null }> };
+
+export type CreateEmployeePaidOvertimeMutationVariables = Exact<{
+  input: CreateEmployeePaidOvertimeInput;
+}>;
+
+
+export type CreateEmployeePaidOvertimeMutation = { __typename?: 'Mutation', createEmployeePaidOvertime: { __typename?: 'EmployeePaidOvertime', id: string } };
+
+export type UpdateEmployeePaidOvertimeMutationVariables = Exact<{
+  input: UpdateEmployeePaidOvertimeInput;
+}>;
+
+
+export type UpdateEmployeePaidOvertimeMutation = { __typename?: 'Mutation', updateEmployeePaidOvertime: { __typename?: 'EmployeePaidOvertime', id: string } };
+
+export type DeleteEmployeePaidOvertimeMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteEmployeePaidOvertimeMutation = { __typename?: 'Mutation', deleteEmployeePaidOvertime: boolean };
+
+export type TimeTrackingPeriodsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type TimeTrackingPeriodsQuery = { __typename?: 'Query', timeTrackingPeriods: Array<{ __typename?: 'TimeTrackingPeriod', id: string, label: string, startDate: string, endDate: string, status: TimeTrackingPeriodStatus }> };
+
+export type EnsureTimeTrackingPeriodMutationVariables = Exact<{
+  date: Scalars['String']['input'];
+}>;
+
+
+export type EnsureTimeTrackingPeriodMutation = { __typename?: 'Mutation', ensureTimeTrackingPeriod: { __typename?: 'TimeTrackingPeriod', id: string, label: string } };
+
+export type SetTimeTrackingPeriodStatusMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  status: TimeTrackingPeriodStatus;
+}>;
+
+
+export type SetTimeTrackingPeriodStatusMutation = { __typename?: 'Mutation', setTimeTrackingPeriodStatus: { __typename?: 'TimeTrackingPeriod', id: string, status: TimeTrackingPeriodStatus } };
+
+export type TimeTrackingSettingsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type TimeTrackingSettingsQuery = { __typename?: 'Query', holidays: Array<{ __typename?: 'Holiday', id: string, date: string, name: string, paidPercentage: number, canton?: string | null }>, companyVacations: Array<{ __typename?: 'CompanyVacation', id: string, name: string, startDate: string, endDate: string, appliesToAll: boolean }> };
+
+export type CreateHolidayMutationVariables = Exact<{
+  input: CreateHolidayInput;
+}>;
+
+
+export type CreateHolidayMutation = { __typename?: 'Mutation', createHoliday: { __typename?: 'Holiday', id: string } };
+
+export type DeleteHolidayMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteHolidayMutation = { __typename?: 'Mutation', deleteHoliday: boolean };
+
+export type CreateCompanyVacationMutationVariables = Exact<{
+  input: CreateCompanyVacationInput;
+}>;
+
+
+export type CreateCompanyVacationMutation = { __typename?: 'Mutation', createCompanyVacation: { __typename?: 'CompanyVacation', id: string } };
+
+export type DeleteCompanyVacationMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteCompanyVacationMutation = { __typename?: 'Mutation', deleteCompanyVacation: boolean };
+
 export type AddUserEmailMutationVariables = Exact<{
   userId: Scalars['ID']['input'];
   email: Scalars['String']['input'];
@@ -5828,6 +6466,13 @@ export type AddUserEmailMutationVariables = Exact<{
 
 
 export type AddUserEmailMutation = { __typename?: 'Mutation', addUserEmail: { __typename?: 'UserEmail', id: string, email: string, isPrimary: boolean, isVerified: boolean } };
+
+export type ChangeUserEmailMutationVariables = Exact<{
+  input: ChangeUserEmailInput;
+}>;
+
+
+export type ChangeUserEmailMutation = { __typename?: 'Mutation', changeUserEmail: { __typename?: 'User', id: string, userEmails: Array<{ __typename?: 'UserEmail', id: string, email: string, isPrimary: boolean, isVerified: boolean }> } };
 
 export type CreateUserMutationVariables = Exact<{
   createUserInput: CreateUserInput;
@@ -5839,7 +6484,7 @@ export type CreateUserMutation = { __typename?: 'Mutation', createUser: { __type
 export type GetAuthContextQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetAuthContextQuery = { __typename?: 'Query', authContext: { __typename?: 'AuthContextOutput', roles: Array<string>, permissions: Array<string>, orgId?: string | null, persona?: Persona | null, isSuperAdmin: boolean, user: { __typename?: 'User', id: string, firstName: string, lastName: string, userEmails: Array<{ __typename?: 'UserEmail', id: string, email: string, isPrimary: boolean, isVerified: boolean }> } } };
+export type GetAuthContextQuery = { __typename?: 'Query', authContext: { __typename?: 'AuthContextOutput', roles: Array<string>, permissions: Array<string>, orgId?: string | null, persona?: Persona | null, isSuperAdmin: boolean, timeTrackingEnabled: boolean, isProjectMember: boolean, user: { __typename?: 'User', id: string, firstName: string, lastName: string, userEmails: Array<{ __typename?: 'UserEmail', id: string, email: string, isPrimary: boolean, isVerified: boolean }> } } };
 
 export type RolesByOrganizationIdQueryVariables = Exact<{
   organizationId: Scalars['ID']['input'];
@@ -6082,9 +6727,34 @@ export const RemoveTeamMemberDocument = {"kind":"Document","definitions":[{"kind
 export const ReorderTeamsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ReorderTeams"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ReorderTeamsInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"reorderTeams"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"parentId"}}]}}]}}]} as unknown as DocumentNode<ReorderTeamsMutation, ReorderTeamsMutationVariables>;
 export const UpdateTeamMemberRoleDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateTeamMemberRole"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateTeamMemberInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateTeamMember"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}}]}}]} as unknown as DocumentNode<UpdateTeamMemberRoleMutation, UpdateTeamMemberRoleMutationVariables>;
 export const UpdateTeamDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateTeam"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateTeamInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateTeam"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<UpdateTeamMutation, UpdateTeamMutationVariables>;
+export const MyEmployeeIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"MyEmployeeId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"myEmployeeId"}}]}}]} as unknown as DocumentNode<MyEmployeeIdQuery, MyEmployeeIdQueryVariables>;
+export const MyTimeTrackingDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"MyTimeTracking"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"from"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"to"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"myWorkTimeBalance"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"from"}}},{"kind":"Argument","name":{"kind":"Name","value":"to"},"value":{"kind":"Variable","name":{"kind":"Name","value":"to"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeId"}},{"kind":"Field","name":{"kind":"Name","value":"fromDate"}},{"kind":"Field","name":{"kind":"Name","value":"toDate"}},{"kind":"Field","name":{"kind":"Name","value":"plannedMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"workedMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"vacationMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"absenceMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"actualMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"differenceMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"openingWorkMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"paidOvertimeMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"netBalanceMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"vacationDaysUsed"}},{"kind":"Field","name":{"kind":"Name","value":"absenceDaysCount"}}]}},{"kind":"Field","name":{"kind":"Name","value":"myVacationBalance"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"from"}}},{"kind":"Argument","name":{"kind":"Name","value":"to"},"value":{"kind":"Variable","name":{"kind":"Name","value":"to"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entitlementDays"}},{"kind":"Field","name":{"kind":"Name","value":"openingDays"}},{"kind":"Field","name":{"kind":"Name","value":"usedDays"}},{"kind":"Field","name":{"kind":"Name","value":"remainingDays"}}]}},{"kind":"Field","name":{"kind":"Name","value":"myMissingRecordDays"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"from"}}},{"kind":"Argument","name":{"kind":"Name","value":"to"},"value":{"kind":"Variable","name":{"kind":"Name","value":"to"}}}]},{"kind":"Field","name":{"kind":"Name","value":"timeTrackingByEmployeeId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}},{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"from"}}},{"kind":"Argument","name":{"kind":"Name","value":"to"},"value":{"kind":"Variable","name":{"kind":"Name","value":"to"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"startedAt"}},{"kind":"Field","name":{"kind":"Name","value":"endedAt"}},{"kind":"Field","name":{"kind":"Name","value":"breakMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"workMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"entryDate"}},{"kind":"Field","name":{"kind":"Name","value":"source"}}]}}]}}]} as unknown as DocumentNode<MyTimeTrackingQuery, MyTimeTrackingQueryVariables>;
+export const TeamOverviewDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TeamOverview"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"from"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"to"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"teamWorkTimeOverview"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"from"}}},{"kind":"Argument","name":{"kind":"Name","value":"to"},"value":{"kind":"Variable","name":{"kind":"Name","value":"to"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeId"}},{"kind":"Field","name":{"kind":"Name","value":"employeeName"}},{"kind":"Field","name":{"kind":"Name","value":"netBalanceMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"vacationDaysUsed"}}]}}]}}]} as unknown as DocumentNode<TeamOverviewQuery, TeamOverviewQueryVariables>;
+export const EmployeeReportDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"EmployeeReport"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"from"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"to"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"locale"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeMissingRecordDays"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}},{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"from"}}},{"kind":"Argument","name":{"kind":"Name","value":"to"},"value":{"kind":"Variable","name":{"kind":"Name","value":"to"}}}]},{"kind":"Field","name":{"kind":"Name","value":"employeeAbsenceCategorySummary"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}},{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"from"}}},{"kind":"Argument","name":{"kind":"Name","value":"to"},"value":{"kind":"Variable","name":{"kind":"Name","value":"to"}}},{"kind":"Argument","name":{"kind":"Name","value":"locale"},"value":{"kind":"Variable","name":{"kind":"Name","value":"locale"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"categoryId"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"fullDays"}},{"kind":"Field","name":{"kind":"Name","value":"partialDays"}},{"kind":"Field","name":{"kind":"Name","value":"totalDays"}}]}},{"kind":"Field","name":{"kind":"Name","value":"employeeWorkTimeBalance"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}},{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"from"}}},{"kind":"Argument","name":{"kind":"Name","value":"to"},"value":{"kind":"Variable","name":{"kind":"Name","value":"to"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeId"}},{"kind":"Field","name":{"kind":"Name","value":"plannedMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"workedMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"vacationMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"absenceMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"differenceMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"openingWorkMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"paidOvertimeMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"netBalanceMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"vacationDaysUsed"}},{"kind":"Field","name":{"kind":"Name","value":"absenceDaysCount"}}]}},{"kind":"Field","name":{"kind":"Name","value":"employeeVacationBalance"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}},{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"from"}}},{"kind":"Argument","name":{"kind":"Name","value":"to"},"value":{"kind":"Variable","name":{"kind":"Name","value":"to"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entitlementDays"}},{"kind":"Field","name":{"kind":"Name","value":"openingDays"}},{"kind":"Field","name":{"kind":"Name","value":"usedDays"}},{"kind":"Field","name":{"kind":"Name","value":"remainingDays"}}]}},{"kind":"Field","name":{"kind":"Name","value":"employeeMonthlyWorkTime"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}},{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"from"}}},{"kind":"Argument","name":{"kind":"Name","value":"to"},"value":{"kind":"Variable","name":{"kind":"Name","value":"to"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"year"}},{"kind":"Field","name":{"kind":"Name","value":"month"}},{"kind":"Field","name":{"kind":"Name","value":"plannedMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"actualMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"differenceMinutes"}}]}}]}}]} as unknown as DocumentNode<EmployeeReportQuery, EmployeeReportQueryVariables>;
+export const CreateTimeTrackingDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateTimeTracking"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateTimeTrackingInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createTimeTracking"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateTimeTrackingMutation, CreateTimeTrackingMutationVariables>;
+export const UpdateTimeTrackingDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateTimeTracking"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateTimeTrackingInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateTimeTracking"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateTimeTrackingMutation, UpdateTimeTrackingMutationVariables>;
+export const DeleteTimeTrackingDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteTimeTracking"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteTimeTracking"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteTimeTrackingMutation, DeleteTimeTrackingMutationVariables>;
+export const StartTimeTrackingDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"StartTimeTracking"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"startTimeTracking"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<StartTimeTrackingMutation, StartTimeTrackingMutationVariables>;
+export const StopTimeTrackingDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"StopTimeTracking"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"stopTimeTracking"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<StopTimeTrackingMutation, StopTimeTrackingMutationVariables>;
+export const EmployeePeriodOpeningBalancesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"EmployeePeriodOpeningBalances"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeePeriodOpeningBalances"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"employeeId"}},{"kind":"Field","name":{"kind":"Name","value":"periodId"}},{"kind":"Field","name":{"kind":"Name","value":"openingWorkMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"openingVacationDays"}}]}}]}}]} as unknown as DocumentNode<EmployeePeriodOpeningBalancesQuery, EmployeePeriodOpeningBalancesQueryVariables>;
+export const UpsertEmployeePeriodOpeningBalanceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpsertEmployeePeriodOpeningBalance"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpsertEmployeePeriodOpeningBalanceInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"upsertEmployeePeriodOpeningBalance"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpsertEmployeePeriodOpeningBalanceMutation, UpsertEmployeePeriodOpeningBalanceMutationVariables>;
+export const DeleteEmployeePeriodOpeningBalanceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteEmployeePeriodOpeningBalance"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteEmployeePeriodOpeningBalance"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteEmployeePeriodOpeningBalanceMutation, DeleteEmployeePeriodOpeningBalanceMutationVariables>;
+export const EmployeePaidOvertimeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"EmployeePaidOvertime"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeePaidOvertime"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"employeeId"}},{"kind":"Field","name":{"kind":"Name","value":"date"}},{"kind":"Field","name":{"kind":"Name","value":"minutes"}},{"kind":"Field","name":{"kind":"Name","value":"note"}}]}}]}}]} as unknown as DocumentNode<EmployeePaidOvertimeQuery, EmployeePaidOvertimeQueryVariables>;
+export const CreateEmployeePaidOvertimeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateEmployeePaidOvertime"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateEmployeePaidOvertimeInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createEmployeePaidOvertime"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateEmployeePaidOvertimeMutation, CreateEmployeePaidOvertimeMutationVariables>;
+export const UpdateEmployeePaidOvertimeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateEmployeePaidOvertime"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateEmployeePaidOvertimeInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateEmployeePaidOvertime"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateEmployeePaidOvertimeMutation, UpdateEmployeePaidOvertimeMutationVariables>;
+export const DeleteEmployeePaidOvertimeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteEmployeePaidOvertime"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteEmployeePaidOvertime"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteEmployeePaidOvertimeMutation, DeleteEmployeePaidOvertimeMutationVariables>;
+export const TimeTrackingPeriodsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TimeTrackingPeriods"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"timeTrackingPeriods"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"startDate"}},{"kind":"Field","name":{"kind":"Name","value":"endDate"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode<TimeTrackingPeriodsQuery, TimeTrackingPeriodsQueryVariables>;
+export const EnsureTimeTrackingPeriodDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"EnsureTimeTrackingPeriod"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"date"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"ensureTimeTrackingPeriod"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"date"},"value":{"kind":"Variable","name":{"kind":"Name","value":"date"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"label"}}]}}]}}]} as unknown as DocumentNode<EnsureTimeTrackingPeriodMutation, EnsureTimeTrackingPeriodMutationVariables>;
+export const SetTimeTrackingPeriodStatusDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SetTimeTrackingPeriodStatus"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"status"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"TimeTrackingPeriodStatus"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"setTimeTrackingPeriodStatus"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"status"},"value":{"kind":"Variable","name":{"kind":"Name","value":"status"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode<SetTimeTrackingPeriodStatusMutation, SetTimeTrackingPeriodStatusMutationVariables>;
+export const TimeTrackingSettingsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TimeTrackingSettings"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"holidays"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"date"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"paidPercentage"}},{"kind":"Field","name":{"kind":"Name","value":"canton"}}]}},{"kind":"Field","name":{"kind":"Name","value":"companyVacations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"startDate"}},{"kind":"Field","name":{"kind":"Name","value":"endDate"}},{"kind":"Field","name":{"kind":"Name","value":"appliesToAll"}}]}}]}}]} as unknown as DocumentNode<TimeTrackingSettingsQuery, TimeTrackingSettingsQueryVariables>;
+export const CreateHolidayDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateHoliday"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateHolidayInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createHoliday"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateHolidayMutation, CreateHolidayMutationVariables>;
+export const DeleteHolidayDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteHoliday"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteHoliday"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteHolidayMutation, DeleteHolidayMutationVariables>;
+export const CreateCompanyVacationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateCompanyVacation"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateCompanyVacationInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createCompanyVacation"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateCompanyVacationMutation, CreateCompanyVacationMutationVariables>;
+export const DeleteCompanyVacationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteCompanyVacation"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteCompanyVacation"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteCompanyVacationMutation, DeleteCompanyVacationMutationVariables>;
 export const AddUserEmailDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AddUserEmail"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"userId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"email"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"addUserEmail"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"userId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"userId"}}},{"kind":"Argument","name":{"kind":"Name","value":"email"},"value":{"kind":"Variable","name":{"kind":"Name","value":"email"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"isPrimary"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}}]}}]}}]} as unknown as DocumentNode<AddUserEmailMutation, AddUserEmailMutationVariables>;
+export const ChangeUserEmailDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ChangeUserEmail"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ChangeUserEmailInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"changeUserEmail"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userEmails"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"isPrimary"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}}]}}]}}]}}]} as unknown as DocumentNode<ChangeUserEmailMutation, ChangeUserEmailMutationVariables>;
 export const CreateUserDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateUser"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"createUserInput"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateUserInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createUser"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"createUserInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"createUserInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateUserMutation, CreateUserMutationVariables>;
-export const GetAuthContextDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAuthContext"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"authContext"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"userEmails"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"isPrimary"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"roles"}},{"kind":"Field","name":{"kind":"Name","value":"permissions"}},{"kind":"Field","name":{"kind":"Name","value":"orgId"}},{"kind":"Field","name":{"kind":"Name","value":"persona"}},{"kind":"Field","name":{"kind":"Name","value":"isSuperAdmin"}}]}}]}}]} as unknown as DocumentNode<GetAuthContextQuery, GetAuthContextQueryVariables>;
+export const GetAuthContextDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAuthContext"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"authContext"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"userEmails"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"isPrimary"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"roles"}},{"kind":"Field","name":{"kind":"Name","value":"permissions"}},{"kind":"Field","name":{"kind":"Name","value":"orgId"}},{"kind":"Field","name":{"kind":"Name","value":"persona"}},{"kind":"Field","name":{"kind":"Name","value":"isSuperAdmin"}},{"kind":"Field","name":{"kind":"Name","value":"timeTrackingEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"isProjectMember"}}]}}]}}]} as unknown as DocumentNode<GetAuthContextQuery, GetAuthContextQueryVariables>;
 export const RolesByOrganizationIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"RolesByOrganizationId"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"organizationId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"rolesByOrganizationId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"organizationId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"organizationId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"systemCode"}},{"kind":"Field","name":{"kind":"Name","value":"isSystem"}}]}}]}}]} as unknown as DocumentNode<RolesByOrganizationIdQuery, RolesByOrganizationIdQueryVariables>;
 export const GetUserByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetUserById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"dateOfBirth"}},{"kind":"Field","name":{"kind":"Name","value":"isSuperAdmin"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"userEmails"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"isPrimary"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}}]}},{"kind":"Field","name":{"kind":"Name","value":"memberships"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"persona"}},{"kind":"Field","name":{"kind":"Name","value":"contactPhone"}},{"kind":"Field","name":{"kind":"Name","value":"userEmailId"}},{"kind":"Field","name":{"kind":"Name","value":"organization"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetUserByIdQuery, GetUserByIdQueryVariables>;
 export const GetUsersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetUsers"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"users"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"isSuperAdmin"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"userEmails"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"isPrimary"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"authAccounts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"provider"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"memberships"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"persona"}},{"kind":"Field","name":{"kind":"Name","value":"organization"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetUsersQuery, GetUsersQueryVariables>;
