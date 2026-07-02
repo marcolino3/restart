@@ -71,14 +71,19 @@ const createMockEntityManager = () => {
     getMany: jest.fn().mockResolvedValue([]),
   };
   return {
-    transaction: jest.fn((cb: (m: any) => any) => cb(txManager)),
+    transaction: jest.fn((cb: (m: typeof txManager) => unknown) =>
+      cb(txManager),
+    ),
     getRepository: jest.fn().mockReturnValue({
       createQueryBuilder: jest.fn().mockReturnValue(qb),
       findOne: jest.fn(),
     }),
     exists: jest.fn(),
     save: jest.fn(),
-    create: jest.fn((_, data) => ({ id: 'new-org', ...data })),
+    create: jest.fn((_: unknown, data: Record<string, unknown>) => ({
+      id: 'new-org',
+      ...data,
+    })),
     _qb: qb,
   };
 };
@@ -91,9 +96,15 @@ const createMockGeocodingService = () => ({
 const txManager = {
   save: jest
     .fn()
-    .mockImplementation((data) => Promise.resolve({ id: 'new-org', ...data })),
-  create: jest.fn((_, data) => data),
+    .mockImplementation((data: Record<string, unknown>) =>
+      Promise.resolve({ id: 'new-org', ...data }),
+    ),
+  create: jest.fn((_: unknown, data: Record<string, unknown>) => data),
 };
+
+const createMockGeocodingService = () => ({
+  geocode: jest.fn().mockResolvedValue(null),
+});
 
 describe('OrganizationsService', () => {
   let service: OrganizationsService;
