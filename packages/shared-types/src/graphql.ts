@@ -24,6 +24,12 @@ export type AccessibleTeam = {
   team: Team;
 };
 
+export type AddProjectMemberInput = {
+  membershipId: Scalars['ID']['input'];
+  projectId: Scalars['ID']['input'];
+  role?: InputMaybe<ProjectMemberRole>;
+};
+
 export type Address = {
   __typename?: 'Address';
   addressLine2?: Maybe<Scalars['String']['output']>;
@@ -318,6 +324,26 @@ export enum AdmissionStageType {
   InProgress = 'IN_PROGRESS',
   Rejected = 'REJECTED'
 }
+
+/** Purpose of an agenda item (Entscheidung / Information / Diskussion) */
+export enum AgendaGoal {
+  Decision = 'DECISION',
+  Discussion = 'DISCUSSION',
+  Information = 'INFORMATION'
+}
+
+export type AgendaItem = {
+  __typename?: 'AgendaItem';
+  goal?: Maybe<AgendaGoal>;
+  no?: Maybe<Scalars['Int']['output']>;
+  topic: Scalars['String']['output'];
+};
+
+export type AgendaItemInput = {
+  goal?: InputMaybe<AgendaGoal>;
+  no?: InputMaybe<Scalars['Int']['input']>;
+  topic: Scalars['String']['input'];
+};
 
 export type AreaLessonCount = {
   __typename?: 'AreaLessonCount';
@@ -731,6 +757,37 @@ export type CreateOrganizationSettingInput = {
   value: Scalars['String']['input'];
 };
 
+export type CreateProjectFromTemplateInput = {
+  memberMembershipIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  startDate?: InputMaybe<Scalars['String']['input']>;
+  templateId: Scalars['ID']['input'];
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type CreateProjectInput = {
+  color?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  memberMembershipIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  status?: InputMaybe<ProjectStatus>;
+  title: Scalars['String']['input'];
+};
+
+export type CreateProjectTemplateInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  tasks?: InputMaybe<Array<TemplateTaskInput>>;
+  title: Scalars['String']['input'];
+};
+
+export type CreateProtocolInput = {
+  externalParticipants?: InputMaybe<Array<Scalars['String']['input']>>;
+  meetingDate?: InputMaybe<Scalars['String']['input']>;
+  participantMembershipIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  projectId?: InputMaybe<Scalars['ID']['input']>;
+  sections?: InputMaybe<ProtocolSectionsInput>;
+  status?: InputMaybe<ProtocolStatus>;
+  title: Scalars['String']['input'];
+};
+
 export type CreateSchoolClassEnrollmentInput = {
   enrolledAt: Scalars['String']['input'];
   leftAt?: InputMaybe<Scalars['String']['input']>;
@@ -767,6 +824,21 @@ export type CreateStudentNoteInput = {
   isConfidential?: InputMaybe<Scalars['Boolean']['input']>;
   studentId: Scalars['ID']['input'];
   title: Scalars['String']['input'];
+};
+
+export type CreateTaskInput = {
+  assigneeMembershipIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  dueDate?: InputMaybe<Scalars['String']['input']>;
+  priority?: InputMaybe<TaskPriority>;
+  projectId?: InputMaybe<Scalars['ID']['input']>;
+  status?: InputMaybe<TaskStatus>;
+  title: Scalars['String']['input'];
+};
+
+export type CreateTasksFromProtocolInput = {
+  protocolId: Scalars['ID']['input'];
+  tasks: Array<ProtocolTaskDraftInput>;
 };
 
 export type CreateTeamInput = {
@@ -1596,8 +1668,15 @@ export type MoveAdmissionApplicationInput = {
   toStageId: Scalars['ID']['input'];
 };
 
+export type MoveTaskInput = {
+  id: Scalars['ID']['input'];
+  orderedTaskIds: Array<Scalars['ID']['input']>;
+  status: TaskStatus;
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
+  addProjectMember: ProjectMember;
   addUserEmail: UserEmail;
   archiveAdmissionApplication: Scalars['Boolean']['output'];
   archiveAdmissionRejectionReason: Scalars['Boolean']['output'];
@@ -1608,6 +1687,7 @@ export type Mutation = {
   archiveCurriculumNode: Scalars['Boolean']['output'];
   archiveEmployeeAbsenceCategory: Scalars['Boolean']['output'];
   archiveFamily: Scalars['Boolean']['output'];
+  archiveProject: Project;
   completeAdmissionReminder: AdmissionReminder;
   createAddress: Address;
   createAdmissionActivity: AdmissionActivity;
@@ -1634,9 +1714,15 @@ export type Mutation = {
   createMembership: Membership;
   createOrganization: Organization;
   createOrganizationSetting: OrganizationSettingOutput;
+  createProject: Project;
+  createProjectFromTemplate: Project;
+  createProjectTemplate: ProjectTemplate;
+  createProtocol: Protocol;
   createSchoolClass: SchoolClass;
   createStudent: Student;
   createStudentNote: StudentNote;
+  createTask: Task;
+  createTasksFromProtocol: Array<Task>;
   createTeam: Team;
   createTeamMember: TeamMember;
   createTimeTracking: TimeTracking;
@@ -1653,8 +1739,12 @@ export type Mutation = {
   deleteGradeLevel: Scalars['Boolean']['output'];
   deleteLessonRecord: Scalars['Boolean']['output'];
   deleteOrganizationSetting: Scalars['Boolean']['output'];
+  deleteProject: Scalars['Boolean']['output'];
+  deleteProjectTemplate: Scalars['Boolean']['output'];
+  deleteProtocol: Scalars['Boolean']['output'];
   deleteSchoolClass: Scalars['Boolean']['output'];
   deleteStudent: Scalars['Boolean']['output'];
+  deleteTask: Scalars['Boolean']['output'];
   deleteTeam: Scalars['Boolean']['output'];
   deleteTeamMember: Scalars['Boolean']['output'];
   deleteTimeTracking: Scalars['Boolean']['output'];
@@ -1664,9 +1754,11 @@ export type Mutation = {
   linkContactPersonToStudent: StudentContactPerson;
   moveAdmissionApplication: AdmissionApplication;
   moveStudentToStage: Student;
+  moveTask: Task;
   rejectAdmissionApplication: AdmissionApplication;
   removeCountry: Country;
   removeOrganization: Organization;
+  removeProjectMember: Scalars['Boolean']['output'];
   removeUser: User;
   removeUserEmail: UserEmail;
   reorderAdmissionApplications: Array<AdmissionApplication>;
@@ -1677,10 +1769,12 @@ export type Mutation = {
   reorderCurriculumNodes: Array<CurriculumNode>;
   reorderEmployeeAbsenceCategories: Array<EmployeeAbsenceCategory>;
   reorderGradeLevels: Array<GradeLevel>;
+  reorderMyTasks: Scalars['Boolean']['output'];
   reorderTeams: Array<Team>;
   resendAdmissionEmail: AdmissionEmail;
   restoreAdmissionApplication: AdmissionApplication;
   resyncSystemEmployeeAbsenceCategoryTranslations: Scalars['Boolean']['output'];
+  saveProjectAsTemplate: ProjectTemplate;
   seedSystemEmployeeAbsenceCategories: Scalars['Boolean']['output'];
   sendAdmissionEmail: AdmissionEmail;
   setEmployeeAbsenceCategoryActive: EmployeeAbsenceCategory;
@@ -1719,12 +1813,17 @@ export type Mutation = {
   updateMembership: Membership;
   updateOrganization: Organization;
   updateOrganizationSetting: OrganizationSettingOutput;
+  updateProject: Project;
+  updateProjectMemberRole: ProjectMember;
+  updateProjectTemplate: ProjectTemplate;
+  updateProtocol: Protocol;
   updateRecordKeepingSettings: RecordKeepingSettings;
   updateRolePermissions: Role;
   updateSchoolClass: SchoolClass;
   updateStudent: Student;
   updateStudentContactPersonLink: StudentContactPerson;
   updateStudentNote: StudentNote;
+  updateTask: Task;
   updateTeam: Team;
   updateTeamMember: TeamMember;
   updateTimeTracking: TimeTracking;
@@ -1736,6 +1835,11 @@ export type Mutation = {
   upsertEmployeeAbsenceCategoryTranslation: EmployeeAbsenceCategoryTranslation;
   upsertEmployeeEmergencyProfile: EmployeeEmergencyProfile;
   upsertEmployeeHrProfile: EmployeeHrProfile;
+};
+
+
+export type MutationAddProjectMemberArgs = {
+  input: AddProjectMemberInput;
 };
 
 
@@ -1786,6 +1890,12 @@ export type MutationArchiveEmployeeAbsenceCategoryArgs = {
 
 
 export type MutationArchiveFamilyArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationArchiveProjectArgs = {
+  archived?: Scalars['Boolean']['input'];
   id: Scalars['ID']['input'];
 };
 
@@ -1915,6 +2025,26 @@ export type MutationCreateOrganizationSettingArgs = {
 };
 
 
+export type MutationCreateProjectArgs = {
+  input: CreateProjectInput;
+};
+
+
+export type MutationCreateProjectFromTemplateArgs = {
+  input: CreateProjectFromTemplateInput;
+};
+
+
+export type MutationCreateProjectTemplateArgs = {
+  input: CreateProjectTemplateInput;
+};
+
+
+export type MutationCreateProtocolArgs = {
+  input: CreateProtocolInput;
+};
+
+
 export type MutationCreateSchoolClassArgs = {
   input: CreateSchoolClassInput;
 };
@@ -1927,6 +2057,16 @@ export type MutationCreateStudentArgs = {
 
 export type MutationCreateStudentNoteArgs = {
   createStudentNoteInput: CreateStudentNoteInput;
+};
+
+
+export type MutationCreateTaskArgs = {
+  input: CreateTaskInput;
+};
+
+
+export type MutationCreateTasksFromProtocolArgs = {
+  input: CreateTasksFromProtocolInput;
 };
 
 
@@ -2011,12 +2151,32 @@ export type MutationDeleteOrganizationSettingArgs = {
 };
 
 
+export type MutationDeleteProjectArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteProjectTemplateArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteProtocolArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationDeleteSchoolClassArgs = {
   id: Scalars['ID']['input'];
 };
 
 
 export type MutationDeleteStudentArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteTaskArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -2067,6 +2227,11 @@ export type MutationMoveStudentToStageArgs = {
 };
 
 
+export type MutationMoveTaskArgs = {
+  input: MoveTaskInput;
+};
+
+
 export type MutationRejectAdmissionApplicationArgs = {
   input: RejectAdmissionApplicationInput;
 };
@@ -2079,6 +2244,11 @@ export type MutationRemoveCountryArgs = {
 
 export type MutationRemoveOrganizationArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type MutationRemoveProjectMemberArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -2132,6 +2302,11 @@ export type MutationReorderGradeLevelsArgs = {
 };
 
 
+export type MutationReorderMyTasksArgs = {
+  orderedTaskIds: Array<Scalars['ID']['input']>;
+};
+
+
 export type MutationReorderTeamsArgs = {
   input: ReorderTeamsInput;
 };
@@ -2149,6 +2324,11 @@ export type MutationRestoreAdmissionApplicationArgs = {
 
 export type MutationResyncSystemEmployeeAbsenceCategoryTranslationsArgs = {
   orgId: Scalars['ID']['input'];
+};
+
+
+export type MutationSaveProjectAsTemplateArgs = {
+  input: SaveProjectAsTemplateInput;
 };
 
 
@@ -2343,6 +2523,26 @@ export type MutationUpdateOrganizationSettingArgs = {
 };
 
 
+export type MutationUpdateProjectArgs = {
+  input: UpdateProjectInput;
+};
+
+
+export type MutationUpdateProjectMemberRoleArgs = {
+  input: UpdateProjectMemberRoleInput;
+};
+
+
+export type MutationUpdateProjectTemplateArgs = {
+  input: UpdateProjectTemplateInput;
+};
+
+
+export type MutationUpdateProtocolArgs = {
+  input: UpdateProtocolInput;
+};
+
+
 export type MutationUpdateRecordKeepingSettingsArgs = {
   input: UpdateRecordKeepingSettingsInput;
 };
@@ -2370,6 +2570,11 @@ export type MutationUpdateStudentContactPersonLinkArgs = {
 
 export type MutationUpdateStudentNoteArgs = {
   updateStudentNoteInput: UpdateStudentNoteInput;
+};
+
+
+export type MutationUpdateTaskArgs = {
+  input: UpdateTaskInput;
 };
 
 
@@ -2519,6 +2724,13 @@ export enum PermissionCode {
   FamilyWrite = 'FAMILY_WRITE',
   OrgDelete = 'ORG_DELETE',
   OrgTransferOwnership = 'ORG_TRANSFER_OWNERSHIP',
+  ProjectCreate = 'PROJECT_CREATE',
+  ProjectManageAll = 'PROJECT_MANAGE_ALL',
+  ProjectRead = 'PROJECT_READ',
+  ProjectTemplateManage = 'PROJECT_TEMPLATE_MANAGE',
+  ProtocolDelete = 'PROTOCOL_DELETE',
+  ProtocolRead = 'PROTOCOL_READ',
+  ProtocolWrite = 'PROTOCOL_WRITE',
   RecordKeepingRead = 'RECORD_KEEPING_READ',
   RecordKeepingSettingsManage = 'RECORD_KEEPING_SETTINGS_MANAGE',
   RecordKeepingWrite = 'RECORD_KEEPING_WRITE',
@@ -2546,6 +2758,227 @@ export enum Persona {
   Student = 'STUDENT',
   Teacher = 'TEACHER'
 }
+
+export type Project = {
+  __typename?: 'Project';
+  color?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  createdBy?: Maybe<Membership>;
+  createdByMembershipId?: Maybe<Scalars['ID']['output']>;
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  members?: Maybe<Array<ProjectMember>>;
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['ID']['output'];
+  status: ProjectStatus;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type ProjectMember = {
+  __typename?: 'ProjectMember';
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  membership?: Maybe<Membership>;
+  membershipId: Scalars['ID']['output'];
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['ID']['output'];
+  project?: Maybe<Project>;
+  projectId: Scalars['ID']['output'];
+  role: ProjectMemberRole;
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+/** Role of a membership within a project (OWNER or MEMBER) */
+export enum ProjectMemberRole {
+  Member = 'MEMBER',
+  Owner = 'OWNER'
+}
+
+/** Lifecycle status of a project (board) */
+export enum ProjectStatus {
+  Active = 'ACTIVE',
+  Completed = 'COMPLETED',
+  OnHold = 'ON_HOLD'
+}
+
+export type ProjectTemplate = {
+  __typename?: 'ProjectTemplate';
+  createdAt: Scalars['DateTime']['output'];
+  createdBy?: Maybe<Membership>;
+  createdByMembershipId?: Maybe<Scalars['ID']['output']>;
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['ID']['output'];
+  tasks?: Maybe<Array<ProjectTemplateTask>>;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type ProjectTemplateTask = {
+  __typename?: 'ProjectTemplateTask';
+  createdAt: Scalars['DateTime']['output'];
+  defaultAssigneeRole?: Maybe<SystemRole>;
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  dueOffsetDays?: Maybe<Scalars['Int']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['ID']['output'];
+  priority: TaskPriority;
+  sortOrder: Scalars['Int']['output'];
+  template?: Maybe<ProjectTemplate>;
+  templateId: Scalars['ID']['output'];
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type Protocol = {
+  __typename?: 'Protocol';
+  createdAt: Scalars['DateTime']['output'];
+  createdBy?: Maybe<Membership>;
+  createdByMembershipId?: Maybe<Scalars['ID']['output']>;
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  externalParticipants: Array<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  meetingDate?: Maybe<Scalars['String']['output']>;
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['ID']['output'];
+  participants?: Maybe<Array<ProtocolParticipant>>;
+  project?: Maybe<Project>;
+  projectId?: Maybe<Scalars['ID']['output']>;
+  sections: ProtocolSections;
+  status: ProtocolStatus;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type ProtocolChallenge = {
+  __typename?: 'ProtocolChallenge';
+  challenge?: Maybe<Scalars['String']['output']>;
+  supportNeeded?: Maybe<Scalars['String']['output']>;
+  topic: Scalars['String']['output'];
+};
+
+export type ProtocolChallengeInput = {
+  challenge?: InputMaybe<Scalars['String']['input']>;
+  supportNeeded?: InputMaybe<Scalars['String']['input']>;
+  topic: Scalars['String']['input'];
+};
+
+export type ProtocolCommunication = {
+  __typename?: 'ProtocolCommunication';
+  audience?: Maybe<Scalars['String']['output']>;
+  channel?: Maybe<Scalars['String']['output']>;
+  dueDate?: Maybe<Scalars['String']['output']>;
+  responsible?: Maybe<Scalars['String']['output']>;
+  topic: Scalars['String']['output'];
+};
+
+export type ProtocolCommunicationInput = {
+  audience?: InputMaybe<Scalars['String']['input']>;
+  channel?: InputMaybe<Scalars['String']['input']>;
+  dueDate?: InputMaybe<Scalars['String']['input']>;
+  responsible?: InputMaybe<Scalars['String']['input']>;
+  topic: Scalars['String']['input'];
+};
+
+export type ProtocolDecision = {
+  __typename?: 'ProtocolDecision';
+  decision?: Maybe<Scalars['String']['output']>;
+  dueDate?: Maybe<Scalars['String']['output']>;
+  responsible?: Maybe<Scalars['String']['output']>;
+  topic: Scalars['String']['output'];
+};
+
+export type ProtocolDecisionInput = {
+  decision?: InputMaybe<Scalars['String']['input']>;
+  dueDate?: InputMaybe<Scalars['String']['input']>;
+  responsible?: InputMaybe<Scalars['String']['input']>;
+  topic: Scalars['String']['input'];
+};
+
+export type ProtocolOpenPoint = {
+  __typename?: 'ProtocolOpenPoint';
+  forNextMeeting: Scalars['Boolean']['output'];
+  nextStep?: Maybe<Scalars['String']['output']>;
+  topic: Scalars['String']['output'];
+};
+
+export type ProtocolOpenPointInput = {
+  forNextMeeting?: InputMaybe<Scalars['Boolean']['input']>;
+  nextStep?: InputMaybe<Scalars['String']['input']>;
+  topic: Scalars['String']['input'];
+};
+
+export type ProtocolParticipant = {
+  __typename?: 'ProtocolParticipant';
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  membership?: Maybe<Membership>;
+  membershipId: Scalars['ID']['output'];
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['ID']['output'];
+  protocol?: Maybe<Protocol>;
+  protocolId: Scalars['ID']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type ProtocolSections = {
+  __typename?: 'ProtocolSections';
+  agendaItems: Array<AgendaItem>;
+  challenges: Array<ProtocolChallenge>;
+  communications: Array<ProtocolCommunication>;
+  decisions: Array<ProtocolDecision>;
+  infoPoints: Array<Scalars['String']['output']>;
+  openPoints: Array<ProtocolOpenPoint>;
+};
+
+export type ProtocolSectionsInput = {
+  agendaItems?: InputMaybe<Array<AgendaItemInput>>;
+  challenges?: InputMaybe<Array<ProtocolChallengeInput>>;
+  communications?: InputMaybe<Array<ProtocolCommunicationInput>>;
+  decisions?: InputMaybe<Array<ProtocolDecisionInput>>;
+  infoPoints?: InputMaybe<Array<Scalars['String']['input']>>;
+  openPoints?: InputMaybe<Array<ProtocolOpenPointInput>>;
+};
+
+/** Lifecycle status of a meeting protocol */
+export enum ProtocolStatus {
+  Draft = 'DRAFT',
+  Finalized = 'FINALIZED'
+}
+
+export type ProtocolTaskDraftInput = {
+  assigneeMembershipIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  dueDate?: InputMaybe<Scalars['String']['input']>;
+  priority?: InputMaybe<TaskPriority>;
+  title: Scalars['String']['input'];
+};
 
 export type Query = {
   __typename?: 'Query';
@@ -2611,6 +3044,8 @@ export type Query = {
   lessonRecords: Array<LessonRecord>;
   lessonsByOrg: Array<CurriculumNode>;
   membershipsByOrgId: Array<Membership>;
+  myProjects: Array<Project>;
+  myTasks: Array<Task>;
   myTeachingSchoolClasses: Array<SchoolClass>;
   myTeams: Array<AccessibleTeam>;
   nextLessonsForStudent: Array<CurriculumNode>;
@@ -2621,6 +3056,12 @@ export type Query = {
   organizations: Array<Organization>;
   permissions: Array<Permission>;
   previewAdmissionEmail: AdmissionEmailPreview;
+  projectById: Project;
+  projectMembers: Array<ProjectMember>;
+  projectTemplateById: ProjectTemplate;
+  projectTemplates: Array<ProjectTemplate>;
+  protocolById: Protocol;
+  protocolsByOrg: Array<Protocol>;
   recordKeepingSettings: RecordKeepingSettings;
   relatedAddressesForContactPerson: Array<AddressSuggestion>;
   rolesByOrgId: Array<Role>;
@@ -2632,6 +3073,9 @@ export type Query = {
   studentNotesByStudentId: Array<StudentNote>;
   studentsByContactPersonId: Array<StudentContactPerson>;
   studentsByOrgId: Array<Student>;
+  taskById: Task;
+  tasksByProject: Array<Task>;
+  tasksByProtocol: Array<Task>;
   teachersByOrgId: Array<Employee>;
   teamById: Team;
   teamMemberById: TeamMember;
@@ -2943,6 +3387,26 @@ export type QueryPreviewAdmissionEmailArgs = {
 };
 
 
+export type QueryProjectByIdArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryProjectMembersArgs = {
+  projectId: Scalars['ID']['input'];
+};
+
+
+export type QueryProjectTemplateByIdArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryProtocolByIdArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type QueryRelatedAddressesForContactPersonArgs = {
   contactPersonId: Scalars['ID']['input'];
 };
@@ -2978,6 +3442,21 @@ export type QueryStudentNotesByStudentIdArgs = {
 
 export type QueryStudentsByContactPersonIdArgs = {
   contactPersonId: Scalars['ID']['input'];
+};
+
+
+export type QueryTaskByIdArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryTasksByProjectArgs = {
+  projectId: Scalars['ID']['input'];
+};
+
+
+export type QueryTasksByProtocolArgs = {
+  protocolId: Scalars['ID']['input'];
 };
 
 
@@ -3122,6 +3601,12 @@ export enum Salutation {
   Mrs = 'MRS',
   None = 'NONE'
 }
+
+export type SaveProjectAsTemplateInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  projectId: Scalars['ID']['input'];
+  title: Scalars['String']['input'];
+};
 
 export type SchoolClass = {
   __typename?: 'SchoolClass';
@@ -3308,6 +3793,66 @@ export enum SystemRole {
   TeamLead = 'TEAM_LEAD'
 }
 
+export type Task = {
+  __typename?: 'Task';
+  assignees?: Maybe<Array<TaskAssignee>>;
+  createdAt: Scalars['DateTime']['output'];
+  createdBy?: Maybe<Membership>;
+  createdByMembershipId?: Maybe<Scalars['ID']['output']>;
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  dueDate?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['ID']['output'];
+  priority: TaskPriority;
+  project?: Maybe<Project>;
+  projectId?: Maybe<Scalars['ID']['output']>;
+  protocol?: Maybe<Protocol>;
+  protocolId?: Maybe<Scalars['ID']['output']>;
+  sortOrder: Scalars['Int']['output'];
+  status: TaskStatus;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type TaskAssignee = {
+  __typename?: 'TaskAssignee';
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  membership?: Maybe<Membership>;
+  membershipId: Scalars['ID']['output'];
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['ID']['output'];
+  sortOrder: Scalars['Int']['output'];
+  task?: Maybe<Task>;
+  taskId: Scalars['ID']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+/** Priority of a task */
+export enum TaskPriority {
+  High = 'HIGH',
+  Low = 'LOW',
+  Medium = 'MEDIUM',
+  Urgent = 'URGENT'
+}
+
+/** Workflow status of a task; also the columns of the board */
+export enum TaskStatus {
+  Blocked = 'BLOCKED',
+  Done = 'DONE',
+  InProgress = 'IN_PROGRESS',
+  Open = 'OPEN'
+}
+
 /** LK-Selbsteinschätzung der Vorbereitung: WELL_PREPARED / ACCEPTABLE / RUSHED. */
 export enum TeacherPreparation {
   Acceptable = 'ACCEPTABLE',
@@ -3361,6 +3906,14 @@ export enum TeamMemberRole {
   Lead = 'LEAD',
   Member = 'MEMBER'
 }
+
+export type TemplateTaskInput = {
+  defaultAssigneeRole?: InputMaybe<SystemRole>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  dueOffsetDays?: InputMaybe<Scalars['Int']['input']>;
+  priority?: InputMaybe<TaskPriority>;
+  title: Scalars['String']['input'];
+};
 
 export type TimeTracking = {
   __typename?: 'TimeTracking';
@@ -3655,6 +4208,37 @@ export type UpdateOrganizationSettingInput = {
   value?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type UpdateProjectInput = {
+  color?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  status?: InputMaybe<ProjectStatus>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateProjectMemberRoleInput = {
+  id: Scalars['ID']['input'];
+  role: ProjectMemberRole;
+};
+
+export type UpdateProjectTemplateInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  tasks?: InputMaybe<Array<TemplateTaskInput>>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateProtocolInput = {
+  externalParticipants?: InputMaybe<Array<Scalars['String']['input']>>;
+  id: Scalars['ID']['input'];
+  meetingDate?: InputMaybe<Scalars['String']['input']>;
+  participantMembershipIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  projectId?: InputMaybe<Scalars['ID']['input']>;
+  sections?: InputMaybe<ProtocolSectionsInput>;
+  status?: InputMaybe<ProtocolStatus>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type UpdateRecordKeepingSettingsInput = {
   bigGapDays: Scalars['Int']['input'];
   introducedStuckDays: Scalars['Int']['input'];
@@ -3713,6 +4297,16 @@ export type UpdateStudentNoteInput = {
   id: Scalars['ID']['input'];
   isConfidential?: InputMaybe<Scalars['Boolean']['input']>;
   studentId?: InputMaybe<Scalars['ID']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateTaskInput = {
+  assigneeMembershipIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  dueDate?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  priority?: InputMaybe<TaskPriority>;
+  status?: InputMaybe<TaskStatus>;
   title?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -4670,6 +5264,237 @@ export type UpdateOrganizationMutationVariables = Exact<{
 
 export type UpdateOrganizationMutation = { __typename?: 'Mutation', updateOrganization: { __typename?: 'Organization', id: string, name?: string | null, subdomain?: string | null } };
 
+export type ArchiveProjectMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  archived: Scalars['Boolean']['input'];
+}>;
+
+
+export type ArchiveProjectMutation = { __typename?: 'Mutation', archiveProject: { __typename?: 'Project', id: string, isArchived: boolean } };
+
+export type CreateProjectFromTemplateMutationVariables = Exact<{
+  input: CreateProjectFromTemplateInput;
+}>;
+
+
+export type CreateProjectFromTemplateMutation = { __typename?: 'Mutation', createProjectFromTemplate: { __typename?: 'Project', id: string } };
+
+export type CreateProjectMutationVariables = Exact<{
+  input: CreateProjectInput;
+}>;
+
+
+export type CreateProjectMutation = { __typename?: 'Mutation', createProject: { __typename?: 'Project', id: string } };
+
+export type CreateTasksFromProtocolMutationVariables = Exact<{
+  input: CreateTasksFromProtocolInput;
+}>;
+
+
+export type CreateTasksFromProtocolMutation = { __typename?: 'Mutation', createTasksFromProtocol: Array<{ __typename?: 'Task', id: string }> };
+
+export type DeleteProjectMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteProjectMutation = { __typename?: 'Mutation', deleteProject: boolean };
+
+export type MyTasksQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MyTasksQuery = { __typename?: 'Query', myTasks: Array<{ __typename?: 'Task', id: string, title: string, description?: string | null, status: TaskStatus, priority: TaskPriority, dueDate?: string | null, sortOrder: number, project?: { __typename?: 'Project', id: string, title: string, color?: string | null } | null, protocol?: { __typename?: 'Protocol', id: string, title: string } | null, assignees?: Array<{ __typename?: 'TaskAssignee', id: string, membershipId: string, membership?: { __typename?: 'Membership', id: string, userId: string, user?: { __typename?: 'User', firstName: string, lastName: string } | null, userEmail?: { __typename?: 'UserEmail', email: string } | null } | null }> | null }> };
+
+export type MembershipsByOrgIdQueryVariables = Exact<{
+  organizationId: Scalars['ID']['input'];
+}>;
+
+
+export type MembershipsByOrgIdQuery = { __typename?: 'Query', membershipsByOrgId: Array<{ __typename?: 'Membership', id: string, userId: string, user?: { __typename?: 'User', firstName: string, lastName: string, isSuperAdmin?: boolean | null } | null, userEmail?: { __typename?: 'UserEmail', email: string } | null }> };
+
+export type TasksByProjectQueryVariables = Exact<{
+  projectId: Scalars['ID']['input'];
+}>;
+
+
+export type TasksByProjectQuery = { __typename?: 'Query', tasksByProject: Array<{ __typename?: 'Task', id: string, title: string, description?: string | null, status: TaskStatus, priority: TaskPriority, dueDate?: string | null, sortOrder: number, protocol?: { __typename?: 'Protocol', id: string, title: string } | null, assignees?: Array<{ __typename?: 'TaskAssignee', id: string, membershipId: string, membership?: { __typename?: 'Membership', id: string, userId: string, user?: { __typename?: 'User', firstName: string, lastName: string } | null, userEmail?: { __typename?: 'UserEmail', email: string } | null } | null }> | null }> };
+
+export type ProjectByIdQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type ProjectByIdQuery = { __typename?: 'Query', projectById: { __typename?: 'Project', id: string, title: string, description?: string | null, status: ProjectStatus, color?: string | null, isArchived: boolean, createdAt: any, members?: Array<{ __typename?: 'ProjectMember', id: string, role: ProjectMemberRole, membership?: { __typename?: 'Membership', id: string, userId: string, user?: { __typename?: 'User', firstName: string, lastName: string } | null, userEmail?: { __typename?: 'UserEmail', email: string } | null } | null }> | null } };
+
+export type MyProjectsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MyProjectsQuery = { __typename?: 'Query', myProjects: Array<{ __typename?: 'Project', id: string, title: string, description?: string | null, status: ProjectStatus, color?: string | null, isArchived: boolean, createdAt: any }> };
+
+export type TasksByProtocolQueryVariables = Exact<{
+  protocolId: Scalars['ID']['input'];
+}>;
+
+
+export type TasksByProtocolQuery = { __typename?: 'Query', tasksByProtocol: Array<{ __typename?: 'Task', id: string, title: string, description?: string | null, status: TaskStatus, priority: TaskPriority, dueDate?: string | null, project?: { __typename?: 'Project', id: string, title: string } | null, assignees?: Array<{ __typename?: 'TaskAssignee', id: string, membershipId: string, membership?: { __typename?: 'Membership', id: string, user?: { __typename?: 'User', firstName: string, lastName: string } | null, userEmail?: { __typename?: 'UserEmail', email: string } | null } | null }> | null }> };
+
+export type ProtocolByIdQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type ProtocolByIdQuery = { __typename?: 'Query', protocolById: { __typename?: 'Protocol', id: string, title: string, meetingDate?: string | null, status: ProtocolStatus, projectId?: string | null, externalParticipants: Array<string>, createdByMembershipId?: string | null, createdBy?: { __typename?: 'Membership', userId: string } | null, project?: { __typename?: 'Project', id: string, title: string } | null, participants?: Array<{ __typename?: 'ProtocolParticipant', id: string, membershipId: string, membership?: { __typename?: 'Membership', id: string, userId: string, user?: { __typename?: 'User', firstName: string, lastName: string } | null, userEmail?: { __typename?: 'UserEmail', email: string } | null } | null }> | null, sections: { __typename?: 'ProtocolSections', infoPoints: Array<string>, agendaItems: Array<{ __typename?: 'AgendaItem', no?: number | null, topic: string, goal?: AgendaGoal | null }>, decisions: Array<{ __typename?: 'ProtocolDecision', topic: string, decision?: string | null, responsible?: string | null, dueDate?: string | null }>, communications: Array<{ __typename?: 'ProtocolCommunication', topic: string, audience?: string | null, responsible?: string | null, channel?: string | null, dueDate?: string | null }>, challenges: Array<{ __typename?: 'ProtocolChallenge', topic: string, challenge?: string | null, supportNeeded?: string | null }>, openPoints: Array<{ __typename?: 'ProtocolOpenPoint', topic: string, nextStep?: string | null, forNextMeeting: boolean }> } } };
+
+export type ProtocolsByOrgQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ProtocolsByOrgQuery = { __typename?: 'Query', protocolsByOrg: Array<{ __typename?: 'Protocol', id: string, title: string, meetingDate?: string | null, status: ProtocolStatus, project?: { __typename?: 'Project', id: string, title: string } | null }> };
+
+export type ProjectTemplateByIdQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type ProjectTemplateByIdQuery = { __typename?: 'Query', projectTemplateById: { __typename?: 'ProjectTemplate', id: string, title: string, description?: string | null, createdAt: any, tasks?: Array<{ __typename?: 'ProjectTemplateTask', id: string, title: string, description?: string | null, priority: TaskPriority, sortOrder: number, dueOffsetDays?: number | null }> | null } };
+
+export type ProjectTemplatesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ProjectTemplatesQuery = { __typename?: 'Query', projectTemplates: Array<{ __typename?: 'ProjectTemplate', id: string, title: string, description?: string | null, createdAt: any }> };
+
+export type AddProjectMemberMutationVariables = Exact<{
+  input: AddProjectMemberInput;
+}>;
+
+
+export type AddProjectMemberMutation = { __typename?: 'Mutation', addProjectMember: { __typename?: 'ProjectMember', id: string } };
+
+export type UpdateProjectMemberRoleMutationVariables = Exact<{
+  input: UpdateProjectMemberRoleInput;
+}>;
+
+
+export type UpdateProjectMemberRoleMutation = { __typename?: 'Mutation', updateProjectMemberRole: { __typename?: 'ProjectMember', id: string, role: ProjectMemberRole } };
+
+export type RemoveProjectMemberMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type RemoveProjectMemberMutation = { __typename?: 'Mutation', removeProjectMember: boolean };
+
+export type CreateProtocolMutationVariables = Exact<{
+  input: CreateProtocolInput;
+}>;
+
+
+export type CreateProtocolMutation = { __typename?: 'Mutation', createProtocol: { __typename?: 'Protocol', id: string } };
+
+export type UpdateProtocolMutationVariables = Exact<{
+  input: UpdateProtocolInput;
+}>;
+
+
+export type UpdateProtocolMutation = { __typename?: 'Mutation', updateProtocol: { __typename?: 'Protocol', id: string } };
+
+export type DeleteProtocolMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteProtocolMutation = { __typename?: 'Mutation', deleteProtocol: boolean };
+
+export type CreateTaskMutationVariables = Exact<{
+  input: CreateTaskInput;
+}>;
+
+
+export type CreateTaskMutation = { __typename?: 'Mutation', createTask: { __typename?: 'Task', id: string } };
+
+export type UpdateTaskMutationVariables = Exact<{
+  input: UpdateTaskInput;
+}>;
+
+
+export type UpdateTaskMutation = { __typename?: 'Mutation', updateTask: { __typename?: 'Task', id: string } };
+
+export type MoveTaskMutationVariables = Exact<{
+  input: MoveTaskInput;
+}>;
+
+
+export type MoveTaskMutation = { __typename?: 'Mutation', moveTask: { __typename?: 'Task', id: string, status: TaskStatus, sortOrder: number } };
+
+export type DeleteTaskMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteTaskMutation = { __typename?: 'Mutation', deleteTask: boolean };
+
+export type CreateProjectTemplateMutationVariables = Exact<{
+  input: CreateProjectTemplateInput;
+}>;
+
+
+export type CreateProjectTemplateMutation = { __typename?: 'Mutation', createProjectTemplate: { __typename?: 'ProjectTemplate', id: string } };
+
+export type UpdateProjectTemplateMutationVariables = Exact<{
+  input: UpdateProjectTemplateInput;
+}>;
+
+
+export type UpdateProjectTemplateMutation = { __typename?: 'Mutation', updateProjectTemplate: { __typename?: 'ProjectTemplate', id: string } };
+
+export type DeleteProjectTemplateMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteProjectTemplateMutation = { __typename?: 'Mutation', deleteProjectTemplate: boolean };
+
+export type CreatePersonalTaskMutationVariables = Exact<{
+  input: CreateTaskInput;
+}>;
+
+
+export type CreatePersonalTaskMutation = { __typename?: 'Mutation', createTask: { __typename?: 'Task', id: string } };
+
+export type UpdatePersonalTaskMutationVariables = Exact<{
+  input: UpdateTaskInput;
+}>;
+
+
+export type UpdatePersonalTaskMutation = { __typename?: 'Mutation', updateTask: { __typename?: 'Task', id: string } };
+
+export type ReorderMyTasksMutationVariables = Exact<{
+  orderedTaskIds: Array<Scalars['ID']['input']> | Scalars['ID']['input'];
+}>;
+
+
+export type ReorderMyTasksMutation = { __typename?: 'Mutation', reorderMyTasks: boolean };
+
+export type SaveProjectAsTemplateMutationVariables = Exact<{
+  input: SaveProjectAsTemplateInput;
+}>;
+
+
+export type SaveProjectAsTemplateMutation = { __typename?: 'Mutation', saveProjectAsTemplate: { __typename?: 'ProjectTemplate', id: string } };
+
+export type UpdateProjectMutationVariables = Exact<{
+  input: UpdateProjectInput;
+}>;
+
+
+export type UpdateProjectMutation = { __typename?: 'Mutation', updateProject: { __typename?: 'Project', id: string } };
+
+export type UpdateTaskStatusMutationVariables = Exact<{
+  input: UpdateTaskInput;
+}>;
+
+
+export type UpdateTaskStatusMutation = { __typename?: 'Mutation', updateTask: { __typename?: 'Task', id: string, status: TaskStatus } };
+
 export type GetRecordKeepingSettingsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -5174,6 +5999,40 @@ export const OrganizationDocument = {"kind":"Document","definitions":[{"kind":"O
 export const GetOrganizationsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetOrganizations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"organizations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"subdomain"}},{"kind":"Field","name":{"kind":"Name","value":"domain"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}}]}}]}}]} as unknown as DocumentNode<GetOrganizationsQuery, GetOrganizationsQueryVariables>;
 export const RemoveOrganizationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RemoveOrganization"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"removeOrganization"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<RemoveOrganizationMutation, RemoveOrganizationMutationVariables>;
 export const UpdateOrganizationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateOrganization"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"updateOrganizationInput"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateOrganizationInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateOrganization"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"updateOrganizationInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"updateOrganizationInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"subdomain"}}]}}]}}]} as unknown as DocumentNode<UpdateOrganizationMutation, UpdateOrganizationMutationVariables>;
+export const ArchiveProjectDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ArchiveProject"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"archived"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"archiveProject"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"archived"},"value":{"kind":"Variable","name":{"kind":"Name","value":"archived"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"isArchived"}}]}}]}}]} as unknown as DocumentNode<ArchiveProjectMutation, ArchiveProjectMutationVariables>;
+export const CreateProjectFromTemplateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateProjectFromTemplate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateProjectFromTemplateInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createProjectFromTemplate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateProjectFromTemplateMutation, CreateProjectFromTemplateMutationVariables>;
+export const CreateProjectDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateProject"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateProjectInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createProject"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateProjectMutation, CreateProjectMutationVariables>;
+export const CreateTasksFromProtocolDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateTasksFromProtocol"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateTasksFromProtocolInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createTasksFromProtocol"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateTasksFromProtocolMutation, CreateTasksFromProtocolMutationVariables>;
+export const DeleteProjectDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteProject"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteProject"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteProjectMutation, DeleteProjectMutationVariables>;
+export const MyTasksDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"MyTasks"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"myTasks"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}},{"kind":"Field","name":{"kind":"Name","value":"dueDate"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"project"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"protocol"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}},{"kind":"Field","name":{"kind":"Name","value":"assignees"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"membershipId"}},{"kind":"Field","name":{"kind":"Name","value":"membership"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}},{"kind":"Field","name":{"kind":"Name","value":"userEmail"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"email"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<MyTasksQuery, MyTasksQueryVariables>;
+export const MembershipsByOrgIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"MembershipsByOrgId"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"organizationId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"membershipsByOrgId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"organizationId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"organizationId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"isSuperAdmin"}}]}},{"kind":"Field","name":{"kind":"Name","value":"userEmail"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"email"}}]}}]}}]}}]} as unknown as DocumentNode<MembershipsByOrgIdQuery, MembershipsByOrgIdQueryVariables>;
+export const TasksByProjectDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TasksByProject"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"projectId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"tasksByProject"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"projectId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"projectId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}},{"kind":"Field","name":{"kind":"Name","value":"dueDate"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"protocol"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}},{"kind":"Field","name":{"kind":"Name","value":"assignees"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"membershipId"}},{"kind":"Field","name":{"kind":"Name","value":"membership"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}},{"kind":"Field","name":{"kind":"Name","value":"userEmail"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"email"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<TasksByProjectQuery, TasksByProjectQueryVariables>;
+export const ProjectByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ProjectById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"projectById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"isArchived"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"members"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"membership"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}},{"kind":"Field","name":{"kind":"Name","value":"userEmail"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"email"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<ProjectByIdQuery, ProjectByIdQueryVariables>;
+export const MyProjectsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"MyProjects"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"myProjects"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"isArchived"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<MyProjectsQuery, MyProjectsQueryVariables>;
+export const TasksByProtocolDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TasksByProtocol"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"protocolId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"tasksByProtocol"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"protocolId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"protocolId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}},{"kind":"Field","name":{"kind":"Name","value":"dueDate"}},{"kind":"Field","name":{"kind":"Name","value":"project"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}},{"kind":"Field","name":{"kind":"Name","value":"assignees"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"membershipId"}},{"kind":"Field","name":{"kind":"Name","value":"membership"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}},{"kind":"Field","name":{"kind":"Name","value":"userEmail"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"email"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<TasksByProtocolQuery, TasksByProtocolQueryVariables>;
+export const ProtocolByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ProtocolById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"protocolById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"meetingDate"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"projectId"}},{"kind":"Field","name":{"kind":"Name","value":"externalParticipants"}},{"kind":"Field","name":{"kind":"Name","value":"createdByMembershipId"}},{"kind":"Field","name":{"kind":"Name","value":"createdBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"userId"}}]}},{"kind":"Field","name":{"kind":"Name","value":"project"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}},{"kind":"Field","name":{"kind":"Name","value":"participants"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"membershipId"}},{"kind":"Field","name":{"kind":"Name","value":"membership"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}},{"kind":"Field","name":{"kind":"Name","value":"userEmail"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"email"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"sections"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agendaItems"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"no"}},{"kind":"Field","name":{"kind":"Name","value":"topic"}},{"kind":"Field","name":{"kind":"Name","value":"goal"}}]}},{"kind":"Field","name":{"kind":"Name","value":"decisions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"topic"}},{"kind":"Field","name":{"kind":"Name","value":"decision"}},{"kind":"Field","name":{"kind":"Name","value":"responsible"}},{"kind":"Field","name":{"kind":"Name","value":"dueDate"}}]}},{"kind":"Field","name":{"kind":"Name","value":"communications"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"topic"}},{"kind":"Field","name":{"kind":"Name","value":"audience"}},{"kind":"Field","name":{"kind":"Name","value":"responsible"}},{"kind":"Field","name":{"kind":"Name","value":"channel"}},{"kind":"Field","name":{"kind":"Name","value":"dueDate"}}]}},{"kind":"Field","name":{"kind":"Name","value":"infoPoints"}},{"kind":"Field","name":{"kind":"Name","value":"challenges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"topic"}},{"kind":"Field","name":{"kind":"Name","value":"challenge"}},{"kind":"Field","name":{"kind":"Name","value":"supportNeeded"}}]}},{"kind":"Field","name":{"kind":"Name","value":"openPoints"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"topic"}},{"kind":"Field","name":{"kind":"Name","value":"nextStep"}},{"kind":"Field","name":{"kind":"Name","value":"forNextMeeting"}}]}}]}}]}}]}}]} as unknown as DocumentNode<ProtocolByIdQuery, ProtocolByIdQueryVariables>;
+export const ProtocolsByOrgDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ProtocolsByOrg"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"protocolsByOrg"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"meetingDate"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"project"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]}}]}}]} as unknown as DocumentNode<ProtocolsByOrgQuery, ProtocolsByOrgQueryVariables>;
+export const ProjectTemplateByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ProjectTemplateById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"projectTemplateById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"tasks"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"dueOffsetDays"}}]}}]}}]}}]} as unknown as DocumentNode<ProjectTemplateByIdQuery, ProjectTemplateByIdQueryVariables>;
+export const ProjectTemplatesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ProjectTemplates"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"projectTemplates"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<ProjectTemplatesQuery, ProjectTemplatesQueryVariables>;
+export const AddProjectMemberDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AddProjectMember"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AddProjectMemberInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"addProjectMember"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<AddProjectMemberMutation, AddProjectMemberMutationVariables>;
+export const UpdateProjectMemberRoleDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateProjectMemberRole"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateProjectMemberRoleInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateProjectMemberRole"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}}]}}]} as unknown as DocumentNode<UpdateProjectMemberRoleMutation, UpdateProjectMemberRoleMutationVariables>;
+export const RemoveProjectMemberDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RemoveProjectMember"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"removeProjectMember"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<RemoveProjectMemberMutation, RemoveProjectMemberMutationVariables>;
+export const CreateProtocolDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateProtocol"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateProtocolInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createProtocol"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateProtocolMutation, CreateProtocolMutationVariables>;
+export const UpdateProtocolDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateProtocol"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateProtocolInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateProtocol"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateProtocolMutation, UpdateProtocolMutationVariables>;
+export const DeleteProtocolDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteProtocol"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteProtocol"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteProtocolMutation, DeleteProtocolMutationVariables>;
+export const CreateTaskDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateTask"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateTaskInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createTask"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateTaskMutation, CreateTaskMutationVariables>;
+export const UpdateTaskDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateTask"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateTaskInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateTask"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateTaskMutation, UpdateTaskMutationVariables>;
+export const MoveTaskDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"MoveTask"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"MoveTaskInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"moveTask"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}}]}}]}}]} as unknown as DocumentNode<MoveTaskMutation, MoveTaskMutationVariables>;
+export const DeleteTaskDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteTask"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteTask"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteTaskMutation, DeleteTaskMutationVariables>;
+export const CreateProjectTemplateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateProjectTemplate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateProjectTemplateInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createProjectTemplate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateProjectTemplateMutation, CreateProjectTemplateMutationVariables>;
+export const UpdateProjectTemplateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateProjectTemplate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateProjectTemplateInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateProjectTemplate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateProjectTemplateMutation, UpdateProjectTemplateMutationVariables>;
+export const DeleteProjectTemplateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteProjectTemplate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteProjectTemplate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteProjectTemplateMutation, DeleteProjectTemplateMutationVariables>;
+export const CreatePersonalTaskDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreatePersonalTask"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateTaskInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createTask"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreatePersonalTaskMutation, CreatePersonalTaskMutationVariables>;
+export const UpdatePersonalTaskDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdatePersonalTask"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateTaskInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateTask"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdatePersonalTaskMutation, UpdatePersonalTaskMutationVariables>;
+export const ReorderMyTasksDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ReorderMyTasks"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderedTaskIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"reorderMyTasks"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderedTaskIds"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderedTaskIds"}}}]}]}}]} as unknown as DocumentNode<ReorderMyTasksMutation, ReorderMyTasksMutationVariables>;
+export const SaveProjectAsTemplateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SaveProjectAsTemplate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SaveProjectAsTemplateInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"saveProjectAsTemplate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<SaveProjectAsTemplateMutation, SaveProjectAsTemplateMutationVariables>;
+export const UpdateProjectDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateProject"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateProjectInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateProject"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateProjectMutation, UpdateProjectMutationVariables>;
+export const UpdateTaskStatusDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateTaskStatus"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateTaskInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateTask"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode<UpdateTaskStatusMutation, UpdateTaskStatusMutationVariables>;
 export const GetRecordKeepingSettingsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetRecordKeepingSettings"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"recordKeepingSettings"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"introducedStuckDays"}},{"kind":"Field","name":{"kind":"Name","value":"practicedStuckDays"}},{"kind":"Field","name":{"kind":"Name","value":"bigGapDays"}}]}}]}}]} as unknown as DocumentNode<GetRecordKeepingSettingsQuery, GetRecordKeepingSettingsQueryVariables>;
 export const UpdateRecordKeepingSettingsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateRecordKeepingSettings"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateRecordKeepingSettingsInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateRecordKeepingSettings"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"introducedStuckDays"}},{"kind":"Field","name":{"kind":"Name","value":"practicedStuckDays"}},{"kind":"Field","name":{"kind":"Name","value":"bigGapDays"}}]}}]}}]} as unknown as DocumentNode<UpdateRecordKeepingSettingsMutation, UpdateRecordKeepingSettingsMutationVariables>;
 export const CreateLessonRecordsBulkDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateLessonRecordsBulk"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateLessonRecordsBulkInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createLessonRecordsBulk"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"studentId"}},{"kind":"Field","name":{"kind":"Name","value":"lessonId"}},{"kind":"Field","name":{"kind":"Name","value":"recordedAt"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"note"}}]}}]}}]} as unknown as DocumentNode<CreateLessonRecordsBulkMutation, CreateLessonRecordsBulkMutationVariables>;

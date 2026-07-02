@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-import { EntityManager } from 'typeorm';
+import { getEntityManagerToken } from '@nestjs/typeorm';
 
 import { UsersResolver } from './users.resolver';
 import { UsersService } from './users.service';
@@ -17,7 +17,7 @@ describe('UsersResolver', () => {
   const tokenPayload: TokenPayload = {
     sub: 'user-1',
     orgId: 'org-1',
-    membershipId: 'mem-1',
+    membershipId: 'membership-1',
     persona: Persona.EMPLOYEE,
     roles: ['ADMIN'],
     permissions: ['EMPLOYEE_WRITE'],
@@ -39,7 +39,7 @@ describe('UsersResolver', () => {
       providers: [
         UsersResolver,
         { provide: UsersService, useValue: usersService },
-        { provide: EntityManager, useValue: em },
+        { provide: getEntityManagerToken(), useValue: em },
       ],
     })
       .overrideGuard(GqlBetterAuthGuard)
@@ -68,39 +68,58 @@ describe('UsersResolver', () => {
   });
 
   describe('authContext', () => {
-    it('surfaces the active orgId / roles / permissions from the token payload', async () => {
-      const user = { id: 'user-1' };
-      usersService.findCurrentUser.mockResolvedValue(user);
+    beforeEach(() => {
+      usersService.findCurrentUser.mockResolvedValue({ id: 'user-1' });
+    });
+
+    it('surfaces timeTrackingEnabled and isProjectMember from the DB', async () => {
+      em.query.mockImplementation((sql: string) => {
+        if (sql.includes('time_tracking_enabled')) {
+          return Promise.resolve([{ enabled: true }]);
+        }
+        return Promise.resolve([{ is_member: true }]);
+      });
 
       const result = await resolver.authContext(tokenPayload);
 
-      expect(result).toEqual({
-        user,
-        roles: ['ADMIN'],
-        permissions: ['EMPLOYEE_WRITE'],
-        orgId: 'org-1',
-        persona: Persona.EMPLOYEE,
-        isSuperAdmin: false,
-      });
+      expect(result.timeTrackingEnabled).toBe(true);
+      expect(result.isProjectMember).toBe(true);
+      // Multi-tenant isolation: both lookups must be scoped to membership + org.
+      for (const call of em.query.mock.calls) {
+        expect(call[1]).toEqual(['membership-1', 'org-1']);
+      }
     });
 
-    it('defaults roles/permissions to empty arrays without an active org', async () => {
-      const user = { id: 'user-1' };
-      usersService.findCurrentUser.mockResolvedValue(user);
+    it('defaults both flags to false when the DB has no matching rows', async () => {
+      em.query.mockResolvedValue([]);
 
+      const result = await resolver.authContext(tokenPayload);
+
+      expect(result.timeTrackingEnabled).toBe(false);
+      expect(result.isProjectMember).toBe(false);
+    });
+
+    it('skips DB lookups and returns false flags without membership/org (SuperAdmin ohne Org)', async () => {
       const result = await resolver.authContext({
         sub: 'user-1',
         isSuperAdmin: true,
       });
 
-      expect(result).toEqual({
-        user,
-        roles: [],
-        permissions: [],
-        orgId: undefined,
-        persona: undefined,
-        isSuperAdmin: true,
-      });
+      expect(result.timeTrackingEnabled).toBe(false);
+      expect(result.isProjectMember).toBe(false);
+      expect(em.query).not.toHaveBeenCalled();
+    });
+
+    it('passes token roles, permissions, persona and org through', async () => {
+      em.query.mockResolvedValue([]);
+
+      const result = await resolver.authContext(tokenPayload);
+
+      expect(result.roles).toEqual(['ADMIN']);
+      expect(result.permissions).toEqual(['EMPLOYEE_WRITE']);
+      expect(result.orgId).toBe('org-1');
+      expect(result.persona).toBe(Persona.EMPLOYEE);
+      expect(result.isSuperAdmin).toBe(false);
     });
 
     it('throws NotFoundException when the user no longer exists', async () => {

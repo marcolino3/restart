@@ -107,6 +107,10 @@ export const auth = betterAuth({
     google: {
       clientId: requireEnv('GOOGLE_AUTH_CLIENT_ID'),
       clientSecret: requireEnv('GOOGLE_AUTH_CLIENT_SECRET'),
+      // Immer die Google-Kontoauswahl erzwingen. Ohne dies meldet Google nach
+      // einem Logout stillschweigend dasselbe Konto wieder an (kein Chooser),
+      // sodass man sich nicht mit einem anderen Account einloggen kann.
+      prompt: 'select_account',
       // No redirectURI override: callback lands on backend
       // (${baseURL}/api/auth/callback/google = localhost:4001 in dev),
       // which keeps the state cookie on the same origin as where it was
@@ -183,6 +187,24 @@ export const auth = betterAuth({
       if (!email) {
         throw new APIError('UNAUTHORIZED', { message: 'No session' });
       }
+
+      // Stop-Impersonating: Während der Impersonation IST die aktive Identität
+      // der Mitarbeiter (nicht der SuperAdmin) — deshalb darf hier NICHT auf
+      // is_super_admin geprüft werden. Erlaubt ist die Rückkehr, wenn die
+      // Session eine aktive Impersonation ist (better-auth setzt
+      // session.impersonatedBy auf den ursprünglichen SuperAdmin).
+      if (ctx.path === '/admin/stop-impersonating') {
+        const impersonatedBy = session?.session?.impersonatedBy as
+          | string
+          | undefined
+          | null;
+        if (!impersonatedBy) {
+          throw new APIError('FORBIDDEN', { message: 'Not impersonating' });
+        }
+        return;
+      }
+
+      // Impersonate-User (Start): nur SuperAdmins dürfen Impersonation starten.
       const result: Array<{ is_super_admin: boolean }> = await pool
         .query(
           `SELECT u.is_super_admin

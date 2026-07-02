@@ -66,6 +66,10 @@ function RootLayoutNav() {
           options={{ headerShown: false, animation: "fade" }}
         />
         <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+        <Stack.Screen
+          name="time-entry"
+          options={{ presentation: "modal", headerShown: false }}
+        />
       </Stack>
     </ThemeProvider>
   );

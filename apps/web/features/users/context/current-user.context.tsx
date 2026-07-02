@@ -19,6 +19,10 @@ export type CurrentUser = {
   orgId?: string;
   persona?: Persona;
   isSuperAdmin: boolean;
+  // Eigenes Employee-Flag — steuert die Sichtbarkeit des Zeiterfassungs-Menüs.
+  timeTrackingEnabled: boolean;
+  // Mitglied in mindestens einem aktiven Projekt — steuert das Projekte-Menü.
+  isProjectMember: boolean;
 };
 
 const UserContext = createContext<CurrentUser | null>(null);
