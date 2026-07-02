@@ -11,16 +11,29 @@ on:
 env:
   TURBO_TELEMETRY_DISABLED: 1
 
+# Least-privilege Default — kein Job braucht mehr als Checkout-Lesezugriff.
+permissions:
+  contents: read
+
+# Bei schnell aufeinanderfolgenden Pushes auf denselben PR den veralteten Lauf
+# abbrechen. Auf main (workflow_call aus deploy-staging) ist die Gruppe über
+# run_id eindeutig — dort wird nie gecancelt, ein laufendes Deploy-Gate bleibt
+# unangetastet.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
     name: Lint, Test, Build
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: "pnpm"
@@ -35,6 +48,7 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-latest
     needs: [build]
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:17
@@ -50,11 +64,11 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: "pnpm"
@@ -118,3 +132,104 @@ jobs:
           NEXT_PUBLIC_API_URL: http://localhost:4001
           NEXT_PUBLIC_GRAPHQL_API_URL: http://localhost:4001/graphql
           BACKEND_URL: http://localhost:4001
+
+      # Traces/Screenshots/HTML-Report bei Fehlschlag hochladen — ohne sie sind
+      # CI-only-Flakes praktisch nicht debugbar.
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: playwright-artifacts
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # Drift-Check: die committeten generierten GraphQL-Types
+  # (packages/shared-types/src/) müssen zum tatsächlichen Backend-Schema
+  # passen. Bootet das Backend gegen Postgres (wie der E2E-Job), lässt den
+  # Codegen laufen und failed, wenn `git diff` Abweichungen zeigt.
+  codegen-drift:
+    name: Codegen Drift Check
+    runs-on: ubuntu-latest
+    needs: [build]
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: colibri_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      # Identisch zum E2E-Job — das Backend braucht dieselben Envs zum Booten.
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: colibri_test
+      DB_USERNAME: test
+      DB_PASSWORD: test
+      DB_SYNCHRONIZE: "false"
+      NODE_ENV: test
+      PORT: 4001
+      ALLOWED_ORIGINS: http://localhost:4000
+      JWT_ACCESS_TOKEN_SECRET: ci-test-access-secret-key
+      JWT_ACCESS_TOKEN_EXPIRATION_MS: "900000"
+      JWT_REFRESH_TOKEN_SECRET: ci-test-refresh-secret-key
+      JWT_REFRESH_TOKEN_EXPIRATION_MS: "604800000"
+      GOOGLE_AUTH_CLIENT_ID: ci-test-google-client-id
+      GOOGLE_AUTH_CLIENT_SECRET: ci-test-google-client-secret
+      GOOGLE_AUTH_REDIRECT_URI: http://localhost:4001/api/auth/google/redirect
+      AUTH_UI_REDIRECT: http://localhost:4000
+      SMTP_USER: ci-test@example.com
+      GOOGLE_MAIL_REFRESH_TOKEN: ci-test-mail-refresh-token
+      GOOGLE_CALENDAR_ID: ci-test-calendar-id
+      ORG_SETTINGS_ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Prepare better-auth schema
+        run: pnpm --filter @restart/backend run auth:migrate
+
+      - name: Build & start backend
+        run: |
+          pnpm --filter @restart/backend run build
+          nohup node apps/backend/dist/src/main.js > backend.log 2>&1 &
+          echo "Waiting for backend on :4001…"
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:4001/api/health > /dev/null; then
+              echo "Backend up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Backend did not become healthy"
+          tail -100 backend.log
+          exit 1
+
+      - name: Run codegen
+        run: pnpm --filter @restart/web run codegen
+
+      - name: Fail on drift
+        run: |
+          if ! git diff --exit-code -- packages/shared-types; then
+            echo "::error::Generated GraphQL types are out of date. Run the backend locally and execute 'pnpm --filter @restart/web codegen', then commit the result."
+            exit 1
+          fi
+          echo "::notice::Generated types match the backend schema."
