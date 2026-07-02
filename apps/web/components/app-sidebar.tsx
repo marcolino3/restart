@@ -59,8 +59,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 type Organization = {
   id: string;
-  name: string;
-  slug: string;
+  name?: string | null;
 };
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {

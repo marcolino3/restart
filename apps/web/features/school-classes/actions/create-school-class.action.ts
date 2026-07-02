@@ -40,7 +40,7 @@ export const createSchoolClassAction = async (
       : {}),
     ...(parsed.color ? { color: parsed.color } : {}),
     ...(parsed.description ? { description: parsed.description } : {}),
-    ...(parsed.maxCapacity && parsed.maxCapacity !== ""
+    ...(parsed.maxCapacity
       ? { maxCapacity: Number(parsed.maxCapacity) }
       : {}),
     ...(parsed.room ? { room: parsed.room } : {}),

@@ -22,9 +22,9 @@ export async function getOrganizationsAction() {
   try {
     const { organizations } =
       await client.request<GetOrganizationsQuery>(GetOrganizationsDocument);
-    return { success: true, data: organizations };
+    return { success: true as const, data: organizations };
   } catch (error) {
     console.error(error);
-    return { success: false, error };
+    return { success: false as const, error: String(error) };
   }
 }

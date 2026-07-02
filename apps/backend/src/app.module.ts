@@ -12,6 +12,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { DataSource, EntityManager } from 'typeorm';
 import { loggerConfig } from './logger.config';
 import { resolveSynchronize } from './database/resolve-synchronize';
+import { createMaxDepthRule } from './common/graphql/max-depth.validation-rule';
 import { AddressesModule } from './addresses/addresses.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -41,6 +42,11 @@ import { HealthModule } from './health/health.module';
 import { UploadModule } from './upload/upload.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+
+// Upper bound on GraphQL query nesting. The deepest legitimate queries in the
+// app (curriculum/team ancestor traversal, admission board with nested cards)
+// sit well under this; it exists to reject abusive deeply-nested queries.
+const MAX_QUERY_DEPTH = 12;
 
 @Module({
   imports: [
@@ -102,30 +108,36 @@ import { join } from 'path';
       },
     }),
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
-      inject: [DataSource],
+      inject: [DataSource, ConfigService],
       driver: ApolloDriver,
-      useFactory: (dataSource: DataSource) => ({
-        autoSchemaFile: true,
-        introspection: true,
-        playground: false,
-        context: ({
-          req,
-          res,
-        }: {
-          req: Request;
-          res: Response;
-          entityManager: EntityManager;
-        }) => ({
-          req,
-          res,
-          entityManager: dataSource.manager, // 💡 wichtig für deine Decorators
-          loaders: {
-            curriculumNodes: new CurriculumNodeLoaders(dataSource),
-            studentEnrollments: new StudentEnrollmentLoaders(dataSource),
-          },
-        }),
-        plugins: [ApolloServerPluginLandingPageLocalDefault()],
-      }),
+      useFactory: (dataSource: DataSource, configService: ConfigService) => {
+        const isProd = configService.get<string>('NODE_ENV') === 'production';
+        return {
+          autoSchemaFile: true,
+          // Introspection and the Apollo sandbox landing page leak the full
+          // schema and an interactive query console — dev-only.
+          introspection: !isProd,
+          playground: false,
+          validationRules: [createMaxDepthRule(MAX_QUERY_DEPTH)],
+          context: ({
+            req,
+            res,
+          }: {
+            req: Request;
+            res: Response;
+            entityManager: EntityManager;
+          }) => ({
+            req,
+            res,
+            entityManager: dataSource.manager, // 💡 wichtig für deine Decorators
+            loaders: {
+              curriculumNodes: new CurriculumNodeLoaders(dataSource),
+              studentEnrollments: new StudentEnrollmentLoaders(dataSource),
+            },
+          }),
+          plugins: isProd ? [] : [ApolloServerPluginLandingPageLocalDefault()],
+        };
+      },
     }),
 
     // Serve uploaded images under /api/uploads so they are reachable

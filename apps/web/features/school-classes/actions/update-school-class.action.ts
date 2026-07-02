@@ -32,10 +32,7 @@ export const updateSchoolClassAction = async (
     teacherIds: parsed.teacherIds ?? [],
     color: parsed.color || null,
     description: parsed.description || null,
-    maxCapacity:
-      parsed.maxCapacity && parsed.maxCapacity !== ""
-        ? Number(parsed.maxCapacity)
-        : null,
+    maxCapacity: parsed.maxCapacity ? Number(parsed.maxCapacity) : null,
     room: parsed.room || null,
   };
 
