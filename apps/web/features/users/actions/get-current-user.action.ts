@@ -30,6 +30,8 @@ type AuthContextResponse = {
       | "STUDENT"
       | "EMPLOYEE";
     isSuperAdmin: boolean;
+    timeTrackingEnabled: boolean;
+    isProjectMember: boolean;
   };
 };
 
@@ -52,6 +54,8 @@ const GetAuthContextDocument = gql`
       orgId
       persona
       isSuperAdmin
+      timeTrackingEnabled
+      isProjectMember
     }
   }
 `;
@@ -77,6 +81,8 @@ export const getCurrentUserAction = async () => {
         orgId: data.authContext.orgId,
         persona: data.authContext.persona,
         isSuperAdmin: data.authContext.isSuperAdmin,
+        timeTrackingEnabled: data.authContext.timeTrackingEnabled,
+        isProjectMember: data.authContext.isProjectMember,
       },
     };
   } catch (error) {

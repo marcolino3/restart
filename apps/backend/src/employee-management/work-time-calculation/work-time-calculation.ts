@@ -69,6 +69,45 @@ function dominantAbsence(
   }, undefined);
 }
 
+/** Vertrag, soweit für den Ferienanspruch relevant. */
+export interface VacationEntitlementContract {
+  /** inklusiv */
+  startDate: string;
+  /** inklusiv; null = offen */
+  endDate: string | null;
+  annualVacationDays: number;
+}
+
+/**
+ * Ferienanspruch pro-rata über einen Bereich (typisch: eine Periode): jeder
+ * (teil-)überlappende Vertrag trägt annualVacationDays × Überlappungstage /
+ * Bereichstage bei (colibri: Vertragstage / Schuljahrestage). Auf halbe Tage
+ * gerundet.
+ */
+export function proRataEntitlementDays(
+  contracts: VacationEntitlementContract[],
+  rangeStart: string,
+  rangeEnd: string,
+): number {
+  const start = DateTime.fromISO(rangeStart);
+  const end = DateTime.fromISO(rangeEnd);
+  const totalDays = end.diff(start, 'days').days + 1;
+  if (totalDays <= 0) return 0;
+
+  let entitlement = 0;
+  for (const c of contracts) {
+    const overlapStart = c.startDate > rangeStart ? c.startDate : rangeStart;
+    const overlapEnd =
+      c.endDate != null && c.endDate < rangeEnd ? c.endDate : rangeEnd;
+    if (overlapStart > overlapEnd) continue;
+    const overlapDays =
+      DateTime.fromISO(overlapEnd).diff(DateTime.fromISO(overlapStart), 'days')
+        .days + 1;
+    entitlement += (Number(c.annualVacationDays) * overlapDays) / totalDays;
+  }
+  return Math.round(entitlement * 2) / 2;
+}
+
 export function calculateDays(input: CalcInput): DayResult[] {
   const holidayByDate = new Map(input.holidays.map((h) => [h.date, h]));
   const vacationDates = new Set(input.vacationDays.map((v) => v.date));
@@ -132,15 +171,29 @@ export function calculateDays(input: CalcInput): DayResult[] {
       );
       result.plannedMinutes = Math.round(result.plannedMinutes * unpaidFactor);
     } else {
-      // Ferien: der Tag ist durch Ferien gedeckt (nur an Arbeitstagen).
-      if (vacationDates.has(date) && result.plannedMinutes > 0) {
+      const isVacationDay =
+        vacationDates.has(date) && result.plannedMinutes > 0;
+      const absence = dominantAbsence(absencesByDate.get(date) ?? []);
+
+      if (
+        isVacationDay &&
+        absence &&
+        absence.countsAsWorkTime &&
+        absence.isVacationCapable === false
+      ) {
+        // Krank/verunfallt in den Ferien und nicht ferienfähig: der Ferientag
+        // wird gutgeschrieben (nicht konsumiert), die Absenz deckt den Tag.
+        result.isAbsence = true;
+        result.absenceMinutes = Math.round(
+          (result.plannedMinutes * absence.percentage) / 100,
+        );
+      } else if (isVacationDay) {
+        // Ferien decken den Tag; eine gleichzeitige Absenz zählt nicht
+        // zusätzlich (keine Doppel-Anrechnung).
         result.isVacation = true;
         result.vacationMinutes = result.plannedMinutes;
-      }
-
-      // Absenz: zählt nur als Arbeitszeit, wenn die Kategorie es vorsieht.
-      const absence = dominantAbsence(absencesByDate.get(date) ?? []);
-      if (absence) {
+      } else if (absence) {
+        // Absenz: zählt nur als Arbeitszeit, wenn die Kategorie es vorsieht.
         result.isAbsence = true;
         if (absence.countsAsWorkTime) {
           result.absenceMinutes = Math.round(

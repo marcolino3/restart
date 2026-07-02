@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '@/database/database.module';
 import { TeamsModule } from '@/employee-management/teams/teams.module';
+import { TimeTrackingPeriodsModule } from '@/employee-management/time-tracking-periods/time-tracking-periods.module';
 import { BalanceRecomputeService } from './balance-recompute.service';
 import { WorkTimeBalanceService } from './work-time-balance.service';
 import { WorkTimeBalanceResolver } from './work-time-balance.resolver';
 import { TimeTrackingAccessService } from './time-tracking-access.service';
+import { TimeTrackingReconcileService } from './time-tracking-reconcile.service';
 
 /**
  * Berechnungs-Kern der Arbeitszeiterfassung: reine Engine (work-time-calculation.ts)
@@ -14,12 +16,13 @@ import { TimeTrackingAccessService } from './time-tracking-access.service';
  * berechnen.
  */
 @Module({
-  imports: [DatabaseModule, TeamsModule],
+  imports: [DatabaseModule, TeamsModule, TimeTrackingPeriodsModule],
   providers: [
     BalanceRecomputeService,
     WorkTimeBalanceService,
     WorkTimeBalanceResolver,
     TimeTrackingAccessService,
+    TimeTrackingReconcileService,
   ],
   exports: [
     BalanceRecomputeService,

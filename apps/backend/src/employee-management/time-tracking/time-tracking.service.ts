@@ -13,6 +13,7 @@ import { CreateTimeTrackingInput } from './dto/create-time-tracking.input';
 import { UpdateTimeTrackingInput } from './dto/update-time-tracking.input';
 import { BalanceRecomputeService } from '../work-time-calculation/balance-recompute.service';
 import { TimeTrackingAccessService } from '../work-time-calculation/time-tracking-access.service';
+import { TimeTrackingPeriodsService } from '../time-tracking-periods/time-tracking-periods.service';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 
 /** 'YYYY-MM-DD' (lokaler Kalendertag) aus einem Date. */
@@ -41,6 +42,7 @@ export class TimeTrackingService {
     private readonly timeTrackingRepo: Repository<TimeTracking>,
     private readonly balanceRecompute: BalanceRecomputeService,
     private readonly access: TimeTrackingAccessService,
+    private readonly periods: TimeTrackingPeriodsService,
   ) {}
 
   async create(
@@ -50,12 +52,18 @@ export class TimeTrackingService {
   ): Promise<TimeTracking> {
     await this.access.assertCanManageEmployee(user, input.employeeId);
     const startedAt = new Date(input.startedAt);
+    const entryDate = toDateString(startedAt);
+    await this.periods.assertRangeUnlocked(
+      organizationId,
+      entryDate,
+      entryDate,
+    );
     const endedAt = input.endedAt ? new Date(input.endedAt) : undefined;
     const entry = this.timeTrackingRepo.create({
       ...input,
       startedAt,
       endedAt,
-      entryDate: toDateString(startedAt),
+      entryDate,
       workMinutes: computeWorkMinutes(startedAt, endedAt, input.breakMinutes),
       source: TimeTrackingSource.MANUAL,
       organizationId,
@@ -96,11 +104,13 @@ export class TimeTrackingService {
     }
 
     const now = new Date();
+    const today = toDateString(now);
+    await this.periods.assertRangeUnlocked(organizationId, today, today);
     const entry = this.timeTrackingRepo.create({
       organizationId,
       employeeId,
       startedAt: now,
-      entryDate: toDateString(now),
+      entryDate: today,
       source: TimeTrackingSource.CLOCK,
     });
     return this.timeTrackingRepo.save(entry);
@@ -179,11 +189,25 @@ export class TimeTrackingService {
     const entry = await this.findOne(input.id, organizationId);
     await this.access.assertCanManageEmployee(user, entry.employeeId);
     const previousEntryDate = entry.entryDate;
-    const { startedAt, endedAt, ...rest } = input;
+    await this.periods.assertRangeUnlocked(
+      organizationId,
+      previousEntryDate,
+      previousEntryDate,
+    );
+    // employeeId bewusst verwerfen: ein Eintrag darf nicht auf einen anderen
+    // Mitarbeiter umgehängt werden (Access-Check lief gegen den Besitzer).
+    const { startedAt, endedAt, employeeId: _ignored, ...rest } = input;
     Object.assign(entry, rest);
     if (startedAt) {
       entry.startedAt = new Date(startedAt);
       entry.entryDate = toDateString(entry.startedAt);
+      if (entry.entryDate !== previousEntryDate) {
+        await this.periods.assertRangeUnlocked(
+          organizationId,
+          entry.entryDate,
+          entry.entryDate,
+        );
+      }
     }
     if (endedAt !== undefined) {
       entry.endedAt = endedAt ? new Date(endedAt) : undefined;
@@ -215,6 +239,11 @@ export class TimeTrackingService {
   ): Promise<boolean> {
     const entry = await this.findOne(id, organizationId);
     await this.access.assertCanManageEmployee(user, entry.employeeId);
+    await this.periods.assertRangeUnlocked(
+      organizationId,
+      entry.entryDate,
+      entry.entryDate,
+    );
     entry.isActive = false;
     await this.timeTrackingRepo.save(entry);
     await this.recompute(entry);

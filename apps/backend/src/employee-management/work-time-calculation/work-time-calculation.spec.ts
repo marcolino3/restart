@@ -1,4 +1,8 @@
-import { calculateDays, dailyPlannedMinutes } from './work-time-calculation';
+import {
+  calculateDays,
+  dailyPlannedMinutes,
+  proRataEntitlementDays,
+} from './work-time-calculation';
 import { CalcContract, CalcInput } from './work-time-calculation.types';
 
 const fullTime: CalcContract = {
@@ -37,6 +41,58 @@ describe('dailyPlannedMinutes', () => {
     };
     expect(dailyPlannedMinutes(c, 1)).toBe(600); // 25% von 2400
     expect(dailyPlannedMinutes(c, 5)).toBe(0); // Fr frei
+  });
+});
+
+describe('proRataEntitlementDays', () => {
+  const range = ['2025-08-01', '2026-07-31'] as const; // 365 Tage
+
+  it('gibt den vollen Anspruch bei durchgehendem Vertrag', () => {
+    const days = proRataEntitlementDays(
+      [{ startDate: '2024-01-01', endDate: null, annualVacationDays: 25 }],
+      ...range,
+    );
+    expect(days).toBe(25);
+  });
+
+  it('kürzt pro-rata bei unterjährigem Eintritt', () => {
+    // Eintritt 1.2.2026 → 181 von 365 Tagen ≈ 12.4 → 12.5 (halbe Tage)
+    const days = proRataEntitlementDays(
+      [{ startDate: '2026-02-01', endDate: null, annualVacationDays: 25 }],
+      ...range,
+    );
+    expect(days).toBe(12.5);
+  });
+
+  it('summiert mehrere Verträge mit unterschiedlichem Anspruch', () => {
+    // 1. Halbjahr (184 Tage) 20 Tage, 2. Halbjahr (181 Tage) 30 Tage
+    const days = proRataEntitlementDays(
+      [
+        {
+          startDate: '2025-08-01',
+          endDate: '2026-01-31',
+          annualVacationDays: 20,
+        },
+        { startDate: '2026-02-01', endDate: null, annualVacationDays: 30 },
+      ],
+      ...range,
+    );
+    // 20×184/365 + 30×181/365 = 10.08 + 14.88 = 24.96 → 25
+    expect(days).toBe(25);
+  });
+
+  it('ignoriert Verträge ausserhalb des Bereichs', () => {
+    const days = proRataEntitlementDays(
+      [
+        {
+          startDate: '2024-01-01',
+          endDate: '2025-07-31',
+          annualVacationDays: 25,
+        },
+      ],
+      ...range,
+    );
+    expect(days).toBe(0);
   });
 });
 
@@ -137,6 +193,52 @@ describe('calculateDays', () => {
     const weekDiff = days.reduce((s, d) => s + d.differenceMinutes, 0);
     expect(weekDiff).toBe(0); // Überzeit gekappt
     expect(days.some((d) => d.overtimeCapped)).toBe(true);
+  });
+
+  it('schreibt Ferientage gut, wenn eine Arbeitszeit-Absenz ohne Ferienfähigkeit überlappt', () => {
+    // Krank in den Ferien (isVacationCapable=false): Ferientag wird nicht
+    // konsumiert, die Absenz deckt den Tag.
+    const days = calculateDays(
+      baseInput({
+        vacationDays: [{ date: '2026-06-02' }],
+        absenceDays: [
+          {
+            date: '2026-06-02',
+            percentage: 100,
+            countsAsWorkTime: true,
+            isVacationCapable: false,
+          },
+        ],
+      }),
+    );
+    const tue = days[1];
+    expect(tue.isVacation).toBe(false);
+    expect(tue.vacationMinutes).toBe(0);
+    expect(tue.isAbsence).toBe(true);
+    expect(tue.absenceMinutes).toBe(504);
+    expect(tue.differenceMinutes).toBe(0);
+  });
+
+  it('konsumiert den Ferientag, wenn die überlappende Absenz ferienfähig ist', () => {
+    const days = calculateDays(
+      baseInput({
+        vacationDays: [{ date: '2026-06-02' }],
+        absenceDays: [
+          {
+            date: '2026-06-02',
+            percentage: 100,
+            countsAsWorkTime: true,
+            isVacationCapable: true,
+          },
+        ],
+      }),
+    );
+    const tue = days[1];
+    expect(tue.isVacation).toBe(true);
+    expect(tue.vacationMinutes).toBe(504);
+    // Keine Doppel-Anrechnung: Absenz zählt nicht zusätzlich.
+    expect(tue.absenceMinutes).toBe(0);
+    expect(tue.actualMinutes).toBe(504);
   });
 
   it('markiert Tage ohne Vertrag', () => {

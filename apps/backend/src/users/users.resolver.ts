@@ -41,6 +41,10 @@ export class UsersResolver {
   ): Promise<AuthContextOutput> {
     const fullUser = await this.usersService.findCurrentUser(user.sub);
     if (!fullUser) throw new NotFoundException('User not found');
+    const [timeTrackingEnabled, isProjectMember] = await Promise.all([
+      this.resolveTimeTrackingEnabled(user),
+      this.resolveIsProjectMember(user),
+    ]);
     return {
       user: fullUser,
       roles: user.roles ?? [],
@@ -48,7 +52,43 @@ export class UsersResolver {
       orgId: user.orgId,
       persona: user.persona,
       isSuperAdmin: user.isSuperAdmin ?? false,
+      timeTrackingEnabled,
+      isProjectMember,
     };
+  }
+
+  /** Own employee's time_tracking_enabled flag (false without employee record). */
+  private async resolveTimeTrackingEnabled(
+    user: TokenPayload,
+  ): Promise<boolean> {
+    if (!user.membershipId || !user.orgId) return false;
+    const rows: Array<{ enabled: boolean }> = await this.em.query(
+      `SELECT e.time_tracking_enabled AS enabled
+         FROM memberships m
+         INNER JOIN employees e ON e.id = m.employee_id
+         WHERE m.id = $1 AND m.organization_id = $2 AND e."isActive" = true
+         LIMIT 1`,
+      [user.membershipId, user.orgId],
+    );
+    return rows[0]?.enabled ?? false;
+  }
+
+  /** Whether the membership belongs to at least one active project. */
+  private async resolveIsProjectMember(user: TokenPayload): Promise<boolean> {
+    if (!user.membershipId || !user.orgId) return false;
+    const rows: Array<{ is_member: boolean }> = await this.em.query(
+      `SELECT EXISTS (
+           SELECT 1
+           FROM project_members pm
+           INNER JOIN projects p
+             ON p.id = pm.project_id AND p."isActive" = true
+           WHERE pm.membership_id = $1
+             AND pm.organization_id = $2
+             AND pm."isActive" = true
+         ) AS is_member`,
+      [user.membershipId, user.orgId],
+    );
+    return rows[0]?.is_member ?? false;
   }
 
   @Query(() => [User], { name: 'users' })
