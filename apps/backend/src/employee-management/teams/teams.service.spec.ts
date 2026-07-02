@@ -193,7 +193,11 @@ describe('TeamsService', () => {
 
       const saved = repo.save.mock.calls[0][0] as unknown as Team[];
       expect(saved).toEqual([
-        expect.objectContaining({ id: 'a', sortOrder: 0, parentId: 'newParent' }),
+        expect.objectContaining({
+          id: 'a',
+          sortOrder: 0,
+          parentId: 'newParent',
+        }),
       ]);
     });
 

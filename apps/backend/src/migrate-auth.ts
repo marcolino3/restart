@@ -42,7 +42,9 @@ async function run(): Promise<void> {
     console.log(`[migrate-auth] creating tables: ${pendingTables.join(', ')}`);
   }
   if (pendingColumns.length > 0) {
-    console.log(`[migrate-auth] adding columns on: ${pendingColumns.join(', ')}`);
+    console.log(
+      `[migrate-auth] adding columns on: ${pendingColumns.join(', ')}`,
+    );
   }
 
   await runMigrations();
