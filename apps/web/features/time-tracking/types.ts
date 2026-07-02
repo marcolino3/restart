@@ -69,6 +69,7 @@ export type MyTimeTrackingData = {
   vacation: VacationBalance | null;
   entries: TimeEntry[];
   openEntry: TimeEntry | null;
+  missingRecordDays: string[];
   fromDate: string;
   toDate: string;
 };
