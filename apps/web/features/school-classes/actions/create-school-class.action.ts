@@ -40,8 +40,10 @@ export const createSchoolClassAction = async (
       : {}),
     ...(parsed.color ? { color: parsed.color } : {}),
     ...(parsed.description ? { description: parsed.description } : {}),
-    ...(parsed.maxCapacity && parsed.maxCapacity !== ""
-      ? { maxCapacity: Number(parsed.maxCapacity) }
+    // maxCapacity is `number | "" | undefined` after parsing; the schema
+    // already coerces numeric strings, so only a real number is sent.
+    ...(typeof parsed.maxCapacity === "number"
+      ? { maxCapacity: parsed.maxCapacity }
       : {}),
     ...(parsed.room ? { room: parsed.room } : {}),
   };

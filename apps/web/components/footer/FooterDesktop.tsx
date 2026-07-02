@@ -1,4 +1,3 @@
-import { NavigationTreeOutput } from "@restart/shared-types/graphql";
 import { cn } from "@/lib/utils";
 import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
@@ -9,8 +8,18 @@ import { ContactInfos } from "./contact-infos";
 import Image from "next/image";
 import { QuickLinks } from "./quicklinks";
 
+// Local shape of the navigation tree consumed by the footer. The backend
+// (Periparto reference) exposed this as `NavigationTreeOutput`, which does not
+// exist in @restart/shared-types (yet).
+export interface FooterNavigationItem {
+  id: string;
+  name?: string | null;
+  categorySlug?: string | null;
+  children?: FooterNavigationItem[] | null;
+}
+
 interface Props {
-  navigation: NavigationTreeOutput[];
+  navigation: FooterNavigationItem[];
 }
 
 export const FooterDesktop = async ({ navigation }: Props) => {
