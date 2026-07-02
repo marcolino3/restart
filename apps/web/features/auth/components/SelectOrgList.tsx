@@ -7,7 +7,7 @@ import { useState } from "react";
 
 type Organization = {
   id: string;
-  name: string;
+  name?: string | null;
   subdomain?: string | null;
 };
 

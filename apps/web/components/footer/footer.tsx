@@ -1,9 +1,8 @@
-import { NavigationTreeOutput } from "@restart/shared-types/graphql";
-import { FooterDesktop } from "./FooterDesktop";
+import { FooterDesktop, FooterNavigationItem } from "./FooterDesktop";
 import { FooterMobile } from "./FooterMobile";
 
 interface Props {
-  navigation: NavigationTreeOutput[];
+  navigation: FooterNavigationItem[];
 }
 
 export const Footer = ({ navigation }: Props) => {

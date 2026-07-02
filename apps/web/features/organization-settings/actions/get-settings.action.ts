@@ -37,9 +37,15 @@ export async function getOrganizationSettingsAction(organizationId: string) {
       GetOrganizationSettingsDocument,
       { organizationId }
     );
-    return { success: true, data: organizationSettings as OrganizationSetting[] };
+    return {
+      success: true as const,
+      data: organizationSettings as OrganizationSetting[],
+    };
   } catch (error) {
     console.error(error);
-    return { success: false, error };
+    return {
+      success: false as const,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }

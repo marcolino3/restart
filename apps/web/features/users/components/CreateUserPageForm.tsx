@@ -29,7 +29,7 @@ import {
 
 interface Organization {
   id: string;
-  name: string;
+  name?: string | null;
 }
 
 interface CreateUserPageFormProps {
@@ -83,7 +83,7 @@ export default function CreateUserPageForm({
 
   const organizationOptions = organizations.map((org) => ({
     value: org.id,
-    label: org.name,
+    label: org.name ?? org.id,
   }));
 
   const roleOptions = roles.map((role) => ({

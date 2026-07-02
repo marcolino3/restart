@@ -24,8 +24,7 @@ import {
 
 type Organization = {
   id: string;
-  name: string;
-  slug: string;
+  name?: string | null;
 };
 
 interface OrgSwitcherProps {
@@ -88,7 +87,7 @@ export function OrgSwitcher({ organizations, currentOrgId }: OrgSwitcherProps) {
                   {organizations.map((org) => (
                     <CommandItem
                       key={org.id}
-                      value={org.name}
+                      value={org.name ?? org.id}
                       onSelect={() => handleSelect(org.id)}
                     >
                       <span>{org.name}</span>
