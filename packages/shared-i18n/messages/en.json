@@ -2033,6 +2033,7 @@
     "difference": "Difference",
     "vacationDaysUsedShort": "Vacation used",
     "noReportAccess": "You are not allowed to view the report.",
+    "timeTrackingNotEnabled": "Time tracking is not enabled for you. Contact your administration if you want to use it.",
     "selectEmployee": "Select employee",
     "settings": "Settings",
     "holidays": "Holidays",

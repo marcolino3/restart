@@ -46,6 +46,11 @@ import {
 } from "@/components/ui/sidebar";
 import { ROUTES } from "@/constants/routes";
 import {
+  canSeeProjects,
+  canSeeTimeReport,
+  canSeeTimeTracking,
+} from "@/lib/navigation/nav-visibility";
+import {
   isAdminPersona,
   usePermissions,
   useUser,
@@ -66,13 +71,10 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
   const locale = useLocale();
   const t = useTranslations("SiteHeader");
   const tCommon = useTranslations("Common");
-  const { hasPermission, hasRole } = usePermissions();
+  const { hasPermission } = usePermissions();
   const user = useUser();
 
   const isSuperAdmin = user?.isSuperAdmin ?? false;
-  // Zeit-Auswertung: Admin/HR/Office-Persona ODER Teamleiter.
-  const canSeeTimeReport =
-    isSuperAdmin || isAdminPersona(user?.persona) || hasRole("TEAM_LEAD");
   // SuperAdmin always sees the org-admin block; otherwise persona must be
   // one of ADMIN/HR/OFFICE. Teacher/Student/Parent/Employee personas are
   // hard-blocked from the navOrg sidebar group regardless of permissions.
@@ -90,12 +92,18 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
         url: "#",
         icon: IconDashboard,
       },
-      {
-        title: t("timeTracking"),
-        url: ROUTES.admin.myTimeTracking(locale),
-        icon: IconListDetails,
-      },
-      ...(canSeeTimeReport
+      // Zeiterfassung: nur wenn das Feature am eigenen Employee aktiviert ist.
+      ...(canSeeTimeTracking(user)
+        ? [
+            {
+              title: t("timeTracking"),
+              url: ROUTES.admin.myTimeTracking(locale),
+              icon: IconListDetails,
+            },
+          ]
+        : []),
+      // Zeitauswertung: ADMIN/HR + Teamleiter (OFFICE ausgeschlossen).
+      ...(canSeeTimeReport(user)
         ? [
             {
               title: t("timeTrackingReport"),
@@ -145,29 +153,26 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
             },
           ]
         : []),
-      ...(hasPermission("PROJECT_READ")
+      // Projekte: nur wenn Mitglied in mindestens einem Projekt (oder Manage-All).
+      ...(canSeeProjects(user)
         ? [
             {
               title: t("projects"),
               url: ROUTES.admin.projects(locale),
               icon: IconLayoutKanban,
             },
-            {
-              title: t("myTasks"),
-              url: ROUTES.admin.myTasks(locale),
-              icon: IconListCheck,
-            },
           ]
         : []),
-      ...(hasPermission("PROTOCOL_READ")
-        ? [
-            {
-              title: t("protocols"),
-              url: ROUTES.admin.protocols(locale),
-              icon: IconFileText,
-            },
-          ]
-        : []),
+      {
+        title: t("myTasks"),
+        url: ROUTES.admin.myTasks(locale),
+        icon: IconListCheck,
+      },
+      {
+        title: t("protocols"),
+        url: ROUTES.admin.protocols(locale),
+        icon: IconFileText,
+      },
     ],
     navOrg: canSeeOrgAdmin
       ? [

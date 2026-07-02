@@ -2033,6 +2033,7 @@
     "difference": "Differenz",
     "vacationDaysUsedShort": "Ferien bezogen",
     "noReportAccess": "Keine Berechtigung für die Auswertung.",
+    "timeTrackingNotEnabled": "Die Zeiterfassung ist für dich nicht aktiviert. Wende dich an deine Administration, wenn du sie nutzen möchtest.",
     "selectEmployee": "Mitarbeiter wählen",
     "settings": "Einstellungen",
     "holidays": "Feiertage",
