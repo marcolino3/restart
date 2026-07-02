@@ -136,10 +136,11 @@ folgende Flow gilt **immer** — auch bei vermeintlich kleinen Änderungen.
   E2E via `pnpm --filter @restart/e2e test:e2e`).
 
 ### CI-Gates (müssen grün sein — werden erzwungen)
-Bei jedem PR und vor jedem Deploy:
-- `CI`: lint · typecheck (über `build` mit tsc) · unit-tests · build · **Playwright E2E**
+Bei jedem PR und vor jedem Deploy (8 Required Checks auf `main`, strict = Branch muss up to date sein):
+- `CI`: lint (check-only, ohne `--fix`) · typecheck (Backend/Web über `build` mit tsc, Mobile über den `typecheck`-Turbo-Task) · unit-tests · build · **Playwright E2E** · **Codegen-Drift-Check** (bootet Backend gegen Postgres, `git diff` auf generierte Types in `packages/shared-types`)
 - `CodeQL` (security-extended + quality)
-- `Security`: gitleaks (Secrets) · Trivy (Vulns/Misconfig) · pnpm-audit — **blockierend**
+- `Security`: gitleaks (Secrets) · Trivy (Vulns/Misconfig) · pnpm-audit · **Dependency Review** (blockt neue Dependencies mit Vulns ≥ high) — **blockierend**
+- CI-Postgres ist auf **16-alpine** gepinnt (= Zielversion in Prod/Compose). NICHT auf neuere Major heben, ohne die Deployment-DB mitzuziehen — PG-versionsspezifisches Verhalten (z.B. Enum-Regel 55P04) muss in CI reproduzierbar sein.
 - Schlägt ein Gate fehl → **kein Build, kein Deploy**.
 
 ### Security (Dauer-Anforderung)
@@ -163,6 +164,10 @@ Bei jedem PR und vor jedem Deploy:
   Pipeline: resolve → validate → Migrate → Deploy → Smoke → Rollback-on-fail → `:production-current` → Audit-Log.
 - **DB-Schema** nur über TypeORM-Migrationen (`apps/backend/src/migrations/`), nie via `synchronize` in Staging/Prod.
   Migrationen forward-only / expand-contract (Rollback rollt Schema nicht zurück).
+  Migrationsläufe laufen überall mit `migrationsTransactionMode: 'each'` (Boot, CLI, migrate.ts) —
+  Default `'all'` bricht auf frischer PG16-DB mit 55P04 ab, wenn eine Migration einen zuvor per
+  `ALTER TYPE … ADD VALUE` ergänzten Enum-Wert nutzt. Bei `ADD VALUE`-Migrationen: Wert-Nutzung
+  in eine SEPARATE Migration legen.
 
 ### Definition of Done
 Eine Änderung ist erst fertig, wenn: Tests geschrieben & grün · lint/build/E2E grün ·

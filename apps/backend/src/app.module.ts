@@ -98,6 +98,10 @@ import { join } from 'path';
           migrationsRun,
           migrations: [__dirname + '/migrations/*.{ts,js}'],
           migrationsTableName: 'typeorm_migrations',
+          // 'each' statt Default 'all': siehe data-source.ts — PG16 lehnt die
+          // Nutzung frisch ergänzter Enum-Werte in derselben Transaktion ab
+          // (55P04); der Boot-Migrationslauf auf frischer DB bricht sonst ab.
+          migrationsTransactionMode: 'each',
         };
       },
     }),
