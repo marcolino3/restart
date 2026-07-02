@@ -97,6 +97,15 @@ describe('TimeTrackingAccessService', () => {
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
+    it('verweigert OFFICE-Persona Zugriff auf fremde Daten (nur ADMIN/HR)', async () => {
+      await expect(
+        service.assertCanViewEmployee(
+          callerUser({ persona: Persona.OFFICE }),
+          'OTHER',
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
     it('ignoriert reine MEMBER-Teamrollen (kein Lead → kein Zugriff)', async () => {
       teamAccess.getEffectiveTeamRoles.mockResolvedValue([
         { teamId: 'T1', role: TeamMemberRole.MEMBER },
@@ -128,6 +137,15 @@ describe('TimeTrackingAccessService', () => {
         ),
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
+
+    it('verweigert OFFICE-Persona das Verwalten fremder Daten', async () => {
+      await expect(
+        service.assertCanManageEmployee(
+          callerUser({ persona: Persona.OFFICE }),
+          'OTHER',
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
   });
 
   describe('resolveOverviewScope', () => {
@@ -140,6 +158,15 @@ describe('TimeTrackingAccessService', () => {
       ).resolves.toBeNull();
       await expect(
         service.resolveOverviewScope(callerUser(), 'org-1'),
+      ).resolves.toEqual([]);
+    });
+
+    it('OFFICE ohne Lead-Rolle → [] (kein Zugriff auf die Auswertung)', async () => {
+      await expect(
+        service.resolveOverviewScope(
+          callerUser({ persona: Persona.OFFICE }),
+          'org-1',
+        ),
       ).resolves.toEqual([]);
     });
 

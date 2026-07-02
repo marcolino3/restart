@@ -43,6 +43,13 @@ export interface CalcAbsenceDay {
   percentage: number;
   /** Kategorie zählt als Arbeitszeit (Krankheit/Unfall) → keine Sollzeit-Lücke. */
   countsAsWorkTime: boolean;
+  /**
+   * War die Person trotz Absenz ferienfähig? Bei `false` (z. B. krank in den
+   * Ferien) wird ein überlappender Ferientag nicht konsumiert, sondern durch
+   * die Absenz gedeckt (Ferien-Gutschrift, vgl. colibri `isFitForVacation`).
+   * Fehlend = `true`.
+   */
+  isVacationCapable?: boolean;
 }
 
 /** Ein bereits auf einen einzelnen Tag aufgelöster Ferientag. */

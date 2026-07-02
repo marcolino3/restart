@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
 import { LoggerModule } from 'nestjs-pino';
@@ -53,6 +54,9 @@ import { join } from 'path';
     // Drei Buckets: short (Burst-Schutz), medium (Normal), long (sustained).
     // Login/Register/Reset bekommen via @Throttle()-Decorator strengere Limits
     // direkt am Controller (siehe SPEC für TODO im Auth-Modul).
+    // Zeitgesteuerte Jobs (nächtlicher Ledger-Reconcile der Zeiterfassung).
+    ScheduleModule.forRoot(),
+
     ThrottlerModule.forRoot([
       { name: 'short', ttl: 1000, limit: 10 },
       { name: 'medium', ttl: 10_000, limit: 50 },

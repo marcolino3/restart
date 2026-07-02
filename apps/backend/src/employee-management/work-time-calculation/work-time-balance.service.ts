@@ -7,12 +7,31 @@ import { EmployeeContract } from '@/employee-management/employee-contracts/entit
 import { EmployeePeriodOpeningBalance } from '@/employee-management/time-tracking-periods/entities/employee-period-opening-balance.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { TimeTrackingAccessService } from './time-tracking-access.service';
+import { proRataEntitlementDays } from './work-time-calculation';
 import {
   EmployeeWorkTimeOverviewRow,
   MonthlyWorkTimeSummary,
   VacationBalance,
   WorkTimeBalance,
 } from './dto/work-time-balance.output';
+
+/** 'YYYY-MM-DD' von heute (Serverzeit). */
+function todayIso(): string {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+/**
+ * Arbeitszeit-Salden werden nur bis heute gerechnet (colibri-Regel): künftige
+ * Tage im Ledger (z. B. durch Wochen-Expansion einer künftigen Absenz
+ * materialisiert) dürfen nicht als Minuszeit in den Saldo einfliessen.
+ */
+function clampToToday(to: string): string {
+  const today = todayIso();
+  return to > today ? today : to;
+}
 
 interface LedgerSumRow {
   planned_minutes: number;
@@ -156,9 +175,10 @@ export class WorkTimeBalanceService {
     from: string,
     to: string,
   ): Promise<WorkTimeBalance> {
+    const effectiveTo = clampToToday(to);
     const [sum, paidOvertimeMinutes, openingWorkMinutes] = await Promise.all([
-      this.ledgerSum(orgId, employeeId, from, to),
-      this.paidOvertimeMinutes(orgId, employeeId, from, to),
+      this.ledgerSum(orgId, employeeId, from, effectiveTo),
+      this.paidOvertimeMinutes(orgId, employeeId, from, effectiveTo),
       this.openingWorkMinutes(orgId, employeeId, from),
     ]);
     const netBalanceMinutes =
@@ -207,7 +227,7 @@ export class WorkTimeBalanceService {
         WHERE organization_id = $1 AND employee_id = $2 AND date BETWEEN $3 AND $4
         GROUP BY 1, 2
         ORDER BY 1, 2`,
-      [user.orgId, employeeId, from, to],
+      [user.orgId, employeeId, from, clampToToday(to)],
     );
     return rows.map((r) => ({
       year: r.year,
@@ -230,17 +250,26 @@ export class WorkTimeBalanceService {
     const sum = await this.ledgerSum(orgId, employeeId, from, to);
     const openingDays = await this.openingVacationDays(orgId, employeeId, from);
 
-    // Anspruch (v1): annualVacationDays des am Bereichsende gültigen Vertrags.
-    const contract = await this.contractRepo
+    // Anspruch pro-rata: jeder im Bereich (teil-)aktive Vertrag trägt
+    // annualVacationDays × Überlappungstage / Bereichstage bei (colibri-Regel:
+    // Vertragstage / Periodentage). Ergebnis auf halbe Tage gerundet.
+    const contracts = await this.contractRepo
       .createQueryBuilder('c')
       .where('c.organization_id = :orgId', { orgId })
       .andWhere('c.employee_id = :employeeId', { employeeId })
       .andWhere('c."isActive" = true')
       .andWhere('c.start_date <= :to', { to })
-      .andWhere('(c.end_date IS NULL OR c.end_date >= :to)', { to })
-      .orderBy('c.start_date', 'DESC')
-      .getOne();
-    const entitlementDays = contract?.annualVacationDays ?? 0;
+      .andWhere('(c.end_date IS NULL OR c.end_date >= :from)', { from })
+      .getMany();
+    const entitlementDays = proRataEntitlementDays(
+      contracts.map((c) => ({
+        startDate: c.startDate,
+        endDate: c.endDate ?? null,
+        annualVacationDays: c.annualVacationDays ?? 0,
+      })),
+      from,
+      to,
+    );
     const usedDays = sum.vacation_days_used;
     return {
       entitlementDays,
@@ -291,7 +320,7 @@ export class WorkTimeBalanceService {
     const employeeIds = await this.access.resolveOverviewScope(user, orgId);
     if (employeeIds !== null && employeeIds.length === 0) return [];
 
-    const params: unknown[] = [orgId, from, to];
+    const params: unknown[] = [orgId, from, clampToToday(to)];
     let scopeClause = '';
     if (employeeIds !== null) {
       params.push(employeeIds);

@@ -142,6 +142,10 @@ export class BalanceRecomputeService {
           date,
           percentage: a.percentage ?? 100,
           countsAsWorkTime: a.absenceCategory?.countsAsWorkTime ?? false,
+          isVacationCapable:
+            a.isVacationCapable ??
+            a.absenceCategory?.defaultIsVacationCapable ??
+            true,
         });
       }
     }
