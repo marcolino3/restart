@@ -214,9 +214,34 @@ type Documents = {
     "\n  mutation ReorderTeams($input: ReorderTeamsInput!) {\n    reorderTeams(input: $input) {\n      id\n      name\n      sortOrder\n      parentId\n    }\n  }\n": typeof types.ReorderTeamsDocument,
     "\n  mutation UpdateTeamMemberRole($input: UpdateTeamMemberInput!) {\n    updateTeamMember(input: $input) {\n      id\n      role\n    }\n  }\n": typeof types.UpdateTeamMemberRoleDocument,
     "\n  mutation UpdateTeam($input: UpdateTeamInput!) {\n    updateTeam(input: $input) {\n      id\n      name\n    }\n  }\n": typeof types.UpdateTeamDocument,
+    "\n  query MyEmployeeId {\n    myEmployeeId\n  }\n": typeof types.MyEmployeeIdDocument,
+    "\n  query MyTimeTracking($employeeId: ID!, $from: String!, $to: String!) {\n    myWorkTimeBalance(from: $from, to: $to) {\n      employeeId\n      fromDate\n      toDate\n      plannedMinutes\n      workedMinutes\n      vacationMinutes\n      absenceMinutes\n      actualMinutes\n      differenceMinutes\n      openingWorkMinutes\n      paidOvertimeMinutes\n      netBalanceMinutes\n      vacationDaysUsed\n      absenceDaysCount\n    }\n    myVacationBalance(from: $from, to: $to) {\n      entitlementDays\n      openingDays\n      usedDays\n      remainingDays\n    }\n    myMissingRecordDays(from: $from, to: $to)\n    timeTrackingByEmployeeId(employeeId: $employeeId, from: $from, to: $to) {\n      id\n      startedAt\n      endedAt\n      breakMinutes\n      workMinutes\n      notes\n      entryDate\n      source\n    }\n  }\n": typeof types.MyTimeTrackingDocument,
+    "\n  query TeamOverview($from: String!, $to: String!) {\n    teamWorkTimeOverview(from: $from, to: $to) {\n      employeeId\n      employeeName\n      netBalanceMinutes\n      vacationDaysUsed\n    }\n  }\n": typeof types.TeamOverviewDocument,
+    "\n  query EmployeeReport(\n    $employeeId: ID!\n    $from: String!\n    $to: String!\n    $locale: String\n  ) {\n    employeeMissingRecordDays(employeeId: $employeeId, from: $from, to: $to)\n    employeeAbsenceCategorySummary(\n      employeeId: $employeeId\n      from: $from\n      to: $to\n      locale: $locale\n    ) {\n      categoryId\n      name\n      color\n      fullDays\n      partialDays\n      totalDays\n    }\n    employeeWorkTimeBalance(employeeId: $employeeId, from: $from, to: $to) {\n      employeeId\n      plannedMinutes\n      workedMinutes\n      vacationMinutes\n      absenceMinutes\n      differenceMinutes\n      openingWorkMinutes\n      paidOvertimeMinutes\n      netBalanceMinutes\n      vacationDaysUsed\n      absenceDaysCount\n    }\n    employeeVacationBalance(employeeId: $employeeId, from: $from, to: $to) {\n      entitlementDays\n      openingDays\n      usedDays\n      remainingDays\n    }\n    employeeMonthlyWorkTime(employeeId: $employeeId, from: $from, to: $to) {\n      year\n      month\n      plannedMinutes\n      actualMinutes\n      differenceMinutes\n    }\n  }\n": typeof types.EmployeeReportDocument,
+    "\n  mutation CreateTimeTracking($input: CreateTimeTrackingInput!) {\n    createTimeTracking(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateTimeTrackingDocument,
+    "\n  mutation UpdateTimeTracking($input: UpdateTimeTrackingInput!) {\n    updateTimeTracking(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateTimeTrackingDocument,
+    "\n  mutation DeleteTimeTracking($id: ID!) {\n    deleteTimeTracking(id: $id)\n  }\n": typeof types.DeleteTimeTrackingDocument,
+    "\n  mutation StartTimeTracking($employeeId: ID!) {\n    startTimeTracking(employeeId: $employeeId) {\n      id\n    }\n  }\n": typeof types.StartTimeTrackingDocument,
+    "\n  mutation StopTimeTracking($employeeId: ID!) {\n    stopTimeTracking(employeeId: $employeeId) {\n      id\n    }\n  }\n": typeof types.StopTimeTrackingDocument,
+    "\n  query EmployeePeriodOpeningBalances($employeeId: ID!) {\n    employeePeriodOpeningBalances(employeeId: $employeeId) {\n      id\n      employeeId\n      periodId\n      openingWorkMinutes\n      openingVacationDays\n    }\n  }\n": typeof types.EmployeePeriodOpeningBalancesDocument,
+    "\n  mutation UpsertEmployeePeriodOpeningBalance(\n    $input: UpsertEmployeePeriodOpeningBalanceInput!\n  ) {\n    upsertEmployeePeriodOpeningBalance(input: $input) {\n      id\n    }\n  }\n": typeof types.UpsertEmployeePeriodOpeningBalanceDocument,
+    "\n  mutation DeleteEmployeePeriodOpeningBalance($id: ID!) {\n    deleteEmployeePeriodOpeningBalance(id: $id)\n  }\n": typeof types.DeleteEmployeePeriodOpeningBalanceDocument,
+    "\n  query EmployeePaidOvertime($employeeId: ID!) {\n    employeePaidOvertime(employeeId: $employeeId) {\n      id\n      employeeId\n      date\n      minutes\n      note\n    }\n  }\n": typeof types.EmployeePaidOvertimeDocument,
+    "\n  mutation CreateEmployeePaidOvertime($input: CreateEmployeePaidOvertimeInput!) {\n    createEmployeePaidOvertime(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateEmployeePaidOvertimeDocument,
+    "\n  mutation UpdateEmployeePaidOvertime($input: UpdateEmployeePaidOvertimeInput!) {\n    updateEmployeePaidOvertime(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateEmployeePaidOvertimeDocument,
+    "\n  mutation DeleteEmployeePaidOvertime($id: ID!) {\n    deleteEmployeePaidOvertime(id: $id)\n  }\n": typeof types.DeleteEmployeePaidOvertimeDocument,
+    "\n  query TimeTrackingPeriods {\n    timeTrackingPeriods {\n      id\n      label\n      startDate\n      endDate\n      status\n    }\n  }\n": typeof types.TimeTrackingPeriodsDocument,
+    "\n  mutation EnsureTimeTrackingPeriod($date: String!) {\n    ensureTimeTrackingPeriod(date: $date) {\n      id\n      label\n    }\n  }\n": typeof types.EnsureTimeTrackingPeriodDocument,
+    "\n  mutation SetTimeTrackingPeriodStatus(\n    $id: ID!\n    $status: TimeTrackingPeriodStatus!\n  ) {\n    setTimeTrackingPeriodStatus(id: $id, status: $status) {\n      id\n      status\n    }\n  }\n": typeof types.SetTimeTrackingPeriodStatusDocument,
+    "\n  query TimeTrackingSettings {\n    holidays {\n      id\n      date\n      name\n      paidPercentage\n      canton\n    }\n    companyVacations {\n      id\n      name\n      startDate\n      endDate\n      appliesToAll\n    }\n  }\n": typeof types.TimeTrackingSettingsDocument,
+    "\n  mutation CreateHoliday($input: CreateHolidayInput!) {\n    createHoliday(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateHolidayDocument,
+    "\n  mutation DeleteHoliday($id: ID!) {\n    deleteHoliday(id: $id)\n  }\n": typeof types.DeleteHolidayDocument,
+    "\n  mutation CreateCompanyVacation($input: CreateCompanyVacationInput!) {\n    createCompanyVacation(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateCompanyVacationDocument,
+    "\n  mutation DeleteCompanyVacation($id: ID!) {\n    deleteCompanyVacation(id: $id)\n  }\n": typeof types.DeleteCompanyVacationDocument,
     "\n  mutation AddUserEmail($userId: ID!, $email: String!) {\n    addUserEmail(userId: $userId, email: $email) {\n      id\n      email\n      isPrimary\n      isVerified\n    }\n  }\n": typeof types.AddUserEmailDocument,
+    "\n  mutation ChangeUserEmail($input: ChangeUserEmailInput!) {\n    changeUserEmail(input: $input) {\n      id\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n      }\n    }\n  }\n": typeof types.ChangeUserEmailDocument,
     "\n  mutation CreateUser($createUserInput: CreateUserInput!) {\n    createUser(createUserInput: $createUserInput) {\n      id\n    }\n  }\n": typeof types.CreateUserDocument,
-    "\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        userEmails {\n          id\n          email\n          isPrimary\n          isVerified\n        }\n      }\n      roles\n      permissions\n      orgId\n      persona\n      isSuperAdmin\n    }\n  }\n": typeof types.GetAuthContextDocument,
+    "\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        userEmails {\n          id\n          email\n          isPrimary\n          isVerified\n        }\n      }\n      roles\n      permissions\n      orgId\n      persona\n      isSuperAdmin\n      timeTrackingEnabled\n      isProjectMember\n    }\n  }\n": typeof types.GetAuthContextDocument,
     "\n  query RolesByOrganizationId($organizationId: ID!) {\n    rolesByOrganizationId(organizationId: $organizationId) {\n      id\n      name\n      systemCode\n      isSystem\n    }\n  }\n": typeof types.RolesByOrganizationIdDocument,
     "\n  query GetUserById($id: ID!) {\n    user(id: $id) {\n      id\n      title\n      firstName\n      lastName\n      username\n      dateOfBirth\n      isSuperAdmin\n      isActive\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n      }\n      memberships {\n        id\n        persona\n        contactPhone\n        userEmailId\n        organization {\n          id\n          name\n        }\n      }\n    }\n  }\n": typeof types.GetUserByIdDocument,
     "\n  query GetUsers {\n    users {\n      id\n      title\n      firstName\n      lastName\n      isSuperAdmin\n      isActive\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n        authAccounts {\n          id\n          provider\n        }\n      }\n      memberships {\n        id\n        persona\n        organization {\n          id\n          name\n        }\n      }\n    }\n  }\n": typeof types.GetUsersDocument,
@@ -425,9 +450,34 @@ const documents: Documents = {
     "\n  mutation ReorderTeams($input: ReorderTeamsInput!) {\n    reorderTeams(input: $input) {\n      id\n      name\n      sortOrder\n      parentId\n    }\n  }\n": types.ReorderTeamsDocument,
     "\n  mutation UpdateTeamMemberRole($input: UpdateTeamMemberInput!) {\n    updateTeamMember(input: $input) {\n      id\n      role\n    }\n  }\n": types.UpdateTeamMemberRoleDocument,
     "\n  mutation UpdateTeam($input: UpdateTeamInput!) {\n    updateTeam(input: $input) {\n      id\n      name\n    }\n  }\n": types.UpdateTeamDocument,
+    "\n  query MyEmployeeId {\n    myEmployeeId\n  }\n": types.MyEmployeeIdDocument,
+    "\n  query MyTimeTracking($employeeId: ID!, $from: String!, $to: String!) {\n    myWorkTimeBalance(from: $from, to: $to) {\n      employeeId\n      fromDate\n      toDate\n      plannedMinutes\n      workedMinutes\n      vacationMinutes\n      absenceMinutes\n      actualMinutes\n      differenceMinutes\n      openingWorkMinutes\n      paidOvertimeMinutes\n      netBalanceMinutes\n      vacationDaysUsed\n      absenceDaysCount\n    }\n    myVacationBalance(from: $from, to: $to) {\n      entitlementDays\n      openingDays\n      usedDays\n      remainingDays\n    }\n    myMissingRecordDays(from: $from, to: $to)\n    timeTrackingByEmployeeId(employeeId: $employeeId, from: $from, to: $to) {\n      id\n      startedAt\n      endedAt\n      breakMinutes\n      workMinutes\n      notes\n      entryDate\n      source\n    }\n  }\n": types.MyTimeTrackingDocument,
+    "\n  query TeamOverview($from: String!, $to: String!) {\n    teamWorkTimeOverview(from: $from, to: $to) {\n      employeeId\n      employeeName\n      netBalanceMinutes\n      vacationDaysUsed\n    }\n  }\n": types.TeamOverviewDocument,
+    "\n  query EmployeeReport(\n    $employeeId: ID!\n    $from: String!\n    $to: String!\n    $locale: String\n  ) {\n    employeeMissingRecordDays(employeeId: $employeeId, from: $from, to: $to)\n    employeeAbsenceCategorySummary(\n      employeeId: $employeeId\n      from: $from\n      to: $to\n      locale: $locale\n    ) {\n      categoryId\n      name\n      color\n      fullDays\n      partialDays\n      totalDays\n    }\n    employeeWorkTimeBalance(employeeId: $employeeId, from: $from, to: $to) {\n      employeeId\n      plannedMinutes\n      workedMinutes\n      vacationMinutes\n      absenceMinutes\n      differenceMinutes\n      openingWorkMinutes\n      paidOvertimeMinutes\n      netBalanceMinutes\n      vacationDaysUsed\n      absenceDaysCount\n    }\n    employeeVacationBalance(employeeId: $employeeId, from: $from, to: $to) {\n      entitlementDays\n      openingDays\n      usedDays\n      remainingDays\n    }\n    employeeMonthlyWorkTime(employeeId: $employeeId, from: $from, to: $to) {\n      year\n      month\n      plannedMinutes\n      actualMinutes\n      differenceMinutes\n    }\n  }\n": types.EmployeeReportDocument,
+    "\n  mutation CreateTimeTracking($input: CreateTimeTrackingInput!) {\n    createTimeTracking(input: $input) {\n      id\n    }\n  }\n": types.CreateTimeTrackingDocument,
+    "\n  mutation UpdateTimeTracking($input: UpdateTimeTrackingInput!) {\n    updateTimeTracking(input: $input) {\n      id\n    }\n  }\n": types.UpdateTimeTrackingDocument,
+    "\n  mutation DeleteTimeTracking($id: ID!) {\n    deleteTimeTracking(id: $id)\n  }\n": types.DeleteTimeTrackingDocument,
+    "\n  mutation StartTimeTracking($employeeId: ID!) {\n    startTimeTracking(employeeId: $employeeId) {\n      id\n    }\n  }\n": types.StartTimeTrackingDocument,
+    "\n  mutation StopTimeTracking($employeeId: ID!) {\n    stopTimeTracking(employeeId: $employeeId) {\n      id\n    }\n  }\n": types.StopTimeTrackingDocument,
+    "\n  query EmployeePeriodOpeningBalances($employeeId: ID!) {\n    employeePeriodOpeningBalances(employeeId: $employeeId) {\n      id\n      employeeId\n      periodId\n      openingWorkMinutes\n      openingVacationDays\n    }\n  }\n": types.EmployeePeriodOpeningBalancesDocument,
+    "\n  mutation UpsertEmployeePeriodOpeningBalance(\n    $input: UpsertEmployeePeriodOpeningBalanceInput!\n  ) {\n    upsertEmployeePeriodOpeningBalance(input: $input) {\n      id\n    }\n  }\n": types.UpsertEmployeePeriodOpeningBalanceDocument,
+    "\n  mutation DeleteEmployeePeriodOpeningBalance($id: ID!) {\n    deleteEmployeePeriodOpeningBalance(id: $id)\n  }\n": types.DeleteEmployeePeriodOpeningBalanceDocument,
+    "\n  query EmployeePaidOvertime($employeeId: ID!) {\n    employeePaidOvertime(employeeId: $employeeId) {\n      id\n      employeeId\n      date\n      minutes\n      note\n    }\n  }\n": types.EmployeePaidOvertimeDocument,
+    "\n  mutation CreateEmployeePaidOvertime($input: CreateEmployeePaidOvertimeInput!) {\n    createEmployeePaidOvertime(input: $input) {\n      id\n    }\n  }\n": types.CreateEmployeePaidOvertimeDocument,
+    "\n  mutation UpdateEmployeePaidOvertime($input: UpdateEmployeePaidOvertimeInput!) {\n    updateEmployeePaidOvertime(input: $input) {\n      id\n    }\n  }\n": types.UpdateEmployeePaidOvertimeDocument,
+    "\n  mutation DeleteEmployeePaidOvertime($id: ID!) {\n    deleteEmployeePaidOvertime(id: $id)\n  }\n": types.DeleteEmployeePaidOvertimeDocument,
+    "\n  query TimeTrackingPeriods {\n    timeTrackingPeriods {\n      id\n      label\n      startDate\n      endDate\n      status\n    }\n  }\n": types.TimeTrackingPeriodsDocument,
+    "\n  mutation EnsureTimeTrackingPeriod($date: String!) {\n    ensureTimeTrackingPeriod(date: $date) {\n      id\n      label\n    }\n  }\n": types.EnsureTimeTrackingPeriodDocument,
+    "\n  mutation SetTimeTrackingPeriodStatus(\n    $id: ID!\n    $status: TimeTrackingPeriodStatus!\n  ) {\n    setTimeTrackingPeriodStatus(id: $id, status: $status) {\n      id\n      status\n    }\n  }\n": types.SetTimeTrackingPeriodStatusDocument,
+    "\n  query TimeTrackingSettings {\n    holidays {\n      id\n      date\n      name\n      paidPercentage\n      canton\n    }\n    companyVacations {\n      id\n      name\n      startDate\n      endDate\n      appliesToAll\n    }\n  }\n": types.TimeTrackingSettingsDocument,
+    "\n  mutation CreateHoliday($input: CreateHolidayInput!) {\n    createHoliday(input: $input) {\n      id\n    }\n  }\n": types.CreateHolidayDocument,
+    "\n  mutation DeleteHoliday($id: ID!) {\n    deleteHoliday(id: $id)\n  }\n": types.DeleteHolidayDocument,
+    "\n  mutation CreateCompanyVacation($input: CreateCompanyVacationInput!) {\n    createCompanyVacation(input: $input) {\n      id\n    }\n  }\n": types.CreateCompanyVacationDocument,
+    "\n  mutation DeleteCompanyVacation($id: ID!) {\n    deleteCompanyVacation(id: $id)\n  }\n": types.DeleteCompanyVacationDocument,
     "\n  mutation AddUserEmail($userId: ID!, $email: String!) {\n    addUserEmail(userId: $userId, email: $email) {\n      id\n      email\n      isPrimary\n      isVerified\n    }\n  }\n": types.AddUserEmailDocument,
+    "\n  mutation ChangeUserEmail($input: ChangeUserEmailInput!) {\n    changeUserEmail(input: $input) {\n      id\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n      }\n    }\n  }\n": types.ChangeUserEmailDocument,
     "\n  mutation CreateUser($createUserInput: CreateUserInput!) {\n    createUser(createUserInput: $createUserInput) {\n      id\n    }\n  }\n": types.CreateUserDocument,
-    "\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        userEmails {\n          id\n          email\n          isPrimary\n          isVerified\n        }\n      }\n      roles\n      permissions\n      orgId\n      persona\n      isSuperAdmin\n    }\n  }\n": types.GetAuthContextDocument,
+    "\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        userEmails {\n          id\n          email\n          isPrimary\n          isVerified\n        }\n      }\n      roles\n      permissions\n      orgId\n      persona\n      isSuperAdmin\n      timeTrackingEnabled\n      isProjectMember\n    }\n  }\n": types.GetAuthContextDocument,
     "\n  query RolesByOrganizationId($organizationId: ID!) {\n    rolesByOrganizationId(organizationId: $organizationId) {\n      id\n      name\n      systemCode\n      isSystem\n    }\n  }\n": types.RolesByOrganizationIdDocument,
     "\n  query GetUserById($id: ID!) {\n    user(id: $id) {\n      id\n      title\n      firstName\n      lastName\n      username\n      dateOfBirth\n      isSuperAdmin\n      isActive\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n      }\n      memberships {\n        id\n        persona\n        contactPhone\n        userEmailId\n        organization {\n          id\n          name\n        }\n      }\n    }\n  }\n": types.GetUserByIdDocument,
     "\n  query GetUsers {\n    users {\n      id\n      title\n      firstName\n      lastName\n      isSuperAdmin\n      isActive\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n        authAccounts {\n          id\n          provider\n        }\n      }\n      memberships {\n        id\n        persona\n        organization {\n          id\n          name\n        }\n      }\n    }\n  }\n": types.GetUsersDocument,
@@ -1253,7 +1303,107 @@ export function graphql(source: "\n  mutation UpdateTeam($input: UpdateTeamInput
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n  query MyEmployeeId {\n    myEmployeeId\n  }\n"): (typeof documents)["\n  query MyEmployeeId {\n    myEmployeeId\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query MyTimeTracking($employeeId: ID!, $from: String!, $to: String!) {\n    myWorkTimeBalance(from: $from, to: $to) {\n      employeeId\n      fromDate\n      toDate\n      plannedMinutes\n      workedMinutes\n      vacationMinutes\n      absenceMinutes\n      actualMinutes\n      differenceMinutes\n      openingWorkMinutes\n      paidOvertimeMinutes\n      netBalanceMinutes\n      vacationDaysUsed\n      absenceDaysCount\n    }\n    myVacationBalance(from: $from, to: $to) {\n      entitlementDays\n      openingDays\n      usedDays\n      remainingDays\n    }\n    myMissingRecordDays(from: $from, to: $to)\n    timeTrackingByEmployeeId(employeeId: $employeeId, from: $from, to: $to) {\n      id\n      startedAt\n      endedAt\n      breakMinutes\n      workMinutes\n      notes\n      entryDate\n      source\n    }\n  }\n"): (typeof documents)["\n  query MyTimeTracking($employeeId: ID!, $from: String!, $to: String!) {\n    myWorkTimeBalance(from: $from, to: $to) {\n      employeeId\n      fromDate\n      toDate\n      plannedMinutes\n      workedMinutes\n      vacationMinutes\n      absenceMinutes\n      actualMinutes\n      differenceMinutes\n      openingWorkMinutes\n      paidOvertimeMinutes\n      netBalanceMinutes\n      vacationDaysUsed\n      absenceDaysCount\n    }\n    myVacationBalance(from: $from, to: $to) {\n      entitlementDays\n      openingDays\n      usedDays\n      remainingDays\n    }\n    myMissingRecordDays(from: $from, to: $to)\n    timeTrackingByEmployeeId(employeeId: $employeeId, from: $from, to: $to) {\n      id\n      startedAt\n      endedAt\n      breakMinutes\n      workMinutes\n      notes\n      entryDate\n      source\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query TeamOverview($from: String!, $to: String!) {\n    teamWorkTimeOverview(from: $from, to: $to) {\n      employeeId\n      employeeName\n      netBalanceMinutes\n      vacationDaysUsed\n    }\n  }\n"): (typeof documents)["\n  query TeamOverview($from: String!, $to: String!) {\n    teamWorkTimeOverview(from: $from, to: $to) {\n      employeeId\n      employeeName\n      netBalanceMinutes\n      vacationDaysUsed\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query EmployeeReport(\n    $employeeId: ID!\n    $from: String!\n    $to: String!\n    $locale: String\n  ) {\n    employeeMissingRecordDays(employeeId: $employeeId, from: $from, to: $to)\n    employeeAbsenceCategorySummary(\n      employeeId: $employeeId\n      from: $from\n      to: $to\n      locale: $locale\n    ) {\n      categoryId\n      name\n      color\n      fullDays\n      partialDays\n      totalDays\n    }\n    employeeWorkTimeBalance(employeeId: $employeeId, from: $from, to: $to) {\n      employeeId\n      plannedMinutes\n      workedMinutes\n      vacationMinutes\n      absenceMinutes\n      differenceMinutes\n      openingWorkMinutes\n      paidOvertimeMinutes\n      netBalanceMinutes\n      vacationDaysUsed\n      absenceDaysCount\n    }\n    employeeVacationBalance(employeeId: $employeeId, from: $from, to: $to) {\n      entitlementDays\n      openingDays\n      usedDays\n      remainingDays\n    }\n    employeeMonthlyWorkTime(employeeId: $employeeId, from: $from, to: $to) {\n      year\n      month\n      plannedMinutes\n      actualMinutes\n      differenceMinutes\n    }\n  }\n"): (typeof documents)["\n  query EmployeeReport(\n    $employeeId: ID!\n    $from: String!\n    $to: String!\n    $locale: String\n  ) {\n    employeeMissingRecordDays(employeeId: $employeeId, from: $from, to: $to)\n    employeeAbsenceCategorySummary(\n      employeeId: $employeeId\n      from: $from\n      to: $to\n      locale: $locale\n    ) {\n      categoryId\n      name\n      color\n      fullDays\n      partialDays\n      totalDays\n    }\n    employeeWorkTimeBalance(employeeId: $employeeId, from: $from, to: $to) {\n      employeeId\n      plannedMinutes\n      workedMinutes\n      vacationMinutes\n      absenceMinutes\n      differenceMinutes\n      openingWorkMinutes\n      paidOvertimeMinutes\n      netBalanceMinutes\n      vacationDaysUsed\n      absenceDaysCount\n    }\n    employeeVacationBalance(employeeId: $employeeId, from: $from, to: $to) {\n      entitlementDays\n      openingDays\n      usedDays\n      remainingDays\n    }\n    employeeMonthlyWorkTime(employeeId: $employeeId, from: $from, to: $to) {\n      year\n      month\n      plannedMinutes\n      actualMinutes\n      differenceMinutes\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation CreateTimeTracking($input: CreateTimeTrackingInput!) {\n    createTimeTracking(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateTimeTracking($input: CreateTimeTrackingInput!) {\n    createTimeTracking(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateTimeTracking($input: UpdateTimeTrackingInput!) {\n    updateTimeTracking(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateTimeTracking($input: UpdateTimeTrackingInput!) {\n    updateTimeTracking(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation DeleteTimeTracking($id: ID!) {\n    deleteTimeTracking(id: $id)\n  }\n"): (typeof documents)["\n  mutation DeleteTimeTracking($id: ID!) {\n    deleteTimeTracking(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation StartTimeTracking($employeeId: ID!) {\n    startTimeTracking(employeeId: $employeeId) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation StartTimeTracking($employeeId: ID!) {\n    startTimeTracking(employeeId: $employeeId) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation StopTimeTracking($employeeId: ID!) {\n    stopTimeTracking(employeeId: $employeeId) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation StopTimeTracking($employeeId: ID!) {\n    stopTimeTracking(employeeId: $employeeId) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query EmployeePeriodOpeningBalances($employeeId: ID!) {\n    employeePeriodOpeningBalances(employeeId: $employeeId) {\n      id\n      employeeId\n      periodId\n      openingWorkMinutes\n      openingVacationDays\n    }\n  }\n"): (typeof documents)["\n  query EmployeePeriodOpeningBalances($employeeId: ID!) {\n    employeePeriodOpeningBalances(employeeId: $employeeId) {\n      id\n      employeeId\n      periodId\n      openingWorkMinutes\n      openingVacationDays\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpsertEmployeePeriodOpeningBalance(\n    $input: UpsertEmployeePeriodOpeningBalanceInput!\n  ) {\n    upsertEmployeePeriodOpeningBalance(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpsertEmployeePeriodOpeningBalance(\n    $input: UpsertEmployeePeriodOpeningBalanceInput!\n  ) {\n    upsertEmployeePeriodOpeningBalance(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation DeleteEmployeePeriodOpeningBalance($id: ID!) {\n    deleteEmployeePeriodOpeningBalance(id: $id)\n  }\n"): (typeof documents)["\n  mutation DeleteEmployeePeriodOpeningBalance($id: ID!) {\n    deleteEmployeePeriodOpeningBalance(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query EmployeePaidOvertime($employeeId: ID!) {\n    employeePaidOvertime(employeeId: $employeeId) {\n      id\n      employeeId\n      date\n      minutes\n      note\n    }\n  }\n"): (typeof documents)["\n  query EmployeePaidOvertime($employeeId: ID!) {\n    employeePaidOvertime(employeeId: $employeeId) {\n      id\n      employeeId\n      date\n      minutes\n      note\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation CreateEmployeePaidOvertime($input: CreateEmployeePaidOvertimeInput!) {\n    createEmployeePaidOvertime(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateEmployeePaidOvertime($input: CreateEmployeePaidOvertimeInput!) {\n    createEmployeePaidOvertime(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateEmployeePaidOvertime($input: UpdateEmployeePaidOvertimeInput!) {\n    updateEmployeePaidOvertime(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateEmployeePaidOvertime($input: UpdateEmployeePaidOvertimeInput!) {\n    updateEmployeePaidOvertime(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation DeleteEmployeePaidOvertime($id: ID!) {\n    deleteEmployeePaidOvertime(id: $id)\n  }\n"): (typeof documents)["\n  mutation DeleteEmployeePaidOvertime($id: ID!) {\n    deleteEmployeePaidOvertime(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query TimeTrackingPeriods {\n    timeTrackingPeriods {\n      id\n      label\n      startDate\n      endDate\n      status\n    }\n  }\n"): (typeof documents)["\n  query TimeTrackingPeriods {\n    timeTrackingPeriods {\n      id\n      label\n      startDate\n      endDate\n      status\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation EnsureTimeTrackingPeriod($date: String!) {\n    ensureTimeTrackingPeriod(date: $date) {\n      id\n      label\n    }\n  }\n"): (typeof documents)["\n  mutation EnsureTimeTrackingPeriod($date: String!) {\n    ensureTimeTrackingPeriod(date: $date) {\n      id\n      label\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation SetTimeTrackingPeriodStatus(\n    $id: ID!\n    $status: TimeTrackingPeriodStatus!\n  ) {\n    setTimeTrackingPeriodStatus(id: $id, status: $status) {\n      id\n      status\n    }\n  }\n"): (typeof documents)["\n  mutation SetTimeTrackingPeriodStatus(\n    $id: ID!\n    $status: TimeTrackingPeriodStatus!\n  ) {\n    setTimeTrackingPeriodStatus(id: $id, status: $status) {\n      id\n      status\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query TimeTrackingSettings {\n    holidays {\n      id\n      date\n      name\n      paidPercentage\n      canton\n    }\n    companyVacations {\n      id\n      name\n      startDate\n      endDate\n      appliesToAll\n    }\n  }\n"): (typeof documents)["\n  query TimeTrackingSettings {\n    holidays {\n      id\n      date\n      name\n      paidPercentage\n      canton\n    }\n    companyVacations {\n      id\n      name\n      startDate\n      endDate\n      appliesToAll\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation CreateHoliday($input: CreateHolidayInput!) {\n    createHoliday(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateHoliday($input: CreateHolidayInput!) {\n    createHoliday(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation DeleteHoliday($id: ID!) {\n    deleteHoliday(id: $id)\n  }\n"): (typeof documents)["\n  mutation DeleteHoliday($id: ID!) {\n    deleteHoliday(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation CreateCompanyVacation($input: CreateCompanyVacationInput!) {\n    createCompanyVacation(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateCompanyVacation($input: CreateCompanyVacationInput!) {\n    createCompanyVacation(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation DeleteCompanyVacation($id: ID!) {\n    deleteCompanyVacation(id: $id)\n  }\n"): (typeof documents)["\n  mutation DeleteCompanyVacation($id: ID!) {\n    deleteCompanyVacation(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n  mutation AddUserEmail($userId: ID!, $email: String!) {\n    addUserEmail(userId: $userId, email: $email) {\n      id\n      email\n      isPrimary\n      isVerified\n    }\n  }\n"): (typeof documents)["\n  mutation AddUserEmail($userId: ID!, $email: String!) {\n    addUserEmail(userId: $userId, email: $email) {\n      id\n      email\n      isPrimary\n      isVerified\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ChangeUserEmail($input: ChangeUserEmailInput!) {\n    changeUserEmail(input: $input) {\n      id\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n      }\n    }\n  }\n"): (typeof documents)["\n  mutation ChangeUserEmail($input: ChangeUserEmailInput!) {\n    changeUserEmail(input: $input) {\n      id\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n      }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -1261,7 +1411,7 @@ export function graphql(source: "\n  mutation CreateUser($createUserInput: Creat
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        userEmails {\n          id\n          email\n          isPrimary\n          isVerified\n        }\n      }\n      roles\n      permissions\n      orgId\n      persona\n      isSuperAdmin\n    }\n  }\n"): (typeof documents)["\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        userEmails {\n          id\n          email\n          isPrimary\n          isVerified\n        }\n      }\n      roles\n      permissions\n      orgId\n      persona\n      isSuperAdmin\n    }\n  }\n"];
+export function graphql(source: "\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        userEmails {\n          id\n          email\n          isPrimary\n          isVerified\n        }\n      }\n      roles\n      permissions\n      orgId\n      persona\n      isSuperAdmin\n      timeTrackingEnabled\n      isProjectMember\n    }\n  }\n"): (typeof documents)["\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        userEmails {\n          id\n          email\n          isPrimary\n          isVerified\n        }\n      }\n      roles\n      permissions\n      orgId\n      persona\n      isSuperAdmin\n      timeTrackingEnabled\n      isProjectMember\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

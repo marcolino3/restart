@@ -9,9 +9,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  *
  * Forward-only / expand (see CLAUDE.md); down path exists for local dev.
  */
-export class CreateProjectTemplates1779201800002
-  implements MigrationInterface
-{
+export class CreateProjectTemplates1779201800002 implements MigrationInterface {
   name = 'CreateProjectTemplates1779201800002';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

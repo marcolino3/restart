@@ -108,7 +108,10 @@ const PERMISSION_CATALOG: Array<{
     name: 'Projekt-Vorlagen verwalten',
   },
   { code: PermissionCode.PROTOCOL_READ, name: 'Protokolle lesen' },
-  { code: PermissionCode.PROTOCOL_WRITE, name: 'Protokolle erstellen/bearbeiten' },
+  {
+    code: PermissionCode.PROTOCOL_WRITE,
+    name: 'Protokolle erstellen/bearbeiten',
+  },
   { code: PermissionCode.PROTOCOL_DELETE, name: 'Protokolle loeschen' },
 ];
 

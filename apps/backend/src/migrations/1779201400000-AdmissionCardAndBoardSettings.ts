@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AdmissionCardAndBoardSettings1779201400000
-  implements MigrationInterface
-{
+export class AdmissionCardAndBoardSettings1779201400000 implements MigrationInterface {
   name = 'AdmissionCardAndBoardSettings1779201400000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

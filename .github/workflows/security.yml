@@ -19,20 +19,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Blockt PRs, die Dependencies mit bekannten Vulnerabilities (>= high)
+  # einführen — prüft den Diff der Manifeste, nicht den ganzen Baum
+  # (Komplement zu pnpm audit, das den Ist-Zustand prüft).
+  dependency-review:
+    name: Dependency Review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure
+
   gitleaks:
     name: Secret Scanning (gitleaks)
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           # Full history damit gitleaks auch alte Commits scannt.
           # Auf großen Repos später auf depth: 50 begrenzen, hier reicht 0.
           fetch-depth: 0
 
       - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Free / OSS-Mode: kein Lizenz-Token nötig.
@@ -45,14 +61,14 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       # Stufe 1 — REPORT: CRITICAL + HIGH ins GitHub-Security-Tab.
       # Blockt NICHT (exit-code 0), damit bekannte, nicht ohne Breaking-Change
       # fixbare transitive HIGH-CVEs (z. B. immutable < 4.3.8 via graphql-codegen,
       # siehe MEMORY.md) den Build nicht dauerhaft rot färben. Sichtbar bleiben sie.
       - name: Run Trivy filesystem scan (report)
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: "fs"
           scan-ref: "."
@@ -69,7 +85,7 @@ jobs:
 
       - name: Upload Trivy scan results to GitHub Security
         if: always()
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a # v4
         with:
           sarif_file: "trivy-fs-results.sarif"
           category: "trivy-fs"
@@ -78,7 +94,7 @@ jobs:
       # Nutzt den lokalen Trivy-Cache aus Stufe 1 (kein erneuter DB-Download).
       # Akzeptierte Findings via .trivyignore (CVE-ID + Begründung) ausblenden.
       - name: Trivy filesystem scan (CRITICAL gate)
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: "fs"
           scan-ref: "."
@@ -94,9 +110,9 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: "pnpm"

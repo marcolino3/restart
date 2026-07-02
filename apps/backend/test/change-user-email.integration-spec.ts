@@ -63,7 +63,9 @@ describe('UsersService.changeUserEmail (Integration)', () => {
     return user;
   }
 
-  const authEmail = async (id: string): Promise<{ email: string; verified: boolean }> => {
+  const authEmail = async (
+    id: string,
+  ): Promise<{ email: string; verified: boolean }> => {
     const rows: Array<{ email: string; emailVerified: boolean }> =
       await dataSource.query(
         'SELECT email, "emailVerified" FROM "user" WHERE id = $1',

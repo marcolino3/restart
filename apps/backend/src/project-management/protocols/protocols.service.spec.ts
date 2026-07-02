@@ -76,7 +76,11 @@ describe('ProtocolsService', () => {
 
   beforeEach(async () => {
     protocolsRepo = { find: jest.fn(), findOne: jest.fn(), save: jest.fn() };
-    participantsRepo = { delete: jest.fn(), save: jest.fn(), findOne: jest.fn() };
+    participantsRepo = {
+      delete: jest.fn(),
+      save: jest.fn(),
+      findOne: jest.fn(),
+    };
     membershipsRepo = { find: jest.fn() };
     access = { assertCanView: jest.fn().mockResolvedValue({ id: 'p1' }) };
     dataSource = { transaction: jest.fn() };
