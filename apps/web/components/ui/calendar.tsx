@@ -126,7 +126,12 @@ function Calendar({
           return (
             <div
               data-slot="calendar"
-              ref={rootRef}
+              // react-day-picker's d.ts resolves a second, pnpm-hoisted copy of
+              // @types/react (pinned to ~19.1 by apps/mobile for Expo), whose
+              // Ref<T> is structurally identical but nominally incompatible
+              // with the 19.2 types used here. The assertion only bridges the
+              // duplicate-types gap; it does not change the ref's shape.
+              ref={rootRef as React.Ref<HTMLDivElement>}
               className={cn(className)}
               {...props}
             />

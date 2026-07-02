@@ -12,9 +12,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * values here (the seeder runs at app startup, in a later transaction), so this
  * is safe on PostgreSQL 12+.
  */
-export class AddAdmissionEmailPermissions1779201700000
-  implements MigrationInterface
-{
+export class AddAdmissionEmailPermissions1779201700000 implements MigrationInterface {
   name = 'AddAdmissionEmailPermissions1779201700000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

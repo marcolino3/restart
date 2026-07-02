@@ -131,23 +131,8 @@
     ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
-    "_comment_testPathIgnorePatterns": "TECH DEBT: these specs were not maintained after refactorings (removed methods like setMagicLinkToken, renamed fields, added dependencies without updating mocks). Reactivate one-by-one when touching the corresponding code. Tracked: backend-test-debt",
     "testPathIgnorePatterns": [
-      "/node_modules/",
-      "src/users/users.service.spec.ts",
-      "src/auth/auth.service.spec.ts",
-      "src/auth-accounts/auth-accounts.service.spec.ts",
-      "src/auth-accounts/auth-accounts.resolver.spec.ts",
-      "src/addresses/addresses.resolver.spec.ts",
-      "src/memberships/memberships.resolver.spec.ts",
-      "src/organizations/organizations.service.spec.ts",
-      "src/organizations/organizations.resolver.spec.ts",
-      "src/permissions/permissions.resolver.spec.ts",
-      "src/roles/roles.resolver.spec.ts",
-      "src/employee-management/employees/employees.service.spec.ts",
-      "src/employee-management/employees/employees.resolver.spec.ts",
-      "src/employee-management/employee-absences/employee-absences.resolver.spec.ts",
-      "src/employee-management/employee-absence-categories/employee-absence-categories.resolver.spec.ts"
+      "/node_modules/"
     ],
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
