@@ -15,6 +15,7 @@ import { ChangeUserEmailInput } from './dto/change-user-email.input';
 import { AuthContextOutput } from './dto/auth-context.output';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
+import { Organization } from '@/organizations/entities/organization.entity';
 
 @Resolver(() => User)
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
@@ -45,11 +46,23 @@ export class UsersResolver {
       this.resolveTimeTrackingEnabled(user),
       this.resolveIsProjectMember(user),
     ]);
+
+    // Surface the active organization's name so the frontend can show the
+    // school name in the sidebar header (multi-tenant: only the active org).
+    let orgName: string | undefined;
+    if (user.orgId) {
+      const org = await this.em.findOne(Organization, {
+        where: { id: user.orgId },
+        select: { id: true, name: true },
+      });
+      orgName = org?.name ?? undefined;
+    }
     return {
       user: fullUser,
       roles: user.roles ?? [],
       permissions: user.permissions ?? [],
       orgId: user.orgId,
+      orgName,
       persona: user.persona,
       isSuperAdmin: user.isSuperAdmin ?? false,
       timeTrackingEnabled,

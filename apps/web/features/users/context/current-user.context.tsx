@@ -17,6 +17,7 @@ export type CurrentUser = {
   roles: string[];
   permissions: string[];
   orgId?: string;
+  orgName?: string;
   persona?: Persona;
   isSuperAdmin: boolean;
   // Eigenes Employee-Flag — steuert die Sichtbarkeit des Zeiterfassungs-Menüs.

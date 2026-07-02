@@ -12,7 +12,7 @@ import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 describe('UsersResolver', () => {
   let resolver: UsersResolver;
   let usersService: Record<string, jest.Mock>;
-  let em: { query: jest.Mock };
+  let em: { query: jest.Mock; findOne: jest.Mock };
 
   const tokenPayload: TokenPayload = {
     sub: 'user-1',
@@ -33,7 +33,7 @@ describe('UsersResolver', () => {
       update: jest.fn(),
       remove: jest.fn(),
     };
-    em = { query: jest.fn() };
+    em = { query: jest.fn(), findOne: jest.fn().mockResolvedValue(null) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -107,7 +107,32 @@ describe('UsersResolver', () => {
 
       expect(result.timeTrackingEnabled).toBe(false);
       expect(result.isProjectMember).toBe(false);
+      expect(result.orgName).toBeUndefined();
       expect(em.query).not.toHaveBeenCalled();
+      expect(em.findOne).not.toHaveBeenCalled();
+    });
+
+    it('surfaces the active organization name (scoped to the active org)', async () => {
+      em.query.mockResolvedValue([]);
+      em.findOne.mockResolvedValue({ id: 'org-1', name: 'Montessori Zürich' });
+
+      const result = await resolver.authContext(tokenPayload);
+
+      expect(result.orgName).toBe('Montessori Zürich');
+      // Multi-tenant isolation: lookup must be scoped to the active org only.
+      expect(em.findOne).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ where: { id: 'org-1' } }),
+      );
+    });
+
+    it('leaves orgName undefined when the organization no longer exists', async () => {
+      em.query.mockResolvedValue([]);
+      em.findOne.mockResolvedValue(null);
+
+      const result = await resolver.authContext(tokenPayload);
+
+      expect(result.orgName).toBeUndefined();
     });
 
     it('passes token roles, permissions, persona and org through', async () => {

@@ -16,6 +16,9 @@ export class AuthContextOutput {
   @Field(() => String, { nullable: true })
   orgId?: string;
 
+  @Field(() => String, { nullable: true })
+  orgName?: string;
+
   @Field(() => Persona, { nullable: true })
   persona?: Persona;
 
