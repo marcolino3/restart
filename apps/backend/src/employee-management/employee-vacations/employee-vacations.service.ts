@@ -8,6 +8,7 @@ import { CreateEmployeeVacationInput } from './dto/create-employee-vacation.inpu
 import { UpdateEmployeeVacationInput } from './dto/update-employee-vacation.input';
 import { BalanceRecomputeService } from '../work-time-calculation/balance-recompute.service';
 import { TimeTrackingAccessService } from '../work-time-calculation/time-tracking-access.service';
+import { TimeTrackingPeriodsService } from '../time-tracking-periods/time-tracking-periods.service';
 
 @Injectable()
 export class EmployeeVacationsService {
@@ -18,6 +19,7 @@ export class EmployeeVacationsService {
     private readonly membershipRepo: Repository<Membership>,
     private readonly balanceRecompute: BalanceRecomputeService,
     private readonly access: TimeTrackingAccessService,
+    private readonly periods: TimeTrackingPeriodsService,
   ) {}
 
   async findByEmployee(
@@ -41,6 +43,11 @@ export class EmployeeVacationsService {
   ): Promise<EmployeeVacation> {
     const organizationId = user.orgId as string;
     await this.access.assertCanManageEmployee(user, input.employeeId);
+    await this.periods.assertRangeUnlocked(
+      organizationId,
+      input.startDate,
+      input.endDate,
+    );
     const membershipId = await this.resolveMembershipId(
       input.employeeId,
       organizationId,
@@ -72,9 +79,10 @@ export class EmployeeVacationsService {
     const prevEnd = entity.endDate;
     const { id: _id, employeeId: _employeeId, ...rest } = input;
     Object.assign(entity, rest);
+    const from = prevStart < entity.startDate ? prevStart : entity.startDate;
+    const to = prevEnd > entity.endDate ? prevEnd : entity.endDate;
+    await this.periods.assertRangeUnlocked(organizationId, from, to);
     const saved = await this.repo.save(entity);
-    const from = prevStart < saved.startDate ? prevStart : saved.startDate;
-    const to = prevEnd > saved.endDate ? prevEnd : saved.endDate;
     await this.balanceRecompute.recomputeRange(
       organizationId,
       saved.employeeId,
@@ -88,6 +96,11 @@ export class EmployeeVacationsService {
     const organizationId = user.orgId as string;
     const entity = await this.findOne(id, organizationId);
     await this.access.assertCanManageEmployee(user, entity.employeeId);
+    await this.periods.assertRangeUnlocked(
+      organizationId,
+      entity.startDate,
+      entity.endDate,
+    );
     entity.isActive = false;
     await this.repo.save(entity);
     await this.balanceRecompute.recomputeRange(

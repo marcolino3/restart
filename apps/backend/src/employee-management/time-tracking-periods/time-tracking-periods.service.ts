@@ -1,6 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { DateTime } from 'luxon';
 import { OrganizationSettingsService } from '@/organization-settings/organization-settings.service';
 import {
@@ -83,6 +87,32 @@ export class TimeTrackingPeriodsService {
       status: TimeTrackingPeriodStatus.OPEN,
     });
     return this.repo.save(period);
+  }
+
+  /**
+   * Wirft, wenn der Datumsbereich eine GESPERRTE Periode berührt. Von allen
+   * Schreibpfaden der Zeiterfassung (Einträge, Absenzen, Ferien) aufzurufen —
+   * zum Ändern muss ein Admin die Periode zuerst wieder öffnen.
+   */
+  async assertRangeUnlocked(
+    organizationId: string,
+    fromDate: string,
+    toDate: string,
+  ): Promise<void> {
+    const locked = await this.repo.findOne({
+      where: {
+        organizationId,
+        isActive: true,
+        status: TimeTrackingPeriodStatus.LOCKED,
+        startDate: LessThanOrEqual(toDate),
+        endDate: MoreThanOrEqual(fromDate),
+      },
+    });
+    if (locked) {
+      throw new BadRequestException(
+        `Die Abrechnungsperiode ${locked.label} ist gesperrt.`,
+      );
+    }
   }
 
   async setStatus(
