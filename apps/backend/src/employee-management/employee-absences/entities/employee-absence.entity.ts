@@ -1,6 +1,6 @@
 import { EmployeeAbsenceCategory } from '@/employee-management/employee-absence-categories/entities/employee-absence-category.entity';
 import { Employee } from '@/employee-management/employees/entities/employee.entity';
-import { ObjectType, Field } from '@nestjs/graphql';
+import { ObjectType, Field, Int } from '@nestjs/graphql';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { EmployeeAbsenceDay } from './employee-absence-days.entity';
 import { AbstractEntity } from '@/database/abstract.entity';
@@ -78,4 +78,10 @@ export class EmployeeAbsence extends AbstractEntity<EmployeeAbsence> {
   @Field(() => Boolean)
   @Column('boolean', { name: 'is_vacation_capable', default: true })
   isVacationCapable: boolean;
+
+  // Abwesenheitsgrad in Prozent (1–100). 100 = ganztägig; <100 = Teilabsenz
+  // (z. B. 50 % AU). Initial aus EmployeeAbsenceCategory.defaultPercentage.
+  @Field(() => Int)
+  @Column('int', { default: 100 })
+  percentage: number;
 }

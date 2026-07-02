@@ -10,7 +10,10 @@ import {
   IconFileDescription,
   IconFileWord,
   IconHelp,
+  IconFileText,
   IconInnerShadowTop,
+  IconLayoutKanban,
+  IconListCheck,
   IconListDetails,
   IconReport,
   IconBook,
@@ -42,6 +45,11 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { ROUTES } from "@/constants/routes";
+import {
+  canSeeProjects,
+  canSeeTimeReport,
+  canSeeTimeTracking,
+} from "@/lib/navigation/nav-visibility";
 import {
   isAdminPersona,
   usePermissions,
@@ -84,11 +92,26 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
         url: "#",
         icon: IconDashboard,
       },
-      {
-        title: t("timeTracking"),
-        url: ROUTES.admin.myTimeTracking(locale),
-        icon: IconListDetails,
-      },
+      // Zeiterfassung: nur wenn das Feature am eigenen Employee aktiviert ist.
+      ...(canSeeTimeTracking(user)
+        ? [
+            {
+              title: t("timeTracking"),
+              url: ROUTES.admin.myTimeTracking(locale),
+              icon: IconListDetails,
+            },
+          ]
+        : []),
+      // Zeitauswertung: ADMIN/HR + Teamleiter (OFFICE ausgeschlossen).
+      ...(canSeeTimeReport(user)
+        ? [
+            {
+              title: t("timeTrackingReport"),
+              url: ROUTES.admin.timeTrackingReport(locale),
+              icon: IconReport,
+            },
+          ]
+        : []),
       {
         title: t("employees"),
         url: ROUTES.admin.employees(locale),
@@ -130,6 +153,26 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
             },
           ]
         : []),
+      // Projekte: nur wenn Mitglied in mindestens einem Projekt (oder Manage-All).
+      ...(canSeeProjects(user)
+        ? [
+            {
+              title: t("projects"),
+              url: ROUTES.admin.projects(locale),
+              icon: IconLayoutKanban,
+            },
+          ]
+        : []),
+      {
+        title: t("myTasks"),
+        url: ROUTES.admin.myTasks(locale),
+        icon: IconListCheck,
+      },
+      {
+        title: t("protocols"),
+        url: ROUTES.admin.protocols(locale),
+        icon: IconFileText,
+      },
     ],
     navOrg: canSeeOrgAdmin
       ? [
@@ -167,6 +210,11 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
                   title: t("absenceCategories"),
                   url: ROUTES.admin.absenceCategories(locale),
                   icon: IconCalendarOff,
+                },
+                {
+                  title: t("timeTrackingSettings"),
+                  url: ROUTES.admin.timeTrackingSettings(locale),
+                  icon: IconSettings,
                 },
               ]
             : []),

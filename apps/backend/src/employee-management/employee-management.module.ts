@@ -10,6 +10,12 @@ import { TimeTrackingModule } from './time-tracking/time-tracking.module';
 import { TeamMembersModule } from './team-members/team-members.module';
 import { EmployeeAbsenceCategoriesModule } from './employee-absence-categories/employee-absence-categories.module';
 import { EmployeeAbsencesModule } from './employee-absences/employee-absences.module';
+import { WorkTimeCalculationModule } from './work-time-calculation/work-time-calculation.module';
+import { HolidaysModule } from './holidays/holidays.module';
+import { CompanyVacationsModule } from './company-vacations/company-vacations.module';
+import { EmployeeVacationsModule } from './employee-vacations/employee-vacations.module';
+import { EmployeePaidOvertimeModule } from './employee-paid-overtime/employee-paid-overtime.module';
+import { TimeTrackingPeriodsModule } from './time-tracking-periods/time-tracking-periods.module';
 
 @Module({
   imports: [
@@ -24,6 +30,12 @@ import { EmployeeAbsencesModule } from './employee-absences/employee-absences.mo
     TimeTrackingModule,
     EmployeeAbsenceCategoriesModule,
     EmployeeAbsencesModule,
+    WorkTimeCalculationModule,
+    HolidaysModule,
+    CompanyVacationsModule,
+    EmployeeVacationsModule,
+    EmployeePaidOvertimeModule,
+    TimeTrackingPeriodsModule,
   ],
 })
 export class EmployeeManagementModule {}

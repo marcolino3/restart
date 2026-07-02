@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { EntityManager, Repository } from 'typeorm';
 import { hash } from 'bcrypt';
 
@@ -8,6 +12,7 @@ import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PasswordService } from './password.service';
 import { UserEmailsService } from '@/user-emails/user-emails.service';
+import { UserEmail } from '@/user-emails/entities/user-email.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { Role } from '@/roles/entities/role.entity';
 
@@ -136,6 +141,81 @@ export class UsersService {
 
       const updated = await m.findOne(User, {
         where: { id },
+        relations: ['userEmails'],
+      });
+      if (!updated) throw new NotFoundException('User not found');
+      return updated;
+    });
+  }
+
+  /**
+   * Ändert die (primäre) E-Mail eines Users **atomar in beiden Speichern**:
+   * TypeORM `user_emails` UND better-auth `user.email` (Login-Identität).
+   * Beide Tabellen liegen in derselben DB → eine TypeORM-Transaktion genügt.
+   *
+   * - Uniqueness wird in beiden Tabellen geprüft.
+   * - `isVerified`/`emailVerified` werden zurückgesetzt (neue Adresse unbestätigt).
+   * - Der E-Mail-Join zwischen beiden Tabellen (siehe authUserIdByUserId) bleibt
+   *   dadurch konsistent.
+   */
+  async changeUserEmail(userId: string, rawEmail: string): Promise<User> {
+    const newEmail = rawEmail.trim().toLowerCase();
+
+    return this.entityManager.transaction(async (m) => {
+      const emails = await m.find(UserEmail, { where: { userId } });
+      if (!emails.length) {
+        throw new NotFoundException('User hat keine E-Mail-Adresse.');
+      }
+      const primary = emails.find((e) => e.isPrimary) ?? emails[0];
+      const oldEmail = primary.email.trim().toLowerCase();
+      if (oldEmail === newEmail) {
+        const unchanged = await m.findOne(User, {
+          where: { id: userId },
+          relations: ['userEmails'],
+        });
+        if (!unchanged) throw new NotFoundException('User not found');
+        return unchanged;
+      }
+
+      // Uniqueness: TypeORM user_emails (org-übergreifend unique)
+      const emailClash = await m.findOne(UserEmail, {
+        where: { email: newEmail },
+      });
+      if (emailClash && emailClash.userId !== userId) {
+        throw new ConflictException('E-Mail-Adresse ist bereits vergeben.');
+      }
+
+      // Uniqueness: better-auth "user"-Tabelle
+      const authRows: Array<{ id: string }> = await m.query(
+        'SELECT id FROM "user" WHERE LOWER(email) = LOWER($1)',
+        [newEmail],
+      );
+      const currentAuthRows: Array<{ id: string }> = await m.query(
+        'SELECT id FROM "user" WHERE LOWER(email) = LOWER($1)',
+        [oldEmail],
+      );
+      const currentAuthId = currentAuthRows[0]?.id;
+      if (authRows.length && authRows[0].id !== currentAuthId) {
+        throw new ConflictException(
+          'E-Mail-Adresse ist bereits vergeben (Login).',
+        );
+      }
+
+      // 1) TypeORM user_emails
+      primary.email = newEmail;
+      primary.isVerified = false;
+      await m.save(UserEmail, primary);
+
+      // 2) better-auth user.email (Login-Identität) — gleiche DB, gleiche Tx
+      if (currentAuthId) {
+        await m.query(
+          'UPDATE "user" SET email = $1, "emailVerified" = false WHERE id = $2',
+          [newEmail, currentAuthId],
+        );
+      }
+
+      const updated = await m.findOne(User, {
+        where: { id: userId },
         relations: ['userEmails'],
       });
       if (!updated) throw new NotFoundException('User not found');

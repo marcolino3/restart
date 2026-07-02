@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
 import { LoggerModule } from 'nestjs-pino';
@@ -24,6 +25,7 @@ import { CountryInputTemplatesModule } from './country-input-templates/country-i
 import { EmployeeContractsModule } from './employee-management/employee-contracts/employee-contracts.module';
 import { EmployeeManagementModule } from './employee-management/employee-management.module';
 import { SchoolManagementModule } from './school-management/school-management.module';
+import { ProjectManagementModule } from './project-management/project-management.module';
 import { CurriculaModule } from './curricula/curricula.module';
 import { CurriculumNodeLoaders } from './curricula/loaders/curriculum-node-loaders';
 import { StudentEnrollmentLoaders } from './school-management/students/loaders/student-enrollment-loaders';
@@ -52,6 +54,9 @@ import { join } from 'path';
     // Drei Buckets: short (Burst-Schutz), medium (Normal), long (sustained).
     // Login/Register/Reset bekommen via @Throttle()-Decorator strengere Limits
     // direkt am Controller (siehe SPEC für TODO im Auth-Modul).
+    // Zeitgesteuerte Jobs (nächtlicher Ledger-Reconcile der Zeiterfassung).
+    ScheduleModule.forRoot(),
+
     ThrottlerModule.forRoot([
       { name: 'short', ttl: 1000, limit: 10 },
       { name: 'medium', ttl: 10_000, limit: 50 },
@@ -151,6 +156,7 @@ import { join } from 'path';
     EmployeeContractsModule,
     EmployeeManagementModule,
     SchoolManagementModule,
+    ProjectManagementModule,
     CurriculaModule,
     MembershipsModule,
     MailModule,

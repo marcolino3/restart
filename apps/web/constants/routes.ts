@@ -22,6 +22,14 @@ export const ROUTES = {
     myTimeTrackingEdit: (locale: string, id: string) =>
       `/${locale}/admin/my-time-tracking/edit/${id}`,
 
+    // Time Tracking Report + Settings (Admin/HR/Teamleiter)
+    timeTrackingReport: (locale: string) =>
+      `/${locale}/admin/time-tracking-report`,
+    timeTrackingReportEmployee: (locale: string, id: string) =>
+      `/${locale}/admin/time-tracking-report/${id}`,
+    timeTrackingSettings: (locale: string) =>
+      `/${locale}/admin/time-tracking-settings`,
+
     // School Classes
     schoolClasses: (locale: string) => `/${locale}/admin/school-classes`,
     schoolClassesCreate: (locale: string) =>
@@ -36,6 +44,19 @@ export const ROUTES = {
     teams: (locale: string) => `/${locale}/admin/teams`,
     teamsDetail: (locale: string, id: string) =>
       `/${locale}/admin/teams/${id}`,
+
+    // Projects (project management / boards)
+    projects: (locale: string) => `/${locale}/admin/projects`,
+    projectsBoard: (locale: string, id: string) =>
+      `/${locale}/admin/projects/${id}`,
+    projectTemplates: (locale: string) =>
+      `/${locale}/admin/projects/templates`,
+    myTasks: (locale: string) => `/${locale}/admin/my-tasks`,
+
+    // Meeting protocols
+    protocols: (locale: string) => `/${locale}/admin/protocols`,
+    protocolEditor: (locale: string, id: string) =>
+      `/${locale}/admin/protocols/${id}`,
 
     // Students
     students: (locale: string) => `/${locale}/admin/students`,
