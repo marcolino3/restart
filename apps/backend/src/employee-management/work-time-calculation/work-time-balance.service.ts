@@ -9,6 +9,7 @@ import { Membership } from '@/memberships/entities/membership.entity';
 import { TimeTrackingAccessService } from './time-tracking-access.service';
 import { proRataEntitlementDays } from './work-time-calculation';
 import {
+  AbsenceCategorySummary,
   EmployeeWorkTimeOverviewRow,
   MonthlyWorkTimeSummary,
   VacationBalance,
@@ -308,6 +309,92 @@ export class WorkTimeBalanceService {
       .select('ob.opening_vacation_days', 'days')
       .getRawOne<{ days: string }>();
     return ob ? Number(ob.days) : 0;
+  }
+
+  /**
+   * Fehlende Einträge: vergangene Arbeitstage (Soll > 0) ohne Arbeit, Ferien,
+   * Absenz oder Feiertag (colibri daysWithMissingRecord). Setzt ein
+   * materialisiertes Ledger voraus (Reconcile-Cron).
+   */
+  async getMissingRecordDays(
+    user: TokenPayload,
+    employeeId: string,
+    from: string,
+    to: string,
+  ): Promise<string[]> {
+    await this.access.assertCanViewEmployee(user, employeeId);
+    const rows = await this.dataSource.query<{ date: string }[]>(
+      `SELECT date::text AS date
+         FROM work_day_balances
+        WHERE organization_id = $1 AND employee_id = $2
+          AND date BETWEEN $3 AND $4
+          AND planned_minutes > 0 AND worked_minutes = 0
+          AND NOT is_vacation AND NOT is_absence AND NOT is_holiday
+        ORDER BY date`,
+      [user.orgId, employeeId, from, clampToToday(to)],
+    );
+    return rows.map((r) => r.date);
+  }
+
+  async getMyMissingRecordDays(
+    user: TokenPayload,
+    from: string,
+    to: string,
+  ): Promise<string[]> {
+    const employeeId = await this.access.resolveCallerEmployeeId(user);
+    if (!employeeId) {
+      throw new ForbiddenException(
+        'Kein Mitarbeiterprofil für diesen Account.',
+      );
+    }
+    return this.getMissingRecordDays(user, employeeId, from, to);
+  }
+
+  /** Absenz-Tage je Kategorie, aufgeteilt in 100 % / Teilabsenzen. */
+  async getAbsenceCategorySummaries(
+    user: TokenPayload,
+    employeeId: string,
+    from: string,
+    to: string,
+    locale = 'DE',
+  ): Promise<AbsenceCategorySummary[]> {
+    await this.access.assertCanViewEmployee(user, employeeId);
+    const rows = await this.dataSource.query<
+      {
+        category_id: string;
+        name: string | null;
+        color: string | null;
+        full_days: number;
+        partial_days: number;
+        total_days: number;
+      }[]
+    >(
+      `SELECT c.id::text AS category_id,
+              COALESCE(t.name, c.system_code::text) AS name,
+              c.color AS color,
+              COUNT(*) FILTER (WHERE a.percentage >= 100)::int AS full_days,
+              COUNT(*) FILTER (WHERE a.percentage < 100)::int  AS partial_days,
+              COUNT(*)::int AS total_days
+         FROM employee_absence_days d
+         JOIN employee_absences a ON a.id = d.employee_absence_id
+         JOIN employee_absence_categories c ON c.id = a.absence_category_id
+         LEFT JOIN employee_absence_category_translations t
+                ON t.category_id = c.id AND t.locale = $5
+        WHERE d.organization_id = $1 AND d.employee_id = $2
+          AND d.date >= $3::date AND d.date < ($4::date + 1)
+          AND a."isActive" = true AND d."isActive" = true
+        GROUP BY 1, 2, 3
+        ORDER BY 2`,
+      [user.orgId, employeeId, from, to, locale],
+    );
+    return rows.map((r) => ({
+      categoryId: r.category_id,
+      name: r.name,
+      color: r.color,
+      fullDays: r.full_days,
+      partialDays: r.partial_days,
+      totalDays: r.total_days,
+    }));
   }
 
   /** Auswertung: Saldo-Übersicht aller sichtbaren Mitarbeiter (Lead/Admin). */

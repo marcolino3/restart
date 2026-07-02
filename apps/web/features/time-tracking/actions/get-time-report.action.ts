@@ -2,7 +2,9 @@
 
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
+import { getLocale } from "next-intl/server";
 import type {
+  AbsenceCategorySummary,
   EmployeeWorkTimeOverviewRow,
   MonthlyWorkTimeSummary,
   VacationBalance,
@@ -46,7 +48,26 @@ export const getTeamOverviewAction = async (): Promise<TeamOverviewResult> => {
 };
 
 const EmployeeReportDocument = gql`
-  query EmployeeReport($employeeId: ID!, $from: String!, $to: String!) {
+  query EmployeeReport(
+    $employeeId: ID!
+    $from: String!
+    $to: String!
+    $locale: String
+  ) {
+    employeeMissingRecordDays(employeeId: $employeeId, from: $from, to: $to)
+    employeeAbsenceCategorySummary(
+      employeeId: $employeeId
+      from: $from
+      to: $to
+      locale: $locale
+    ) {
+      categoryId
+      name
+      color
+      fullDays
+      partialDays
+      totalDays
+    }
     employeeWorkTimeBalance(employeeId: $employeeId, from: $from, to: $to) {
       employeeId
       plannedMinutes
@@ -80,6 +101,8 @@ export type EmployeeReportResult = {
   balance: WorkTimeBalance | null;
   vacation: VacationBalance | null;
   monthly: MonthlyWorkTimeSummary[];
+  missingRecordDays: string[];
+  categorySummary: AbsenceCategorySummary[];
   from: string;
   to: string;
 };
@@ -89,21 +112,34 @@ export const getEmployeeReportAction = async (
 ): Promise<EmployeeReportResult> => {
   const client = await serverCookieGqlClient();
   const { from, to } = currentYearRange();
+  const locale = (await getLocale()).toUpperCase();
   try {
     const data = await client.request<{
       employeeWorkTimeBalance: WorkTimeBalance;
       employeeVacationBalance: VacationBalance;
       employeeMonthlyWorkTime: MonthlyWorkTimeSummary[];
-    }>(EmployeeReportDocument, { employeeId, from, to });
+      employeeMissingRecordDays: string[];
+      employeeAbsenceCategorySummary: AbsenceCategorySummary[];
+    }>(EmployeeReportDocument, { employeeId, from, to, locale });
     return {
       balance: data.employeeWorkTimeBalance,
       vacation: data.employeeVacationBalance,
       monthly: data.employeeMonthlyWorkTime ?? [],
+      missingRecordDays: data.employeeMissingRecordDays ?? [],
+      categorySummary: data.employeeAbsenceCategorySummary ?? [],
       from,
       to,
     };
   } catch (error) {
     console.error("getEmployeeReportAction", error);
-    return { balance: null, vacation: null, monthly: [], from, to };
+    return {
+      balance: null,
+      vacation: null,
+      monthly: [],
+      missingRecordDays: [],
+      categorySummary: [],
+      from,
+      to,
+    };
   }
 };

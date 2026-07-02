@@ -48,6 +48,21 @@ export type EmployeeWorkTimeOverviewRow = {
   vacationDaysUsed: number;
 };
 
+export type AbsenceCategorySummary = {
+  categoryId: string;
+  name?: string | null;
+  color?: string | null;
+  fullDays: number;
+  partialDays: number;
+  totalDays: number;
+};
+
+/** Minimal employee option for admin selects. */
+export type EmployeeOption = {
+  id: string;
+  name: string;
+};
+
 export type MyTimeTrackingData = {
   employeeId: string | null;
   balance: WorkTimeBalance | null;

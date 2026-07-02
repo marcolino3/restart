@@ -7,6 +7,8 @@ import { WorkTimeBalanceService } from './work-time-balance.service';
 import { WorkTimeBalanceResolver } from './work-time-balance.resolver';
 import { TimeTrackingAccessService } from './time-tracking-access.service';
 import { TimeTrackingReconcileService } from './time-tracking-reconcile.service';
+import { WorkTimeReportService } from './work-time-report.service';
+import { WorkTimeReportController } from './work-time-report.controller';
 
 /**
  * Berechnungs-Kern der Arbeitszeiterfassung: reine Engine (work-time-calculation.ts)
@@ -17,12 +19,14 @@ import { TimeTrackingReconcileService } from './time-tracking-reconcile.service'
  */
 @Module({
   imports: [DatabaseModule, TeamsModule, TimeTrackingPeriodsModule],
+  controllers: [WorkTimeReportController],
   providers: [
     BalanceRecomputeService,
     WorkTimeBalanceService,
     WorkTimeBalanceResolver,
     TimeTrackingAccessService,
     TimeTrackingReconcileService,
+    WorkTimeReportService,
   ],
   exports: [
     BalanceRecomputeService,
