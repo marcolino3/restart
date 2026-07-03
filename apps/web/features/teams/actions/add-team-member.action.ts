@@ -28,6 +28,7 @@ export const addTeamMemberAction = async (input: {
     const { createTeamMember } = await client.request<Response>(Document, {
       input,
     });
+    revalidatePath(`/${locale}/admin/teams`);
     revalidatePath(`/${locale}/admin/teams/${input.teamId}`);
     return { success: true as const, data: createTeamMember };
   } catch (error) {
