@@ -1,20 +1,17 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { EntityManager } from 'typeorm';
 import { UploadController } from './upload.controller';
 import { BetterAuthGuard } from '@/auth/guard/better-auth.guard';
 import { ROLES_KEY } from '@/auth/decorators/roles.decorator';
 import { SystemRole } from '@/roles/entities/system-role.enum';
+import { StorageService } from '@/storage/storage.service';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 
 jest.mock('sharp', () => {
-  const toFile = jest.fn().mockResolvedValue(undefined);
-  const webp = jest.fn(() => ({ toFile }));
+  const toBuffer = jest.fn().mockResolvedValue(Buffer.from('webp'));
+  const webp = jest.fn(() => ({ toBuffer }));
   return { __esModule: true, default: jest.fn(() => ({ webp })) };
 });
-
-jest.mock('fs/promises', () => ({
-  mkdir: jest.fn().mockResolvedValue(undefined),
-  unlink: jest.fn().mockResolvedValue(undefined),
-}));
 
 const ORG_ID = 'org-1';
 const OTHER_ORG_ID = 'org-2';
@@ -41,9 +38,19 @@ const pngFile = {
 
 describe('UploadController', () => {
   let controller: UploadController;
+  let storage: { put: jest.Mock; delete: jest.Mock };
+  let entityManager: { findOne: jest.Mock };
 
   beforeEach(() => {
-    controller = new UploadController();
+    storage = {
+      put: jest.fn().mockResolvedValue(undefined),
+      delete: jest.fn().mockResolvedValue(undefined),
+    };
+    entityManager = { findOne: jest.fn() };
+    controller = new UploadController(
+      entityManager as unknown as EntityManager,
+      storage as unknown as StorageService,
+    );
     jest.clearAllMocks();
   });
 

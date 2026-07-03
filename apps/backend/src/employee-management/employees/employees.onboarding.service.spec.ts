@@ -41,9 +41,7 @@ describe('EmployeesService onboarding orchestrator', () => {
         Promise.resolve((rows as Record<string, unknown>)[entity.name] ?? null),
       ),
       find: jest.fn((entity: { name: string }) =>
-        Promise.resolve(
-          entity.name === 'Role' ? (rows.Role ?? []) : [],
-        ),
+        Promise.resolve(entity.name === 'Role' ? (rows.Role ?? []) : []),
       ),
       save: jest.fn((_entity: unknown, value: unknown) =>
         Promise.resolve(value),
@@ -60,7 +58,7 @@ describe('EmployeesService onboarding orchestrator', () => {
 
     service = new EmployeesService(
       entityManager as never,
-      { generateRandomPasswordHash: jest.fn() } as never,
+      { generateRandomPasswordHash: jest.fn() },
       { logChanges: jest.fn() } as never,
       invitationService as never,
       {} as never,
@@ -80,7 +78,12 @@ describe('EmployeesService onboarding orchestrator', () => {
 
       await expect(
         service.upsertEmployeeOnboardingDraft(
-          { id: 'emp-1', firstName: 'A', lastName: 'B', roleIds: ['role-x'] } as never,
+          {
+            id: 'emp-1',
+            firstName: 'A',
+            lastName: 'B',
+            roleIds: ['role-x'],
+          },
           'org-1',
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
@@ -97,7 +100,12 @@ describe('EmployeesService onboarding orchestrator', () => {
 
       await expect(
         service.upsertEmployeeOnboardingDraft(
-          { id: 'emp-1', firstName: 'A', lastName: 'B', teamId: 'team-x' } as never,
+          {
+            id: 'emp-1',
+            firstName: 'A',
+            lastName: 'B',
+            teamId: 'team-x',
+          },
           'org-1',
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
@@ -112,7 +120,7 @@ describe('EmployeesService onboarding orchestrator', () => {
 
       await expect(
         service.upsertEmployeeOnboardingDraft(
-          { id: 'emp-1', firstName: 'A', lastName: 'B' } as never,
+          { id: 'emp-1', firstName: 'A', lastName: 'B' },
           'org-1',
         ),
       ).rejects.toBeInstanceOf(NotFoundException);

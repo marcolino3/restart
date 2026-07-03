@@ -16,7 +16,7 @@ describe('WorkTimeBalanceService.getListNetBalanceMinutes', () => {
   let query: jest.Mock;
   let resolveOverviewScope: jest.Mock;
 
-  const user: TokenPayload = { sub: 'u1', orgId: 'org-1' } as TokenPayload;
+  const user: TokenPayload = { sub: 'u1', orgId: 'org-1' };
 
   beforeEach(() => {
     query = jest.fn().mockResolvedValue([]);

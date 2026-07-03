@@ -7,9 +7,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * the percentage-based weekdayWorkloads. Structure:
  *   { mon: [{ start: "08:00", end: "12:00" }], … }
  */
-export class AddContractWeekdayTimeWindows1783060930000
-  implements MigrationInterface
-{
+export class AddContractWeekdayTimeWindows1783060930000 implements MigrationInterface {
   name = 'AddContractWeekdayTimeWindows1783060930000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

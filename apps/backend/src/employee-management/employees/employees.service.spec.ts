@@ -3,6 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { EmployeesService } from './employees.service';
+import { EmployeeInvitationService } from './employee-invitation.service';
 import { Employee } from './entities/employee.entity';
 import { PasswordService } from '@/users/password.service';
 import { EmployeeAuditLogService } from '../employee-audit-log/employee-audit-log.service';
@@ -51,6 +52,10 @@ describe('EmployeesService', () => {
         { provide: EntityManager, useValue: entityManager },
         { provide: PasswordService, useValue: {} },
         { provide: EmployeeAuditLogService, useValue: auditLogService },
+        {
+          provide: EmployeeInvitationService,
+          useValue: { sendInvite: jest.fn(), scheduleInvite: jest.fn() },
+        },
         { provide: getRepositoryToken(Employee), useValue: employeeRepo },
       ],
     }).compile();

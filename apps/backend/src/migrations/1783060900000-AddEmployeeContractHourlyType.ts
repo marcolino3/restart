@@ -11,9 +11,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * CLAUDE.md). `down()` is a no-op because PostgreSQL cannot remove enum values
  * (forward-only / expand-contract).
  */
-export class AddEmployeeContractHourlyType1783060900000
-  implements MigrationInterface
-{
+export class AddEmployeeContractHourlyType1783060900000 implements MigrationInterface {
   name = 'AddEmployeeContractHourlyType1783060900000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

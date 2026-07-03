@@ -4,10 +4,7 @@ import { Cron } from '@nestjs/schedule';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { randomBytes } from 'crypto';
 import { EntityManager, LessThanOrEqual } from 'typeorm';
-import {
-  Employee,
-  EmployeeInvitationStatus,
-} from './entities/employee.entity';
+import { Employee, EmployeeInvitationStatus } from './entities/employee.entity';
 
 /**
  * Sends the first-login invitation for a newly onboarded employee using

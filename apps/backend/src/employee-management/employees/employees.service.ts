@@ -494,7 +494,8 @@ export class EmployeesService {
             lastName: input.lastName.trim(),
             title: input.title?.trim() || undefined,
             dateOfBirth: input.dateOfBirth || undefined,
-            socialSecurityNumber: input.socialSecurityNumber?.trim() || undefined,
+            socialSecurityNumber:
+              input.socialSecurityNumber?.trim() || undefined,
             privateEmail: input.privateEmail?.trim() || undefined,
             street: input.street?.trim() || undefined,
             houseNumber: input.houseNumber?.trim() || undefined,
@@ -554,7 +555,12 @@ export class EmployeesService {
         await manager.save(Membership, membership);
       }
 
-      await this.applyOnboardingRoles(manager, membership, input, organizationId);
+      await this.applyOnboardingRoles(
+        manager,
+        membership,
+        input,
+        organizationId,
+      );
       await this.applyOnboardingTeam(manager, employee, input, organizationId);
       await this.upsertOnboardingContract(
         manager,

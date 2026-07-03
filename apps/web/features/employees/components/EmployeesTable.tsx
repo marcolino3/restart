@@ -256,6 +256,9 @@ export const EmployeesTable = ({ data }: Props) => {
     pageSize: 10,
   });
 
+  // TanStack Table returns fresh function instances by design; the
+  // react-hooks "incompatible-library" heuristic is a false positive here.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,

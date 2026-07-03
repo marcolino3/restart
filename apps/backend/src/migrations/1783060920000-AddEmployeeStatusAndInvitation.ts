@@ -7,9 +7,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * scheduled send time (invitation on the entry date, dispatched by the nightly
  * cron).
  */
-export class AddEmployeeStatusAndInvitation1783060920000
-  implements MigrationInterface
-{
+export class AddEmployeeStatusAndInvitation1783060920000 implements MigrationInterface {
   name = 'AddEmployeeStatusAndInvitation1783060920000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -34,9 +32,7 @@ export class AddEmployeeStatusAndInvitation1783060920000
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `ALTER TABLE "employees" DROP COLUMN "invited_at"`,
-    );
+    await queryRunner.query(`ALTER TABLE "employees" DROP COLUMN "invited_at"`);
     await queryRunner.query(
       `ALTER TABLE "employees" DROP COLUMN "invitation_scheduled_send_at"`,
     );

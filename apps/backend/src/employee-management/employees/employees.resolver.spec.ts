@@ -27,7 +27,7 @@ describe('EmployeesResolver', () => {
   let contractRepo: { find: jest.Mock };
   let balanceService: { getListNetBalanceMinutes: jest.Mock };
 
-  const user: TokenPayload = { sub: 'user-1', orgId: 'org-1' } as TokenPayload;
+  const user: TokenPayload = { sub: 'user-1', orgId: 'org-1' };
 
   beforeEach(async () => {
     employeesService = {
@@ -47,7 +47,10 @@ describe('EmployeesResolver', () => {
       providers: [
         EmployeesResolver,
         { provide: EmployeesService, useValue: employeesService },
-        { provide: getRepositoryToken(EmployeeContract), useValue: contractRepo },
+        {
+          provide: getRepositoryToken(EmployeeContract),
+          useValue: contractRepo,
+        },
         { provide: WorkTimeBalanceService, useValue: balanceService },
       ],
     })
@@ -240,7 +243,12 @@ describe('EmployeesResolver', () => {
       contractRepo.find.mockResolvedValue([]);
 
       await expect(
-        resolver.workloadPercent({ id: 'emp-2' } as Employee, 'org-1', user, {}),
+        resolver.workloadPercent(
+          { id: 'emp-2' } as Employee,
+          'org-1',
+          user,
+          {},
+        ),
       ).resolves.toBeNull();
     });
   });

@@ -6,9 +6,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Language lives on both users (SuperAdmin / global) and memberships (per-org),
  * mirroring the existing `theme` column.
  */
-export class AddUserAvatarAndLanguage1783060910000
-  implements MigrationInterface
-{
+export class AddUserAvatarAndLanguage1783060910000 implements MigrationInterface {
   name = 'AddUserAvatarAndLanguage1783060910000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
