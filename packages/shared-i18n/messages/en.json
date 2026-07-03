@@ -798,7 +798,11 @@
     "chipCare": "Care",
     "statusToday": "Status today",
     "statusDraft": "Draft",
-    "joinedOn": "Joined {date}"
+    "joinedOn": "Joined {date}",
+    "contractAndWorkload": "Contract & workload",
+    "contactAndPerson": "Contact & person",
+    "vacationDaysPerYear": "{days} days / year",
+    "sinceMonth": "since {date}"
   },
   "EmployeeHistory": {
     "noEntries": "No changes recorded yet.",
@@ -1015,7 +1019,22 @@
     "makeLead": "Make lead",
     "makeMember": "Make member",
     "roleUpdated": "Role updated",
-    "roleUpdateError": "Could not update role"
+    "roleUpdateError": "Could not update role",
+    "teamsPageSubtitle": "{teams} teams · {members} employees · drag & drop members to move them",
+    "newTeam": "New team",
+    "dragMemberHint": "A person can belong to several teams — dragging moves them, holding <alt>Alt</alt> copies them (second membership).",
+    "teamActions": "Team actions",
+    "teamLead": "Team lead",
+    "teamLeadLine": "Team lead: {name}",
+    "noLeadYet": "No team lead yet",
+    "alsoInTeams": "also in {teams}",
+    "memberMoved": "Member moved",
+    "memberMoveError": "Could not move member",
+    "memberCopied": "Member copied (second membership)",
+    "memberCopyError": "Could not copy member",
+    "memberAlreadyInTeam": "This person is already in this team",
+    "functionInTeam": "Function in team",
+    "addMemberToTeam": "Add to team"
   },
   "GradeLevels": {
     "gradeLevels": "Grade Levels",

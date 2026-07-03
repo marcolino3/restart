@@ -63,13 +63,18 @@ export const EmployeeOnboardingFormSchema = z.object({
 
   // --- Step 1: Person ---
   title: z.string().optional().default(""),
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-  email: z.string().email().optional(),
+  firstName: z.string().min(1, { message: "Vorname ist erforderlich" }),
+  lastName: z.string().min(1, { message: "Nachname ist erforderlich" }),
+  email: z
+    .string()
+    .email({ message: "Ungültige E-Mail-Adresse" })
+    .optional(),
   persona: z.nativeEnum(Persona).default(Persona.Employee),
   dateOfBirth: z.date().nullable().optional(),
   socialSecurityNumber: z.string().optional().default(""),
+  privateEmail: z.union([z.string().email(), z.literal("")]).optional(),
   contactPhone: z.string().optional().default(""),
+  contactPhone2: z.string().optional().default(""),
   street: z.string().optional().default(""),
   houseNumber: z.string().optional().default(""),
   addressLine2: z.string().optional().default(""),
@@ -88,6 +93,7 @@ export const EmployeeOnboardingFormSchema = z.object({
   weeklyHours: z.string().optional().default(""),
   annualVacationDays: intOrNull,
   weekdayTimeWindows: WeekdayTimeWindowsSchema.optional(),
+  documentUrl: z.string().optional().default(""),
   teamId: z.string().uuid().nullable().optional(),
 
   // --- Step 3: Rollen & Zugang ---

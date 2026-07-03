@@ -798,7 +798,11 @@
     "chipCare": "Betreuung",
     "statusToday": "Status heute",
     "statusDraft": "Entwurf",
-    "joinedOn": "Eintritt {date}"
+    "joinedOn": "Eintritt {date}",
+    "contractAndWorkload": "Vertrag & Pensum",
+    "contactAndPerson": "Kontakt & Person",
+    "vacationDaysPerYear": "{days} Tage / Jahr",
+    "sinceMonth": "seit {date}"
   },
   "EmployeeHistory": {
     "noEntries": "Noch keine Änderungen erfasst.",
@@ -1015,7 +1019,22 @@
     "makeLead": "Als Leitung festlegen",
     "makeMember": "Als Mitglied festlegen",
     "roleUpdated": "Rolle aktualisiert",
-    "roleUpdateError": "Rolle konnte nicht aktualisiert werden"
+    "roleUpdateError": "Rolle konnte nicht aktualisiert werden",
+    "teamsPageSubtitle": "{teams} Teams · {members} Mitarbeitende · Mitglieder per Drag & Drop verschieben",
+    "newTeam": "Neues Team",
+    "dragMemberHint": "Eine Person kann mehreren Teams angehören — Ziehen verschiebt, mit gedrückter <alt>Alt-Taste</alt> wird kopiert (Zweitmitgliedschaft).",
+    "teamActions": "Team-Aktionen",
+    "teamLead": "Teamleitung",
+    "teamLeadLine": "Teamleitung: {name}",
+    "noLeadYet": "Noch keine Teamleitung",
+    "alsoInTeams": "auch in {teams}",
+    "memberMoved": "Mitglied verschoben",
+    "memberMoveError": "Mitglied konnte nicht verschoben werden",
+    "memberCopied": "Mitglied kopiert (Zweitmitgliedschaft)",
+    "memberCopyError": "Mitglied konnte nicht kopiert werden",
+    "memberAlreadyInTeam": "Diese Person ist bereits in diesem Team",
+    "functionInTeam": "Funktion im Team",
+    "addMemberToTeam": "Zum Team hinzufügen"
   },
   "GradeLevels": {
     "gradeLevels": "Stufen",
