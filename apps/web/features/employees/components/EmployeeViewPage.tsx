@@ -8,7 +8,6 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BackButton } from "@/components/common/BackButton";
 import { UserEmailField } from "@/features/users/components/UserEmailField";
 import { ROUTES } from "@/constants/routes";
 
@@ -115,21 +114,11 @@ export default function EmployeeViewPage({
     "rounded-none border-b-[3px] border-transparent px-0 pb-[11px] text-[13.5px] font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-[650] data-[state=active]:text-foreground data-[state=active]:shadow-none";
 
   return (
-    <div className="min-h-full">
-      <main className="py-10">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
-          <div className="mb-4">
-            <BackButton
-              href={ROUTES.admin.employees(locale)}
-              label={tE("backToEmployees")}
-            />
-          </div>
-
-          <Tabs
-            value={activeTab}
-            onValueChange={handleTabChange}
-            className="w-full"
-          >
+    <Tabs
+      value={activeTab}
+      onValueChange={handleTabChange}
+      className="w-full"
+    >
             {/* Profile band — saas-konzept `.pf-band` (light panel) */}
             <div className="mb-[18px] overflow-x-auto rounded-card border bg-card px-[22px] pt-[18px] shadow-xs">
               <div className="flex flex-wrap items-center gap-4">
@@ -477,8 +466,5 @@ export default function EmployeeViewPage({
               </div>
             </TabsContent>
           </Tabs>
-        </div>
-      </main>
-    </div>
   );
 }
