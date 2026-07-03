@@ -53,8 +53,9 @@ test.describe('Teams — board', () => {
       .locator('div.rounded-card')
       .filter({ has: page.getByText(unique, { exact: true }) })
     await expect(card).toBeVisible({ timeout: 15000 })
-    // A fresh team has no members yet → count badge shows 0.
-    await expect(card.getByText('0')).toBeVisible()
+    // A fresh team has no members yet → count badge shows exactly "0".
+    // (exact match: the unique team name contains digits too.)
+    await expect(card.getByText('0', { exact: true })).toBeVisible()
 
     // --- Add-member dialog opens with the role options -------------------
     await card.getByRole('button', { name: /add member/i }).click()
