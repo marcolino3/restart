@@ -23,6 +23,8 @@ type Props = {
   consents: Consent[];
   /** Required to grant consent for a child (the custodial guardian). */
   guardianContactPersonId?: string;
+  /** Called after a successful record/withdraw so the caller can refresh data. */
+  onChanged?: () => void | Promise<void>;
 };
 
 const STATUS_VARIANT: Record<
@@ -40,6 +42,7 @@ export function ConsentMatrix({
   purposes,
   consents,
   guardianContactPersonId,
+  onChanged,
 }: Props) {
   const t = useTranslations(NS);
   const router = useRouter();
@@ -69,6 +72,7 @@ export function ConsentMatrix({
           }),
         successMessage: t("recordedToast"),
       });
+      await onChanged?.();
       router.refresh();
     });
 
@@ -78,6 +82,7 @@ export function ConsentMatrix({
         action: () => withdrawConsentAction(consentId),
         successMessage: t("withdrawnToast"),
       });
+      await onChanged?.();
       router.refresh();
     });
 
