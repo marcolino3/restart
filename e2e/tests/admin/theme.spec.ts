@@ -7,12 +7,9 @@ import { ensureActiveOrg, signInAsSuperAdmin } from '../helpers/auth'
  * SuperAdmin, which is what this suite signs in as) and re-applied on load
  * even without the localStorage fast path.
  */
-// The reload/persistence path needs a real UI login. A fresh CI database has
-// no better-auth credential account (the superadmin bootstrap seeds only the
-// TypeORM hash), so it is gated behind E2E_RUN_AUTHED — same limitation the
-// admin CRUD suites document. Run locally with E2E_RUN_AUTHED=1. The
-// unauthenticated-rejection test below always runs and gates CI.
-const RUN_AUTHED = process.env.E2E_RUN_AUTHED === '1'
+// The reload/persistence path signs in through the real UI; the credential
+// account is seeded once by the Playwright global-setup (see
+// helpers/global-setup), so it runs in CI too.
 const BACKEND_URL = process.env.BACKEND_URL ?? 'http://localhost:4001'
 const THEME_STORAGE_KEY = 'restart-theme'
 
@@ -28,7 +25,6 @@ const fetchProfileTheme = async (page: Page): Promise<string | null> => {
 
 test.describe('Theme — persisted in the profile', () => {
   test('picked theme survives reload without localStorage', async ({ page }) => {
-    test.skip(!RUN_AUTHED, 'needs better-auth credential seed (see file header)')
     await signInAsSuperAdmin(page)
     await ensureActiveOrg(page)
     await page.goto('/en/admin/grade-levels', { waitUntil: 'networkidle' })
