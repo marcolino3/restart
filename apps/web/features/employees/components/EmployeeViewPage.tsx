@@ -5,7 +5,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Pencil, Paperclip } from "lucide-react";
 import Link from "next/link";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -87,78 +86,115 @@ export default function EmployeeViewPage({
     );
   };
 
+  const monthYear = (dateStr: string | null | undefined) =>
+    dateStr
+      ? new Date(dateStr).toLocaleDateString(
+          locale === "de" ? "de-CH" : "en-GB",
+          { month: "short", year: "numeric" },
+        )
+      : null;
+
+  // Aktuell gültiger Vertrag (jüngster Beginn ≤ heute) für die Kopf-Chips.
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const currentContract = [...contracts]
+    .filter((c) => c.startDate && c.startDate.slice(0, 10) <= todayIso)
+    .sort((a, b) => (a.startDate < b.startDate ? 1 : -1))[0];
+
+  const pensum =
+    currentContract?.workloadPercent != null
+      ? Math.round(Number(currentContract.workloadPercent))
+      : null;
+  const entry = monthYear(currentContract?.startDate);
+
+  const metaChips: string[] = [t(membership?.persona ?? "EMPLOYEE")];
+  if (pensum != null) metaChips.push(`${pensum}% ${t("workloadPercent")}`);
+  if (entry) metaChips.push(tE("joinedOn", { date: entry }));
+
+  // pf-tabs (design handoff): Gold-Unterstrich statt Pill-Container.
+  const tabCls =
+    "rounded-none border-b-[3px] border-transparent px-0 pb-[13px] text-[13.5px] font-medium text-timer-foreground/60 data-[state=active]:border-gold data-[state=active]:bg-transparent data-[state=active]:font-[650] data-[state=active]:text-timer-foreground data-[state=active]:shadow-none";
+
   return (
     <div className="min-h-full">
       <main className="py-10">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:max-w-7xl lg:px-8 mb-4">
-          <BackButton
-            href={ROUTES.admin.employees(locale)}
-            label={tE("backToEmployees")}
-          />
-        </div>
-        {/* Page header */}
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 md:flex md:items-center md:justify-between md:space-x-5 lg:max-w-7xl lg:px-8">
-          <div className="flex items-center space-x-5">
-            <div className="shrink-0">
-              <Avatar className="h-16 w-16">
-                <AvatarFallback className="bg-primary text-primary-foreground text-xl font-semibold">
-                  {getInitials(user?.firstName, user?.lastName)}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                {employeeName}
-              </h1>
-              <p className="text-sm font-medium text-muted-foreground">
-                <span className="text-foreground">
-                  {t(membership?.persona ?? "EMPLOYEE")}
-                </span>
-                {membership?.organization && (
-                  <>
-                    {" "}
-                    {tE("at")}{" "}
-                    <span className="text-foreground">
-                      {membership.organization.name}
-                    </span>
-                  </>
-                )}
-              </p>
-            </div>
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
+          <div className="mb-4">
+            <BackButton
+              href={ROUTES.admin.employees(locale)}
+              label={tE("backToEmployees")}
+            />
           </div>
-          <div className="mt-6 flex md:mt-0">
-            <Button asChild>
-              <Link
-                href={`${ROUTES.admin.employeesEdit(locale, employee.id)}?tab=${activeTab}`}
-              >
-                <Pencil className="h-4 w-4 mr-2" />
-                {t("edit")}
-              </Link>
-            </Button>
-          </div>
-        </div>
 
-        <div className="mx-auto mt-8 max-w-3xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
           <Tabs
             value={activeTab}
             onValueChange={handleTabChange}
             className="w-full"
           >
-            <TabsList className="mb-6">
-              <TabsTrigger value="overview">{tE("overview")}</TabsTrigger>
-              <TabsTrigger value="address">{t("address")}</TabsTrigger>
-              <TabsTrigger value="hr">{tE("hr.tabLabel")}</TabsTrigger>
-              <TabsTrigger value="emergency">
-                {tE("emergency.tabLabel")}
-              </TabsTrigger>
-              <TabsTrigger value="logbook">{tN("logbook")}</TabsTrigger>
-              <TabsTrigger value="documents">{tE("attachments")}</TabsTrigger>
-              <TabsTrigger value="contracts">{tE("contracts")}</TabsTrigger>
-              <TabsTrigger value="history">{tE("history")}</TabsTrigger>
-              <TabsTrigger value="absences" disabled>
-                {t("absenceNotice")}
-              </TabsTrigger>
-            </TabsList>
+            {/* Profile band — design handoff `.pf-band` */}
+            <div className="mb-[18px] overflow-x-auto rounded-card bg-timer px-[30px] pt-[26px] text-timer-foreground">
+              <div className="flex flex-wrap items-center gap-5">
+                <span className="flex size-[68px] shrink-0 items-center justify-center rounded-[20px] bg-gold text-[23px] font-bold text-gold-foreground">
+                  {getInitials(user?.firstName, user?.lastName)}
+                </span>
+                <div className="min-w-0">
+                  <h2 className="text-[26px] font-bold leading-none tracking-[-0.025em]">
+                    {employeeName}
+                  </h2>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {metaChips.map((chip, i) => (
+                      <span
+                        key={i}
+                        className="rounded-full bg-timer-foreground/15 px-[11px] py-1 text-[11.5px] font-semibold"
+                      >
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="ml-auto flex shrink-0 gap-[9px]">
+                  <Button
+                    asChild
+                    className="h-[38px] rounded-ctl border border-gold bg-gold px-4 text-[13px] font-semibold text-gold-foreground hover:bg-gold/90"
+                  >
+                    <Link
+                      href={`${ROUTES.admin.employeesEdit(locale, employee.id)}?tab=${activeTab}`}
+                    >
+                      <Pencil className="mr-2 h-4 w-4" />
+                      {t("edit")}
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+              <TabsList className="mt-[22px] h-auto justify-start gap-6 rounded-none bg-transparent p-0">
+                <TabsTrigger className={tabCls} value="overview">
+                  {tE("overview")}
+                </TabsTrigger>
+                <TabsTrigger className={tabCls} value="address">
+                  {t("address")}
+                </TabsTrigger>
+                <TabsTrigger className={tabCls} value="hr">
+                  {tE("hr.tabLabel")}
+                </TabsTrigger>
+                <TabsTrigger className={tabCls} value="emergency">
+                  {tE("emergency.tabLabel")}
+                </TabsTrigger>
+                <TabsTrigger className={tabCls} value="logbook">
+                  {tN("logbook")}
+                </TabsTrigger>
+                <TabsTrigger className={tabCls} value="documents">
+                  {tE("attachments")}
+                </TabsTrigger>
+                <TabsTrigger className={tabCls} value="contracts">
+                  {tE("contracts")}
+                </TabsTrigger>
+                <TabsTrigger className={tabCls} value="history">
+                  {tE("history")}
+                </TabsTrigger>
+                <TabsTrigger className={tabCls} value="absences" disabled>
+                  {t("absenceNotice")}
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             {/* Overview — description list */}
             <TabsContent value="overview">
