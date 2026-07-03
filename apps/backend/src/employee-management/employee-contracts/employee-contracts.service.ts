@@ -106,6 +106,7 @@ export class EmployeeContractsService {
         remainingVacationDays:
           incoming.remainingVacationDays ?? previous.remainingVacationDays,
         notes: incoming.notes ?? previous.notes,
+        documentUrl: incoming.documentUrl ?? previous.documentUrl,
         previousContractId: previous.id,
       });
 

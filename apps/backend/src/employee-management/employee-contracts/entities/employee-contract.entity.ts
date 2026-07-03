@@ -211,6 +211,11 @@ export class EmployeeContract extends AbstractEntity<EmployeeContract> {
   @Column('text', { nullable: true })
   notes?: string | null;
 
+  // Verknüpftes Vertragsdokument (1 PDF pro Vertrag; via /api/upload abgelegt).
+  @Field(() => String, { nullable: true })
+  @Column({ name: 'document_url', type: 'varchar', nullable: true })
+  documentUrl?: string | null;
+
   @Field(() => ID, { nullable: true })
   @Column('uuid', { name: 'previous_contract_id', nullable: true })
   previousContractId?: string | null;

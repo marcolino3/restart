@@ -97,6 +97,11 @@ export class CreateEmployeeContractInput {
   @IsString()
   notes?: string;
 
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  documentUrl?: string;
+
   @Field(() => WeekdayTimeWindowsInput, { nullable: true })
   @IsOptional()
   @ValidateNested()

@@ -32,6 +32,8 @@ const ALLOWED_MIME_TYPES = new Set([
   'image/webp',
   'image/gif',
   'image/avif',
+  // Vertragsdokumente (employees-Entity): PDF-Upload.
+  'application/pdf',
 ]);
 
 // Every entity here must have an ownership rule in assertTargetInOrg().
@@ -65,7 +67,7 @@ export class UploadController {
 
     if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
       throw new BadRequestException(
-        `Unsupported file type "${file.mimetype}". Allowed: images only`,
+        `Unsupported file type "${file.mimetype}". Allowed: images or PDF`,
       );
     }
 
