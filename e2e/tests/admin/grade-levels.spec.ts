@@ -5,17 +5,10 @@ import { ensureActiveOrg, signInAsSuperAdmin } from '../helpers/auth'
  * Grade levels ("Stufen") — design-handoff table with search, dialog-based
  * create/edit, delete and drag-and-drop reordering.
  *
- * The authenticated CRUD/reorder suites need a real password login. The
- * SuperAdminBootstrapService seeds the TypeORM password hash but NOT a
- * better-auth credential account (better-auth uses its own user/account
- * tables + scrypt), so on a fresh CI database the sign-in cannot succeed.
- * They are therefore CI-skipped — same limitation the admissions happy-path
- * documents — and were verified manually in the browser. Run them locally
- * against a dev DB that already has the better-auth account with
- * E2E_RUN_AUTHED=1. The access-control suite runs unauthenticated and gates CI.
+ * The authenticated suites sign in through the real UI. The credential
+ * account is seeded once by the Playwright global-setup (see
+ * helpers/global-setup), so these run in CI against a fresh database too.
  */
-const RUN_AUTHED = process.env.E2E_RUN_AUTHED === '1'
-
 test.describe('Grade levels — access control', () => {
   test('page requires authentication', async ({ page }) => {
     await page.goto('/en/admin/grade-levels', { waitUntil: 'networkidle' })
@@ -27,7 +20,6 @@ test.describe('Grade levels — access control', () => {
 })
 
 test.describe('Grade levels — CRUD', () => {
-  test.skip(!RUN_AUTHED, 'needs better-auth credential seed (see file header)')
   const unique = `E2E Stufe ${Date.now()}`
   const renamed = `${unique} umbenannt`
 

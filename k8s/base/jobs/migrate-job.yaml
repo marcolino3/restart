@@ -21,12 +21,28 @@ spec:
         component: migration
     spec:
       restartPolicy: Never
+      automountServiceAccountToken: false
       imagePullSecrets:
         - name: ghcr-secret
+      # Same hardened context as the backend deployment — identical image,
+      # the job only talks to Postgres (KSV-0118).
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: migrate
           image: ghcr.io/${IMAGE_OWNER}/restart-backend:${IMAGE_TAG}
           command: ["node", "dist/src/migrate.js"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
           envFrom:
             - configMapRef:
                 name: backend-config

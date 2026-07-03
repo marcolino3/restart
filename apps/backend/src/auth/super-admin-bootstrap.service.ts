@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { compare, hash } from 'bcrypt';
+import { auth } from '@/lib/auth';
 import { User } from '@/users/entities/user.entity';
 import { UserEmail } from '@/user-emails/entities/user-email.entity';
 
@@ -84,6 +85,35 @@ export class SuperAdminBootstrapService implements OnApplicationBootstrap {
           this.logger.log(`Superadmin angelegt: ${emailEnv}`);
         }
       });
+
+      // The sign-in form authenticates against better-auth's OWN tables
+      // (`user` + credential `account`), not user_emails.passwordHash. On a
+      // fresh database (CI, new environment) no such account exists, so the
+      // env-provisioned super-admin could never log in. Create it via the
+      // better-auth server API; existing users are left untouched (their
+      // password is NOT reset from env).
+      try {
+        const existing: Array<{ id: string }> = await this.em.query(
+          `SELECT id FROM "user" WHERE LOWER(email) = $1 LIMIT 1`,
+          [emailEnv],
+        );
+        if (existing.length === 0) {
+          await auth.api.signUpEmail({
+            body: {
+              name: 'Super Admin',
+              email: emailEnv,
+              password: passEnv,
+            },
+          });
+          this.logger.log(
+            `better-auth Credential-Account angelegt: ${emailEnv}`,
+          );
+        }
+      } catch (err) {
+        this.logger.warn(
+          `Could not create better-auth credential account (table missing?): ${(err as Error).message}`,
+        );
+      }
 
       // Mirror the SuperAdmin flag into better-auth's separate `user` table
       // by setting `role='admin'`. The admin plugin's impersonation check
