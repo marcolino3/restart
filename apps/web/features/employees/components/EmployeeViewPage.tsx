@@ -15,27 +15,65 @@ import {
 } from "@/components/common/DetailPanel";
 import { UserEmailField } from "@/features/users/components/UserEmailField";
 import { ROUTES } from "@/constants/routes";
+import { cn } from "@/lib/utils";
 
 import type { EmployeeDetail } from "../actions/get-employee-by-id.action";
 import type { EmployeeNoteItem } from "@/features/employee-notes/actions/get-employee-notes.action";
-import type { EmployeeAuditLogItem } from "../actions/get-employee-audit-log.action";
-import type { EmployeeHrProfile } from "../actions/get-employee-hr-profile.action";
-import type { EmployeeEmergencyProfile } from "../actions/get-employee-emergency-profile.action";
 import type { EmployeeContract } from "../actions/employee-contracts.actions";
+import type { EmployeeReportResult } from "@/features/time-tracking/actions/get-time-report.action";
 import EmployeeNotesFeed from "@/features/employee-notes/components/EmployeeNotesFeed";
 import EmployeeNotesTimeline from "@/features/employee-notes/components/EmployeeNotesTimeline";
 import CreateEmployeeNoteInline from "@/features/employee-notes/components/CreateEmployeeNoteInline";
-import EmployeeHistoryFeed from "./EmployeeHistoryFeed";
 import EmployeeContractsTab from "./EmployeeContractsTab";
+import EmployeeHistoryFeed from "./EmployeeHistoryFeed";
 
 interface EmployeeViewPageProps {
   employee: EmployeeDetail;
   notes: EmployeeNoteItem[];
-  auditLog: EmployeeAuditLogItem[];
-  hrProfile: EmployeeHrProfile | null;
-  emergencyProfile: EmployeeEmergencyProfile | null;
   contracts: EmployeeContract[];
+  report: EmployeeReportResult;
   employeeName: string;
+}
+
+/** Minutes → "+12:30" / "−2:15". */
+const fmtBalance = (min?: number | null): string => {
+  if (min == null) return "–";
+  const sign = min < 0 ? "−" : "+";
+  const a = Math.abs(min);
+  return `${sign}${Math.floor(a / 60)}:${String(a % 60).padStart(2, "0")}`;
+};
+const fmtHours = (min?: number | null): string =>
+  min == null ? "–" : `${(min / 60).toFixed(1)} h`;
+
+const STAT_TONE: Record<string, string> = {
+  green: "bg-status-green text-status-green-foreground",
+  sky: "bg-status-sky text-status-sky-foreground",
+  amber: "bg-status-amber text-status-amber-foreground",
+  rose: "bg-status-rose text-status-rose-foreground",
+  slate: "bg-status-slate text-status-slate-foreground",
+};
+
+/** Stat box from the design handoff (`.lsb`). */
+function StatBox({
+  label,
+  value,
+  tone = "slate",
+}: {
+  label: string;
+  value: React.ReactNode;
+  tone?: keyof typeof STAT_TONE | string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col gap-0.5 rounded-ctl px-[15px] py-3",
+        STAT_TONE[tone] ?? STAT_TONE.slate,
+      )}
+    >
+      <span className="text-[11px] font-semibold opacity-70">{label}</span>
+      <span className="text-[20px] font-bold tabular-nums">{value}</span>
+    </div>
+  );
 }
 
 function getInitials(firstName?: string, lastName?: string): string {
@@ -48,8 +86,8 @@ function getInitials(firstName?: string, lastName?: string): string {
 export default function EmployeeViewPage({
   employee,
   notes,
-  auditLog,
   contracts,
+  report,
   employeeName,
 }: EmployeeViewPageProps) {
   const t = useTranslations("Common");
@@ -152,23 +190,20 @@ export default function EmployeeViewPage({
                 <TabsTrigger className={tabCls} value="overview">
                   {tE("overview")}
                 </TabsTrigger>
-                <TabsTrigger className={tabCls} value="address">
-                  {t("address")}
+                <TabsTrigger className={tabCls} value="contracts">
+                  {tE("tabContract")}
+                </TabsTrigger>
+                <TabsTrigger className={tabCls} value="absences">
+                  {tE("tabAbsences")}
+                </TabsTrigger>
+                <TabsTrigger className={tabCls} value="timetracking">
+                  {tE("tabTimeTracking")}
                 </TabsTrigger>
                 <TabsTrigger className={tabCls} value="logbook">
-                  {tN("logbook")}
+                  {tE("tabNotes")}
                 </TabsTrigger>
                 <TabsTrigger className={tabCls} value="documents">
-                  {tE("attachments")}
-                </TabsTrigger>
-                <TabsTrigger className={tabCls} value="contracts">
-                  {tE("contracts")}
-                </TabsTrigger>
-                <TabsTrigger className={tabCls} value="history">
-                  {tE("history")}
-                </TabsTrigger>
-                <TabsTrigger className={tabCls} value="absences" disabled>
-                  {t("absenceNotice")}
+                  {tE("tabDocuments")}
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -265,12 +300,7 @@ export default function EmployeeViewPage({
                     </KvRow>
                   )}
                 </DetailPanel>
-              </DetailCols>
-            </TabsContent>
 
-            {/* Address */}
-            <TabsContent value="address">
-              <DetailCols>
                 <DetailPanel title={t("address")}>
                   <KvRow label={t("street")}>
                     {[user?.street, user?.houseNumber]
@@ -292,6 +322,66 @@ export default function EmployeeViewPage({
                   </KvRow>
                 </DetailPanel>
               </DetailCols>
+            </TabsContent>
+
+            {/* Absenzen */}
+            <TabsContent value="absences">
+              <DetailPanel title={tE("tabAbsences")}>
+                {report.categorySummary.length ? (
+                  report.categorySummary.map((c) => (
+                    <KvRow
+                      key={c.categoryId}
+                      label={
+                        <span className="flex items-center gap-2">
+                          <span
+                            className="inline-block size-2 shrink-0 rounded-full"
+                            style={{ background: c.color ?? "var(--muted)" }}
+                          />
+                          {c.name}
+                        </span>
+                      }
+                    >
+                      {tE("daysCount", { days: c.totalDays })}
+                    </KvRow>
+                  ))
+                ) : (
+                  <p className="text-[13px] text-muted-foreground">
+                    {tE("noAbsences")}
+                  </p>
+                )}
+              </DetailPanel>
+            </TabsContent>
+
+            {/* Zeiterfassung */}
+            <TabsContent value="timetracking">
+              <DetailPanel title={tE("tabTimeTracking")}>
+                <div className="grid grid-cols-2 gap-[9px] md:grid-cols-4">
+                  <StatBox
+                    tone="green"
+                    label={t("timeBalanceMinutes")}
+                    value={fmtBalance(report.balance?.netBalanceMinutes)}
+                  />
+                  <StatBox
+                    tone="sky"
+                    label={tE("remainingVacation")}
+                    value={
+                      report.vacation?.remainingDays != null
+                        ? `${report.vacation.remainingDays} d`
+                        : "–"
+                    }
+                  />
+                  <StatBox
+                    tone="slate"
+                    label={tE("worked")}
+                    value={fmtHours(report.balance?.workedMinutes)}
+                  />
+                  <StatBox
+                    tone="slate"
+                    label={tE("planned")}
+                    value={fmtHours(report.balance?.plannedMinutes)}
+                  />
+                </div>
+              </DetailPanel>
             </TabsContent>
 
 
@@ -323,7 +413,7 @@ export default function EmployeeViewPage({
 
             {/* Documents / Attachments */}
             <TabsContent value="documents">
-              <DetailPanel title={tE("attachments")}>
+              <DetailPanel title={tE("tabDocuments")}>
                 <ul
                   role="list"
                   className="mt-2 divide-y divide-border rounded-ctl border border-border"
@@ -387,16 +477,6 @@ export default function EmployeeViewPage({
                 contracts={contracts}
                 editable
               />
-            </TabsContent>
-
-            {/* History */}
-            <TabsContent value="history">
-              <DetailPanel title={tE("history")}>
-                <p className="mb-4 text-[12.5px] text-muted-foreground">
-                  {tE("historyDescription")}
-                </p>
-                <EmployeeHistoryFeed logs={auditLog} />
-              </DetailPanel>
             </TabsContent>
           </Tabs>
   );

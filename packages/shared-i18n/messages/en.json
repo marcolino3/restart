@@ -802,7 +802,17 @@
     "contractAndWorkload": "Contract & workload",
     "contactAndPerson": "Contact & person",
     "vacationDaysPerYear": "{days} days / year",
-    "sinceMonth": "since {date}"
+    "sinceMonth": "since {date}",
+    "tabContract": "Contract",
+    "tabAbsences": "Absences",
+    "tabTimeTracking": "Time tracking",
+    "tabNotes": "Notes",
+    "tabDocuments": "Documents",
+    "remainingVacation": "Remaining vacation",
+    "worked": "Worked",
+    "planned": "Target",
+    "daysCount": "{days} days",
+    "noAbsences": "No absences recorded"
   },
   "EmployeeHistory": {
     "noEntries": "No changes recorded yet.",
