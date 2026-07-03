@@ -229,6 +229,15 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
                 },
               ]
             : []),
+          ...(hasPermission("CONSENT_READ")
+            ? [
+                {
+                  title: t("dataProtection"),
+                  url: ROUTES.admin.dataProtection(locale),
+                  icon: IconShield,
+                },
+              ]
+            : []),
         ]
       : [],
     ...(isSuperAdmin

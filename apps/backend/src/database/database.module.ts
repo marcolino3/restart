@@ -57,6 +57,9 @@ import { ProjectTemplate } from '@/project-management/templates/entities/project
 import { ProjectTemplateTask } from '@/project-management/templates/entities/project-template-task.entity';
 import { Protocol } from '@/project-management/protocols/entities/protocol.entity';
 import { ProtocolParticipant } from '@/project-management/protocols/entities/protocol-participant.entity';
+import { ConsentPurpose } from '@/consent/entities/consent-purpose.entity';
+import { Consent } from '@/consent/entities/consent.entity';
+import { ConsentAuditLog } from '@/consent/entities/consent-audit-log.entity';
 import { Permission } from '@/permissions/entities/permission.entity';
 import { Role } from '@/roles/entities/role.entity';
 import { UserEmail } from '@/user-emails/entities/user-email.entity';
@@ -130,6 +133,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       ProjectTemplateTask,
       Protocol,
       ProtocolParticipant,
+      ConsentPurpose,
+      Consent,
+      ConsentAuditLog,
     ]),
   ],
   exports: [TypeOrmModule],

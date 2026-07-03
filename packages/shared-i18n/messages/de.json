@@ -1,5 +1,58 @@
 {
+  "ConsentManagement": {
+    "centerTitle": "Datenschutz-Center",
+    "centerSubtitle": "Einwilligungen und Betroffenenrechte org-weit verwalten",
+    "tabConsent": "Einwilligungen",
+    "tabOverview": "Übersicht",
+    "overviewPlaceholder": "Weitere Bereiche (Betroffenenanfragen, Aufbewahrung, Datenpannen) folgen in den nächsten Phasen.",
+    "purposesTitle": "Einwilligungs-Zwecke",
+    "purposesSubtitle": "Definiere, wofür deine Organisation Einwilligungen einholt.",
+    "addPurpose": "Zweck hinzufügen",
+    "editPurpose": "Zweck bearbeiten",
+    "noPurposes": "Noch keine Einwilligungs-Zwecke definiert.",
+    "fieldName": "Bezeichnung",
+    "fieldSlug": "Kürzel (slug)",
+    "fieldDescription": "Beschreibung",
+    "fieldAppliesTo": "Gilt für",
+    "fieldLegalBasis": "Rechtsgrundlage",
+    "fieldRequiresEvidence": "Nachweis erforderlich",
+    "fieldRequiresEvidenceHint": "Zum Erteilen muss ein unterschriebenes Dokument hinterlegt werden.",
+    "fieldIsMandatory": "Pflicht beim Onboarding",
+    "fieldIsMandatoryHint": "Muss beim Aufnahme-/Eintrittsprozess entschieden werden.",
+    "save": "Speichern",
+    "edit": "Bearbeiten",
+    "archive": "Archivieren",
+    "mandatoryBadge": "Pflicht",
+    "evidenceBadge": "Nachweis",
+    "grant": "Erteilen",
+    "deny": "Ablehnen",
+    "withdraw": "Widerrufen",
+    "noApplicablePurposes": "Keine passenden Einwilligungs-Zwecke für diese Person.",
+    "savedToast": "Zweck gespeichert",
+    "archivedToast": "Zweck archiviert",
+    "recordedToast": "Einwilligung erfasst",
+    "withdrawnToast": "Einwilligung widerrufen",
+    "subject": {
+      "STUDENT": "Schüler",
+      "EMPLOYEE": "Mitarbeiter"
+    },
+    "legalBasis": {
+      "CONSENT": "Einwilligung",
+      "CONTRACT": "Vertrag",
+      "LEGAL_OBLIGATION": "Rechtliche Verpflichtung",
+      "VITAL_INTEREST": "Lebenswichtige Interessen",
+      "PUBLIC_TASK": "Öffentliche Aufgabe",
+      "LEGITIMATE_INTEREST": "Berechtigtes Interesse"
+    },
+    "status": {
+      "GRANTED": "Erteilt",
+      "DENIED": "Abgelehnt",
+      "WITHDRAWN": "Widerrufen",
+      "PENDING": "Offen"
+    }
+  },
   "SiteHeader": {
+    "dataProtection": "Datenschutz",
     "dashboard": "Dashboard",
     "timeTracking": "Zeiterfassung",
     "timeTrackingReport": "Zeit-Auswertung",

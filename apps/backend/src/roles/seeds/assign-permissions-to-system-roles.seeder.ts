@@ -56,6 +56,9 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'PROTOCOL_READ',
     'PROTOCOL_WRITE',
     'PROTOCOL_DELETE',
+    'CONSENT_READ',
+    'CONSENT_MANAGE',
+    'CONSENT_SETTINGS_MANAGE',
   ] as PermissionCode[],
   ORG_ADMIN: [
     'USER_INVITE',
@@ -103,6 +106,9 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'PROTOCOL_READ',
     'PROTOCOL_WRITE',
     'PROTOCOL_DELETE',
+    'CONSENT_READ',
+    'CONSENT_MANAGE',
+    'CONSENT_SETTINGS_MANAGE',
   ] as PermissionCode[],
   HR_MANAGER: [
     'EMPLOYEE_READ',
@@ -121,6 +127,8 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'PROJECT_CREATE',
     'PROTOCOL_READ',
     'PROTOCOL_WRITE',
+    'CONSENT_READ',
+    'CONSENT_MANAGE',
   ] as PermissionCode[],
   OFFICE: [
     'EMPLOYEE_READ',
@@ -153,6 +161,9 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'PROTOCOL_READ',
     'PROTOCOL_WRITE',
     'PROTOCOL_DELETE',
+    'CONSENT_READ',
+    'CONSENT_MANAGE',
+    'CONSENT_SETTINGS_MANAGE',
   ] as PermissionCode[],
   TEAM_LEAD: [
     'EMPLOYEE_READ',
@@ -171,6 +182,7 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'PROJECT_CREATE',
     'PROTOCOL_READ',
     'PROTOCOL_WRITE',
+    'CONSENT_READ',
   ] as PermissionCode[],
   EMPLOYEE: [
     'EMPLOYEE_READ',

@@ -1,5 +1,58 @@
 {
+  "ConsentManagement": {
+    "centerTitle": "Data Protection Center",
+    "centerSubtitle": "Manage consents and data-subject rights across the organization",
+    "tabConsent": "Consents",
+    "tabOverview": "Overview",
+    "overviewPlaceholder": "Further areas (data-subject requests, retention, breaches) follow in the next phases.",
+    "purposesTitle": "Consent purposes",
+    "purposesSubtitle": "Define what your organization asks consent for.",
+    "addPurpose": "Add purpose",
+    "editPurpose": "Edit purpose",
+    "noPurposes": "No consent purposes defined yet.",
+    "fieldName": "Name",
+    "fieldSlug": "Slug",
+    "fieldDescription": "Description",
+    "fieldAppliesTo": "Applies to",
+    "fieldLegalBasis": "Legal basis",
+    "fieldRequiresEvidence": "Evidence required",
+    "fieldRequiresEvidenceHint": "A signed document must be attached to grant consent.",
+    "fieldIsMandatory": "Mandatory at onboarding",
+    "fieldIsMandatoryHint": "Must be decided during the admission / hiring process.",
+    "save": "Save",
+    "edit": "Edit",
+    "archive": "Archive",
+    "mandatoryBadge": "Mandatory",
+    "evidenceBadge": "Evidence",
+    "grant": "Grant",
+    "deny": "Deny",
+    "withdraw": "Withdraw",
+    "noApplicablePurposes": "No applicable consent purposes for this person.",
+    "savedToast": "Purpose saved",
+    "archivedToast": "Purpose archived",
+    "recordedToast": "Consent recorded",
+    "withdrawnToast": "Consent withdrawn",
+    "subject": {
+      "STUDENT": "Student",
+      "EMPLOYEE": "Employee"
+    },
+    "legalBasis": {
+      "CONSENT": "Consent",
+      "CONTRACT": "Contract",
+      "LEGAL_OBLIGATION": "Legal obligation",
+      "VITAL_INTEREST": "Vital interests",
+      "PUBLIC_TASK": "Public task",
+      "LEGITIMATE_INTEREST": "Legitimate interest"
+    },
+    "status": {
+      "GRANTED": "Granted",
+      "DENIED": "Denied",
+      "WITHDRAWN": "Withdrawn",
+      "PENDING": "Pending"
+    }
+  },
   "SiteHeader": {
+    "dataProtection": "Data protection",
     "dashboard": "Dashboard",
     "timeTracking": "Time Tracking",
     "timeTrackingReport": "Time Report",

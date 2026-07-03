@@ -113,6 +113,15 @@ const PERMISSION_CATALOG: Array<{
     name: 'Protokolle erstellen/bearbeiten',
   },
   { code: PermissionCode.PROTOCOL_DELETE, name: 'Protokolle loeschen' },
+  { code: PermissionCode.CONSENT_READ, name: 'Einwilligungen lesen' },
+  {
+    code: PermissionCode.CONSENT_MANAGE,
+    name: 'Einwilligungen erfassen/widerrufen',
+  },
+  {
+    code: PermissionCode.CONSENT_SETTINGS_MANAGE,
+    name: 'Einwilligungs-Zwecke verwalten',
+  },
 ];
 
 export async function seedPermissionCatalog(manager: EntityManager) {

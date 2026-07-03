@@ -119,6 +119,9 @@ export const ROUTES = {
     // Roles
     roles: (locale: string) => `/${locale}/admin/roles`,
 
+    // Data protection center (DSGVO / revDSG)
+    dataProtection: (locale: string) => `/${locale}/admin/data-protection`,
+
     // Forbidden landing for persona-blocked admin routes
     dashboard: (locale: string) => `/${locale}/admin`,
     forbidden: (locale: string) => `/${locale}/admin/forbidden`,

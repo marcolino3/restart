@@ -478,6 +478,106 @@ export type CompanyVacation = {
   version: Scalars['Int']['output'];
 };
 
+export type Consent = {
+  __typename?: 'Consent';
+  actorMembership?: Maybe<Membership>;
+  actorMembershipId?: Maybe<Scalars['ID']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  decidedAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  evidenceUrl?: Maybe<Scalars['String']['output']>;
+  grantedByContactPerson?: Maybe<ContactPerson>;
+  grantedByContactPersonId?: Maybe<Scalars['ID']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  note?: Maybe<Scalars['String']['output']>;
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['String']['output'];
+  purpose?: Maybe<ConsentPurpose>;
+  purposeId: Scalars['ID']['output'];
+  status: ConsentStatus;
+  subjectId: Scalars['ID']['output'];
+  subjectType: ConsentSubjectType;
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+  withdrawnAt?: Maybe<Scalars['DateTime']['output']>;
+};
+
+/** Immutable history event for a consent decision change */
+export enum ConsentAuditAction {
+  Denied = 'DENIED',
+  Granted = 'GRANTED',
+  Updated = 'UPDATED',
+  Withdrawn = 'WITHDRAWN'
+}
+
+export type ConsentAuditLog = {
+  __typename?: 'ConsentAuditLog';
+  action: ConsentAuditAction;
+  actorMembership?: Maybe<Membership>;
+  actorMembershipId?: Maybe<Scalars['ID']['output']>;
+  consentId?: Maybe<Scalars['ID']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  newStatus?: Maybe<ConsentStatus>;
+  note?: Maybe<Scalars['String']['output']>;
+  organizationId: Scalars['String']['output'];
+  previousStatus?: Maybe<ConsentStatus>;
+  purposeId: Scalars['ID']['output'];
+  subjectId: Scalars['ID']['output'];
+  subjectType: ConsentSubjectType;
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+/** Lawful basis for the processing (DSGVO Art. 6 / revDSG) */
+export enum ConsentLegalBasis {
+  Consent = 'CONSENT',
+  Contract = 'CONTRACT',
+  LegalObligation = 'LEGAL_OBLIGATION',
+  LegitimateInterest = 'LEGITIMATE_INTEREST',
+  PublicTask = 'PUBLIC_TASK',
+  VitalInterest = 'VITAL_INTEREST'
+}
+
+export type ConsentPurpose = {
+  __typename?: 'ConsentPurpose';
+  appliesTo: Array<ConsentSubjectType>;
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  isMandatory: Scalars['Boolean']['output'];
+  legalBasis: ConsentLegalBasis;
+  name: Scalars['String']['output'];
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['String']['output'];
+  position: Scalars['Int']['output'];
+  requiresEvidence: Scalars['Boolean']['output'];
+  slug: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+/** Current decision on a consent purpose for a subject */
+export enum ConsentStatus {
+  Denied = 'DENIED',
+  Granted = 'GRANTED',
+  Withdrawn = 'WITHDRAWN'
+}
+
+/** The kind of data subject a consent refers to */
+export enum ConsentSubjectType {
+  Employee = 'EMPLOYEE',
+  Student = 'STUDENT'
+}
+
 export type ContactPerson = {
   __typename?: 'ContactPerson';
   address?: Maybe<Address>;
@@ -625,6 +725,17 @@ export type CreateCompanyVacationInput = {
   endDate: Scalars['String']['input'];
   name: Scalars['String']['input'];
   startDate: Scalars['String']['input'];
+};
+
+export type CreateConsentPurposeInput = {
+  appliesTo: Array<ConsentSubjectType>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  isMandatory?: InputMaybe<Scalars['Boolean']['input']>;
+  legalBasis?: InputMaybe<ConsentLegalBasis>;
+  name: Scalars['String']['input'];
+  position?: InputMaybe<Scalars['Int']['input']>;
+  requiresEvidence?: InputMaybe<Scalars['Boolean']['input']>;
+  slug: Scalars['String']['input'];
 };
 
 export type CreateContactPersonInput = {
@@ -1901,6 +2012,7 @@ export type Mutation = {
   archiveAdmissionApplication: Scalars['Boolean']['output'];
   archiveAdmissionRejectionReason: Scalars['Boolean']['output'];
   archiveAdmissionStage: Scalars['Boolean']['output'];
+  archiveConsentPurpose: Scalars['Boolean']['output'];
   archiveContactPerson: Scalars['Boolean']['output'];
   archiveCurriculum: Scalars['Boolean']['output'];
   archiveCurriculumLevel: Scalars['Boolean']['output'];
@@ -1917,6 +2029,7 @@ export type Mutation = {
   createAdmissionReminder: AdmissionReminder;
   createAdmissionStage: AdmissionStage;
   createCompanyVacation: CompanyVacation;
+  createConsentPurpose: ConsentPurpose;
   createContactPerson: ContactPerson;
   createCountry: Country;
   createCurriculum: Curriculum;
@@ -1988,6 +2101,7 @@ export type Mutation = {
   moveAdmissionApplication: AdmissionApplication;
   moveStudentToStage: Student;
   moveTask: Task;
+  recordConsent: Consent;
   rejectAdmissionApplication: AdmissionApplication;
   removeCountry: Country;
   removeOrganization: Organization;
@@ -1997,6 +2111,7 @@ export type Mutation = {
   reorderAdmissionApplications: Array<AdmissionApplication>;
   reorderAdmissionRejectionReasons: Array<AdmissionRejectionReason>;
   reorderAdmissionStages: Array<AdmissionStage>;
+  reorderConsentPurposes: Array<ConsentPurpose>;
   reorderCurricula: Array<Curriculum>;
   reorderCurriculumLevels: Array<CurriculumLevel>;
   reorderCurriculumNodes: Array<CurriculumNode>;
@@ -2033,6 +2148,7 @@ export type Mutation = {
   updateAdmissionReminder: AdmissionReminder;
   updateAdmissionStage: AdmissionStage;
   updateCompanyVacation: CompanyVacation;
+  updateConsentPurpose: ConsentPurpose;
   updateContactPerson: ContactPerson;
   updateCountry: Country;
   updateCurriculum: Curriculum;
@@ -2079,6 +2195,7 @@ export type Mutation = {
   upsertEmployeeHrProfile: EmployeeHrProfile;
   upsertEmployeeOnboardingDraft: Employee;
   upsertEmployeePeriodOpeningBalance: EmployeePeriodOpeningBalance;
+  withdrawConsent: Consent;
 };
 
 
@@ -2104,6 +2221,11 @@ export type MutationArchiveAdmissionRejectionReasonArgs = {
 
 
 export type MutationArchiveAdmissionStageArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationArchiveConsentPurposeArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -2186,6 +2308,11 @@ export type MutationCreateAdmissionStageArgs = {
 
 export type MutationCreateCompanyVacationArgs = {
   input: CreateCompanyVacationInput;
+};
+
+
+export type MutationCreateConsentPurposeArgs = {
+  input: CreateConsentPurposeInput;
 };
 
 
@@ -2541,6 +2668,11 @@ export type MutationMoveTaskArgs = {
 };
 
 
+export type MutationRecordConsentArgs = {
+  input: RecordConsentInput;
+};
+
+
 export type MutationRejectAdmissionApplicationArgs = {
   input: RejectAdmissionApplicationInput;
 };
@@ -2583,6 +2715,11 @@ export type MutationReorderAdmissionRejectionReasonsArgs = {
 
 export type MutationReorderAdmissionStagesArgs = {
   input: ReorderAdmissionStagesInput;
+};
+
+
+export type MutationReorderConsentPurposesArgs = {
+  input: ReorderConsentPurposesInput;
 };
 
 
@@ -2765,6 +2902,11 @@ export type MutationUpdateAdmissionStageArgs = {
 
 export type MutationUpdateCompanyVacationArgs = {
   input: UpdateCompanyVacationInput;
+};
+
+
+export type MutationUpdateConsentPurposeArgs = {
+  input: UpdateConsentPurposeInput;
 };
 
 
@@ -2997,6 +3139,11 @@ export type MutationUpsertEmployeePeriodOpeningBalanceArgs = {
   input: UpsertEmployeePeriodOpeningBalanceInput;
 };
 
+
+export type MutationWithdrawConsentArgs = {
+  input: WithdrawConsentInput;
+};
+
 export type OnboardingContractInput = {
   annualVacationDays?: InputMaybe<Scalars['Int']['input']>;
   contractType?: InputMaybe<EmployeeContractType>;
@@ -3086,6 +3233,9 @@ export enum PermissionCode {
   AdmissionStageManage = 'ADMISSION_STAGE_MANAGE',
   AdmissionStageRead = 'ADMISSION_STAGE_READ',
   BillingManage = 'BILLING_MANAGE',
+  ConsentManage = 'CONSENT_MANAGE',
+  ConsentRead = 'CONSENT_READ',
+  ConsentSettingsManage = 'CONSENT_SETTINGS_MANAGE',
   ContactPersonDelete = 'CONTACT_PERSON_DELETE',
   ContactPersonRead = 'CONTACT_PERSON_READ',
   ContactPersonWrite = 'CONTACT_PERSON_WRITE',
@@ -3382,6 +3532,10 @@ export type Query = {
   classroomEngagementTimeline: EngagementTimelineOutput;
   classroomHeatmapData: ClassroomHeatmapDataOutput;
   companyVacations: Array<CompanyVacation>;
+  consentAuditTrail: Array<ConsentAuditLog>;
+  consentPurposeById: ConsentPurpose;
+  consentPurposes: Array<ConsentPurpose>;
+  consentsForSubject: Array<Consent>;
   contactPersonById: ContactPerson;
   contactPersonsByOrgId: Array<ContactPerson>;
   contactPersonsByStudentId: Array<StudentContactPerson>;
@@ -3577,6 +3731,28 @@ export type QueryClassroomEngagementTimelineArgs = {
 export type QueryClassroomHeatmapDataArgs = {
   locale?: Scalars['String']['input'];
   schoolClassId: Scalars['ID']['input'];
+};
+
+
+export type QueryConsentAuditTrailArgs = {
+  subjectId: Scalars['ID']['input'];
+  subjectType: ConsentSubjectType;
+};
+
+
+export type QueryConsentPurposeByIdArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryConsentPurposesArgs = {
+  includeArchived?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+
+export type QueryConsentsForSubjectArgs = {
+  subjectId: Scalars['ID']['input'];
+  subjectType: ConsentSubjectType;
 };
 
 
@@ -3969,6 +4145,17 @@ export type QueryUserEmailsByUserIdArgs = {
   userId: Scalars['ID']['input'];
 };
 
+export type RecordConsentInput = {
+  decidedAt?: InputMaybe<Scalars['DateTime']['input']>;
+  evidenceUrl?: InputMaybe<Scalars['String']['input']>;
+  grantedByContactPersonId?: InputMaybe<Scalars['ID']['input']>;
+  note?: InputMaybe<Scalars['String']['input']>;
+  purposeId: Scalars['ID']['input'];
+  status: ConsentStatus;
+  subjectId: Scalars['ID']['input'];
+  subjectType: ConsentSubjectType;
+};
+
 export type RecordKeepingSettings = {
   __typename?: 'RecordKeepingSettings';
   bigGapDays: Scalars['Int']['output'];
@@ -4016,6 +4203,10 @@ export type ReorderAdmissionRejectionReasonsInput = {
 };
 
 export type ReorderAdmissionStagesInput = {
+  ids: Array<Scalars['ID']['input']>;
+};
+
+export type ReorderConsentPurposesInput = {
   ids: Array<Scalars['ID']['input']>;
 };
 
@@ -4531,6 +4722,18 @@ export type UpdateCompanyVacationInput = {
   id: Scalars['ID']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
   startDate?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateConsentPurposeInput = {
+  appliesTo?: InputMaybe<Array<ConsentSubjectType>>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  isMandatory?: InputMaybe<Scalars['Boolean']['input']>;
+  legalBasis?: InputMaybe<ConsentLegalBasis>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  position?: InputMaybe<Scalars['Int']['input']>;
+  requiresEvidence?: InputMaybe<Scalars['Boolean']['input']>;
+  slug?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateContactPersonInput = {
@@ -5082,6 +5285,11 @@ export type WeekdayWorkloads = {
   wed?: Maybe<Scalars['Float']['output']>;
 };
 
+export type WithdrawConsentInput = {
+  id: Scalars['ID']['input'];
+  note?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type WorkTimeBalance = {
   __typename?: 'WorkTimeBalance';
   absenceDaysCount: Scalars['Int']['output'];
@@ -5366,6 +5574,56 @@ export type AuthUserIdByUserIdQueryVariables = Exact<{
 
 
 export type AuthUserIdByUserIdQuery = { __typename?: 'Query', authUserIdByUserId?: string | null };
+
+export type ArchiveConsentPurposeMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type ArchiveConsentPurposeMutation = { __typename?: 'Mutation', archiveConsentPurpose: boolean };
+
+export type ConsentPurposesQueryVariables = Exact<{
+  includeArchived?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+
+export type ConsentPurposesQuery = { __typename?: 'Query', consentPurposes: Array<{ __typename?: 'ConsentPurpose', id: string, name: string, slug: string, description?: string | null, appliesTo: Array<ConsentSubjectType>, legalBasis: ConsentLegalBasis, requiresEvidence: boolean, isMandatory: boolean, position: number, isArchived: boolean }> };
+
+export type ConsentsForSubjectQueryVariables = Exact<{
+  subjectType: ConsentSubjectType;
+  subjectId: Scalars['ID']['input'];
+}>;
+
+
+export type ConsentsForSubjectQuery = { __typename?: 'Query', consentsForSubject: Array<{ __typename?: 'Consent', id: string, subjectType: ConsentSubjectType, subjectId: string, purposeId: string, status: ConsentStatus, grantedByContactPersonId?: string | null, decidedAt: any, withdrawnAt?: any | null, evidenceUrl?: string | null, note?: string | null, purpose?: { __typename?: 'ConsentPurpose', id: string, name: string, slug: string } | null }> };
+
+export type RecordConsentMutationVariables = Exact<{
+  input: RecordConsentInput;
+}>;
+
+
+export type RecordConsentMutation = { __typename?: 'Mutation', recordConsent: { __typename?: 'Consent', id: string, status: ConsentStatus } };
+
+export type CreateConsentPurposeMutationVariables = Exact<{
+  input: CreateConsentPurposeInput;
+}>;
+
+
+export type CreateConsentPurposeMutation = { __typename?: 'Mutation', createConsentPurpose: { __typename?: 'ConsentPurpose', id: string } };
+
+export type UpdateConsentPurposeMutationVariables = Exact<{
+  input: UpdateConsentPurposeInput;
+}>;
+
+
+export type UpdateConsentPurposeMutation = { __typename?: 'Mutation', updateConsentPurpose: { __typename?: 'ConsentPurpose', id: string } };
+
+export type WithdrawConsentMutationVariables = Exact<{
+  input: WithdrawConsentInput;
+}>;
+
+
+export type WithdrawConsentMutation = { __typename?: 'Mutation', withdrawConsent: { __typename?: 'Consent', id: string, status: ConsentStatus } };
 
 export type ArchiveContactPersonMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -6436,11 +6694,6 @@ export type DeleteTeamMutationVariables = Exact<{
 
 export type DeleteTeamMutation = { __typename?: 'Mutation', deleteTeam: boolean };
 
-export type GetAllTeamMembersQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type GetAllTeamMembersQuery = { __typename?: 'Query', teamMembersByOrgId: Array<{ __typename?: 'TeamMember', id: string, role: TeamMemberRole, team?: { __typename?: 'Team', id: string } | null, employee?: { __typename?: 'Employee', id: string, isActive: boolean, membership: { __typename?: 'Membership', user?: { __typename?: 'User', id: string, firstName: string, lastName: string, userEmails: Array<{ __typename?: 'UserEmail', email: string, isPrimary: boolean }> } | null } } | null }> };
-
 export type GetTeamByIdQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
@@ -6459,13 +6712,6 @@ export type GetTeamsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type GetTeamsQuery = { __typename?: 'Query', teamsByOrgId: Array<{ __typename?: 'Team', id: string, name: string, sortOrder: number, parentId?: string | null }> };
-
-export type MoveTeamMemberMutationVariables = Exact<{
-  input: UpdateTeamMemberInput;
-}>;
-
-
-export type MoveTeamMemberMutation = { __typename?: 'Mutation', updateTeamMember: { __typename?: 'TeamMember', id: string, role: TeamMemberRole } };
 
 export type RemoveTeamMemberMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -6779,6 +7025,13 @@ export const ReorderAdmissionStagesDocument = {"kind":"Document","definitions":[
 export const UpdateAdmissionActivityDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateAdmissionActivity"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateAdmissionActivityInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateAdmissionActivity"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateAdmissionActivityMutation, UpdateAdmissionActivityMutationVariables>;
 export const UpdateAdmissionApplicationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateAdmissionApplication"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateAdmissionApplicationInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateAdmissionApplication"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateAdmissionApplicationMutation, UpdateAdmissionApplicationMutationVariables>;
 export const AuthUserIdByUserIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AuthUserIdByUserId"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"userId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"authUserIdByUserId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"userId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"userId"}}}]}]}}]} as unknown as DocumentNode<AuthUserIdByUserIdQuery, AuthUserIdByUserIdQueryVariables>;
+export const ArchiveConsentPurposeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ArchiveConsentPurpose"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"archiveConsentPurpose"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<ArchiveConsentPurposeMutation, ArchiveConsentPurposeMutationVariables>;
+export const ConsentPurposesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ConsentPurposes"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"includeArchived"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"consentPurposes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"includeArchived"},"value":{"kind":"Variable","name":{"kind":"Name","value":"includeArchived"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"appliesTo"}},{"kind":"Field","name":{"kind":"Name","value":"legalBasis"}},{"kind":"Field","name":{"kind":"Name","value":"requiresEvidence"}},{"kind":"Field","name":{"kind":"Name","value":"isMandatory"}},{"kind":"Field","name":{"kind":"Name","value":"position"}},{"kind":"Field","name":{"kind":"Name","value":"isArchived"}}]}}]}}]} as unknown as DocumentNode<ConsentPurposesQuery, ConsentPurposesQueryVariables>;
+export const ConsentsForSubjectDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ConsentsForSubject"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"subjectType"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ConsentSubjectType"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"subjectId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"consentsForSubject"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"subjectType"},"value":{"kind":"Variable","name":{"kind":"Name","value":"subjectType"}}},{"kind":"Argument","name":{"kind":"Name","value":"subjectId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"subjectId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"subjectType"}},{"kind":"Field","name":{"kind":"Name","value":"subjectId"}},{"kind":"Field","name":{"kind":"Name","value":"purposeId"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"grantedByContactPersonId"}},{"kind":"Field","name":{"kind":"Name","value":"decidedAt"}},{"kind":"Field","name":{"kind":"Name","value":"withdrawnAt"}},{"kind":"Field","name":{"kind":"Name","value":"evidenceUrl"}},{"kind":"Field","name":{"kind":"Name","value":"note"}},{"kind":"Field","name":{"kind":"Name","value":"purpose"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}}]}}]}}]}}]} as unknown as DocumentNode<ConsentsForSubjectQuery, ConsentsForSubjectQueryVariables>;
+export const RecordConsentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RecordConsent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RecordConsentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"recordConsent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode<RecordConsentMutation, RecordConsentMutationVariables>;
+export const CreateConsentPurposeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateConsentPurpose"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateConsentPurposeInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createConsentPurpose"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateConsentPurposeMutation, CreateConsentPurposeMutationVariables>;
+export const UpdateConsentPurposeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateConsentPurpose"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateConsentPurposeInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateConsentPurpose"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateConsentPurposeMutation, UpdateConsentPurposeMutationVariables>;
+export const WithdrawConsentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"WithdrawConsent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"WithdrawConsentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"withdrawConsent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode<WithdrawConsentMutation, WithdrawConsentMutationVariables>;
 export const ArchiveContactPersonDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ArchiveContactPerson"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"archiveContactPerson"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<ArchiveContactPersonMutation, ArchiveContactPersonMutationVariables>;
 export const CreateAddressDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateAddress"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateAddressInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createAddress"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateAddressMutation, CreateAddressMutationVariables>;
 export const CreateContactPersonDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateContactPerson"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateContactPersonInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createContactPerson"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateContactPersonMutation, CreateContactPersonMutationVariables>;
@@ -6936,11 +7189,9 @@ export const UpdateStudentDocument = {"kind":"Document","definitions":[{"kind":"
 export const AddTeamMemberDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AddTeamMember"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateTeamMemberInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createTeamMember"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}}]}}]} as unknown as DocumentNode<AddTeamMemberMutation, AddTeamMemberMutationVariables>;
 export const CreateTeamDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateTeam"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateTeamInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createTeam"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"parentId"}}]}}]}}]} as unknown as DocumentNode<CreateTeamMutation, CreateTeamMutationVariables>;
 export const DeleteTeamDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteTeam"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteTeam"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteTeamMutation, DeleteTeamMutationVariables>;
-export const GetAllTeamMembersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAllTeamMembers"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"teamMembersByOrgId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"team"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"employee"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"membership"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"userEmails"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"isPrimary"}}]}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetAllTeamMembersQuery, GetAllTeamMembersQueryVariables>;
 export const GetTeamByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetTeamById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"teamById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<GetTeamByIdQuery, GetTeamByIdQueryVariables>;
 export const GetTeamMembersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetTeamMembers"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"teamId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"teamMembersByTeamId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"teamId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"teamId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"employee"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"membership"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"userEmails"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"isPrimary"}}]}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetTeamMembersQuery, GetTeamMembersQueryVariables>;
 export const GetTeamsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetTeams"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"teamsByOrgId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"parentId"}}]}}]}}]} as unknown as DocumentNode<GetTeamsQuery, GetTeamsQueryVariables>;
-export const MoveTeamMemberDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"MoveTeamMember"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateTeamMemberInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateTeamMember"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}}]}}]} as unknown as DocumentNode<MoveTeamMemberMutation, MoveTeamMemberMutationVariables>;
 export const RemoveTeamMemberDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RemoveTeamMember"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteTeamMember"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<RemoveTeamMemberMutation, RemoveTeamMemberMutationVariables>;
 export const ReorderTeamsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ReorderTeams"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ReorderTeamsInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"reorderTeams"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"parentId"}}]}}]}}]} as unknown as DocumentNode<ReorderTeamsMutation, ReorderTeamsMutationVariables>;
 export const UpdateTeamMemberRoleDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateTeamMemberRole"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateTeamMemberInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateTeamMember"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}}]}}]} as unknown as DocumentNode<UpdateTeamMemberRoleMutation, UpdateTeamMemberRoleMutationVariables>;
