@@ -69,6 +69,12 @@ export class User extends AbstractEntity<User> {
   @Column({ name: 'country', type: 'varchar', length: 80, nullable: true })
   country?: string | null;
 
+  // UI color theme for users WITHOUT a membership (SuperAdmin) — members
+  // store their theme per org on the membership instead (memberships.theme).
+  @Field(() => String, { nullable: true })
+  @Column({ name: 'theme', type: 'varchar', length: 30, nullable: true })
+  theme?: string | null;
+
   @HideField()
   @Column({
     name: 'refresh_token',

@@ -11,6 +11,9 @@ const UpdateGradeLevelDocument = gql`
       id
       name
       color
+      shortCode
+      ageMin
+      ageMax
       sortOrder
     }
   }
@@ -21,6 +24,9 @@ type UpdateGradeLevelResponse = {
     id: string;
     name: string;
     color: string | null;
+    shortCode: string | null;
+    ageMin: number | null;
+    ageMax: number | null;
     sortOrder: number;
   };
 };
@@ -29,6 +35,9 @@ export const updateGradeLevelAction = async (input: {
   id: string;
   name?: string;
   color?: string | null;
+  shortCode?: string | null;
+  ageMin?: number | null;
+  ageMax?: number | null;
 }) => {
   const locale = await getLocale();
   const client = await serverCookieGqlClient();

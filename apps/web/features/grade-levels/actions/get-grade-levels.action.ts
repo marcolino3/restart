@@ -7,7 +7,12 @@ export type GradeLevelItem = {
   id: string;
   name: string;
   color: string | null;
+  shortCode: string | null;
+  ageMin: number | null;
+  ageMax: number | null;
   sortOrder: number;
+  classCount: number | null;
+  studentCount: number | null;
 };
 
 type GetGradeLevelsResponse = {
@@ -20,7 +25,12 @@ const GetGradeLevelsDocument = gql`
       id
       name
       color
+      shortCode
+      ageMin
+      ageMax
       sortOrder
+      classCount
+      studentCount
     }
   }
 `;

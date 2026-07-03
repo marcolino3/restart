@@ -30,6 +30,7 @@ type AuthContextResponse = {
       | "PARENT"
       | "STUDENT"
       | "EMPLOYEE";
+    theme?: string | null;
     isSuperAdmin: boolean;
     timeTrackingEnabled: boolean;
     isProjectMember: boolean;
@@ -55,6 +56,7 @@ const GetAuthContextDocument = gql`
       orgId
       orgName
       persona
+      theme
       isSuperAdmin
       timeTrackingEnabled
       isProjectMember
@@ -83,6 +85,7 @@ export const getCurrentUserAction = async () => {
         orgId: data.authContext.orgId,
         orgName: data.authContext.orgName,
         persona: data.authContext.persona,
+        theme: data.authContext.theme,
         isSuperAdmin: data.authContext.isSuperAdmin,
         timeTrackingEnabled: data.authContext.timeTrackingEnabled,
         isProjectMember: data.authContext.isProjectMember,

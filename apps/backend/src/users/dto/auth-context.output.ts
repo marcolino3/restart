@@ -22,6 +22,11 @@ export class AuthContextOutput {
   @Field(() => Persona, { nullable: true })
   persona?: Persona;
 
+  // UI theme persisted on the caller's membership in the active org
+  // (per-org preference). Undefined without membership or when never set.
+  @Field(() => String, { nullable: true })
+  theme?: string;
+
   @Field(() => Boolean)
   isSuperAdmin: boolean;
 

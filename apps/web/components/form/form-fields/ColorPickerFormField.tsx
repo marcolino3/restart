@@ -11,6 +11,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { ColorPicker } from "@/components/ui/color-picker";
+import { cn } from "@/lib/utils";
 
 interface Props {
   name: string;
@@ -23,6 +24,8 @@ interface Props {
   presets?: string[];
   allowClear?: boolean;
   disabled?: boolean;
+  width?: string;
+  className?: string;
 }
 
 export const ColorPickerFormField = ({
@@ -32,6 +35,8 @@ export const ColorPickerFormField = ({
   presets,
   allowClear = true,
   disabled = false,
+  width,
+  className,
 }: Props) => {
   const t = useTranslations(namespace);
   const { control } = useFormContext();
@@ -40,7 +45,9 @@ export const ColorPickerFormField = ({
       control={control}
       name={name}
       render={({ field }) => (
-        <FormItem className={disabled ? "opacity-60" : undefined}>
+        <FormItem
+          className={cn(className, width, disabled && "opacity-60")}
+        >
           {label && <FormLabel>{t(label)}</FormLabel>}
           <FormControl>
             <ColorPicker

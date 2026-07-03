@@ -6,7 +6,12 @@ import { gql } from "graphql-request";
 export type SchoolClassListItem = {
   id: string;
   name: string;
-  gradeLevels?: { id: string; name: string }[];
+  gradeLevels?: {
+    id: string;
+    name: string;
+    ageMin?: number | null;
+    ageMax?: number | null;
+  }[];
   teachers?: {
     id: string;
     membership: {
@@ -18,6 +23,7 @@ export type SchoolClassListItem = {
   sortOrder: number;
   maxCapacity?: number | null;
   room?: string | null;
+  enrolledCount?: number | null;
   isActive: boolean;
 };
 
@@ -33,6 +39,8 @@ const GetSchoolClassesDocument = gql`
       gradeLevels {
         id
         name
+        ageMin
+        ageMax
       }
       teachers {
         id
@@ -48,6 +56,7 @@ const GetSchoolClassesDocument = gql`
       sortOrder
       maxCapacity
       room
+      enrolledCount
       isActive
     }
   }

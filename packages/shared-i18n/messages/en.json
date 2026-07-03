@@ -577,7 +577,8 @@
     "ACADEMIC": "Academic",
     "BEHAVIOR": "Behavior",
     "HEALTH": "Health",
-    "PARENT_CONTACT": "Parent Contact"
+    "PARENT_CONTACT": "Parent Contact",
+    "remove": "Remove"
   },
   "Organizations": {
     "general": "General",
@@ -921,7 +922,26 @@
     "gradeLevelDeleteError": "Error deleting grade level",
     "inUse": "In use",
     "gradeLevelInUseTooltip": "This grade level is assigned to a class and cannot be deleted",
-    "teachers": "Teachers"
+    "teachers": "Teachers",
+    "countSubtitle": "{count, plural, one {# class} other {# classes}}",
+    "searchPlaceholder": "Search classes …",
+    "newSchoolClass": "New class",
+    "ageShort": "{from}–{to} y.",
+    "seatsOccupied": "{enrolled} of {capacity} seats filled",
+    "seatsOccupiedFull": "{enrolled} of {capacity} seats filled — full",
+    "enrolledCountLabel": "{count, plural, one {# student} other {# students}}",
+    "noSearchResults": "No classes found for \"{query}\"",
+    "selectPlaceholder": "Please select …",
+    "schoolClass": "Class",
+    "gradeLevel": "Grade level",
+    "room": "Room",
+    "occupancy": "Occupancy",
+    "viewCards": "Cards",
+    "viewTable": "Table",
+    "drag": "Drag to reorder",
+    "actions": "Actions",
+    "schoolClassesReordered": "Order saved",
+    "reorderError": "Failed to save order"
   },
   "Teams": {
     "teams": "Teams",
@@ -994,7 +1014,25 @@
     "gradeLevelUpdated": "Grade level saved successfully",
     "gradeLevelUpdateError": "Error saving grade level",
     "gradeLevelsReordered": "Order saved",
-    "reorderError": "Error saving order"
+    "reorderError": "Error saving order",
+    "gradeLevel": "Grade level",
+    "shortCode": "Short code",
+    "shortCodePlaceholder": "e.g. US 1–3",
+    "ageRange": "Age range",
+    "ageMin": "Age from",
+    "ageMax": "Age to",
+    "classes": "Classes",
+    "students": "Students",
+    "newGradeLevel": "New grade level",
+    "createGradeLevel": "Create grade level",
+    "searchPlaceholder": "Search grade levels …",
+    "countSubtitle": "{count, plural, one {# grade level} other {# grade levels}}",
+    "gradeLevelsHint": "Grade levels drive curriculum mapping and heatmap grouping",
+    "ageRangeYears": "{from}–{to} years",
+    "ageFromYears": "from {from} years",
+    "ageToYears": "up to {to} years",
+    "ageRangeInvalid": "\"Age to\" must be greater than or equal to \"Age from\"",
+    "noSearchResults": "No grade levels found for \"{query}\""
   },
   "Students": {
     "students": "Students",
@@ -1734,6 +1772,7 @@
     "emailPlaceholder": "name@example.com",
     "forgotPassword": "Forgot password?",
     "signIn": "Sign in",
+    "signInWithGoogle": "Sign in with Google",
     "signInError": "Email or password is incorrect.",
     "magicLinkSend": "Send magic link",
     "magicLinkSent": "Login link sent",
@@ -2087,5 +2126,8 @@
     "absenceCategory": "Category",
     "absenceFullDays": "100 %",
     "absencePartialDays": "< 100 %"
+  },
+  "ThemePicker": {
+    "theme": "Theme"
   }
 }

@@ -99,7 +99,9 @@ describe('UsersResolver', () => {
       expect(result.isProjectMember).toBe(false);
     });
 
-    it('skips DB lookups and returns false flags without membership/org (SuperAdmin ohne Org)', async () => {
+    it('skips org-scoped lookups and returns false flags without membership/org (SuperAdmin ohne Org)', async () => {
+      em.query.mockResolvedValue([{ theme: 'graphit' }]);
+
       const result = await resolver.authContext({
         sub: 'user-1',
         isSuperAdmin: true,
@@ -108,7 +110,14 @@ describe('UsersResolver', () => {
       expect(result.timeTrackingEnabled).toBe(false);
       expect(result.isProjectMember).toBe(false);
       expect(result.orgName).toBeUndefined();
-      expect(em.query).not.toHaveBeenCalled();
+      // Without a membership the theme comes from the caller's own user
+      // record — the ONLY DB query allowed in this branch.
+      expect(result.theme).toBe('graphit');
+      expect(em.query).toHaveBeenCalledTimes(1);
+      expect(em.query).toHaveBeenCalledWith(
+        expect.stringContaining('FROM users'),
+        ['user-1'],
+      );
       expect(em.findOne).not.toHaveBeenCalled();
     });
 
@@ -133,6 +142,27 @@ describe('UsersResolver', () => {
       const result = await resolver.authContext(tokenPayload);
 
       expect(result.orgName).toBeUndefined();
+    });
+
+    it('surfaces the membership theme (scoped to membership + org)', async () => {
+      em.query.mockImplementation((sql: string) => {
+        if (sql.includes('SELECT theme')) {
+          return Promise.resolve([{ theme: 'lagune' }]);
+        }
+        return Promise.resolve([]);
+      });
+
+      const result = await resolver.authContext(tokenPayload);
+
+      expect(result.theme).toBe('lagune');
+    });
+
+    it('leaves theme undefined when the membership has none stored', async () => {
+      em.query.mockResolvedValue([]);
+
+      const result = await resolver.authContext(tokenPayload);
+
+      expect(result.theme).toBeUndefined();
     });
 
     it('passes token roles, permissions, persona and org through', async () => {

@@ -7,6 +7,7 @@ import { Employee } from '@/employee-management/employees/entities/employee.enti
 import { Persona } from '@/common/enums/persona.enum';
 import { CreateSchoolClassInput } from './dto/create-school-class.input';
 import { UpdateSchoolClassInput } from './dto/update-school-class.input';
+import { ReorderSchoolClassesInput } from './dto/reorder-school-classes.input';
 
 @Injectable()
 export class SchoolClassesService {
@@ -41,6 +42,13 @@ export class SchoolClassesService {
     organizationId: string,
   ): Promise<SchoolClass> {
     const { gradeLevelIds, teacherIds, ...rest } = input;
+    // Ordering is drag-and-drop only (no form field) — append new classes.
+    if (rest.sortOrder === undefined) {
+      const max = await this.schoolClassRepo.maximum('sortOrder', {
+        organizationId,
+      });
+      rest.sortOrder = (max ?? -1) + 1;
+    }
     const schoolClass = this.schoolClassRepo.create({
       ...rest,
       organizationId,
@@ -64,13 +72,37 @@ export class SchoolClassesService {
   }
 
   async findAllByOrgId(organizationId: string): Promise<SchoolClass[]> {
-    return this.schoolClassRepo.find({
+    const classes = await this.schoolClassRepo.find({
       where: { organizationId, isActive: true },
       relations: {
         gradeLevels: true,
         teachers: { membership: { user: true } },
       },
       order: { sortOrder: 'ASC', name: 'ASC' },
+    });
+    if (classes.length === 0) return classes;
+
+    const rows: Array<{ class_id: string; enrolled_count: string }> =
+      await this.schoolClassRepo
+        .createQueryBuilder('sc')
+        .innerJoin(
+          'school_class_enrollments',
+          'e',
+          'e.school_class_id = sc.id AND e.left_at IS NULL AND e."isActive" = true',
+        )
+        .select('sc.id', 'class_id')
+        .addSelect('COUNT(DISTINCT e.student_id)', 'enrolled_count')
+        .where('sc.organizationId = :organizationId', { organizationId })
+        .andWhere('sc.id IN (:...ids)', { ids: classes.map((c) => c.id) })
+        .groupBy('sc.id')
+        .getRawMany();
+
+    const counts = new Map(
+      rows.map((r) => [r.class_id, Number(r.enrolled_count)]),
+    );
+    return classes.map((schoolClass) => {
+      schoolClass.enrolledCount = counts.get(schoolClass.id) ?? 0;
+      return schoolClass;
     });
   }
 
@@ -172,5 +204,27 @@ export class SchoolClassesService {
     schoolClass.isActive = false;
     await this.schoolClassRepo.save(schoolClass);
     return true;
+  }
+
+  async reorder(
+    input: ReorderSchoolClassesInput,
+    organizationId: string,
+  ): Promise<SchoolClass[]> {
+    const classes = await this.schoolClassRepo.find({
+      where: { id: In(input.ids), organizationId, isActive: true },
+    });
+    if (classes.length !== input.ids.length) {
+      throw new NotFoundException(
+        'One or more school classes not found in this organization',
+      );
+    }
+    const byId = new Map(classes.map((c) => [c.id, c]));
+    const toSave = input.ids.map((id, index) => {
+      const schoolClass = byId.get(id)!;
+      schoolClass.sortOrder = index;
+      return schoolClass;
+    });
+    await this.schoolClassRepo.save(toSave);
+    return this.findAllByOrgId(organizationId);
   }
 }
