@@ -26,8 +26,6 @@ import EmployeeNotesFeed from "@/features/employee-notes/components/EmployeeNote
 import EmployeeNotesTimeline from "@/features/employee-notes/components/EmployeeNotesTimeline";
 import CreateEmployeeNoteInline from "@/features/employee-notes/components/CreateEmployeeNoteInline";
 import EmployeeHistoryFeed from "./EmployeeHistoryFeed";
-import EmployeeHrTabView from "./EmployeeHrTabView";
-import EmployeeEmergencyTabView from "./EmployeeEmergencyTabView";
 import EmployeeContractsTab from "./EmployeeContractsTab";
 
 interface EmployeeViewPageProps {
@@ -51,8 +49,6 @@ export default function EmployeeViewPage({
   employee,
   notes,
   auditLog,
-  hrProfile,
-  emergencyProfile,
   contracts,
   employeeName,
 }: EmployeeViewPageProps) {
@@ -158,12 +154,6 @@ export default function EmployeeViewPage({
                 </TabsTrigger>
                 <TabsTrigger className={tabCls} value="address">
                   {t("address")}
-                </TabsTrigger>
-                <TabsTrigger className={tabCls} value="hr">
-                  {tE("hr.tabLabel")}
-                </TabsTrigger>
-                <TabsTrigger className={tabCls} value="emergency">
-                  {tE("emergency.tabLabel")}
                 </TabsTrigger>
                 <TabsTrigger className={tabCls} value="logbook">
                   {tN("logbook")}
@@ -304,15 +294,6 @@ export default function EmployeeViewPage({
               </DetailCols>
             </TabsContent>
 
-            {/* HR */}
-            <TabsContent value="hr">
-              <EmployeeHrTabView profile={hrProfile} />
-            </TabsContent>
-
-            {/* Notfall */}
-            <TabsContent value="emergency">
-              <EmployeeEmergencyTabView profile={emergencyProfile} />
-            </TabsContent>
 
             {/* Logbook */}
             <TabsContent value="logbook">
@@ -342,15 +323,10 @@ export default function EmployeeViewPage({
 
             {/* Documents / Attachments */}
             <TabsContent value="documents">
-              <div className="px-4 sm:px-0">
-                <h3 className="text-base/7 font-semibold text-foreground">
-                  {tE("attachments")}
-                </h3>
-              </div>
-              <div className="mt-6 border-t border-border pt-6">
+              <DetailPanel title={tE("attachments")}>
                 <ul
                   role="list"
-                  className="divide-y divide-border rounded-md border border-border"
+                  className="mt-2 divide-y divide-border rounded-ctl border border-border"
                 >
                   <li className="flex items-center justify-between py-4 pr-5 pl-4 text-sm/6">
                     <div className="flex w-0 flex-1 items-center">
@@ -401,7 +377,7 @@ export default function EmployeeViewPage({
                     </div>
                   </li>
                 </ul>
-              </div>
+              </DetailPanel>
             </TabsContent>
 
             {/* Verträge */}
@@ -415,17 +391,12 @@ export default function EmployeeViewPage({
 
             {/* History */}
             <TabsContent value="history">
-              <div className="px-4 sm:px-0">
-                <h3 className="text-base/7 font-semibold text-foreground">
-                  {tE("history")}
-                </h3>
-                <p className="mt-1 max-w-2xl text-sm/6 text-muted-foreground">
+              <DetailPanel title={tE("history")}>
+                <p className="mb-4 text-[12.5px] text-muted-foreground">
                   {tE("historyDescription")}
                 </p>
-              </div>
-              <div className="mt-6 border-t border-border pt-6">
                 <EmployeeHistoryFeed logs={auditLog} />
-              </div>
+              </DetailPanel>
             </TabsContent>
           </Tabs>
   );
