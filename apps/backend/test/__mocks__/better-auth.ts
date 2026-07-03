@@ -5,6 +5,7 @@
 export const betterAuth = () => ({
   api: {
     getSession: () => Promise.resolve(null),
+    signUpEmail: () => Promise.resolve({ token: null, user: {} }),
   },
   handler: () => Promise.resolve(new Response('', { status: 404 })),
 });
