@@ -330,8 +330,24 @@ export const EmployeesTable = ({ data }: Props) => {
 
   return (
     <div className="w-full">
-      {/* Filter chips (design handoff `.chiprow`) */}
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      {/* Search first, then filter chips + controls — one row */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative w-[280px]">
+          <Search className="pointer-events-none absolute top-1/2 left-3.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={tE("searchPlaceholder")}
+            value={
+              (table.getColumn("person")?.getFilterValue() as string) ?? ""
+            }
+            onChange={(e) =>
+              table.getColumn("person")?.setFilterValue(e.target.value)
+            }
+            className="h-9 rounded-full pl-9"
+            aria-label={tE("searchPlaceholder")}
+          />
+        </div>
+
+        {/* Filter chips (design handoff `.chiprow`) */}
         <FilterChip active={activeChip === "ALL"} onClick={() => setChip("ALL")}>
           {t("all")}
         </FilterChip>
@@ -350,24 +366,6 @@ export const EmployeesTable = ({ data }: Props) => {
         >
           {t("inactive")}
         </FilterChip>
-      </div>
-
-      {/* Search + controls */}
-      <div className="mb-4 flex items-center gap-2 flex-wrap">
-        <div className="relative w-[280px]">
-          <Search className="pointer-events-none absolute top-1/2 left-3.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={tE("searchPlaceholder")}
-            value={
-              (table.getColumn("person")?.getFilterValue() as string) ?? ""
-            }
-            onChange={(e) =>
-              table.getColumn("person")?.setFilterValue(e.target.value)
-            }
-            className="h-9 rounded-full pl-9"
-            aria-label={tE("searchPlaceholder")}
-          />
-        </div>
 
         {/* Reset filters */}
         {columnFilters.length > 0 && (
