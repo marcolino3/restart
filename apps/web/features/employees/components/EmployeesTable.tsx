@@ -56,7 +56,7 @@ const PERSONA_VARIANT: Record<string, BadgeProps["variant"]> = {
   ASSISTANT: "sky",
   PARENT: "slate",
   STUDENT: "slate",
-  EMPLOYEE: "slate",
+  EMPLOYEE: "green",
 };
 
 const fullName = (row: EmployeeListItem) =>
@@ -200,8 +200,10 @@ const useColumns = (): ColumnDef<EmployeeListItem>[] => {
       header: tE("statusToday"),
       filterFn: (row, id, value) =>
         value === undefined || row.getValue<boolean>(id) === value,
-      cell: ({ getValue }) =>
-        getValue<boolean>() ? (
+      cell: ({ row, getValue }) =>
+        row.original.membership.employee?.status === "DRAFT" ? (
+          <Badge variant="amber">{tE("statusDraft")}</Badge>
+        ) : getValue<boolean>() ? (
           <Badge variant="green">{t("active")}</Badge>
         ) : (
           <Badge variant="slate">{t("inactive")}</Badge>

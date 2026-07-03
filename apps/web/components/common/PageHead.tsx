@@ -28,31 +28,28 @@ export function PageHead({
   className,
 }: PageHeadProps) {
   const heading = (
-    <h2 className="text-[26px] font-bold tracking-[-0.025em]">{title}</h2>
+    <h2 className="text-[26px] font-bold leading-none tracking-[-0.025em]">
+      {title}
+    </h2>
   );
   const sub = subtitle ? (
-    <p
-      className={cn(
-        "text-[13.5px] text-muted-foreground",
-        stacked ? "pt-1" : "pb-[3px]"
-      )}
-    >
+    <p className={cn("text-[13.5px] text-muted-foreground", stacked && "pt-1.5")}>
       {subtitle}
     </p>
   ) : null;
 
   return (
-    <div className={cn("mb-5 flex items-end gap-4", className)}>
+    <div className={cn("mb-5 flex flex-wrap items-center gap-4", className)}>
       {stacked ? (
         <div>
           {heading}
           {sub}
         </div>
       ) : (
-        <>
+        <div className="flex items-baseline gap-3">
           {heading}
           {sub}
-        </>
+        </div>
       )}
       {action && <div className="ml-auto shrink-0">{action}</div>}
     </div>
