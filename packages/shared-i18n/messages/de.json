@@ -1034,7 +1034,10 @@
     "memberCopyError": "Mitglied konnte nicht kopiert werden",
     "memberAlreadyInTeam": "Diese Person ist bereits in diesem Team",
     "functionInTeam": "Funktion im Team",
-    "addMemberToTeam": "Zum Team hinzufügen"
+    "addMemberToTeam": "Zum Team hinzufügen",
+    "selectPlaceholder": "Person auswählen …",
+    "searchPlaceholder": "Name suchen …",
+    "noResults": "Keine Person gefunden"
   },
   "GradeLevels": {
     "gradeLevels": "Stufen",

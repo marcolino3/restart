@@ -1034,7 +1034,10 @@
     "memberCopyError": "Could not copy member",
     "memberAlreadyInTeam": "This person is already in this team",
     "functionInTeam": "Function in team",
-    "addMemberToTeam": "Add to team"
+    "addMemberToTeam": "Add to team",
+    "selectPlaceholder": "Select person …",
+    "searchPlaceholder": "Search name …",
+    "noResults": "No person found"
   },
   "GradeLevels": {
     "gradeLevels": "Grade Levels",

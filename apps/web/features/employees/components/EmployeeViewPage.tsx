@@ -8,6 +8,11 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DetailCols,
+  DetailPanel,
+  KvRow,
+} from "@/components/common/DetailPanel";
 import { UserEmailField } from "@/features/users/components/UserEmailField";
 import { ROUTES } from "@/constants/routes";
 
@@ -72,10 +77,6 @@ export default function EmployeeViewPage({
   const primaryEmail =
     user?.userEmails?.find((e) => e.isPrimary)?.email ??
     user?.userEmails?.[0]?.email;
-
-  const fullName = [user?.title, user?.firstName, user?.lastName]
-    .filter(Boolean)
-    .join(" ");
 
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return "–";
@@ -182,164 +183,125 @@ export default function EmployeeViewPage({
               </TabsList>
             </div>
 
-            {/* Overview — description list */}
+            {/* Overview — design cols2 panels */}
             <TabsContent value="overview">
-              <div className="px-4 sm:px-0">
-                <h3 className="text-base/7 font-semibold text-foreground">
-                  {tE("overview")}
-                </h3>
-              </div>
-              <div className="mt-6 border-t border-border">
-                <dl className="divide-y divide-border">
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {t("name")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {fullName || "–"}
-                    </dd>
-                  </div>
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {t("persona")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {t(membership?.persona ?? "EMPLOYEE")}
-                    </dd>
-                  </div>
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {t("email")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {user?.id ? (
-                        <UserEmailField
-                          userId={user.id}
-                          currentEmail={primaryEmail}
-                        />
-                      ) : (
-                        (primaryEmail ?? "–")
-                      )}
-                    </dd>
-                  </div>
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {t("phone")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {membership?.contactPhone || "–"}
-                    </dd>
-                  </div>
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {t("dateOfBirth")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {formatDate(user?.dateOfBirth)}
-                    </dd>
-                  </div>
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {t("socialSecurityNumber")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {user?.socialSecurityNumber || "–"}
-                    </dd>
-                  </div>
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {tE("timeTrackingEnabled")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {employee.timeTrackingEnabled
-                        ? t("active")
-                        : t("inactive")}
-                    </dd>
-                  </div>
+              <DetailCols>
+                <DetailPanel title={tE("contractAndWorkload")}>
+                  <KvRow label={tE("hr.position")}>
+                    {currentContract?.position ||
+                      t(membership?.persona ?? "EMPLOYEE")}
+                  </KvRow>
+                  <KvRow label={t("workloadPercent")}>
+                    {pensum != null ? (
+                      <span className="inline-flex items-center gap-[9px]">
+                        <span className="h-2 w-20 overflow-hidden rounded-full bg-field">
+                          <span
+                            className="block h-full rounded-full bg-primary"
+                            style={{
+                              width: `${Math.min(100, Math.max(0, pensum))}%`,
+                            }}
+                          />
+                        </span>
+                        {pensum}%
+                      </span>
+                    ) : (
+                      "–"
+                    )}
+                  </KvRow>
+                  <KvRow label={tE("contracts")}>
+                    {currentContract
+                      ? ([
+                          currentContract.contractType
+                            ? tE(`contractType.${currentContract.contractType}`)
+                            : null,
+                          entry ? tE("sinceMonth", { date: entry }) : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ") || "–")
+                      : "–"}
+                  </KvRow>
+                  <KvRow label={tE("hr.annualVacationDays")}>
+                    {currentContract?.annualVacationDays != null
+                      ? tE("vacationDaysPerYear", {
+                          days: currentContract.annualVacationDays,
+                        })
+                      : "–"}
+                  </KvRow>
+                  <KvRow label={tE("timeTrackingEnabled")}>
+                    {employee.timeTrackingEnabled
+                      ? t("active")
+                      : t("inactive")}
+                  </KvRow>
+                </DetailPanel>
+
+                <DetailPanel title={tE("contactAndPerson")}>
+                  <KvRow label={t("email")}>
+                    {user?.id ? (
+                      <UserEmailField
+                        userId={user.id}
+                        currentEmail={primaryEmail}
+                      />
+                    ) : (
+                      (primaryEmail ?? "–")
+                    )}
+                  </KvRow>
+                  <KvRow label={t("phone")}>
+                    {membership?.contactPhone || "–"}
+                  </KvRow>
+                  <KvRow label={t("dateOfBirth")}>
+                    {formatDate(user?.dateOfBirth)}
+                  </KvRow>
+                  <KvRow label={t("socialSecurityNumber")}>
+                    {user?.socialSecurityNumber || "–"}
+                  </KvRow>
                   {membership?.organization && (
-                    <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                      <dt className="text-sm/6 font-medium text-foreground">
-                        {t("organization")}
-                      </dt>
-                      <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                        {membership.organization.name}
-                      </dd>
-                    </div>
+                    <KvRow label={t("organization")}>
+                      {membership.organization.name}
+                    </KvRow>
                   )}
                   {membership?.roles && membership.roles.length > 0 && (
-                    <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                      <dt className="text-sm/6 font-medium text-foreground">
-                        {tE("roles")}
-                      </dt>
-                      <dd className="mt-1 sm:col-span-2 sm:mt-0">
-                        <div className="flex flex-wrap gap-1.5">
-                          {membership.roles.map((role) => (
-                            <Badge
-                              key={role.id}
-                              variant="outline"
-                              className="text-xs"
-                            >
-                              {role.name ?? role.systemCode ?? "–"}
-                            </Badge>
-                          ))}
-                        </div>
-                      </dd>
-                    </div>
+                    <KvRow label={tE("roles")}>
+                      <span className="flex flex-wrap justify-end gap-1.5">
+                        {membership.roles.map((role) => (
+                          <Badge
+                            key={role.id}
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            {role.name ?? role.systemCode ?? "–"}
+                          </Badge>
+                        ))}
+                      </span>
+                    </KvRow>
                   )}
-                </dl>
-              </div>
-
+                </DetailPanel>
+              </DetailCols>
             </TabsContent>
 
             {/* Address */}
             <TabsContent value="address">
-              <div className="px-4 sm:px-0">
-                <h3 className="text-base/7 font-semibold text-foreground">
-                  {t("address")}
-                </h3>
-              </div>
-              <div className="mt-6 border-t border-border">
-                <dl className="divide-y divide-border">
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {t("street")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {[user?.street, user?.houseNumber]
-                        .filter(Boolean)
-                        .join(" ") || "–"}
-                    </dd>
-                  </div>
+              <DetailCols>
+                <DetailPanel title={t("address")}>
+                  <KvRow label={t("street")}>
+                    {[user?.street, user?.houseNumber]
+                      .filter(Boolean)
+                      .join(" ") || "–"}
+                  </KvRow>
                   {user?.addressLine2 && (
-                    <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                      <dt className="text-sm/6 font-medium text-foreground">
-                        {t("addressLine2")}
-                      </dt>
-                      <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                        {user.addressLine2}
-                      </dd>
-                    </div>
+                    <KvRow label={t("addressLine2")}>
+                      {user.addressLine2}
+                    </KvRow>
                   )}
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {t("postalCode")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {[user?.postalCode, user?.city]
-                        .filter(Boolean)
-                        .join(" ") || "–"}
-                    </dd>
-                  </div>
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {t("country")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {user?.country ? tCountries(user.country) : "–"}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
+                  <KvRow label={t("postalCode")}>
+                    {[user?.postalCode, user?.city]
+                      .filter(Boolean)
+                      .join(" ") || "–"}
+                  </KvRow>
+                  <KvRow label={t("country")}>
+                    {user?.country ? tCountries(user.country) : "–"}
+                  </KvRow>
+                </DetailPanel>
+              </DetailCols>
             </TabsContent>
 
             {/* HR */}
