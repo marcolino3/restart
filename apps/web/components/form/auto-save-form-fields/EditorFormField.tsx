@@ -49,7 +49,7 @@ export const EditorFormField = ({ name, label, onSave }: Props) => {
               >
                 <MDXEditor
                   markdown={field.value}
-                  onChange={(val) => {
+                  onChange={(val: string) => {
                     setValue(name, val, { shouldDirty: true });
                   }}
                   className="min-h-[150px]"

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { OTPInput, OTPInputContext } from "input-otp"
+import { OTPInput, OTPInputContext, type RenderProps } from "input-otp"
 import { MinusIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -43,7 +43,9 @@ function InputOTPSlot({
 }: React.ComponentProps<"div"> & {
   index: number
 }) {
-  const inputOTPContext = React.useContext(OTPInputContext)
+  // Explicit generic: without it TS infers `{}` for the context value and
+  // rejects the `slots` access (React 19 + input-otp d.ts inference gap).
+  const inputOTPContext = React.useContext<RenderProps>(OTPInputContext)
   const { char, hasFakeCaret, isActive } = inputOTPContext?.slots[index] ?? {}
 
   return (
