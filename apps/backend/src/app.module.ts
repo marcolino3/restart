@@ -40,6 +40,7 @@ import { GoogleModule } from './google/google.module';
 import { OrganizationSettingsModule } from './organization-settings/organization-settings.module';
 import { HealthModule } from './health/health.module';
 import { UploadModule } from './upload/upload.module';
+import { ContractDocumentsModule } from './employee-management/contract-documents/contract-documents.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 
@@ -157,6 +158,7 @@ const MAX_QUERY_DEPTH = 12;
       serveRoot: '/api/uploads',
     }),
     UploadModule,
+    ContractDocumentsModule,
     OrganizationsModule,
     CommonModule,
     AddressesModule,
