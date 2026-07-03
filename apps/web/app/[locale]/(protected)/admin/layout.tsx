@@ -1,4 +1,5 @@
 import { AppSidebar } from "@/components/app-sidebar";
+import { ProfileThemeSync } from "@/components/providers/profile-theme-sync";
 import { SheetProvider } from "@/components/providers/sheet-provider";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -35,16 +36,17 @@ const AdminLayout = async ({ children }: { children: React.ReactNode }) => {
 
   return (
     <UserProvider user={res.data}>
+      <ProfileThemeSync theme={res.data.theme} />
       <CountryInputTemplatesProvider templates={templatesRes.data}>
       <SidebarProvider
         style={
           {
-            "--sidebar-width": "calc(var(--spacing) * 72)",
-            "--header-height": "calc(var(--spacing) * 12)",
+            "--sidebar-width": "260px",
+            "--header-height": "60px",
           } as React.CSSProperties
         }
       >
-        <AppSidebar variant="inset" organizations={organizations} />
+        <AppSidebar organizations={organizations} />
         <SheetProvider>
           <SidebarInset>
             {impersonationInfo.isImpersonating && (

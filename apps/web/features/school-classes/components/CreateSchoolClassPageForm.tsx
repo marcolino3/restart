@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 
 import { Form } from "@/components/ui/form";
+import { ColorPickerFormField } from "@/components/form/form-fields/ColorPickerFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { ComboboxFormField } from "@/components/form/form-fields/ComboboxFormField";
 import { FormActionButtons } from "@/components/form/form-fields/FormActionButtons";
@@ -50,9 +51,8 @@ export default function CreateSchoolClassPageForm({
       name: "",
       gradeLevelIds: [] as string[],
       teacherIds: [] as string[],
-      color: "",
+      color: null as string | null,
       description: "",
-      sortOrder: 0,
       maxCapacity: "" as unknown as number,
       room: "",
     },
@@ -98,22 +98,11 @@ export default function CreateSchoolClassPageForm({
             />
             <InputFormField name="description" label="description" />
             <div className="flex gap-4">
-              <InputFormField
-                name="color"
-                label="color"
-                type="color"
-                width="w-1/4"
-              />
+              <ColorPickerFormField name="color" label="color" width="w-1/4" />
               <InputFormField name="room" label="room" width="w-1/4" />
               <InputFormField
                 name="maxCapacity"
                 label="maxCapacity"
-                type="number"
-                width="w-1/4"
-              />
-              <InputFormField
-                name="sortOrder"
-                label="sortOrder"
                 type="number"
                 width="w-1/4"
               />

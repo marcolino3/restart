@@ -11,6 +11,9 @@ const CreateGradeLevelDocument = gql`
       id
       name
       color
+      shortCode
+      ageMin
+      ageMax
       sortOrder
     }
   }
@@ -21,13 +24,23 @@ type CreateGradeLevelResponse = {
     id: string;
     name: string;
     color: string | null;
+    shortCode: string | null;
+    ageMin: number | null;
+    ageMax: number | null;
     sortOrder: number;
   };
 };
 
+export type CreateGradeLevelActionInput = {
+  name: string;
+  color?: string | null;
+  shortCode?: string | null;
+  ageMin?: number | null;
+  ageMax?: number | null;
+};
+
 export const createGradeLevelAction = async (
-  name: string,
-  color?: string | null,
+  input: CreateGradeLevelActionInput,
 ) => {
   const locale = await getLocale();
   const client = await serverCookieGqlClient();
@@ -35,7 +48,15 @@ export const createGradeLevelAction = async (
   try {
     const { createGradeLevel } = await client.request<CreateGradeLevelResponse>(
       CreateGradeLevelDocument,
-      { input: { name, ...(color ? { color } : {}) } },
+      {
+        input: {
+          name: input.name,
+          ...(input.color ? { color: input.color } : {}),
+          shortCode: input.shortCode ?? null,
+          ageMin: input.ageMin ?? null,
+          ageMax: input.ageMax ?? null,
+        },
+      },
     );
     revalidatePath(`/${locale}/admin/grade-levels`);
     revalidatePath(`/${locale}/admin/school-classes`);

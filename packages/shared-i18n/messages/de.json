@@ -577,7 +577,8 @@
     "ACADEMIC": "Schulisch",
     "BEHAVIOR": "Verhalten",
     "HEALTH": "Gesundheit",
-    "PARENT_CONTACT": "Elternkontakt"
+    "PARENT_CONTACT": "Elternkontakt",
+    "remove": "Entfernen"
   },
   "Organizations": {
     "general": "Allgemein",
@@ -921,7 +922,26 @@
     "gradeLevelDeleteError": "Fehler beim Löschen der Stufe",
     "inUse": "In Verwendung",
     "gradeLevelInUseTooltip": "Diese Stufe ist einer Klasse zugewiesen und kann nicht gelöscht werden",
-    "teachers": "Lehrkräfte"
+    "teachers": "Lehrkräfte",
+    "countSubtitle": "{count, plural, one {# Klasse} other {# Klassen}}",
+    "searchPlaceholder": "Klasse suchen …",
+    "newSchoolClass": "Neue Klasse",
+    "ageShort": "{from}–{to} J.",
+    "seatsOccupied": "{enrolled} von {capacity} Plätzen belegt",
+    "seatsOccupiedFull": "{enrolled} von {capacity} Plätzen belegt — voll",
+    "enrolledCountLabel": "{count, plural, one {# Schüler:in} other {# Schüler:innen}}",
+    "noSearchResults": "Keine Klassen gefunden für «{query}»",
+    "selectPlaceholder": "Bitte auswählen …",
+    "schoolClass": "Klasse",
+    "gradeLevel": "Stufe",
+    "room": "Raum",
+    "occupancy": "Belegung",
+    "viewCards": "Karten",
+    "viewTable": "Tabelle",
+    "drag": "Zum Sortieren ziehen",
+    "actions": "Aktionen",
+    "schoolClassesReordered": "Reihenfolge gespeichert",
+    "reorderError": "Fehler beim Speichern der Reihenfolge"
   },
   "Teams": {
     "teams": "Teams",
@@ -994,7 +1014,25 @@
     "gradeLevelUpdated": "Stufe erfolgreich gespeichert",
     "gradeLevelUpdateError": "Fehler beim Speichern der Stufe",
     "gradeLevelsReordered": "Reihenfolge gespeichert",
-    "reorderError": "Fehler beim Speichern der Reihenfolge"
+    "reorderError": "Fehler beim Speichern der Reihenfolge",
+    "gradeLevel": "Stufe",
+    "shortCode": "Kürzel",
+    "shortCodePlaceholder": "z.B. US 1–3",
+    "ageRange": "Altersbereich",
+    "ageMin": "Alter von",
+    "ageMax": "Alter bis",
+    "classes": "Klassen",
+    "students": "Schüler:innen",
+    "newGradeLevel": "Neue Stufe",
+    "createGradeLevel": "Neue Stufe erstellen",
+    "searchPlaceholder": "Stufe suchen …",
+    "countSubtitle": "{count, plural, one {# Stufe} other {# Stufen}}",
+    "gradeLevelsHint": "Stufen steuern Lehrplan-Zuordnung und Heatmap-Gruppierung",
+    "ageRangeYears": "{from}–{to} Jahre",
+    "ageFromYears": "ab {from} Jahren",
+    "ageToYears": "bis {to} Jahre",
+    "ageRangeInvalid": "«Alter bis» muss grösser oder gleich «Alter von» sein",
+    "noSearchResults": "Keine Stufen gefunden für «{query}»"
   },
   "Students": {
     "students": "Schüler",
@@ -1734,6 +1772,7 @@
     "emailPlaceholder": "name@beispiel.ch",
     "forgotPassword": "Passwort vergessen?",
     "signIn": "Anmelden",
+    "signInWithGoogle": "Mit Google anmelden",
     "signInError": "E-Mail oder Passwort ist falsch.",
     "magicLinkSend": "Magic Link senden",
     "magicLinkSent": "Login-Link gesendet",
@@ -2087,5 +2126,8 @@
     "absenceCategory": "Kategorie",
     "absenceFullDays": "100 %",
     "absencePartialDays": "< 100 %"
+  },
+  "ThemePicker": {
+    "theme": "Theme"
   }
 }

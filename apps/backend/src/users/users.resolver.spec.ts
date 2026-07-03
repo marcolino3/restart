@@ -12,7 +12,7 @@ import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 describe('UsersResolver', () => {
   let resolver: UsersResolver;
   let usersService: Record<string, jest.Mock>;
-  let em: { query: jest.Mock };
+  let em: { query: jest.Mock; findOne: jest.Mock };
 
   const tokenPayload: TokenPayload = {
     sub: 'user-1',
@@ -33,7 +33,7 @@ describe('UsersResolver', () => {
       update: jest.fn(),
       remove: jest.fn(),
     };
-    em = { query: jest.fn() };
+    em = { query: jest.fn(), findOne: jest.fn().mockResolvedValue(null) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -99,7 +99,9 @@ describe('UsersResolver', () => {
       expect(result.isProjectMember).toBe(false);
     });
 
-    it('skips DB lookups and returns false flags without membership/org (SuperAdmin ohne Org)', async () => {
+    it('skips org-scoped lookups and returns false flags without membership/org (SuperAdmin ohne Org)', async () => {
+      em.query.mockResolvedValue([{ theme: 'graphit' }]);
+
       const result = await resolver.authContext({
         sub: 'user-1',
         isSuperAdmin: true,
@@ -107,7 +109,60 @@ describe('UsersResolver', () => {
 
       expect(result.timeTrackingEnabled).toBe(false);
       expect(result.isProjectMember).toBe(false);
-      expect(em.query).not.toHaveBeenCalled();
+      expect(result.orgName).toBeUndefined();
+      // Without a membership the theme comes from the caller's own user
+      // record — the ONLY DB query allowed in this branch.
+      expect(result.theme).toBe('graphit');
+      expect(em.query).toHaveBeenCalledTimes(1);
+      expect(em.query).toHaveBeenCalledWith(
+        expect.stringContaining('FROM users'),
+        ['user-1'],
+      );
+      expect(em.findOne).not.toHaveBeenCalled();
+    });
+
+    it('surfaces the active organization name (scoped to the active org)', async () => {
+      em.query.mockResolvedValue([]);
+      em.findOne.mockResolvedValue({ id: 'org-1', name: 'Montessori Zürich' });
+
+      const result = await resolver.authContext(tokenPayload);
+
+      expect(result.orgName).toBe('Montessori Zürich');
+      // Multi-tenant isolation: lookup must be scoped to the active org only.
+      expect(em.findOne).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ where: { id: 'org-1' } }),
+      );
+    });
+
+    it('leaves orgName undefined when the organization no longer exists', async () => {
+      em.query.mockResolvedValue([]);
+      em.findOne.mockResolvedValue(null);
+
+      const result = await resolver.authContext(tokenPayload);
+
+      expect(result.orgName).toBeUndefined();
+    });
+
+    it('surfaces the membership theme (scoped to membership + org)', async () => {
+      em.query.mockImplementation((sql: string) => {
+        if (sql.includes('SELECT theme')) {
+          return Promise.resolve([{ theme: 'lagune' }]);
+        }
+        return Promise.resolve([]);
+      });
+
+      const result = await resolver.authContext(tokenPayload);
+
+      expect(result.theme).toBe('lagune');
+    });
+
+    it('leaves theme undefined when the membership has none stored', async () => {
+      em.query.mockResolvedValue([]);
+
+      const result = await resolver.authContext(tokenPayload);
+
+      expect(result.theme).toBeUndefined();
     });
 
     it('passes token roles, permissions, persona and org through', async () => {

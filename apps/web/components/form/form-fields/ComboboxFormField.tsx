@@ -61,6 +61,7 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
   namespace = "Common",
 }: ComboboxFormFieldProps<TFormValues>) {
   const t = useTranslations(namespace);
+  const tCommon = useTranslations("Common");
   const { control } = useFormContext();
   return (
     <FormField
@@ -153,26 +154,33 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
             </Popover>
 
             {multiple && selectedOptions.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {selectedOptions.map((option: Option | undefined) => (
-                  <Badge
-                    key={option?.value}
-                    variant="secondary"
-                    className="flex items-center gap-1"
-                  >
-                    {translateOptions ? t(option?.label ?? "") : option?.label ?? ""}
-                    <Button
-                      variant={"ghost"}
-                      onClick={() => {
-                        if (option?.value !== undefined) {
-                          toggleValue(option.value);
-                        }
-                      }}
+              <div className="flex flex-wrap gap-1.5">
+                {selectedOptions.map((option: Option | undefined) => {
+                  const optionLabel = translateOptions
+                    ? t(option?.label ?? "")
+                    : (option?.label ?? "");
+                  return (
+                    <Badge
+                      key={option?.value}
+                      variant="accent"
+                      className="gap-1 pr-1"
                     >
-                      <X className="h-3 w-3 text-muted-foreground" />
-                    </Button>
-                  </Badge>
-                ))}
+                      {optionLabel}
+                      <button
+                        type="button"
+                        aria-label={`${tCommon("remove")} ${optionLabel}`}
+                        className="inline-flex size-4 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-accent-foreground/15"
+                        onClick={() => {
+                          if (option?.value !== undefined) {
+                            toggleValue(option.value);
+                          }
+                        }}
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </Badge>
+                  );
+                })}
               </div>
             )}
 

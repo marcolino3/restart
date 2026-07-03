@@ -27,7 +27,6 @@ export const updateSchoolClassAction = async (
   const input = {
     id: parsed.id,
     name: parsed.name,
-    sortOrder: parsed.sortOrder,
     gradeLevelIds: parsed.gradeLevelIds ?? [],
     teacherIds: parsed.teacherIds ?? [],
     color: parsed.color || null,

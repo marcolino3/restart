@@ -4,6 +4,7 @@ import { EmployeeAbsencesResolver } from './employee-absences.resolver';
 import { EmployeeAbsencesService } from './employee-absences.service';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
+import { MembershipGuard } from '@/auth/guard/membership.guard';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { CreateEmployeeAbsenceNoticeInput } from './dto/create-employee-absence-notice.input';
 
@@ -38,6 +39,8 @@ describe('EmployeeAbsencesResolver', () => {
       .useValue({ canActivate: () => true })
       .overrideGuard(GraphQLAccessGuard)
       .useValue({ canActivate: () => true })
+      .overrideGuard(MembershipGuard)
+      .useValue({ canActivate: () => true })
       .compile();
 
     resolver = module.get<EmployeeAbsencesResolver>(EmployeeAbsencesResolver);
@@ -45,6 +48,26 @@ describe('EmployeeAbsencesResolver', () => {
 
   it('should be defined', () => {
     expect(resolver).toBeDefined();
+  });
+
+  describe('security metadata (regression: create had no membership requirement)', () => {
+    it('authenticates the whole resolver', () => {
+      const guards: unknown[] =
+        Reflect.getMetadata('__guards__', EmployeeAbsencesResolver) ?? [];
+      expect(guards).toEqual(
+        expect.arrayContaining([GqlBetterAuthGuard, GraphQLAccessGuard]),
+      );
+    });
+
+    it('createEmployeeAbsenceNotice requires a verified org membership', () => {
+      const handler = Object.getOwnPropertyDescriptor(
+        EmployeeAbsencesResolver.prototype,
+        'createEmployeeAbsenceNotice',
+      )?.value as object;
+      const guards: unknown[] =
+        Reflect.getMetadata('__guards__', handler) ?? [];
+      expect(guards).toContain(MembershipGuard);
+    });
   });
 
   describe('createEmployeeAbsenceNotice', () => {

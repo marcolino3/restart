@@ -87,16 +87,21 @@ export class SuperAdminBootstrapService implements OnApplicationBootstrap {
 
       // Mirror the SuperAdmin flag into better-auth's separate `user` table
       // by setting `role='admin'`. The admin plugin's impersonation check
-      // gates on this column (`adminRoles=['admin']` by default). Run
-      // outside the previous transaction (it spans a different table set)
-      // and ignore if the row doesn't exist yet — the user may not have
-      // logged in via better-auth even once.
+      // gates on this column (`adminRoles=['admin']` by default). Also mark
+      // the account as email-verified: an env-provisioned super-admin is
+      // trusted by definition, and an unverified better-auth `user` row
+      // blocks social-login account linking (`account_not_linked`) when the
+      // admin first signs in with Google/Apple. Run outside the previous
+      // transaction (it spans a different table set) and ignore if the row
+      // doesn't exist yet — the user may not have logged in via better-auth
+      // even once.
       try {
         await this.em.query(
           `UPDATE "user"
-             SET role = 'admin'
+             SET role = 'admin', "emailVerified" = true
            WHERE email = $1
-             AND (role IS DISTINCT FROM 'admin')`,
+             AND (role IS DISTINCT FROM 'admin'
+                  OR "emailVerified" IS DISTINCT FROM true)`,
           [emailEnv],
         );
       } catch (err) {

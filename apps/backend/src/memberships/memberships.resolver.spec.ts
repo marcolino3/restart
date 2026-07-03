@@ -5,6 +5,7 @@ import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { CreateMembershipInput } from './dto/create-membership.input';
 import { UpdateMembershipInput } from './dto/update-membership.input';
+import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 
 describe('MembershipsResolver', () => {
   let resolver: MembershipsResolver;
@@ -12,6 +13,7 @@ describe('MembershipsResolver', () => {
     create: jest.Mock;
     update: jest.Mock;
     findByOrgId: jest.Mock;
+    updateMyTheme: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -19,6 +21,7 @@ describe('MembershipsResolver', () => {
       create: jest.fn().mockResolvedValue({ id: 'mem-1' }),
       update: jest.fn().mockResolvedValue({ id: 'mem-1' }),
       findByOrgId: jest.fn().mockResolvedValue([]),
+      updateMyTheme: jest.fn().mockResolvedValue(true),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -83,6 +86,42 @@ describe('MembershipsResolver', () => {
 
       await resolver.updateMembership(input);
       expect(membershipsService.update).toHaveBeenCalledWith(input);
+    });
+  });
+
+  describe('updateMyTheme', () => {
+    it('scopes the update to the caller session (own membership + active org)', async () => {
+      const user = {
+        sub: 'user-1',
+        membershipId: 'mem-1',
+        orgId: 'org-1',
+      } as TokenPayload;
+
+      await expect(
+        resolver.updateMyTheme(user, { theme: 'lagune' }),
+      ).resolves.toBe(true);
+      // Multi-tenant isolation: all ids come from the session token, never
+      // from client arguments.
+      expect(membershipsService.updateMyTheme).toHaveBeenCalledWith(
+        { userId: 'user-1', membershipId: 'mem-1', organizationId: 'org-1' },
+        'lagune',
+      );
+    });
+
+    it('passes callers without membership through (SuperAdmin → user fallback)', async () => {
+      const user = { sub: 'user-1', isSuperAdmin: true } as TokenPayload;
+
+      await expect(
+        resolver.updateMyTheme(user, { theme: 'lagune' }),
+      ).resolves.toBe(true);
+      expect(membershipsService.updateMyTheme).toHaveBeenCalledWith(
+        {
+          userId: 'user-1',
+          membershipId: undefined,
+          organizationId: undefined,
+        },
+        'lagune',
+      );
     });
   });
 });

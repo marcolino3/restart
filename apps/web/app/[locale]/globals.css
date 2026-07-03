@@ -42,42 +42,272 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Restart theme system — additional design tokens (see design handoff) */
+  --radius-card: var(--r-card);
+  --radius-ctl: var(--r-ctl);
+  --shadow-card: var(--shadow);
+  --color-field: var(--field);
+  --color-row-hover: var(--row-h);
+  --color-timer: var(--timer-bg);
+  --color-timer-foreground: var(--timer-fg);
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-ink);
+  --color-status-slate: var(--st-slate-bg);
+  --color-status-slate-foreground: var(--st-slate-fg);
+  --color-status-sky: var(--st-sky-bg);
+  --color-status-sky-foreground: var(--st-sky-fg);
+  --color-status-amber: var(--st-amber-bg);
+  --color-status-amber-foreground: var(--st-amber-fg);
+  --color-status-green: var(--st-green-bg);
+  --color-status-green-foreground: var(--st-green-fg);
+  --color-status-rose: var(--st-rose-bg);
+  --color-status-rose-foreground: var(--st-rose-fg);
+  --color-heatmap-empty: var(--hm-e);
+  --color-heatmap-0: var(--hm-0);
+  --color-heatmap-1: var(--hm-1);
+  --color-heatmap-2: var(--hm-2);
+  --color-heatmap-3: var(--hm-3);
+  --color-heatmap-4: var(--hm-4);
 }
 
+/* ================= THEMES =================
+   12 Farbvarianten aus dem Design-Handoff. Jedes Theme definiert denselben
+   Variablen-Satz; Komponenten referenzieren ausschliesslich die gemappten
+   shadcn-Tokens weiter unten — nie Hex-Werte direkt. */
+:root,
+[data-theme="salbei"] {
+  --bg: #f7f5f0; --panel: #ffffff; --line: #e7e2d7; --ink: #26251f; --soft: #837d70;
+  --row-h: #faf8f2; --field: #f4f1e9;
+  --side-bg: #efebe1; --side-fg: #3d382e; --side-line: #e0dac9; --side-soft: #8d8571;
+  --side-on-bg: #3a7d44; --side-on-fg: #ffffff;
+  --acc: #3a7d44; --acc-ink: #ffffff; --acc-soft: #e4efe2; --acc-soft-fg: #316b3a;
+  --timer-bg: #24422a; --timer-fg: #eef3e8; --gold: #e9c46a; --gold-ink: #43350e;
+  --st-slate-bg: #efece1; --st-slate-fg: #77705d;
+  --st-sky-bg: #e0ebe8; --st-sky-fg: #2f6459;
+  --st-amber-bg: #f6ecd4; --st-amber-fg: #8a6414;
+  --st-green-bg: #e4efe2; --st-green-fg: #316b3a;
+  --st-rose-bg: #f7e3dd; --st-rose-fg: #a3452e;
+  --hm-e: #f3f1e9; --hm-0: #edeade; --hm-1: #ddeae6; --hm-2: #f6ecd4; --hm-3: #dfeeda; --hm-4: #97d6a4;
+  --r-card: 16px; --r-ctl: 11px;
+  --shadow: 0 1px 2px rgb(60 50 30 / 0.05);
+}
+[data-theme="lagune"] {
+  --bg: #faf7f2; --panel: #ffffff; --line: #ebe5d9; --ink: #27272a; --soft: #8b8578;
+  --row-h: #fbf9f4; --field: #f5f1e8;
+  --side-bg: #e9f3f1; --side-fg: #1f4d46; --side-line: #d5e7e3; --side-soft: #56847c;
+  --side-on-bg: #2a9d8f; --side-on-fg: #ffffff;
+  --acc: #2a9d8f; --acc-ink: #ffffff; --acc-soft: #e2f1ee; --acc-soft-fg: #21867a;
+  --timer-bg: #14332d; --timer-fg: #e4f1ee; --gold: #e9c46a; --gold-ink: #43350e;
+  --st-slate-bg: #eeebe0; --st-slate-fg: #7b7462;
+  --st-sky-bg: #ddf0ed; --st-sky-fg: #1f6d63;
+  --st-amber-bg: #faeed2; --st-amber-fg: #96660f;
+  --st-green-bg: #e3f0df; --st-green-fg: #3c7040;
+  --st-rose-bg: #fbe4dc; --st-rose-fg: #bc4d26;
+  --hm-e: #f4f2ea; --hm-0: #eeebdf; --hm-1: #dcedea; --hm-2: #faeed2; --hm-3: #ddefd8; --hm-4: #8bd8c4;
+  --r-card: 14px; --r-ctl: 10px;
+  --shadow: 0 1px 3px rgb(50 40 20 / 0.06);
+}
+[data-theme="himmel"] {
+  --bg: #f4f7fa; --panel: #ffffff; --line: #e2e8f0; --ink: #1f2732; --soft: #7b8698;
+  --row-h: #f7fafc; --field: #eef3f8;
+  --side-bg: #e8f1f9; --side-fg: #25455f; --side-line: #d6e5f1; --side-soft: #6f8dab;
+  --side-on-bg: #2f7bd0; --side-on-fg: #ffffff;
+  --acc: #2f7bd0; --acc-ink: #ffffff; --acc-soft: #e1eefb; --acc-soft-fg: #20639f;
+  --timer-bg: #16324f; --timer-fg: #e2eefb; --gold: #f0b653; --gold-ink: #4a3608;
+  --st-slate-bg: #ebeef2; --st-slate-fg: #6f7787;
+  --st-sky-bg: #dcedfb; --st-sky-fg: #1d6398;
+  --st-amber-bg: #fceed0; --st-amber-fg: #92620d;
+  --st-green-bg: #ddf2e3; --st-green-fg: #227540;
+  --st-rose-bg: #fce3e4; --st-rose-fg: #b03844;
+  --hm-e: #f0f3f7; --hm-0: #e8ecf2; --hm-1: #dcebfa; --hm-2: #fceed0; --hm-3: #dcf1e2; --hm-4: #8bd8a8;
+  --r-card: 14px; --r-ctl: 10px;
+  --shadow: 0 1px 4px rgb(30 50 80 / 0.07);
+}
+[data-theme="indigo"] {
+  --bg: #f4f5fa; --panel: #ffffff; --line: #e4e6ef; --ink: #23252e; --soft: #7d8093;
+  --row-h: #f8f9fc; --field: #f1f2f8;
+  --side-bg: #ffffff; --side-fg: #3a3d4a; --side-line: #e8eaf1; --side-soft: #8a8da0;
+  --side-on-bg: #eaecfb; --side-on-fg: #3c47b8;
+  --acc: #4f5dd8; --acc-ink: #ffffff; --acc-soft: #eaecfb; --acc-soft-fg: #3c47b8;
+  --timer-bg: #262c66; --timer-fg: #e8eafd; --gold: #f0b653; --gold-ink: #4a3608;
+  --st-slate-bg: #edeef3; --st-slate-fg: #6d7085;
+  --st-sky-bg: #ddedfb; --st-sky-fg: #1d5f96;
+  --st-amber-bg: #fceed0; --st-amber-fg: #92620d;
+  --st-green-bg: #ddf2e3; --st-green-fg: #227540;
+  --st-rose-bg: #fce3e4; --st-rose-fg: #b03844;
+  --hm-e: #f1f2f6; --hm-0: #e9eaf0; --hm-1: #dcebfa; --hm-2: #fceed0; --hm-3: #dcf1e2; --hm-4: #8bd8a8;
+  --r-card: 14px; --r-ctl: 10px;
+  --shadow: 0 1px 4px rgb(40 45 90 / 0.07);
+}
+[data-theme="flieder"] {
+  --bg: #f7f5fa; --panel: #ffffff; --line: #e8e3f0; --ink: #28242e; --soft: #867f93;
+  --row-h: #faf8fc; --field: #f2eff7;
+  --side-bg: #f0eaf8; --side-fg: #43355f; --side-line: #e1d7ef; --side-soft: #8f7fb0;
+  --side-on-bg: #7d55cc; --side-on-fg: #ffffff;
+  --acc: #7d55cc; --acc-ink: #ffffff; --acc-soft: #eee6fa; --acc-soft-fg: #6440ad;
+  --timer-bg: #342550; --timer-fg: #ebe3f8; --gold: #f0b653; --gold-ink: #4a3608;
+  --st-slate-bg: #edecf2; --st-slate-fg: #716d84;
+  --st-sky-bg: #deecfa; --st-sky-fg: #1e6095;
+  --st-amber-bg: #fbeed2; --st-amber-fg: #916310;
+  --st-green-bg: #def1e2; --st-green-fg: #257341;
+  --st-rose-bg: #fbe3e6; --st-rose-fg: #ae3a4e;
+  --hm-e: #f2f0f6; --hm-0: #eae7f0; --hm-1: #deebfa; --hm-2: #fbeed2; --hm-3: #def1e0; --hm-4: #8ed6a6;
+  --r-card: 16px; --r-ctl: 11px;
+  --shadow: 0 1px 4px rgb(60 40 100 / 0.07);
+}
+[data-theme="terracotta"] {
+  --bg: #faf6f1; --panel: #ffffff; --line: #ece1d4; --ink: #2b241e; --soft: #8f8172;
+  --row-h: #fbf8f3; --field: #f5efe6;
+  --side-bg: #f4e9dd; --side-fg: #4c3a2b; --side-line: #e8d8c6; --side-soft: #a0876e;
+  --side-on-bg: #bb5d3a; --side-on-fg: #ffffff;
+  --acc: #bb5d3a; --acc-ink: #ffffff; --acc-soft: #f7e7dd; --acc-soft-fg: #9c4826;
+  --timer-bg: #46301f; --timer-fg: #f5e8dc; --gold: #e9c46a; --gold-ink: #43350e;
+  --st-slate-bg: #efe9df; --st-slate-fg: #7b7260;
+  --st-sky-bg: #dfecea; --st-sky-fg: #2c6459;
+  --st-amber-bg: #f8ecd0; --st-amber-fg: #8f6410;
+  --st-green-bg: #e3efdd; --st-green-fg: #3a6f3e;
+  --st-rose-bg: #f8e2da; --st-rose-fg: #a8432b;
+  --hm-e: #f4f0e9; --hm-0: #ede7db; --hm-1: #ddebe8; --hm-2: #f8ecd0; --hm-3: #dfeeda; --hm-4: #96d5a1;
+  --r-card: 14px; --r-ctl: 10px;
+  --shadow: 0 1px 2px rgb(60 45 25 / 0.05);
+}
+[data-theme="ozean"] {
+  --bg: #f3f7f8; --panel: #ffffff; --line: #e0e9ec; --ink: #1e2a2e; --soft: #75888e;
+  --row-h: #f6fafb; --field: #edf4f6;
+  --side-bg: #e5f0f3; --side-fg: #1e4653; --side-line: #d2e4e9; --side-soft: #5f8b99;
+  --side-on-bg: #20708d; --side-on-fg: #ffffff;
+  --acc: #20708d; --acc-ink: #ffffff; --acc-soft: #ddeef4; --acc-soft-fg: #175a73;
+  --timer-bg: #123642; --timer-fg: #ddeef4; --gold: #eec25f; --gold-ink: #43350e;
+  --st-slate-bg: #eaeef0; --st-slate-fg: #6c7d84;
+  --st-sky-bg: #dcedfb; --st-sky-fg: #1d6398;
+  --st-amber-bg: #fbeed1; --st-amber-fg: #916310;
+  --st-green-bg: #ddf1e1; --st-green-fg: #25743e;
+  --st-rose-bg: #fbe3e1; --st-rose-fg: #b04336;
+  --hm-e: #eff4f5; --hm-0: #e6edef; --hm-1: #dcecf8; --hm-2: #fbeed1; --hm-3: #dcf0de; --hm-4: #8dd6a4;
+  --r-card: 14px; --r-ctl: 10px;
+  --shadow: 0 1px 3px rgb(25 55 65 / 0.07);
+}
+[data-theme="wald"] {
+  --bg: #f5f7f4; --panel: #ffffff; --line: #e2e8de; --ink: #212822; --soft: #7d887d;
+  --row-h: #f8faf6; --field: #eff3ec;
+  --side-bg: #e7efe7; --side-fg: #28402f; --side-line: #d6e3d4; --side-soft: #6f8a72;
+  --side-on-bg: #2d6a4f; --side-on-fg: #ffffff;
+  --acc: #2d6a4f; --acc-ink: #ffffff; --acc-soft: #e0eee5; --acc-soft-fg: #215540;
+  --timer-bg: #1b3a2c; --timer-fg: #e0eee5; --gold: #e9c46a; --gold-ink: #43350e;
+  --st-slate-bg: #ebeee7; --st-slate-fg: #75806b;
+  --st-sky-bg: #deedea; --st-sky-fg: #26685d;
+  --st-amber-bg: #f7edd2; --st-amber-fg: #8d6412;
+  --st-green-bg: #e1efdc; --st-green-fg: #356e3b;
+  --st-rose-bg: #f8e3dc; --st-rose-fg: #a8462c;
+  --hm-e: #f1f4ee; --hm-0: #e9ede4; --hm-1: #deece9; --hm-2: #f7edd2; --hm-3: #dfeed8; --hm-4: #94d6a0;
+  --r-card: 12px; --r-ctl: 9px;
+  --shadow: 0 1px 2px rgb(35 55 40 / 0.06);
+}
+[data-theme="beere"] {
+  --bg: #faf6f8; --panel: #ffffff; --line: #eee0e7; --ink: #2b2226; --soft: #93808a;
+  --row-h: #fcf8fa; --field: #f6eef2;
+  --side-bg: #f6e9f0; --side-fg: #592f44; --side-line: #ecd8e3; --side-soft: #a97f93;
+  --side-on-bg: #a34d74; --side-on-fg: #ffffff;
+  --acc: #a34d74; --acc-ink: #ffffff; --acc-soft: #f6e4ec; --acc-soft-fg: #8a3c5f;
+  --timer-bg: #4a2338; --timer-fg: #f4e4ed; --gold: #f0b653; --gold-ink: #4a3608;
+  --st-slate-bg: #efeaed; --st-slate-fg: #7d707a;
+  --st-sky-bg: #e0ebf8; --st-sky-fg: #22619a;
+  --st-amber-bg: #fbeed2; --st-amber-fg: #916310;
+  --st-green-bg: #e0f0e0; --st-green-fg: #2c7342;
+  --st-rose-bg: #fae2de; --st-rose-fg: #b04330;
+  --hm-e: #f4eff2; --hm-0: #ede5ea; --hm-1: #e0eaf8; --hm-2: #fbeed2; --hm-3: #dff0de; --hm-4: #92d6a2;
+  --r-card: 16px; --r-ctl: 11px;
+  --shadow: 0 1px 4px rgb(80 35 60 / 0.07);
+}
+[data-theme="honig"] {
+  --bg: #faf7f0; --panel: #ffffff; --line: #ece3d0; --ink: #2a251c; --soft: #8f8672;
+  --row-h: #fcf9f3; --field: #f5f0e4;
+  --side-bg: #f5edda; --side-fg: #4f3f1e; --side-line: #e9dec3; --side-soft: #a3905f;
+  --side-on-bg: #a97a24; --side-on-fg: #ffffff;
+  --acc: #a97a24; --acc-ink: #ffffff; --acc-soft: #f5ead0; --acc-soft-fg: #8a6215;
+  --timer-bg: #3f3213; --timer-fg: #f3ead4; --gold: #e9c46a; --gold-ink: #43350e;
+  --st-slate-bg: #efece2; --st-slate-fg: #7c745e;
+  --st-sky-bg: #e0ecf3; --st-sky-fg: #2a6484;
+  --st-amber-bg: #f8ecd0; --st-amber-fg: #8f6410;
+  --st-green-bg: #e5efdb; --st-green-fg: #3d6f38;
+  --st-rose-bg: #f9e3da; --st-rose-fg: #ab4529;
+  --hm-e: #f4f1e8; --hm-0: #ede8da; --hm-1: #dfecf2; --hm-2: #f8ecd0; --hm-3: #e2eed6; --hm-4: #9ad49b;
+  --r-card: 14px; --r-ctl: 10px;
+  --shadow: 0 1px 2px rgb(60 50 20 / 0.05);
+}
+[data-theme="schiefer"] {
+  --bg: #f4f6f8; --panel: #ffffff; --line: #e3e8ed; --ink: #20262d; --soft: #7a8592;
+  --row-h: #f7f9fb; --field: #eef2f5;
+  --side-bg: #e9eef3; --side-fg: #2e3d4c; --side-line: #d8e1e9; --side-soft: #7690a7;
+  --side-on-bg: #42566b; --side-on-fg: #ffffff;
+  --acc: #42566b; --acc-ink: #ffffff; --acc-soft: #e2e9f0; --acc-soft-fg: #35485c;
+  --timer-bg: #22303e; --timer-fg: #e2e9f0; --gold: #f0b653; --gold-ink: #4a3608;
+  --st-slate-bg: #eaedf1; --st-slate-fg: #6d7885;
+  --st-sky-bg: #ddecfa; --st-sky-fg: #1d6095;
+  --st-amber-bg: #fbeed1; --st-amber-fg: #916310;
+  --st-green-bg: #def1e2; --st-green-fg: #26733f;
+  --st-rose-bg: #fbe3e3; --st-rose-fg: #af3c40;
+  --hm-e: #f0f3f6; --hm-0: #e7ebf0; --hm-1: #dcebfa; --hm-2: #fbeed1; --hm-3: #ddf0df; --hm-4: #8dd7a5;
+  --r-card: 12px; --r-ctl: 9px;
+  --shadow: 0 1px 3px rgb(30 40 55 / 0.06);
+}
+[data-theme="graphit"] {
+  --bg: #f7f7f6; --panel: #ffffff; --line: #e7e7e4; --ink: #1c1c1a; --soft: #84847e;
+  --row-h: #fafaf9; --field: #f1f1ef;
+  --side-bg: #ffffff; --side-fg: #3a3a36; --side-line: #ebebe8; --side-soft: #8f8f88;
+  --side-on-bg: #1c1c1a; --side-on-fg: #ffffff;
+  --acc: #1c1c1a; --acc-ink: #ffffff; --acc-soft: #ececea; --acc-soft-fg: #3a3a36;
+  --timer-bg: #1c1c1a; --timer-fg: #f0f0ee; --gold: #e9c46a; --gold-ink: #43350e;
+  --st-slate-bg: #eef1f5; --st-slate-fg: #475569;
+  --st-sky-bg: #e0f2fe; --st-sky-fg: #0369a1;
+  --st-amber-bg: #fef3c7; --st-amber-fg: #92400e;
+  --st-green-bg: #d1fae5; --st-green-fg: #065f46;
+  --st-rose-bg: #ffe4e6; --st-rose-fg: #9f1239;
+  --hm-e: #f4f4f2; --hm-0: #ececea; --hm-1: #e0f2fe; --hm-2: #fef3c7; --hm-3: #d1fae5; --hm-4: #6ee7a0;
+  --r-card: 10px; --r-ctl: 8px;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+}
+
+/* ===== Mapping Handoff-Variablen -> shadcn-Tokens =====
+   Gilt für alle Themes; die konkreten Werte kommen aus dem aktiven
+   [data-theme]-Block oben. Komponenten nutzen weiterhin bg-background,
+   bg-card, text-primary usw. */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: var(--r-card);
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card: var(--panel);
+  --card-foreground: var(--ink);
+  --popover: var(--panel);
+  --popover-foreground: var(--ink);
+  --primary: var(--acc);
+  --primary-foreground: var(--acc-ink);
+  --secondary: var(--field);
+  --secondary-foreground: var(--ink);
+  --muted: var(--field);
+  --muted-foreground: var(--soft);
+  --accent: var(--acc-soft);
+  --accent-foreground: var(--acc-soft-fg);
+  --destructive: var(--st-rose-fg);
+  --destructive-foreground: #ffffff;
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--acc);
+  --chart-1: var(--acc);
+  --chart-2: var(--st-sky-fg);
+  --chart-3: var(--st-green-fg);
+  --chart-4: var(--st-amber-fg);
+  --chart-5: var(--st-rose-fg);
+  --sidebar: var(--side-bg);
+  --sidebar-foreground: var(--side-fg);
+  --sidebar-primary: var(--acc);
+  --sidebar-primary-foreground: var(--acc-ink);
+  --sidebar-accent: var(--side-on-bg);
+  --sidebar-accent-foreground: var(--side-on-fg);
+  --sidebar-border: var(--side-line);
+  --sidebar-ring: var(--acc);
+  --sidebar-soft: var(--side-soft);
 }
 
 .dark {
@@ -120,7 +350,10 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    /* Design-Handoff: Geist als App-Font (via next/font-Variable auf <body>)
+       + 14px-Basis wie im Prototyp (`body { font-size: 14px }`). rem-Spacing
+       bleibt an der 16px-Root-Grösse, nur die Font-Vererbung ändert sich. */
+    @apply bg-background font-sans text-[14px] text-foreground;
   }
 }
 

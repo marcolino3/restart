@@ -10,6 +10,7 @@ import { SchoolClassesService } from './school-classes.service';
 import { SchoolClass } from './entities/school-class.entity';
 import { CreateSchoolClassInput } from './dto/create-school-class.input';
 import { UpdateSchoolClassInput } from './dto/update-school-class.input';
+import { ReorderSchoolClassesInput } from './dto/reorder-school-classes.input';
 
 @Resolver(() => SchoolClass)
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
@@ -75,5 +76,14 @@ export class SchoolClassesResolver {
     @CurrentOrgId() orgId: string,
   ) {
     return this.schoolClassesService.remove(id, orgId);
+  }
+
+  @Mutation(() => [SchoolClass])
+  @Permissions('SCHOOL_CLASS_WRITE')
+  reorderSchoolClasses(
+    @Args('input') input: ReorderSchoolClassesInput,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.schoolClassesService.reorder(input, orgId);
   }
 }

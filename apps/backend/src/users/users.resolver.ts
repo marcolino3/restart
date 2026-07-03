@@ -15,6 +15,7 @@ import { ChangeUserEmailInput } from './dto/change-user-email.input';
 import { AuthContextOutput } from './dto/auth-context.output';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
+import { Organization } from '@/organizations/entities/organization.entity';
 
 @Resolver(() => User)
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
@@ -41,20 +42,57 @@ export class UsersResolver {
   ): Promise<AuthContextOutput> {
     const fullUser = await this.usersService.findCurrentUser(user.sub);
     if (!fullUser) throw new NotFoundException('User not found');
-    const [timeTrackingEnabled, isProjectMember] = await Promise.all([
+    const [timeTrackingEnabled, isProjectMember, theme] = await Promise.all([
       this.resolveTimeTrackingEnabled(user),
       this.resolveIsProjectMember(user),
+      this.resolveTheme(user),
     ]);
+
+    // Surface the active organization's name so the frontend can show the
+    // school name in the sidebar header (multi-tenant: only the active org).
+    let orgName: string | undefined;
+    if (user.orgId) {
+      const org = await this.em.findOne(Organization, {
+        where: { id: user.orgId },
+        select: { id: true, name: true },
+      });
+      orgName = org?.name ?? undefined;
+    }
     return {
       user: fullUser,
       roles: user.roles ?? [],
       permissions: user.permissions ?? [],
       orgId: user.orgId,
+      orgName,
       persona: user.persona,
+      theme,
       isSuperAdmin: user.isSuperAdmin ?? false,
       timeTrackingEnabled,
       isProjectMember,
     };
+  }
+
+  /**
+   * UI theme stored on the caller's own membership in the active org.
+   * Callers without a membership (SuperAdmin) read it from their user
+   * record instead.
+   */
+  private async resolveTheme(user: TokenPayload): Promise<string | undefined> {
+    if (user.membershipId && user.orgId) {
+      const rows: Array<{ theme: string | null }> = await this.em.query(
+        `SELECT theme
+           FROM memberships
+           WHERE id = $1 AND organization_id = $2
+           LIMIT 1`,
+        [user.membershipId, user.orgId],
+      );
+      return rows[0]?.theme ?? undefined;
+    }
+    const rows: Array<{ theme: string | null }> = await this.em.query(
+      `SELECT theme FROM users WHERE id = $1 LIMIT 1`,
+      [user.sub],
+    );
+    return rows[0]?.theme ?? undefined;
   }
 
   /** Own employee's time_tracking_enabled flag (false without employee record). */
