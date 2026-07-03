@@ -61,10 +61,8 @@ export class UploadController {
       );
     }
 
-    const dir = path.join(UPLOAD_ROOT, safeEntity);
-    await fs.mkdir(dir, { recursive: true });
-
-    const filePath = path.join(dir, `${safeId}.webp`);
+    const filePath = this.safeFilePath(safeEntity, `${safeId}.webp`);
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
 
     try {
       await sharp(file.buffer).webp({ quality: 80 }).toFile(filePath);
@@ -87,7 +85,7 @@ export class UploadController {
 
     const { safeEntity, safeId } = this.resolveTarget(entity, id, user);
 
-    const filePath = path.join(UPLOAD_ROOT, safeEntity, `${safeId}.webp`);
+    const filePath = this.safeFilePath(safeEntity, `${safeId}.webp`);
 
     try {
       await fs.unlink(filePath);
@@ -96,6 +94,21 @@ export class UploadController {
     }
 
     return { success: true };
+  }
+
+  /**
+   * Builds an absolute path under UPLOAD_ROOT and refuses anything that
+   * resolves outside it. `safeEntity`/`fileName` are already stripped to
+   * `[A-Za-z0-9_-]` by resolveTarget, so no traversal is reachable at
+   * runtime — this containment check is the explicit barrier (also clears
+   * the static path-injection analysis and guards future entity additions).
+   */
+  private safeFilePath(safeEntity: string, fileName: string): string {
+    const resolved = path.resolve(UPLOAD_ROOT, safeEntity, fileName);
+    if (!resolved.startsWith(UPLOAD_ROOT + path.sep)) {
+      throw new ForbiddenException('Resolved upload path escapes the root');
+    }
+    return resolved;
   }
 
   private resolveTarget(
