@@ -7,6 +7,7 @@ import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
 import { SocialSecurityNumberFormField } from "@/components/form/form-fields/SocialSecurityNumberFormField";
+import { PhoneFormField } from "@/components/form/form-fields/PhoneFormField";
 import { UploadFormField } from "@/components/form/form-fields/UploadFormField";
 import { AddressSection } from "../../EmployeeFormSections";
 
@@ -72,7 +73,19 @@ export function StepPerson({ orgCountry, draftId }: Props) {
               label="emailLogin"
               namespace="EmployeeOnboarding"
             />
-            <InputFormField name="contactPhone" type="tel" label="phone" />
+            <InputFormField
+              name="privateEmail"
+              type="email"
+              label="privateEmail"
+              namespace="EmployeeOnboarding"
+            />
+            <PhoneFormField name="contactPhone" country={orgCountry} />
+            <InputFormField
+              name="contactPhone2"
+              type="tel"
+              label="phone2"
+              namespace="EmployeeOnboarding"
+            />
           </div>
           <AddressSection />
         </CardContent>

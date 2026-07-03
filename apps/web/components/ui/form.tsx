@@ -84,7 +84,7 @@ function FormItem({ className, ...props }: React.ComponentProps<'div'>) {
     <FormItemContext.Provider value={{ id }}>
       <div
         data-slot="form-item"
-        className={cn('grid gap-2', className)}
+        className={cn('relative grid gap-2', className)}
         {...props}
       />
     </FormItemContext.Provider>
@@ -101,7 +101,9 @@ function FormLabel({
     <Label
       data-slot="form-label"
       data-error={!!error}
-      className={className}
+      // Match the design handoff form-field label (.fld label): 12.5px / 600,
+      // instead of the base Label's larger text-base.
+      className={cn("text-[12.5px] font-semibold", className)}
       htmlFor={formItemId}
       {...props}
     />
@@ -142,16 +144,21 @@ function FormDescription({ className, ...props }: React.ComponentProps<'p'>) {
 function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
   const { error, formMessageId } = useFormField()
   const body = error ? String(error?.message ?? '') : props.children
-  console.log(error)
   if (!body) {
     return null
   }
 
+  // Positioned absolutely just below the control so it lives in the existing
+  // gap between fields — the field height stays constant, so showing/hiding a
+  // validation message never shifts the layout (and keeps grid columns aligned).
   return (
     <p
       data-slot="form-message"
       id={formMessageId}
-      className={cn('text-destructive text-sm mb-0', className)}
+      className={cn(
+        'absolute left-0 top-full mt-0.5 text-destructive text-xs leading-tight',
+        className,
+      )}
       {...props}
     >
       {body}

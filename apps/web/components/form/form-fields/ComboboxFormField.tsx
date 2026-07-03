@@ -103,7 +103,9 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
                     variant="outline"
                     role="combobox"
                     className={cn(
-                      "w-full justify-between",
+                      // Match the Input/Select control background/border so
+                      // combobox fields read as the same control.
+                      "h-[38px] w-full justify-between border-input bg-field font-normal hover:bg-field",
                       !field.value && "text-muted-foreground"
                     )}
                   >

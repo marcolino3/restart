@@ -20,11 +20,23 @@ export default async function CreateEmployeePage() {
 
   const roleOptions =
     "data" in rolesRes && rolesRes.success
-      ? rolesRes.data.map((r) => ({
-          value: r.id,
-          label: r.name ?? r.systemCode ?? r.id,
-          description: r.systemCode ?? undefined,
-        }))
+      ? rolesRes.data.map((r) => {
+          const nameKey = `roleName_${r.systemCode}`;
+          const descKey = `roleDesc_${r.systemCode}`;
+          // Prefer a custom role name; otherwise the translated system-role
+          // label/description. Falls back to the raw code if untranslated.
+          return {
+            value: r.id,
+            // System roles carry their code as name in the DB — prefer the
+            // translated label; custom roles use their own name.
+            label:
+              r.systemCode && t.has(nameKey)
+                ? t(nameKey)
+                : (r.name ?? r.systemCode ?? r.id),
+            description:
+              r.systemCode && t.has(descKey) ? t(descKey) : undefined,
+          };
+        })
       : [];
 
   const teamOptions = teamsRes.success

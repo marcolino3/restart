@@ -77,7 +77,9 @@ export function DatePickerFormField<TFormValues extends FieldValues>({
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full pl-3 text-left font-normal",
+                      // Match the Input control background/border so date
+                      // fields read as the same control (component-based).
+                      "h-[38px] w-full border-input bg-field pl-3 text-left font-normal hover:bg-field",
                       !value && "text-muted-foreground"
                     )}
                   >

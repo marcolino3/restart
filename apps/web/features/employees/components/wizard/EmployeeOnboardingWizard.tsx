@@ -64,7 +64,9 @@ export function EmployeeOnboardingWizard({
       persona: Persona.Employee,
       dateOfBirth: null,
       socialSecurityNumber: "",
+      privateEmail: "",
       contactPhone: "",
+      contactPhone2: "",
       street: "",
       houseNumber: "",
       addressLine2: "",
@@ -81,6 +83,7 @@ export function EmployeeOnboardingWizard({
       weeklyHours: "",
       annualVacationDays: undefined,
       weekdayTimeWindows: {},
+      documentUrl: "",
       teamId: undefined,
       roleId: undefined,
       language: locale === "en" ? "en" : "de",
@@ -102,7 +105,12 @@ export function EmployeeOnboardingWizard({
       return res.data.id;
     }
     setSaveState("idle");
-    toast.error(t("saveError"));
+    const msg = typeof res.error === "string" ? res.error : "";
+    toast.error(
+      /already exists|already in use|conflict/i.test(msg)
+        ? t("emailInUse")
+        : t("saveError"),
+    );
     return undefined;
   }, [form, draftId, t]);
 
@@ -168,6 +176,29 @@ export function EmployeeOnboardingWizard({
     }
   };
 
+  /** Persist the current state as a draft and return to the list. */
+  const saveDraftAndExit = async () => {
+    const ok = await form.trigger(["firstName", "lastName", "email"]);
+    if (!ok || !form.getValues("email")) {
+      toast.error(t("personIncomplete"));
+      return;
+    }
+    const id = await saveDraft();
+    if (id) {
+      toast.success(t("draftSaved"));
+      router.push(ROUTES.admin.employees(locale));
+    }
+  };
+
+  // The finalize CTA reflects the chosen invitation timing.
+  const invitationTiming = form.watch("invitationTiming");
+  const finalizeCtaLabel =
+    invitationTiming === "MANUAL"
+      ? t("createNoInvite")
+      : invitationTiming === "ON_ENTRY_DATE"
+        ? t("createAndSchedule")
+        : t("createAndInvite");
+
   return (
     <Form {...form}>
       <div className="flex flex-col gap-5">
@@ -189,11 +220,7 @@ export function EmployeeOnboardingWizard({
                   !active && !done && "border-border text-muted-foreground",
                 )}
               >
-                {done ? (
-                  <Check className="h-3.5 w-3.5 text-primary" />
-                ) : (
-                  <span>{i + 1}</span>
-                )}
+                {done && <Check className="h-3.5 w-3.5 text-primary" />}
                 {t(`step_${key}`)}
               </button>
             );
@@ -219,7 +246,9 @@ export function EmployeeOnboardingWizard({
             {step === 0 && (
               <StepPerson orgCountry={orgCountry} draftId={draftId} />
             )}
-            {step === 1 && <StepContract teamOptions={teamOptions} />}
+            {step === 1 && (
+              <StepContract teamOptions={teamOptions} draftId={draftId} />
+            )}
             {step === 2 && <StepRoles roleOptions={roleOptions} />}
           </div>
           <OnboardingSummaryAside
@@ -228,28 +257,38 @@ export function EmployeeOnboardingWizard({
           />
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <Button
             type="button"
             variant="ghost"
-            onClick={() =>
-              step === 0
-                ? router.push(ROUTES.admin.employees(locale))
-                : setStep((s) => Math.max(s - 1, 0))
-            }
+            onClick={saveDraftAndExit}
+            disabled={submitting}
           >
-            {step === 0 ? t("cancel") : t("back")}
+            {t("saveDraftClose")}
           </Button>
-          {step < STEPS.length - 1 ? (
-            <Button type="button" onClick={goNext}>
-              {t("next")}
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() =>
+                step === 0
+                  ? router.push(ROUTES.admin.employees(locale))
+                  : setStep((s) => Math.max(s - 1, 0))
+              }
+            >
+              {step === 0 ? t("cancel") : t("back")}
             </Button>
-          ) : (
-            <Button type="button" onClick={onFinalize} disabled={submitting}>
-              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t("createAndInvite")}
-            </Button>
-          )}
+            {step < STEPS.length - 1 ? (
+              <Button type="button" onClick={goNext}>
+                {t("next")}
+              </Button>
+            ) : (
+              <Button type="button" onClick={onFinalize} disabled={submitting}>
+                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {finalizeCtaLabel}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </Form>

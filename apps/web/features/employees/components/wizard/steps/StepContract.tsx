@@ -10,9 +10,11 @@ import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFor
 import { SliderFormField } from "@/components/form/form-fields/SliderFormField";
 import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
 import { WeeklyScheduleField } from "../WeeklyScheduleField";
+import { ContractDocumentUpload } from "../ContractDocumentUpload";
 
 interface Props {
   teamOptions: { label: string; value: string }[];
+  draftId?: string;
 }
 
 const CONTRACT_TYPE_OPTIONS = [
@@ -32,7 +34,7 @@ const FUNCTION_OPTIONS = [
   { label: "functionPrincipal", value: "Schulleitung" },
 ];
 
-export function StepContract({ teamOptions }: Props) {
+export function StepContract({ teamOptions, draftId }: Props) {
   const t = useTranslations("EmployeeOnboarding");
 
   return (
@@ -60,6 +62,8 @@ export function StepContract({ teamOptions }: Props) {
               name="startDate"
               label="entryDate"
               namespace="EmployeeOnboarding"
+              // Entry dates are typically in the future — allow them.
+              disabledDate={(date) => date < new Date("1900-01-01")}
             />
             <SelectFormField
               name="contractType"
@@ -91,6 +95,12 @@ export function StepContract({ teamOptions }: Props) {
               label="annualVacationDays"
               namespace="EmployeeOnboarding"
             />
+          </div>
+          <div className="flex flex-col gap-2">
+            <span className="text-[12.5px] font-semibold">
+              {t("contractDocument")}
+            </span>
+            <ContractDocumentUpload draftId={draftId} />
           </div>
         </CardContent>
       </Card>

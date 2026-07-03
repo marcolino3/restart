@@ -9,6 +9,8 @@ export type EmployeeListItem = {
       isActive: boolean;
       timeTrackingEnabled: boolean;
       id: string;
+      status: string;
+      invitationStatus: string;
     } | null;
     user?: {
       firstName: string;
@@ -46,6 +48,8 @@ const GetEmployeesDocument = gql`
           isActive
           timeTrackingEnabled
           id
+          status
+          invitationStatus
         }
         user {
           firstName

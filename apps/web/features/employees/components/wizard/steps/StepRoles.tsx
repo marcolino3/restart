@@ -46,12 +46,14 @@ export function StepRoles({ roleOptions }: Props) {
           <CardTitle>{t("access")}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-1">
-              <span className="text-sm font-medium">{t("loginEmail")}</span>
-              <span className="text-sm text-muted-foreground">
-                {email || "—"}
+          <div className="grid items-start gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <span className="text-[12.5px] font-semibold">
+                {t("loginEmail")}
               </span>
+              <div className="flex h-[38px] items-center rounded-ctl border border-input bg-muted px-3 text-sm text-muted-foreground">
+                {email || "—"}
+              </div>
             </div>
             <SelectFormField
               name="language"

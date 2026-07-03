@@ -27,6 +27,7 @@ function toOnboardingInput(values: EmployeeOnboardingFormOutput) {
     weeklyHours: emptyToUndef(values.weeklyHours),
     annualVacationDays: values.annualVacationDays ?? undefined,
     weekdayTimeWindows: values.weekdayTimeWindows ?? undefined,
+    documentUrl: emptyToUndef(values.documentUrl),
   };
   const hasContract = Object.values(contract).some((v) => v !== undefined);
 
@@ -39,7 +40,9 @@ function toOnboardingInput(values: EmployeeOnboardingFormOutput) {
     persona: values.persona,
     dateOfBirth: toIsoDate(values.dateOfBirth),
     socialSecurityNumber: emptyToUndef(values.socialSecurityNumber),
+    privateEmail: emptyToUndef(values.privateEmail),
     contactPhone: emptyToUndef(values.contactPhone),
+    contactPhone2: emptyToUndef(values.contactPhone2),
     street: emptyToUndef(values.street),
     houseNumber: emptyToUndef(values.houseNumber),
     addressLine2: emptyToUndef(values.addressLine2),
@@ -86,7 +89,13 @@ export const upsertEmployeeOnboardingDraftAction = async (
       });
     return { success: true as const, data: upsertEmployeeOnboardingDraft };
   } catch (error) {
-    return { success: false as const, error };
+    // Surface the server-side reason (e.g. duplicate e-mail conflict) so the
+    // wizard can show a specific message instead of a generic failure.
+    const gqlMessage = (
+      error as { response?: { errors?: { message?: string }[] } }
+    )?.response?.errors?.[0]?.message;
+    const message = gqlMessage ?? (error as Error)?.message ?? "unknown";
+    return { success: false as const, error: message };
   }
 };
 
