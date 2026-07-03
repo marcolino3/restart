@@ -10,6 +10,8 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
 import sharp from 'sharp';
 import * as path from 'path';
 import * as fs from 'fs/promises';
@@ -18,6 +20,7 @@ import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { Roles } from '@/auth/decorators/roles.decorator';
 import { BetterAuthGuard } from '@/auth/guard/better-auth.guard';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
+import { Employee } from '@/employee-management/employees/entities/employee.entity';
 import { SystemRole } from '@/roles/entities/system-role.enum';
 
 const UPLOAD_ROOT = path.join(process.cwd(), 'public');
@@ -34,12 +37,17 @@ const ALLOWED_MIME_TYPES = new Set([
 // Every entity here must have an ownership rule in assertTargetInOrg().
 // Uploaded files land in the public/ directory and are served unauthenticated,
 // so writes must be limited to targets the caller actually owns.
-const ALLOWED_ENTITIES = new Set(['organizations']);
+const ALLOWED_ENTITIES = new Set(['organizations', 'employees']);
 
 @Controller('upload')
 @UseGuards(BetterAuthGuard)
 @Roles(SystemRole.ORG_OWNER, SystemRole.ORG_ADMIN)
 export class UploadController {
+  constructor(
+    @InjectEntityManager()
+    private readonly entityManager: EntityManager,
+  ) {}
+
   @Post()
   @UseInterceptors(
     FileInterceptor('file', { limits: { fileSize: MAX_UPLOAD_BYTES } }),
@@ -53,7 +61,7 @@ export class UploadController {
     if (!file) throw new BadRequestException('No file provided');
     if (!entity || !id) throw new BadRequestException('entity and id required');
 
-    const { safeEntity, safeId } = this.resolveTarget(entity, id, user);
+    const { safeEntity, safeId } = await this.resolveTarget(entity, id, user);
 
     if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
       throw new BadRequestException(
@@ -83,7 +91,7 @@ export class UploadController {
   ) {
     if (!entity || !id) throw new BadRequestException('entity and id required');
 
-    const { safeEntity, safeId } = this.resolveTarget(entity, id, user);
+    const { safeEntity, safeId } = await this.resolveTarget(entity, id, user);
 
     const filePath = this.safeFilePath(safeEntity, `${safeId}.webp`);
 
@@ -111,11 +119,11 @@ export class UploadController {
     return resolved;
   }
 
-  private resolveTarget(
+  private async resolveTarget(
     entity: string,
     id: string,
     user: TokenPayload,
-  ): { safeEntity: string; safeId: string } {
+  ): Promise<{ safeEntity: string; safeId: string }> {
     // Sanitize: strips path separators and dots (no traversal possible)
     const safeEntity = entity.replace(/[^a-zA-Z0-9_-]/g, '');
     const safeId = id.replace(/[^a-zA-Z0-9_-]/g, '');
@@ -126,21 +134,40 @@ export class UploadController {
       );
     }
 
-    this.assertTargetInOrg(safeEntity, safeId, user);
+    await this.assertTargetInOrg(safeEntity, safeId, user);
 
     return { safeEntity, safeId };
   }
 
-  private assertTargetInOrg(
+  private async assertTargetInOrg(
     safeEntity: string,
     safeId: string,
     user: TokenPayload,
-  ): void {
+  ): Promise<void> {
     if (user.isSuperAdmin) return;
 
     // organizations: the target must be the caller's active organization
     if (safeEntity === 'organizations') {
       if (!user.orgId || safeId !== user.orgId) {
+        throw new ForbiddenException(
+          'Upload target outside active organization',
+        );
+      }
+      return;
+    }
+
+    // employees: the target employee must belong to the caller's active org
+    // (verified via the employee's membership). Avatar uploads run during the
+    // onboarding wizard, so the DRAFT employee already exists at this point.
+    if (safeEntity === 'employees') {
+      if (!user.orgId) {
+        throw new ForbiddenException('No active organization');
+      }
+      const employee = await this.entityManager.findOne(Employee, {
+        where: { id: safeId, membership: { organizationId: user.orgId } },
+        relations: { membership: true },
+      });
+      if (!employee) {
         throw new ForbiddenException(
           'Upload target outside active organization',
         );

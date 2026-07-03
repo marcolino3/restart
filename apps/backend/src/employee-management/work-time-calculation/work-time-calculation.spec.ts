@@ -2,6 +2,7 @@ import {
   calculateDays,
   dailyPlannedMinutes,
   proRataEntitlementDays,
+  timeWindowMinutes,
 } from './work-time-calculation';
 import { CalcContract, CalcInput } from './work-time-calculation.types';
 
@@ -41,6 +42,39 @@ describe('dailyPlannedMinutes', () => {
     };
     expect(dailyPlannedMinutes(c, 1)).toBe(600); // 25% von 2400
     expect(dailyPlannedMinutes(c, 5)).toBe(0); // Fr frei
+  });
+
+  it('leitet Sollminuten aus konkreten Zeitfenstern ab (Vorrang vor Pensum)', () => {
+    const c: CalcContract = {
+      ...fullTime,
+      // weeklyHours + weekdayWorkloads würden 504 bzw. 600 liefern — die
+      // Zeitfenster haben Vorrang und ergeben andere Werte.
+      weeklyHours: 42,
+      weekdayWorkloads: { mon: 100 },
+      weekdayTimeWindows: {
+        mon: [
+          { start: '08:00', end: '12:00' }, // 240
+          { start: '13:00', end: '17:30' }, // 270
+        ],
+        wed: [{ start: '08:00', end: '12:30' }], // 270
+      },
+    };
+    expect(dailyPlannedMinutes(c, 1)).toBe(510); // Mo: 240 + 270
+    expect(dailyPlannedMinutes(c, 3)).toBe(270); // Mi
+    expect(dailyPlannedMinutes(c, 2)).toBe(0); // Di: kein Fenster → frei
+    expect(dailyPlannedMinutes(c, 6)).toBe(0); // Sa: kein Fenster → frei
+  });
+});
+
+describe('timeWindowMinutes', () => {
+  it('berechnet die Fensterdauer in Minuten', () => {
+    expect(timeWindowMinutes({ start: '08:00', end: '12:00' })).toBe(240);
+    expect(timeWindowMinutes({ start: '13:15', end: '17:30' })).toBe(255);
+  });
+
+  it('gibt 0 bei ungültigem/rückwärtigem Fenster', () => {
+    expect(timeWindowMinutes({ start: '12:00', end: '08:00' })).toBe(0);
+    expect(timeWindowMinutes({ start: '09:00', end: '09:00' })).toBe(0);
   });
 });
 

@@ -88,6 +88,12 @@ export class Membership extends AbstractEntity<Membership> {
   @Column({ name: 'theme', type: 'varchar', length: 30, nullable: true })
   theme?: string | null;
 
+  // Preferred UI/e-mail language for this member in this org context as a
+  // locale code (e.g. "de", "en"). Set during onboarding.
+  @Field(() => String, { nullable: true })
+  @Column({ name: 'language', type: 'varchar', length: 10, nullable: true })
+  language?: string | null;
+
   // Employee
   @Field(() => String, { nullable: true })
   @Column('uuid', { nullable: true, name: 'employee_id' })

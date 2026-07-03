@@ -1,14 +1,15 @@
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
 interface EmployeeAvatarProps {
-  seed: string;
   firstName?: string | null;
   lastName?: string | null;
+  /**
+   * Real profile image. When absent, the design falls back to initials
+   * (handoff `.ava`) — there is no employee photo upload yet, so this is
+   * currently always initials.
+   */
+  imageUrl?: string | null;
   className?: string;
   fallbackClassName?: string;
 }
@@ -20,23 +21,24 @@ function getInitials(firstName?: string | null, lastName?: string | null) {
   );
 }
 
+/**
+ * Employee avatar: shows the profile image when one exists, otherwise the
+ * initials in an accent circle (design handoff `.ava` — accent-soft
+ * background, bold initials).
+ */
 export function EmployeeAvatar({
-  seed,
   firstName,
   lastName,
+  imageUrl,
   className,
   fallbackClassName,
 }: EmployeeAvatarProps) {
-  const src = `https://api.dicebear.com/9.x/lorelei/svg?seed=${encodeURIComponent(
-    seed,
-  )}&backgroundType=gradientLinear`;
-
   return (
     <Avatar className={className}>
-      <AvatarImage src={src} alt="" />
+      {imageUrl ? <AvatarImage src={imageUrl} alt="" /> : null}
       <AvatarFallback
         className={cn(
-          "bg-primary text-primary-foreground font-semibold",
+          "bg-accent font-bold text-accent-foreground",
           fallbackClassName,
         )}
       >

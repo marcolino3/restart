@@ -75,6 +75,20 @@ export class User extends AbstractEntity<User> {
   @Column({ name: 'theme', type: 'varchar', length: 30, nullable: true })
   theme?: string | null;
 
+  // Preferred UI/e-mail language as a locale code (e.g. "de", "en"). Set
+  // during onboarding; members may also store a per-org language on the
+  // membership (memberships.language).
+  @Field(() => String, { nullable: true })
+  @Column({ name: 'language', type: 'varchar', length: 10, nullable: true })
+  language?: string | null;
+
+  // Uploaded profile photo URL (public path served by the upload controller,
+  // e.g. "/employees/<id>.webp"). null → the frontend falls back to a
+  // generated avatar (EmployeeAvatar).
+  @Field(() => String, { nullable: true })
+  @Column({ name: 'avatar_url', type: 'varchar', length: 500, nullable: true })
+  avatarUrl?: string | null;
+
   @HideField()
   @Column({
     name: 'refresh_token',

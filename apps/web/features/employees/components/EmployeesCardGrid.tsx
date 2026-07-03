@@ -83,7 +83,6 @@ export const EmployeesCardGrid = ({ data }: Props) => {
             const lastName = user?.lastName ?? "";
             const fullName = `${firstName} ${lastName}`.trim() || "—";
             const persona = item.membership.persona;
-            const seed = user?.id ?? empId ?? fullName;
             const teams = (item.teamMembers ?? [])
               .map((tm) => tm.team)
               .filter((tt): tt is { id: string; name: string } => !!tt);
@@ -95,7 +94,6 @@ export const EmployeesCardGrid = ({ data }: Props) => {
               >
                 <CardContent className="flex flex-col items-center gap-3 p-6 text-center">
                   <EmployeeAvatar
-                    seed={seed}
                     firstName={firstName}
                     lastName={lastName}
                     className="h-20 w-20"

@@ -1,11 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { EmployeesResolver } from './employees.resolver';
 import { EmployeesService } from './employees.service';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { CreateEmployeeInput } from './dto/create-employee.input';
 import { UpdateEmployeeInput } from './dto/update-employee.input';
+import { EmployeeContract } from '@/employee-management/employee-contracts/entities/employee-contract.entity';
+import { WorkTimeBalanceService } from '@/employee-management/work-time-calculation/work-time-balance.service';
+import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
+import { Employee } from './entities/employee.entity';
 
 describe('EmployeesResolver', () => {
   let resolver: EmployeesResolver;
@@ -16,6 +21,10 @@ describe('EmployeesResolver', () => {
     findTeachersByOrgId: jest.Mock;
     findEmployeeById: jest.Mock;
   };
+  let contractRepo: { find: jest.Mock };
+  let balanceService: { getListNetBalanceMinutes: jest.Mock };
+
+  const user: TokenPayload = { sub: 'user-1', orgId: 'org-1' } as TokenPayload;
 
   beforeEach(async () => {
     employeesService = {
@@ -25,11 +34,15 @@ describe('EmployeesResolver', () => {
       findTeachersByOrgId: jest.fn(),
       findEmployeeById: jest.fn(),
     };
+    contractRepo = { find: jest.fn().mockResolvedValue([]) };
+    balanceService = { getListNetBalanceMinutes: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EmployeesResolver,
         { provide: EmployeesService, useValue: employeesService },
+        { provide: getRepositoryToken(EmployeeContract), useValue: contractRepo },
+        { provide: WorkTimeBalanceService, useValue: balanceService },
       ],
     })
       .overrideGuard(GqlBetterAuthGuard)
@@ -146,6 +159,70 @@ describe('EmployeesResolver', () => {
       await expect(
         resolver.findEmployeeById('emp-of-other-org', 'org-1'),
       ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe('workloadPercent (resolve field)', () => {
+    it('returns the current contract workload, org-scoped (multi-tenant)', async () => {
+      contractRepo.find.mockResolvedValue([
+        { employeeId: 'emp-1', startDate: '2024-01-01', workloadPercent: 80 },
+        { employeeId: 'emp-1', startDate: '2023-01-01', workloadPercent: 50 },
+      ]);
+
+      const result = await resolver.workloadPercent(
+        { id: 'emp-1' } as Employee,
+        'org-1',
+        user,
+        {},
+      );
+
+      expect(result).toBe(80);
+      expect(contractRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ organizationId: 'org-1' }),
+        }),
+      );
+    });
+
+    it('returns null when the employee has no active contract', async () => {
+      contractRepo.find.mockResolvedValue([]);
+
+      await expect(
+        resolver.workloadPercent({ id: 'emp-2' } as Employee, 'org-1', user, {}),
+      ).resolves.toBeNull();
+    });
+  });
+
+  describe('timeBalanceMinutes (resolve field)', () => {
+    it('returns null without querying when time tracking is disabled', async () => {
+      const result = await resolver.timeBalanceMinutes(
+        { id: 'emp-1', timeTrackingEnabled: false } as Employee,
+        'org-1',
+        user,
+        {},
+      );
+
+      expect(result).toBeNull();
+      expect(balanceService.getListNetBalanceMinutes).not.toHaveBeenCalled();
+    });
+
+    it('returns the net balance for time-tracked employees', async () => {
+      balanceService.getListNetBalanceMinutes.mockResolvedValue(
+        new Map([['emp-1', 750]]),
+      );
+
+      const result = await resolver.timeBalanceMinutes(
+        { id: 'emp-1', timeTrackingEnabled: true } as Employee,
+        'org-1',
+        user,
+        {},
+      );
+
+      expect(result).toBe(750);
+      expect(balanceService.getListNetBalanceMinutes).toHaveBeenCalledWith(
+        user,
+        ['emp-1'],
+      );
     });
   });
 });

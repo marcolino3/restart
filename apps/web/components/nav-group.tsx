@@ -34,6 +34,7 @@ export function NavGroup({ label, items }: NavGroupProps) {
             <SidebarMenuButton
               asChild
               isActive={isNavItemActive(pathname, item.url)}
+              className="opacity-[0.85] hover:opacity-100 data-[active=true]:opacity-100"
             >
               <Link href={item.url}>
                 <item.icon />

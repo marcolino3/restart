@@ -42,4 +42,30 @@ export const mailer = {
       `,
     });
   },
+
+  // Onboarding invitation / password-setup e-mail. Sent via better-auth's
+  // reset-password primitive (sendResetPassword callback) — the new employee
+  // was created with a random password and sets their own here. Works both as
+  // a first-time invitation and as a plain password reset.
+  sendPasswordSetup: async (to: string, url: string): Promise<void> => {
+    if (process.env.NODE_ENV === 'test') return;
+    await getTransporter().sendMail({
+      from: process.env.SMTP_USER ?? '',
+      to,
+      subject: 'Dein Zugang zu Restart – Passwort festlegen',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+          <h2>Willkommen bei Restart</h2>
+          <p>Dein Konto wurde angelegt. Klicke auf den Button, um dein Passwort festzulegen und dich erstmals einzuloggen:</p>
+          <a href="${url}"
+             style="display: inline-block; padding: 12px 24px; background-color: #0f172a; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600;">
+            Passwort festlegen
+          </a>
+          <p style="margin-top: 24px; font-size: 14px; color: #64748b;">
+            Wenn du diese E-Mail nicht erwartet hast, kannst du sie ignorieren.
+          </p>
+        </div>
+      `,
+    });
+  },
 };

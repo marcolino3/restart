@@ -22,6 +22,8 @@ export type EmployeeListItem = {
     persona: string;
     contactPhone?: string | null;
   };
+  workloadPercent?: number | null;
+  timeBalanceMinutes?: number | null;
   teamMembers?: {
     team?: {
       id: string;
@@ -37,6 +39,8 @@ type GetEmployeesResponse = {
 const GetEmployeesDocument = gql`
   query GetEmployees {
     employeesByOrgId {
+      workloadPercent
+      timeBalanceMinutes
       membership {
         employee {
           isActive

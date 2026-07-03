@@ -466,6 +466,10 @@
     "isActive": "Active",
     "active": "Active",
     "inactive": "Inactive",
+    "person": "Person",
+    "team": "Team",
+    "status": "Status",
+    "activeSubtitle": "{count} active",
     "yes": "Yes",
     "no": "No",
     "noName": "No name",
@@ -578,7 +582,10 @@
     "BEHAVIOR": "Behavior",
     "HEALTH": "Health",
     "PARENT_CONTACT": "Parent Contact",
-    "remove": "Remove"
+    "remove": "Remove",
+    "workloadPercent": "Workload",
+    "timeBalanceMinutes": "Time balance",
+    "role": "Role"
   },
   "Organizations": {
     "general": "General",
@@ -776,7 +783,13 @@
       "noContracts": "No contracts recorded yet.",
       "listDescription": "Employment contracts of this employee.",
       "notes": "Notes"
-    }
+    },
+    "searchPlaceholder": "Search name or email...",
+    "newEmployee": "New employee",
+    "chipTeachers": "Teachers",
+    "chipAdmin": "Administration",
+    "chipCare": "Care",
+    "statusToday": "Status today"
   },
   "EmployeeHistory": {
     "noEntries": "No changes recorded yet.",
@@ -1106,7 +1119,9 @@
     "comingSoon": "Coming soon...",
     "validationError": "Please review the highlighted fields.",
     "since": "enrolled since",
-    "status": "Status"
+    "status": "Status",
+    "searchPlaceholder": "Search by name...",
+    "birthInfo": "b. {date} · {age} yr"
   },
   "ContactPersons": {
     "contactPersons": "Contact Persons",

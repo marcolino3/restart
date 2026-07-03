@@ -1,4 +1,5 @@
 import { Field, Float, ID, InputType, Int } from '@nestjs/graphql';
+import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
@@ -9,11 +10,13 @@ import {
   IsUUID,
   Max,
   Min,
+  ValidateNested,
 } from 'class-validator';
 import {
   EmployeeContractType,
   EmployeePaymentInterval,
 } from '../entities/employee-contract.entity';
+import { WeekdayTimeWindowsInput } from '@/employee-management/employees/dto/employee-onboarding.input';
 
 @InputType()
 export class CreateEmployeeContractInput {
@@ -93,4 +96,10 @@ export class CreateEmployeeContractInput {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @Field(() => WeekdayTimeWindowsInput, { nullable: true })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => WeekdayTimeWindowsInput)
+  weekdayTimeWindows?: WeekdayTimeWindowsInput | null;
 }

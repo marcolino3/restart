@@ -3,6 +3,7 @@ import { z } from "zod";
 export const EmployeeContractTypeEnum = z.enum([
   "PERMANENT",
   "TEMPORARY",
+  "HOURLY",
   "INTERNSHIP",
   "APPRENTICESHIP",
 ]);

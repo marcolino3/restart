@@ -18,6 +18,27 @@ export interface WeekdayWorkloadShares {
   sun?: number | null;
 }
 
+/** Ein konkretes Arbeitszeitfenster ("HH:mm"–"HH:mm", 24h). */
+export interface CalcTimeWindow {
+  start: string;
+  end: string;
+}
+
+/**
+ * Konkrete Arbeitszeitfenster pro Wochentag. Wenn gesetzt, ist dies die
+ * Sollzeit-Quelle (Summe der Fensterdauern) und hat Vorrang vor
+ * {@link WeekdayWorkloadShares}/`weeklyHours`. Ein Tag ohne Fenster = frei.
+ */
+export interface WeekdayTimeWindows {
+  mon?: CalcTimeWindow[] | null;
+  tue?: CalcTimeWindow[] | null;
+  wed?: CalcTimeWindow[] | null;
+  thu?: CalcTimeWindow[] | null;
+  fri?: CalcTimeWindow[] | null;
+  sat?: CalcTimeWindow[] | null;
+  sun?: CalcTimeWindow[] | null;
+}
+
 export interface CalcContract {
   id: string;
   /** inklusiv */
@@ -28,6 +49,11 @@ export interface CalcContract {
   weeklyHours: number;
   /** Optional ungleiche Verteilung; null = gleichmässig Mo–Fr. */
   weekdayWorkloads?: WeekdayWorkloadShares | null;
+  /**
+   * Optional konkrete Zeitfenster pro Wochentag; hat Vorrang vor
+   * weekdayWorkloads. null = nicht genutzt.
+   */
+  weekdayTimeWindows?: WeekdayTimeWindows | null;
 }
 
 export interface CalcHoliday {

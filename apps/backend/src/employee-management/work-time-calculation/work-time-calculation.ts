@@ -3,6 +3,7 @@ import {
   CalcAbsenceDay,
   CalcContract,
   CalcInput,
+  CalcTimeWindow,
   DayResult,
   WeekdayWorkloadShares,
 } from './work-time-calculation.types';
@@ -27,19 +28,38 @@ const WEEKDAY_KEYS: (keyof WeekdayWorkloadShares)[] = [
   'sun',
 ];
 
+/** Minuten eines "HH:mm"-"HH:mm"-Zeitfensters (0 bei ungültig/rückwärts). */
+export function timeWindowMinutes(window: CalcTimeWindow): number {
+  const toMinutes = (t: string): number => {
+    const [h, m] = t.split(':');
+    return (Number(h) || 0) * 60 + (Number(m) || 0);
+  };
+  return Math.max(0, toMinutes(window.end) - toMinutes(window.start));
+}
+
 /** Sollminuten eines Tages aus dem Vertrag. `weekday`: 1=Mo … 7=So (Luxon). */
 export function dailyPlannedMinutes(
   contract: CalcContract,
   weekday: number,
 ): number {
+  // 1. Konkrete Zeitfenster haben Vorrang: Summe der Fensterdauern des Tages.
+  //    Ein definierter Plan ohne Fenster für diesen Tag = frei (0 Min).
+  const windows = contract.weekdayTimeWindows;
+  if (windows) {
+    const dayWindows = windows[WEEKDAY_KEYS[weekday - 1]];
+    if (!dayWindows || dayWindows.length === 0) return 0;
+    return dayWindows.reduce((sum, w) => sum + timeWindowMinutes(w), 0);
+  }
+
   const weeklyMinutes = contract.weeklyHours * 60;
+  // 2. Ungleiche Prozent-Verteilung pro Wochentag.
   const shares = contract.weekdayWorkloads;
   if (shares) {
     const share = shares[WEEKDAY_KEYS[weekday - 1]];
     if (share == null) return 0;
     return Math.round((share / 100) * weeklyMinutes);
   }
-  // Default: gleichmässig Mo–Fr.
+  // 3. Default: gleichmässig Mo–Fr.
   return weekday <= 5 ? Math.round(weeklyMinutes / 5) : 0;
 }
 

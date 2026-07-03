@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
+  FilterFn,
   SortingState,
   VisibilityState,
   flexRender,
@@ -13,37 +14,22 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import {
-  ArrowUpDown,
-  ChevronDown,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-  X,
-} from "lucide-react";
-import Link from "next/link";
+import { ArrowUpDown, ChevronDown, Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { PersonCell } from "@/components/common/PersonCell";
+import { FilterChip } from "@/components/common/FilterChip";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -52,17 +38,65 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { BadgeProps } from "@/components/ui/badge";
 import { ROUTES } from "@/constants/routes";
 import { EmployeeListItem } from "../actions/get-employees.action";
 import { EmployeeActionsCell } from "./EmployeeActionsCell";
+import { EmployeeAvatar } from "./EmployeeAvatar";
 
 interface Props {
   data: EmployeeListItem[];
 }
 
+/** Persona → status-pill variant, following the design-handoff role colours. */
+const PERSONA_VARIANT: Record<string, BadgeProps["variant"]> = {
+  TEACHER: "accent",
+  ADMIN: "amber",
+  HR: "amber",
+  OFFICE: "sky",
+  ASSISTANT: "sky",
+  PARENT: "slate",
+  STUDENT: "slate",
+  EMPLOYEE: "slate",
+};
+
+const fullName = (row: EmployeeListItem) =>
+  `${row.membership.user?.firstName ?? ""} ${
+    row.membership.user?.lastName ?? ""
+  }`.trim();
+
+const primaryEmail = (row: EmployeeListItem) => {
+  const emails = row.membership.user?.userEmails;
+  return emails?.find((e) => e.isPrimary)?.email ?? emails?.[0]?.email ?? "";
+};
+
+const teamNames = (row: EmployeeListItem) =>
+  (row.teamMembers ?? [])
+    .map((tm) => tm.team?.name)
+    .filter((n): n is string => !!n);
+
+/** Minutes → "+12:30" / "−2:15" (design handoff `.mono` Zeitsaldo). */
+const formatBalance = (mins: number): string => {
+  const sign = mins < 0 ? "−" : "+";
+  const abs = Math.abs(mins);
+  return `${sign}${Math.floor(abs / 60)}:${String(abs % 60).padStart(2, "0")}`;
+};
+
+/** Search across name + email for the merged person column. */
+const personFilter: FilterFn<EmployeeListItem> = (row, _columnId, value) => {
+  const needle = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  if (!needle) return true;
+  const hay = `${fullName(row.original)} ${primaryEmail(
+    row.original,
+  )}`.toLowerCase();
+  return hay.includes(needle);
+};
+
 const useColumns = (): ColumnDef<EmployeeListItem>[] => {
   const t = useTranslations("Common");
-  const locale = useLocale();
+  const tE = useTranslations("Employees");
 
   return [
     {
@@ -90,79 +124,113 @@ const useColumns = (): ColumnDef<EmployeeListItem>[] => {
       enableHiding: false,
     },
     {
-      id: "firstName",
-      accessorFn: (row) => row.membership.user?.firstName ?? "",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          {t("firstName")} <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ getValue }) => <div>{getValue<string>()}</div>,
-      filterFn: "includesString",
-    },
-    {
-      id: "lastName",
+      id: "person",
       accessorFn: (row) => row.membership.user?.lastName ?? "",
       header: ({ column }) => (
         <Button
           variant="ghost"
+          className="-ml-3"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          {t("lastName")} <ArrowUpDown className="ml-2 h-4 w-4" />
+          {t("person")} <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ getValue }) => <div>{getValue<string>()}</div>,
-      filterFn: "includesString",
-    },
-    {
-      id: "email",
-      accessorFn: (row) => {
-        const emails = row.membership.user?.userEmails;
-        const primary = emails?.find((e) => e.isPrimary);
-        return primary?.email ?? emails?.[0]?.email ?? "";
-      },
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          {t("email")} <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+      cell: ({ row }) => (
+        <PersonCell
+          avatar={
+            <EmployeeAvatar
+              firstName={row.original.membership.user?.firstName}
+              lastName={row.original.membership.user?.lastName}
+              className="size-8"
+            />
+          }
+          name={fullName(row.original) || "—"}
+          subtitle={primaryEmail(row.original) || undefined}
+        />
       ),
-      cell: ({ getValue }) => <div>{getValue<string>()}</div>,
-      filterFn: "includesString",
+      filterFn: personFilter,
     },
     {
       id: "persona",
       accessorFn: (row) => row.membership.persona,
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          {t("persona")} <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
+      header: t("role"),
+      filterFn: (row, id, value) => {
+        const picks = value as string[] | undefined;
+        return !picks?.length || picks.includes(row.getValue<string>(id));
+      },
       cell: ({ row }) => {
         const persona = row.original.membership.persona;
-        return <Badge variant="secondary">{t(persona)}</Badge>;
+        return (
+          <Badge variant={PERSONA_VARIANT[persona] ?? "slate"}>
+            {t(persona)}
+          </Badge>
+        );
       },
     },
     {
-      id: "isActive",
-      accessorFn: (row) => row.membership.employee?.isActive ?? true,
-      header: t("isActive"),
-      cell: ({ getValue }) => {
-        const value = getValue<boolean>();
-        return value ? (
-          <Badge variant="default">{t("active")}</Badge>
+      id: "team",
+      accessorFn: (row) => teamNames(row).join(", "),
+      header: t("team"),
+      enableSorting: false,
+      cell: ({ row }) => {
+        const names = teamNames(row.original);
+        return names.length ? (
+          <span className="text-muted-foreground">{names.join(" · ")}</span>
         ) : (
-          <Badge variant="destructive">{t("inactive")}</Badge>
+          <span className="text-muted-foreground">—</span>
         );
       },
+    },
+    {
+      id: "workloadPercent",
+      accessorFn: (row) => row.workloadPercent ?? -1,
+      header: t("workloadPercent"),
+      cell: ({ row }) => {
+        const pct = row.original.workloadPercent;
+        if (pct == null) {
+          return <span className="text-muted-foreground">—</span>;
+        }
+        return (
+          <span className="inline-flex items-center gap-[9px]">
+            <span className="h-2 w-20 overflow-hidden rounded-full bg-field">
+              <span
+                className="block h-full rounded-full bg-primary"
+                style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
+              />
+            </span>
+            <span className="text-[13px] tabular-nums">{pct}%</span>
+          </span>
+        );
+      },
+    },
+    {
+      id: "timeBalanceMinutes",
+      accessorFn: (row) => row.timeBalanceMinutes ?? null,
+      header: t("timeBalanceMinutes"),
+      cell: ({ row }) => {
+        const bal = row.original.timeBalanceMinutes;
+        if (bal == null) {
+          return <span className="text-muted-foreground">—</span>;
+        }
+        return (
+          <span className="font-mono text-[12.5px] tabular-nums">
+            {formatBalance(bal)}
+          </span>
+        );
+      },
+    },
+    {
+      id: "status",
+      accessorFn: (row) => row.membership.employee?.isActive ?? true,
+      header: tE("statusToday"),
+      filterFn: (row, id, value) =>
+        value === undefined || row.getValue<boolean>(id) === value,
+      cell: ({ getValue }) =>
+        getValue<boolean>() ? (
+          <Badge variant="green">{t("active")}</Badge>
+        ) : (
+          <Badge variant="slate">{t("inactive")}</Badge>
+        ),
     },
     {
       id: "actions",
@@ -172,18 +240,31 @@ const useColumns = (): ColumnDef<EmployeeListItem>[] => {
   ];
 };
 
-const PERSONA_VALUES = [
-  "ADMIN",
-  "HR",
-  "OFFICE",
-  "TEACHER",
-  "PARENT",
-  "STUDENT",
-  "EMPLOYEE",
+/**
+ * Feste Filter-Gruppen aus dem Design-Handoff (`.chiprow`): Alle · Lehrkräfte ·
+ * Administration · Betreuung · Inaktiv. Jede Gruppe bündelt die passenden
+ * Personas; "Inaktiv" filtert über den Status.
+ */
+const PERSONA_GROUPS = [
+  { key: "TEACHERS", labelKey: "chipTeachers", personas: ["TEACHER"] },
+  {
+    key: "ADMIN",
+    labelKey: "chipAdmin",
+    personas: ["ADMIN", "HR", "OFFICE"],
+  },
+  {
+    key: "CARE",
+    labelKey: "chipCare",
+    personas: ["ASSISTANT", "EMPLOYEE"],
+  },
 ] as const;
+
+const sameMembers = (a: readonly string[], b: readonly string[]) =>
+  a.length === b.length && a.every((x) => b.includes(x));
 
 export const EmployeesTable = ({ data }: Props) => {
   const t = useTranslations("Common");
+  const tE = useTranslations("Employees");
   const locale = useLocale();
   const router = useRouter();
   const columns = useColumns();
@@ -198,11 +279,6 @@ export const EmployeesTable = ({ data }: Props) => {
     pageIndex: 0,
     pageSize: 10,
   });
-
-  const handlePageSizeChange = (value: string) => {
-    const newPageSize = value === "all" ? data.length : Number(value);
-    setPagination({ pageIndex: 0, pageSize: newPageSize });
-  };
 
   const table = useReactTable({
     data,
@@ -225,91 +301,80 @@ export const EmployeesTable = ({ data }: Props) => {
     },
   });
 
+  // Chip-Filter (design handoff `.chiprow`): feste Gruppen, Einfach-Auswahl —
+  // treibt die persona-/status-Spaltenfilter.
+  const personaFilter = table.getColumn("persona")?.getFilterValue() as
+    | string[]
+    | undefined;
+  const inactiveActive = table.getColumn("status")?.getFilterValue() === false;
+  const activeGroup = personaFilter?.length
+    ? PERSONA_GROUPS.find((g) => sameMembers(g.personas, personaFilter))?.key
+    : undefined;
+  const activeChip = inactiveActive ? "INACTIVE" : (activeGroup ?? "ALL");
+
+  const setChip = (key: string) => {
+    const personaCol = table.getColumn("persona");
+    const statusCol = table.getColumn("status");
+    if (key === "ALL") {
+      personaCol?.setFilterValue(undefined);
+      statusCol?.setFilterValue(undefined);
+    } else if (key === "INACTIVE") {
+      personaCol?.setFilterValue(undefined);
+      statusCol?.setFilterValue(false);
+    } else {
+      const group = PERSONA_GROUPS.find((g) => g.key === key);
+      personaCol?.setFilterValue(group ? [...group.personas] : undefined);
+      statusCol?.setFilterValue(undefined);
+    }
+  };
+
   return (
     <div className="w-full">
-      {/* Filters */}
-      <div className="flex items-center py-4 gap-2 flex-wrap">
-        <Input
-          placeholder={t("filterFirstName")}
-          value={
-            (table.getColumn("firstName")?.getFilterValue() as string) ?? ""
-          }
-          onChange={(e) =>
-            table.getColumn("firstName")?.setFilterValue(e.target.value)
-          }
-          className="max-w-[180px]"
-        />
-        <Input
-          placeholder={t("filterLastName")}
-          value={
-            (table.getColumn("lastName")?.getFilterValue() as string) ?? ""
-          }
-          onChange={(e) =>
-            table.getColumn("lastName")?.setFilterValue(e.target.value)
-          }
-          className="max-w-[180px]"
-        />
-        <Input
-          placeholder={t("filterEmail")}
-          value={
-            (table.getColumn("email")?.getFilterValue() as string) ?? ""
-          }
-          onChange={(e) =>
-            table.getColumn("email")?.setFilterValue(e.target.value)
-          }
-          className="max-w-[200px]"
-        />
-
-        {/* Persona filter */}
-        <Select
-          value={
-            (table.getColumn("persona")?.getFilterValue() as string) ?? "ALL"
-          }
-          onValueChange={(value) =>
-            table
-              .getColumn("persona")
-              ?.setFilterValue(value === "ALL" ? undefined : value)
-          }
+      {/* Filter chips (design handoff `.chiprow`) */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <FilterChip active={activeChip === "ALL"} onClick={() => setChip("ALL")}>
+          {t("all")}
+        </FilterChip>
+        {PERSONA_GROUPS.map((g) => (
+          <FilterChip
+            key={g.key}
+            active={activeChip === g.key}
+            onClick={() => setChip(g.key)}
+          >
+            {tE(g.labelKey)}
+          </FilterChip>
+        ))}
+        <FilterChip
+          active={activeChip === "INACTIVE"}
+          onClick={() => setChip("INACTIVE")}
         >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder={t("persona")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">{t("all")}</SelectItem>
-            {PERSONA_VALUES.map((p) => (
-              <SelectItem key={p} value={p}>
-                {t(p)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          {t("inactive")}
+        </FilterChip>
+      </div>
 
-        {/* Page size */}
-        <Select
-          value={
-            pagination.pageSize >= data.length
-              ? "all"
-              : String(pagination.pageSize)
-          }
-          onValueChange={handlePageSizeChange}
-        >
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder={t("show")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="10">10 {t("items")}</SelectItem>
-            <SelectItem value="25">25 {t("items")}</SelectItem>
-            <SelectItem value="50">50 {t("items")}</SelectItem>
-            <SelectItem value="all">{t("all")}</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Search + controls */}
+      <div className="mb-4 flex items-center gap-2 flex-wrap">
+        <div className="relative w-[280px]">
+          <Search className="pointer-events-none absolute top-1/2 left-3.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={tE("searchPlaceholder")}
+            value={
+              (table.getColumn("person")?.getFilterValue() as string) ?? ""
+            }
+            onChange={(e) =>
+              table.getColumn("person")?.setFilterValue(e.target.value)
+            }
+            className="h-9 rounded-full pl-9"
+            aria-label={tE("searchPlaceholder")}
+          />
+        </div>
 
         {/* Reset filters */}
         {columnFilters.length > 0 && (
           <Button
             variant="ghost"
             onClick={() => setColumnFilters([])}
-            className="h-8 px-2 lg:px-3"
+            className="h-9 px-2 lg:px-3"
           >
             {t("resetFilters")}
             <X className="ml-2 h-4 w-4" />
@@ -344,11 +409,11 @@ export const EmployeesTable = ({ data }: Props) => {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border">
+      <div className="overflow-hidden rounded-card border bg-card shadow-xs">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="hover:bg-transparent">
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id}>
                     {header.isPlaceholder

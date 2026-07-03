@@ -466,6 +466,10 @@
     "isActive": "Aktiv",
     "active": "Aktiv",
     "inactive": "Inaktiv",
+    "person": "Person",
+    "team": "Team",
+    "status": "Status",
+    "activeSubtitle": "{count} aktiv",
     "yes": "Ja",
     "no": "Nein",
     "noName": "Kein Name",
@@ -578,7 +582,10 @@
     "BEHAVIOR": "Verhalten",
     "HEALTH": "Gesundheit",
     "PARENT_CONTACT": "Elternkontakt",
-    "remove": "Entfernen"
+    "remove": "Entfernen",
+    "workloadPercent": "Pensum",
+    "timeBalanceMinutes": "Zeitsaldo",
+    "role": "Rolle"
   },
   "Organizations": {
     "general": "Allgemein",
@@ -594,7 +601,7 @@
     "dailySicknessContactPhone": "Krankentaggeld-Kontakt Telefon"
   },
   "Employees": {
-    "employees": "Mitarbeiter",
+    "employees": "Mitarbeitende",
     "filterByName": "Nach Vor- oder Nachname suchen",
     "createEmployee": "Mitarbeiter erstellen",
     "selectPlaceholder": "Bitte auswählen...",
@@ -776,7 +783,13 @@
       "noContracts": "Noch keine Verträge erfasst.",
       "listDescription": "Erfasste Anstellungsverträge dieses Mitarbeitenden.",
       "notes": "Bemerkungen"
-    }
+    },
+    "searchPlaceholder": "Name oder E-Mail suchen...",
+    "newEmployee": "Neue:r Mitarbeiter:in",
+    "chipTeachers": "Lehrkräfte",
+    "chipAdmin": "Administration",
+    "chipCare": "Betreuung",
+    "statusToday": "Status heute"
   },
   "EmployeeHistory": {
     "noEntries": "Noch keine Änderungen erfasst.",
@@ -1106,7 +1119,9 @@
     "comingSoon": "Kommt in Kürze...",
     "validationError": "Bitte prüfe die markierten Felder.",
     "since": "eingeschult seit",
-    "status": "Status"
+    "status": "Status",
+    "searchPlaceholder": "Nach Name suchen...",
+    "birthInfo": "geb. {date} · {age} J."
   },
   "ContactPersons": {
     "contactPersons": "Bezugspersonen",

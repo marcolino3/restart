@@ -15,6 +15,7 @@ import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 export enum EmployeeContractType {
   PERMANENT = 'PERMANENT',
   TEMPORARY = 'TEMPORARY',
+  HOURLY = 'HOURLY',
   INTERNSHIP = 'INTERNSHIP',
   APPRENTICESHIP = 'APPRENTICESHIP',
 }
@@ -44,6 +45,37 @@ export class WeekdayWorkloads {
   sat?: number | null;
   @Field(() => Float, { nullable: true })
   sun?: number | null;
+}
+
+// A single working time window within a day, "HH:mm" 24h format.
+@ObjectType()
+export class TimeWindow {
+  @Field(() => String)
+  start: string;
+  @Field(() => String)
+  end: string;
+}
+
+// Concrete working time windows per weekday. When present, the work-time
+// engine derives the daily planned minutes from the summed window durations
+// (takes precedence over weekdayWorkloads / weeklyHours). null → fall back to
+// weekdayWorkloads, then to an even Mon–Fri split of weeklyHours.
+@ObjectType()
+export class WeekdayTimeWindows {
+  @Field(() => [TimeWindow], { nullable: true })
+  mon?: TimeWindow[] | null;
+  @Field(() => [TimeWindow], { nullable: true })
+  tue?: TimeWindow[] | null;
+  @Field(() => [TimeWindow], { nullable: true })
+  wed?: TimeWindow[] | null;
+  @Field(() => [TimeWindow], { nullable: true })
+  thu?: TimeWindow[] | null;
+  @Field(() => [TimeWindow], { nullable: true })
+  fri?: TimeWindow[] | null;
+  @Field(() => [TimeWindow], { nullable: true })
+  sat?: TimeWindow[] | null;
+  @Field(() => [TimeWindow], { nullable: true })
+  sun?: TimeWindow[] | null;
 }
 
 @ObjectType()
@@ -129,6 +161,13 @@ export class EmployeeContract extends AbstractEntity<EmployeeContract> {
   @Field(() => WeekdayWorkloads, { nullable: true })
   @Column('jsonb', { name: 'weekday_workloads', nullable: true })
   weekdayWorkloads?: WeekdayWorkloads | null;
+
+  // Concrete working time windows per weekday (Mo 08:00–12:00, …). When set,
+  // this is the source of truth for the daily planned minutes; see
+  // WeekdayTimeWindows above and work-time-calculation.ts::dailyPlannedMinutes.
+  @Field(() => WeekdayTimeWindows, { nullable: true })
+  @Column('jsonb', { name: 'weekday_time_windows', nullable: true })
+  weekdayTimeWindows?: WeekdayTimeWindows | null;
 
   // --- Lohn ---
   @Field(() => Float, { nullable: true })

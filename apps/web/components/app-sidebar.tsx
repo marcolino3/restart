@@ -3,26 +3,29 @@
 import * as React from "react";
 import {
   IconBuilding,
+  IconBuildingCommunity,
   IconCamera,
-  IconDashboard,
+  IconChartHistogram,
+  IconClock,
   IconDatabase,
   IconFileAi,
   IconFileDescription,
   IconFileWord,
+  IconHeart,
   IconHelp,
   IconFileText,
+  IconLayoutDashboard,
   IconLayoutKanban,
   IconListCheck,
-  IconListDetails,
   IconReport,
   IconBook,
-  IconChecklist,
   IconClipboardCheck,
-  IconLayersIntersect,
   IconSchool,
   IconSearch,
   IconSettings,
-  IconShieldLock,
+  IconShield,
+  IconSquareCheck,
+  IconStack2,
   IconUsers,
   IconWorld,
   IconCalendarOff,
@@ -89,7 +92,7 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
       {
         title: t("dashboard"),
         url: "#",
-        icon: IconDashboard,
+        icon: IconLayoutDashboard,
       },
       // Zeiterfassung: nur wenn das Feature am eigenen Employee aktiviert ist.
       ...(canSeeTimeTracking(user)
@@ -97,7 +100,7 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
             {
               title: t("timeTracking"),
               url: ROUTES.admin.myTimeTracking(locale),
-              icon: IconListDetails,
+              icon: IconClock,
             },
           ]
         : []),
@@ -107,7 +110,7 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
             {
               title: t("timeTrackingReport"),
               url: ROUTES.admin.timeTrackingReport(locale),
-              icon: IconReport,
+              icon: IconChartHistogram,
             },
           ]
         : []),
@@ -121,7 +124,7 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
             {
               title: t("students"),
               url: ROUTES.admin.students(locale),
-              icon: IconUsers,
+              icon: IconSchool,
             },
           ]
         : []),
@@ -130,7 +133,7 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
             {
               title: t("contactPersons"),
               url: ROUTES.admin.contactPersons(locale),
-              icon: IconUsers,
+              icon: IconHeart,
             },
           ]
         : []),
@@ -139,7 +142,7 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
             {
               title: t("recordKeeping"),
               url: ROUTES.admin.recordKeeping(locale),
-              icon: IconChecklist,
+              icon: IconSquareCheck,
             },
           ]
         : []),
@@ -185,12 +188,12 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
                 {
                   title: t("schoolClasses"),
                   url: ROUTES.admin.schoolClasses(locale),
-                  icon: IconSchool,
+                  icon: IconBuildingCommunity,
                 },
                 {
                   title: t("gradeLevels"),
                   url: ROUTES.admin.gradeLevels(locale),
-                  icon: IconLayersIntersect,
+                  icon: IconStack2,
                 },
               ]
             : []),
@@ -222,7 +225,7 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
                 {
                   title: t("roles"),
                   url: ROUTES.admin.roles(locale),
-                  icon: IconShieldLock,
+                  icon: IconShield,
                 },
               ]
             : []),
