@@ -110,9 +110,9 @@ export default function EmployeeViewPage({
   if (pensum != null) metaChips.push(`${pensum}% ${t("workloadPercent")}`);
   if (entry) metaChips.push(tE("joinedOn", { date: entry }));
 
-  // pf-tabs (design handoff): Gold-Unterstrich statt Pill-Container.
+  // pf-tabs (saas-konzept): Accent-Unterstrich statt Pill-Container.
   const tabCls =
-    "rounded-none border-b-[3px] border-transparent px-0 pb-[13px] text-[13.5px] font-medium text-timer-foreground/60 data-[state=active]:border-gold data-[state=active]:bg-transparent data-[state=active]:font-[650] data-[state=active]:text-timer-foreground data-[state=active]:shadow-none";
+    "rounded-none border-b-[3px] border-transparent px-0 pb-[11px] text-[13.5px] font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-[650] data-[state=active]:text-foreground data-[state=active]:shadow-none";
 
   return (
     <div className="min-h-full">
@@ -130,21 +130,21 @@ export default function EmployeeViewPage({
             onValueChange={handleTabChange}
             className="w-full"
           >
-            {/* Profile band — design handoff `.pf-band` */}
-            <div className="mb-[18px] overflow-x-auto rounded-card bg-timer px-[30px] pt-[26px] text-timer-foreground">
-              <div className="flex flex-wrap items-center gap-5">
-                <span className="flex size-[68px] shrink-0 items-center justify-center rounded-[20px] bg-gold text-[23px] font-bold text-gold-foreground">
+            {/* Profile band — saas-konzept `.pf-band` (light panel) */}
+            <div className="mb-[18px] overflow-x-auto rounded-card border bg-card px-[22px] pt-[18px] shadow-xs">
+              <div className="flex flex-wrap items-center gap-4">
+                <span className="flex size-[52px] shrink-0 items-center justify-center rounded-[16px] bg-accent text-[18px] font-bold text-accent-foreground">
                   {getInitials(user?.firstName, user?.lastName)}
                 </span>
                 <div className="min-w-0">
-                  <h2 className="text-[26px] font-bold leading-none tracking-[-0.025em]">
+                  <h2 className="text-[20px] font-bold tracking-[-0.02em]">
                     {employeeName}
                   </h2>
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  <div className="mt-1.5 flex flex-wrap gap-2">
                     {metaChips.map((chip, i) => (
                       <span
                         key={i}
-                        className="rounded-full bg-timer-foreground/15 px-[11px] py-1 text-[11.5px] font-semibold"
+                        className="rounded-full bg-field px-[11px] py-1 text-[11.5px] font-semibold text-muted-foreground"
                       >
                         {chip}
                       </span>
@@ -152,10 +152,7 @@ export default function EmployeeViewPage({
                   </div>
                 </div>
                 <div className="ml-auto flex shrink-0 gap-[9px]">
-                  <Button
-                    asChild
-                    className="h-[38px] rounded-ctl border border-gold bg-gold px-4 text-[13px] font-semibold text-gold-foreground hover:bg-gold/90"
-                  >
+                  <Button asChild className="h-9">
                     <Link
                       href={`${ROUTES.admin.employeesEdit(locale, employee.id)}?tab=${activeTab}`}
                     >
@@ -165,7 +162,7 @@ export default function EmployeeViewPage({
                   </Button>
                 </div>
               </div>
-              <TabsList className="mt-[22px] h-auto justify-start gap-6 rounded-none bg-transparent p-0">
+              <TabsList className="mt-[14px] h-auto justify-start gap-[22px] rounded-none bg-transparent p-0">
                 <TabsTrigger className={tabCls} value="overview">
                   {tE("overview")}
                 </TabsTrigger>
