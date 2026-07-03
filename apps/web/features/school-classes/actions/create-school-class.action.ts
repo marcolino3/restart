@@ -31,7 +31,6 @@ export const createSchoolClassAction = async (
 
   const input = {
     name: parsed.name,
-    sortOrder: parsed.sortOrder,
     ...(parsed.gradeLevelIds?.length
       ? { gradeLevelIds: parsed.gradeLevelIds }
       : {}),

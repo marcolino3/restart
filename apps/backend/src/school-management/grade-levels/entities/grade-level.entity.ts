@@ -20,9 +20,29 @@ export class GradeLevel
   @Column('text', { nullable: true })
   color?: string | null;
 
+  @Field(() => String, { nullable: true })
+  @Column('text', { nullable: true })
+  shortCode?: string | null;
+
+  @Field(() => Int, { nullable: true })
+  @Column('integer', { nullable: true })
+  ageMin?: number | null;
+
+  @Field(() => Int, { nullable: true })
+  @Column('integer', { nullable: true })
+  ageMax?: number | null;
+
   @Field(() => Int)
   @Column('integer', { default: 0 })
   sortOrder: number;
+
+  /** Computed in findAllByOrgId — number of active classes assigned to this level. */
+  @Field(() => Int, { nullable: true })
+  classCount?: number;
+
+  /** Computed in findAllByOrgId — students currently enrolled in those classes. */
+  @Field(() => Int, { nullable: true })
+  studentCount?: number;
 
   @Field(() => String)
   @Column('uuid', { name: 'organization_id' })

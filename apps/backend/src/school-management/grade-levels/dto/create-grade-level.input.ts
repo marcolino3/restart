@@ -4,6 +4,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Max,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -20,6 +21,26 @@ export class CreateGradeLevelInput {
   @IsString()
   @MaxLength(16)
   color?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(16)
+  shortCode?: string | null;
+
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(30)
+  ageMin?: number | null;
+
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(30)
+  ageMax?: number | null;
 
   @Field(() => Int, { nullable: true, defaultValue: 0 })
   @IsInt()

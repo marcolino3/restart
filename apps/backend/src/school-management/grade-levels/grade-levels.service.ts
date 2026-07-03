@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -20,10 +21,20 @@ export class GradeLevelsService {
     private readonly schoolClassRepo: Repository<SchoolClass>,
   ) {}
 
+  private assertValidAgeRange(
+    ageMin?: number | null,
+    ageMax?: number | null,
+  ): void {
+    if (ageMin != null && ageMax != null && ageMax < ageMin) {
+      throw new BadRequestException('ageMax must not be smaller than ageMin');
+    }
+  }
+
   async create(
     input: CreateGradeLevelInput,
     organizationId: string,
   ): Promise<GradeLevel> {
+    this.assertValidAgeRange(input.ageMin, input.ageMax);
     const existing = await this.gradeLevelRepo.findOne({
       where: { organizationId, name: input.name },
     });
@@ -43,9 +54,54 @@ export class GradeLevelsService {
   }
 
   async findAllByOrgId(organizationId: string): Promise<GradeLevel[]> {
-    return this.gradeLevelRepo.find({
+    const levels = await this.gradeLevelRepo.find({
       where: { organizationId, isActive: true },
       order: { sortOrder: 'ASC', name: 'ASC' },
+    });
+    if (levels.length === 0) return levels;
+
+    const ids = levels.map((l) => l.id);
+
+    const classRows: Array<{ gl_id: string; class_count: string }> =
+      await this.schoolClassRepo
+        .createQueryBuilder('sc')
+        .innerJoin('sc.gradeLevels', 'gl')
+        .select('gl.id', 'gl_id')
+        .addSelect('COUNT(DISTINCT sc.id)', 'class_count')
+        .where('sc.organizationId = :organizationId', { organizationId })
+        .andWhere('sc.isActive = true')
+        .andWhere('gl.id IN (:...ids)', { ids })
+        .groupBy('gl.id')
+        .getRawMany();
+
+    const studentRows: Array<{ gl_id: string; student_count: string }> =
+      await this.schoolClassRepo
+        .createQueryBuilder('sc')
+        .innerJoin('sc.gradeLevels', 'gl')
+        .innerJoin(
+          'school_class_enrollments',
+          'e',
+          'e.school_class_id = sc.id AND e.left_at IS NULL AND e."isActive" = true',
+        )
+        .select('gl.id', 'gl_id')
+        .addSelect('COUNT(DISTINCT e.student_id)', 'student_count')
+        .where('sc.organizationId = :organizationId', { organizationId })
+        .andWhere('sc.isActive = true')
+        .andWhere('gl.id IN (:...ids)', { ids })
+        .groupBy('gl.id')
+        .getRawMany();
+
+    const classCounts = new Map(
+      classRows.map((r) => [r.gl_id, Number(r.class_count)]),
+    );
+    const studentCounts = new Map(
+      studentRows.map((r) => [r.gl_id, Number(r.student_count)]),
+    );
+
+    return levels.map((level) => {
+      level.classCount = classCounts.get(level.id) ?? 0;
+      level.studentCount = studentCounts.get(level.id) ?? 0;
+      return level;
     });
   }
 
@@ -64,6 +120,10 @@ export class GradeLevelsService {
     organizationId: string,
   ): Promise<GradeLevel> {
     const gradeLevel = await this.findOne(input.id, organizationId);
+    this.assertValidAgeRange(
+      input.ageMin !== undefined ? input.ageMin : gradeLevel.ageMin,
+      input.ageMax !== undefined ? input.ageMax : gradeLevel.ageMax,
+    );
     Object.assign(gradeLevel, input);
     return this.gradeLevelRepo.save(gradeLevel);
   }

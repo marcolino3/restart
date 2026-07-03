@@ -11,7 +11,6 @@ import {
   IconFileWord,
   IconHelp,
   IconFileText,
-  IconInnerShadowTop,
   IconLayoutKanban,
   IconListCheck,
   IconListDetails,
@@ -35,6 +34,7 @@ import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
 import { OrgSwitcher } from "@/components/org-switcher";
+import { ThemePicker } from "@/components/theme-picker";
 import {
   Sidebar,
   SidebarContent,
@@ -348,9 +348,11 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
                 className="data-[slot=sidebar-menu-button]:!p-1.5"
               >
                 <a href="#">
-                  <IconInnerShadowTop className="!size-5" />
-                  <span className="text-base font-semibold">
-                    {user?.orgName ?? "RMS"}
+                  <span className="flex size-[30px] shrink-0 items-center justify-center rounded-[9px] bg-primary text-sm font-bold text-primary-foreground">
+                    R
+                  </span>
+                  <span className="text-[17px] font-bold tracking-tight">
+                    {user?.orgName ?? "Restart"}
                   </span>
                 </a>
               </SidebarMenuButton>
@@ -373,6 +375,7 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
+        <ThemePicker className="border-t border-sidebar-border pt-3 group-data-[collapsible=icon]:hidden" />
         <NavUser user={data.user} />
       </SidebarFooter>
     </Sidebar>

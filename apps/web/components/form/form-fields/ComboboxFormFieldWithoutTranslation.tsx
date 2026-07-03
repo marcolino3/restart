@@ -179,31 +179,35 @@ export function ComboboxFormFieldWithoutTranslation<
             </div>
 
             {multiple && selectedOptions.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {selectedOptions.map((option) => (
-                  <Badge
-                    key={option?.value}
-                    variant="default"
-                    className="flex items-center gap-1 px-2 py-0.5 text-xs"
-                  >
-                    {option?.label
-                      ? translateOptions
-                        ? t(option.label)
-                        : option.label
-                      : ""}
-                    <button
-                      type="button"
-                      className="ml-1 hover:bg-primary-foreground/20 rounded-full p-0.5"
-                      onClick={() => {
-                        if (option?.value !== undefined) {
-                          toggleValue(option.value);
-                        }
-                      }}
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {selectedOptions.map((option) => {
+                  const optionLabel = option?.label
+                    ? translateOptions
+                      ? t(option.label)
+                      : option.label
+                    : "";
+                  return (
+                    <Badge
+                      key={option?.value}
+                      variant="accent"
+                      className="gap-1 pr-1"
                     >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
+                      {optionLabel}
+                      <button
+                        type="button"
+                        aria-label={optionLabel}
+                        className="inline-flex size-4 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-accent-foreground/15"
+                        onClick={() => {
+                          if (option?.value !== undefined) {
+                            toggleValue(option.value);
+                          }
+                        }}
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </Badge>
+                  );
+                })}
               </div>
             )}
 

@@ -60,6 +60,10 @@ export class SchoolClass
   @Column('varchar', { length: 100, nullable: true })
   room?: string | null;
 
+  /** Computed in findAllByOrgId — students currently enrolled (left_at IS NULL). */
+  @Field(() => Int, { nullable: true })
+  enrolledCount?: number;
+
   @Field(() => String)
   @Column('uuid', { name: 'organization_id' })
   organizationId: string;

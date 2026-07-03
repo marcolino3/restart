@@ -80,6 +80,14 @@ export class Membership extends AbstractEntity<Membership> {
   })
   contactPhone?: string;
 
+  // UI color theme chosen by this member for this org context. Stores a
+  // theme id from the frontend theme registry (apps/web/lib/themes.ts);
+  // unknown/legacy values are ignored by the frontend and fall back to the
+  // default theme.
+  @Field(() => String, { nullable: true })
+  @Column({ name: 'theme', type: 'varchar', length: 30, nullable: true })
+  theme?: string | null;
+
   // Employee
   @Field(() => String, { nullable: true })
   @Column('uuid', { nullable: true, name: 'employee_id' })

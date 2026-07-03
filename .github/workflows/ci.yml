@@ -124,6 +124,10 @@ jobs:
           GOOGLE_AUTH_REDIRECT_URI: http://localhost:4001/api/auth/google/redirect
           # Auth
           AUTH_UI_REDIRECT: http://localhost:4000
+          # Superadmin-Seed: Backend-Bootstrap und Auth-Fixture der E2E-Tests
+          # (tests/helpers/auth.ts) müssen dieselben Credentials sehen.
+          SUPERADMIN_EMAIL: e2e-superadmin@example.com
+          SUPERADMIN_PASSWORD: ci-e2e-superadmin-password
           # Mail (dummy values – not actually used in E2E smoke tests)
           SMTP_USER: ci-test@example.com
           GOOGLE_MAIL_REFRESH_TOKEN: ci-test-mail-refresh-token
