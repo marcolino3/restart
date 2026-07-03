@@ -102,10 +102,6 @@ const txManager = {
   create: jest.fn((_: unknown, data: Record<string, unknown>) => data),
 };
 
-const createMockGeocodingService = () => ({
-  geocode: jest.fn().mockResolvedValue(null),
-});
-
 describe('OrganizationsService', () => {
   let service: OrganizationsService;
   let orgRepo: ReturnType<typeof createMockRepository>;
