@@ -51,6 +51,7 @@ export const EmployeeContractFormSchema = z.object({
   annualVacationDays: intOrNull,
   remainingVacationDays: z.string().optional().default(""),
   notes: z.string().optional().default(""),
+  documentUrl: z.string().optional().default(""),
 });
 
 export type EmployeeContractFormType = z.input<
