@@ -22,6 +22,7 @@ export const removeTeamMemberAction = async (
       Document,
       { id: teamMemberId },
     );
+    revalidatePath(`/${locale}/admin/teams`);
     revalidatePath(`/${locale}/admin/teams/${teamId}`);
     return { success: true as const, data: result.deleteTeamMember };
   } catch (error) {
