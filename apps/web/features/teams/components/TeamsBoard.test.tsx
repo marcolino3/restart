@@ -101,8 +101,6 @@ const employee = (empId: string, first: string, last: string): EmployeeListItem 
       isActive: true,
       timeTrackingEnabled: false,
       id: empId,
-      status: "ACTIVE",
-      invitationStatus: "ACCEPTED",
     },
     user: {
       firstName: first,
@@ -113,8 +111,6 @@ const employee = (empId: string, first: string, last: string): EmployeeListItem 
     persona: "EMPLOYEE",
     contactPhone: null,
   },
-  workloadPercent: 80,
-  timeBalanceMinutes: 0,
   teamMembers: [],
 });
 

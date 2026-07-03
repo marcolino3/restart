@@ -150,12 +150,15 @@ export function TeamsBoard({ initialTeams, initialMembers, employees }: Props) {
     return map;
   }, [members]);
 
-  // employeeId → workload percent, for the member subtitle.
+  // employeeId → workload percent, for the member subtitle. Read defensively:
+  // `workloadPercent` only exists on the employee query once the pensum work
+  // lands — until then it is simply absent and the percent is omitted.
   const workloadByEmployee = React.useMemo(() => {
     const map = new Map<string, number>();
     for (const e of employees) {
       const id = e.membership.employee?.id;
-      if (id && e.workloadPercent != null) map.set(id, e.workloadPercent);
+      const wl = (e as { workloadPercent?: number | null }).workloadPercent;
+      if (id && wl != null) map.set(id, wl);
     }
     return map;
   }, [employees]);
@@ -430,6 +433,10 @@ export function TeamsBoard({ initialTeams, initialMembers, employees }: Props) {
             {activeMember ? (
               <div className="flex items-center gap-3 rounded-ctl border bg-card px-2 py-1.5 shadow-lg">
                 <EmployeeAvatar
+                  seed={
+                    activeMember.employee.membership?.user?.id ??
+                    activeMember.employee.id
+                  }
                   firstName={activeMember.employee.membership?.user?.firstName}
                   lastName={activeMember.employee.membership?.user?.lastName}
                   className="h-[30px] w-[30px]"
@@ -672,6 +679,7 @@ function MemberRow({ member, teamId, subtitle, onRemove }: MemberRowProps) {
       {...listeners}
     >
       <EmployeeAvatar
+        seed={user?.id ?? member.employee.id}
         firstName={user?.firstName}
         lastName={user?.lastName}
         className="h-[30px] w-[30px]"
