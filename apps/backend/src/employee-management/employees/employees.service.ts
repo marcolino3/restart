@@ -446,6 +446,7 @@ export class EmployeesService {
             title: input.title,
             dateOfBirth: input.dateOfBirth,
             socialSecurityNumber: input.socialSecurityNumber,
+            privateEmail: input.privateEmail,
             street: input.street,
             houseNumber: input.houseNumber,
             addressLine2: input.addressLine2,
@@ -461,6 +462,8 @@ export class EmployeesService {
         if (input.persona !== undefined) membership.persona = input.persona;
         if (input.contactPhone !== undefined)
           membership.contactPhone = input.contactPhone?.trim() || undefined;
+        if (input.contactPhone2 !== undefined)
+          membership.contactPhone2 = input.contactPhone2?.trim() || undefined;
         if (input.language !== undefined) membership.language = input.language;
         await manager.save(Membership, membership);
 
@@ -492,6 +495,7 @@ export class EmployeesService {
             title: input.title?.trim() || undefined,
             dateOfBirth: input.dateOfBirth || undefined,
             socialSecurityNumber: input.socialSecurityNumber?.trim() || undefined,
+            privateEmail: input.privateEmail?.trim() || undefined,
             street: input.street?.trim() || undefined,
             houseNumber: input.houseNumber?.trim() || undefined,
             addressLine2: input.addressLine2?.trim() || undefined,
@@ -531,6 +535,7 @@ export class EmployeesService {
             persona: input.persona ?? Persona.EMPLOYEE,
             userEmailId: userEmail.id,
             contactPhone: input.contactPhone?.trim() || undefined,
+            contactPhone2: input.contactPhone2?.trim() || undefined,
             language: input.language || undefined,
             isActive: true,
             isArchived: false,
@@ -654,6 +659,7 @@ export class EmployeesService {
       patch.annualVacationDays = c.annualVacationDays ?? null;
     if (c.weekdayTimeWindows !== undefined)
       patch.weekdayTimeWindows = c.weekdayTimeWindows ?? null;
+    if (c.documentUrl !== undefined) patch.documentUrl = c.documentUrl ?? null;
 
     let contract = await manager.findOne(EmployeeContract, {
       where: { employeeId: employee.id, organizationId, isActive: true },

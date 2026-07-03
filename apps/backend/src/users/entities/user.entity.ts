@@ -40,6 +40,17 @@ export class User extends AbstractEntity<User> {
   })
   socialSecurityNumber?: string | null;
 
+  // Personal/private e-mail address, distinct from the login e-mail
+  // (which lives on UserEmail). Used for HR contact, not authentication.
+  @Field(() => String, { nullable: true })
+  @Column({
+    name: 'private_email',
+    type: 'varchar',
+    length: 320,
+    nullable: true,
+  })
+  privateEmail?: string | null;
+
   @Field(() => String, { nullable: true })
   @Column({ name: 'street', type: 'varchar', length: 200, nullable: true })
   street?: string | null;

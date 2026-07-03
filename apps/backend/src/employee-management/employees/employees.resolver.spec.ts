@@ -17,6 +17,9 @@ describe('EmployeesResolver', () => {
   let employeesService: {
     createEmployeeMinimal: jest.Mock;
     updateEmployeeMinimal: jest.Mock;
+    upsertEmployeeOnboardingDraft: jest.Mock;
+    finalizeEmployeeOnboarding: jest.Mock;
+    sendEmployeeInvitation: jest.Mock;
     findEmployeesByOrgId: jest.Mock;
     findTeachersByOrgId: jest.Mock;
     findEmployeeById: jest.Mock;
@@ -30,6 +33,9 @@ describe('EmployeesResolver', () => {
     employeesService = {
       createEmployeeMinimal: jest.fn(),
       updateEmployeeMinimal: jest.fn(),
+      upsertEmployeeOnboardingDraft: jest.fn(),
+      finalizeEmployeeOnboarding: jest.fn(),
+      sendEmployeeInvitation: jest.fn(),
       findEmployeesByOrgId: jest.fn(),
       findTeachersByOrgId: jest.fn(),
       findEmployeeById: jest.fn(),
@@ -107,6 +113,52 @@ describe('EmployeesResolver', () => {
         input,
         'org-1',
         null,
+      );
+    });
+  });
+
+  describe('upsertEmployeeOnboardingDraft', () => {
+    it('delegates with the current org id from the session (multi-tenant)', async () => {
+      const input = { firstName: 'Jane', lastName: 'Doe' } as never;
+      const draft = { id: 'emp-1', status: 'DRAFT' };
+      employeesService.upsertEmployeeOnboardingDraft.mockResolvedValue(draft);
+
+      await expect(
+        resolver.upsertEmployeeOnboardingDraft(input, 'org-1'),
+      ).resolves.toBe(draft);
+      expect(
+        employeesService.upsertEmployeeOnboardingDraft,
+      ).toHaveBeenCalledWith(input, 'org-1');
+    });
+  });
+
+  describe('finalizeEmployeeOnboarding', () => {
+    it('delegates with the current org id from the session (multi-tenant)', async () => {
+      const input = { id: 'emp-1', invitationTiming: 'IMMEDIATE' } as never;
+      const finalized = { id: 'emp-1', status: 'ACTIVE' };
+      employeesService.finalizeEmployeeOnboarding.mockResolvedValue(finalized);
+
+      await expect(
+        resolver.finalizeEmployeeOnboarding(input, 'org-1'),
+      ).resolves.toBe(finalized);
+      expect(employeesService.finalizeEmployeeOnboarding).toHaveBeenCalledWith(
+        input,
+        'org-1',
+      );
+    });
+  });
+
+  describe('sendEmployeeInvitation', () => {
+    it('delegates with employee id and the current org id (multi-tenant)', async () => {
+      const employee = { id: 'emp-1', invitationStatus: 'SENT' };
+      employeesService.sendEmployeeInvitation.mockResolvedValue(employee);
+
+      await expect(
+        resolver.sendEmployeeInvitation('emp-1', 'org-1'),
+      ).resolves.toBe(employee);
+      expect(employeesService.sendEmployeeInvitation).toHaveBeenCalledWith(
+        'emp-1',
+        'org-1',
       );
     });
   });

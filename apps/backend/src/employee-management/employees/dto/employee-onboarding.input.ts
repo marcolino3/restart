@@ -122,6 +122,11 @@ export class OnboardingContractInput {
   @ValidateNested()
   @Type(() => WeekdayTimeWindowsInput)
   weekdayTimeWindows?: WeekdayTimeWindowsInput | null;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  documentUrl?: string;
 }
 
 /**
@@ -174,7 +179,17 @@ export class EmployeeOnboardingInput {
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  privateEmail?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
   contactPhone?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  contactPhone2?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
