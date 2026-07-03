@@ -20,7 +20,6 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { PersonCell } from "@/components/common/PersonCell";
 import { FilterChip } from "@/components/common/FilterChip";
 import {
@@ -99,30 +98,6 @@ const useColumns = (): ColumnDef<EmployeeListItem>[] => {
   const tE = useTranslations("Employees");
 
   return [
-    {
-      id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) =>
-            table.toggleAllPageRowsSelected(!!value)
-          }
-          aria-label={t("selectAll")}
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label={t("selectRow")}
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
     {
       id: "person",
       accessorFn: (row) => row.membership.user?.lastName ?? "",
@@ -274,7 +249,6 @@ export const EmployeesTable = ({ data }: Props) => {
     React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = React.useState({});
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: 10,
@@ -290,13 +264,11 @@ export const EmployeesTable = ({ data }: Props) => {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
     onPaginationChange: setPagination,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
-      rowSelection,
       pagination,
     },
   });
@@ -432,7 +404,6 @@ export const EmployeesTable = ({ data }: Props) => {
                 return (
                   <TableRow
                     key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
                     className={empId ? "cursor-pointer" : ""}
                     onClick={() => {
                       if (empId) {
@@ -446,10 +417,7 @@ export const EmployeesTable = ({ data }: Props) => {
                       <TableCell
                         key={cell.id}
                         onClick={(e) => {
-                          if (
-                            cell.column.id === "select" ||
-                            cell.column.id === "actions"
-                          ) {
+                          if (cell.column.id === "actions") {
                             e.stopPropagation();
                           }
                         }}
@@ -481,12 +449,6 @@ export const EmployeesTable = ({ data }: Props) => {
       <div className="flex items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
           {table.getFilteredRowModel().rows.length} {t("results")}
-          {table.getFilteredSelectedRowModel().rows.length > 0 && (
-            <span className="ml-2">
-              ({table.getFilteredSelectedRowModel().rows.length}{" "}
-              {t("selected")})
-            </span>
-          )}
         </div>
         <div className="space-x-2">
           <Button

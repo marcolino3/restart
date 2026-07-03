@@ -91,7 +91,9 @@ export const EmployeeOnboardingFormSchema = z.object({
   teamId: z.string().uuid().nullable().optional(),
 
   // --- Step 3: Rollen & Zugang ---
-  roleIds: z.array(z.string().uuid()).optional().default([]),
+  // The wizard assigns a single primary role (design); mapped to the backend's
+  // roleIds array in the action.
+  roleId: z.string().uuid().optional(),
   language: z.string().optional().default("de"),
   invitationTiming: InvitationTimingEnum.default("IMMEDIATE"),
 });

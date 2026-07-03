@@ -3,7 +3,7 @@ import { getCurrentUserAction } from "@/features/users/actions/get-current-user.
 import { isAdminPersona } from "@/features/users/lib/admin-persona";
 import { EmployeesTable } from "@/features/employees/components/EmployeesTable";
 import { EmployeesCardGrid } from "@/features/employees/components/EmployeesCardGrid";
-import { EmployeesCsvUpload } from "@/features/employees/components/EmployeesCsvUpload";
+import { EmployeesActionsMenu } from "@/features/employees/components/EmployeesActionsMenu";
 import { ROUTES } from "@/constants/routes";
 import { Button } from "@/components/ui/button";
 import { PageHead } from "@/components/common/PageHead";
@@ -45,7 +45,7 @@ const EmployeesPage = async () => {
         action={
           canSeeDetails ? (
             <div className="flex items-center gap-2">
-              <EmployeesCsvUpload />
+              <EmployeesActionsMenu />
               <Button asChild>
                 <Link href={ROUTES.admin.employeesCreate(locale)}>
                   <PlusIcon />

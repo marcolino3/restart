@@ -49,7 +49,7 @@ function toOnboardingInput(values: EmployeeOnboardingFormOutput) {
     avatarUrl: emptyToUndef(values.avatarUrl),
     timeTrackingEnabled: values.timeTrackingEnabled,
     teamId: values.teamId ?? undefined,
-    roleIds: values.roleIds,
+    roleIds: values.roleId ? [values.roleId] : undefined,
     language: values.language,
     ...(hasContract ? { contract } : {}),
   };
