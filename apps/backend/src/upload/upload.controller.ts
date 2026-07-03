@@ -13,8 +13,6 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import sharp from 'sharp';
-import * as path from 'path';
-import * as fs from 'fs/promises';
 
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { Roles } from '@/auth/decorators/roles.decorator';
@@ -22,10 +20,14 @@ import { BetterAuthGuard } from '@/auth/guard/better-auth.guard';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { Employee } from '@/employee-management/employees/entities/employee.entity';
 import { SystemRole } from '@/roles/entities/system-role.enum';
+import { StorageService } from '@/storage/storage.service';
 
-const UPLOAD_ROOT = path.join(process.cwd(), 'public');
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 MB
 
+// Images only. Sensitive documents (e.g. employment contracts) must NOT be
+// stored here — these are public assets (avatars, org logos) served
+// unauthenticated via /api/uploads. Contracts use the authenticated,
+// org-scoped ContractDocumentsController instead.
 const ALLOWED_MIME_TYPES = new Set([
   'image/jpeg',
   'image/png',
@@ -35,8 +37,8 @@ const ALLOWED_MIME_TYPES = new Set([
 ]);
 
 // Every entity here must have an ownership rule in assertTargetInOrg().
-// Uploaded files land in the public/ directory and are served unauthenticated,
-// so writes must be limited to targets the caller actually owns.
+// Objects are public (served unauthenticated), so writes must be limited to
+// targets the caller actually owns.
 const ALLOWED_ENTITIES = new Set(['organizations', 'employees']);
 
 @Controller('upload')
@@ -46,7 +48,13 @@ export class UploadController {
   constructor(
     @InjectEntityManager()
     private readonly entityManager: EntityManager,
+    private readonly storage: StorageService,
   ) {}
+
+  /** Object storage key for a public asset. */
+  private key(safeEntity: string, safeId: string): string {
+    return `uploads/${safeEntity}/${safeId}.webp`;
+  }
 
   @Post()
   @UseInterceptors(
@@ -69,14 +77,14 @@ export class UploadController {
       );
     }
 
-    const filePath = this.safeFilePath(safeEntity, `${safeId}.webp`);
-    await fs.mkdir(path.dirname(filePath), { recursive: true });
-
+    let webp: Buffer;
     try {
-      await sharp(file.buffer).webp({ quality: 80 }).toFile(filePath);
+      webp = await sharp(file.buffer).webp({ quality: 80 }).toBuffer();
     } catch {
       throw new BadRequestException('File is not a valid image');
     }
+
+    await this.storage.put(this.key(safeEntity, safeId), webp, 'image/webp');
 
     return {
       url: `/${safeEntity}/${safeId}.webp`,
@@ -92,31 +100,9 @@ export class UploadController {
     if (!entity || !id) throw new BadRequestException('entity and id required');
 
     const { safeEntity, safeId } = await this.resolveTarget(entity, id, user);
-
-    const filePath = this.safeFilePath(safeEntity, `${safeId}.webp`);
-
-    try {
-      await fs.unlink(filePath);
-    } catch {
-      // File doesn't exist — that's fine
-    }
+    await this.storage.delete(this.key(safeEntity, safeId));
 
     return { success: true };
-  }
-
-  /**
-   * Builds an absolute path under UPLOAD_ROOT and refuses anything that
-   * resolves outside it. `safeEntity`/`fileName` are already stripped to
-   * `[A-Za-z0-9_-]` by resolveTarget, so no traversal is reachable at
-   * runtime — this containment check is the explicit barrier (also clears
-   * the static path-injection analysis and guards future entity additions).
-   */
-  private safeFilePath(safeEntity: string, fileName: string): string {
-    const resolved = path.resolve(UPLOAD_ROOT, safeEntity, fileName);
-    if (!resolved.startsWith(UPLOAD_ROOT + path.sep)) {
-      throw new ForbiddenException('Resolved upload path escapes the root');
-    }
-    return resolved;
   }
 
   private async resolveTarget(

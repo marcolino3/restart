@@ -16,9 +16,6 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
-import { createReadStream } from 'fs';
-import * as fs from 'fs/promises';
-import * as path from 'path';
 import { randomUUID } from 'crypto';
 
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
@@ -27,22 +24,18 @@ import { BetterAuthGuard } from '@/auth/guard/better-auth.guard';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { Employee } from '@/employee-management/employees/entities/employee.entity';
 import { SystemRole } from '@/roles/entities/system-role.enum';
+import { StorageService } from '@/storage/storage.service';
 
-/**
- * Contract documents (PDF) live OUTSIDE public/ — they are sensitive HR files
- * and must not be served unauthenticated (unlike avatars). Storage is scoped
- * per organization (`<root>/<orgId>/<uuid>.pdf`) so a download keyed on the
- * caller's active org can only ever reach that org's files (multi-tenant
- * isolation by construction). Access is additionally gated by the same admin
- * roles as the avatar upload.
- */
-const DOC_ROOT = path.join(
-  process.cwd(),
-  'private-uploads',
-  'employee-contracts',
-);
 const MAX_BYTES = 15 * 1024 * 1024; // 15 MB
 
+/**
+ * Contract documents (PDF) are sensitive HR files: never public. Stored in
+ * object storage under an org-scoped key (`contracts/<orgId>/<uuid>.pdf`) and
+ * only ever reachable via this authenticated controller, keyed on the CALLER's
+ * active organization — so a download can only reach that org's files
+ * (multi-tenant isolation by construction). Access is gated by the same admin
+ * roles as the avatar upload.
+ */
 @Controller('contract-documents')
 @UseGuards(BetterAuthGuard)
 @Roles(SystemRole.ORG_OWNER, SystemRole.ORG_ADMIN)
@@ -50,27 +43,21 @@ export class ContractDocumentsController {
   constructor(
     @InjectEntityManager()
     private readonly entityManager: EntityManager,
+    private readonly storage: StorageService,
   ) {}
 
-  /** Absolute `<root>/<org>/<file>.pdf`, refusing any path traversal. */
-  private resolvePath(orgId: string, fileId: string): string {
+  /** Org-scoped object key, refusing invalid org/file references. */
+  private key(orgId: string, fileId: string): string {
     const safeOrg = orgId.replace(/[^a-zA-Z0-9-]/g, '');
     const safeFile = fileId.replace(/[^a-zA-Z0-9-]/g, '');
     if (!safeOrg || !safeFile) {
       throw new BadRequestException('Invalid document reference');
     }
-    const orgDir = path.resolve(DOC_ROOT, safeOrg);
-    const resolved = path.resolve(orgDir, `${safeFile}.pdf`);
-    if (!resolved.startsWith(orgDir + path.sep)) {
-      throw new ForbiddenException('Resolved path escapes the document root');
-    }
-    return resolved;
+    return `contracts/${safeOrg}/${safeFile}.pdf`;
   }
 
   @Post()
-  @UseInterceptors(
-    FileInterceptor('file', { limits: { fileSize: MAX_BYTES } }),
-  )
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_BYTES } }))
   async upload(
     @UploadedFile() file: Express.Multer.File,
     @Query('employeeId') employeeId: string,
@@ -96,9 +83,11 @@ export class ContractDocumentsController {
     }
 
     const fileId = randomUUID();
-    const filePath = this.resolvePath(orgId, fileId);
-    await fs.mkdir(path.dirname(filePath), { recursive: true });
-    await fs.writeFile(filePath, file.buffer);
+    await this.storage.put(
+      this.key(orgId, fileId),
+      file.buffer,
+      'application/pdf',
+    );
 
     return { url: `/api/contract-documents/${fileId}`, fileId };
   }
@@ -111,16 +100,15 @@ export class ContractDocumentsController {
     const orgId = user.orgId;
     if (!orgId) throw new ForbiddenException('No active organization');
 
-    const filePath = this.resolvePath(orgId, fileId);
     try {
-      await fs.access(filePath);
+      const { stream } = await this.storage.getStream(this.key(orgId, fileId));
+      return new StreamableFile(stream, {
+        type: 'application/pdf',
+        disposition: 'inline; filename="vertrag.pdf"',
+      });
     } catch {
       throw new NotFoundException('Document not found');
     }
-    return new StreamableFile(createReadStream(filePath), {
-      type: 'application/pdf',
-      disposition: 'inline; filename="vertrag.pdf"',
-    });
   }
 
   @Delete(':fileId')
@@ -131,12 +119,7 @@ export class ContractDocumentsController {
     const orgId = user.orgId;
     if (!orgId) throw new ForbiddenException('No active organization');
 
-    const filePath = this.resolvePath(orgId, fileId);
-    try {
-      await fs.unlink(filePath);
-    } catch {
-      // Already gone — treat as success (idempotent).
-    }
+    await this.storage.delete(this.key(orgId, fileId));
     return { success: true };
   }
 }
