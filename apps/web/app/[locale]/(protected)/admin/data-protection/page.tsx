@@ -8,11 +8,14 @@ import { getConsentPurposesAction } from "@/features/consent/actions/get-consent
 import { ConsentPurposesList } from "@/features/consent/components/ConsentPurposesList";
 import { getDataRequestsAction } from "@/features/data-requests/actions/get-data-requests.action";
 import { DataRequestsList } from "@/features/data-requests/components/DataRequestsList";
+import { getRetentionPoliciesAction } from "@/features/retention/actions/get-retention-policies.action";
+import { RetentionPoliciesList } from "@/features/retention/components/RetentionPoliciesList";
 
 const DataProtectionPage = async () => {
   const locale = await getLocale();
   const t = await getTranslations("ConsentManagement");
   const tR = await getTranslations("DataRequests");
+  const tRet = await getTranslations("RetentionSettings");
   const userRes = await getCurrentUserAction();
 
   if (!userRes?.success) {
@@ -24,6 +27,7 @@ const DataProtectionPage = async () => {
 
   const purposesRes = await getConsentPurposesAction();
   const requestsRes = await getDataRequestsAction();
+  const retentionRes = await getRetentionPoliciesAction();
 
   return (
     <div className="p-4">
@@ -41,6 +45,7 @@ const DataProtectionPage = async () => {
         <TabsList>
           <TabsTrigger value="consent">{t("tabConsent")}</TabsTrigger>
           <TabsTrigger value="requests">{tR("tab")}</TabsTrigger>
+          <TabsTrigger value="retention">{tRet("tab")}</TabsTrigger>
           <TabsTrigger value="overview">{t("tabOverview")}</TabsTrigger>
         </TabsList>
 
@@ -50,6 +55,10 @@ const DataProtectionPage = async () => {
 
         <TabsContent value="requests">
           <DataRequestsList initial={requestsRes.data} />
+        </TabsContent>
+
+        <TabsContent value="retention">
+          <RetentionPoliciesList initial={retentionRes.data} />
         </TabsContent>
 
         <TabsContent value="overview">

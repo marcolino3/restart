@@ -77,6 +77,9 @@ export enum PermissionCode {
 
   DATA_REQUEST_READ = 'DATA_REQUEST_READ',
   DATA_REQUEST_MANAGE = 'DATA_REQUEST_MANAGE',
+
+  RETENTION_READ = 'RETENTION_READ',
+  RETENTION_MANAGE = 'RETENTION_MANAGE',
 }
 
 registerEnumType(PermissionCode, {

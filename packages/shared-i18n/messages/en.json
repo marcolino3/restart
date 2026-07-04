@@ -1,4 +1,35 @@
 {
+  "RetentionSettings": {
+    "tab": "Retention",
+    "title": "Retention periods",
+    "subtitle": "Define how long each record type is kept.",
+    "executionNote": "Execution (delete/anonymize) is not automatic — it runs via an admin-reviewed job. Here you only configure the rules and preview currently-due records.",
+    "save": "Save",
+    "edit": "Edit",
+    "remove": "Remove",
+    "configure": "Configure",
+    "notConfigured": "Not configured",
+    "disabled": "Disabled",
+    "months": "{count} months",
+    "dueCount": "{count} due",
+    "savedToast": "Policy saved",
+    "removedToast": "Policy removed",
+    "fieldRetentionMonths": "Retention (months)",
+    "fieldAction": "Action when lapsed",
+    "fieldDescription": "Description",
+    "fieldIsEnabled": "Enabled",
+    "entity": {
+      "STUDENT": "Students",
+      "EMPLOYEE": "Employees",
+      "CONTACT_PERSON": "Contact persons",
+      "ADMISSION_APPLICATION": "Applications",
+      "DATA_SUBJECT_REQUEST": "Data-subject requests"
+    },
+    "action": {
+      "DELETE": "Delete",
+      "ANONYMIZE": "Anonymize"
+    }
+  },
   "DataRequests": {
     "tab": "Data-subject requests",
     "listTitle": "Data-subject requests",
