@@ -17,7 +17,6 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StudentAvatar } from "@/features/students/components/StudentAvatar";
 import { cn } from "@/lib/utils";
 
@@ -228,9 +227,38 @@ export function AdmissionDetailPage({
         </div>
       )}
 
-      <div className="flex flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:gap-8">
-        {/* Left: Stammdaten */}
-        <aside className="flex w-full shrink-0 flex-col gap-4 lg:sticky lg:top-[68px] lg:max-h-[calc(100vh-90px)] lg:w-80 lg:overflow-y-auto">
+      <div className="grid flex-1 grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1.6fr_1fr] lg:gap-8">
+        {/* Left: Aktivitäten (composer + timeline) */}
+        <main className="min-w-0">
+          <section className="rounded-lg border bg-card p-4 shadow-sm sm:p-5">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+              <ClipboardList className="h-4 w-4 text-muted-foreground" />
+              {t("tabActivities")}
+              <span className="ml-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                {activities.length}
+              </span>
+            </h3>
+            {canEdit && (
+              <div className="mb-4">
+                <ActivityComposer
+                  applicationId={detail.id}
+                  onSaved={refreshActivities}
+                  members={members}
+                  onReminderSaved={refreshReminders}
+                />
+              </div>
+            )}
+            <ActivityTimeline
+              applicationId={detail.id}
+              activities={activities}
+              canEdit={canEdit}
+              onChanged={refreshActivities}
+            />
+          </section>
+        </main>
+
+        {/* Right: Angaben / Bezugspersonen / Erinnerungen / E-Mail-Verlauf */}
+        <aside className="flex w-full min-w-0 flex-col gap-4 lg:sticky lg:top-[68px] lg:max-h-[calc(100vh-90px)] lg:overflow-y-auto">
           <div className="flex items-center gap-3 rounded-lg border bg-card p-4 shadow-sm">
             <StudentAvatar
               studentId={detail.id}
@@ -250,15 +278,6 @@ export function AdmissionDetailPage({
               </div>
             </div>
           </div>
-
-          <AdmissionRemindersBlock
-            applicationId={detail.id}
-            reminders={reminders}
-            canEdit={canEdit}
-            onChanged={refreshReminders}
-            members={members}
-            childName={childName}
-          />
 
           <DataCard title={t("tabOverview")}>
             <DataRow
@@ -286,6 +305,7 @@ export function AdmissionDetailPage({
 
           <DataCard
             title={`${t("familySection")}${detail.familyName ? ` · ${detail.familyName}` : ""}`}
+            icon={<Users2 className="h-3.5 w-3.5" />}
           >
             {detail.contactPersons.length === 0 ? (
               <p className="text-xs italic text-muted-foreground">
@@ -298,7 +318,57 @@ export function AdmissionDetailPage({
                 ))}
               </ul>
             )}
+            {detail.familyNotes && (
+              <p className="mt-2 border-t pt-2 text-xs whitespace-pre-wrap text-muted-foreground">
+                {detail.familyNotes}
+              </p>
+            )}
           </DataCard>
+
+          <AdmissionRemindersBlock
+            applicationId={detail.id}
+            reminders={reminders}
+            canEdit={canEdit}
+            onChanged={refreshReminders}
+            members={members}
+            childName={childName}
+          />
+
+          {/* E-Mail-Verlauf */}
+          <section className="rounded-lg border bg-card shadow-sm">
+            <div className="flex items-center justify-between border-b px-4 py-2.5">
+              <div className="flex items-center gap-2">
+                <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {t("tabEmails")}
+                </span>
+                {emails.length > 0 && (
+                  <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground">
+                    {emails.length}
+                  </span>
+                )}
+              </div>
+              {canSendEmail && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 gap-1 px-2 text-xs"
+                  onClick={() => setSendOpen(true)}
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  {t("emailSend")}
+                </Button>
+              )}
+            </div>
+            <div className="p-4">
+              <AdmissionEmailHistory
+                applicationId={detail.id}
+                emails={emails}
+                canManage={canSendEmail}
+                onChanged={refreshEmails}
+              />
+            </div>
+          </section>
 
           {detail.siblings.length > 0 && (
             <DataCard
@@ -330,129 +400,56 @@ export function AdmissionDetailPage({
             </DataCard>
           )}
         </aside>
+      </div>
 
-        {/* Right: Tabs (Activities default) */}
-        <main className="min-w-0 flex-1">
-          <Tabs defaultValue="activities">
-            <TabsList>
-              <TabsTrigger value="activities" className="gap-1.5">
-                <ClipboardList className="h-3.5 w-3.5" />
-                {t("tabActivities")}
-                <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                  {activities.length}
-                </span>
-              </TabsTrigger>
-              <TabsTrigger value="emails" className="gap-1.5">
-                <Mail className="h-3.5 w-3.5" />
-                {t("tabEmails")}
-                <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                  {emails.length}
-                </span>
-              </TabsTrigger>
-              <TabsTrigger value="family" className="gap-1.5">
-                <Users2 className="h-3.5 w-3.5" />
-                {t("tabFamily")}
-              </TabsTrigger>
-              <TabsTrigger value="audit" className="gap-1.5">
-                <History className="h-3.5 w-3.5" />
-                {t("tabAudit")}
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="activities" className="space-y-4 pt-4">
-              {canEdit && (
-                <ActivityComposer
-                  applicationId={detail.id}
-                  onSaved={refreshActivities}
-                  members={members}
-                  onReminderSaved={refreshReminders}
-                />
-              )}
-              <ActivityTimeline
-                applicationId={detail.id}
-                activities={activities}
-                canEdit={canEdit}
-                onChanged={refreshActivities}
-              />
-            </TabsContent>
-
-            <TabsContent value="emails" className="space-y-4 pt-4">
-              {canSendEmail && (
-                <div className="flex justify-end">
-                  <Button
-                    size="sm"
-                    className="gap-1.5"
-                    onClick={() => setSendOpen(true)}
+      {/* Audit log — kept, as a collapsible section (design has no audit tab) */}
+      <div className="px-4 pb-8 sm:px-6">
+        <details className="rounded-lg border bg-card shadow-sm">
+          <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground">
+            <History className="h-4 w-4" />
+            {t("tabAudit")}
+            {detail.auditLogs.length > 0 && (
+              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium leading-none">
+                {detail.auditLogs.length}
+              </span>
+            )}
+          </summary>
+          <div className="border-t p-4">
+            {detail.auditLogs.length === 0 ? (
+              <p className="text-sm italic text-muted-foreground">
+                {t("noAuditLogs")}
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {detail.auditLogs.map((l) => (
+                  <li
+                    key={l.id}
+                    className="space-y-0.5 rounded-md border bg-background/40 p-3 text-xs"
                   >
-                    <Send className="h-4 w-4" />
-                    {t("emailSend")}
-                  </Button>
-                </div>
-              )}
-              <AdmissionEmailHistory
-                applicationId={detail.id}
-                emails={emails}
-                canManage={canSendEmail}
-                onChanged={refreshEmails}
-              />
-            </TabsContent>
-
-            <TabsContent value="family" className="space-y-3 pt-4">
-              {detail.contactPersons.length === 0 ? (
-                <p className="text-sm italic text-muted-foreground">
-                  {t("noContactPersons")}
-                </p>
-              ) : (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {detail.contactPersons.map((cp) => (
-                    <ContactCardLarge key={cp.id} contact={cp} />
-                  ))}
-                </div>
-              )}
-              {detail.familyNotes && (
-                <div className="rounded-lg border bg-card p-4 text-sm whitespace-pre-wrap shadow-sm">
-                  {detail.familyNotes}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="audit" className="space-y-2 pt-4">
-              {detail.auditLogs.length === 0 ? (
-                <p className="text-sm italic text-muted-foreground">
-                  {t("noAuditLogs")}
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {detail.auditLogs.map((l) => (
-                    <li
-                      key={l.id}
-                      className="space-y-0.5 rounded-md border bg-card p-3 text-xs shadow-sm"
-                    >
-                      <div className="flex items-center justify-between">
-                        <Badge variant="secondary" className="text-[10px]">
-                          {l.action}
-                        </Badge>
-                        <span className="text-muted-foreground">
-                          {new Date(l.createdAt).toLocaleString()}
-                        </span>
+                    <div className="flex items-center justify-between">
+                      <Badge variant="secondary" className="text-[10px]">
+                        {l.action}
+                      </Badge>
+                      <span className="text-muted-foreground">
+                        {new Date(l.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    {l.action === "STAGE_CHANGED" && (
+                      <div className="text-muted-foreground">
+                        {l.fromStage?.name ?? "—"} → {l.toStage?.name ?? "—"}
                       </div>
-                      {l.action === "STAGE_CHANGED" && (
-                        <div className="text-muted-foreground">
-                          {l.fromStage?.name ?? "—"} → {l.toStage?.name ?? "—"}
-                        </div>
-                      )}
-                      {l.actorName && (
-                        <div className="text-muted-foreground">
-                          {t("by")}: {l.actorName}
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </TabsContent>
-          </Tabs>
-        </main>
+                    )}
+                    {l.actorName && (
+                      <div className="text-muted-foreground">
+                        {t("by")}: {l.actorName}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </details>
       </div>
 
       {canSendEmail && sendOpen && (
@@ -495,14 +492,17 @@ export function AdmissionDetailPage({
 
 function DataCard({
   title,
+  icon,
   children,
 }: {
   title: string;
+  icon?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <section className="rounded-lg border bg-card p-4 shadow-sm">
-      <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <h3 className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {icon}
         {title}
       </h3>
       <div className="space-y-1.5 text-sm">{children}</div>
@@ -569,50 +569,6 @@ function ContactCard({ contact }: { contact: AdmissionDetailContact }) {
         </a>
       )}
     </li>
-  );
-}
-
-function ContactCardLarge({ contact }: { contact: AdmissionDetailContact }) {
-  return (
-    <div className="space-y-2 rounded-lg border bg-card p-4 text-sm shadow-sm">
-      <div className="flex items-center justify-between gap-2">
-        <div className="font-semibold">
-          {contact.firstName} {contact.lastName}
-        </div>
-        <div className="flex flex-wrap gap-1">
-          {(contact.roles ?? []).map((r) => (
-            <Badge key={r} variant="secondary" className="text-[10px]">
-              {r}
-            </Badge>
-          ))}
-        </div>
-      </div>
-      {contact.occupation && (
-        <div className="text-xs text-muted-foreground">
-          {contact.occupation}
-        </div>
-      )}
-      {contact.email && (
-        <a
-          href={`mailto:${contact.email}`}
-          className={cn(
-            "flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground",
-          )}
-        >
-          <Mail className="h-3.5 w-3.5" />
-          {contact.email}
-        </a>
-      )}
-      {(contact.mobile || contact.phone) && (
-        <a
-          href={`tel:${contact.mobile ?? contact.phone}`}
-          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
-        >
-          <Phone className="h-3.5 w-3.5" />
-          {contact.mobile ?? contact.phone}
-        </a>
-      )}
-    </div>
   );
 }
 
