@@ -55,18 +55,27 @@ test.describe('Employee onboarding — wizard happy path', () => {
     ).toBeVisible({ timeout: 15000 })
 
     // --- Step 2: Contract ----------------------------------------------
-    // Entry date is required to advance; fill via the date field if present.
-    const entry = page.getByLabel(/entry date/i)
-    if (await entry.count()) {
-      await entry.first().click()
-      await page.getByRole('gridcell', { name: '15' }).first().click()
-    }
+    // Entry date is required to advance. The field is a shadcn date-picker
+    // trigger button (not a labelled input), so target it by role, open the
+    // calendar and pick a day.
+    await page.getByRole('button', { name: /^entry date$/i }).click()
+    // Calendar day cell — accessible name may be just "15" or a full date, so
+    // match by substring (non-exact) and take the first (outside-month days can
+    // repeat the number).
+    await page.getByRole('gridcell', { name: '15' }).first().click()
     await page.getByRole('button', { name: /^next$/i }).click()
 
+    // Step 3 (Roles & access) becomes active once the entry date is set.
+    await expect(
+      page.getByText(/roles & access|3 · roles/i).first(),
+    ).toBeVisible({ timeout: 15000 })
+
     // --- Step 3: Roles --------------------------------------------------
-    // Pick the first available role card, then finalize.
-    const roleCard = page.getByRole('radio').first()
-    if (await roleCard.count()) await roleCard.click()
+    // Pick the first role card. Scope to <main> so we don't hit the sidebar
+    // theme-switcher radios; the role group renders before the invitation
+    // group, and the default invitation timing (IMMEDIATE) keeps the CTA as
+    // "Create & send invitation".
+    await page.getByRole('main').getByRole('radio').first().click()
 
     await page.getByRole('button', { name: /create & send invitation/i }).click()
 
