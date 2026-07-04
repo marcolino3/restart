@@ -433,10 +433,6 @@ export function TeamsBoard({ initialTeams, initialMembers, employees }: Props) {
             {activeMember ? (
               <div className="flex items-center gap-3 rounded-ctl border bg-card px-2 py-1.5 shadow-lg">
                 <EmployeeAvatar
-                  seed={
-                    activeMember.employee.membership?.user?.id ??
-                    activeMember.employee.id
-                  }
                   firstName={activeMember.employee.membership?.user?.firstName}
                   lastName={activeMember.employee.membership?.user?.lastName}
                   className="h-[30px] w-[30px]"
@@ -679,7 +675,6 @@ function MemberRow({ member, teamId, subtitle, onRemove }: MemberRowProps) {
       {...listeners}
     >
       <EmployeeAvatar
-        seed={user?.id ?? member.employee.id}
         firstName={user?.firstName}
         lastName={user?.lastName}
         className="h-[30px] w-[30px]"
