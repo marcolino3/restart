@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Plus } from "lucide-react";
+import { Plus, Download } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,7 @@ import { handleAction } from "@/lib/actions/handle-action";
 import { DataRequestForm } from "./DataRequestForm";
 import { createDataRequestAction } from "../actions/create-data-request.action";
 import { updateDataRequestAction } from "../actions/update-data-request.action";
+import { getDataSubjectExportAction } from "../actions/get-data-subject-export.action";
 import type { DataRequestFormType } from "../schemas/data-request-form.schema";
 import type { DataSubjectRequest } from "../types";
 
@@ -87,6 +89,31 @@ export function DataRequestsList({
       router.refresh();
     });
 
+  const exportSubject = (req: DataSubjectRequest) =>
+    startTransition(async () => {
+      if (!req.subjectId) return;
+      const res = await getDataSubjectExportAction(
+        req.subjectType,
+        req.subjectId,
+      );
+      if (!res.success) {
+        toast.error(t("exportFailed"));
+        return;
+      }
+      const blob = new Blob([res.data], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `datenexport-${req.subjectId}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(t("exportDone"));
+    });
+
+  const canExport = (req: DataSubjectRequest) =>
+    !!req.subjectId &&
+    (req.subjectType === "STUDENT" || req.subjectType === "EMPLOYEE");
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -134,6 +161,17 @@ export function DataRequestsList({
                 </p>
               </div>
               <div className="flex shrink-0 gap-1">
+                {canExport(req) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={pending}
+                    onClick={() => exportSubject(req)}
+                  >
+                    <Download className="mr-1 h-4 w-4" />
+                    {t("export")}
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant="ghost"

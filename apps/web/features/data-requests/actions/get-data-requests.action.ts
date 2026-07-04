@@ -11,6 +11,7 @@ const DataSubjectRequestsDocument = gql`
       type
       status
       subjectType
+      subjectId
       subjectName
       contactEmail
       receivedAt
