@@ -472,6 +472,7 @@ export function AdmissionDetailPage({
         <RejectApplicationDialog
           applicationId={detail.id}
           reasons={rejectionReasons}
+          childName={childName}
           onClose={() => setRejectOpen(false)}
         />
       )}
