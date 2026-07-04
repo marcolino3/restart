@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -42,7 +43,9 @@ const Schema = z.object({
   parentLastName: z.string().max(120).optional(),
   parentEmail: z.string().email().optional().or(z.literal("")),
   parentPhone: z.string().max(64).optional(),
-  parentRole: z.enum(["MOTHER", "FATHER", "LEGAL_GUARDIAN", "OTHER"]).optional(),
+  parentRole: z
+    .enum(["MOTHER", "FATHER", "LEGAL_GUARDIAN", "OTHER"])
+    .optional(),
 });
 
 type FormValues = z.infer<typeof Schema>;
@@ -177,12 +180,10 @@ export function CreateApplicationDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[640px]">
         <DialogHeader>
           <DialogTitle>{t("newApplication")}</DialogTitle>
+          <DialogDescription>{t("newApplicationHint")}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4"
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <section className="space-y-3 rounded-md border p-3">
               <h3 className="text-sm font-semibold">{t("childSection")}</h3>
               <div className="grid grid-cols-2 gap-3">

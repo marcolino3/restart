@@ -7,7 +7,9 @@ import { getAdmissionRemindersAction } from "@/features/admissions-kanban/action
 import { getAdmissionsDataAction } from "@/features/admissions-kanban/actions/get-admissions-data.action";
 import { getAdmissionEmailsAction } from "@/features/admissions-kanban/actions/get-admission-emails.action";
 import { getEmailTemplatesAction } from "@/features/email-templates/actions/get-email-templates.action";
+import { getOrgMembershipsAction } from "@/features/projects/actions/get-org-memberships.action";
 import { AdmissionDetailPage } from "@/features/admissions-kanban/components/AdmissionDetailPage";
+import { mapReminderMembers } from "@/features/admissions-kanban/lib/map-reminder-members";
 
 const has = (permissions: string[], code: string, isSuperAdmin: boolean) =>
   isSuperAdmin || permissions.includes(code);
@@ -33,7 +35,9 @@ export default async function AdmissionDetailRoute({ params }: PageProps) {
 
   if (!user?.success) {
     return (
-      <div className="p-6 text-sm text-destructive">{t("notAuthenticated")}</div>
+      <div className="p-6 text-sm text-destructive">
+        {t("notAuthenticated")}
+      </div>
     );
   }
   if (!detail.success) {
@@ -52,11 +56,19 @@ export default async function AdmissionDetailRoute({ params }: PageProps) {
     ? kanbanData.data.rejectionReasons
     : [];
 
+  const membersRes = user.data.orgId
+    ? await getOrgMembershipsAction(user.data.orgId)
+    : null;
+  const members = mapReminderMembers(
+    membersRes?.success ? membersRes.data : [],
+  );
+
   return (
     <AdmissionDetailPage
       detail={detail.data}
       stages={stages}
       rejectionReasons={rejectionReasons}
+      members={members}
       initialActivities={activities.success ? activities.data : []}
       initialReminders={reminders.success ? reminders.data : []}
       initialEmails={emails.success ? emails.data : []}
