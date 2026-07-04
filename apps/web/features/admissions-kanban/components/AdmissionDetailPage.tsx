@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   Ban,
   ClipboardList,
+  GraduationCap,
   History,
   Mail,
   Phone,
@@ -36,6 +37,7 @@ import { ActivityTimeline } from "./ActivityTimeline";
 import { AdmissionRemindersBlock } from "./AdmissionRemindersBlock";
 import { AdmissionEmailHistory } from "./AdmissionEmailHistory";
 import { RejectApplicationDialog } from "./RejectApplicationDialog";
+import { FinalizeEnrollmentDialog } from "./FinalizeEnrollmentDialog";
 import { SendEmailDialog, type SendableTemplate } from "./SendEmailDialog";
 import type { ReminderMember } from "./ReminderForm";
 
@@ -65,6 +67,7 @@ export function AdmissionDetailPage({
   emailTemplates,
   members,
   canEdit,
+  canEnroll,
   canSendEmail,
   canReject,
 }: Props) {
@@ -77,9 +80,13 @@ export function AdmissionDetailPage({
   const [emails, setEmails] = useState<AdmissionEmail[]>(initialEmails);
   const [sendOpen, setSendOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
+  const [enrollOpen, setEnrollOpen] = useState(false);
   const [, startTransition] = useTransition();
 
   const stage = stages.find((s) => s.id === detail.admissionStageId);
+  const currentStageIndex = stages.findIndex(
+    (s) => s.id === detail.admissionStageId,
+  );
   const emailContacts = detail.contactPersons
     .filter((c) => c.email)
     .map((c) => ({
@@ -156,6 +163,16 @@ export function AdmissionDetailPage({
               {t("rejectApplication")}
             </Button>
           )}
+          {canEnroll && detail.status === "ACTIVE" && (
+            <Button
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setEnrollOpen(true)}
+            >
+              <GraduationCap className="h-4 w-4" />
+              {t("finalizeEnrollment")}
+            </Button>
+          )}
           {stage && (
             <Badge
               variant="outline"
@@ -171,6 +188,45 @@ export function AdmissionDetailPage({
           )}
         </div>
       </div>
+
+      {/* Stage tracker (design: chip row of stages with the active one filled) */}
+      {stages.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 px-4 pt-4 sm:px-6">
+          {stages.map((s, i) => {
+            const done = i < currentStageIndex;
+            const active = i === currentStageIndex;
+            return (
+              <span
+                key={s.id}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium",
+                  active
+                    ? "font-semibold"
+                    : done
+                      ? ""
+                      : "border-border text-muted-foreground",
+                )}
+                style={
+                  s.color
+                    ? active
+                      ? {
+                          backgroundColor: s.color,
+                          borderColor: s.color,
+                          color: "#fff",
+                        }
+                      : done
+                        ? { borderColor: s.color, color: s.color }
+                        : undefined
+                    : undefined
+                }
+              >
+                {done && "✓ "}
+                {s.name}
+              </span>
+            );
+          })}
+        </div>
+      )}
 
       <div className="flex flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:gap-8">
         {/* Left: Stammdaten */}
@@ -417,6 +473,19 @@ export function AdmissionDetailPage({
           applicationId={detail.id}
           reasons={rejectionReasons}
           onClose={() => setRejectOpen(false)}
+        />
+      )}
+
+      {canEnroll && enrollOpen && (
+        <FinalizeEnrollmentDialog
+          applicationId={detail.id}
+          childName={childName}
+          defaultDate={detail.desiredEnrollmentDate}
+          onClose={() => setEnrollOpen(false)}
+          onSuccess={() => {
+            setEnrollOpen(false);
+            router.refresh();
+          }}
         />
       )}
     </div>
