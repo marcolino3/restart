@@ -50,7 +50,7 @@ function makeDataSource(capture: {
   };
   const manager = {
     getRepository: (entity: unknown) =>
-      entity === Task ? taskRepo : assigneeRepo,
+      entity === TaskAssignee ? assigneeRepo : taskRepo,
   };
   return {
     transaction: jest.fn((cb: (m: typeof manager) => unknown) => cb(manager)),
