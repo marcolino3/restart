@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 
 import { EmailTemplatesService } from './email-templates.service';
+import { AdmissionEmail } from './entities/admission-email.entity';
 import { EmailTemplate } from './entities/email-template.entity';
 import { EmailTemplateCategory } from './enums/email-template-category.enum';
 
@@ -17,16 +18,34 @@ const createMockRepository = () => ({
   delete: jest.fn().mockResolvedValue({ affected: 1 }),
 });
 
+// The AdmissionEmail repo mock only needs a chainable query builder whose
+// getRawMany result the test controls (for sentCount aggregation).
+const createMockEmailsRepo = () => {
+  const getRawMany = jest.fn().mockResolvedValue([]);
+  const qb = {
+    select: () => qb,
+    addSelect: () => qb,
+    where: () => qb,
+    andWhere: () => qb,
+    groupBy: () => qb,
+    getRawMany,
+  };
+  return { createQueryBuilder: jest.fn(() => qb), getRawMany };
+};
+
 describe('EmailTemplatesService', () => {
   let service: EmailTemplatesService;
   let repo: ReturnType<typeof createMockRepository>;
+  let emailsRepo: ReturnType<typeof createMockEmailsRepo>;
 
   beforeEach(async () => {
     repo = createMockRepository();
+    emailsRepo = createMockEmailsRepo();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EmailTemplatesService,
         { provide: getRepositoryToken(EmailTemplate), useValue: repo },
+        { provide: getRepositoryToken(AdmissionEmail), useValue: emailsRepo },
       ],
     }).compile();
     service = module.get(EmailTemplatesService);
@@ -104,6 +123,57 @@ describe('EmailTemplatesService', () => {
         organizationId: ORG_ID,
       });
       expect(repo.save.mock.calls[0][0].name).toBe('New');
+    });
+  });
+
+  describe('isAutomatic + sentCount', () => {
+    it('create persists the isAutomatic flag', async () => {
+      await service.create(
+        {
+          name: 'Confirmation',
+          subject: 'Hi',
+          bodyHtml: '<p>Hi</p>',
+          isAutomatic: true,
+        },
+        ORG_ID,
+        'membership-1',
+      );
+      expect(repo.create.mock.calls[0][0].isAutomatic).toBe(true);
+    });
+
+    it('create defaults isAutomatic to false when omitted', async () => {
+      await service.create(
+        { name: 'Manual', subject: 'Hi', bodyHtml: '<p>Hi</p>' },
+        ORG_ID,
+        'membership-1',
+      );
+      expect(repo.create.mock.calls[0][0].isAutomatic).toBe(false);
+    });
+
+    it('update persists a changed isAutomatic flag', async () => {
+      repo.findOne.mockResolvedValue({
+        id: 'tpl-1',
+        organizationId: ORG_ID,
+        isAutomatic: false,
+      });
+      await service.update({ id: 'tpl-1', isAutomatic: true }, ORG_ID);
+      expect(repo.save.mock.calls[0][0].isAutomatic).toBe(true);
+    });
+
+    it('findForOrg populates sentCount from sent admission emails (org-scoped)', async () => {
+      repo.find.mockResolvedValue([
+        { id: 'tpl-1', organizationId: ORG_ID, sentCount: 0 },
+        { id: 'tpl-2', organizationId: ORG_ID, sentCount: 0 },
+      ]);
+      emailsRepo.getRawMany.mockResolvedValue([
+        { templateId: 'tpl-1', count: 3 },
+      ]);
+
+      const result = await service.findForOrg(ORG_ID);
+
+      expect(result.find((t) => t.id === 'tpl-1')?.sentCount).toBe(3);
+      // No sent emails → stays 0.
+      expect(result.find((t) => t.id === 'tpl-2')?.sentCount).toBe(0);
     });
   });
 });
