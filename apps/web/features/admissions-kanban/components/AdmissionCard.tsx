@@ -6,10 +6,7 @@ import { Bell, BellRing, Mail, Phone, User2, Users2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { StudentAvatar } from "@/features/students/components/StudentAvatar";
 import { cn } from "@/lib/utils";
-import {
-  resolveCardFields,
-  type CardFieldKey,
-} from "../field-registry";
+import { resolveCardFields, type CardFieldKey } from "../field-registry";
 import type { KanbanApplication } from "../types";
 
 interface Props {
@@ -23,7 +20,10 @@ interface Props {
   className?: string;
 }
 
-const GENDER_GLYPH: Record<NonNullable<KanbanApplication["childGender"]>, string> = {
+const GENDER_GLYPH: Record<
+  NonNullable<KanbanApplication["childGender"]>,
+  string
+> = {
   MALE: "♂",
   FEMALE: "♀",
   OTHER: "⚧",
@@ -92,7 +92,10 @@ export function AdmissionCardVisual({
     switch (key) {
       case "birthYear":
         return birthYear ? (
-          <span key={key} title={t("fieldBirthYear")}>{`Jg. ${birthYear}`}</span>
+          <span
+            key={key}
+            title={t("fieldBirthYear")}
+          >{`Jg. ${birthYear}`}</span>
         ) : null;
       case "age": {
         if (!application.childDateOfBirth) return null;
@@ -129,7 +132,9 @@ export function AdmissionCardVisual({
                   application.desiredGradeLevelColor ?? "var(--muted)",
               }}
             />
-            <span className="truncate">{application.desiredGradeLevelName}</span>
+            <span className="truncate">
+              {application.desiredGradeLevelName}
+            </span>
           </span>
         ) : null;
       case "source":
@@ -200,10 +205,10 @@ export function AdmissionCardVisual({
           <span
             key={key}
             className={cn(
-              "inline-flex items-center gap-0.5 rounded px-1 font-medium",
+              "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold",
               application.overdueRemindersCount > 0
-                ? "bg-destructive/10 text-destructive"
-                : "bg-amber-500/15 text-amber-700",
+                ? "bg-status-rose text-status-rose-foreground"
+                : "bg-status-amber text-status-amber-foreground",
             )}
             title={t("openRemindersTitle", {
               open: application.openRemindersCount,

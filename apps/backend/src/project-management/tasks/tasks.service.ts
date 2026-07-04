@@ -21,6 +21,9 @@ const TASK_RELATIONS = {
 const MY_TASK_RELATIONS = {
   assignees: { membership: { user: true } },
   project: true,
+  // Source of an auto-created reminder task — surfaced as a "Aufnahme: <Kind>"
+  // link in "My Tasks".
+  admissionApplication: true,
 } as const;
 
 @Injectable()

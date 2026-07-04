@@ -30,7 +30,14 @@ import {
 } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { ArrowUpDown, FileText, GripVertical, Plus, X } from "lucide-react";
+import {
+  ArrowUpDown,
+  Bell,
+  FileText,
+  GripVertical,
+  Plus,
+  X,
+} from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -106,7 +113,7 @@ const sortHeader = (
     toggleSorting: (desc?: boolean) => void;
     getIsSorted: () => false | "asc" | "desc";
   },
-  label: string
+  label: string,
 ) => (
   <Button
     variant="ghost"
@@ -132,7 +139,7 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [personalDialog, setPersonalDialog] = React.useState<{
     open: boolean;
@@ -143,7 +150,7 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
   const dndEnabled = sorting.length === 0;
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
   const onChangeStatus = async (task: Task, status: TaskStatus) => {
@@ -171,7 +178,7 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
       const next = arrayMove(prev, oldIndex, newIndex);
       void persistOrder(
         next.map((tk) => tk.id),
-        prev
+        prev,
       );
       return next;
     });
@@ -182,8 +189,8 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
     for (const task of data) {
       if (task.project) map.set(task.project.title, task.project.color ?? null);
     }
-    return Array.from(map, ([title, color]) => ({ title, color })).sort((a, b) =>
-      a.title.localeCompare(b.title)
+    return Array.from(map, ([title, color]) => ({ title, color })).sort(
+      (a, b) => a.title.localeCompare(b.title),
     );
   }, [data]);
 
@@ -203,7 +210,7 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
         accessorFn: (row) => row.project?.title ?? "",
         header: ({ column }) => sortHeader(column, t("source")),
         cell: ({ row }) => {
-          const { project, protocol } = row.original;
+          const { project, protocol, admissionApplication } = row.original;
           return (
             <div className="flex flex-col items-start gap-1">
               {project && (
@@ -232,7 +239,29 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
                   {protocol.title}
                 </Badge>
               )}
-              {!project && !protocol && (
+              {admissionApplication && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(
+                      `/${locale}/admin/admissions/${admissionApplication.id}`,
+                    );
+                  }}
+                  title={t("sourceAdmission")}
+                >
+                  <Badge
+                    variant="amber"
+                    className="flex w-fit items-center gap-1 hover:opacity-80"
+                  >
+                    <Bell className="h-3 w-3" />
+                    {t("sourceAdmission")}:{" "}
+                    {admissionApplication.childFirstName}{" "}
+                    {admissionApplication.childLastName}
+                  </Badge>
+                </button>
+              )}
+              {!project && !protocol && !admissionApplication && (
                 <span className="text-muted-foreground">{t("personal")}</span>
               )}
             </div>
@@ -278,7 +307,7 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
             <span
               className={cn(
                 "inline-flex rounded-md px-2 py-0.5 text-xs font-medium",
-                PRIORITY_CLASS[value]
+                PRIORITY_CLASS[value],
               )}
             >
               {t(`priority_${value}`)}
@@ -305,7 +334,7 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t]
+    [t],
   );
 
   const table = useReactTable({
@@ -327,13 +356,15 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
   const facet = (
     columnId: string,
     title: string,
-    options: { value: string; label: React.ReactNode; searchValue?: string }[]
+    options: { value: string; label: React.ReactNode; searchValue?: string }[],
   ) => (
     <DataTableFacetedFilter
       title={title}
       selected={(table.getColumn(columnId)?.getFilterValue() as string[]) ?? []}
       onChange={(next) =>
-        table.getColumn(columnId)?.setFilterValue(next.length ? next : undefined)
+        table
+          .getColumn(columnId)
+          ?.setFilterValue(next.length ? next : undefined)
       }
       options={options}
     />
@@ -357,7 +388,7 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
             value: s,
             searchValue: t(`taskStatus_${s}`),
             label: t(`taskStatus_${s}`),
-          }))
+          })),
         )}
         {facet(
           "priority",
@@ -366,7 +397,7 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
             value: p,
             searchValue: t(`priority_${p}`),
             label: t(`priority_${p}`),
-          }))
+          })),
         )}
         {projectOptions.length > 0 &&
           facet(
@@ -385,7 +416,7 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
                   {p.title}
                 </span>
               ),
-            }))
+            })),
           )}
         {columnFilters.length > 0 && (
           <Button
@@ -424,7 +455,7 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   ))}
@@ -447,8 +478,8 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
                           router.push(
                             ROUTES.admin.projectsBoard(
                               locale,
-                              row.original.project.id
-                            )
+                              row.original.project.id,
+                            ),
                           );
                         } else {
                           setPersonalDialog({
@@ -469,7 +500,7 @@ export function MyTasksTable({ tasks }: { tasks: Task[] }) {
                         >
                           {flexRender(
                             cell.column.columnDef.cell,
-                            cell.getContext()
+                            cell.getContext(),
                           )}
                         </TableCell>
                       ))}
@@ -563,7 +594,7 @@ function SortableTaskRow({
         <GripVertical
           className={cn(
             "h-4 w-4 text-muted-foreground",
-            dragEnabled ? "cursor-grab" : "opacity-30"
+            dragEnabled ? "cursor-grab" : "opacity-30",
           )}
         />
       </TableCell>

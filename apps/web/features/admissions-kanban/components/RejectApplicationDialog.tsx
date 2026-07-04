@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -31,6 +32,8 @@ interface Props {
   reasons: AdmissionRejectionReason[];
   onClose: () => void;
   onRejected?: () => void;
+  /** Child name shown in the dialog title (design: "Absage — <Kind>"). */
+  childName?: string;
 }
 
 const NONE_VALUE = "__none__";
@@ -40,6 +43,7 @@ export function RejectApplicationDialog({
   reasons,
   onClose,
   onRejected,
+  childName,
 }: Props) {
   const t = useTranslations("Admissions");
   const tC = useTranslations("Common");
@@ -85,7 +89,12 @@ export function RejectApplicationDialog({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[460px]">
         <DialogHeader>
-          <DialogTitle>{t("rejectApplication")}</DialogTitle>
+          <DialogTitle>
+            {childName
+              ? `${t("rejectApplication")} — ${childName}`
+              : t("rejectApplication")}
+          </DialogTitle>
+          <DialogDescription>{t("rejectDialogHint")}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
