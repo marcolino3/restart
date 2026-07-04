@@ -59,6 +59,8 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'CONSENT_READ',
     'CONSENT_MANAGE',
     'CONSENT_SETTINGS_MANAGE',
+    'DATA_REQUEST_READ',
+    'DATA_REQUEST_MANAGE',
   ] as PermissionCode[],
   ORG_ADMIN: [
     'USER_INVITE',
@@ -109,6 +111,8 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'CONSENT_READ',
     'CONSENT_MANAGE',
     'CONSENT_SETTINGS_MANAGE',
+    'DATA_REQUEST_READ',
+    'DATA_REQUEST_MANAGE',
   ] as PermissionCode[],
   HR_MANAGER: [
     'EMPLOYEE_READ',
@@ -129,6 +133,8 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'PROTOCOL_WRITE',
     'CONSENT_READ',
     'CONSENT_MANAGE',
+    'DATA_REQUEST_READ',
+    'DATA_REQUEST_MANAGE',
   ] as PermissionCode[],
   OFFICE: [
     'EMPLOYEE_READ',
@@ -164,6 +170,8 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'CONSENT_READ',
     'CONSENT_MANAGE',
     'CONSENT_SETTINGS_MANAGE',
+    'DATA_REQUEST_READ',
+    'DATA_REQUEST_MANAGE',
   ] as PermissionCode[],
   TEAM_LEAD: [
     'EMPLOYEE_READ',

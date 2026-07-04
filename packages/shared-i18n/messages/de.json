@@ -1,4 +1,44 @@
 {
+  "DataRequests": {
+    "tab": "Betroffenenanfragen",
+    "listTitle": "Betroffenenanfragen",
+    "listSubtitle": "Anfragen betroffener Personen fristgerecht bearbeiten.",
+    "newRequest": "Neue Anfrage",
+    "noRequests": "Noch keine Anfragen erfasst.",
+    "dueOn": "Frist: {date}",
+    "save": "Speichern",
+    "fieldType": "Art der Anfrage",
+    "fieldSubjectName": "Betroffene Person",
+    "fieldSubjectType": "Kategorie",
+    "fieldContactEmail": "Kontakt-E-Mail",
+    "fieldReceivedAt": "Eingegangen am",
+    "fieldNotes": "Notizen",
+    "createdToast": "Anfrage erfasst",
+    "updatedToast": "Status aktualisiert",
+    "actionInProgress": "In Bearbeitung",
+    "actionComplete": "Erledigt",
+    "actionReject": "Ablehnen",
+    "type": {
+      "ACCESS": "Auskunft",
+      "RECTIFICATION": "Berichtigung",
+      "ERASURE": "Löschung",
+      "PORTABILITY": "Datenübertragbarkeit",
+      "OBJECTION": "Widerspruch",
+      "RESTRICTION": "Einschränkung"
+    },
+    "subject": {
+      "STUDENT": "Schüler",
+      "EMPLOYEE": "Mitarbeiter",
+      "CONTACT_PERSON": "Bezugsperson",
+      "OTHER": "Andere"
+    },
+    "status": {
+      "NEW": "Neu",
+      "IN_PROGRESS": "In Bearbeitung",
+      "COMPLETED": "Erledigt",
+      "REJECTED": "Abgelehnt"
+    }
+  },
   "ConsentManagement": {
     "centerTitle": "Datenschutz-Center",
     "centerSubtitle": "Einwilligungen und Betroffenenrechte org-weit verwalten",
