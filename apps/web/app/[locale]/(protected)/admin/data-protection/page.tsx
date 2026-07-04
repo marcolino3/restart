@@ -6,10 +6,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 import { getConsentPurposesAction } from "@/features/consent/actions/get-consent-purposes.action";
 import { ConsentPurposesList } from "@/features/consent/components/ConsentPurposesList";
+import { getDataRequestsAction } from "@/features/data-requests/actions/get-data-requests.action";
+import { DataRequestsList } from "@/features/data-requests/components/DataRequestsList";
 
 const DataProtectionPage = async () => {
   const locale = await getLocale();
   const t = await getTranslations("ConsentManagement");
+  const tR = await getTranslations("DataRequests");
   const userRes = await getCurrentUserAction();
 
   if (!userRes?.success) {
@@ -20,6 +23,7 @@ const DataProtectionPage = async () => {
   }
 
   const purposesRes = await getConsentPurposesAction();
+  const requestsRes = await getDataRequestsAction();
 
   return (
     <div className="p-4">
@@ -36,11 +40,16 @@ const DataProtectionPage = async () => {
       <Tabs defaultValue="consent" className="space-y-4">
         <TabsList>
           <TabsTrigger value="consent">{t("tabConsent")}</TabsTrigger>
+          <TabsTrigger value="requests">{tR("tab")}</TabsTrigger>
           <TabsTrigger value="overview">{t("tabOverview")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="consent">
           <ConsentPurposesList initial={purposesRes.data} />
+        </TabsContent>
+
+        <TabsContent value="requests">
+          <DataRequestsList initial={requestsRes.data} />
         </TabsContent>
 
         <TabsContent value="overview">

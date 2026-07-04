@@ -60,6 +60,7 @@ import { ProtocolParticipant } from '@/project-management/protocols/entities/pro
 import { ConsentPurpose } from '@/consent/entities/consent-purpose.entity';
 import { Consent } from '@/consent/entities/consent.entity';
 import { ConsentAuditLog } from '@/consent/entities/consent-audit-log.entity';
+import { DataSubjectRequest } from '@/data-requests/entities/data-subject-request.entity';
 import { Permission } from '@/permissions/entities/permission.entity';
 import { Role } from '@/roles/entities/role.entity';
 import { UserEmail } from '@/user-emails/entities/user-email.entity';
@@ -136,6 +137,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       ConsentPurpose,
       Consent,
       ConsentAuditLog,
+      DataSubjectRequest,
     ]),
   ],
   exports: [TypeOrmModule],
