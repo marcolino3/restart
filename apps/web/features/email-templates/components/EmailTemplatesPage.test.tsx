@@ -31,6 +31,8 @@ const template = (overrides: Partial<EmailTemplate> = {}): EmailTemplate => ({
   subject: "Hello {{childFirstName}}",
   bodyHtml: "<p>Hi</p>",
   description: null,
+  isAutomatic: false,
+  sentCount: 0,
   createdAt: "2030-01-01T00:00:00.000Z",
   updatedAt: "2030-01-01T00:00:00.000Z",
   ...overrides,

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Eye, Mail, Pencil, Plus, Settings2 } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -106,9 +107,17 @@ export function EmailTemplatesPage({ initialTemplates, canManage }: Props) {
                 key={template.id}
                 className="flex flex-col rounded-lg border bg-card p-5 shadow-sm"
               >
-                <h3 className="text-[15px] font-semibold leading-tight">
-                  {template.name}
-                </h3>
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="text-[15px] font-semibold leading-tight">
+                    {template.name}
+                  </h3>
+                  <Badge
+                    variant={template.isAutomatic ? "accent" : "slate"}
+                    className="shrink-0"
+                  >
+                    {template.isAutomatic ? t("automatic") : t("manual")}
+                  </Badge>
+                </div>
                 <p className="mt-1.5 text-xs text-muted-foreground">
                   <span className="font-medium">{t("subject")}:</span>{" "}
                   <span>{template.subject}</span>
@@ -122,6 +131,8 @@ export function EmailTemplatesPage({ initialTemplates, canManage }: Props) {
                   <span className="flex-1 truncate text-xs text-muted-foreground">
                     {t("lastEdited")}:{" "}
                     {new Date(template.updatedAt).toLocaleDateString()}
+                    {template.sentCount > 0 &&
+                      ` · ${t("sentCount", { count: template.sentCount })}`}
                   </span>
                   <Button
                     variant="ghost"

@@ -12,6 +12,8 @@ export type EmailTemplate = {
   subject: string;
   bodyHtml: string;
   description: string | null;
+  isAutomatic: boolean;
+  sentCount: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -25,6 +27,8 @@ const Document = gql`
       subject
       bodyHtml
       description
+      isAutomatic
+      sentCount
       createdAt
       updatedAt
     }

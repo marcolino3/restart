@@ -20,6 +20,7 @@ import {
 import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { EditorFormField } from "@/components/form/form-fields/EditorFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
@@ -36,6 +37,7 @@ const Schema = z.object({
   subject: z.string().min(1).max(300),
   bodyHtml: z.string().min(1),
   description: z.string().max(1000).optional(),
+  isAutomatic: z.boolean(),
 });
 
 type FormValues = z.infer<typeof Schema>;
@@ -64,6 +66,7 @@ export function EmailTemplateDialog({
       subject: initial?.subject ?? "",
       bodyHtml: initial?.bodyHtml ?? "",
       description: initial?.description ?? "",
+      isAutomatic: initial?.isAutomatic ?? false,
     },
   });
 
@@ -156,6 +159,21 @@ export function EmailTemplateDialog({
               namespace="EmailTemplates"
               placeholder={t("descriptionPlaceholder")}
             />
+
+            <div className="flex items-center justify-between gap-3 rounded-md border p-3">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-medium">
+                  {t("isAutomaticLabel")}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {t("isAutomaticHint")}
+                </p>
+              </div>
+              <Switch
+                checked={form.watch("isAutomatic")}
+                onCheckedChange={(v) => form.setValue("isAutomatic", v)}
+              />
+            </div>
 
             <DialogFooter>
               <Button
