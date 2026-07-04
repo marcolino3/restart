@@ -132,6 +132,8 @@ const PERMISSION_CATALOG: Array<{
     code: PermissionCode.RETENTION_MANAGE,
     name: 'Aufbewahrungsfristen verwalten',
   },
+  { code: PermissionCode.DATA_BREACH_READ, name: 'Datenpannen lesen' },
+  { code: PermissionCode.DATA_BREACH_MANAGE, name: 'Datenpannen bearbeiten' },
 ];
 
 export async function seedPermissionCatalog(manager: EntityManager) {
