@@ -42,15 +42,13 @@ export const ROUTES = {
 
     // Teams
     teams: (locale: string) => `/${locale}/admin/teams`,
-    teamsDetail: (locale: string, id: string) =>
-      `/${locale}/admin/teams/${id}`,
+    teamsDetail: (locale: string, id: string) => `/${locale}/admin/teams/${id}`,
 
     // Projects (project management / boards)
     projects: (locale: string) => `/${locale}/admin/projects`,
     projectsBoard: (locale: string, id: string) =>
       `/${locale}/admin/projects/${id}`,
-    projectTemplates: (locale: string) =>
-      `/${locale}/admin/projects/templates`,
+    projectTemplates: (locale: string) => `/${locale}/admin/projects/templates`,
     myTasks: (locale: string) => `/${locale}/admin/my-tasks`,
 
     // Meeting protocols
@@ -97,10 +95,13 @@ export const ROUTES = {
 
     // Admissions Kanban
     admissions: (locale: string) => `/${locale}/admin/admissions`,
-    admissionsKanban: (locale: string) =>
-      `/${locale}/admin/admissions/kanban`,
+    admissionsKanban: (locale: string) => `/${locale}/admin/admissions/kanban`,
     admissionsReminders: (locale: string) =>
       `/${locale}/admin/admissions/reminders`,
+    admissionsRejected: (locale: string) =>
+      `/${locale}/admin/admissions/rejected`,
+    admissionsEmailTemplates: (locale: string) =>
+      `/${locale}/admin/admissions/email-templates`,
 
     // Absence Categories (HR)
     absenceCategories: (locale: string) =>

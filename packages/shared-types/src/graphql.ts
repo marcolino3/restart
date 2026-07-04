@@ -4176,6 +4176,10 @@ export enum SystemRole {
 
 export type Task = {
   __typename?: 'Task';
+  admissionApplication?: Maybe<AdmissionApplication>;
+  admissionApplicationId?: Maybe<Scalars['ID']['output']>;
+  admissionReminder?: Maybe<AdmissionReminder>;
+  admissionReminderId?: Maybe<Scalars['ID']['output']>;
   assignees?: Maybe<Array<TaskAssignee>>;
   createdAt: Scalars['DateTime']['output'];
   createdBy?: Maybe<Membership>;

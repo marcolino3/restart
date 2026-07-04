@@ -37,6 +37,7 @@ import { AdmissionRemindersBlock } from "./AdmissionRemindersBlock";
 import { AdmissionEmailHistory } from "./AdmissionEmailHistory";
 import { RejectApplicationDialog } from "./RejectApplicationDialog";
 import { SendEmailDialog, type SendableTemplate } from "./SendEmailDialog";
+import type { ReminderMember } from "./ReminderForm";
 
 interface Props {
   detail: AdmissionApplicationDetail;
@@ -46,6 +47,8 @@ interface Props {
   initialReminders: AdmissionReminder[];
   initialEmails: AdmissionEmail[];
   emailTemplates: SendableTemplate[];
+  /** Org memberships for reminder assignee pickers. */
+  members: ReminderMember[];
   canEdit: boolean;
   canEnroll: boolean;
   canSendEmail: boolean;
@@ -60,6 +63,7 @@ export function AdmissionDetailPage({
   initialReminders,
   initialEmails,
   emailTemplates,
+  members,
   canEdit,
   canSendEmail,
   canReject,
@@ -185,7 +189,8 @@ export function AdmissionDetailPage({
               </div>
               <div className="mt-0.5 text-xs text-muted-foreground">
                 {birthYear ? `${t("bornAbbr")} ${birthYear}` : "—"}
-                {detail.childGender && ` · ${genderLabel(detail.childGender, t)}`}
+                {detail.childGender &&
+                  ` · ${genderLabel(detail.childGender, t)}`}
               </div>
             </div>
           </div>
@@ -195,6 +200,8 @@ export function AdmissionDetailPage({
             reminders={reminders}
             canEdit={canEdit}
             onChanged={refreshReminders}
+            members={members}
+            childName={childName}
           />
 
           <DataCard title={t("tabOverview")}>
@@ -211,7 +218,10 @@ export function AdmissionDetailPage({
               label={t("desiredEnrollmentDate")}
               value={detail.desiredEnrollmentDate}
             />
-            <DataRow label={t("source")} value={sourceLabel(detail.source, t)} />
+            <DataRow
+              label={t("source")}
+              value={sourceLabel(detail.source, t)}
+            />
             <DataRow
               label={t("childDateOfBirth")}
               value={detail.childDateOfBirth}
@@ -298,6 +308,8 @@ export function AdmissionDetailPage({
                 <ActivityComposer
                   applicationId={detail.id}
                   onSaved={refreshActivities}
+                  members={members}
+                  onReminderSaved={refreshReminders}
                 />
               )}
               <ActivityTimeline
@@ -370,8 +382,7 @@ export function AdmissionDetailPage({
                       </div>
                       {l.action === "STAGE_CHANGED" && (
                         <div className="text-muted-foreground">
-                          {l.fromStage?.name ?? "—"} →{" "}
-                          {l.toStage?.name ?? "—"}
+                          {l.fromStage?.name ?? "—"} → {l.toStage?.name ?? "—"}
                         </div>
                       )}
                       {l.actorName && (
@@ -507,7 +518,9 @@ function ContactCardLarge({ contact }: { contact: AdmissionDetailContact }) {
         </div>
       </div>
       {contact.occupation && (
-        <div className="text-xs text-muted-foreground">{contact.occupation}</div>
+        <div className="text-xs text-muted-foreground">
+          {contact.occupation}
+        </div>
       )}
       {contact.email && (
         <a
@@ -533,10 +546,7 @@ function ContactCardLarge({ contact }: { contact: AdmissionDetailContact }) {
   );
 }
 
-function sourceLabel(
-  source: string,
-  t: (key: string) => string,
-): string {
+function sourceLabel(source: string, t: (key: string) => string): string {
   switch (source) {
     case "MANUAL":
       return t("sourceManual");
@@ -553,10 +563,7 @@ function sourceLabel(
   }
 }
 
-function genderLabel(
-  gender: string,
-  t: (key: string) => string,
-): string {
+function genderLabel(gender: string, t: (key: string) => string): string {
   switch (gender) {
     case "MALE":
       return t("genderMale");

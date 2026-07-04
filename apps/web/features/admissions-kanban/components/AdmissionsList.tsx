@@ -56,12 +56,14 @@ const SOURCE_ICON: Record<
   OTHER: null,
 };
 
-const GENDER_GLYPH: Record<NonNullable<KanbanApplication["childGender"]>, string> =
-  {
-    MALE: "♂",
-    FEMALE: "♀",
-    OTHER: "⚧",
-  };
+const GENDER_GLYPH: Record<
+  NonNullable<KanbanApplication["childGender"]>,
+  string
+> = {
+  MALE: "♂",
+  FEMALE: "♀",
+  OTHER: "⚧",
+};
 
 export function AdmissionsList({
   stages,
@@ -185,8 +187,7 @@ export function AdmissionsList({
                   aria-hidden
                   className="inline-block h-2 w-2 shrink-0 rounded-full ring-1 ring-border"
                   style={{
-                    backgroundColor:
-                      a.desiredGradeLevelColor ?? "var(--muted)",
+                    backgroundColor: a.desiredGradeLevelColor ?? "var(--muted)",
                   }}
                 />
                 <span className="truncate">{a.desiredGradeLevelName}</span>
@@ -236,7 +237,9 @@ export function AdmissionsList({
       case "status":
         return (
           <TableCell key={key} className="text-sm">
-            <Badge variant="outline">{t(statusKey(a.status))}</Badge>
+            <Badge variant={statusVariant(a.status)}>
+              {t(statusKey(a.status))}
+            </Badge>
           </TableCell>
         );
       case "days": {
@@ -255,9 +258,7 @@ export function AdmissionsList({
       case "contact":
         return (
           <TableCell key={key} className="text-sm">
-            <span className="truncate">
-              {a.family.contactNames[0] ?? "—"}
-            </span>
+            <span className="truncate">{a.family.contactNames[0] ?? "—"}</span>
           </TableCell>
         );
       case "reminders":
@@ -266,10 +267,10 @@ export function AdmissionsList({
             {a.openRemindersCount > 0 ? (
               <span
                 className={cn(
-                  "inline-flex items-center gap-0.5 rounded px-1 text-xs font-medium",
+                  "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold",
                   a.overdueRemindersCount > 0
-                    ? "text-destructive"
-                    : "text-amber-700",
+                    ? "bg-status-rose text-status-rose-foreground"
+                    : "bg-status-amber text-status-amber-foreground",
                 )}
               >
                 {a.overdueRemindersCount > 0 ? (
@@ -410,6 +411,23 @@ function statusKey(status: KanbanApplication["status"]): string {
     case "ARCHIVED":
     default:
       return "statusArchived";
+  }
+}
+
+/** Theme-aware status pill colour per application status. */
+function statusVariant(
+  status: KanbanApplication["status"],
+): "green" | "rose" | "accent" | "slate" {
+  switch (status) {
+    case "ACTIVE":
+      return "green";
+    case "REJECTED":
+      return "rose";
+    case "ENROLLED":
+      return "accent";
+    case "ARCHIVED":
+    default:
+      return "slate";
   }
 }
 

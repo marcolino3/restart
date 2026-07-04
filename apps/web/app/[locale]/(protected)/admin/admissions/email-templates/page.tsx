@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 import { getEmailTemplatesAction } from "@/features/email-templates/actions/get-email-templates.action";
 import { EmailTemplatesPage } from "@/features/email-templates/components/EmailTemplatesPage";
+import { AdmissionsSubNav } from "@/features/admissions-kanban/components/AdmissionsSubNav";
 
 const has = (permissions: string[], code: string, isSuperAdmin: boolean) =>
   isSuperAdmin || permissions.includes(code);
@@ -15,7 +16,9 @@ export default async function EmailTemplatesRoute() {
 
   if (!user?.success) {
     return (
-      <div className="p-6 text-sm text-destructive">{t("notAuthenticated")}</div>
+      <div className="p-6 text-sm text-destructive">
+        {t("notAuthenticated")}
+      </div>
     );
   }
 
@@ -41,9 +44,14 @@ export default async function EmailTemplatesRoute() {
   }
 
   return (
-    <EmailTemplatesPage
-      initialTemplates={templates.data}
-      canManage={canManage}
-    />
+    <div>
+      <div className="px-4 pt-4">
+        <AdmissionsSubNav active="templates" />
+      </div>
+      <EmailTemplatesPage
+        initialTemplates={templates.data}
+        canManage={canManage}
+      />
+    </div>
   );
 }

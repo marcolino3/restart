@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactNode } from "react";
 
 import { RemindersListPage } from "./RemindersListPage";
 import type { OrgAdmissionReminder } from "../actions/get-org-admission-reminders.action";
@@ -20,6 +21,14 @@ vi.mock("next-intl", () => ({
 }));
 vi.mock("@/i18n/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => "/admin/admissions/reminders",
+  Link: ({
+    children,
+    ...props
+  }: {
+    children: ReactNode;
+    [key: string]: unknown;
+  }) => <a {...props}>{children}</a>,
 }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 
@@ -53,13 +62,11 @@ describe("RemindersListPage", () => {
 
   it("refetches when returning to the initial filter after viewing another tab (regression)", async () => {
     const user = userEvent.setup();
-    getOrgAdmissionRemindersAction.mockImplementation(
-      (filter: string) => {
-        const data =
-          filter === "COMPLETED" ? [completedReminder] : [openReminder];
-        return Promise.resolve({ success: true, data });
-      },
-    );
+    getOrgAdmissionRemindersAction.mockImplementation((filter: string) => {
+      const data =
+        filter === "COMPLETED" ? [completedReminder] : [openReminder];
+      return Promise.resolve({ success: true, data });
+    });
 
     render(
       <RemindersListPage
@@ -74,11 +81,15 @@ describe("RemindersListPage", () => {
     expect(getOrgAdmissionRemindersAction).not.toHaveBeenCalled();
 
     // Switch to COMPLETED → refetch shows the completed reminder.
-    await user.click(screen.getByRole("tab", { name: "remindersFilterCompleted" }));
+    await user.click(
+      screen.getByRole("tab", { name: "remindersFilterCompleted" }),
+    );
     await waitFor(() =>
       expect(screen.getByText("Completed reminder")).toBeInTheDocument(),
     );
-    expect(getOrgAdmissionRemindersAction).toHaveBeenLastCalledWith("COMPLETED");
+    expect(getOrgAdmissionRemindersAction).toHaveBeenLastCalledWith(
+      "COMPLETED",
+    );
 
     // Switch back to OPEN → must refetch and show open reminders again,
     // not the stale completed data from the previous tab.

@@ -25,6 +25,12 @@ const Document = gql`
         id
         title
       }
+      admissionApplicationId
+      admissionApplication {
+        id
+        childFirstName
+        childLastName
+      }
       assignees {
         id
         membershipId

@@ -1,11 +1,27 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, IsNull, LessThan, Not, Repository } from 'typeorm';
+import {
+  Between,
+  DataSource,
+  IsNull,
+  LessThan,
+  Not,
+  Repository,
+} from 'typeorm';
+import { Task } from '@/project-management/tasks/entities/task.entity';
+import { TaskAssignee } from '@/project-management/tasks/entities/task-assignee.entity';
+import { TaskPriority } from '@/project-management/tasks/entities/task-priority.enum';
+import { TaskStatus } from '@/project-management/tasks/entities/task-status.enum';
 import { CreateAdmissionReminderInput } from './dto/create-admission-reminder.input';
 import { UpdateAdmissionReminderInput } from './dto/update-admission-reminder.input';
 import { AdmissionApplication } from './entities/admission-application.entity';
 import { AdmissionReminder } from './entities/admission-reminder.entity';
 import { AdmissionReminderFilter } from './enums/admission-reminder-filter.enum';
+
+/** UTC date-only string (YYYY-MM-DD) for a task's `dueDate`. */
+function toDateOnly(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
 
 @Injectable()
 export class AdmissionRemindersService {
@@ -14,6 +30,9 @@ export class AdmissionRemindersService {
     private readonly repo: Repository<AdmissionReminder>,
     @InjectRepository(AdmissionApplication)
     private readonly applicationsRepo: Repository<AdmissionApplication>,
+    @InjectRepository(Task)
+    private readonly tasksRepo: Repository<Task>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async findByApplication(
@@ -110,7 +129,9 @@ export class AdmissionRemindersService {
         input.assignedToMembershipId ?? createdByMembershipId ?? null,
       createdByMembershipId: createdByMembershipId ?? null,
     });
-    return this.repo.save(entity);
+    const saved = await this.repo.save(entity);
+    await this.createTaskForReminder(saved);
+    return saved;
   }
 
   async update(
@@ -131,7 +152,9 @@ export class AdmissionRemindersService {
     if (input.assignedToMembershipId !== undefined) {
       existing.assignedToMembershipId = input.assignedToMembershipId ?? null;
     }
-    return this.repo.save(existing);
+    const saved = await this.repo.save(existing);
+    await this.syncTaskForReminder(saved);
+    return saved;
   }
 
   async complete(
@@ -147,6 +170,11 @@ export class AdmissionRemindersService {
       reminder.completedAt = new Date();
       reminder.completedByMembershipId = actorMembershipId ?? null;
       await this.repo.save(reminder);
+      await this.setTaskStatusForReminder(
+        reminder.id,
+        organizationId,
+        TaskStatus.DONE,
+      );
     }
     return reminder;
   }
@@ -163,6 +191,11 @@ export class AdmissionRemindersService {
       reminder.completedAt = null;
       reminder.completedByMembershipId = null;
       await this.repo.save(reminder);
+      await this.setTaskStatusForReminder(
+        reminder.id,
+        organizationId,
+        TaskStatus.OPEN,
+      );
     }
     return reminder;
   }
@@ -173,8 +206,106 @@ export class AdmissionRemindersService {
       select: ['id'],
     });
     if (!existing) throw new NotFoundException(`Reminder ${id} not found`);
+    // Soft-delete the linked task first — the FK is ON DELETE SET NULL, so after
+    // the reminder is gone we could no longer find its task by reminder id.
+    await this.removeTaskForReminder(id, organizationId);
     await this.repo.delete({ id, organizationId });
     return true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Reminder → Task mirroring. Every admission reminder is also recorded as a
+  // personal task for its assignee (source: this reminder + its application), so
+  // it shows up under "My Tasks". Tasks are created/updated directly on the repo
+  // (matching the protocol-task pattern) — no dependency on TasksModule.
+  // ---------------------------------------------------------------------------
+
+  private async createTaskForReminder(
+    reminder: AdmissionReminder,
+  ): Promise<void> {
+    const assigneeId = reminder.assignedToMembershipId;
+    // A task with no assignee would be orphaned (never appears in anyone's list).
+    if (!assigneeId) return;
+    await this.dataSource.transaction(async (manager) => {
+      const task = await manager.getRepository(Task).save(
+        manager.getRepository(Task).create({
+          title: reminder.title,
+          description: reminder.note ?? null,
+          status: reminder.completedAt ? TaskStatus.DONE : TaskStatus.OPEN,
+          priority: TaskPriority.MEDIUM,
+          dueDate: toDateOnly(reminder.dueAt),
+          sortOrder: 0,
+          organizationId: reminder.organizationId,
+          projectId: null,
+          createdByMembershipId: reminder.createdByMembershipId ?? null,
+          admissionReminderId: reminder.id,
+          admissionApplicationId: reminder.applicationId,
+        }),
+      );
+      await manager.getRepository(TaskAssignee).save(
+        manager.getRepository(TaskAssignee).create({
+          organizationId: reminder.organizationId,
+          taskId: task.id,
+          membershipId: assigneeId,
+        }),
+      );
+    });
+  }
+
+  /** Keep the linked task's title/note/due/assignee in sync after a reminder edit. */
+  private async syncTaskForReminder(
+    reminder: AdmissionReminder,
+  ): Promise<void> {
+    const task = await this.tasksRepo.findOne({
+      where: {
+        admissionReminderId: reminder.id,
+        organizationId: reminder.organizationId,
+        isActive: true,
+      },
+    });
+    if (!task) {
+      // No task yet (e.g. reminder previously had no assignee) — create one now.
+      await this.createTaskForReminder(reminder);
+      return;
+    }
+    await this.dataSource.transaction(async (manager) => {
+      task.title = reminder.title;
+      task.description = reminder.note ?? null;
+      task.dueDate = toDateOnly(reminder.dueAt);
+      task.status = reminder.completedAt ? TaskStatus.DONE : TaskStatus.OPEN;
+      await manager.getRepository(Task).save(task);
+      await manager.getRepository(TaskAssignee).delete({ taskId: task.id });
+      if (reminder.assignedToMembershipId) {
+        await manager.getRepository(TaskAssignee).save(
+          manager.getRepository(TaskAssignee).create({
+            organizationId: reminder.organizationId,
+            taskId: task.id,
+            membershipId: reminder.assignedToMembershipId,
+          }),
+        );
+      }
+    });
+  }
+
+  private async setTaskStatusForReminder(
+    reminderId: string,
+    organizationId: string,
+    status: TaskStatus,
+  ): Promise<void> {
+    await this.tasksRepo.update(
+      { admissionReminderId: reminderId, organizationId, isActive: true },
+      { status },
+    );
+  }
+
+  private async removeTaskForReminder(
+    reminderId: string,
+    organizationId: string,
+  ): Promise<void> {
+    await this.tasksRepo.update(
+      { admissionReminderId: reminderId, organizationId, isActive: true },
+      { isActive: false },
+    );
   }
 
   // Lightweight count per application — used by the kanban badge to avoid
