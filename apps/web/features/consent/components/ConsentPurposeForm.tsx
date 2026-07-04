@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 
+import { toSlug } from "@/lib/utils/to-slug";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
@@ -45,6 +47,15 @@ export function ConsentPurposeForm({ initial, submitting, onSubmit }: Props) {
     },
   });
 
+  // Auto-generate the slug from the name while creating, until the user edits
+  // the slug manually. When editing an existing purpose the slug is preserved.
+  const slugTouchedRef = useRef(!!initial?.slug);
+  const nameValue = form.watch("name");
+  useEffect(() => {
+    if (slugTouchedRef.current) return;
+    form.setValue("slug", toSlug(nameValue ?? ""), { shouldValidate: true });
+  }, [nameValue, form]);
+
   return (
     <Form {...form}>
       <form
@@ -53,7 +64,14 @@ export function ConsentPurposeForm({ initial, submitting, onSubmit }: Props) {
         noValidate
       >
         <InputFormField name="name" label="fieldName" namespace={NS} />
-        <InputFormField name="slug" label="fieldSlug" namespace={NS} />
+        <InputFormField
+          name="slug"
+          label="fieldSlug"
+          namespace={NS}
+          onChange={() => {
+            slugTouchedRef.current = true;
+          }}
+        />
         <TextareaFormField
           name="description"
           label="fieldDescription"
