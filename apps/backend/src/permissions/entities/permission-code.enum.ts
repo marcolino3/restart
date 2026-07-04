@@ -80,6 +80,9 @@ export enum PermissionCode {
 
   RETENTION_READ = 'RETENTION_READ',
   RETENTION_MANAGE = 'RETENTION_MANAGE',
+
+  DATA_BREACH_READ = 'DATA_BREACH_READ',
+  DATA_BREACH_MANAGE = 'DATA_BREACH_MANAGE',
 }
 
 registerEnumType(PermissionCode, {

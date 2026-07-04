@@ -10,12 +10,15 @@ import { getDataRequestsAction } from "@/features/data-requests/actions/get-data
 import { DataRequestsList } from "@/features/data-requests/components/DataRequestsList";
 import { getRetentionPoliciesAction } from "@/features/retention/actions/get-retention-policies.action";
 import { RetentionPoliciesList } from "@/features/retention/components/RetentionPoliciesList";
+import { getDataBreachesAction } from "@/features/data-breaches/actions/get-data-breaches.action";
+import { DataBreachesList } from "@/features/data-breaches/components/DataBreachesList";
 
 const DataProtectionPage = async () => {
   const locale = await getLocale();
   const t = await getTranslations("ConsentManagement");
   const tR = await getTranslations("DataRequests");
   const tRet = await getTranslations("RetentionSettings");
+  const tB = await getTranslations("DataBreaches");
   const userRes = await getCurrentUserAction();
 
   if (!userRes?.success) {
@@ -28,6 +31,7 @@ const DataProtectionPage = async () => {
   const purposesRes = await getConsentPurposesAction();
   const requestsRes = await getDataRequestsAction();
   const retentionRes = await getRetentionPoliciesAction();
+  const breachesRes = await getDataBreachesAction();
 
   return (
     <div className="p-4">
@@ -46,6 +50,7 @@ const DataProtectionPage = async () => {
           <TabsTrigger value="consent">{t("tabConsent")}</TabsTrigger>
           <TabsTrigger value="requests">{tR("tab")}</TabsTrigger>
           <TabsTrigger value="retention">{tRet("tab")}</TabsTrigger>
+          <TabsTrigger value="breaches">{tB("tab")}</TabsTrigger>
           <TabsTrigger value="overview">{t("tabOverview")}</TabsTrigger>
         </TabsList>
 
@@ -59,6 +64,10 @@ const DataProtectionPage = async () => {
 
         <TabsContent value="retention">
           <RetentionPoliciesList initial={retentionRes.data} />
+        </TabsContent>
+
+        <TabsContent value="breaches">
+          <DataBreachesList initial={breachesRes.data} />
         </TabsContent>
 
         <TabsContent value="overview">

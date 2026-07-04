@@ -785,6 +785,16 @@ export type CreateCurriculumNodeInput = {
   translations: Array<CurriculumNodeTranslationInput>;
 };
 
+export type CreateDataBreachInput = {
+  affectedCount?: InputMaybe<Scalars['Int']['input']>;
+  affectedScope?: InputMaybe<Scalars['String']['input']>;
+  description: Scalars['String']['input'];
+  detectedAt?: InputMaybe<Scalars['DateTime']['input']>;
+  notes?: InputMaybe<Scalars['String']['input']>;
+  riskLevel?: InputMaybe<DataBreachRiskLevel>;
+  title: Scalars['String']['input'];
+};
+
 export type CreateDataSubjectRequestInput = {
   contactEmail?: InputMaybe<Scalars['String']['input']>;
   notes?: InputMaybe<Scalars['String']['input']>;
@@ -1252,6 +1262,51 @@ export type CurriculumTranslationInput = {
   locale: CurriculumLocale;
   name: Scalars['String']['input'];
 };
+
+export type DataBreachIncident = {
+  __typename?: 'DataBreachIncident';
+  affectedCount?: Maybe<Scalars['Int']['output']>;
+  affectedScope?: Maybe<Scalars['String']['output']>;
+  assigneeMembership?: Maybe<Membership>;
+  assigneeMembershipId?: Maybe<Scalars['ID']['output']>;
+  authorityNotificationDueAt: Scalars['DateTime']['output'];
+  authorityNotifiedAt?: Maybe<Scalars['DateTime']['output']>;
+  closedAt?: Maybe<Scalars['DateTime']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  createdByMembership?: Maybe<Membership>;
+  createdByMembershipId?: Maybe<Scalars['ID']['output']>;
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  description: Scalars['String']['output'];
+  detectedAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  measures?: Maybe<Scalars['String']['output']>;
+  notes?: Maybe<Scalars['String']['output']>;
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['String']['output'];
+  riskLevel: DataBreachRiskLevel;
+  status: DataBreachStatus;
+  subjectsNotifiedAt?: Maybe<Scalars['DateTime']['output']>;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+/** Risk to affected data subjects */
+export enum DataBreachRiskLevel {
+  High = 'HIGH',
+  Low = 'LOW',
+  Medium = 'MEDIUM'
+}
+
+/** Lifecycle status of a data-breach incident */
+export enum DataBreachStatus {
+  Closed = 'CLOSED',
+  Contained = 'CONTAINED',
+  Investigating = 'INVESTIGATING',
+  Open = 'OPEN'
+}
 
 export type DataSubjectRequest = {
   __typename?: 'DataSubjectRequest';
@@ -2099,6 +2154,7 @@ export type Mutation = {
   createCurriculum: Curriculum;
   createCurriculumLevel: CurriculumLevel;
   createCurriculumNode: CurriculumNode;
+  createDataBreach: DataBreachIncident;
   createDataSubjectRequest: DataSubjectRequest;
   createEmailTemplate: EmailTemplate;
   createEmployee: Employee;
@@ -2220,6 +2276,7 @@ export type Mutation = {
   updateCurriculum: Curriculum;
   updateCurriculumLevel: CurriculumLevel;
   updateCurriculumNode: CurriculumNode;
+  updateDataBreach: DataBreachIncident;
   updateDataSubjectRequest: DataSubjectRequest;
   updateEmailTemplate: EmailTemplate;
   updateEmployee: Employee;
@@ -2406,6 +2463,11 @@ export type MutationCreateCurriculumLevelArgs = {
 
 export type MutationCreateCurriculumNodeArgs = {
   input: CreateCurriculumNodeInput;
+};
+
+
+export type MutationCreateDataBreachArgs = {
+  input: CreateDataBreachInput;
 };
 
 
@@ -3013,6 +3075,11 @@ export type MutationUpdateCurriculumNodeArgs = {
 };
 
 
+export type MutationUpdateDataBreachArgs = {
+  input: UpdateDataBreachInput;
+};
+
+
 export type MutationUpdateDataSubjectRequestArgs = {
   input: UpdateDataSubjectRequestInput;
 };
@@ -3331,6 +3398,8 @@ export enum PermissionCode {
   CurriculumLevelRead = 'CURRICULUM_LEVEL_READ',
   CurriculumManage = 'CURRICULUM_MANAGE',
   CurriculumRead = 'CURRICULUM_READ',
+  DataBreachManage = 'DATA_BREACH_MANAGE',
+  DataBreachRead = 'DATA_BREACH_READ',
   DataRequestManage = 'DATA_REQUEST_MANAGE',
   DataRequestRead = 'DATA_REQUEST_READ',
   EmployeeAbsenceCategoryManage = 'EMPLOYEE_ABSENCE_CATEGORY_MANAGE',
@@ -3644,6 +3713,8 @@ export type Query = {
   curriculumLevels: Array<CurriculumLevel>;
   curriculumNodeById: CurriculumNode;
   curriculumNodes: Array<CurriculumNode>;
+  dataBreachById: DataBreachIncident;
+  dataBreaches: Array<DataBreachIncident>;
   dataSubjectRequestById: DataSubjectRequest;
   dataSubjectRequests: Array<DataSubjectRequest>;
   emailTemplates: Array<EmailTemplate>;
@@ -3914,6 +3985,16 @@ export type QueryCurriculumNodesArgs = {
   curriculumId: Scalars['ID']['input'];
   includeArchived?: InputMaybe<Scalars['Boolean']['input']>;
   levelId: Scalars['ID']['input'];
+};
+
+
+export type QueryDataBreachByIdArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryDataBreachesArgs = {
+  status?: InputMaybe<DataBreachStatus>;
 };
 
 
@@ -4925,6 +5006,22 @@ export type UpdateCurriculumNodeInput = {
   parentId?: InputMaybe<Scalars['ID']['input']>;
   position?: InputMaybe<Scalars['Int']['input']>;
   translations?: InputMaybe<Array<CurriculumNodeTranslationInput>>;
+};
+
+export type UpdateDataBreachInput = {
+  affectedCount?: InputMaybe<Scalars['Int']['input']>;
+  affectedScope?: InputMaybe<Scalars['String']['input']>;
+  assigneeMembershipId?: InputMaybe<Scalars['ID']['input']>;
+  authorityNotified?: InputMaybe<Scalars['Boolean']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  detectedAt?: InputMaybe<Scalars['DateTime']['input']>;
+  id: Scalars['ID']['input'];
+  measures?: InputMaybe<Scalars['String']['input']>;
+  notes?: InputMaybe<Scalars['String']['input']>;
+  riskLevel?: InputMaybe<DataBreachRiskLevel>;
+  status?: InputMaybe<DataBreachStatus>;
+  subjectsNotified?: InputMaybe<Scalars['Boolean']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateDataSubjectRequestInput = {
@@ -6009,6 +6106,27 @@ export type UpsertCurriculumNodeTranslationMutationVariables = Exact<{
 
 
 export type UpsertCurriculumNodeTranslationMutation = { __typename?: 'Mutation', upsertCurriculumNodeTranslation: { __typename?: 'CurriculumNodeTranslation', locale: CurriculumLocale, name: string, notes?: string | null } };
+
+export type CreateDataBreachMutationVariables = Exact<{
+  input: CreateDataBreachInput;
+}>;
+
+
+export type CreateDataBreachMutation = { __typename?: 'Mutation', createDataBreach: { __typename?: 'DataBreachIncident', id: string } };
+
+export type DataBreachesQueryVariables = Exact<{
+  status?: InputMaybe<DataBreachStatus>;
+}>;
+
+
+export type DataBreachesQuery = { __typename?: 'Query', dataBreaches: Array<{ __typename?: 'DataBreachIncident', id: string, title: string, description: string, detectedAt: any, status: DataBreachStatus, riskLevel: DataBreachRiskLevel, affectedScope?: string | null, affectedCount?: number | null, authorityNotifiedAt?: any | null, subjectsNotifiedAt?: any | null, measures?: string | null, closedAt?: any | null, notes?: string | null, authorityNotificationDueAt: any, assigneeMembership?: { __typename?: 'Membership', id: string, user?: { __typename?: 'User', firstName: string, lastName: string } | null } | null }> };
+
+export type UpdateDataBreachMutationVariables = Exact<{
+  input: UpdateDataBreachInput;
+}>;
+
+
+export type UpdateDataBreachMutation = { __typename?: 'Mutation', updateDataBreach: { __typename?: 'DataBreachIncident', id: string, status: DataBreachStatus } };
 
 export type CreateDataSubjectRequestMutationVariables = Exact<{
   input: CreateDataSubjectRequestInput;
@@ -7265,6 +7383,9 @@ export const UpdateCurriculumDocument = {"kind":"Document","definitions":[{"kind
 export const UpdateLessonClassificationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateLessonClassification"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateCurriculumNodeInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateCurriculumNode"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"lessonType"}},{"kind":"Field","name":{"kind":"Name","value":"lessonScale"}}]}}]}}]} as unknown as DocumentNode<UpdateLessonClassificationMutation, UpdateLessonClassificationMutationVariables>;
 export const UpsertCurriculumLevelTranslationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpsertCurriculumLevelTranslation"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpsertCurriculumLevelTranslationInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"upsertCurriculumLevelTranslation"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<UpsertCurriculumLevelTranslationMutation, UpsertCurriculumLevelTranslationMutationVariables>;
 export const UpsertCurriculumNodeTranslationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpsertCurriculumNodeTranslation"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpsertCurriculumNodeTranslationInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"upsertCurriculumNodeTranslation"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}}]}}]}}]} as unknown as DocumentNode<UpsertCurriculumNodeTranslationMutation, UpsertCurriculumNodeTranslationMutationVariables>;
+export const CreateDataBreachDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateDataBreach"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateDataBreachInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createDataBreach"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateDataBreachMutation, CreateDataBreachMutationVariables>;
+export const DataBreachesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"DataBreaches"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"status"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"DataBreachStatus"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"dataBreaches"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"status"},"value":{"kind":"Variable","name":{"kind":"Name","value":"status"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"detectedAt"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"riskLevel"}},{"kind":"Field","name":{"kind":"Name","value":"affectedScope"}},{"kind":"Field","name":{"kind":"Name","value":"affectedCount"}},{"kind":"Field","name":{"kind":"Name","value":"authorityNotifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"subjectsNotifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"measures"}},{"kind":"Field","name":{"kind":"Name","value":"closedAt"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"authorityNotificationDueAt"}},{"kind":"Field","name":{"kind":"Name","value":"assigneeMembership"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}}]}}]}}]}}]} as unknown as DocumentNode<DataBreachesQuery, DataBreachesQueryVariables>;
+export const UpdateDataBreachDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateDataBreach"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateDataBreachInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateDataBreach"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode<UpdateDataBreachMutation, UpdateDataBreachMutationVariables>;
 export const CreateDataSubjectRequestDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateDataSubjectRequest"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateDataSubjectRequestInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createDataSubjectRequest"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateDataSubjectRequestMutation, CreateDataSubjectRequestMutationVariables>;
 export const DataSubjectRequestsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"DataSubjectRequests"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"status"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"DataSubjectRequestStatus"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"dataSubjectRequests"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"status"},"value":{"kind":"Variable","name":{"kind":"Name","value":"status"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"subjectType"}},{"kind":"Field","name":{"kind":"Name","value":"subjectName"}},{"kind":"Field","name":{"kind":"Name","value":"contactEmail"}},{"kind":"Field","name":{"kind":"Name","value":"receivedAt"}},{"kind":"Field","name":{"kind":"Name","value":"dueDate"}},{"kind":"Field","name":{"kind":"Name","value":"resolvedAt"}},{"kind":"Field","name":{"kind":"Name","value":"resolutionNote"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"assigneeMembershipId"}},{"kind":"Field","name":{"kind":"Name","value":"assigneeMembership"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}}]}}]}}]}}]} as unknown as DocumentNode<DataSubjectRequestsQuery, DataSubjectRequestsQueryVariables>;
 export const UpdateDataSubjectRequestDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateDataSubjectRequest"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateDataSubjectRequestInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateDataSubjectRequest"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode<UpdateDataSubjectRequestMutation, UpdateDataSubjectRequestMutationVariables>;
