@@ -182,6 +182,7 @@
     "rejectedListTitle": "Rejections",
     "rejectedListSubtitle": "{count} rejected applications",
     "rejectedListEmpty": "No rejections yet.",
+    "rejectedSearchPlaceholder": "Search child, family or reason …",
     "rejectedAtLabel": "Date",
     "notAuthorized": "You do not have access to this page.",
     "ageYears": "{count} yrs",

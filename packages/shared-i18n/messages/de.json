@@ -182,6 +182,7 @@
     "rejectedListTitle": "Absagen",
     "rejectedListSubtitle": "{count} abgelehnte Bewerbungen",
     "rejectedListEmpty": "Noch keine Absagen.",
+    "rejectedSearchPlaceholder": "Kind, Familie oder Grund suchen …",
     "rejectedAtLabel": "Datum",
     "notAuthorized": "Du hast keinen Zugriff auf diese Seite.",
     "ageYears": "{count} J.",
