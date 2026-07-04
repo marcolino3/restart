@@ -25,7 +25,6 @@ import EmployeeNotesFeed from "@/features/employee-notes/components/EmployeeNote
 import EmployeeNotesTimeline from "@/features/employee-notes/components/EmployeeNotesTimeline";
 import CreateEmployeeNoteInline from "@/features/employee-notes/components/CreateEmployeeNoteInline";
 import EmployeeContractsTab from "./EmployeeContractsTab";
-import EmployeeHistoryFeed from "./EmployeeHistoryFeed";
 
 interface EmployeeViewPageProps {
   employee: EmployeeDetail;
