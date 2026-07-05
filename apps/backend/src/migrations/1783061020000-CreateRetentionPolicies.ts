@@ -8,9 +8,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Each enum column gets its OWN pg type. Registers the RETENTION_* permission
  * codes; catalog + role rows are seeded in the next migration (55P04).
  */
-export class CreateRetentionPolicies1783061020000
-  implements MigrationInterface
-{
+export class CreateRetentionPolicies1783061020000 implements MigrationInterface {
   name = 'CreateRetentionPolicies1783061020000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

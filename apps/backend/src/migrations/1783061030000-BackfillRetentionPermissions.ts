@@ -9,9 +9,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  *   RETENTION_READ   → ORG_OWNER, ORG_ADMIN, HR_MANAGER, OFFICE
  *   RETENTION_MANAGE → ORG_OWNER, ORG_ADMIN, OFFICE
  */
-export class BackfillRetentionPermissions1783061030000
-  implements MigrationInterface
-{
+export class BackfillRetentionPermissions1783061030000 implements MigrationInterface {
   name = 'BackfillRetentionPermissions1783061030000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
