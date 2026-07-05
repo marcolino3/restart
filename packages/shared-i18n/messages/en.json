@@ -1,4 +1,45 @@
 {
+  "DataRequests": {
+    "pickADate": "Pick a date",
+    "tab": "Data-subject requests",
+    "listTitle": "Data-subject requests",
+    "listSubtitle": "Handle data-subject requests within the statutory deadline.",
+    "newRequest": "New request",
+    "noRequests": "No requests yet.",
+    "dueOn": "Due: {date}",
+    "save": "Save",
+    "fieldType": "Request type",
+    "fieldSubjectName": "Data subject",
+    "fieldSubjectType": "Category",
+    "fieldContactEmail": "Contact e-mail",
+    "fieldReceivedAt": "Received on",
+    "fieldNotes": "Notes",
+    "createdToast": "Request created",
+    "updatedToast": "Status updated",
+    "actionInProgress": "In progress",
+    "actionComplete": "Complete",
+    "actionReject": "Reject",
+    "type": {
+      "ACCESS": "Access",
+      "RECTIFICATION": "Rectification",
+      "ERASURE": "Erasure",
+      "PORTABILITY": "Portability",
+      "OBJECTION": "Objection",
+      "RESTRICTION": "Restriction"
+    },
+    "subject": {
+      "STUDENT": "Student",
+      "EMPLOYEE": "Employee",
+      "CONTACT_PERSON": "Contact person",
+      "OTHER": "Other"
+    },
+    "status": {
+      "NEW": "New",
+      "IN_PROGRESS": "In progress",
+      "COMPLETED": "Completed",
+      "REJECTED": "Rejected"
+    }
+  },
   "ConsentManagement": {
     "centerTitle": "Data Protection Center",
     "centerSubtitle": "Manage consents and data-subject rights across the organization",

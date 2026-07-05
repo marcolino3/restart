@@ -93,6 +93,9 @@ type Documents = {
     "\n  mutation UpdateLessonClassification($input: UpdateCurriculumNodeInput!) {\n    updateCurriculumNode(input: $input) {\n      id\n      lessonType\n      lessonScale\n    }\n  }\n": typeof types.UpdateLessonClassificationDocument,
     "\n  mutation UpsertCurriculumLevelTranslation(\n    $input: UpsertCurriculumLevelTranslationInput!\n  ) {\n    upsertCurriculumLevelTranslation(input: $input) {\n      locale\n      name\n    }\n  }\n": typeof types.UpsertCurriculumLevelTranslationDocument,
     "\n  mutation UpsertCurriculumNodeTranslation(\n    $input: UpsertCurriculumNodeTranslationInput!\n  ) {\n    upsertCurriculumNodeTranslation(input: $input) {\n      locale\n      name\n      notes\n    }\n  }\n": typeof types.UpsertCurriculumNodeTranslationDocument,
+    "\n  mutation CreateDataSubjectRequest($input: CreateDataSubjectRequestInput!) {\n    createDataSubjectRequest(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateDataSubjectRequestDocument,
+    "\n  query DataSubjectRequests($status: DataSubjectRequestStatus) {\n    dataSubjectRequests(status: $status) {\n      id\n      type\n      status\n      subjectType\n      subjectName\n      contactEmail\n      receivedAt\n      dueDate\n      resolvedAt\n      resolutionNote\n      notes\n      assigneeMembershipId\n      assigneeMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": typeof types.DataSubjectRequestsDocument,
+    "\n  mutation UpdateDataSubjectRequest($input: UpdateDataSubjectRequestInput!) {\n    updateDataSubjectRequest(input: $input) {\n      id\n      status\n    }\n  }\n": typeof types.UpdateDataSubjectRequestDocument,
     "\n  query EmailTemplates($category: EmailTemplateCategory) {\n    emailTemplates(category: $category) {\n      id\n      name\n      category\n      subject\n      bodyHtml\n      description\n      isAutomatic\n      sentCount\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.EmailTemplatesDocument,
     "\n  mutation CreateEmailTemplate($input: CreateEmailTemplateInput!) {\n    createEmailTemplate(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateEmailTemplateDocument,
     "\n  mutation UpdateEmailTemplate($input: UpdateEmailTemplateInput!) {\n    updateEmailTemplate(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateEmailTemplateDocument,
@@ -343,6 +346,9 @@ const documents: Documents = {
     "\n  mutation UpdateLessonClassification($input: UpdateCurriculumNodeInput!) {\n    updateCurriculumNode(input: $input) {\n      id\n      lessonType\n      lessonScale\n    }\n  }\n": types.UpdateLessonClassificationDocument,
     "\n  mutation UpsertCurriculumLevelTranslation(\n    $input: UpsertCurriculumLevelTranslationInput!\n  ) {\n    upsertCurriculumLevelTranslation(input: $input) {\n      locale\n      name\n    }\n  }\n": types.UpsertCurriculumLevelTranslationDocument,
     "\n  mutation UpsertCurriculumNodeTranslation(\n    $input: UpsertCurriculumNodeTranslationInput!\n  ) {\n    upsertCurriculumNodeTranslation(input: $input) {\n      locale\n      name\n      notes\n    }\n  }\n": types.UpsertCurriculumNodeTranslationDocument,
+    "\n  mutation CreateDataSubjectRequest($input: CreateDataSubjectRequestInput!) {\n    createDataSubjectRequest(input: $input) {\n      id\n    }\n  }\n": types.CreateDataSubjectRequestDocument,
+    "\n  query DataSubjectRequests($status: DataSubjectRequestStatus) {\n    dataSubjectRequests(status: $status) {\n      id\n      type\n      status\n      subjectType\n      subjectName\n      contactEmail\n      receivedAt\n      dueDate\n      resolvedAt\n      resolutionNote\n      notes\n      assigneeMembershipId\n      assigneeMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": types.DataSubjectRequestsDocument,
+    "\n  mutation UpdateDataSubjectRequest($input: UpdateDataSubjectRequestInput!) {\n    updateDataSubjectRequest(input: $input) {\n      id\n      status\n    }\n  }\n": types.UpdateDataSubjectRequestDocument,
     "\n  query EmailTemplates($category: EmailTemplateCategory) {\n    emailTemplates(category: $category) {\n      id\n      name\n      category\n      subject\n      bodyHtml\n      description\n      isAutomatic\n      sentCount\n      createdAt\n      updatedAt\n    }\n  }\n": types.EmailTemplatesDocument,
     "\n  mutation CreateEmailTemplate($input: CreateEmailTemplateInput!) {\n    createEmailTemplate(input: $input) {\n      id\n    }\n  }\n": types.CreateEmailTemplateDocument,
     "\n  mutation UpdateEmailTemplate($input: UpdateEmailTemplateInput!) {\n    updateEmailTemplate(input: $input) {\n      id\n    }\n  }\n": types.UpdateEmailTemplateDocument,
@@ -844,6 +850,18 @@ export function graphql(source: "\n  mutation UpsertCurriculumLevelTranslation(\
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation UpsertCurriculumNodeTranslation(\n    $input: UpsertCurriculumNodeTranslationInput!\n  ) {\n    upsertCurriculumNodeTranslation(input: $input) {\n      locale\n      name\n      notes\n    }\n  }\n"): (typeof documents)["\n  mutation UpsertCurriculumNodeTranslation(\n    $input: UpsertCurriculumNodeTranslationInput!\n  ) {\n    upsertCurriculumNodeTranslation(input: $input) {\n      locale\n      name\n      notes\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation CreateDataSubjectRequest($input: CreateDataSubjectRequestInput!) {\n    createDataSubjectRequest(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateDataSubjectRequest($input: CreateDataSubjectRequestInput!) {\n    createDataSubjectRequest(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query DataSubjectRequests($status: DataSubjectRequestStatus) {\n    dataSubjectRequests(status: $status) {\n      id\n      type\n      status\n      subjectType\n      subjectName\n      contactEmail\n      receivedAt\n      dueDate\n      resolvedAt\n      resolutionNote\n      notes\n      assigneeMembershipId\n      assigneeMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n"): (typeof documents)["\n  query DataSubjectRequests($status: DataSubjectRequestStatus) {\n    dataSubjectRequests(status: $status) {\n      id\n      type\n      status\n      subjectType\n      subjectName\n      contactEmail\n      receivedAt\n      dueDate\n      resolvedAt\n      resolutionNote\n      notes\n      assigneeMembershipId\n      assigneeMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateDataSubjectRequest($input: UpdateDataSubjectRequestInput!) {\n    updateDataSubjectRequest(input: $input) {\n      id\n      status\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateDataSubjectRequest($input: UpdateDataSubjectRequestInput!) {\n    updateDataSubjectRequest(input: $input) {\n      id\n      status\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

@@ -122,6 +122,11 @@ const PERMISSION_CATALOG: Array<{
     code: PermissionCode.CONSENT_SETTINGS_MANAGE,
     name: 'Einwilligungs-Zwecke verwalten',
   },
+  { code: PermissionCode.DATA_REQUEST_READ, name: 'Betroffenenanfragen lesen' },
+  {
+    code: PermissionCode.DATA_REQUEST_MANAGE,
+    name: 'Betroffenenanfragen bearbeiten',
+  },
 ];
 
 export async function seedPermissionCatalog(manager: EntityManager) {
