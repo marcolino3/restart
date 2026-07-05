@@ -8,9 +8,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Matrix (mirrors assign-permissions-to-system-roles.seeder.ts):
  *   DATA_REQUEST_READ / DATA_REQUEST_MANAGE → ORG_OWNER, ORG_ADMIN, HR_MANAGER, OFFICE
  */
-export class BackfillDataRequestPermissions1783061010000
-  implements MigrationInterface
-{
+export class BackfillDataRequestPermissions1783061010000 implements MigrationInterface {
   name = 'BackfillDataRequestPermissions1783061010000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

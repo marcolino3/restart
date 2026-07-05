@@ -10,9 +10,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * permission codes; catalog + role rows are seeded in the next migration
  * (new enum values cannot be used in the same transaction — 55P04).
  */
-export class CreateDataSubjectRequests1783061000000
-  implements MigrationInterface
-{
+export class CreateDataSubjectRequests1783061000000 implements MigrationInterface {
   name = 'CreateDataSubjectRequests1783061000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
