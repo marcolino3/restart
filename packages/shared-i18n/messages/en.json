@@ -32,6 +32,9 @@
   "Admissions": {
     "pageTitle": "Admissions",
     "pageSubtitle": "Manage inquiries, applications and enrollments",
+    "kanbanActiveCount": "{count} active applications",
+    "kanbanOpenReminders": "{count} open reminders",
+    "moreSettings": "Settings",
     "newApplication": "New application",
     "newApplicationHint": "Record a new expression of interest. Further details can be added later on the application.",
     "createSuccess": "Application created",

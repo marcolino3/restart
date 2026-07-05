@@ -35,8 +35,9 @@ import {
   LayoutList,
   Bell,
   Mail,
+  MoreHorizontal,
   Plus,
-  Users2,
+  Search,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +46,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -100,9 +102,7 @@ const STAGE_SORT_LABEL: Record<StageSortField, string> = {
   reminders: "fieldReminders",
 };
 
-const STAGE_SORT_FIELDS = Object.keys(
-  STAGE_SORT_LABEL,
-) as StageSortField[];
+const STAGE_SORT_FIELDS = Object.keys(STAGE_SORT_LABEL) as StageSortField[];
 
 /** Comparable value for a card under a given sort field. */
 const stageSortValue = (
@@ -162,6 +162,8 @@ interface Props {
   canEnroll: boolean;
   canWrite: boolean;
   canManageStages: boolean;
+  /** Number of rejected applications — shown as a count on the "Absagen" chip. */
+  rejectedCount: number;
 }
 
 type ColumnState = {
@@ -179,6 +181,7 @@ export function AdmissionsKanban({
   canCreate,
   canMove,
   canManageStages,
+  rejectedCount,
 }: Props) {
   const t = useTranslations("Admissions");
   const router = useRouter();
@@ -413,7 +416,7 @@ export function AdmissionsKanban({
     // to avoid colliding with the stage's sortable id. Strip the prefix here.
     let toColId = (overId ?? "").startsWith("drop:")
       ? (overId ?? "").slice("drop:".length)
-      : overId ?? "";
+      : (overId ?? "");
     if (!columns[toColId]) {
       const owner = findColumnFor(toColId);
       if (!owner) return;
@@ -485,106 +488,143 @@ export function AdmissionsKanban({
     [applicationsById],
   );
 
+  const openRemindersTotal = useMemo(
+    () =>
+      Object.values(applicationsById).reduce(
+        (sum, a) => sum + (a.openRemindersCount ?? 0),
+        0,
+      ),
+    [applicationsById],
+  );
+
   return (
     <div className="flex flex-col gap-4">
+      {/* Page head — title, dynamic subtitle, primary action (design). */}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">{t("pageTitle")}</h1>
+          <p className="text-sm text-muted-foreground">
+            {t("kanbanActiveCount", { count: totalCount })}
+            {openRemindersTotal > 0 &&
+              ` · ${t("kanbanOpenReminders", { count: openRemindersTotal })}`}
+          </p>
+        </div>
+        {canCreate && (
+          <Button className="gap-1.5" onClick={() => setShowCreate(true)}>
+            <Plus className="h-4 w-4" />
+            {t("newApplication")}
+          </Button>
+        )}
+      </div>
+
+      {/* Toolbar — search · view toggle · reminders/rejected chips · ⋯ menu. */}
       <div className="flex flex-wrap items-center gap-2">
-        <Input
-          placeholder={t("searchPlaceholder")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-9 max-w-sm"
-        />
-        <Badge variant="secondary" className="gap-1">
-          <Users2 className="h-3 w-3" />
-          {t("totalApplications", { count: totalCount })}
-        </Badge>
-        <div className="ml-auto flex gap-2">
-          <div
-            className="flex items-center rounded-md border bg-card p-0.5"
-            role="tablist"
-            aria-label={t("viewToggle")}
+        <div className="relative w-full max-w-xs">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={t("searchPlaceholder")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-9 rounded-full pl-9"
+          />
+        </div>
+        <div
+          className="flex items-center rounded-md border bg-card p-0.5"
+          role="tablist"
+          aria-label={t("viewToggle")}
+        >
+          <Button
+            size="sm"
+            variant={view === "board" ? "secondary" : "ghost"}
+            className="h-7 gap-1 px-2"
+            onClick={() => setView("board")}
+            aria-pressed={view === "board"}
+            title={t("viewBoard")}
           >
-            <Button
-              size="sm"
-              variant={view === "board" ? "secondary" : "ghost"}
-              className="h-7 gap-1 px-2"
-              onClick={() => setView("board")}
-              aria-pressed={view === "board"}
-              title={t("viewBoard")}
-            >
-              <Kanban className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("viewBoard")}</span>
-            </Button>
-            <Button
-              size="sm"
-              variant={view === "list" ? "secondary" : "ghost"}
-              className="h-7 gap-1 px-2"
-              onClick={() => setView("list")}
-              aria-pressed={view === "list"}
-              title={t("viewList")}
-            >
-              <LayoutList className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("viewList")}</span>
-            </Button>
-          </div>
+            <Kanban className="h-4 w-4" />
+            <span className="hidden sm:inline">{t("viewBoard")}</span>
+          </Button>
+          <Button
+            size="sm"
+            variant={view === "list" ? "secondary" : "ghost"}
+            className="h-7 gap-1 px-2"
+            onClick={() => setView("list")}
+            aria-pressed={view === "list"}
+            title={t("viewList")}
+          >
+            <LayoutList className="h-4 w-4" />
+            <span className="hidden sm:inline">{t("viewList")}</span>
+          </Button>
+        </div>
+
+        <div className="ml-auto flex items-center gap-2">
           <Button
             size="sm"
             variant="outline"
-            onClick={() =>
-              router.push(`/admin/admissions/reminders`)
-            }
-            className="relative"
+            className="rounded-full"
+            onClick={() => router.push(`/admin/admissions/reminders`)}
           >
             <Bell className="mr-1 h-4 w-4" />
             {t("remindersNavLabel")}
-            {overdueRemindersTotal > 0 && (
-              <span className="ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-destructive-foreground">
-                {overdueRemindersTotal}
+            {openRemindersTotal > 0 && (
+              <span
+                className={cn(
+                  "ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-semibold leading-none",
+                  overdueRemindersTotal > 0
+                    ? "bg-destructive text-destructive-foreground"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
+                {openRemindersTotal}
               </span>
             )}
           </Button>
           <Button
             size="sm"
             variant="outline"
-            onClick={() => router.push(`/admin/admissions/email-templates`)}
-          >
-            <Mail className="mr-1 h-4 w-4" />
-            {t("emailTemplatesNavLabel")}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
+            className="rounded-full"
             onClick={() => router.push(`/admin/admissions/rejected`)}
           >
             <Ban className="mr-1 h-4 w-4" />
             {t("rejectedListTitle")}
+            {rejectedCount > 0 && (
+              <span className="ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-muted px-1 text-[10px] font-semibold leading-none text-muted-foreground">
+                {rejectedCount}
+              </span>
+            )}
           </Button>
-          {canManageStages && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowStages(true)}
-            >
-              <Layers className="mr-1 h-4 w-4" />
-              {t("manageStages")}
-            </Button>
-          )}
-          {canManageStages && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowReasons(true)}
-            >
-              <Ban className="mr-1 h-4 w-4" />
-              {t("manageRejectionReasons")}
-            </Button>
-          )}
-          {canCreate && (
-            <Button size="sm" onClick={() => setShowCreate(true)}>
-              <Plus className="mr-1 h-4 w-4" />
-              {t("newApplication")}
-            </Button>
-          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-9 w-9 rounded-full"
+                aria-label={t("moreSettings")}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem
+                onClick={() => router.push(`/admin/admissions/email-templates`)}
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                {t("emailTemplatesNavLabel")}
+              </DropdownMenuItem>
+              {canManageStages && (
+                <DropdownMenuItem onClick={() => setShowStages(true)}>
+                  <Layers className="mr-2 h-4 w-4" />
+                  {t("manageStages")}
+                </DropdownMenuItem>
+              )}
+              {canManageStages && (
+                <DropdownMenuItem onClick={() => setShowReasons(true)}>
+                  <Ban className="mr-2 h-4 w-4" />
+                  {t("manageRejectionReasons")}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -980,8 +1020,14 @@ function DraggableApplication({
   onOpen: (id: string) => void;
   canDrag: boolean;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: application.id, disabled: !canDrag });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: application.id, disabled: !canDrag });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
