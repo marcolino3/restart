@@ -34,6 +34,11 @@ export class Project extends AbstractEntity<Project> {
   @Column('text', { name: 'color', nullable: true })
   color?: string | null;
 
+  // Optional target date ("Fällig" in list and create dialog), ISO date string.
+  @Field(() => String, { nullable: true })
+  @Column('date', { name: 'due_date', nullable: true })
+  dueDate?: string | null;
+
   @Field(() => ID)
   @Column('uuid', { name: 'organization_id' })
   organizationId: string;

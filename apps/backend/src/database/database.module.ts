@@ -65,6 +65,7 @@ import { RetentionPolicy } from '@/retention/entities/retention-policy.entity';
 import { DataBreachIncident } from '@/data-breaches/entities/data-breach-incident.entity';
 import { ProcessingActivity } from '@/vvt/entities/processing-activity.entity';
 import { Subprocessor } from '@/vvt/entities/subprocessor.entity';
+import { ProtocolTemplate } from '@/project-management/protocols/entities/protocol-template.entity';
 import { Permission } from '@/permissions/entities/permission.entity';
 import { Role } from '@/roles/entities/role.entity';
 import { UserEmail } from '@/user-emails/entities/user-email.entity';
@@ -146,6 +147,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       DataBreachIncident,
       ProcessingActivity,
       Subprocessor,
+      ProtocolTemplate,
     ]),
   ],
   exports: [TypeOrmModule],

@@ -21,6 +21,7 @@ import { UpdateProtocolInput } from './dto/update-protocol.input';
 import { ProtocolParticipant } from './entities/protocol-participant.entity';
 import { ProtocolSections } from './entities/protocol-sections.output';
 import { Protocol } from './entities/protocol.entity';
+import { ProtocolTemplatesService } from './protocol-templates.service';
 
 const PARTICIPANT_RELATIONS = {
   participants: { membership: { user: true } },
@@ -39,6 +40,7 @@ export class ProtocolsService {
     @InjectRepository(ProjectMember)
     private readonly membersRepo: Repository<ProjectMember>,
     private readonly access: ProjectAccessService,
+    private readonly templates: ProtocolTemplatesService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -73,22 +75,40 @@ export class ProtocolsService {
         canSeeAll,
       );
     }
-    const participantIds = await this.validateMembershipsInOrg(
+    let participantIds = await this.validateMembershipsInOrg(
       input.participantMembershipIds ?? [],
       organizationId,
     );
+
+    // Vorlage anwenden: Traktanden + Standard-Teilnehmende übernehmen —
+    // explizit mitgegebene sections/participants gewinnen.
+    const sections = mergeSections(input.sections);
+    if (input.templateId) {
+      const applied = await this.templates.apply(
+        input.templateId,
+        organizationId,
+      );
+      if (!input.sections?.agendaItems?.length) {
+        sections.agendaItems = applied.agendaItems;
+      }
+      if (!participantIds.length) {
+        participantIds = applied.participantMembershipIds;
+      }
+    }
 
     return this.dataSource.transaction(async (manager) => {
       const protocol = await manager.getRepository(Protocol).save(
         manager.getRepository(Protocol).create({
           title: input.title.trim(),
           meetingDate: input.meetingDate ?? null,
+          startTime: input.startTime ?? null,
+          endTime: input.endTime ?? null,
           status: input.status,
           organizationId,
           projectId: input.projectId ?? null,
           createdByMembershipId: membershipId ?? null,
           externalParticipants: input.externalParticipants ?? [],
-          sections: mergeSections(input.sections),
+          sections,
         }),
       );
       await this.writeParticipants(
@@ -131,6 +151,9 @@ export class ProtocolsService {
       if (input.title !== undefined) protocol.title = input.title.trim();
       if (input.meetingDate !== undefined)
         protocol.meetingDate = input.meetingDate ?? null;
+      if (input.startTime !== undefined)
+        protocol.startTime = input.startTime ?? null;
+      if (input.endTime !== undefined) protocol.endTime = input.endTime ?? null;
       if (input.status !== undefined) protocol.status = input.status;
       if (input.projectId !== undefined)
         protocol.projectId = input.projectId ?? null;

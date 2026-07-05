@@ -1,4 +1,5 @@
 import { Field, ID, InputType } from '@nestjs/graphql';
+import { Type } from 'class-transformer';
 import {
   IsArray,
   IsDateString,
@@ -7,10 +8,13 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
 import { TaskPriority } from '../entities/task-priority.enum';
 import { TaskStatus } from '../entities/task-status.enum';
+import { TaskChecklistItemInput } from './task-checklist-item.input';
 
 @InputType()
 export class CreateTaskInput {
@@ -48,6 +52,20 @@ export class CreateTaskInput {
   @IsOptional()
   @IsDateString()
   dueDate?: string | null;
+
+  // Optional time-of-day (HH:MM) complementing dueDate.
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/)
+  dueTime?: string | null;
+
+  // Full checklist state (replace-all semantics, also on update).
+  @Field(() => [TaskChecklistItemInput], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TaskChecklistItemInput)
+  checklist?: TaskChecklistItemInput[];
 
   // Memberships assigned to this task (multi-assignee). Must belong to the
   // active organization and be members of the project.

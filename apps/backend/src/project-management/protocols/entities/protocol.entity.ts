@@ -27,6 +27,15 @@ export class Protocol extends AbstractEntity<Protocol> {
   @Column('date', { name: 'meeting_date', nullable: true })
   meetingDate?: string | null;
 
+  // Optional meeting window (HH:MM), shown as "14:00–16:00" in the detail head.
+  @Field(() => String, { nullable: true })
+  @Column('text', { name: 'start_time', nullable: true })
+  startTime?: string | null;
+
+  @Field(() => String, { nullable: true })
+  @Column('text', { name: 'end_time', nullable: true })
+  endTime?: string | null;
+
   @Field(() => ProtocolStatus)
   @Column({ type: 'enum', enum: ProtocolStatus, default: ProtocolStatus.DRAFT })
   status: ProtocolStatus;

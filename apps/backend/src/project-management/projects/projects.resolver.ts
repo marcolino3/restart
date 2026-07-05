@@ -5,7 +5,16 @@ import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { UseGuards } from '@nestjs/common';
-import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  Context,
+  ID,
+  Mutation,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
 import {
   canSeeAllProjects,
   actingMembershipId,
@@ -13,6 +22,8 @@ import {
 import { CreateProjectInput } from './dto/create-project.input';
 import { UpdateProjectInput } from './dto/update-project.input';
 import { Project } from './entities/project.entity';
+import { ProjectTaskStats } from './entities/project-task-stats.output';
+import { ProjectTaskStatsLoaders } from './loaders/project-task-stats.loaders';
 import { ProjectsService } from './projects.service';
 
 @Resolver(() => Project)
@@ -91,6 +102,21 @@ export class ProjectsResolver {
       actingMembershipId(user),
       canSeeAllProjects(user),
     );
+  }
+
+  /**
+   * Aufgaben-Zähler (total/done) — per-Request via DataLoader gebatcht (eine
+   * GROUP-BY-Query je Request statt N+1), org-scoped über den nach orgId
+   * gekeyten Loader.
+   */
+  @ResolveField(() => ProjectTaskStats, { name: 'taskStats' })
+  taskStats(
+    @Parent() project: Project,
+    @CurrentOrgId() orgId: string,
+    @Context()
+    ctx: { loaders: { projectTaskStats: ProjectTaskStatsLoaders } },
+  ): Promise<ProjectTaskStats> {
+    return ctx.loaders.projectTaskStats.statsLoader(orgId).load(project.id);
   }
 
   @Mutation(() => Boolean)
