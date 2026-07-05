@@ -9,9 +9,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  *   DATA_BREACH_READ   → ORG_OWNER, ORG_ADMIN, HR_MANAGER, OFFICE
  *   DATA_BREACH_MANAGE → ORG_OWNER, ORG_ADMIN, OFFICE
  */
-export class BackfillDataBreachPermissions1783061050000
-  implements MigrationInterface
-{
+export class BackfillDataBreachPermissions1783061050000 implements MigrationInterface {
   name = 'BackfillDataBreachPermissions1783061050000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
