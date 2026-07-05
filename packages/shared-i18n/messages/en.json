@@ -1,4 +1,21 @@
 {
+  "AccessReview": {
+    "tab": "Access",
+    "title": "Access review",
+    "subtitle": "Who can access sensitive data — review and recertify periodically.",
+    "noEntries": "No one with sensitive access found.",
+    "reviewedOn": "Last reviewed: {date}",
+    "never": "Never reviewed",
+    "recertify": "Recertify",
+    "recertifiedToast": "Access recertified",
+    "perm": {
+      "EMPLOYEE_WRITE": "Employee data (incl. emergency/health)",
+      "RECORD_KEEPING_WRITE": "Learning records (children)",
+      "CONSENT_MANAGE": "Consents",
+      "DATA_REQUEST_MANAGE": "Data requests/export",
+      "DATA_BREACH_MANAGE": "Data breaches"
+    }
+  },
   "Vvt": {
     "tab": "Records",
     "activitiesTitle": "Processing activities",

@@ -15,6 +15,8 @@ import { DataBreachesList } from "@/features/data-breaches/components/DataBreach
 import { getProcessingActivitiesAction } from "@/features/vvt/actions/get-processing-activities.action";
 import { getSubprocessorsAction } from "@/features/vvt/actions/get-subprocessors.action";
 import { VvtSection } from "@/features/vvt/components/VvtSection";
+import { getAccessReviewAction } from "@/features/access-review/actions/get-access-review.action";
+import { AccessReviewList } from "@/features/access-review/components/AccessReviewList";
 
 const DataProtectionPage = async () => {
   const locale = await getLocale();
@@ -23,6 +25,7 @@ const DataProtectionPage = async () => {
   const tRet = await getTranslations("RetentionSettings");
   const tB = await getTranslations("DataBreaches");
   const tV = await getTranslations("Vvt");
+  const tA = await getTranslations("AccessReview");
   const userRes = await getCurrentUserAction();
 
   if (!userRes?.success) {
@@ -36,9 +39,10 @@ const DataProtectionPage = async () => {
   const requestsRes = await getDataRequestsAction();
   const retentionRes = await getRetentionPoliciesAction();
   const breachesRes = await getDataBreachesAction();
-  const [activitiesRes, subprocessorsRes] = await Promise.all([
+  const [activitiesRes, subprocessorsRes, accessRes] = await Promise.all([
     getProcessingActivitiesAction(),
     getSubprocessorsAction(),
+    getAccessReviewAction(),
   ]);
 
   return (
@@ -60,6 +64,7 @@ const DataProtectionPage = async () => {
           <TabsTrigger value="retention">{tRet("tab")}</TabsTrigger>
           <TabsTrigger value="breaches">{tB("tab")}</TabsTrigger>
           <TabsTrigger value="vvt">{tV("tab")}</TabsTrigger>
+          <TabsTrigger value="access">{tA("tab")}</TabsTrigger>
           <TabsTrigger value="overview">{t("tabOverview")}</TabsTrigger>
         </TabsList>
 
@@ -84,6 +89,10 @@ const DataProtectionPage = async () => {
             activities={activitiesRes.data}
             subprocessors={subprocessorsRes.data}
           />
+        </TabsContent>
+
+        <TabsContent value="access">
+          <AccessReviewList initial={accessRes.data} />
         </TabsContent>
 
         <TabsContent value="overview">
