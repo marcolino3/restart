@@ -1,5 +1,6 @@
 {
   "DataRequests": {
+    "pickADate": "Pick a date",
     "tab": "Data-subject requests",
     "listTitle": "Data-subject requests",
     "listSubtitle": "Handle data-subject requests within the statutory deadline.",

@@ -1,5 +1,6 @@
 {
   "DataRequests": {
+    "pickADate": "Datum wählen",
     "tab": "Betroffenenanfragen",
     "listTitle": "Betroffenenanfragen",
     "listSubtitle": "Anfragen betroffener Personen fristgerecht bearbeiten.",
