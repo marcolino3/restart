@@ -1,4 +1,37 @@
 {
+  "DataBreaches": {
+    "pickADate": "Pick a date",
+    "tab": "Data breaches",
+    "listTitle": "Data-breach register",
+    "listSubtitle": "Log incidents and track the notification duties (72h).",
+    "newIncident": "Record incident",
+    "noIncidents": "No incidents recorded.",
+    "save": "Save",
+    "createdToast": "Incident recorded",
+    "updatedToast": "Updated",
+    "authorityNotified": "Authority notified",
+    "subjectsNotified": "Subjects notified",
+    "authorityDueOn": "Authority deadline: {date}",
+    "detectedOn": "Detected: {date}",
+    "fieldTitle": "Title",
+    "fieldDescription": "Description",
+    "fieldRiskLevel": "Risk",
+    "fieldDetectedAt": "Detected on",
+    "fieldAffectedScope": "Affected data/persons",
+    "fieldAffectedCount": "Number affected",
+    "fieldNotes": "Notes",
+    "risk": {
+      "LOW": "Low",
+      "MEDIUM": "Medium",
+      "HIGH": "High"
+    },
+    "status": {
+      "OPEN": "Open",
+      "INVESTIGATING": "Investigating",
+      "CONTAINED": "Contained",
+      "CLOSED": "Closed"
+    }
+  },
   "RetentionSettings": {
     "tab": "Retention",
     "title": "Retention periods",

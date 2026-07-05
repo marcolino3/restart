@@ -1,4 +1,37 @@
 {
+  "DataBreaches": {
+    "pickADate": "Datum wählen",
+    "tab": "Datenpannen",
+    "listTitle": "Datenpannen-Register",
+    "listSubtitle": "Vorfälle erfassen und die Meldepflichten (72h) nachhalten.",
+    "newIncident": "Vorfall erfassen",
+    "noIncidents": "Keine Vorfälle erfasst.",
+    "save": "Speichern",
+    "createdToast": "Vorfall erfasst",
+    "updatedToast": "Aktualisiert",
+    "authorityNotified": "Behörde gemeldet",
+    "subjectsNotified": "Betroffene informiert",
+    "authorityDueOn": "Behörden-Frist: {date}",
+    "detectedOn": "Entdeckt: {date}",
+    "fieldTitle": "Titel",
+    "fieldDescription": "Beschreibung",
+    "fieldRiskLevel": "Risiko",
+    "fieldDetectedAt": "Entdeckt am",
+    "fieldAffectedScope": "Betroffene Daten/Personen",
+    "fieldAffectedCount": "Anzahl Betroffene",
+    "fieldNotes": "Notizen",
+    "risk": {
+      "LOW": "Gering",
+      "MEDIUM": "Mittel",
+      "HIGH": "Hoch"
+    },
+    "status": {
+      "OPEN": "Offen",
+      "INVESTIGATING": "In Untersuchung",
+      "CONTAINED": "Eingedämmt",
+      "CLOSED": "Abgeschlossen"
+    }
+  },
   "RetentionSettings": {
     "tab": "Aufbewahrung",
     "title": "Aufbewahrungsfristen",
