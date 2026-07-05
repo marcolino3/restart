@@ -32,6 +32,9 @@
   "Admissions": {
     "pageTitle": "Aufnahmeprozess",
     "pageSubtitle": "Anfragen, Bewerbungen und Einschreibungen verwalten",
+    "kanbanActiveCount": "{count} aktive Bewerbungen",
+    "kanbanOpenReminders": "{count} offene Erinnerungen",
+    "moreSettings": "Einstellungen",
     "newApplication": "Neue Bewerbung",
     "newApplicationHint": "Erfasse eine neue Interessens-Anmeldung. Weitere Angaben lassen sich später auf der Bewerbung ergänzen.",
     "createSuccess": "Bewerbung erstellt",
