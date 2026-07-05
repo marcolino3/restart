@@ -1,7 +1,7 @@
 import { AbstractEntity } from '@/database/abstract.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
-import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { EmailTemplateCategory } from '../enums/email-template-category.enum';
 
@@ -45,6 +45,17 @@ export class EmailTemplate extends AbstractEntity<EmailTemplate> {
   @Field(() => String, { nullable: true })
   @Column('text', { nullable: true })
   description?: string | null;
+
+  // Marks the template that is sent automatically (e.g. the intake
+  // confirmation), rendered as an "Automatisch" badge. `false` = manual.
+  @Field(() => Boolean)
+  @Column('boolean', { name: 'is_automatic', default: false })
+  isAutomatic: boolean;
+
+  // Number of successfully sent admission emails that used this template.
+  // Not a column — populated by EmailTemplatesService.findForOrg.
+  @Field(() => Int)
+  sentCount = 0;
 
   @Field(() => ID, { nullable: true })
   @Column('uuid', { name: 'created_by_membership_id', nullable: true })
