@@ -433,6 +433,7 @@ export class AdmissionApplicationsService {
     }
 
     application.rejectedBy = input.rejectedBy ?? null;
+    application.followUpYear = input.followUpYear?.trim() || null;
 
     // best-effort: move to a REJECTED stage if exists
     const rejectedStage = await this.stagesRepo.findOne({

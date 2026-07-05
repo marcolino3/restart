@@ -172,7 +172,9 @@ describe('TasksService', () => {
   });
 
   describe('update (completedAt + checklist)', () => {
-    const manager = { getRepository: () => ({ save: jest.fn((d: Task) => d) }) };
+    const manager = {
+      getRepository: () => ({ save: jest.fn((d: Task) => d) }),
+    };
 
     beforeEach(() => {
       dataSource.transaction.mockImplementation((cb: (m: unknown) => unknown) =>
@@ -255,7 +257,11 @@ describe('TasksService', () => {
           checklist: [
             { label: '  Grill besetzen  ', done: false },
             { label: '   ', done: true },
-            { id: '4f2c0e9e-0000-4000-8000-000000000001', label: 'Kasse', done: true },
+            {
+              id: '4f2c0e9e-0000-4000-8000-000000000001',
+              label: 'Kasse',
+              done: true,
+            },
           ],
         },
         ORG,

@@ -164,6 +164,7 @@ export function RejectedApplicationsList({ applications }: Props) {
                 dir={sortDir}
                 onClick={toggleSort}
               />
+              <TableHead>{t("followUpYearColumn")}</TableHead>
               <ColHead
                 label={t("rejectedAtLabel")}
                 sortKey="date"
@@ -225,6 +226,15 @@ export function RejectedApplicationsList({ applications }: Props) {
                     </Badge>
                   ) : (
                     "—"
+                  )}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {a.followUpYear ? (
+                    <Badge variant="secondary" className="text-[10px]">
+                      {a.followUpYear}
+                    </Badge>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
                   )}
                 </TableCell>
                 <TableCell className="text-right text-sm text-muted-foreground">

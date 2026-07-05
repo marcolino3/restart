@@ -152,4 +152,11 @@ export class AdmissionApplication
   @Field(() => AdmissionRejectedBy, { nullable: true })
   @Column('text', { name: 'rejected_by', nullable: true })
   rejectedBy?: AdmissionRejectedBy | null;
+
+  // Optional waitlist target ("Wiedervorlage"): a future school year the family
+  // may be reconsidered for after a rejection. Free text (e.g. "2027/28"),
+  // null when the rejection is final.
+  @Field(() => String, { nullable: true })
+  @Column('text', { name: 'follow_up_year', nullable: true })
+  followUpYear?: string | null;
 }

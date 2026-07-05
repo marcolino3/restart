@@ -561,7 +561,12 @@
     "emailRecipientLabel": "Recipient",
     "emailResend": "Resend",
     "emailSentBy": "by {name}",
-    "emailUnknownSender": "Unknown"
+    "emailUnknownSender": "Unknown",
+    "followUpYearLabel": "Waitlist (school year)",
+    "followUpYearPlaceholder": "e.g. 2027/28",
+    "followUpYearHint": "Optional — keep the child on the waitlist for a later school year.",
+    "followUpYearColumn": "Waitlist",
+    "addApplicationToStage": "+ Add"
   },
   "Forbidden": {
     "title": "Access denied",

@@ -128,6 +128,7 @@ export type AdmissionApplication = {
   enrolledStudentId?: Maybe<Scalars['ID']['output']>;
   family?: Maybe<Family>;
   familyId: Scalars['ID']['output'];
+  followUpYear?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   isActive: Scalars['Boolean']['output'];
   isArchived: Scalars['Boolean']['output'];
@@ -4522,6 +4523,7 @@ export type RecordKeepingSettings = {
 };
 
 export type RejectAdmissionApplicationInput = {
+  followUpYear?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
   reason?: InputMaybe<Scalars['String']['input']>;
   rejectedBy?: InputMaybe<AdmissionRejectedBy>;

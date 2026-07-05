@@ -119,7 +119,10 @@ export class ProtocolTemplatesService {
   async apply(
     templateId: string,
     organizationId: string,
-  ): Promise<{ agendaItems: AgendaItem[]; participantMembershipIds: string[] }> {
+  ): Promise<{
+    agendaItems: AgendaItem[];
+    participantMembershipIds: string[];
+  }> {
     const template = await this.findOne(templateId, organizationId);
     await this.templatesRepo.increment(
       { id: template.id, organizationId },

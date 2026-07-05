@@ -561,7 +561,12 @@
     "emailRecipientLabel": "Empfänger",
     "emailResend": "Erneut senden",
     "emailSentBy": "von {name}",
-    "emailUnknownSender": "Unbekannt"
+    "emailUnknownSender": "Unbekannt",
+    "followUpYearLabel": "Wiedervorlage (Schuljahr)",
+    "followUpYearPlaceholder": "z.B. 2027/28",
+    "followUpYearHint": "Optional — Kind für ein späteres Schuljahr auf der Warteliste vormerken.",
+    "followUpYearColumn": "Wiedervorlage",
+    "addApplicationToStage": "+ Hinzufügen"
   },
   "Forbidden": {
     "title": "Zugriff verweigert",

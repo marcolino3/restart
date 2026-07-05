@@ -15,6 +15,7 @@ const Document = gql`
       rejectionReason
       rejectionReasonId
       rejectedBy
+      followUpYear
       family {
         name
       }
@@ -40,6 +41,7 @@ type Resp = {
     rejectionReason: string | null;
     rejectionReasonId: string | null;
     rejectedBy: AdmissionRejectedBy | null;
+    followUpYear: string | null;
     family: { name: string | null } | null;
     desiredGradeLevel: { name: string } | null;
   }>;
@@ -77,6 +79,7 @@ export const getRejectedApplicationsAction = async (): Promise<
           rejectionReasonLabel: ref?.label ?? null,
           rejectionReasonColor: ref?.color ?? null,
           rejectedBy: a.rejectedBy,
+          followUpYear: a.followUpYear,
           rejectedAt: a.stageEnteredAt,
         };
       })

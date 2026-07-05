@@ -61,6 +61,8 @@ interface Props {
   existingFamilies: ExistingFamily[];
   onClose: () => void;
   onCreated: () => void;
+  /** Preselected stage when opened from a column's "+ Hinzufügen" button. */
+  initialStageId?: string | null;
 }
 
 export function CreateApplicationDialog({
@@ -68,6 +70,7 @@ export function CreateApplicationDialog({
   existingFamilies,
   onClose,
   onCreated,
+  initialStageId,
 }: Props) {
   const t = useTranslations("Admissions");
   const tC = useTranslations("Common");
@@ -79,7 +82,10 @@ export function CreateApplicationDialog({
     defaultValues: {
       childFirstName: "",
       childLastName: "",
-      admissionStageId: stages[0]?.id,
+      admissionStageId:
+        (initialStageId && stages.some((s) => s.id === initialStageId)
+          ? initialStageId
+          : stages[0]?.id) ?? stages[0]?.id,
       source: "MANUAL",
       parentRole: "MOTHER",
     },

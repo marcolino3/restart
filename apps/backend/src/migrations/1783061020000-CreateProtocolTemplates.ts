@@ -5,9 +5,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * optionale Sitzungszeitfenster (start_time/end_time) auf Protokollen.
  * Keine neuen Permission-Codes — Vorlagen laufen unter PROTOCOL_READ/WRITE.
  */
-export class CreateProtocolTemplates1783061020000
-  implements MigrationInterface
-{
+export class CreateProtocolTemplates1783061020000 implements MigrationInterface {
   name = 'CreateProtocolTemplates1783061020000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -45,7 +43,9 @@ export class CreateProtocolTemplates1783061020000
     await queryRunner.query(
       `ALTER TABLE "protocol_templates" DROP CONSTRAINT IF EXISTS "FK_protocol_templates_org"`,
     );
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_protocol_templates_org"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_protocol_templates_org"`,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS "protocol_templates"`);
   }
 }

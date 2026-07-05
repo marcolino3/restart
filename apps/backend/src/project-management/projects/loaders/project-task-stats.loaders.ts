@@ -19,10 +19,7 @@ async function batchTaskStats(
     .createQueryBuilder('task')
     .select('task.project_id', 'projectId')
     .addSelect('COUNT(*)::int', 'total')
-    .addSelect(
-      `COUNT(*) FILTER (WHERE task.status = :done)::int`,
-      'done',
-    )
+    .addSelect(`COUNT(*) FILTER (WHERE task.status = :done)::int`, 'done')
     .where({ projectId: In(projectIds as string[]), organizationId })
     .andWhere('task."isActive" = true')
     .setParameter('done', TaskStatus.DONE)

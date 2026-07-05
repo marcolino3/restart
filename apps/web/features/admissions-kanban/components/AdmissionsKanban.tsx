@@ -214,6 +214,9 @@ export function AdmissionsKanban({
   const [activeApp, setActiveApp] = useState<KanbanApplication | null>(null);
   const [activeStageId, setActiveStageId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  // Stage preselected when the create dialog is opened via a column's
+  // "+ Hinzufügen" button; null for the global "Neue Bewerbung" button.
+  const [createStageId, setCreateStageId] = useState<string | null>(null);
   const [showStages, setShowStages] = useState(false);
   const [showReasons, setShowReasons] = useState(false);
 
@@ -682,6 +685,11 @@ export function AdmissionsKanban({
                     onToggleCollapsed={() => toggleCollapsed(stage.id)}
                     sort={sort}
                     onChangeSort={(next) => setStageSort(stage.id, next)}
+                    canAdd={canManageStages || canMove}
+                    onAddCard={() => {
+                      setCreateStageId(stage.id);
+                      setShowCreate(true);
+                    }}
                   />
                 );
               })}
@@ -711,14 +719,19 @@ export function AdmissionsKanban({
       {showCreate && (
         <CreateApplicationDialog
           stages={initialStages}
+          initialStageId={createStageId}
           existingFamilies={Object.values(applicationsById).map((a) => ({
             id: a.familyId,
             name: a.family.name ?? `${a.childLastName}`,
             contactNames: a.family.contactNames,
           }))}
-          onClose={() => setShowCreate(false)}
+          onClose={() => {
+            setShowCreate(false);
+            setCreateStageId(null);
+          }}
           onCreated={() => {
             setShowCreate(false);
+            setCreateStageId(null);
           }}
         />
       )}
@@ -752,6 +765,8 @@ interface ColumnProps {
   onToggleCollapsed: () => void;
   sort: StageSort | undefined;
   onChangeSort: (sort: StageSort) => void;
+  canAdd: boolean;
+  onAddCard: () => void;
 }
 
 function KanbanColumn({
@@ -765,6 +780,8 @@ function KanbanColumn({
   onToggleCollapsed,
   sort,
   onChangeSort,
+  canAdd,
+  onAddCard,
 }: ColumnProps) {
   const t = useTranslations("Admissions");
   // Drop-zone for Cards being dragged into this stage. Uses a prefixed id so
@@ -935,6 +952,15 @@ function KanbanColumn({
             ))
           )}
         </SortableContext>
+        {canAdd && stage.stageType !== "REJECTED" && (
+          <button
+            type="button"
+            onClick={onAddCard}
+            className="mt-2 w-full rounded-md border border-dashed py-1.5 text-xs font-medium text-muted-foreground transition hover:border-primary hover:text-foreground"
+          >
+            {t("addApplicationToStage")}
+          </button>
+        )}
       </CardContent>
     </Card>
   );

@@ -59,6 +59,7 @@ export const rejectApplicationAction = async (input: {
   reason?: string;
   rejectionReasonId?: string;
   rejectedBy?: "SCHOOL" | "PARENTS" | "OTHER";
+  followUpYear?: string;
 }) => {
   const client = await serverCookieGqlClient();
   try {

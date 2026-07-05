@@ -29,4 +29,11 @@ export class RejectAdmissionApplicationInput {
   @IsOptional()
   @IsEnum(AdmissionRejectedBy)
   rejectedBy?: AdmissionRejectedBy;
+
+  // Optional waitlist target ("Wiedervorlage") — a future school year, free text.
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  followUpYear?: string;
 }

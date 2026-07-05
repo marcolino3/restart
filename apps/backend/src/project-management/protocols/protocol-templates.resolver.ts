@@ -33,11 +33,7 @@ export class ProtocolTemplatesResolver {
     @CurrentOrgId() orgId: string,
     @CurrentUser() user: TokenPayload,
   ): Promise<ProtocolTemplate> {
-    return this.templatesService.create(
-      input,
-      orgId,
-      actingMembershipId(user),
-    );
+    return this.templatesService.create(input, orgId, actingMembershipId(user));
   }
 
   @Mutation(() => ProtocolTemplate)
