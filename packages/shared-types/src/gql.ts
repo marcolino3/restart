@@ -54,6 +54,13 @@ type Documents = {
     "\n  mutation UpdateAdmissionActivity($input: UpdateAdmissionActivityInput!) {\n    updateAdmissionActivity(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateAdmissionActivityDocument,
     "\n  mutation UpdateAdmissionApplication(\n    $input: UpdateAdmissionApplicationInput!\n  ) {\n    updateAdmissionApplication(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateAdmissionApplicationDocument,
     "\n  query AuthUserIdByUserId($userId: ID!) {\n    authUserIdByUserId(userId: $userId)\n  }\n": typeof types.AuthUserIdByUserIdDocument,
+    "\n  mutation ArchiveConsentPurpose($id: ID!) {\n    archiveConsentPurpose(id: $id)\n  }\n": typeof types.ArchiveConsentPurposeDocument,
+    "\n  query ConsentPurposes($includeArchived: Boolean) {\n    consentPurposes(includeArchived: $includeArchived) {\n      id\n      name\n      slug\n      description\n      appliesTo\n      legalBasis\n      requiresEvidence\n      isMandatory\n      position\n      isArchived\n    }\n  }\n": typeof types.ConsentPurposesDocument,
+    "\n  query ConsentsForSubject(\n    $subjectType: ConsentSubjectType!\n    $subjectId: ID!\n  ) {\n    consentsForSubject(subjectType: $subjectType, subjectId: $subjectId) {\n      id\n      subjectType\n      subjectId\n      purposeId\n      status\n      grantedByContactPersonId\n      decidedAt\n      withdrawnAt\n      evidenceUrl\n      note\n      purpose {\n        id\n        name\n        slug\n      }\n    }\n  }\n": typeof types.ConsentsForSubjectDocument,
+    "\n  mutation RecordConsent($input: RecordConsentInput!) {\n    recordConsent(input: $input) {\n      id\n      status\n    }\n  }\n": typeof types.RecordConsentDocument,
+    "\n  mutation CreateConsentPurpose($input: CreateConsentPurposeInput!) {\n    createConsentPurpose(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateConsentPurposeDocument,
+    "\n  mutation UpdateConsentPurpose($input: UpdateConsentPurposeInput!) {\n    updateConsentPurpose(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateConsentPurposeDocument,
+    "\n  mutation WithdrawConsent($input: WithdrawConsentInput!) {\n    withdrawConsent(input: $input) {\n      id\n      status\n    }\n  }\n": typeof types.WithdrawConsentDocument,
     "\n  mutation ArchiveContactPerson($id: ID!) {\n    archiveContactPerson(id: $id)\n  }\n": typeof types.ArchiveContactPersonDocument,
     "\n  mutation CreateAddress($input: CreateAddressInput!) {\n    createAddress(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateAddressDocument,
     "\n  mutation CreateContactPerson($input: CreateContactPersonInput!) {\n    createContactPerson(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateContactPersonDocument,
@@ -86,6 +93,13 @@ type Documents = {
     "\n  mutation UpdateLessonClassification($input: UpdateCurriculumNodeInput!) {\n    updateCurriculumNode(input: $input) {\n      id\n      lessonType\n      lessonScale\n    }\n  }\n": typeof types.UpdateLessonClassificationDocument,
     "\n  mutation UpsertCurriculumLevelTranslation(\n    $input: UpsertCurriculumLevelTranslationInput!\n  ) {\n    upsertCurriculumLevelTranslation(input: $input) {\n      locale\n      name\n    }\n  }\n": typeof types.UpsertCurriculumLevelTranslationDocument,
     "\n  mutation UpsertCurriculumNodeTranslation(\n    $input: UpsertCurriculumNodeTranslationInput!\n  ) {\n    upsertCurriculumNodeTranslation(input: $input) {\n      locale\n      name\n      notes\n    }\n  }\n": typeof types.UpsertCurriculumNodeTranslationDocument,
+    "\n  mutation CreateDataBreach($input: CreateDataBreachInput!) {\n    createDataBreach(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateDataBreachDocument,
+    "\n  query DataBreaches($status: DataBreachStatus) {\n    dataBreaches(status: $status) {\n      id\n      title\n      description\n      detectedAt\n      status\n      riskLevel\n      affectedScope\n      affectedCount\n      authorityNotifiedAt\n      subjectsNotifiedAt\n      measures\n      closedAt\n      notes\n      authorityNotificationDueAt\n      assigneeMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": typeof types.DataBreachesDocument,
+    "\n  mutation UpdateDataBreach($input: UpdateDataBreachInput!) {\n    updateDataBreach(input: $input) {\n      id\n      status\n    }\n  }\n": typeof types.UpdateDataBreachDocument,
+    "\n  mutation CreateDataSubjectRequest($input: CreateDataSubjectRequestInput!) {\n    createDataSubjectRequest(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateDataSubjectRequestDocument,
+    "\n  query DataSubjectRequests($status: DataSubjectRequestStatus) {\n    dataSubjectRequests(status: $status) {\n      id\n      type\n      status\n      subjectType\n      subjectId\n      subjectName\n      contactEmail\n      receivedAt\n      dueDate\n      resolvedAt\n      resolutionNote\n      notes\n      assigneeMembershipId\n      assigneeMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": typeof types.DataSubjectRequestsDocument,
+    "\n  query DataSubjectExport($subjectType: DataSubjectType!, $subjectId: ID!) {\n    dataSubjectExport(subjectType: $subjectType, subjectId: $subjectId)\n  }\n": typeof types.DataSubjectExportDocument,
+    "\n  mutation UpdateDataSubjectRequest($input: UpdateDataSubjectRequestInput!) {\n    updateDataSubjectRequest(input: $input) {\n      id\n      status\n    }\n  }\n": typeof types.UpdateDataSubjectRequestDocument,
     "\n  query EmailTemplates($category: EmailTemplateCategory) {\n    emailTemplates(category: $category) {\n      id\n      name\n      category\n      subject\n      bodyHtml\n      description\n      isAutomatic\n      sentCount\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.EmailTemplatesDocument,
     "\n  mutation CreateEmailTemplate($input: CreateEmailTemplateInput!) {\n    createEmailTemplate(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateEmailTemplateDocument,
     "\n  mutation UpdateEmailTemplate($input: UpdateEmailTemplateInput!) {\n    updateEmailTemplate(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateEmailTemplateDocument,
@@ -184,6 +198,9 @@ type Documents = {
     "\n  query StudentLessonRecordTimeline(\n    $studentId: ID!\n    $from: String!\n    $to: String!\n    $granularity: TimelineGranularity!\n  ) {\n    studentLessonRecordTimeline(\n      studentId: $studentId\n      from: $from\n      to: $to\n      granularity: $granularity\n    ) {\n      buckets {\n        bucketStart\n        planning\n        introduced\n        practiced\n        mastered\n        needsMore\n        total\n      }\n      totalIntroductionsInRange\n      daysSinceLastIntroduction\n    }\n  }\n": typeof types.StudentLessonRecordTimelineDocument,
     "\n  mutation SetLessonPrerequisites($input: SetLessonPrerequisitesInput!) {\n    setLessonPrerequisites(input: $input) {\n      id\n    }\n  }\n": typeof types.SetLessonPrerequisitesDocument,
     "\n  mutation UpdateLessonRecord($input: UpdateLessonRecordInput!) {\n    updateLessonRecord(input: $input) {\n      id\n      studentId\n      lessonId\n      recordedAt\n      status\n      note\n    }\n  }\n": typeof types.UpdateLessonRecordDocument,
+    "\n  mutation DeleteRetentionPolicy($id: ID!) {\n    deleteRetentionPolicy(id: $id)\n  }\n": typeof types.DeleteRetentionPolicyDocument,
+    "\n  query RetentionPolicies {\n    retentionPolicies {\n      id\n      entityType\n      retentionMonths\n      action\n      description\n      isEnabled\n      dueCount\n    }\n  }\n": typeof types.RetentionPoliciesDocument,
+    "\n  mutation UpsertRetentionPolicy($input: UpsertRetentionPolicyInput!) {\n    upsertRetentionPolicy(input: $input) {\n      id\n    }\n  }\n": typeof types.UpsertRetentionPolicyDocument,
     "\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n": typeof types.GetPermissionsDocument,
     "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n": typeof types.GetRolesByOrgIdDocument,
     "\n  mutation UpdateRolePermissions($input: UpdateRolePermissionsInput!) {\n    updateRolePermissions(input: $input) {\n      id\n      permissions {\n        id\n        code\n      }\n    }\n  }\n": typeof types.UpdateRolePermissionsDocument,
@@ -255,6 +272,14 @@ type Documents = {
     "\n  mutation SetPrimaryUserEmail($id: ID!) {\n    setPrimaryUserEmail(id: $id) {\n      id\n      isPrimary\n    }\n  }\n": typeof types.SetPrimaryUserEmailDocument,
     "\n  mutation UpdateMyTheme($input: UpdateMyThemeInput!) {\n    updateMyTheme(input: $input)\n  }\n": typeof types.UpdateMyThemeDocument,
     "\n  mutation UpdateUser($updateUserInput: UpdateUserInput!) {\n    updateUser(updateUserInput: $updateUserInput) {\n      id\n    }\n  }\n": typeof types.UpdateUserDocument,
+    "\n  mutation ArchiveProcessingActivity($id: ID!) {\n    archiveProcessingActivity(id: $id)\n  }\n": typeof types.ArchiveProcessingActivityDocument,
+    "\n  mutation ArchiveSubprocessor($id: ID!) {\n    archiveSubprocessor(id: $id)\n  }\n": typeof types.ArchiveSubprocessorDocument,
+    "\n  query ProcessingActivities {\n    processingActivities {\n      id\n      name\n      purpose\n      legalBasis\n      dataCategories\n      dataSubjects\n      recipients\n      retentionNote\n    }\n  }\n": typeof types.ProcessingActivitiesDocument,
+    "\n  query Subprocessors {\n    subprocessors {\n      id\n      name\n      purpose\n      country\n      dpaSigned\n      url\n      notes\n    }\n  }\n": typeof types.SubprocessorsDocument,
+    "\n  mutation CreateProcessingActivity($input: CreateProcessingActivityInput!) {\n    createProcessingActivity(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateProcessingActivityDocument,
+    "\n  mutation UpdateProcessingActivity($input: UpdateProcessingActivityInput!) {\n    updateProcessingActivity(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateProcessingActivityDocument,
+    "\n  mutation CreateSubprocessor($input: CreateSubprocessorInput!) {\n    createSubprocessor(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateSubprocessorDocument,
+    "\n  mutation UpdateSubprocessor($input: UpdateSubprocessorInput!) {\n    updateSubprocessor(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateSubprocessorDocument,
 };
 const documents: Documents = {
     "\n  mutation ArchiveAdmissionApplication($id: ID!) {\n    archiveAdmissionApplication(id: $id)\n  }\n": types.ArchiveAdmissionApplicationDocument,
@@ -297,6 +322,13 @@ const documents: Documents = {
     "\n  mutation UpdateAdmissionActivity($input: UpdateAdmissionActivityInput!) {\n    updateAdmissionActivity(input: $input) {\n      id\n    }\n  }\n": types.UpdateAdmissionActivityDocument,
     "\n  mutation UpdateAdmissionApplication(\n    $input: UpdateAdmissionApplicationInput!\n  ) {\n    updateAdmissionApplication(input: $input) {\n      id\n    }\n  }\n": types.UpdateAdmissionApplicationDocument,
     "\n  query AuthUserIdByUserId($userId: ID!) {\n    authUserIdByUserId(userId: $userId)\n  }\n": types.AuthUserIdByUserIdDocument,
+    "\n  mutation ArchiveConsentPurpose($id: ID!) {\n    archiveConsentPurpose(id: $id)\n  }\n": types.ArchiveConsentPurposeDocument,
+    "\n  query ConsentPurposes($includeArchived: Boolean) {\n    consentPurposes(includeArchived: $includeArchived) {\n      id\n      name\n      slug\n      description\n      appliesTo\n      legalBasis\n      requiresEvidence\n      isMandatory\n      position\n      isArchived\n    }\n  }\n": types.ConsentPurposesDocument,
+    "\n  query ConsentsForSubject(\n    $subjectType: ConsentSubjectType!\n    $subjectId: ID!\n  ) {\n    consentsForSubject(subjectType: $subjectType, subjectId: $subjectId) {\n      id\n      subjectType\n      subjectId\n      purposeId\n      status\n      grantedByContactPersonId\n      decidedAt\n      withdrawnAt\n      evidenceUrl\n      note\n      purpose {\n        id\n        name\n        slug\n      }\n    }\n  }\n": types.ConsentsForSubjectDocument,
+    "\n  mutation RecordConsent($input: RecordConsentInput!) {\n    recordConsent(input: $input) {\n      id\n      status\n    }\n  }\n": types.RecordConsentDocument,
+    "\n  mutation CreateConsentPurpose($input: CreateConsentPurposeInput!) {\n    createConsentPurpose(input: $input) {\n      id\n    }\n  }\n": types.CreateConsentPurposeDocument,
+    "\n  mutation UpdateConsentPurpose($input: UpdateConsentPurposeInput!) {\n    updateConsentPurpose(input: $input) {\n      id\n    }\n  }\n": types.UpdateConsentPurposeDocument,
+    "\n  mutation WithdrawConsent($input: WithdrawConsentInput!) {\n    withdrawConsent(input: $input) {\n      id\n      status\n    }\n  }\n": types.WithdrawConsentDocument,
     "\n  mutation ArchiveContactPerson($id: ID!) {\n    archiveContactPerson(id: $id)\n  }\n": types.ArchiveContactPersonDocument,
     "\n  mutation CreateAddress($input: CreateAddressInput!) {\n    createAddress(input: $input) {\n      id\n    }\n  }\n": types.CreateAddressDocument,
     "\n  mutation CreateContactPerson($input: CreateContactPersonInput!) {\n    createContactPerson(input: $input) {\n      id\n    }\n  }\n": types.CreateContactPersonDocument,
@@ -329,6 +361,13 @@ const documents: Documents = {
     "\n  mutation UpdateLessonClassification($input: UpdateCurriculumNodeInput!) {\n    updateCurriculumNode(input: $input) {\n      id\n      lessonType\n      lessonScale\n    }\n  }\n": types.UpdateLessonClassificationDocument,
     "\n  mutation UpsertCurriculumLevelTranslation(\n    $input: UpsertCurriculumLevelTranslationInput!\n  ) {\n    upsertCurriculumLevelTranslation(input: $input) {\n      locale\n      name\n    }\n  }\n": types.UpsertCurriculumLevelTranslationDocument,
     "\n  mutation UpsertCurriculumNodeTranslation(\n    $input: UpsertCurriculumNodeTranslationInput!\n  ) {\n    upsertCurriculumNodeTranslation(input: $input) {\n      locale\n      name\n      notes\n    }\n  }\n": types.UpsertCurriculumNodeTranslationDocument,
+    "\n  mutation CreateDataBreach($input: CreateDataBreachInput!) {\n    createDataBreach(input: $input) {\n      id\n    }\n  }\n": types.CreateDataBreachDocument,
+    "\n  query DataBreaches($status: DataBreachStatus) {\n    dataBreaches(status: $status) {\n      id\n      title\n      description\n      detectedAt\n      status\n      riskLevel\n      affectedScope\n      affectedCount\n      authorityNotifiedAt\n      subjectsNotifiedAt\n      measures\n      closedAt\n      notes\n      authorityNotificationDueAt\n      assigneeMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": types.DataBreachesDocument,
+    "\n  mutation UpdateDataBreach($input: UpdateDataBreachInput!) {\n    updateDataBreach(input: $input) {\n      id\n      status\n    }\n  }\n": types.UpdateDataBreachDocument,
+    "\n  mutation CreateDataSubjectRequest($input: CreateDataSubjectRequestInput!) {\n    createDataSubjectRequest(input: $input) {\n      id\n    }\n  }\n": types.CreateDataSubjectRequestDocument,
+    "\n  query DataSubjectRequests($status: DataSubjectRequestStatus) {\n    dataSubjectRequests(status: $status) {\n      id\n      type\n      status\n      subjectType\n      subjectId\n      subjectName\n      contactEmail\n      receivedAt\n      dueDate\n      resolvedAt\n      resolutionNote\n      notes\n      assigneeMembershipId\n      assigneeMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": types.DataSubjectRequestsDocument,
+    "\n  query DataSubjectExport($subjectType: DataSubjectType!, $subjectId: ID!) {\n    dataSubjectExport(subjectType: $subjectType, subjectId: $subjectId)\n  }\n": types.DataSubjectExportDocument,
+    "\n  mutation UpdateDataSubjectRequest($input: UpdateDataSubjectRequestInput!) {\n    updateDataSubjectRequest(input: $input) {\n      id\n      status\n    }\n  }\n": types.UpdateDataSubjectRequestDocument,
     "\n  query EmailTemplates($category: EmailTemplateCategory) {\n    emailTemplates(category: $category) {\n      id\n      name\n      category\n      subject\n      bodyHtml\n      description\n      isAutomatic\n      sentCount\n      createdAt\n      updatedAt\n    }\n  }\n": types.EmailTemplatesDocument,
     "\n  mutation CreateEmailTemplate($input: CreateEmailTemplateInput!) {\n    createEmailTemplate(input: $input) {\n      id\n    }\n  }\n": types.CreateEmailTemplateDocument,
     "\n  mutation UpdateEmailTemplate($input: UpdateEmailTemplateInput!) {\n    updateEmailTemplate(input: $input) {\n      id\n    }\n  }\n": types.UpdateEmailTemplateDocument,
@@ -427,6 +466,9 @@ const documents: Documents = {
     "\n  query StudentLessonRecordTimeline(\n    $studentId: ID!\n    $from: String!\n    $to: String!\n    $granularity: TimelineGranularity!\n  ) {\n    studentLessonRecordTimeline(\n      studentId: $studentId\n      from: $from\n      to: $to\n      granularity: $granularity\n    ) {\n      buckets {\n        bucketStart\n        planning\n        introduced\n        practiced\n        mastered\n        needsMore\n        total\n      }\n      totalIntroductionsInRange\n      daysSinceLastIntroduction\n    }\n  }\n": types.StudentLessonRecordTimelineDocument,
     "\n  mutation SetLessonPrerequisites($input: SetLessonPrerequisitesInput!) {\n    setLessonPrerequisites(input: $input) {\n      id\n    }\n  }\n": types.SetLessonPrerequisitesDocument,
     "\n  mutation UpdateLessonRecord($input: UpdateLessonRecordInput!) {\n    updateLessonRecord(input: $input) {\n      id\n      studentId\n      lessonId\n      recordedAt\n      status\n      note\n    }\n  }\n": types.UpdateLessonRecordDocument,
+    "\n  mutation DeleteRetentionPolicy($id: ID!) {\n    deleteRetentionPolicy(id: $id)\n  }\n": types.DeleteRetentionPolicyDocument,
+    "\n  query RetentionPolicies {\n    retentionPolicies {\n      id\n      entityType\n      retentionMonths\n      action\n      description\n      isEnabled\n      dueCount\n    }\n  }\n": types.RetentionPoliciesDocument,
+    "\n  mutation UpsertRetentionPolicy($input: UpsertRetentionPolicyInput!) {\n    upsertRetentionPolicy(input: $input) {\n      id\n    }\n  }\n": types.UpsertRetentionPolicyDocument,
     "\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n": types.GetPermissionsDocument,
     "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n": types.GetRolesByOrgIdDocument,
     "\n  mutation UpdateRolePermissions($input: UpdateRolePermissionsInput!) {\n    updateRolePermissions(input: $input) {\n      id\n      permissions {\n        id\n        code\n      }\n    }\n  }\n": types.UpdateRolePermissionsDocument,
@@ -498,6 +540,14 @@ const documents: Documents = {
     "\n  mutation SetPrimaryUserEmail($id: ID!) {\n    setPrimaryUserEmail(id: $id) {\n      id\n      isPrimary\n    }\n  }\n": types.SetPrimaryUserEmailDocument,
     "\n  mutation UpdateMyTheme($input: UpdateMyThemeInput!) {\n    updateMyTheme(input: $input)\n  }\n": types.UpdateMyThemeDocument,
     "\n  mutation UpdateUser($updateUserInput: UpdateUserInput!) {\n    updateUser(updateUserInput: $updateUserInput) {\n      id\n    }\n  }\n": types.UpdateUserDocument,
+    "\n  mutation ArchiveProcessingActivity($id: ID!) {\n    archiveProcessingActivity(id: $id)\n  }\n": types.ArchiveProcessingActivityDocument,
+    "\n  mutation ArchiveSubprocessor($id: ID!) {\n    archiveSubprocessor(id: $id)\n  }\n": types.ArchiveSubprocessorDocument,
+    "\n  query ProcessingActivities {\n    processingActivities {\n      id\n      name\n      purpose\n      legalBasis\n      dataCategories\n      dataSubjects\n      recipients\n      retentionNote\n    }\n  }\n": types.ProcessingActivitiesDocument,
+    "\n  query Subprocessors {\n    subprocessors {\n      id\n      name\n      purpose\n      country\n      dpaSigned\n      url\n      notes\n    }\n  }\n": types.SubprocessorsDocument,
+    "\n  mutation CreateProcessingActivity($input: CreateProcessingActivityInput!) {\n    createProcessingActivity(input: $input) {\n      id\n    }\n  }\n": types.CreateProcessingActivityDocument,
+    "\n  mutation UpdateProcessingActivity($input: UpdateProcessingActivityInput!) {\n    updateProcessingActivity(input: $input) {\n      id\n    }\n  }\n": types.UpdateProcessingActivityDocument,
+    "\n  mutation CreateSubprocessor($input: CreateSubprocessorInput!) {\n    createSubprocessor(input: $input) {\n      id\n    }\n  }\n": types.CreateSubprocessorDocument,
+    "\n  mutation UpdateSubprocessor($input: UpdateSubprocessorInput!) {\n    updateSubprocessor(input: $input) {\n      id\n    }\n  }\n": types.UpdateSubprocessorDocument,
 };
 
 /**
@@ -677,6 +727,34 @@ export function graphql(source: "\n  query AuthUserIdByUserId($userId: ID!) {\n 
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n  mutation ArchiveConsentPurpose($id: ID!) {\n    archiveConsentPurpose(id: $id)\n  }\n"): (typeof documents)["\n  mutation ArchiveConsentPurpose($id: ID!) {\n    archiveConsentPurpose(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query ConsentPurposes($includeArchived: Boolean) {\n    consentPurposes(includeArchived: $includeArchived) {\n      id\n      name\n      slug\n      description\n      appliesTo\n      legalBasis\n      requiresEvidence\n      isMandatory\n      position\n      isArchived\n    }\n  }\n"): (typeof documents)["\n  query ConsentPurposes($includeArchived: Boolean) {\n    consentPurposes(includeArchived: $includeArchived) {\n      id\n      name\n      slug\n      description\n      appliesTo\n      legalBasis\n      requiresEvidence\n      isMandatory\n      position\n      isArchived\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query ConsentsForSubject(\n    $subjectType: ConsentSubjectType!\n    $subjectId: ID!\n  ) {\n    consentsForSubject(subjectType: $subjectType, subjectId: $subjectId) {\n      id\n      subjectType\n      subjectId\n      purposeId\n      status\n      grantedByContactPersonId\n      decidedAt\n      withdrawnAt\n      evidenceUrl\n      note\n      purpose {\n        id\n        name\n        slug\n      }\n    }\n  }\n"): (typeof documents)["\n  query ConsentsForSubject(\n    $subjectType: ConsentSubjectType!\n    $subjectId: ID!\n  ) {\n    consentsForSubject(subjectType: $subjectType, subjectId: $subjectId) {\n      id\n      subjectType\n      subjectId\n      purposeId\n      status\n      grantedByContactPersonId\n      decidedAt\n      withdrawnAt\n      evidenceUrl\n      note\n      purpose {\n        id\n        name\n        slug\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation RecordConsent($input: RecordConsentInput!) {\n    recordConsent(input: $input) {\n      id\n      status\n    }\n  }\n"): (typeof documents)["\n  mutation RecordConsent($input: RecordConsentInput!) {\n    recordConsent(input: $input) {\n      id\n      status\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation CreateConsentPurpose($input: CreateConsentPurposeInput!) {\n    createConsentPurpose(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateConsentPurpose($input: CreateConsentPurposeInput!) {\n    createConsentPurpose(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateConsentPurpose($input: UpdateConsentPurposeInput!) {\n    updateConsentPurpose(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateConsentPurpose($input: UpdateConsentPurposeInput!) {\n    updateConsentPurpose(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation WithdrawConsent($input: WithdrawConsentInput!) {\n    withdrawConsent(input: $input) {\n      id\n      status\n    }\n  }\n"): (typeof documents)["\n  mutation WithdrawConsent($input: WithdrawConsentInput!) {\n    withdrawConsent(input: $input) {\n      id\n      status\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n  mutation ArchiveContactPerson($id: ID!) {\n    archiveContactPerson(id: $id)\n  }\n"): (typeof documents)["\n  mutation ArchiveContactPerson($id: ID!) {\n    archiveContactPerson(id: $id)\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
@@ -802,6 +880,34 @@ export function graphql(source: "\n  mutation UpsertCurriculumLevelTranslation(\
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation UpsertCurriculumNodeTranslation(\n    $input: UpsertCurriculumNodeTranslationInput!\n  ) {\n    upsertCurriculumNodeTranslation(input: $input) {\n      locale\n      name\n      notes\n    }\n  }\n"): (typeof documents)["\n  mutation UpsertCurriculumNodeTranslation(\n    $input: UpsertCurriculumNodeTranslationInput!\n  ) {\n    upsertCurriculumNodeTranslation(input: $input) {\n      locale\n      name\n      notes\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation CreateDataBreach($input: CreateDataBreachInput!) {\n    createDataBreach(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateDataBreach($input: CreateDataBreachInput!) {\n    createDataBreach(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query DataBreaches($status: DataBreachStatus) {\n    dataBreaches(status: $status) {\n      id\n      title\n      description\n      detectedAt\n      status\n      riskLevel\n      affectedScope\n      affectedCount\n      authorityNotifiedAt\n      subjectsNotifiedAt\n      measures\n      closedAt\n      notes\n      authorityNotificationDueAt\n      assigneeMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n"): (typeof documents)["\n  query DataBreaches($status: DataBreachStatus) {\n    dataBreaches(status: $status) {\n      id\n      title\n      description\n      detectedAt\n      status\n      riskLevel\n      affectedScope\n      affectedCount\n      authorityNotifiedAt\n      subjectsNotifiedAt\n      measures\n      closedAt\n      notes\n      authorityNotificationDueAt\n      assigneeMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateDataBreach($input: UpdateDataBreachInput!) {\n    updateDataBreach(input: $input) {\n      id\n      status\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateDataBreach($input: UpdateDataBreachInput!) {\n    updateDataBreach(input: $input) {\n      id\n      status\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation CreateDataSubjectRequest($input: CreateDataSubjectRequestInput!) {\n    createDataSubjectRequest(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateDataSubjectRequest($input: CreateDataSubjectRequestInput!) {\n    createDataSubjectRequest(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query DataSubjectRequests($status: DataSubjectRequestStatus) {\n    dataSubjectRequests(status: $status) {\n      id\n      type\n      status\n      subjectType\n      subjectId\n      subjectName\n      contactEmail\n      receivedAt\n      dueDate\n      resolvedAt\n      resolutionNote\n      notes\n      assigneeMembershipId\n      assigneeMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n"): (typeof documents)["\n  query DataSubjectRequests($status: DataSubjectRequestStatus) {\n    dataSubjectRequests(status: $status) {\n      id\n      type\n      status\n      subjectType\n      subjectId\n      subjectName\n      contactEmail\n      receivedAt\n      dueDate\n      resolvedAt\n      resolutionNote\n      notes\n      assigneeMembershipId\n      assigneeMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query DataSubjectExport($subjectType: DataSubjectType!, $subjectId: ID!) {\n    dataSubjectExport(subjectType: $subjectType, subjectId: $subjectId)\n  }\n"): (typeof documents)["\n  query DataSubjectExport($subjectType: DataSubjectType!, $subjectId: ID!) {\n    dataSubjectExport(subjectType: $subjectType, subjectId: $subjectId)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateDataSubjectRequest($input: UpdateDataSubjectRequestInput!) {\n    updateDataSubjectRequest(input: $input) {\n      id\n      status\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateDataSubjectRequest($input: UpdateDataSubjectRequestInput!) {\n    updateDataSubjectRequest(input: $input) {\n      id\n      status\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -1197,6 +1303,18 @@ export function graphql(source: "\n  mutation UpdateLessonRecord($input: UpdateL
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n  mutation DeleteRetentionPolicy($id: ID!) {\n    deleteRetentionPolicy(id: $id)\n  }\n"): (typeof documents)["\n  mutation DeleteRetentionPolicy($id: ID!) {\n    deleteRetentionPolicy(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query RetentionPolicies {\n    retentionPolicies {\n      id\n      entityType\n      retentionMonths\n      action\n      description\n      isEnabled\n      dueCount\n    }\n  }\n"): (typeof documents)["\n  query RetentionPolicies {\n    retentionPolicies {\n      id\n      entityType\n      retentionMonths\n      action\n      description\n      isEnabled\n      dueCount\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpsertRetentionPolicy($input: UpsertRetentionPolicyInput!) {\n    upsertRetentionPolicy(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpsertRetentionPolicy($input: UpsertRetentionPolicyInput!) {\n    upsertRetentionPolicy(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n"): (typeof documents)["\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
@@ -1478,6 +1596,38 @@ export function graphql(source: "\n  mutation UpdateMyTheme($input: UpdateMyThem
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation UpdateUser($updateUserInput: UpdateUserInput!) {\n    updateUser(updateUserInput: $updateUserInput) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateUser($updateUserInput: UpdateUserInput!) {\n    updateUser(updateUserInput: $updateUserInput) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ArchiveProcessingActivity($id: ID!) {\n    archiveProcessingActivity(id: $id)\n  }\n"): (typeof documents)["\n  mutation ArchiveProcessingActivity($id: ID!) {\n    archiveProcessingActivity(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ArchiveSubprocessor($id: ID!) {\n    archiveSubprocessor(id: $id)\n  }\n"): (typeof documents)["\n  mutation ArchiveSubprocessor($id: ID!) {\n    archiveSubprocessor(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query ProcessingActivities {\n    processingActivities {\n      id\n      name\n      purpose\n      legalBasis\n      dataCategories\n      dataSubjects\n      recipients\n      retentionNote\n    }\n  }\n"): (typeof documents)["\n  query ProcessingActivities {\n    processingActivities {\n      id\n      name\n      purpose\n      legalBasis\n      dataCategories\n      dataSubjects\n      recipients\n      retentionNote\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query Subprocessors {\n    subprocessors {\n      id\n      name\n      purpose\n      country\n      dpaSigned\n      url\n      notes\n    }\n  }\n"): (typeof documents)["\n  query Subprocessors {\n    subprocessors {\n      id\n      name\n      purpose\n      country\n      dpaSigned\n      url\n      notes\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation CreateProcessingActivity($input: CreateProcessingActivityInput!) {\n    createProcessingActivity(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateProcessingActivity($input: CreateProcessingActivityInput!) {\n    createProcessingActivity(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateProcessingActivity($input: UpdateProcessingActivityInput!) {\n    updateProcessingActivity(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateProcessingActivity($input: UpdateProcessingActivityInput!) {\n    updateProcessingActivity(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation CreateSubprocessor($input: CreateSubprocessorInput!) {\n    createSubprocessor(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateSubprocessor($input: CreateSubprocessorInput!) {\n    createSubprocessor(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateSubprocessor($input: UpdateSubprocessorInput!) {\n    updateSubprocessor(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateSubprocessor($input: UpdateSubprocessorInput!) {\n    updateSubprocessor(input: $input) {\n      id\n    }\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

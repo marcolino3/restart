@@ -57,6 +57,14 @@ import { ProjectTemplate } from '@/project-management/templates/entities/project
 import { ProjectTemplateTask } from '@/project-management/templates/entities/project-template-task.entity';
 import { Protocol } from '@/project-management/protocols/entities/protocol.entity';
 import { ProtocolParticipant } from '@/project-management/protocols/entities/protocol-participant.entity';
+import { ConsentPurpose } from '@/consent/entities/consent-purpose.entity';
+import { Consent } from '@/consent/entities/consent.entity';
+import { ConsentAuditLog } from '@/consent/entities/consent-audit-log.entity';
+import { DataSubjectRequest } from '@/data-requests/entities/data-subject-request.entity';
+import { RetentionPolicy } from '@/retention/entities/retention-policy.entity';
+import { DataBreachIncident } from '@/data-breaches/entities/data-breach-incident.entity';
+import { ProcessingActivity } from '@/vvt/entities/processing-activity.entity';
+import { Subprocessor } from '@/vvt/entities/subprocessor.entity';
 import { Permission } from '@/permissions/entities/permission.entity';
 import { Role } from '@/roles/entities/role.entity';
 import { UserEmail } from '@/user-emails/entities/user-email.entity';
@@ -130,6 +138,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       ProjectTemplateTask,
       Protocol,
       ProtocolParticipant,
+      ConsentPurpose,
+      Consent,
+      ConsentAuditLog,
+      DataSubjectRequest,
+      RetentionPolicy,
+      DataBreachIncident,
+      ProcessingActivity,
+      Subprocessor,
     ]),
   ],
   exports: [TypeOrmModule],

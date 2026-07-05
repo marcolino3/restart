@@ -113,6 +113,35 @@ const PERMISSION_CATALOG: Array<{
     name: 'Protokolle erstellen/bearbeiten',
   },
   { code: PermissionCode.PROTOCOL_DELETE, name: 'Protokolle loeschen' },
+  { code: PermissionCode.CONSENT_READ, name: 'Einwilligungen lesen' },
+  {
+    code: PermissionCode.CONSENT_MANAGE,
+    name: 'Einwilligungen erfassen/widerrufen',
+  },
+  {
+    code: PermissionCode.CONSENT_SETTINGS_MANAGE,
+    name: 'Einwilligungs-Zwecke verwalten',
+  },
+  { code: PermissionCode.DATA_REQUEST_READ, name: 'Betroffenenanfragen lesen' },
+  {
+    code: PermissionCode.DATA_REQUEST_MANAGE,
+    name: 'Betroffenenanfragen bearbeiten',
+  },
+  { code: PermissionCode.RETENTION_READ, name: 'Aufbewahrungsfristen lesen' },
+  {
+    code: PermissionCode.RETENTION_MANAGE,
+    name: 'Aufbewahrungsfristen verwalten',
+  },
+  { code: PermissionCode.DATA_BREACH_READ, name: 'Datenpannen lesen' },
+  { code: PermissionCode.DATA_BREACH_MANAGE, name: 'Datenpannen bearbeiten' },
+  {
+    code: PermissionCode.VVT_READ,
+    name: 'Verarbeitungsverzeichnis lesen',
+  },
+  {
+    code: PermissionCode.VVT_MANAGE,
+    name: 'Verarbeitungsverzeichnis verwalten',
+  },
 ];
 
 export async function seedPermissionCatalog(manager: EntityManager) {
