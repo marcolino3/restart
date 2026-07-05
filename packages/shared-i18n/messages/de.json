@@ -1,5 +1,6 @@
 {
   "DataBreaches": {
+    "pickADate": "Datum wählen",
     "tab": "Datenpannen",
     "listTitle": "Datenpannen-Register",
     "listSubtitle": "Vorfälle erfassen und die Meldepflichten (72h) nachhalten.",

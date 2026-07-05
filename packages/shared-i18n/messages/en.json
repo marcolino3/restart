@@ -1,5 +1,6 @@
 {
   "DataBreaches": {
+    "pickADate": "Pick a date",
     "tab": "Data breaches",
     "listTitle": "Data-breach register",
     "listSubtitle": "Log incidents and track the notification duties (72h).",
