@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 import { getRejectedApplicationsAction } from "@/features/admissions-kanban/actions/get-rejected-applications.action";
 import { RejectedApplicationsList } from "@/features/admissions-kanban/components/RejectedApplicationsList";
+import { AdmissionsSubNav } from "@/features/admissions-kanban/components/AdmissionsSubNav";
 
 const has = (permissions: string[], code: string, isSuperAdmin: boolean) =>
   isSuperAdmin || permissions.includes(code);
@@ -15,7 +16,9 @@ const RejectedApplicationsPage = async () => {
 
   if (!user?.success) {
     return (
-      <div className="p-6 text-sm text-destructive">{t("notAuthenticated")}</div>
+      <div className="p-6 text-sm text-destructive">
+        {t("notAuthenticated")}
+      </div>
     );
   }
 
@@ -43,6 +46,7 @@ const RejectedApplicationsPage = async () => {
           {t("rejectedListSubtitle", { count: data.data.length })}
         </p>
       </div>
+      <AdmissionsSubNav active="rejected" rejectedCount={data.data.length} />
       <RejectedApplicationsList applications={data.data} />
     </div>
   );

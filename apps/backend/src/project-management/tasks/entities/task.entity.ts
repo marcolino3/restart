@@ -3,6 +3,8 @@ import { Membership } from '@/memberships/entities/membership.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { Project } from '@/project-management/projects/entities/project.entity';
 import { Protocol } from '@/project-management/protocols/entities/protocol.entity';
+import { AdmissionApplication } from '@/school-management/admissions/entities/admission-application.entity';
+import { AdmissionReminder } from '@/school-management/admissions/entities/admission-reminder.entity';
 import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
 import {
   Column,
@@ -92,4 +94,31 @@ export class Task extends AbstractEntity<Task> {
   @ManyToOne(() => Protocol, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'protocol_id' })
   protocol?: Protocol | null;
+
+  // Set when the task was auto-created from an admission reminder
+  // ("Erinnerung"). Completing/deleting the reminder keeps its task in sync.
+  // ON DELETE SET NULL: deleting the reminder detaches the task (the reminders
+  // service soft-deletes the linked task explicitly before hard-deleting).
+  @Field(() => ID, { nullable: true })
+  @Column('uuid', { name: 'admission_reminder_id', nullable: true })
+  admissionReminderId?: string | null;
+
+  @Field(() => AdmissionReminder, { nullable: true })
+  @ManyToOne(() => AdmissionReminder, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'admission_reminder_id' })
+  admissionReminder?: AdmissionReminder | null;
+
+  // The admission application a reminder belongs to — the "source" surfaced in
+  // "My Tasks" (kept even if the reminder itself is later removed).
+  @Field(() => ID, { nullable: true })
+  @Column('uuid', { name: 'admission_application_id', nullable: true })
+  admissionApplicationId?: string | null;
+
+  @Field(() => AdmissionApplication, { nullable: true })
+  @ManyToOne(() => AdmissionApplication, {
+    onDelete: 'SET NULL',
+    nullable: true,
+  })
+  @JoinColumn({ name: 'admission_application_id' })
+  admissionApplication?: AdmissionApplication | null;
 }

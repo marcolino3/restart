@@ -25,8 +25,6 @@ import EmployeeNotesFeed from "@/features/employee-notes/components/EmployeeNote
 import EmployeeNotesTimeline from "@/features/employee-notes/components/EmployeeNotesTimeline";
 import CreateEmployeeNoteInline from "@/features/employee-notes/components/CreateEmployeeNoteInline";
 import EmployeeContractsTab from "./EmployeeContractsTab";
-import EmployeeHistoryFeed from "./EmployeeHistoryFeed";
-import { ConsentTab } from "@/features/consent/components/ConsentTab";
 
 interface EmployeeViewPageProps {
   employee: EmployeeDetail;
@@ -95,7 +93,6 @@ export default function EmployeeViewPage({
   const tE = useTranslations("Employees");
   const tN = useTranslations("EmployeeNotes");
   const tCountries = useTranslations("Countries");
-  const tC = useTranslations("ConsentManagement");
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
@@ -206,9 +203,6 @@ export default function EmployeeViewPage({
                 </TabsTrigger>
                 <TabsTrigger className={tabCls} value="documents">
                   {tE("tabDocuments")}
-                </TabsTrigger>
-                <TabsTrigger className={tabCls} value="consent">
-                  {tC("tabConsent")}
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -482,11 +476,6 @@ export default function EmployeeViewPage({
                 contracts={contracts}
                 editable
               />
-            </TabsContent>
-
-            {/* Einwilligungen */}
-            <TabsContent value="consent">
-              <ConsentTab subjectType="EMPLOYEE" subjectId={employee.id} />
             </TabsContent>
           </Tabs>
   );

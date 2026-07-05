@@ -41,6 +41,7 @@ export interface CreateEmailTemplateInput {
   subject: string;
   bodyHtml: string;
   description?: string | null;
+  isAutomatic?: boolean;
 }
 
 export const createEmailTemplateAction = async (
@@ -57,6 +58,7 @@ export const createEmailTemplateAction = async (
           subject: input.subject,
           bodyHtml: input.bodyHtml,
           description: input.description ?? null,
+          isAutomatic: input.isAutomatic ?? false,
         },
       },
     );
@@ -78,6 +80,7 @@ export interface UpdateEmailTemplateInput {
   subject?: string;
   bodyHtml?: string;
   description?: string | null;
+  isAutomatic?: boolean;
 }
 
 export const updateEmailTemplateAction = async (

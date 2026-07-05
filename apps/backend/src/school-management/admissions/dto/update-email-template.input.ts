@@ -1,5 +1,6 @@
 import { Field, ID, InputType } from '@nestjs/graphql';
 import {
+  IsBoolean,
   IsEnum,
   IsOptional,
   IsString,
@@ -45,4 +46,9 @@ export class UpdateEmailTemplateInput {
   @IsString()
   @MaxLength(1000)
   description?: string;
+
+  @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  isAutomatic?: boolean;
 }

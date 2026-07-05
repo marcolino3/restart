@@ -61,7 +61,10 @@ export class StorageService {
     const safe = key
       .split('/')
       .map((s) => s.replace(/[^a-zA-Z0-9._-]/g, ''))
-      .filter(Boolean)
+      // Drop empty and traversal segments ("." / "..") so untrusted keys can
+      // never climb out of the storage root — the boundary check below is the
+      // second line of defence.
+      .filter((s) => s && s !== '.' && s !== '..')
       .join('/');
     const resolved = path.resolve(this.localRoot, safe);
     if (

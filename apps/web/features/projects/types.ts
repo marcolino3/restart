@@ -84,7 +84,11 @@ export const AGENDA_GOALS: AgendaGoal[] = [
   "DISCUSSION",
 ];
 
-export type AgendaItem = { no?: number | null; topic: string; goal?: AgendaGoal | null };
+export type AgendaItem = {
+  no?: number | null;
+  topic: string;
+  goal?: AgendaGoal | null;
+};
 export type ProtocolDecisionRow = {
   topic: string;
   decision?: string | null;
@@ -154,4 +158,12 @@ export type Task = {
   project?: { id: string; title: string; color?: string | null } | null;
   // Set when the task originated from a meeting protocol.
   protocol?: { id: string; title: string } | null;
+  // Set when the task was auto-created from an admission reminder — the "source"
+  // links back to the application ("Aufnahme: <Kind>").
+  admissionApplicationId?: string | null;
+  admissionApplication?: {
+    id: string;
+    childFirstName: string;
+    childLastName: string;
+  } | null;
 };

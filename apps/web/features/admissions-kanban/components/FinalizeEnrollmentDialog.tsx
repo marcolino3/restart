@@ -8,10 +8,12 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -107,9 +109,8 @@ export function FinalizeEnrollmentDialog({
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle>{t("enrollTitle", { name: childName })}</DialogTitle>
+          <DialogDescription>{t("enrollDescription")}</DialogDescription>
         </DialogHeader>
-
-        <p className="text-sm text-muted-foreground">{t("enrollDescription")}</p>
 
         <Form {...form}>
           <form
@@ -133,6 +134,27 @@ export function FinalizeEnrollmentDialog({
             />
           </form>
         </Form>
+
+        {/* Summary: what gets carried over on enrollment (design element). */}
+        <div className="space-y-2 rounded-md border bg-muted/30 p-3 text-xs">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {t("enrollSummaryTitle")}
+          </p>
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-medium">{childName}</span>
+            <Badge variant="green">{t("enrollSummaryStudent")}</Badge>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-medium">{t("enrollSummaryContacts")}</span>
+            <Badge variant="green">{t("enrollSummaryContactsTarget")}</Badge>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-muted-foreground">
+              {t("enrollSummaryHistory")}
+            </span>
+            <Badge variant="slate">{t("enrollSummaryHistoryTarget")}</Badge>
+          </div>
+        </div>
 
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="outline" onClick={onClose}>
