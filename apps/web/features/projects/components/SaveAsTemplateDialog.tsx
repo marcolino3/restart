@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -89,6 +90,19 @@ export function SaveAsTemplateDialog({
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
+
+          {/* Static "what gets copied" summary (design). */}
+          <div className="space-y-1">
+            <Label>{t("templateIncludes")}</Label>
+            <div className="divide-y rounded-md border">
+              <IncludeRow label={t("templateIncludesTasks")} included />
+              <IncludeRow label={t("templateIncludesColumns")} included />
+              <IncludeRow
+                label={t("templateIncludesDates")}
+                included={false}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="mt-6 flex justify-end gap-2">
@@ -105,5 +119,23 @@ export function SaveAsTemplateDialog({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function IncludeRow({
+  label,
+  included,
+}: {
+  label: string;
+  included: boolean;
+}) {
+  const tc = useTranslations("Common");
+  return (
+    <div className="flex items-center justify-between gap-2 px-3 py-2">
+      <span className="text-sm font-medium">{label}</span>
+      <Badge variant={included ? "green" : "slate"}>
+        {included ? tc("yes") : tc("no")}
+      </Badge>
+    </div>
   );
 }

@@ -32,8 +32,15 @@ const DeleteDocument = gql`
 export const createProtocolAction = async (input: {
   title: string;
   meetingDate?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  // Applies a protocol template (copies agenda items + default participants).
+  templateId?: string | null;
+  status?: ProtocolStatus;
   projectId?: string | null;
   participantMembershipIds?: string[];
+  externalParticipants?: string[];
+  sections?: ProtocolSections;
 }) => {
   const locale = await getLocale();
   const client = await serverCookieGqlClient();
@@ -53,6 +60,8 @@ export const updateProtocolAction = async (input: {
   id: string;
   title?: string;
   meetingDate?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
   status?: ProtocolStatus;
   projectId?: string | null;
   externalParticipants?: string[];

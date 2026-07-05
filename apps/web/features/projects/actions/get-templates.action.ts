@@ -13,6 +13,9 @@ const Document = gql`
       title
       description
       createdAt
+      tasks {
+        id
+      }
     }
   }
 `;

@@ -1,6 +1,13 @@
 "use client";
 
-import { IconArrowLeft, IconPlus, IconTrash } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconCopy,
+  IconDots,
+  IconLayersSubtract,
+  IconPlus,
+  IconTrash,
+} from "@tabler/icons-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -14,14 +21,24 @@ import { ROUTES } from "@/constants/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { handleAction } from "@/lib/actions/handle-action";
 import { cn } from "@/lib/utils";
 
-import { updateProtocolAction } from "../actions/manage-protocols.action";
+import {
+  createProtocolAction,
+  updateProtocolAction,
+} from "../actions/manage-protocols.action";
 import { membershipName } from "../lib/membership-name";
+import { SaveProtocolTemplateDialog } from "./ManageProtocolTemplatesDialog";
 import { ProtocolTodosPanel } from "./ProtocolTodosPanel";
 import {
   AGENDA_GOALS,
@@ -39,6 +56,8 @@ const selectClass =
 type EditorForm = {
   title: string;
   meetingDate: Date | null;
+  startTime: string;
+  endTime: string;
   status: "DRAFT" | "FINALIZED";
   projectId: string;
   participantMembershipIds: string[];
@@ -91,6 +110,8 @@ export function ProtocolEditor({
     defaultValues: {
       title: protocol.title,
       meetingDate: fromIsoDate(protocol.meetingDate),
+      startTime: protocol.startTime ?? "",
+      endTime: protocol.endTime ?? "",
       status: protocol.status,
       projectId: protocol.projectId ?? NO_PROJECT,
       participantMembershipIds: (protocol.participants ?? []).map(
@@ -144,6 +165,35 @@ export function ProtocolEditor({
 
   // Todos can only be assigned to people who attend the meeting.
   const selectedParticipantIds = form.watch("participantMembershipIds") ?? [];
+
+  const [saveTemplateOpen, setSaveTemplateOpen] = React.useState(false);
+  const [duplicating, setDuplicating] = React.useState(false);
+
+  const onDuplicate = async () => {
+    setDuplicating(true);
+    const result = await handleAction({
+      action: () =>
+        createProtocolAction({
+          title: `${protocol.title} ${t("copySuffix")}`,
+          meetingDate: protocol.meetingDate ?? null,
+          startTime: protocol.startTime ?? null,
+          endTime: protocol.endTime ?? null,
+          status: "DRAFT",
+          projectId: protocol.projectId ?? null,
+          participantMembershipIds: (protocol.participants ?? []).map(
+            (p) => p.membershipId
+          ),
+          externalParticipants: protocol.externalParticipants ?? [],
+          sections: protocol.sections,
+        }),
+      successMessage: t("protocolDuplicated"),
+      errorMessage: t("protocolDuplicateError"),
+    });
+    setDuplicating(false);
+    if (result.success) {
+      router.push(ROUTES.admin.protocolEditor(locale, result.data.id));
+    }
+  };
 
   const onSubmit = async (values: EditorForm) => {
     const clean = (s: string) => {
@@ -200,6 +250,8 @@ export function ProtocolEditor({
           id: protocol.id,
           title: values.title.trim(),
           meetingDate: toIsoDate(values.meetingDate),
+          startTime: values.startTime || null,
+          endTime: values.endTime || null,
           status: values.status,
           projectId:
             values.projectId === NO_PROJECT ? null : values.projectId,
@@ -240,12 +292,45 @@ export function ProtocolEditor({
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <Button variant="ghost" size="sm" className="-ml-2 w-fit" asChild>
-        <Link href={ROUTES.admin.protocols(locale)}>
-          <IconArrowLeft className="mr-1 h-4 w-4" />
-          {t("pageTitle")}
-        </Link>
-      </Button>
+      <div className="flex items-center justify-between gap-2">
+        <Button variant="ghost" size="sm" className="-ml-2 w-fit" asChild>
+          <Link href={ROUTES.admin.protocols(locale)}>
+            <IconArrowLeft className="mr-1 h-4 w-4" />
+            {t("pageTitle")}
+          </Link>
+        </Button>
+        {canWrite && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-9 w-9 rounded-full"
+                aria-label={t("moreSettings")}
+              >
+                <IconDots className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={() => setSaveTemplateOpen(true)}>
+                <IconLayersSubtract className="mr-2 h-4 w-4" />
+                {t("saveAsTemplate")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onDuplicate} disabled={duplicating}>
+                <IconCopy className="mr-2 h-4 w-4" />
+                {t("duplicate")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+
+      <SaveProtocolTemplateDialog
+        open={saveTemplateOpen}
+        onOpenChange={setSaveTemplateOpen}
+        protocolId={protocol.id}
+        defaultTitle={protocol.title}
+      />
 
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -256,12 +341,24 @@ export function ProtocolEditor({
                 <Label>{t("title")}</Label>
                 <Input {...form.register("title")} />
               </div>
-              <DatePickerFormField
-                name="meetingDate"
-                label="meetingDate"
-                namespace="Protocols"
-                disabledDate={(d) => d < new Date("1900-01-01")}
-              />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="col-span-2">
+                  <DatePickerFormField
+                    name="meetingDate"
+                    label="meetingDate"
+                    namespace="Protocols"
+                    disabledDate={(d) => d < new Date("1900-01-01")}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>{t("timeFrom")}</Label>
+                  <Input type="time" {...form.register("startTime")} />
+                </div>
+                <div className="space-y-1">
+                  <Label>{t("timeTo")}</Label>
+                  <Input type="time" {...form.register("endTime")} />
+                </div>
+              </div>
               <div className="space-y-1">
                 <Label>{t("status")}</Label>
                 <select className={selectClass} {...form.register("status")}>

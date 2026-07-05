@@ -19,7 +19,10 @@ const Document = gql`
 export const createFromTemplateAction = async (input: {
   templateId: string;
   title?: string;
+  description?: string | null;
+  dueDate?: string | null;
   startDate?: string | null;
+  memberMembershipIds?: string[];
 }) => {
   const locale = await getLocale();
   const client = await serverCookieGqlClient();

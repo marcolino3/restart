@@ -59,8 +59,16 @@ const ProtocolEditorPage = async ({ params }: Props) => {
   );
   const canEdit = canManageAll || isCreator || isParticipant;
 
-  if (!canEdit) {
-    return <ProtocolView protocol={protocol} tasks={existingTasks} />;
+  // Finalized protocols render as the read-only document view (matching the
+  // design); editors can revert to draft from its ⋯ menu.
+  if (!canEdit || protocol.status === "FINALIZED") {
+    return (
+      <ProtocolView
+        protocol={protocol}
+        tasks={existingTasks}
+        canEdit={canEdit}
+      />
+    );
   }
 
   return (
