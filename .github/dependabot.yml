@@ -23,6 +23,11 @@ updates:
           - "minor"
           - "patch"
 
+    ignore:
+      # NativeWind (apps/mobile) ist an Tailwind 3 gebunden — Tailwind 4 bricht die JS-Config-Auflösung
+      - dependency-name: "tailwindcss"
+        versions: [">=4.0.0"]
+
   # Backend
   - package-ecosystem: "npm"
     directory: "/apps/backend"
@@ -50,6 +55,9 @@ updates:
         versions: [">=0.15.0"]
       - dependency-name: "typescript"
         versions: [">=6.0.0"]
+      # TypeORM 1.0 = Datenschicht-Major, braucht dedizierten Migrations-PR
+      - dependency-name: "typeorm"
+        versions: [">=1.0.0"]
 
   # Frontend
   - package-ecosystem: "npm"
