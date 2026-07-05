@@ -65,6 +65,8 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'RETENTION_MANAGE',
     'DATA_BREACH_READ',
     'DATA_BREACH_MANAGE',
+    'VVT_READ',
+    'VVT_MANAGE',
   ] as PermissionCode[],
   ORG_ADMIN: [
     'USER_INVITE',
@@ -121,6 +123,8 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'RETENTION_MANAGE',
     'DATA_BREACH_READ',
     'DATA_BREACH_MANAGE',
+    'VVT_READ',
+    'VVT_MANAGE',
   ] as PermissionCode[],
   HR_MANAGER: [
     'EMPLOYEE_READ',
@@ -145,6 +149,7 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'DATA_REQUEST_MANAGE',
     'RETENTION_READ',
     'DATA_BREACH_READ',
+    'VVT_READ',
   ] as PermissionCode[],
   OFFICE: [
     'EMPLOYEE_READ',
@@ -186,6 +191,8 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'RETENTION_MANAGE',
     'DATA_BREACH_READ',
     'DATA_BREACH_MANAGE',
+    'VVT_READ',
+    'VVT_MANAGE',
   ] as PermissionCode[],
   TEAM_LEAD: [
     'EMPLOYEE_READ',

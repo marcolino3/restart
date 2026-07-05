@@ -958,6 +958,16 @@ export type CreateOrganizationSettingInput = {
   value: Scalars['String']['input'];
 };
 
+export type CreateProcessingActivityInput = {
+  dataCategories?: InputMaybe<Scalars['String']['input']>;
+  dataSubjects?: InputMaybe<Scalars['String']['input']>;
+  legalBasis?: InputMaybe<ConsentLegalBasis>;
+  name: Scalars['String']['input'];
+  purpose?: InputMaybe<Scalars['String']['input']>;
+  recipients?: InputMaybe<Scalars['String']['input']>;
+  retentionNote?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type CreateProjectFromTemplateInput = {
   memberMembershipIds?: InputMaybe<Array<Scalars['ID']['input']>>;
   startDate?: InputMaybe<Scalars['String']['input']>;
@@ -1025,6 +1035,15 @@ export type CreateStudentNoteInput = {
   isConfidential?: InputMaybe<Scalars['Boolean']['input']>;
   studentId: Scalars['ID']['input'];
   title: Scalars['String']['input'];
+};
+
+export type CreateSubprocessorInput = {
+  country?: InputMaybe<Scalars['String']['input']>;
+  dpaSigned?: InputMaybe<Scalars['Boolean']['input']>;
+  name: Scalars['String']['input'];
+  notes?: InputMaybe<Scalars['String']['input']>;
+  purpose?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type CreateTaskInput = {
@@ -2141,7 +2160,9 @@ export type Mutation = {
   archiveCurriculumNode: Scalars['Boolean']['output'];
   archiveEmployeeAbsenceCategory: Scalars['Boolean']['output'];
   archiveFamily: Scalars['Boolean']['output'];
+  archiveProcessingActivity: Scalars['Boolean']['output'];
   archiveProject: Project;
+  archiveSubprocessor: Scalars['Boolean']['output'];
   changeUserEmail: User;
   completeAdmissionReminder: AdmissionReminder;
   createAddress: Address;
@@ -2176,6 +2197,7 @@ export type Mutation = {
   createMembership: Membership;
   createOrganization: Organization;
   createOrganizationSetting: OrganizationSettingOutput;
+  createProcessingActivity: ProcessingActivity;
   createProject: Project;
   createProjectFromTemplate: Project;
   createProjectTemplate: ProjectTemplate;
@@ -2183,6 +2205,7 @@ export type Mutation = {
   createSchoolClass: SchoolClass;
   createStudent: Student;
   createStudentNote: StudentNote;
+  createSubprocessor: Subprocessor;
   createTask: Task;
   createTasksFromProtocol: Array<Task>;
   createTeam: Team;
@@ -2298,6 +2321,7 @@ export type Mutation = {
   updateMyTheme: Scalars['Boolean']['output'];
   updateOrganization: Organization;
   updateOrganizationSetting: OrganizationSettingOutput;
+  updateProcessingActivity: ProcessingActivity;
   updateProject: Project;
   updateProjectMemberRole: ProjectMember;
   updateProjectTemplate: ProjectTemplate;
@@ -2308,6 +2332,7 @@ export type Mutation = {
   updateStudent: Student;
   updateStudentContactPersonLink: StudentContactPerson;
   updateStudentNote: StudentNote;
+  updateSubprocessor: Subprocessor;
   updateTask: Task;
   updateTeam: Team;
   updateTeamMember: TeamMember;
@@ -2388,8 +2413,18 @@ export type MutationArchiveFamilyArgs = {
 };
 
 
+export type MutationArchiveProcessingActivityArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationArchiveProjectArgs = {
   archived?: Scalars['Boolean']['input'];
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationArchiveSubprocessorArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -2559,6 +2594,11 @@ export type MutationCreateOrganizationSettingArgs = {
 };
 
 
+export type MutationCreateProcessingActivityArgs = {
+  input: CreateProcessingActivityInput;
+};
+
+
 export type MutationCreateProjectArgs = {
   input: CreateProjectInput;
 };
@@ -2591,6 +2631,11 @@ export type MutationCreateStudentArgs = {
 
 export type MutationCreateStudentNoteArgs = {
   createStudentNoteInput: CreateStudentNoteInput;
+};
+
+
+export type MutationCreateSubprocessorArgs = {
+  input: CreateSubprocessorInput;
 };
 
 
@@ -3173,6 +3218,11 @@ export type MutationUpdateOrganizationSettingArgs = {
 };
 
 
+export type MutationUpdateProcessingActivityArgs = {
+  input: UpdateProcessingActivityInput;
+};
+
+
 export type MutationUpdateProjectArgs = {
   input: UpdateProjectInput;
 };
@@ -3220,6 +3270,11 @@ export type MutationUpdateStudentContactPersonLinkArgs = {
 
 export type MutationUpdateStudentNoteArgs = {
   updateStudentNoteInput: UpdateStudentNoteInput;
+};
+
+
+export type MutationUpdateSubprocessorArgs = {
+  input: UpdateSubprocessorInput;
 };
 
 
@@ -3437,7 +3492,9 @@ export enum PermissionCode {
   TimesheetRead = 'TIMESHEET_READ',
   TimesheetWrite = 'TIMESHEET_WRITE',
   UserInvite = 'USER_INVITE',
-  UserRemove = 'USER_REMOVE'
+  UserRemove = 'USER_REMOVE',
+  VvtManage = 'VVT_MANAGE',
+  VvtRead = 'VVT_READ'
 }
 
 export enum Persona {
@@ -3449,6 +3506,26 @@ export enum Persona {
   Student = 'STUDENT',
   Teacher = 'TEACHER'
 }
+
+export type ProcessingActivity = {
+  __typename?: 'ProcessingActivity';
+  createdAt: Scalars['DateTime']['output'];
+  dataCategories?: Maybe<Scalars['String']['output']>;
+  dataSubjects?: Maybe<Scalars['String']['output']>;
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  legalBasis: ConsentLegalBasis;
+  name: Scalars['String']['output'];
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['String']['output'];
+  purpose?: Maybe<Scalars['String']['output']>;
+  recipients?: Maybe<Scalars['String']['output']>;
+  retentionNote?: Maybe<Scalars['String']['output']>;
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
 
 export type Project = {
   __typename?: 'Project';
@@ -3770,6 +3847,7 @@ export type Query = {
   organizations: Array<Organization>;
   permissions: Array<Permission>;
   previewAdmissionEmail: AdmissionEmailPreview;
+  processingActivities: Array<ProcessingActivity>;
   projectById: Project;
   projectMembers: Array<ProjectMember>;
   projectTemplateById: ProjectTemplate;
@@ -3788,6 +3866,7 @@ export type Query = {
   studentNotesByStudentId: Array<StudentNote>;
   studentsByContactPersonId: Array<StudentContactPerson>;
   studentsByOrgId: Array<Student>;
+  subprocessors: Array<Subprocessor>;
   taskById: Task;
   tasksByProject: Array<Task>;
   tasksByProtocol: Array<Task>;
@@ -4664,6 +4743,25 @@ export type StudentTimelineOutput = {
   totalIntroductionsInRange: Scalars['Int']['output'];
 };
 
+export type Subprocessor = {
+  __typename?: 'Subprocessor';
+  country?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  dpaSigned: Scalars['Boolean']['output'];
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  name: Scalars['String']['output'];
+  notes?: Maybe<Scalars['String']['output']>;
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['String']['output'];
+  purpose?: Maybe<Scalars['String']['output']>;
+  updatedAt: Scalars['DateTime']['output'];
+  url?: Maybe<Scalars['String']['output']>;
+  version: Scalars['Int']['output'];
+};
+
 /** Supported System Employee Absence Category */
 export enum SystemEmployeeAbsenceCategory {
   Accident = 'ACCIDENT',
@@ -5241,6 +5339,17 @@ export type UpdateOrganizationSettingInput = {
   value?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type UpdateProcessingActivityInput = {
+  dataCategories?: InputMaybe<Scalars['String']['input']>;
+  dataSubjects?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  legalBasis?: InputMaybe<ConsentLegalBasis>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  purpose?: InputMaybe<Scalars['String']['input']>;
+  recipients?: InputMaybe<Scalars['String']['input']>;
+  retentionNote?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type UpdateProjectInput = {
   color?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
@@ -5331,6 +5440,16 @@ export type UpdateStudentNoteInput = {
   isConfidential?: InputMaybe<Scalars['Boolean']['input']>;
   studentId?: InputMaybe<Scalars['ID']['input']>;
   title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateSubprocessorInput = {
+  country?: InputMaybe<Scalars['String']['input']>;
+  dpaSigned?: InputMaybe<Scalars['Boolean']['input']>;
+  id: Scalars['ID']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
+  notes?: InputMaybe<Scalars['String']['input']>;
+  purpose?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateTaskInput = {
@@ -7338,6 +7457,58 @@ export type UpdateUserMutationVariables = Exact<{
 
 export type UpdateUserMutation = { __typename?: 'Mutation', updateUser: { __typename?: 'User', id: string } };
 
+export type ArchiveProcessingActivityMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type ArchiveProcessingActivityMutation = { __typename?: 'Mutation', archiveProcessingActivity: boolean };
+
+export type ArchiveSubprocessorMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type ArchiveSubprocessorMutation = { __typename?: 'Mutation', archiveSubprocessor: boolean };
+
+export type ProcessingActivitiesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ProcessingActivitiesQuery = { __typename?: 'Query', processingActivities: Array<{ __typename?: 'ProcessingActivity', id: string, name: string, purpose?: string | null, legalBasis: ConsentLegalBasis, dataCategories?: string | null, dataSubjects?: string | null, recipients?: string | null, retentionNote?: string | null }> };
+
+export type SubprocessorsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type SubprocessorsQuery = { __typename?: 'Query', subprocessors: Array<{ __typename?: 'Subprocessor', id: string, name: string, purpose?: string | null, country?: string | null, dpaSigned: boolean, url?: string | null, notes?: string | null }> };
+
+export type CreateProcessingActivityMutationVariables = Exact<{
+  input: CreateProcessingActivityInput;
+}>;
+
+
+export type CreateProcessingActivityMutation = { __typename?: 'Mutation', createProcessingActivity: { __typename?: 'ProcessingActivity', id: string } };
+
+export type UpdateProcessingActivityMutationVariables = Exact<{
+  input: UpdateProcessingActivityInput;
+}>;
+
+
+export type UpdateProcessingActivityMutation = { __typename?: 'Mutation', updateProcessingActivity: { __typename?: 'ProcessingActivity', id: string } };
+
+export type CreateSubprocessorMutationVariables = Exact<{
+  input: CreateSubprocessorInput;
+}>;
+
+
+export type CreateSubprocessorMutation = { __typename?: 'Mutation', createSubprocessor: { __typename?: 'Subprocessor', id: string } };
+
+export type UpdateSubprocessorMutationVariables = Exact<{
+  input: UpdateSubprocessorInput;
+}>;
+
+
+export type UpdateSubprocessorMutation = { __typename?: 'Mutation', updateSubprocessor: { __typename?: 'Subprocessor', id: string } };
+
 
 export const ArchiveAdmissionApplicationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ArchiveAdmissionApplication"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"archiveAdmissionApplication"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<ArchiveAdmissionApplicationMutation, ArchiveAdmissionApplicationMutationVariables>;
 export const RejectAdmissionApplicationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RejectAdmissionApplication"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RejectAdmissionApplicationInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"rejectAdmissionApplication"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"rejectionReason"}},{"kind":"Field","name":{"kind":"Name","value":"rejectionReasonId"}},{"kind":"Field","name":{"kind":"Name","value":"rejectedBy"}}]}}]}}]} as unknown as DocumentNode<RejectAdmissionApplicationMutation, RejectAdmissionApplicationMutationVariables>;
@@ -7597,3 +7768,11 @@ export const RemoveUserEmailDocument = {"kind":"Document","definitions":[{"kind"
 export const SetPrimaryUserEmailDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SetPrimaryUserEmail"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"setPrimaryUserEmail"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"isPrimary"}}]}}]}}]} as unknown as DocumentNode<SetPrimaryUserEmailMutation, SetPrimaryUserEmailMutationVariables>;
 export const UpdateMyThemeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateMyTheme"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateMyThemeInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateMyTheme"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}]}]}}]} as unknown as DocumentNode<UpdateMyThemeMutation, UpdateMyThemeMutationVariables>;
 export const UpdateUserDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateUser"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"updateUserInput"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateUserInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateUser"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"updateUserInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"updateUserInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateUserMutation, UpdateUserMutationVariables>;
+export const ArchiveProcessingActivityDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ArchiveProcessingActivity"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"archiveProcessingActivity"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<ArchiveProcessingActivityMutation, ArchiveProcessingActivityMutationVariables>;
+export const ArchiveSubprocessorDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ArchiveSubprocessor"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"archiveSubprocessor"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<ArchiveSubprocessorMutation, ArchiveSubprocessorMutationVariables>;
+export const ProcessingActivitiesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ProcessingActivities"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"processingActivities"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"purpose"}},{"kind":"Field","name":{"kind":"Name","value":"legalBasis"}},{"kind":"Field","name":{"kind":"Name","value":"dataCategories"}},{"kind":"Field","name":{"kind":"Name","value":"dataSubjects"}},{"kind":"Field","name":{"kind":"Name","value":"recipients"}},{"kind":"Field","name":{"kind":"Name","value":"retentionNote"}}]}}]}}]} as unknown as DocumentNode<ProcessingActivitiesQuery, ProcessingActivitiesQueryVariables>;
+export const SubprocessorsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Subprocessors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"subprocessors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"purpose"}},{"kind":"Field","name":{"kind":"Name","value":"country"}},{"kind":"Field","name":{"kind":"Name","value":"dpaSigned"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}}]}}]}}]} as unknown as DocumentNode<SubprocessorsQuery, SubprocessorsQueryVariables>;
+export const CreateProcessingActivityDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateProcessingActivity"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateProcessingActivityInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createProcessingActivity"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateProcessingActivityMutation, CreateProcessingActivityMutationVariables>;
+export const UpdateProcessingActivityDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateProcessingActivity"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateProcessingActivityInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateProcessingActivity"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateProcessingActivityMutation, UpdateProcessingActivityMutationVariables>;
+export const CreateSubprocessorDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateSubprocessor"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateSubprocessorInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createSubprocessor"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateSubprocessorMutation, CreateSubprocessorMutationVariables>;
+export const UpdateSubprocessorDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateSubprocessor"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateSubprocessorInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateSubprocessor"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateSubprocessorMutation, UpdateSubprocessorMutationVariables>;

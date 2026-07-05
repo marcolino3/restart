@@ -134,6 +134,14 @@ const PERMISSION_CATALOG: Array<{
   },
   { code: PermissionCode.DATA_BREACH_READ, name: 'Datenpannen lesen' },
   { code: PermissionCode.DATA_BREACH_MANAGE, name: 'Datenpannen bearbeiten' },
+  {
+    code: PermissionCode.VVT_READ,
+    name: 'Verarbeitungsverzeichnis lesen',
+  },
+  {
+    code: PermissionCode.VVT_MANAGE,
+    name: 'Verarbeitungsverzeichnis verwalten',
+  },
 ];
 
 export async function seedPermissionCatalog(manager: EntityManager) {
