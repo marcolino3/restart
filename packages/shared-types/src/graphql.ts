@@ -2250,6 +2250,7 @@ export type Mutation = {
   deleteTeamMember: Scalars['Boolean']['output'];
   deleteTimeTracking: Scalars['Boolean']['output'];
   ensureTimeTrackingPeriod: TimeTrackingPeriod;
+  executePurgeCandidate: Scalars['Boolean']['output'];
   finalizeAdmissionEnrollment: FinalizeEnrollmentOutput;
   finalizeEmployeeOnboarding: Employee;
   hardDeleteCurriculum: Scalars['Boolean']['output'];
@@ -2281,7 +2282,9 @@ export type Mutation = {
   resendAdmissionEmail: AdmissionEmail;
   restoreAdmissionApplication: AdmissionApplication;
   resyncSystemEmployeeAbsenceCategoryTranslations: Scalars['Boolean']['output'];
+  reviewPurgeCandidate: Scalars['Boolean']['output'];
   saveProjectAsTemplate: ProjectTemplate;
+  scanRetention: Scalars['Int']['output'];
   seedSystemEmployeeAbsenceCategories: Scalars['Boolean']['output'];
   sendAdmissionEmail: AdmissionEmail;
   sendEmployeeInvitation: Employee;
@@ -2825,6 +2828,11 @@ export type MutationEnsureTimeTrackingPeriodArgs = {
 };
 
 
+export type MutationExecutePurgeCandidateArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationFinalizeAdmissionEnrollmentArgs = {
   input: FinalizeEnrollmentInput;
 };
@@ -2979,6 +2987,12 @@ export type MutationRestoreAdmissionApplicationArgs = {
 
 export type MutationResyncSystemEmployeeAbsenceCategoryTranslationsArgs = {
   orgId: Scalars['ID']['input'];
+};
+
+
+export type MutationReviewPurgeCandidateArgs = {
+  approve: Scalars['Boolean']['input'];
+  id: Scalars['ID']['input'];
 };
 
 
@@ -3764,6 +3778,37 @@ export type ProtocolTaskDraftInput = {
   title: Scalars['String']['input'];
 };
 
+export type PurgeCandidate = {
+  __typename?: 'PurgeCandidate';
+  action: RetentionAction;
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  dueSince: Scalars['DateTime']['output'];
+  entityType: RetentionEntityType;
+  executedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  note?: Maybe<Scalars['String']['output']>;
+  organizationId: Scalars['String']['output'];
+  reviewedAt?: Maybe<Scalars['DateTime']['output']>;
+  reviewedByMembershipId?: Maybe<Scalars['ID']['output']>;
+  status: PurgeStatus;
+  subjectId: Scalars['ID']['output'];
+  subjectLabel: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+/** Lifecycle of a retention purge candidate */
+export enum PurgeStatus {
+  Approved = 'APPROVED',
+  Executed = 'EXECUTED',
+  Failed = 'FAILED',
+  Pending = 'PENDING',
+  Rejected = 'REJECTED'
+}
+
 export type Query = {
   __typename?: 'Query';
   accessReview: Array<AccessReviewEntry>;
@@ -3871,6 +3916,7 @@ export type Query = {
   projectTemplates: Array<ProjectTemplate>;
   protocolById: Protocol;
   protocolsByOrg: Array<Protocol>;
+  purgeCandidates: Array<PurgeCandidate>;
   recordKeepingSettings: RecordKeepingSettings;
   relatedAddressesForContactPerson: Array<AddressSuggestion>;
   retentionPolicies: Array<RetentionPolicy>;
@@ -4334,6 +4380,11 @@ export type QueryProjectTemplateByIdArgs = {
 
 export type QueryProtocolByIdArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryPurgeCandidatesArgs = {
+  status?: InputMaybe<PurgeStatus>;
 };
 
 
@@ -7000,10 +7051,35 @@ export type DeleteRetentionPolicyMutationVariables = Exact<{
 
 export type DeleteRetentionPolicyMutation = { __typename?: 'Mutation', deleteRetentionPolicy: boolean };
 
+export type ExecutePurgeCandidateMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type ExecutePurgeCandidateMutation = { __typename?: 'Mutation', executePurgeCandidate: boolean };
+
+export type PurgeCandidatesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type PurgeCandidatesQuery = { __typename?: 'Query', purgeCandidates: Array<{ __typename?: 'PurgeCandidate', id: string, entityType: RetentionEntityType, subjectLabel: string, dueSince: any, action: RetentionAction, status: PurgeStatus, reviewedAt?: any | null, executedAt?: any | null, note?: string | null }> };
+
 export type RetentionPoliciesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type RetentionPoliciesQuery = { __typename?: 'Query', retentionPolicies: Array<{ __typename?: 'RetentionPolicy', id: string, entityType: RetentionEntityType, retentionMonths: number, action: RetentionAction, description?: string | null, isEnabled: boolean, dueCount?: number | null }> };
+
+export type ReviewPurgeCandidateMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  approve: Scalars['Boolean']['input'];
+}>;
+
+
+export type ReviewPurgeCandidateMutation = { __typename?: 'Mutation', reviewPurgeCandidate: boolean };
+
+export type ScanRetentionMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ScanRetentionMutation = { __typename?: 'Mutation', scanRetention: number };
 
 export type UpsertRetentionPolicyMutationVariables = Exact<{
   input: UpsertRetentionPolicyInput;
@@ -7727,7 +7803,11 @@ export const StudentLessonRecordTimelineDocument = {"kind":"Document","definitio
 export const SetLessonPrerequisitesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SetLessonPrerequisites"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SetLessonPrerequisitesInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"setLessonPrerequisites"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<SetLessonPrerequisitesMutation, SetLessonPrerequisitesMutationVariables>;
 export const UpdateLessonRecordDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateLessonRecord"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateLessonRecordInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateLessonRecord"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"studentId"}},{"kind":"Field","name":{"kind":"Name","value":"lessonId"}},{"kind":"Field","name":{"kind":"Name","value":"recordedAt"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"note"}}]}}]}}]} as unknown as DocumentNode<UpdateLessonRecordMutation, UpdateLessonRecordMutationVariables>;
 export const DeleteRetentionPolicyDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteRetentionPolicy"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteRetentionPolicy"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteRetentionPolicyMutation, DeleteRetentionPolicyMutationVariables>;
+export const ExecutePurgeCandidateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ExecutePurgeCandidate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"executePurgeCandidate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<ExecutePurgeCandidateMutation, ExecutePurgeCandidateMutationVariables>;
+export const PurgeCandidatesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"PurgeCandidates"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"purgeCandidates"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"entityType"}},{"kind":"Field","name":{"kind":"Name","value":"subjectLabel"}},{"kind":"Field","name":{"kind":"Name","value":"dueSince"}},{"kind":"Field","name":{"kind":"Name","value":"action"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"reviewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"executedAt"}},{"kind":"Field","name":{"kind":"Name","value":"note"}}]}}]}}]} as unknown as DocumentNode<PurgeCandidatesQuery, PurgeCandidatesQueryVariables>;
 export const RetentionPoliciesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"RetentionPolicies"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"retentionPolicies"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"entityType"}},{"kind":"Field","name":{"kind":"Name","value":"retentionMonths"}},{"kind":"Field","name":{"kind":"Name","value":"action"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"isEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"dueCount"}}]}}]}}]} as unknown as DocumentNode<RetentionPoliciesQuery, RetentionPoliciesQueryVariables>;
+export const ReviewPurgeCandidateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ReviewPurgeCandidate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"approve"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"reviewPurgeCandidate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"approve"},"value":{"kind":"Variable","name":{"kind":"Name","value":"approve"}}}]}]}}]} as unknown as DocumentNode<ReviewPurgeCandidateMutation, ReviewPurgeCandidateMutationVariables>;
+export const ScanRetentionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ScanRetention"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"scanRetention"}}]}}]} as unknown as DocumentNode<ScanRetentionMutation, ScanRetentionMutationVariables>;
 export const UpsertRetentionPolicyDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpsertRetentionPolicy"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpsertRetentionPolicyInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"upsertRetentionPolicy"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpsertRetentionPolicyMutation, UpsertRetentionPolicyMutationVariables>;
 export const GetPermissionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetPermissions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"permissions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]} as unknown as DocumentNode<GetPermissionsQuery, GetPermissionsQueryVariables>;
 export const GetRolesByOrgIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetRolesByOrgId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"rolesByOrgId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"systemCode"}},{"kind":"Field","name":{"kind":"Name","value":"isSystem"}},{"kind":"Field","name":{"kind":"Name","value":"permissions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<GetRolesByOrgIdQuery, GetRolesByOrgIdQueryVariables>;

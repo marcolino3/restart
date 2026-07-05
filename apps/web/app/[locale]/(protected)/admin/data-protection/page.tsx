@@ -10,6 +10,8 @@ import { getDataRequestsAction } from "@/features/data-requests/actions/get-data
 import { DataRequestsList } from "@/features/data-requests/components/DataRequestsList";
 import { getRetentionPoliciesAction } from "@/features/retention/actions/get-retention-policies.action";
 import { RetentionPoliciesList } from "@/features/retention/components/RetentionPoliciesList";
+import { getPurgeCandidatesAction } from "@/features/retention/actions/get-purge-candidates.action";
+import { PurgeQueue } from "@/features/retention/components/PurgeQueue";
 import { getDataBreachesAction } from "@/features/data-breaches/actions/get-data-breaches.action";
 import { DataBreachesList } from "@/features/data-breaches/components/DataBreachesList";
 import { getProcessingActivitiesAction } from "@/features/vvt/actions/get-processing-activities.action";
@@ -38,6 +40,7 @@ const DataProtectionPage = async () => {
   const purposesRes = await getConsentPurposesAction();
   const requestsRes = await getDataRequestsAction();
   const retentionRes = await getRetentionPoliciesAction();
+  const purgeRes = await getPurgeCandidatesAction();
   const breachesRes = await getDataBreachesAction();
   const [activitiesRes, subprocessorsRes, accessRes] = await Promise.all([
     getProcessingActivitiesAction(),
@@ -76,8 +79,9 @@ const DataProtectionPage = async () => {
           <DataRequestsList initial={requestsRes.data} />
         </TabsContent>
 
-        <TabsContent value="retention">
+        <TabsContent value="retention" className="space-y-8">
           <RetentionPoliciesList initial={retentionRes.data} />
+          <PurgeQueue initial={purgeRes.data} />
         </TabsContent>
 
         <TabsContent value="breaches">
