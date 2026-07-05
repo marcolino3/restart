@@ -83,6 +83,9 @@ export enum PermissionCode {
 
   DATA_BREACH_READ = 'DATA_BREACH_READ',
   DATA_BREACH_MANAGE = 'DATA_BREACH_MANAGE',
+
+  VVT_READ = 'VVT_READ',
+  VVT_MANAGE = 'VVT_MANAGE',
 }
 
 registerEnumType(PermissionCode, {

@@ -272,6 +272,14 @@ type Documents = {
     "\n  mutation SetPrimaryUserEmail($id: ID!) {\n    setPrimaryUserEmail(id: $id) {\n      id\n      isPrimary\n    }\n  }\n": typeof types.SetPrimaryUserEmailDocument,
     "\n  mutation UpdateMyTheme($input: UpdateMyThemeInput!) {\n    updateMyTheme(input: $input)\n  }\n": typeof types.UpdateMyThemeDocument,
     "\n  mutation UpdateUser($updateUserInput: UpdateUserInput!) {\n    updateUser(updateUserInput: $updateUserInput) {\n      id\n    }\n  }\n": typeof types.UpdateUserDocument,
+    "\n  mutation ArchiveProcessingActivity($id: ID!) {\n    archiveProcessingActivity(id: $id)\n  }\n": typeof types.ArchiveProcessingActivityDocument,
+    "\n  mutation ArchiveSubprocessor($id: ID!) {\n    archiveSubprocessor(id: $id)\n  }\n": typeof types.ArchiveSubprocessorDocument,
+    "\n  query ProcessingActivities {\n    processingActivities {\n      id\n      name\n      purpose\n      legalBasis\n      dataCategories\n      dataSubjects\n      recipients\n      retentionNote\n    }\n  }\n": typeof types.ProcessingActivitiesDocument,
+    "\n  query Subprocessors {\n    subprocessors {\n      id\n      name\n      purpose\n      country\n      dpaSigned\n      url\n      notes\n    }\n  }\n": typeof types.SubprocessorsDocument,
+    "\n  mutation CreateProcessingActivity($input: CreateProcessingActivityInput!) {\n    createProcessingActivity(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateProcessingActivityDocument,
+    "\n  mutation UpdateProcessingActivity($input: UpdateProcessingActivityInput!) {\n    updateProcessingActivity(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateProcessingActivityDocument,
+    "\n  mutation CreateSubprocessor($input: CreateSubprocessorInput!) {\n    createSubprocessor(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateSubprocessorDocument,
+    "\n  mutation UpdateSubprocessor($input: UpdateSubprocessorInput!) {\n    updateSubprocessor(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateSubprocessorDocument,
 };
 const documents: Documents = {
     "\n  mutation ArchiveAdmissionApplication($id: ID!) {\n    archiveAdmissionApplication(id: $id)\n  }\n": types.ArchiveAdmissionApplicationDocument,
@@ -532,6 +540,14 @@ const documents: Documents = {
     "\n  mutation SetPrimaryUserEmail($id: ID!) {\n    setPrimaryUserEmail(id: $id) {\n      id\n      isPrimary\n    }\n  }\n": types.SetPrimaryUserEmailDocument,
     "\n  mutation UpdateMyTheme($input: UpdateMyThemeInput!) {\n    updateMyTheme(input: $input)\n  }\n": types.UpdateMyThemeDocument,
     "\n  mutation UpdateUser($updateUserInput: UpdateUserInput!) {\n    updateUser(updateUserInput: $updateUserInput) {\n      id\n    }\n  }\n": types.UpdateUserDocument,
+    "\n  mutation ArchiveProcessingActivity($id: ID!) {\n    archiveProcessingActivity(id: $id)\n  }\n": types.ArchiveProcessingActivityDocument,
+    "\n  mutation ArchiveSubprocessor($id: ID!) {\n    archiveSubprocessor(id: $id)\n  }\n": types.ArchiveSubprocessorDocument,
+    "\n  query ProcessingActivities {\n    processingActivities {\n      id\n      name\n      purpose\n      legalBasis\n      dataCategories\n      dataSubjects\n      recipients\n      retentionNote\n    }\n  }\n": types.ProcessingActivitiesDocument,
+    "\n  query Subprocessors {\n    subprocessors {\n      id\n      name\n      purpose\n      country\n      dpaSigned\n      url\n      notes\n    }\n  }\n": types.SubprocessorsDocument,
+    "\n  mutation CreateProcessingActivity($input: CreateProcessingActivityInput!) {\n    createProcessingActivity(input: $input) {\n      id\n    }\n  }\n": types.CreateProcessingActivityDocument,
+    "\n  mutation UpdateProcessingActivity($input: UpdateProcessingActivityInput!) {\n    updateProcessingActivity(input: $input) {\n      id\n    }\n  }\n": types.UpdateProcessingActivityDocument,
+    "\n  mutation CreateSubprocessor($input: CreateSubprocessorInput!) {\n    createSubprocessor(input: $input) {\n      id\n    }\n  }\n": types.CreateSubprocessorDocument,
+    "\n  mutation UpdateSubprocessor($input: UpdateSubprocessorInput!) {\n    updateSubprocessor(input: $input) {\n      id\n    }\n  }\n": types.UpdateSubprocessorDocument,
 };
 
 /**
@@ -1580,6 +1596,38 @@ export function graphql(source: "\n  mutation UpdateMyTheme($input: UpdateMyThem
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation UpdateUser($updateUserInput: UpdateUserInput!) {\n    updateUser(updateUserInput: $updateUserInput) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateUser($updateUserInput: UpdateUserInput!) {\n    updateUser(updateUserInput: $updateUserInput) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ArchiveProcessingActivity($id: ID!) {\n    archiveProcessingActivity(id: $id)\n  }\n"): (typeof documents)["\n  mutation ArchiveProcessingActivity($id: ID!) {\n    archiveProcessingActivity(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ArchiveSubprocessor($id: ID!) {\n    archiveSubprocessor(id: $id)\n  }\n"): (typeof documents)["\n  mutation ArchiveSubprocessor($id: ID!) {\n    archiveSubprocessor(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query ProcessingActivities {\n    processingActivities {\n      id\n      name\n      purpose\n      legalBasis\n      dataCategories\n      dataSubjects\n      recipients\n      retentionNote\n    }\n  }\n"): (typeof documents)["\n  query ProcessingActivities {\n    processingActivities {\n      id\n      name\n      purpose\n      legalBasis\n      dataCategories\n      dataSubjects\n      recipients\n      retentionNote\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query Subprocessors {\n    subprocessors {\n      id\n      name\n      purpose\n      country\n      dpaSigned\n      url\n      notes\n    }\n  }\n"): (typeof documents)["\n  query Subprocessors {\n    subprocessors {\n      id\n      name\n      purpose\n      country\n      dpaSigned\n      url\n      notes\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation CreateProcessingActivity($input: CreateProcessingActivityInput!) {\n    createProcessingActivity(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateProcessingActivity($input: CreateProcessingActivityInput!) {\n    createProcessingActivity(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateProcessingActivity($input: UpdateProcessingActivityInput!) {\n    updateProcessingActivity(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateProcessingActivity($input: UpdateProcessingActivityInput!) {\n    updateProcessingActivity(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation CreateSubprocessor($input: CreateSubprocessorInput!) {\n    createSubprocessor(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateSubprocessor($input: CreateSubprocessorInput!) {\n    createSubprocessor(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateSubprocessor($input: UpdateSubprocessorInput!) {\n    updateSubprocessor(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateSubprocessor($input: UpdateSubprocessorInput!) {\n    updateSubprocessor(input: $input) {\n      id\n    }\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

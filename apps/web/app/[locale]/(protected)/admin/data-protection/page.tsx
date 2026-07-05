@@ -12,6 +12,9 @@ import { getRetentionPoliciesAction } from "@/features/retention/actions/get-ret
 import { RetentionPoliciesList } from "@/features/retention/components/RetentionPoliciesList";
 import { getDataBreachesAction } from "@/features/data-breaches/actions/get-data-breaches.action";
 import { DataBreachesList } from "@/features/data-breaches/components/DataBreachesList";
+import { getProcessingActivitiesAction } from "@/features/vvt/actions/get-processing-activities.action";
+import { getSubprocessorsAction } from "@/features/vvt/actions/get-subprocessors.action";
+import { VvtSection } from "@/features/vvt/components/VvtSection";
 
 const DataProtectionPage = async () => {
   const locale = await getLocale();
@@ -19,6 +22,7 @@ const DataProtectionPage = async () => {
   const tR = await getTranslations("DataRequests");
   const tRet = await getTranslations("RetentionSettings");
   const tB = await getTranslations("DataBreaches");
+  const tV = await getTranslations("Vvt");
   const userRes = await getCurrentUserAction();
 
   if (!userRes?.success) {
@@ -32,6 +36,10 @@ const DataProtectionPage = async () => {
   const requestsRes = await getDataRequestsAction();
   const retentionRes = await getRetentionPoliciesAction();
   const breachesRes = await getDataBreachesAction();
+  const [activitiesRes, subprocessorsRes] = await Promise.all([
+    getProcessingActivitiesAction(),
+    getSubprocessorsAction(),
+  ]);
 
   return (
     <div className="p-4">
@@ -51,6 +59,7 @@ const DataProtectionPage = async () => {
           <TabsTrigger value="requests">{tR("tab")}</TabsTrigger>
           <TabsTrigger value="retention">{tRet("tab")}</TabsTrigger>
           <TabsTrigger value="breaches">{tB("tab")}</TabsTrigger>
+          <TabsTrigger value="vvt">{tV("tab")}</TabsTrigger>
           <TabsTrigger value="overview">{t("tabOverview")}</TabsTrigger>
         </TabsList>
 
@@ -68,6 +77,13 @@ const DataProtectionPage = async () => {
 
         <TabsContent value="breaches">
           <DataBreachesList initial={breachesRes.data} />
+        </TabsContent>
+
+        <TabsContent value="vvt">
+          <VvtSection
+            activities={activitiesRes.data}
+            subprocessors={subprocessorsRes.data}
+          />
         </TabsContent>
 
         <TabsContent value="overview">
