@@ -28,6 +28,15 @@ export type AbsenceCategorySummary = {
   totalDays: Scalars['Int']['output'];
 };
 
+export type AccessReviewEntry = {
+  __typename?: 'AccessReviewEntry';
+  lastReviewedAt?: Maybe<Scalars['DateTime']['output']>;
+  memberName: Scalars['String']['output'];
+  membershipId: Scalars['ID']['output'];
+  roles: Array<Scalars['String']['output']>;
+  sensitivePermissions: Array<Scalars['String']['output']>;
+};
+
 export type AccessibleTeam = {
   __typename?: 'AccessibleTeam';
   effectiveRole: TeamMemberRole;
@@ -2249,6 +2258,7 @@ export type Mutation = {
   moveAdmissionApplication: AdmissionApplication;
   moveStudentToStage: Student;
   moveTask: Task;
+  recertifyAccess: Scalars['Boolean']['output'];
   recordConsent: Consent;
   rejectAdmissionApplication: AdmissionApplication;
   removeCountry: Country;
@@ -2853,6 +2863,12 @@ export type MutationMoveStudentToStageArgs = {
 
 export type MutationMoveTaskArgs = {
   input: MoveTaskInput;
+};
+
+
+export type MutationRecertifyAccessArgs = {
+  membershipId: Scalars['ID']['input'];
+  note?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -3750,6 +3766,7 @@ export type ProtocolTaskDraftInput = {
 
 export type Query = {
   __typename?: 'Query';
+  accessReview: Array<AccessReviewEntry>;
   activeEnrollmentsBySchoolClassId: Array<SchoolClassEnrollment>;
   addressById: Address;
   addressesByOrgId: Array<Address>;
@@ -5700,6 +5717,19 @@ export type WorkTimeBalance = {
   workedMinutes: Scalars['Int']['output'];
 };
 
+export type AccessReviewQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type AccessReviewQuery = { __typename?: 'Query', accessReview: Array<{ __typename?: 'AccessReviewEntry', membershipId: string, memberName: string, roles: Array<string>, sensitivePermissions: Array<string>, lastReviewedAt?: any | null }> };
+
+export type RecertifyAccessMutationVariables = Exact<{
+  membershipId: Scalars['ID']['input'];
+  note?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type RecertifyAccessMutation = { __typename?: 'Mutation', recertifyAccess: boolean };
+
 export type ArchiveAdmissionApplicationMutationVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
@@ -7510,6 +7540,8 @@ export type UpdateSubprocessorMutationVariables = Exact<{
 export type UpdateSubprocessorMutation = { __typename?: 'Mutation', updateSubprocessor: { __typename?: 'Subprocessor', id: string } };
 
 
+export const AccessReviewDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AccessReview"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"accessReview"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"membershipId"}},{"kind":"Field","name":{"kind":"Name","value":"memberName"}},{"kind":"Field","name":{"kind":"Name","value":"roles"}},{"kind":"Field","name":{"kind":"Name","value":"sensitivePermissions"}},{"kind":"Field","name":{"kind":"Name","value":"lastReviewedAt"}}]}}]}}]} as unknown as DocumentNode<AccessReviewQuery, AccessReviewQueryVariables>;
+export const RecertifyAccessDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RecertifyAccess"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"membershipId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"note"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"recertifyAccess"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"membershipId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"membershipId"}}},{"kind":"Argument","name":{"kind":"Name","value":"note"},"value":{"kind":"Variable","name":{"kind":"Name","value":"note"}}}]}]}}]} as unknown as DocumentNode<RecertifyAccessMutation, RecertifyAccessMutationVariables>;
 export const ArchiveAdmissionApplicationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ArchiveAdmissionApplication"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"archiveAdmissionApplication"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<ArchiveAdmissionApplicationMutation, ArchiveAdmissionApplicationMutationVariables>;
 export const RejectAdmissionApplicationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RejectAdmissionApplication"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RejectAdmissionApplicationInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"rejectAdmissionApplication"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"rejectionReason"}},{"kind":"Field","name":{"kind":"Name","value":"rejectionReasonId"}},{"kind":"Field","name":{"kind":"Name","value":"rejectedBy"}}]}}]}}]} as unknown as DocumentNode<RejectAdmissionApplicationMutation, RejectAdmissionApplicationMutationVariables>;
 export const DeleteAdmissionApplicationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteAdmissionApplication"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteAdmissionApplication"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteAdmissionApplicationMutation, DeleteAdmissionApplicationMutationVariables>;

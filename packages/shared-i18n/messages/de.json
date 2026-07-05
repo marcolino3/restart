@@ -1,4 +1,21 @@
 {
+  "AccessReview": {
+    "tab": "Zugriffe",
+    "title": "Zugriffs-Review",
+    "subtitle": "Wer hat Zugriff auf sensible Daten — regelmässig prüfen und bestätigen.",
+    "noEntries": "Niemand mit sensiblem Zugriff gefunden.",
+    "reviewedOn": "Zuletzt geprüft: {date}",
+    "never": "Noch nie geprüft",
+    "recertify": "Rezertifizieren",
+    "recertifiedToast": "Zugriff bestätigt",
+    "perm": {
+      "EMPLOYEE_WRITE": "Mitarbeiterdaten (inkl. Notfall/Gesundheit)",
+      "RECORD_KEEPING_WRITE": "Lernfortschritt (Kinder)",
+      "CONSENT_MANAGE": "Einwilligungen",
+      "DATA_REQUEST_MANAGE": "Betroffenenanfragen/Export",
+      "DATA_BREACH_MANAGE": "Datenpannen"
+    }
+  },
   "Vvt": {
     "tab": "Verzeichnis",
     "activitiesTitle": "Verarbeitungstätigkeiten",
