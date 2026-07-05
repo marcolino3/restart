@@ -201,7 +201,11 @@ type Documents = {
     "\n  mutation SetLessonPrerequisites($input: SetLessonPrerequisitesInput!) {\n    setLessonPrerequisites(input: $input) {\n      id\n    }\n  }\n": typeof types.SetLessonPrerequisitesDocument,
     "\n  mutation UpdateLessonRecord($input: UpdateLessonRecordInput!) {\n    updateLessonRecord(input: $input) {\n      id\n      studentId\n      lessonId\n      recordedAt\n      status\n      note\n    }\n  }\n": typeof types.UpdateLessonRecordDocument,
     "\n  mutation DeleteRetentionPolicy($id: ID!) {\n    deleteRetentionPolicy(id: $id)\n  }\n": typeof types.DeleteRetentionPolicyDocument,
+    "\n  mutation ExecutePurgeCandidate($id: ID!) {\n    executePurgeCandidate(id: $id)\n  }\n": typeof types.ExecutePurgeCandidateDocument,
+    "\n  query PurgeCandidates {\n    purgeCandidates {\n      id\n      entityType\n      subjectLabel\n      dueSince\n      action\n      status\n      reviewedAt\n      executedAt\n      note\n    }\n  }\n": typeof types.PurgeCandidatesDocument,
     "\n  query RetentionPolicies {\n    retentionPolicies {\n      id\n      entityType\n      retentionMonths\n      action\n      description\n      isEnabled\n      dueCount\n    }\n  }\n": typeof types.RetentionPoliciesDocument,
+    "\n  mutation ReviewPurgeCandidate($id: ID!, $approve: Boolean!) {\n    reviewPurgeCandidate(id: $id, approve: $approve)\n  }\n": typeof types.ReviewPurgeCandidateDocument,
+    "\n  mutation ScanRetention {\n    scanRetention\n  }\n": typeof types.ScanRetentionDocument,
     "\n  mutation UpsertRetentionPolicy($input: UpsertRetentionPolicyInput!) {\n    upsertRetentionPolicy(input: $input) {\n      id\n    }\n  }\n": typeof types.UpsertRetentionPolicyDocument,
     "\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n": typeof types.GetPermissionsDocument,
     "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n": typeof types.GetRolesByOrgIdDocument,
@@ -471,7 +475,11 @@ const documents: Documents = {
     "\n  mutation SetLessonPrerequisites($input: SetLessonPrerequisitesInput!) {\n    setLessonPrerequisites(input: $input) {\n      id\n    }\n  }\n": types.SetLessonPrerequisitesDocument,
     "\n  mutation UpdateLessonRecord($input: UpdateLessonRecordInput!) {\n    updateLessonRecord(input: $input) {\n      id\n      studentId\n      lessonId\n      recordedAt\n      status\n      note\n    }\n  }\n": types.UpdateLessonRecordDocument,
     "\n  mutation DeleteRetentionPolicy($id: ID!) {\n    deleteRetentionPolicy(id: $id)\n  }\n": types.DeleteRetentionPolicyDocument,
+    "\n  mutation ExecutePurgeCandidate($id: ID!) {\n    executePurgeCandidate(id: $id)\n  }\n": types.ExecutePurgeCandidateDocument,
+    "\n  query PurgeCandidates {\n    purgeCandidates {\n      id\n      entityType\n      subjectLabel\n      dueSince\n      action\n      status\n      reviewedAt\n      executedAt\n      note\n    }\n  }\n": types.PurgeCandidatesDocument,
     "\n  query RetentionPolicies {\n    retentionPolicies {\n      id\n      entityType\n      retentionMonths\n      action\n      description\n      isEnabled\n      dueCount\n    }\n  }\n": types.RetentionPoliciesDocument,
+    "\n  mutation ReviewPurgeCandidate($id: ID!, $approve: Boolean!) {\n    reviewPurgeCandidate(id: $id, approve: $approve)\n  }\n": types.ReviewPurgeCandidateDocument,
+    "\n  mutation ScanRetention {\n    scanRetention\n  }\n": types.ScanRetentionDocument,
     "\n  mutation UpsertRetentionPolicy($input: UpsertRetentionPolicyInput!) {\n    upsertRetentionPolicy(input: $input) {\n      id\n    }\n  }\n": types.UpsertRetentionPolicyDocument,
     "\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n": types.GetPermissionsDocument,
     "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n": types.GetRolesByOrgIdDocument,
@@ -1319,7 +1327,23 @@ export function graphql(source: "\n  mutation DeleteRetentionPolicy($id: ID!) {\
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n  mutation ExecutePurgeCandidate($id: ID!) {\n    executePurgeCandidate(id: $id)\n  }\n"): (typeof documents)["\n  mutation ExecutePurgeCandidate($id: ID!) {\n    executePurgeCandidate(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query PurgeCandidates {\n    purgeCandidates {\n      id\n      entityType\n      subjectLabel\n      dueSince\n      action\n      status\n      reviewedAt\n      executedAt\n      note\n    }\n  }\n"): (typeof documents)["\n  query PurgeCandidates {\n    purgeCandidates {\n      id\n      entityType\n      subjectLabel\n      dueSince\n      action\n      status\n      reviewedAt\n      executedAt\n      note\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n  query RetentionPolicies {\n    retentionPolicies {\n      id\n      entityType\n      retentionMonths\n      action\n      description\n      isEnabled\n      dueCount\n    }\n  }\n"): (typeof documents)["\n  query RetentionPolicies {\n    retentionPolicies {\n      id\n      entityType\n      retentionMonths\n      action\n      description\n      isEnabled\n      dueCount\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ReviewPurgeCandidate($id: ID!, $approve: Boolean!) {\n    reviewPurgeCandidate(id: $id, approve: $approve)\n  }\n"): (typeof documents)["\n  mutation ReviewPurgeCandidate($id: ID!, $approve: Boolean!) {\n    reviewPurgeCandidate(id: $id, approve: $approve)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ScanRetention {\n    scanRetention\n  }\n"): (typeof documents)["\n  mutation ScanRetention {\n    scanRetention\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

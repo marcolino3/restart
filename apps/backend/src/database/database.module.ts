@@ -66,6 +66,7 @@ import { DataBreachIncident } from '@/data-breaches/entities/data-breach-inciden
 import { ProcessingActivity } from '@/vvt/entities/processing-activity.entity';
 import { Subprocessor } from '@/vvt/entities/subprocessor.entity';
 import { AccessReviewRecord } from '@/access-review/entities/access-review-record.entity';
+import { PurgeCandidate } from '@/retention-purge/entities/purge-candidate.entity';
 import { Permission } from '@/permissions/entities/permission.entity';
 import { Role } from '@/roles/entities/role.entity';
 import { UserEmail } from '@/user-emails/entities/user-email.entity';
@@ -148,6 +149,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       ProcessingActivity,
       Subprocessor,
       AccessReviewRecord,
+      PurgeCandidate,
     ]),
   ],
   exports: [TypeOrmModule],
