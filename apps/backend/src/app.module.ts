@@ -27,6 +27,7 @@ import { EmployeeContractsModule } from './employee-management/employee-contract
 import { EmployeeManagementModule } from './employee-management/employee-management.module';
 import { SchoolManagementModule } from './school-management/school-management.module';
 import { ProjectManagementModule } from './project-management/project-management.module';
+import { ConsentModule } from './consent/consent.module';
 import { CurriculaModule } from './curricula/curricula.module';
 import { CurriculumNodeLoaders } from './curricula/loaders/curriculum-node-loaders';
 import { StudentEnrollmentLoaders } from './school-management/students/loaders/student-enrollment-loaders';
@@ -168,6 +169,7 @@ const MAX_QUERY_DEPTH = 12;
     EmployeeManagementModule,
     SchoolManagementModule,
     ProjectManagementModule,
+    ConsentModule,
     CurriculaModule,
     MembershipsModule,
     MailModule,

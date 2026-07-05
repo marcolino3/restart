@@ -43,6 +43,7 @@ import StudentNotesFeed from "@/features/student-notes/components/StudentNotesFe
 import StudentNotesTimeline from "@/features/student-notes/components/StudentNotesTimeline";
 import CreateStudentNoteInline from "@/features/student-notes/components/CreateStudentNoteInline";
 import { StudentProgressTab } from "@/features/record-keeping/components/StudentProgressTab";
+import { ConsentTab } from "@/features/consent/components/ConsentTab";
 
 interface StudentViewPageProps {
   student: StudentDetail;
@@ -114,6 +115,7 @@ export default function StudentViewPage({
   const tS = useTranslations("Students");
   const tN = useTranslations("StudentNotes");
   const tR = useTranslations("RecordKeeping");
+  const tC = useTranslations("ConsentManagement");
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
@@ -299,6 +301,7 @@ export default function StudentViewPage({
               >
                 {tS("contactPersons")}
               </TabsTrigger>
+              <TabsTrigger value="consent">{tC("tabConsent")}</TabsTrigger>
               <TabsTrigger
                 value="logbook"
                 onMouseEnter={logbookTab.trigger}
@@ -434,6 +437,11 @@ export default function StudentViewPage({
               ) : (
                 <TabLoadingSkeleton />
               )}
+            </TabsContent>
+
+            {/* Einwilligungen */}
+            <TabsContent value="consent">
+              <ConsentTab subjectType="STUDENT" subjectId={student.id} />
             </TabsContent>
 
             {/* Logbook */}
