@@ -1,4 +1,35 @@
 {
+  "RetentionSettings": {
+    "tab": "Aufbewahrung",
+    "title": "Aufbewahrungsfristen",
+    "subtitle": "Pro Datentyp festlegen, wie lange aufbewahrt wird.",
+    "executionNote": "Die Ausführung (Löschen/Anonymisieren) erfolgt nicht automatisch — sie läuft über einen admin-geprüften Job. Hier werden nur die Regeln konfiguriert und die aktuell fälligen Datensätze angezeigt.",
+    "save": "Speichern",
+    "edit": "Bearbeiten",
+    "remove": "Entfernen",
+    "configure": "Konfigurieren",
+    "notConfigured": "Nicht konfiguriert",
+    "disabled": "Deaktiviert",
+    "months": "{count} Monate",
+    "dueCount": "{count} fällig",
+    "savedToast": "Regel gespeichert",
+    "removedToast": "Regel entfernt",
+    "fieldRetentionMonths": "Aufbewahrung (Monate)",
+    "fieldAction": "Aktion nach Ablauf",
+    "fieldDescription": "Beschreibung",
+    "fieldIsEnabled": "Aktiv",
+    "entity": {
+      "STUDENT": "Schüler",
+      "EMPLOYEE": "Mitarbeiter",
+      "CONTACT_PERSON": "Bezugspersonen",
+      "ADMISSION_APPLICATION": "Bewerbungen",
+      "DATA_SUBJECT_REQUEST": "Betroffenenanfragen"
+    },
+    "action": {
+      "DELETE": "Löschen",
+      "ANONYMIZE": "Anonymisieren"
+    }
+  },
   "DataRequests": {
     "pickADate": "Datum wählen",
     "tab": "Betroffenenanfragen",

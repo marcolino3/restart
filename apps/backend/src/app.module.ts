@@ -29,6 +29,7 @@ import { SchoolManagementModule } from './school-management/school-management.mo
 import { ProjectManagementModule } from './project-management/project-management.module';
 import { ConsentModule } from './consent/consent.module';
 import { DataRequestsModule } from './data-requests/data-requests.module';
+import { RetentionModule } from './retention/retention.module';
 import { CurriculaModule } from './curricula/curricula.module';
 import { CurriculumNodeLoaders } from './curricula/loaders/curriculum-node-loaders';
 import { StudentEnrollmentLoaders } from './school-management/students/loaders/student-enrollment-loaders';
@@ -172,6 +173,7 @@ const MAX_QUERY_DEPTH = 12;
     ProjectManagementModule,
     ConsentModule,
     DataRequestsModule,
+    RetentionModule,
     CurriculaModule,
     MembershipsModule,
     MailModule,
