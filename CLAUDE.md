@@ -181,3 +181,81 @@ PR-Checkliste abgehakt · auf Staging verifiziert.
 - Code, Variablen, Commits: **Englisch**
 - Kommunikation mit dem Entwickler: **Deutsch**
 - UI-Texte: i18n (DE + EN), in messages/*.json definiert
+
+---
+
+## Modell-Wahl für Subagenten & Workflows (Token-Effizienz)
+
+**Ziel:** Effizient arbeiten und möglichst wenige (teure) Tokens verbrauchen. Die
+Haupt-Session läuft auf **Opus 4.8** (teuer). Mechanische Arbeit und breite Suchen
+gehören in **Subagenten**, damit der teure Opus-Context nicht mit grep-Output /
+Log-Dumps / File-Dumps geflutet wird — der Subagent liefert nur die verdichtete Antwort.
+
+**Nur zwei Modelle: `fable` und `opus`.** (Codex/gpt wird auf diesem Mac als Malware
+geflaggt — nicht nutzen. `sonnet`/`haiku` bewusst weggelassen.)
+**Hierarchie (offizielle Preise pro 1M Tokens In/Out):** `fable-5` $10/$50 = **stärkstes
+Modell**, für die härtesten Reasoning-/Long-Horizon-Aufgaben; `opus-4.8` $5/$25 =
+Arbeitspferd. Fable ist doppelt so teuer wie Opus — es ist das Spitzen-, NICHT das
+Spar-Modell.
+
+**Zwei Hebel — nicht verwechseln:**
+- **Modell** (`opus` ↔ `fable`): ändert den **Preis pro Token** (Opus = halber Fable-Preis).
+- **`effort`** (`low`→`medium`→`high`→`xhigh`→`max`, bei beiden Modellen): steuert die
+  **Anzahl Denk-Tokens** bei gleichem Token-Preis. Haupt-Sparhebel in diesem Setup.
+  Bei Fable ist Thinking immer an; effort dosiert die Tiefe — Fable auf `low` schlägt
+  oft noch das `xhigh` älterer Modelle.
+- Zusätzlich: **Fast Mode** (`/fast`) = Opus mit schnellerem Output, gleiche Qualität.
+
+**Eskalationsleiter** — von unten nach oben eskalieren, nie höher einsteigen als nötig.
+Sortiert nach effektiven Kosten (Token-Preis × Denkmenge): Fable kostet pro Token das
+Doppelte, denkt bei niedrigem effort aber wenig — darum sitzt `fable low` mitten in der
+Leiter und ist der **Sweet Spot** für „schlau + schnell + bezahlbar".
+(Höher = besser; Kosten höher = günstiger; Speed höher = schneller. Editierbare Defaults.)
+
+| # | Variante              | Kosten | Intelligenz | Taste | Speed | **Balance** | Rolle                                    |
+|---|-----------------------|:------:|:-----------:|:-----:|:-----:|:-----------:|-------------------------------------------|
+| 1 | `opus` · `low`        |   9    |      7      |   9   |   9   |     ★★★     | Bulk, Suche, mechanisch, i18n, Doc-Lookup |
+| 2 | `opus` · `medium`     |   7    |      8      |   9   |   7   |    ★★★★     | **Default** für Standard-Features & Tests |
+| 3 | `fable` · `low`       |   6    |      9      |  10   |   7   |   ★★★★★     | **Sweet Spot**: anspruchsvoll + zügig (kritische Logik, Design-UI, knifflige Bugs) |
+| 4 | `opus` · `high`       |   5    |     8.5     |   9   |   5   |     ★★★     | Fallback wenn medium nicht reicht, 2. Review-Perspektive |
+| 5 | `fable` · `medium`    |   4    |     9.5     |  10   |   5   |    ★★★★     | Architektur, Security/Multi-Tenant, Reviews |
+| 6 | `fable` · `high`      |   2    |     9.5+    |  10   |   3   |     ★★      | harte Architektur-/Security-Entscheide, `/ship`-Gates |
+| 7 | `fable` · `xhigh`/`max` | 1    |     10      |  10   |   1   |      ★      | letzte Instanz — nur wenn #6 scheitert    |
+
+`opus xhigh`/`max` bewusst nicht in der Leiter: ab dieser Preisklasse ist `fable medium`
+schlauer bei ähnlichen Kosten — bei Opus über `high` hinaus lieber auf Fable wechseln.
+
+**Grundregeln:**
+- Defaults, keine Limits. **Standing permission zum Hochstufen:** wenn `opus` (oder ein
+  niedriges effort) den Output nicht auf Niveau bringt, ohne Nachfrage mit höherem effort
+  bzw. `fable` neu machen. Output bewerten, nicht das Preisschild.
+- Für alles, was ausgeliefert wird: **Intelligenz > Taste > Kosten.**
+- Bulk-Arbeit trotzdem in Subagenten auslagern (Context-Hygiene), auch wenn das Modell
+  gleich bleibt — der Haupt-Context bleibt sauber, der Subagent liefert nur die Essenz.
+
+**Task-Arten in diesem Projekt → Modell + effort:**
+- **Breite read-only-Suchen / Codebase-Recherche** (`Explore`, `general-purpose`):
+  **`opus`, `effort: low`** — günstigste Variante im Setup, Ergebnis fliesst verdichtet zurück.
+- **Migrationen & mechanische Refactors** (Rename-Sweeps, Import-Umbau, Codegen-Nachzug),
+  Test-Fixtures, mechanische Version-Bumps: **`opus`, `effort: low`**.
+- **i18n-Ergänzung** (DE+EN in `messages/*.json`, Schweizer Schreibweise ss statt ß):
+  **`opus`, `effort: low`**.
+- **Doc-Lookups** (`nestjs-docs`, `nextjs-docs`, `better-auth-docs`, `expo-docs`):
+  **`opus`, `effort: low`**.
+- **Backend-Feature** (NestJS Resolver/Service/Entity, GraphQL-Schema, Migration):
+  **`opus`, `effort: medium`**; bei sicherheits-/multi-tenant-kritischer Logik
+  (Guards, Org-Isolation, Permissions) → **`fable`, `effort: low`** (Sweet Spot #3).
+- **Frontend-Feature** (Next.js Server Component/Action, shadcn-UI, RHF/Zod-Forms):
+  **`opus`, `effort: medium`**; Design-lastige UI mit hohem Taste-Anspruch → **`fable`, `effort: low`**.
+- **Knifflige Bugs / Debugging**: **`fable`, `effort: low`**; wenn es nicht reicht → `fable medium`.
+- **Tests schreiben** (Jest/Vitest/Playwright nach klarer Spec): **`opus`, `effort: medium`**.
+- **Architektur / Cross-Cutting** (`architecture-guardian`, Modul-Platzierung, Layering,
+  Multi-Tenant-Invarianten): **`fable`, `effort: medium`**; harte Entscheide → `fable high`.
+- **Reviews & Gates** (`/code-review`, `/ship`, Plan-Review, Security-Check):
+  **`fable`, `effort: medium`–`high`**; optional ein `opus high`-Agent als zweite
+  unabhängige Perspektive.
+- **Mobile** (Expo/React Native in `apps/mobile/`): **`opus`, `effort: medium`**, Doc-Fragen via `expo-docs`.
+
+**Mechanik:** `Agent(prompt, { model: 'opus'|'fable', effort: 'low'|'medium'|'high'|'xhigh'|'max' })`
+bzw. `agent()` im Workflow. **Nicht-Coding** (Recherche-Dokumente, Mail, Kalender, Drive)
+über die Google-Workspace-MCP-Tools — kein Modell-Budget nötig.
