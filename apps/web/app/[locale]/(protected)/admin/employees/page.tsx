@@ -3,9 +3,10 @@ import { getCurrentUserAction } from "@/features/users/actions/get-current-user.
 import { isAdminPersona } from "@/features/users/lib/admin-persona";
 import { EmployeesTable } from "@/features/employees/components/EmployeesTable";
 import { EmployeesCardGrid } from "@/features/employees/components/EmployeesCardGrid";
-import { EmployeesCsvUpload } from "@/features/employees/components/EmployeesCsvUpload";
+import { EmployeesActionsMenu } from "@/features/employees/components/EmployeesActionsMenu";
 import { ROUTES } from "@/constants/routes";
 import { Button } from "@/components/ui/button";
+import { PageHead } from "@/components/common/PageHead";
 import { PlusIcon } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
@@ -28,22 +29,33 @@ const EmployeesPage = async () => {
     userRes.data.isSuperAdmin || isAdminPersona(userRes.data.persona);
   const { success, data } = await getEmployeesAction();
 
+  const activeCount = (data ?? []).filter(
+    (e) => e.membership.employee?.isActive ?? true,
+  ).length;
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">{t("employees")}</h1>
-        {canSeeDetails && (
-          <div className="flex items-center gap-2">
-            <EmployeesCsvUpload />
-            <Button asChild>
-              <Link href={ROUTES.admin.employeesCreate(locale)}>
-                <PlusIcon className="mr-2 h-4 w-4" />
-                {tC("createEmployee")}
-              </Link>
-            </Button>
-          </div>
-        )}
-      </div>
+      <PageHead
+        title={t("employees")}
+        subtitle={
+          data && data.length > 0
+            ? tC("activeSubtitle", { count: activeCount })
+            : undefined
+        }
+        action={
+          canSeeDetails ? (
+            <div className="flex items-center gap-2">
+              <EmployeesActionsMenu />
+              <Button asChild>
+                <Link href={ROUTES.admin.employeesCreate(locale)}>
+                  <PlusIcon />
+                  {t("newEmployee")}
+                </Link>
+              </Button>
+            </div>
+          ) : undefined
+        }
+      />
       {success && data && data.length > 0 ? (
         canSeeDetails ? (
           <EmployeesTable data={data} />

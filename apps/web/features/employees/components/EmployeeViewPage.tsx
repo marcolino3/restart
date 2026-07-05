@@ -5,36 +5,74 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Pencil, Paperclip } from "lucide-react";
 import Link from "next/link";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BackButton } from "@/components/common/BackButton";
+import {
+  DetailCols,
+  DetailPanel,
+  KvRow,
+} from "@/components/common/DetailPanel";
 import { UserEmailField } from "@/features/users/components/UserEmailField";
 import { ROUTES } from "@/constants/routes";
+import { cn } from "@/lib/utils";
 
 import type { EmployeeDetail } from "../actions/get-employee-by-id.action";
 import type { EmployeeNoteItem } from "@/features/employee-notes/actions/get-employee-notes.action";
-import type { EmployeeAuditLogItem } from "../actions/get-employee-audit-log.action";
-import type { EmployeeHrProfile } from "../actions/get-employee-hr-profile.action";
-import type { EmployeeEmergencyProfile } from "../actions/get-employee-emergency-profile.action";
 import type { EmployeeContract } from "../actions/employee-contracts.actions";
+import type { EmployeeReportResult } from "@/features/time-tracking/actions/get-time-report.action";
 import EmployeeNotesFeed from "@/features/employee-notes/components/EmployeeNotesFeed";
 import EmployeeNotesTimeline from "@/features/employee-notes/components/EmployeeNotesTimeline";
 import CreateEmployeeNoteInline from "@/features/employee-notes/components/CreateEmployeeNoteInline";
-import EmployeeHistoryFeed from "./EmployeeHistoryFeed";
-import EmployeeHrTabView from "./EmployeeHrTabView";
-import EmployeeEmergencyTabView from "./EmployeeEmergencyTabView";
 import EmployeeContractsTab from "./EmployeeContractsTab";
 
 interface EmployeeViewPageProps {
   employee: EmployeeDetail;
   notes: EmployeeNoteItem[];
-  auditLog: EmployeeAuditLogItem[];
-  hrProfile: EmployeeHrProfile | null;
-  emergencyProfile: EmployeeEmergencyProfile | null;
   contracts: EmployeeContract[];
+  report: EmployeeReportResult;
   employeeName: string;
+}
+
+/** Minutes → "+12:30" / "−2:15". */
+const fmtBalance = (min?: number | null): string => {
+  if (min == null) return "–";
+  const sign = min < 0 ? "−" : "+";
+  const a = Math.abs(min);
+  return `${sign}${Math.floor(a / 60)}:${String(a % 60).padStart(2, "0")}`;
+};
+const fmtHours = (min?: number | null): string =>
+  min == null ? "–" : `${(min / 60).toFixed(1)} h`;
+
+const STAT_TONE: Record<string, string> = {
+  green: "bg-status-green text-status-green-foreground",
+  sky: "bg-status-sky text-status-sky-foreground",
+  amber: "bg-status-amber text-status-amber-foreground",
+  rose: "bg-status-rose text-status-rose-foreground",
+  slate: "bg-status-slate text-status-slate-foreground",
+};
+
+/** Stat box from the design handoff (`.lsb`). */
+function StatBox({
+  label,
+  value,
+  tone = "slate",
+}: {
+  label: string;
+  value: React.ReactNode;
+  tone?: keyof typeof STAT_TONE | string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col gap-0.5 rounded-ctl px-[15px] py-3",
+        STAT_TONE[tone] ?? STAT_TONE.slate,
+      )}
+    >
+      <span className="text-[11px] font-semibold opacity-70">{label}</span>
+      <span className="text-[20px] font-bold tabular-nums">{value}</span>
+    </div>
+  );
 }
 
 function getInitials(firstName?: string, lastName?: string): string {
@@ -47,10 +85,8 @@ function getInitials(firstName?: string, lastName?: string): string {
 export default function EmployeeViewPage({
   employee,
   notes,
-  auditLog,
-  hrProfile,
-  emergencyProfile,
   contracts,
+  report,
   employeeName,
 }: EmployeeViewPageProps) {
   const t = useTranslations("Common");
@@ -75,10 +111,6 @@ export default function EmployeeViewPage({
     user?.userEmails?.find((e) => e.isPrimary)?.email ??
     user?.userEmails?.[0]?.email;
 
-  const fullName = [user?.title, user?.firstName, user?.lastName]
-    .filter(Boolean)
-    .join(" ");
-
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return "–";
     return new Date(dateStr).toLocaleDateString(
@@ -87,248 +119,270 @@ export default function EmployeeViewPage({
     );
   };
 
+  const monthYear = (dateStr: string | null | undefined) =>
+    dateStr
+      ? new Date(dateStr).toLocaleDateString(
+          locale === "de" ? "de-CH" : "en-GB",
+          { month: "short", year: "numeric" },
+        )
+      : null;
+
+  // Aktuell gültiger Vertrag (jüngster Beginn ≤ heute) für die Kopf-Chips.
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const currentContract = [...contracts]
+    .filter((c) => c.startDate && c.startDate.slice(0, 10) <= todayIso)
+    .sort((a, b) => (a.startDate < b.startDate ? 1 : -1))[0];
+
+  const pensum =
+    currentContract?.workloadPercent != null
+      ? Math.round(Number(currentContract.workloadPercent))
+      : null;
+  const entry = monthYear(currentContract?.startDate);
+
+  const metaChips: string[] = [t(membership?.persona ?? "EMPLOYEE")];
+  if (pensum != null) metaChips.push(`${pensum}% ${t("workloadPercent")}`);
+  if (entry) metaChips.push(tE("joinedOn", { date: entry }));
+
+  // pf-tabs (saas-konzept): Accent-Unterstrich statt Pill-Container.
+  const tabCls =
+    "rounded-none border-b-[3px] border-transparent px-0 pb-[11px] text-[13.5px] font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-[650] data-[state=active]:text-foreground data-[state=active]:shadow-none";
+
   return (
-    <div className="min-h-full">
-      <main className="py-10">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:max-w-7xl lg:px-8 mb-4">
-          <BackButton
-            href={ROUTES.admin.employees(locale)}
-            label={tE("backToEmployees")}
-          />
-        </div>
-        {/* Page header */}
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 md:flex md:items-center md:justify-between md:space-x-5 lg:max-w-7xl lg:px-8">
-          <div className="flex items-center space-x-5">
-            <div className="shrink-0">
-              <Avatar className="h-16 w-16">
-                <AvatarFallback className="bg-primary text-primary-foreground text-xl font-semibold">
+    <Tabs
+      value={activeTab}
+      onValueChange={handleTabChange}
+      className="w-full"
+    >
+            {/* Profile band — saas-konzept `.pf-band` (light panel) */}
+            <div className="mb-[18px] overflow-x-auto rounded-card border bg-card px-[22px] pt-[18px] shadow-xs">
+              <div className="flex flex-wrap items-center gap-4">
+                <span className="flex size-[52px] shrink-0 items-center justify-center rounded-[16px] bg-accent text-[18px] font-bold text-accent-foreground">
                   {getInitials(user?.firstName, user?.lastName)}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                {employeeName}
-              </h1>
-              <p className="text-sm font-medium text-muted-foreground">
-                <span className="text-foreground">
-                  {t(membership?.persona ?? "EMPLOYEE")}
                 </span>
-                {membership?.organization && (
-                  <>
-                    {" "}
-                    {tE("at")}{" "}
-                    <span className="text-foreground">
-                      {membership.organization.name}
-                    </span>
-                  </>
-                )}
-              </p>
-            </div>
-          </div>
-          <div className="mt-6 flex md:mt-0">
-            <Button asChild>
-              <Link
-                href={`${ROUTES.admin.employeesEdit(locale, employee.id)}?tab=${activeTab}`}
-              >
-                <Pencil className="h-4 w-4 mr-2" />
-                {t("edit")}
-              </Link>
-            </Button>
-          </div>
-        </div>
-
-        <div className="mx-auto mt-8 max-w-3xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
-          <Tabs
-            value={activeTab}
-            onValueChange={handleTabChange}
-            className="w-full"
-          >
-            <TabsList className="mb-6">
-              <TabsTrigger value="overview">{tE("overview")}</TabsTrigger>
-              <TabsTrigger value="address">{t("address")}</TabsTrigger>
-              <TabsTrigger value="hr">{tE("hr.tabLabel")}</TabsTrigger>
-              <TabsTrigger value="emergency">
-                {tE("emergency.tabLabel")}
-              </TabsTrigger>
-              <TabsTrigger value="logbook">{tN("logbook")}</TabsTrigger>
-              <TabsTrigger value="documents">{tE("attachments")}</TabsTrigger>
-              <TabsTrigger value="contracts">{tE("contracts")}</TabsTrigger>
-              <TabsTrigger value="history">{tE("history")}</TabsTrigger>
-              <TabsTrigger value="absences" disabled>
-                {t("absenceNotice")}
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Overview — description list */}
-            <TabsContent value="overview">
-              <div className="px-4 sm:px-0">
-                <h3 className="text-base/7 font-semibold text-foreground">
-                  {tE("overview")}
-                </h3>
+                <div className="min-w-0">
+                  <h2 className="text-[20px] font-bold tracking-[-0.02em]">
+                    {employeeName}
+                  </h2>
+                  <div className="mt-1.5 flex flex-wrap gap-2">
+                    {metaChips.map((chip, i) => (
+                      <span
+                        key={i}
+                        className="rounded-full bg-field px-[11px] py-1 text-[11.5px] font-semibold text-muted-foreground"
+                      >
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="ml-auto flex shrink-0 gap-[9px]">
+                  <Button asChild className="h-9">
+                    <Link
+                      href={`${ROUTES.admin.employeesEdit(locale, employee.id)}?tab=${activeTab}`}
+                    >
+                      <Pencil className="mr-2 h-4 w-4" />
+                      {t("edit")}
+                    </Link>
+                  </Button>
+                </div>
               </div>
-              <div className="mt-6 border-t border-border">
-                <dl className="divide-y divide-border">
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {t("name")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {fullName || "–"}
-                    </dd>
-                  </div>
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {t("persona")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {t(membership?.persona ?? "EMPLOYEE")}
-                    </dd>
-                  </div>
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {t("email")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {user?.id ? (
-                        <UserEmailField
-                          userId={user.id}
-                          currentEmail={primaryEmail}
-                        />
-                      ) : (
-                        (primaryEmail ?? "–")
-                      )}
-                    </dd>
-                  </div>
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {t("phone")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {membership?.contactPhone || "–"}
-                    </dd>
-                  </div>
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {t("dateOfBirth")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {formatDate(user?.dateOfBirth)}
-                    </dd>
-                  </div>
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {t("socialSecurityNumber")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {user?.socialSecurityNumber || "–"}
-                    </dd>
-                  </div>
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {tE("timeTrackingEnabled")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {employee.timeTrackingEnabled
-                        ? t("active")
-                        : t("inactive")}
-                    </dd>
-                  </div>
+              <TabsList className="mt-[14px] h-auto justify-start gap-[22px] rounded-none bg-transparent p-0">
+                <TabsTrigger className={tabCls} value="overview">
+                  {tE("overview")}
+                </TabsTrigger>
+                <TabsTrigger className={tabCls} value="contracts">
+                  {tE("tabContract")}
+                </TabsTrigger>
+                <TabsTrigger className={tabCls} value="absences">
+                  {tE("tabAbsences")}
+                </TabsTrigger>
+                <TabsTrigger className={tabCls} value="timetracking">
+                  {tE("tabTimeTracking")}
+                </TabsTrigger>
+                <TabsTrigger className={tabCls} value="logbook">
+                  {tE("tabNotes")}
+                </TabsTrigger>
+                <TabsTrigger className={tabCls} value="documents">
+                  {tE("tabDocuments")}
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            {/* Overview — design cols2 panels */}
+            <TabsContent value="overview">
+              <DetailCols>
+                <DetailPanel title={tE("contractAndWorkload")}>
+                  <KvRow label={tE("hr.position")}>
+                    {currentContract?.position ||
+                      t(membership?.persona ?? "EMPLOYEE")}
+                  </KvRow>
+                  <KvRow label={t("workloadPercent")}>
+                    {pensum != null ? (
+                      <span className="inline-flex items-center gap-[9px]">
+                        <span className="h-2 w-20 overflow-hidden rounded-full bg-field">
+                          <span
+                            className="block h-full rounded-full bg-primary"
+                            style={{
+                              width: `${Math.min(100, Math.max(0, pensum))}%`,
+                            }}
+                          />
+                        </span>
+                        {pensum}%
+                      </span>
+                    ) : (
+                      "–"
+                    )}
+                  </KvRow>
+                  <KvRow label={tE("contracts")}>
+                    {currentContract
+                      ? ([
+                          currentContract.contractType
+                            ? tE(`contractType.${currentContract.contractType}`)
+                            : null,
+                          entry ? tE("sinceMonth", { date: entry }) : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ") || "–")
+                      : "–"}
+                  </KvRow>
+                  <KvRow label={tE("hr.annualVacationDays")}>
+                    {currentContract?.annualVacationDays != null
+                      ? tE("vacationDaysPerYear", {
+                          days: currentContract.annualVacationDays,
+                        })
+                      : "–"}
+                  </KvRow>
+                  <KvRow label={tE("timeTrackingEnabled")}>
+                    {employee.timeTrackingEnabled
+                      ? t("active")
+                      : t("inactive")}
+                  </KvRow>
+                </DetailPanel>
+
+                <DetailPanel title={tE("contactAndPerson")}>
+                  <KvRow label={t("email")}>
+                    {user?.id ? (
+                      <UserEmailField
+                        userId={user.id}
+                        currentEmail={primaryEmail}
+                      />
+                    ) : (
+                      (primaryEmail ?? "–")
+                    )}
+                  </KvRow>
+                  <KvRow label={t("phone")}>
+                    {membership?.contactPhone || "–"}
+                  </KvRow>
+                  <KvRow label={t("dateOfBirth")}>
+                    {formatDate(user?.dateOfBirth)}
+                  </KvRow>
+                  <KvRow label={t("socialSecurityNumber")}>
+                    {user?.socialSecurityNumber || "–"}
+                  </KvRow>
                   {membership?.organization && (
-                    <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                      <dt className="text-sm/6 font-medium text-foreground">
-                        {t("organization")}
-                      </dt>
-                      <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                        {membership.organization.name}
-                      </dd>
-                    </div>
+                    <KvRow label={t("organization")}>
+                      {membership.organization.name}
+                    </KvRow>
                   )}
                   {membership?.roles && membership.roles.length > 0 && (
-                    <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                      <dt className="text-sm/6 font-medium text-foreground">
-                        {tE("roles")}
-                      </dt>
-                      <dd className="mt-1 sm:col-span-2 sm:mt-0">
-                        <div className="flex flex-wrap gap-1.5">
-                          {membership.roles.map((role) => (
-                            <Badge
-                              key={role.id}
-                              variant="outline"
-                              className="text-xs"
-                            >
-                              {role.name ?? role.systemCode ?? "–"}
-                            </Badge>
-                          ))}
-                        </div>
-                      </dd>
-                    </div>
+                    <KvRow label={tE("roles")}>
+                      <span className="flex flex-wrap justify-end gap-1.5">
+                        {membership.roles.map((role) => (
+                          <Badge
+                            key={role.id}
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            {role.name ?? role.systemCode ?? "–"}
+                          </Badge>
+                        ))}
+                      </span>
+                    </KvRow>
                   )}
-                </dl>
-              </div>
+                </DetailPanel>
 
-            </TabsContent>
-
-            {/* Address */}
-            <TabsContent value="address">
-              <div className="px-4 sm:px-0">
-                <h3 className="text-base/7 font-semibold text-foreground">
-                  {t("address")}
-                </h3>
-              </div>
-              <div className="mt-6 border-t border-border">
-                <dl className="divide-y divide-border">
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {t("street")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {[user?.street, user?.houseNumber]
-                        .filter(Boolean)
-                        .join(" ") || "–"}
-                    </dd>
-                  </div>
+                <DetailPanel title={t("address")}>
+                  <KvRow label={t("street")}>
+                    {[user?.street, user?.houseNumber]
+                      .filter(Boolean)
+                      .join(" ") || "–"}
+                  </KvRow>
                   {user?.addressLine2 && (
-                    <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                      <dt className="text-sm/6 font-medium text-foreground">
-                        {t("addressLine2")}
-                      </dt>
-                      <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                        {user.addressLine2}
-                      </dd>
-                    </div>
+                    <KvRow label={t("addressLine2")}>
+                      {user.addressLine2}
+                    </KvRow>
                   )}
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {t("postalCode")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {[user?.postalCode, user?.city]
-                        .filter(Boolean)
-                        .join(" ") || "–"}
-                    </dd>
-                  </div>
-                  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt className="text-sm/6 font-medium text-foreground">
-                      {t("country")}
-                    </dt>
-                    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-                      {user?.country ? tCountries(user.country) : "–"}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
+                  <KvRow label={t("postalCode")}>
+                    {[user?.postalCode, user?.city]
+                      .filter(Boolean)
+                      .join(" ") || "–"}
+                  </KvRow>
+                  <KvRow label={t("country")}>
+                    {user?.country ? tCountries(user.country) : "–"}
+                  </KvRow>
+                </DetailPanel>
+              </DetailCols>
             </TabsContent>
 
-            {/* HR */}
-            <TabsContent value="hr">
-              <EmployeeHrTabView profile={hrProfile} />
+            {/* Absenzen */}
+            <TabsContent value="absences">
+              <DetailPanel title={tE("tabAbsences")}>
+                {report.categorySummary.length ? (
+                  report.categorySummary.map((c) => (
+                    <KvRow
+                      key={c.categoryId}
+                      label={
+                        <span className="flex items-center gap-2">
+                          <span
+                            className="inline-block size-2 shrink-0 rounded-full"
+                            style={{ background: c.color ?? "var(--muted)" }}
+                          />
+                          {c.name}
+                        </span>
+                      }
+                    >
+                      {tE("daysCount", { days: c.totalDays })}
+                    </KvRow>
+                  ))
+                ) : (
+                  <p className="text-[13px] text-muted-foreground">
+                    {tE("noAbsences")}
+                  </p>
+                )}
+              </DetailPanel>
             </TabsContent>
 
-            {/* Notfall */}
-            <TabsContent value="emergency">
-              <EmployeeEmergencyTabView profile={emergencyProfile} />
+            {/* Zeiterfassung */}
+            <TabsContent value="timetracking">
+              <DetailPanel title={tE("tabTimeTracking")}>
+                <div className="grid grid-cols-2 gap-[9px] md:grid-cols-4">
+                  <StatBox
+                    tone="green"
+                    label={t("timeBalanceMinutes")}
+                    value={fmtBalance(report.balance?.netBalanceMinutes)}
+                  />
+                  <StatBox
+                    tone="sky"
+                    label={tE("remainingVacation")}
+                    value={
+                      report.vacation?.remainingDays != null
+                        ? `${report.vacation.remainingDays} d`
+                        : "–"
+                    }
+                  />
+                  <StatBox
+                    tone="slate"
+                    label={tE("worked")}
+                    value={fmtHours(report.balance?.workedMinutes)}
+                  />
+                  <StatBox
+                    tone="slate"
+                    label={tE("planned")}
+                    value={fmtHours(report.balance?.plannedMinutes)}
+                  />
+                </div>
+              </DetailPanel>
             </TabsContent>
+
 
             {/* Logbook */}
             <TabsContent value="logbook">
@@ -358,15 +412,10 @@ export default function EmployeeViewPage({
 
             {/* Documents / Attachments */}
             <TabsContent value="documents">
-              <div className="px-4 sm:px-0">
-                <h3 className="text-base/7 font-semibold text-foreground">
-                  {tE("attachments")}
-                </h3>
-              </div>
-              <div className="mt-6 border-t border-border pt-6">
+              <DetailPanel title={tE("tabDocuments")}>
                 <ul
                   role="list"
-                  className="divide-y divide-border rounded-md border border-border"
+                  className="mt-2 divide-y divide-border rounded-ctl border border-border"
                 >
                   <li className="flex items-center justify-between py-4 pr-5 pl-4 text-sm/6">
                     <div className="flex w-0 flex-1 items-center">
@@ -417,7 +466,7 @@ export default function EmployeeViewPage({
                     </div>
                   </li>
                 </ul>
-              </div>
+              </DetailPanel>
             </TabsContent>
 
             {/* Verträge */}
@@ -428,24 +477,6 @@ export default function EmployeeViewPage({
                 editable
               />
             </TabsContent>
-
-            {/* History */}
-            <TabsContent value="history">
-              <div className="px-4 sm:px-0">
-                <h3 className="text-base/7 font-semibold text-foreground">
-                  {tE("history")}
-                </h3>
-                <p className="mt-1 max-w-2xl text-sm/6 text-muted-foreground">
-                  {tE("historyDescription")}
-                </p>
-              </div>
-              <div className="mt-6 border-t border-border pt-6">
-                <EmployeeHistoryFeed logs={auditLog} />
-              </div>
-            </TabsContent>
           </Tabs>
-        </div>
-      </main>
-    </div>
   );
 }

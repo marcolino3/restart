@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { FileText, Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import {
@@ -44,6 +43,7 @@ import {
   EmployeeContractFormOutput,
 } from "../schemas/employee-contract-form.schema";
 import { FormRow } from "./EmployeeFormSections";
+import { ContractDocumentField } from "./ContractDocumentField";
 
 interface Props {
   employeeId: string;
@@ -134,6 +134,9 @@ export default function EmployeeContractsTab({
               <TableHead>{tE("hr.contractType")}</TableHead>
               <TableHead>{tE("hr.position")}</TableHead>
               <TableHead className="text-right">{tE("hr.workloadPercent")}</TableHead>
+              <TableHead className="w-24 text-center">
+                {tE("contract.document")}
+              </TableHead>
               {editable && <TableHead className="w-24"></TableHead>}
             </TableRow>
           </TableHeader>
@@ -141,7 +144,7 @@ export default function EmployeeContractsTab({
             {contracts.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={editable ? 6 : 5}
+                  colSpan={editable ? 7 : 6}
                   className="text-center text-sm text-muted-foreground h-24"
                 >
                   {tE("contract.noContracts")}
@@ -164,6 +167,22 @@ export default function EmployeeContractsTab({
                   <TableCell>{c.position || "–"}</TableCell>
                   <TableCell className="text-right">
                     {c.workloadPercent != null ? `${c.workloadPercent}%` : "–"}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {c.documentUrl ? (
+                      <a
+                        href={c.documentUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={tE("contract.docView")}
+                        className="inline-flex text-primary hover:text-primary/80"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <FileText className="h-4 w-4" />
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground">–</span>
+                    )}
                   </TableCell>
                   {editable && (
                     <TableCell className="text-right">
@@ -246,6 +265,7 @@ function ContractDialog({
       annualVacationDays: contract?.annualVacationDays ?? null,
       remainingVacationDays: contract?.remainingVacationDays ?? "",
       notes: contract?.notes ?? "",
+      documentUrl: contract?.documentUrl ?? "",
     },
   });
 
@@ -349,6 +369,12 @@ function ContractDialog({
                 </FormRow>
                 <FormRow label={tE("contract.notes")}>
                   <TextareaFormField name="notes" />
+                </FormRow>
+                <FormRow label={tE("contract.document")}>
+                  <ContractDocumentField
+                    name="documentUrl"
+                    employeeId={employeeId}
+                  />
                 </FormRow>
               </dl>
             </div>

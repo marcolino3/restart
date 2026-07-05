@@ -93,6 +93,19 @@ export const auth = betterAuth({
   trustedOrigins,
   emailAndPassword: {
     enabled: true,
+    // Wired for the employee onboarding invitation flow: EmployeeInvitationService
+    // calls auth.api.requestPasswordReset(), better-auth stores a token in the
+    // `verification` table and invokes this callback with the reset URL. The
+    // frontend /onboarding/set-password page consumes the token via
+    // authClient.resetPassword(). Doubles as the generic forgot-password mail.
+    sendResetPassword: async ({ user, url }) => {
+      try {
+        await mailer.sendPasswordSetup(user.email, url);
+      } catch (err) {
+        // Never surface SMTP errors — would leak whether an email exists.
+        console.error('[reset-password] sendMail failed:', err);
+      }
+    },
   },
   // OAuth state is stored in the `verification` DB table instead of an
   // encrypted cookie. Required for Expo: the in-app web browser (used

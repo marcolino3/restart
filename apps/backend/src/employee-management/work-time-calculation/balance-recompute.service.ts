@@ -170,6 +170,7 @@ export class BalanceRecomputeService {
         endDate: c.endDate ?? null,
         weeklyHours: c.weeklyHours ? Number(c.weeklyHours) : 0,
         weekdayWorkloads: c.weekdayWorkloads ?? null,
+        weekdayTimeWindows: c.weekdayTimeWindows ?? null,
       })),
       holidays: holidays.map((h) => ({
         date: h.date,

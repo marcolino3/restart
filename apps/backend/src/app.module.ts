@@ -40,8 +40,8 @@ import { GoogleModule } from './google/google.module';
 import { OrganizationSettingsModule } from './organization-settings/organization-settings.module';
 import { HealthModule } from './health/health.module';
 import { UploadModule } from './upload/upload.module';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
+import { ContractDocumentsModule } from './employee-management/contract-documents/contract-documents.module';
+import { StorageModule } from './storage/storage.module';
 
 // Upper bound on GraphQL query nesting. The deepest legitimate queries in the
 // app (curriculum/team ancestor traversal, admission board with nested cards)
@@ -144,19 +144,14 @@ const MAX_QUERY_DEPTH = 12;
       },
     }),
 
-    // Serve uploaded images under /api/uploads so they are reachable
-    // same-origin through the ingress (/api -> backend). A dedicated sub-path
-    // (NOT bare /api) avoids overlapping the global API prefix
-    // (setGlobalPrefix('/api')) — otherwise the ServeStatic middleware can
-    // shadow controller routes (/api/upload POST, /api/health, /api/graphql).
-    // The upload controller returns URLs like `/${entity}/${id}.webp`, which
-    // the frontend prefixes with the same-origin `/api/uploads` base —
-    // resolving to `/api/uploads/${entity}/${id}.webp`, matching serveRoot.
-    ServeStaticModule.forRoot({
-      rootPath: join(process.cwd(), 'public'),
-      serveRoot: '/api/uploads',
-    }),
+    // Public uploaded assets (avatars, org logos) are proxied from object
+    // storage by StorageModule's PublicAssetController under /api/uploads —
+    // same URL scheme as before, now backed by S3 (Infomaniak) in production
+    // with a local filesystem fallback for dev/CI. Contract PDFs use the
+    // authenticated ContractDocumentsController (never public).
+    StorageModule,
     UploadModule,
+    ContractDocumentsModule,
     OrganizationsModule,
     CommonModule,
     AddressesModule,

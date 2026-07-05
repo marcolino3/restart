@@ -435,4 +435,46 @@ export class WorkTimeBalanceService {
       vacationDaysUsed: r.vac,
     }));
   }
+
+  /**
+   * Netto-Arbeitszeitsaldo (Minuten, bis heute) je Mitarbeiter für die
+   * Mitarbeiterliste. Batch-Variante von getTeamOverview: ein gruppiertes
+   * SUM(difference_minutes) über das materialisierte Ledger, access-scoped
+   * via resolveOverviewScope. Bewusst nur difference_minutes (wie
+   * getTeamOverview) — konsistent mit der Zeitauswertungs-Übersicht.
+   *
+   * Nur Mitarbeiter, für die der Aufrufer den Saldo sehen darf (self / Admin /
+   * Team-Lead-Scope), landen in der Map; alle übrigen fehlen (→ Frontend „—").
+   */
+  async getListNetBalanceMinutes(
+    user: TokenPayload,
+    employeeIds: string[],
+  ): Promise<Map<string, number>> {
+    const result = new Map<string, number>();
+    if (!employeeIds.length) return result;
+
+    const orgId = user.orgId as string;
+    const scope = await this.access.resolveOverviewScope(user, orgId);
+    if (scope !== null && scope.length === 0) return result; // kein Zugriff
+
+    const allowedIds =
+      scope === null
+        ? employeeIds
+        : employeeIds.filter((id) => scope.includes(id));
+    if (!allowedIds.length) return result;
+
+    const rows = await this.dataSource.query<
+      { employee_id: string; net: number }[]
+    >(
+      `SELECT employee_id::text AS employee_id,
+              COALESCE(SUM(difference_minutes),0)::int AS net
+         FROM work_day_balances
+        WHERE organization_id = $1 AND date <= $2
+          AND employee_id = ANY($3::uuid[])
+        GROUP BY employee_id`,
+      [orgId, todayIso(), allowedIds],
+    );
+    for (const r of rows) result.set(r.employee_id, r.net);
+    return result;
+  }
 }

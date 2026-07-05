@@ -80,6 +80,16 @@ export class Membership extends AbstractEntity<Membership> {
   })
   contactPhone?: string;
 
+  // Secondary contact phone without a country mask (e.g. a foreign number).
+  @Field(() => String, { nullable: true })
+  @Column({
+    name: 'contact_phone2',
+    type: 'varchar',
+    length: 40,
+    nullable: true,
+  })
+  contactPhone2?: string;
+
   // UI color theme chosen by this member for this org context. Stores a
   // theme id from the frontend theme registry (apps/web/lib/themes.ts);
   // unknown/legacy values are ignored by the frontend and fall back to the
@@ -87,6 +97,12 @@ export class Membership extends AbstractEntity<Membership> {
   @Field(() => String, { nullable: true })
   @Column({ name: 'theme', type: 'varchar', length: 30, nullable: true })
   theme?: string | null;
+
+  // Preferred UI/e-mail language for this member in this org context as a
+  // locale code (e.g. "de", "en"). Set during onboarding.
+  @Field(() => String, { nullable: true })
+  @Column({ name: 'language', type: 'varchar', length: 10, nullable: true })
+  language?: string | null;
 
   // Employee
   @Field(() => String, { nullable: true })

@@ -34,6 +34,7 @@ export type EmployeeContract = {
   annualVacationDays?: number | null;
   remainingVacationDays?: string | null;
   notes?: string | null;
+  documentUrl?: string | null;
   isActive: boolean;
 };
 
@@ -56,6 +57,7 @@ const ListByEmployeeDocument = gql`
       annualVacationDays
       remainingVacationDays
       notes
+      documentUrl
       isActive
     }
   }
@@ -127,6 +129,7 @@ export const saveEmployeeContractAction = async (
         : parsed.annualVacationDays,
     remainingVacationDays: parsed.remainingVacationDays || undefined,
     notes: parsed.notes || undefined,
+    documentUrl: parsed.documentUrl || undefined,
   };
 
   try {

@@ -20,6 +20,7 @@ import {
   Mars,
   MoreHorizontal,
   Pencil,
+  Search,
   Trash2,
   Venus,
   VenusAndMars,
@@ -34,6 +35,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTableFacetedFilter } from "@/components/common/DataTableFacetedFilter";
+import { PersonCell } from "@/components/common/PersonCell";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -61,6 +63,7 @@ import {
 import { ROUTES } from "@/constants/routes";
 import { StudentListItem } from "../actions/get-students.action";
 import { deleteStudentAction } from "../actions/delete-student.action";
+import { StudentAvatar } from "./StudentAvatar";
 import { handleAction } from "@/lib/actions/handle-action";
 
 interface Props {
@@ -76,6 +79,19 @@ const GENDER_META: Record<string, { icon: LucideIcon; className: string }> = {
   },
 };
 
+const fullName = (row: StudentListItem) =>
+  `${row.firstName} ${row.lastName}`.trim();
+
+/** Whole years between a birthdate and now. */
+const ageFromDob = (dob: string): number => {
+  const b = new Date(dob);
+  const now = new Date();
+  let age = now.getFullYear() - b.getFullYear();
+  const m = now.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < b.getDate())) age -= 1;
+  return age;
+};
+
 /** Multi-select facet match for a scalar cell value against a list of picks. */
 const multiSelectFilter: FilterFn<StudentListItem> = (
   row,
@@ -85,6 +101,15 @@ const multiSelectFilter: FilterFn<StudentListItem> = (
   const picks = filterValue as string[] | undefined;
   if (!picks?.length) return true;
   return picks.includes(row.getValue<string>(columnId));
+};
+
+/** Search across first + last name for the merged name column. */
+const nameFilter: FilterFn<StudentListItem> = (row, _columnId, value) => {
+  const needle = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  if (!needle) return true;
+  return fullName(row.original).toLowerCase().includes(needle);
 };
 
 const useColumns = (): ColumnDef<StudentListItem>[] => {
@@ -118,45 +143,43 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
       enableHiding: false,
     },
     {
-      id: "lastName",
+      id: "name",
       accessorKey: "lastName",
       header: ({ column }) => (
         <Button
           variant="ghost"
+          className="-ml-3"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          {t("lastName")} <ArrowUpDown className="ml-2 h-4 w-4" />
+          {t("name")} <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ getValue }) => (
-        <div className="font-medium">{getValue<string>()}</div>
-      ),
-      filterFn: "includesString",
-    },
-    {
-      id: "firstName",
-      accessorKey: "firstName",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          {t("firstName")} <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ getValue }) => <div>{getValue<string>()}</div>,
-      filterFn: "includesString",
-    },
-    {
-      id: "dateOfBirth",
-      accessorKey: "dateOfBirth",
-      header: t("dateOfBirth"),
-      cell: ({ getValue }) => {
-        const value = getValue<string | null>();
-        return value ? (
-          <div>{new Date(value).toLocaleDateString("de-CH")}</div>
-        ) : null;
+      cell: ({ row }) => {
+        const s = row.original;
+        const dob = s.dateOfBirth;
+        const subtitle = dob
+          ? tS("birthInfo", {
+              date: new Date(dob).toLocaleDateString("de-CH"),
+              age: ageFromDob(dob),
+            })
+          : undefined;
+        return (
+          <PersonCell
+            avatar={
+              <StudentAvatar
+                studentId={s.id}
+                firstName={s.firstName}
+                lastName={s.lastName}
+                className="size-8"
+                fallbackClassName="text-[11px]"
+              />
+            }
+            name={fullName(s) || "—"}
+            subtitle={subtitle}
+          />
+        );
       },
+      filterFn: nameFilter,
     },
     {
       id: "gender",
@@ -187,7 +210,7 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
         }
         return (
           <Badge
-            variant="default"
+            variant="accent"
             className={cls.color ? "border-transparent text-white" : undefined}
             style={cls.color ? { backgroundColor: cls.color } : undefined}
           >
@@ -209,7 +232,7 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
             {gradeLevels.map((gl) => (
               <Badge
                 key={gl.id}
-                variant="default"
+                variant="secondary"
                 className={
                   gl.color ? "border-transparent text-white" : undefined
                 }
@@ -224,6 +247,17 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
         );
       },
       filterFn: "arrIncludesSome",
+    },
+    {
+      id: "status",
+      accessorFn: (row) => row.isActive,
+      header: t("status"),
+      cell: ({ getValue }) =>
+        getValue<boolean>() ? (
+          <Badge variant="green">{t("active")}</Badge>
+        ) : (
+          <Badge variant="slate">{t("inactive")}</Badge>
+        ),
     },
     {
       id: "actions",
@@ -271,6 +305,7 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
 
 export const StudentsTable = ({ data }: Props) => {
   const t = useTranslations("Common");
+  const tS = useTranslations("Students");
   const locale = useLocale();
   const router = useRouter();
   const columns = useColumns();
@@ -346,27 +381,19 @@ export const StudentsTable = ({ data }: Props) => {
 
   return (
     <div className="w-full">
-      <div className="flex items-center py-4 gap-2 flex-wrap">
-        <Input
-          placeholder={t("filterLastName")}
-          value={
-            (table.getColumn("lastName")?.getFilterValue() as string) ?? ""
-          }
-          onChange={(e) =>
-            table.getColumn("lastName")?.setFilterValue(e.target.value)
-          }
-          className="max-w-[180px]"
-        />
-        <Input
-          placeholder={t("filterFirstName")}
-          value={
-            (table.getColumn("firstName")?.getFilterValue() as string) ?? ""
-          }
-          onChange={(e) =>
-            table.getColumn("firstName")?.setFilterValue(e.target.value)
-          }
-          className="max-w-[180px]"
-        />
+      <div className="mb-4 flex items-center gap-2 flex-wrap">
+        <div className="relative w-[280px]">
+          <Search className="pointer-events-none absolute top-1/2 left-3.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={tS("searchPlaceholder")}
+            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+            onChange={(e) =>
+              table.getColumn("name")?.setFilterValue(e.target.value)
+            }
+            className="h-9 rounded-full pl-9"
+            aria-label={tS("searchPlaceholder")}
+          />
+        </div>
         {genderOptions.length > 0 && (
           <DataTableFacetedFilter
             title={t("gender")}
@@ -476,7 +503,7 @@ export const StudentsTable = ({ data }: Props) => {
           <Button
             variant="ghost"
             onClick={() => setColumnFilters([])}
-            className="h-8 px-2 lg:px-3"
+            className="h-9 px-2 lg:px-3"
           >
             {t("resetFilters")}
             <X className="ml-2 h-4 w-4" />
@@ -501,18 +528,18 @@ export const StudentsTable = ({ data }: Props) => {
                     column.toggleVisibility(!!value)
                   }
                 >
-                  {column.id}
+                  {t(column.id)}
                 </DropdownMenuCheckboxItem>
               ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      <div className="rounded-md border">
+      <div className="overflow-hidden rounded-card border bg-card shadow-xs">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="hover:bg-transparent">
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id}>
                     {header.isPlaceholder
