@@ -30,6 +30,7 @@
     "label": "Language"
   },
   "Admissions": {
+    "pickADate": "Pick a date",
     "pageTitle": "Admissions",
     "pageSubtitle": "Manage inquiries, applications and enrollments",
     "kanbanActiveCount": "{count} active applications",
@@ -1137,6 +1138,7 @@
     "noSearchResults": "No grade levels found for \"{query}\""
   },
   "Students": {
+    "pickADate": "Pick a date",
     "students": "Students",
     "createStudent": "Create Student",
     "editStudent": "Edit Student",
@@ -1545,6 +1547,7 @@
     "capacityExceededWarn": "{className}: now {count} of {max} – over capacity"
   },
   "RecordKeeping": {
+    "pickADate": "Pick a date",
     "title": "Record Keeping",
     "subtitle": "Pick a lesson, then choose the children from a classroom who took part, and set the status.",
     "subtabOverview": "Overview",
@@ -2082,6 +2085,7 @@
     "source": "Source"
   },
   "Protocols": {
+    "pickADate": "Pick a date",
     "pageTitle": "Protocols",
     "pageSubtitle": "Capture meeting minutes and turn todos into tasks.",
     "newProtocol": "New protocol",
@@ -2141,6 +2145,7 @@
     "readOnly": "Read-only"
   },
   "TimeTracking": {
+    "pickADate": "Pick a date",
     "myTime": "My time",
     "netBalance": "Balance",
     "worked": "Worked",

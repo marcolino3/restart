@@ -30,6 +30,7 @@
     "label": "Sprache"
   },
   "Admissions": {
+    "pickADate": "Datum wählen",
     "pageTitle": "Aufnahmeprozess",
     "pageSubtitle": "Anfragen, Bewerbungen und Einschreibungen verwalten",
     "kanbanActiveCount": "{count} aktive Bewerbungen",
@@ -1137,6 +1138,7 @@
     "noSearchResults": "Keine Stufen gefunden für «{query}»"
   },
   "Students": {
+    "pickADate": "Datum wählen",
     "students": "Schüler",
     "createStudent": "Schüler erstellen",
     "editStudent": "Schüler bearbeiten",
@@ -1545,6 +1547,7 @@
     "capacityExceededWarn": "{className}: jetzt {count} von {max} – Kapazität überschritten"
   },
   "RecordKeeping": {
+    "pickADate": "Datum wählen",
     "title": "Fortschritts-Eintragung",
     "subtitle": "Wähle eine Lektion, dann die Kinder einer Klasse, die teilgenommen haben, und setze den Status.",
     "subtabOverview": "Übersicht",
@@ -2082,6 +2085,7 @@
     "source": "Quelle"
   },
   "Protocols": {
+    "pickADate": "Datum wählen",
     "pageTitle": "Protokolle",
     "pageSubtitle": "Sitzungsprotokolle erfassen und Todos als Aufgaben übernehmen.",
     "newProtocol": "Neues Protokoll",
@@ -2141,6 +2145,7 @@
     "readOnly": "Nur Ansicht"
   },
   "TimeTracking": {
+    "pickADate": "Datum wählen",
     "myTime": "Meine Zeit",
     "netBalance": "Saldo",
     "worked": "Gearbeitet",
