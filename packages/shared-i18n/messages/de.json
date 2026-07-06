@@ -1,4 +1,21 @@
 {
+  "AccessReview": {
+    "tab": "Zugriffe",
+    "title": "Zugriffs-Review",
+    "subtitle": "Wer hat Zugriff auf sensible Daten — regelmässig prüfen und bestätigen.",
+    "noEntries": "Niemand mit sensiblem Zugriff gefunden.",
+    "reviewedOn": "Zuletzt geprüft: {date}",
+    "never": "Noch nie geprüft",
+    "recertify": "Rezertifizieren",
+    "recertifiedToast": "Zugriff bestätigt",
+    "perm": {
+      "EMPLOYEE_WRITE": "Mitarbeiterdaten (inkl. Notfall/Gesundheit)",
+      "RECORD_KEEPING_WRITE": "Lernfortschritt (Kinder)",
+      "CONSENT_MANAGE": "Einwilligungen",
+      "DATA_REQUEST_MANAGE": "Betroffenenanfragen/Export",
+      "DATA_BREACH_MANAGE": "Datenpannen"
+    }
+  },
   "Vvt": {
     "tab": "Verzeichnis",
     "activitiesTitle": "Verarbeitungstätigkeiten",
@@ -89,6 +106,29 @@
     "dueCount": "{count} fällig",
     "savedToast": "Regel gespeichert",
     "removedToast": "Regel entfernt",
+    "purgeTitle": "Lösch-/Anonymisierungs-Queue",
+    "purgeSubtitle": "Fällige Datensätze prüfen, genehmigen und ausführen (löschen/anonymisieren).",
+    "scan": "Jetzt scannen",
+    "scannedToast": "{count} neue Kandidaten gefunden",
+    "scanFailed": "Scan fehlgeschlagen",
+    "noPurgeCandidates": "Keine fälligen Datensätze. „Jetzt scannen“ prüft anhand der Regeln.",
+    "dueSince": "Fällig seit: {date}",
+    "approve": "Genehmigen",
+    "reject": "Ablehnen",
+    "execute": "Ausführen",
+    "cancel": "Abbrechen",
+    "approvedToast": "Genehmigt",
+    "rejectedToast": "Abgelehnt",
+    "executedToast": "Ausgeführt",
+    "confirmExecuteTitle": "Unwiderruflich ausführen?",
+    "confirmExecuteBody": "Aktion „{action}“ wird jetzt auf „{subject}“ angewendet. Dieser Schritt kann nicht rückgängig gemacht werden.",
+    "purgeStatus": {
+      "PENDING": "Offen",
+      "APPROVED": "Genehmigt",
+      "REJECTED": "Abgelehnt",
+      "EXECUTED": "Ausgeführt",
+      "FAILED": "Fehlgeschlagen"
+    },
     "fieldRetentionMonths": "Aufbewahrung (Monate)",
     "fieldAction": "Aktion nach Ablauf",
     "fieldDescription": "Beschreibung",

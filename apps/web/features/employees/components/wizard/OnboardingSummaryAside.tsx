@@ -10,7 +10,6 @@ import {
   DescriptionRow,
 } from "@/components/common/DescriptionList";
 import type { RadioCardOption } from "@/components/form/form-fields/RadioCardFormField";
-import { BACKEND_PUBLIC_URL } from "@/constants/backend-public-url";
 
 interface Props {
   roleOptions: RadioCardOption[];
@@ -24,7 +23,6 @@ export function OnboardingSummaryAside({ roleOptions, teamOptions }: Props) {
   const firstName = watch("firstName") as string;
   const lastName = watch("lastName") as string;
   const email = watch("email") as string | undefined;
-  const avatarUrl = watch("avatarUrl") as string | undefined;
   const dateOfBirth = watch("dateOfBirth") as Date | null | undefined;
   const position = watch("position") as string | undefined;
   const workloadPercent = watch("workloadPercent") as number | undefined;
@@ -60,7 +58,6 @@ export function OnboardingSummaryAside({ roleOptions, teamOptions }: Props) {
           <EmployeeAvatar
             firstName={firstName}
             lastName={lastName}
-            imageUrl={avatarUrl ? `${BACKEND_PUBLIC_URL}${avatarUrl}` : null}
             className="h-11 w-11 text-sm"
           />
           <div className="min-w-0">

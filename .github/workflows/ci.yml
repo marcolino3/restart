@@ -3,6 +3,8 @@ name: CI
 on:
   pull_request:
     branches: [main]
+  # Merge queue: re-validate the exact merge candidate before it lands.
+  merge_group:
   # Auf main läuft CI nicht mehr standalone, sondern als Gate VOR dem Deploy:
   # deploy-staging.yml ruft diesen Workflow via `needs` auf (workflow_call).
   # So werden Images erst gebaut/deployed, wenn Lint/Test/Build/E2E grün sind.

@@ -101,6 +101,8 @@ const employee = (empId: string, first: string, last: string): EmployeeListItem 
       isActive: true,
       timeTrackingEnabled: false,
       id: empId,
+      status: "ACTIVE",
+      invitationStatus: "ACCEPTED",
     },
     user: {
       firstName: first,

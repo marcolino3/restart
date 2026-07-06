@@ -34,6 +34,8 @@ import { DataBreachesModule } from './data-breaches/data-breaches.module';
 import { DataExportModule } from './data-export/data-export.module';
 import { VvtModule } from './vvt/vvt.module';
 import { ProjectTaskStatsLoaders } from './project-management/projects/loaders/project-task-stats.loaders';
+import { AccessReviewModule } from './access-review/access-review.module';
+import { RetentionPurgeModule } from './retention-purge/retention-purge.module';
 import { CurriculaModule } from './curricula/curricula.module';
 import { CurriculumNodeLoaders } from './curricula/loaders/curriculum-node-loaders';
 import { StudentEnrollmentLoaders } from './school-management/students/loaders/student-enrollment-loaders';
@@ -182,6 +184,8 @@ const MAX_QUERY_DEPTH = 12;
     DataBreachesModule,
     DataExportModule,
     VvtModule,
+    AccessReviewModule,
+    RetentionPurgeModule,
     CurriculaModule,
     MembershipsModule,
     MailModule,

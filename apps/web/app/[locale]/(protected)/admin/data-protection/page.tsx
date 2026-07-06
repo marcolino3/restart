@@ -10,11 +10,15 @@ import { getDataRequestsAction } from "@/features/data-requests/actions/get-data
 import { DataRequestsList } from "@/features/data-requests/components/DataRequestsList";
 import { getRetentionPoliciesAction } from "@/features/retention/actions/get-retention-policies.action";
 import { RetentionPoliciesList } from "@/features/retention/components/RetentionPoliciesList";
+import { getPurgeCandidatesAction } from "@/features/retention/actions/get-purge-candidates.action";
+import { PurgeQueue } from "@/features/retention/components/PurgeQueue";
 import { getDataBreachesAction } from "@/features/data-breaches/actions/get-data-breaches.action";
 import { DataBreachesList } from "@/features/data-breaches/components/DataBreachesList";
 import { getProcessingActivitiesAction } from "@/features/vvt/actions/get-processing-activities.action";
 import { getSubprocessorsAction } from "@/features/vvt/actions/get-subprocessors.action";
 import { VvtSection } from "@/features/vvt/components/VvtSection";
+import { getAccessReviewAction } from "@/features/access-review/actions/get-access-review.action";
+import { AccessReviewList } from "@/features/access-review/components/AccessReviewList";
 
 const DataProtectionPage = async () => {
   const locale = await getLocale();
@@ -23,6 +27,7 @@ const DataProtectionPage = async () => {
   const tRet = await getTranslations("RetentionSettings");
   const tB = await getTranslations("DataBreaches");
   const tV = await getTranslations("Vvt");
+  const tA = await getTranslations("AccessReview");
   const userRes = await getCurrentUserAction();
 
   if (!userRes?.success) {
@@ -35,10 +40,12 @@ const DataProtectionPage = async () => {
   const purposesRes = await getConsentPurposesAction();
   const requestsRes = await getDataRequestsAction();
   const retentionRes = await getRetentionPoliciesAction();
+  const purgeRes = await getPurgeCandidatesAction();
   const breachesRes = await getDataBreachesAction();
-  const [activitiesRes, subprocessorsRes] = await Promise.all([
+  const [activitiesRes, subprocessorsRes, accessRes] = await Promise.all([
     getProcessingActivitiesAction(),
     getSubprocessorsAction(),
+    getAccessReviewAction(),
   ]);
 
   return (
@@ -60,6 +67,7 @@ const DataProtectionPage = async () => {
           <TabsTrigger value="retention">{tRet("tab")}</TabsTrigger>
           <TabsTrigger value="breaches">{tB("tab")}</TabsTrigger>
           <TabsTrigger value="vvt">{tV("tab")}</TabsTrigger>
+          <TabsTrigger value="access">{tA("tab")}</TabsTrigger>
           <TabsTrigger value="overview">{t("tabOverview")}</TabsTrigger>
         </TabsList>
 
@@ -71,8 +79,9 @@ const DataProtectionPage = async () => {
           <DataRequestsList initial={requestsRes.data} />
         </TabsContent>
 
-        <TabsContent value="retention">
+        <TabsContent value="retention" className="space-y-8">
           <RetentionPoliciesList initial={retentionRes.data} />
+          <PurgeQueue initial={purgeRes.data} />
         </TabsContent>
 
         <TabsContent value="breaches">
@@ -84,6 +93,10 @@ const DataProtectionPage = async () => {
             activities={activitiesRes.data}
             subprocessors={subprocessorsRes.data}
           />
+        </TabsContent>
+
+        <TabsContent value="access">
+          <AccessReviewList initial={accessRes.data} />
         </TabsContent>
 
         <TabsContent value="overview">

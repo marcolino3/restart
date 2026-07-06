@@ -1,4 +1,21 @@
 {
+  "AccessReview": {
+    "tab": "Access",
+    "title": "Access review",
+    "subtitle": "Who can access sensitive data — review and recertify periodically.",
+    "noEntries": "No one with sensitive access found.",
+    "reviewedOn": "Last reviewed: {date}",
+    "never": "Never reviewed",
+    "recertify": "Recertify",
+    "recertifiedToast": "Access recertified",
+    "perm": {
+      "EMPLOYEE_WRITE": "Employee data (incl. emergency/health)",
+      "RECORD_KEEPING_WRITE": "Learning records (children)",
+      "CONSENT_MANAGE": "Consents",
+      "DATA_REQUEST_MANAGE": "Data requests/export",
+      "DATA_BREACH_MANAGE": "Data breaches"
+    }
+  },
   "Vvt": {
     "tab": "Records",
     "activitiesTitle": "Processing activities",
@@ -89,6 +106,29 @@
     "dueCount": "{count} due",
     "savedToast": "Policy saved",
     "removedToast": "Policy removed",
+    "purgeTitle": "Deletion/anonymization queue",
+    "purgeSubtitle": "Review, approve and execute due records (delete/anonymize).",
+    "scan": "Scan now",
+    "scannedToast": "{count} new candidates found",
+    "scanFailed": "Scan failed",
+    "noPurgeCandidates": "No due records. \"Scan now\" checks against the policies.",
+    "dueSince": "Due since: {date}",
+    "approve": "Approve",
+    "reject": "Reject",
+    "execute": "Execute",
+    "cancel": "Cancel",
+    "approvedToast": "Approved",
+    "rejectedToast": "Rejected",
+    "executedToast": "Executed",
+    "confirmExecuteTitle": "Execute irreversibly?",
+    "confirmExecuteBody": "The action \"{action}\" will now be applied to \"{subject}\". This step cannot be undone.",
+    "purgeStatus": {
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "EXECUTED": "Executed",
+      "FAILED": "Failed"
+    },
     "fieldRetentionMonths": "Retention (months)",
     "fieldAction": "Action when lapsed",
     "fieldDescription": "Description",
