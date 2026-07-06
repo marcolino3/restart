@@ -165,3 +165,9 @@ updates:
       - "terraform"
     commit-message:
       prefix: "chore(deps,terraform)"
+    ignore:
+      # Provider-Majors brauchen terraform-plan-Review (CI-blind) — nicht auto-bumpen
+      - dependency-name: "hashicorp/helm"
+        versions: [">=3.0.0"]
+      - dependency-name: "hashicorp/kubernetes"
+        versions: [">=3.0.0"]

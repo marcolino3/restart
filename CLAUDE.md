@@ -206,18 +206,24 @@ Spar-Modell.
   oft noch das `xhigh` älterer Modelle.
 - Zusätzlich: **Fast Mode** (`/fast`) = Opus mit schnellerem Output, gleiche Qualität.
 
-**Bewertung pro Variante** (höher = besser; Kosten höher = günstiger; Speed höher =
-schneller). Taste ist modell-inhärent, effort-unabhängig. Editierbare Defaults.
+**Eskalationsleiter** — von unten nach oben eskalieren, nie höher einsteigen als nötig.
+Sortiert nach effektiven Kosten (Token-Preis × Denkmenge): Fable kostet pro Token das
+Doppelte, denkt bei niedrigem effort aber wenig — darum sitzt `fable low` mitten in der
+Leiter und ist der **Sweet Spot** für „schlau + schnell + bezahlbar".
+(Höher = besser; Kosten höher = günstiger; Speed höher = schneller. Editierbare Defaults.)
 
-| Variante              | Kosten | Intelligenz | Taste | Speed | Einsatz                                     |
-|-----------------------|:------:|:-----------:|:-----:|:-----:|---------------------------------------------|
-| `opus` · `low`        |   6    |      7      |   9   |   8   | Bulk, breite Suche, mechanisch, i18n        |
-| `opus` · `medium`     |   5    |      8      |   9   |   6   | Standard-Feature (Backend/Frontend/Tests)   |
-| `opus` · `high`       |   4    |     8.5     |   9   |   4   | kritische Logik, solide Reviews             |
-| `opus` · `xhigh`      |   3    |      9      |   9   |   3   | schwierige Bugs, komplexe Features          |
-| `fable` · `low`       |   3    |      9      |  10   |   7   | anspruchsvolle Aufgaben, die schnell gehen sollen |
-| `fable` · `high`      |   2    |     9.5     |  10   |   4   | Architektur, Security, Multi-Tenant, Reviews|
-| `fable` · `xhigh`/`max` | 1    |     10      |  10   |   2   | härteste Probleme / letzte Instanz          |
+| # | Variante              | Kosten | Intelligenz | Taste | Speed | **Balance** | Rolle                                    |
+|---|-----------------------|:------:|:-----------:|:-----:|:-----:|:-----------:|-------------------------------------------|
+| 1 | `opus` · `low`        |   9    |      7      |   9   |   9   |     ★★★     | Bulk, Suche, mechanisch, i18n, Doc-Lookup |
+| 2 | `opus` · `medium`     |   7    |      8      |   9   |   7   |    ★★★★     | **Default** für Standard-Features & Tests |
+| 3 | `fable` · `low`       |   6    |      9      |  10   |   7   |   ★★★★★     | **Sweet Spot**: anspruchsvoll + zügig (kritische Logik, Design-UI, knifflige Bugs) |
+| 4 | `opus` · `high`       |   5    |     8.5     |   9   |   5   |     ★★★     | Fallback wenn medium nicht reicht, 2. Review-Perspektive |
+| 5 | `fable` · `medium`    |   4    |     9.5     |  10   |   5   |    ★★★★     | Architektur, Security/Multi-Tenant, Reviews |
+| 6 | `fable` · `high`      |   2    |     9.5+    |  10   |   3   |     ★★      | harte Architektur-/Security-Entscheide, `/ship`-Gates |
+| 7 | `fable` · `xhigh`/`max` | 1    |     10      |  10   |   1   |      ★      | letzte Instanz — nur wenn #6 scheitert    |
+
+`opus xhigh`/`max` bewusst nicht in der Leiter: ab dieser Preisklasse ist `fable medium`
+schlauer bei ähnlichen Kosten — bei Opus über `high` hinaus lieber auf Fable wechseln.
 
 **Grundregeln:**
 - Defaults, keine Limits. **Standing permission zum Hochstufen:** wenn `opus` (oder ein
@@ -238,14 +244,16 @@ schneller). Taste ist modell-inhärent, effort-unabhängig. Editierbare Defaults
   **`opus`, `effort: low`**.
 - **Backend-Feature** (NestJS Resolver/Service/Entity, GraphQL-Schema, Migration):
   **`opus`, `effort: medium`**; bei sicherheits-/multi-tenant-kritischer Logik
-  (Guards, Org-Isolation, Permissions) → **`fable`, `effort: high`**.
+  (Guards, Org-Isolation, Permissions) → **`fable`, `effort: low`** (Sweet Spot #3).
 - **Frontend-Feature** (Next.js Server Component/Action, shadcn-UI, RHF/Zod-Forms):
   **`opus`, `effort: medium`**; Design-lastige UI mit hohem Taste-Anspruch → **`fable`, `effort: low`**.
+- **Knifflige Bugs / Debugging**: **`fable`, `effort: low`**; wenn es nicht reicht → `fable medium`.
 - **Tests schreiben** (Jest/Vitest/Playwright nach klarer Spec): **`opus`, `effort: medium`**.
 - **Architektur / Cross-Cutting** (`architecture-guardian`, Modul-Platzierung, Layering,
-  Multi-Tenant-Invarianten): **`fable`, `effort: high`** — hier nie sparen.
+  Multi-Tenant-Invarianten): **`fable`, `effort: medium`**; harte Entscheide → `fable high`.
 - **Reviews & Gates** (`/code-review`, `/ship`, Plan-Review, Security-Check):
-  **`fable`, `effort: high`–`max`**; optional ein `opus`-Agent als zweite unabhängige Perspektive.
+  **`fable`, `effort: medium`–`high`**; optional ein `opus high`-Agent als zweite
+  unabhängige Perspektive.
 - **Mobile** (Expo/React Native in `apps/mobile/`): **`opus`, `effort: medium`**, Doc-Fragen via `expo-docs`.
 
 **Mechanik:** `Agent(prompt, { model: 'opus'|'fable', effort: 'low'|'medium'|'high'|'xhigh'|'max' })`
