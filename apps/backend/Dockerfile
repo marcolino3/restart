@@ -7,7 +7,7 @@
 FROM node:26-alpine AS pruner
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
-RUN corepack enable
+RUN npm install -g corepack && corepack enable
 COPY . .
 RUN pnpm dlx turbo@^2 prune @restart/backend --docker
 
@@ -15,7 +15,7 @@ RUN pnpm dlx turbo@^2 prune @restart/backend --docker
 FROM node:26-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache libc6-compat python3 make g++
-RUN corepack enable
+RUN npm install -g corepack && corepack enable
 COPY --from=pruner /app/out/json/ ./
 RUN pnpm install --frozen-lockfile
 
@@ -23,7 +23,7 @@ RUN pnpm install --frozen-lockfile
 FROM node:26-alpine AS build
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
-RUN corepack enable
+RUN npm install -g corepack && corepack enable
 COPY --from=deps /app/ ./
 COPY --from=pruner /app/out/full/ ./
 
