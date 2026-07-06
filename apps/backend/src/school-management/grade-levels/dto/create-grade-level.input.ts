@@ -1,9 +1,10 @@
-import { InputType, Field, Int } from '@nestjs/graphql';
+import { InputType, Field, Int, ID } from '@nestjs/graphql';
 import {
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
   Max,
   MaxLength,
   Min,
@@ -15,6 +16,12 @@ export class CreateGradeLevelInput {
   @IsString()
   @IsNotEmpty()
   name: string;
+
+  /** Parent grade level to nest under (creates a subgroup). Omit for a top-level Stufe. */
+  @Field(() => ID, { nullable: true })
+  @IsOptional()
+  @IsUUID()
+  parentId?: string | null;
 
   @Field(() => String, { nullable: true })
   @IsOptional()

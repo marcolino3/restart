@@ -1393,7 +1393,15 @@
     "ageFromYears": "ab {from} Jahren",
     "ageToYears": "bis {to} Jahre",
     "ageRangeInvalid": "«Alter bis» muss grösser oder gleich «Alter von» sein",
-    "noSearchResults": "Keine Stufen gefunden für «{query}»"
+    "noSearchResults": "Keine Stufen gefunden für «{query}»",
+    "parentLevel": "Übergeordnete Stufe",
+    "addSubgroup": "Untergruppe hinzufügen",
+    "createSubgroup": "Neue Untergruppe erstellen",
+    "editSubgroup": "Untergruppe bearbeiten",
+    "subgroupCreated": "Untergruppe erfolgreich erstellt",
+    "subgroupCreateError": "Fehler beim Erstellen der Untergruppe",
+    "subgroupUpdated": "Untergruppe erfolgreich gespeichert",
+    "subgroupUpdateError": "Fehler beim Speichern der Untergruppe"
   },
   "Students": {
     "pickADate": "Datum wählen",

@@ -3,6 +3,9 @@ import { IOrganization } from '@/organizations/interfaces/organization.interface
 
 export interface IGradeLevel extends IBase {
   name: string;
+  parentId?: string | null;
+  parent?: IGradeLevel | null;
+  children?: IGradeLevel[];
   color?: string | null;
   shortCode?: string | null;
   ageMin?: number | null;

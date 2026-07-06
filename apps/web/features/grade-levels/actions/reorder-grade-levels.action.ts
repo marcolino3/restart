@@ -11,6 +11,7 @@ const ReorderGradeLevelsDocument = gql`
     reorderGradeLevels(input: $input) {
       id
       name
+      parentId
       sortOrder
     }
   }
@@ -18,14 +19,17 @@ const ReorderGradeLevelsDocument = gql`
 
 type ReorderResponse = { reorderGradeLevels: GradeLevelItem[] };
 
-export const reorderGradeLevelsAction = async (ids: string[]) => {
+export const reorderGradeLevelsAction = async (
+  ids: string[],
+  parentId?: string | null,
+) => {
   const locale = await getLocale();
   const client = await serverCookieGqlClient();
 
   try {
     const { reorderGradeLevels } = await client.request<ReorderResponse>(
       ReorderGradeLevelsDocument,
-      { input: { ids } },
+      { input: { ids, ...(parentId !== undefined ? { parentId } : {}) } },
     );
     revalidatePath(`/${locale}/admin/grade-levels`);
     revalidatePath(`/${locale}/admin/school-classes`);
