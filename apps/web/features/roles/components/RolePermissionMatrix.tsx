@@ -8,12 +8,12 @@ import { ChevronRightIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { PageHead } from "@/components/common/PageHead";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
@@ -166,11 +166,15 @@ export function RolePermissionMatrix({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("title")}</CardTitle>
-        <CardDescription>{t("description")}</CardDescription>
-      </CardHeader>
+    <>
+      <PageHead
+        title={t("title")}
+        subtitle={t("rolesCount", { count: roles.length })}
+      />
+      <Card>
+        <CardHeader>
+          <CardDescription>{t("description")}</CardDescription>
+        </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-muted-foreground text-xs">{t("savingHint")}</p>
 
@@ -256,7 +260,8 @@ export function RolePermissionMatrix({
           </Table>
         </div>
       </CardContent>
-    </Card>
+      </Card>
+    </>
   );
 }
 
