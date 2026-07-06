@@ -17,6 +17,14 @@ const Document = gql`
   }
 `;
 
+/** Date → ISO date string (YYYY-MM-DD) without timezone drift. */
+function toIsoDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export const updateProjectAction = async (
   id: string,
   values: ProjectFormOutput
@@ -30,6 +38,7 @@ export const updateProjectAction = async (
     description: values.description ?? null,
     status: values.status,
     color: values.color ?? null,
+    dueDate: values.dueDate ? toIsoDate(values.dueDate) : null,
   };
 
   try {

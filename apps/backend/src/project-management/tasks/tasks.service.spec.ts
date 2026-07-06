@@ -170,4 +170,110 @@ describe('TasksService', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
     });
   });
+
+  describe('update (completedAt + checklist)', () => {
+    const manager = {
+      getRepository: () => ({ save: jest.fn((d: Task) => d) }),
+    };
+
+    beforeEach(() => {
+      dataSource.transaction.mockImplementation((cb: (m: unknown) => unknown) =>
+        cb(manager),
+      );
+    });
+
+    it('sets completedAt on the transition into DONE', async () => {
+      const task = {
+        id: 't1',
+        projectId: 'p1',
+        organizationId: ORG,
+        status: TaskStatus.OPEN,
+        completedAt: null,
+      } as unknown as Task;
+      tasksRepo.findOne.mockResolvedValue(task);
+
+      const saved = await service.update(
+        { id: 't1', status: TaskStatus.DONE },
+        ORG,
+        ME,
+        false,
+      );
+      expect(saved.status).toBe(TaskStatus.DONE);
+      expect(saved.completedAt).toBeInstanceOf(Date);
+    });
+
+    it('clears completedAt when a done task is reopened', async () => {
+      const task = {
+        id: 't1',
+        projectId: 'p1',
+        organizationId: ORG,
+        status: TaskStatus.DONE,
+        completedAt: new Date('2026-06-01T10:00:00Z'),
+      } as unknown as Task;
+      tasksRepo.findOne.mockResolvedValue(task);
+
+      const saved = await service.update(
+        { id: 't1', status: TaskStatus.OPEN },
+        ORG,
+        ME,
+        false,
+      );
+      expect(saved.completedAt).toBeNull();
+    });
+
+    it('keeps completedAt untouched when the status does not change', async () => {
+      const completedAt = new Date('2026-06-01T10:00:00Z');
+      const task = {
+        id: 't1',
+        projectId: 'p1',
+        organizationId: ORG,
+        status: TaskStatus.DONE,
+        completedAt,
+      } as unknown as Task;
+      tasksRepo.findOne.mockResolvedValue(task);
+
+      const saved = await service.update(
+        { id: 't1', status: TaskStatus.DONE, title: 'Neu' },
+        ORG,
+        ME,
+        false,
+      );
+      expect(saved.completedAt).toBe(completedAt);
+    });
+
+    it('normalises the checklist: assigns ids, trims labels, drops empties', async () => {
+      const task = {
+        id: 't1',
+        projectId: 'p1',
+        organizationId: ORG,
+        status: TaskStatus.OPEN,
+        checklist: [],
+      } as unknown as Task;
+      tasksRepo.findOne.mockResolvedValue(task);
+
+      const saved = await service.update(
+        {
+          id: 't1',
+          checklist: [
+            { label: '  Grill besetzen  ', done: false },
+            { label: '   ', done: true },
+            {
+              id: '4f2c0e9e-0000-4000-8000-000000000001',
+              label: 'Kasse',
+              done: true,
+            },
+          ],
+        },
+        ORG,
+        ME,
+        false,
+      );
+      expect(saved.checklist).toHaveLength(2);
+      expect(saved.checklist[0].label).toBe('Grill besetzen');
+      expect(saved.checklist[0].id).toEqual(expect.any(String));
+      expect(saved.checklist[1].id).toBe(
+        '4f2c0e9e-0000-4000-8000-000000000001',
+      );
+    });
+  });
 });

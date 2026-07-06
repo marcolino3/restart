@@ -32,14 +32,22 @@ export type MembershipRef = {
   userEmail?: { email?: string | null } | null;
 };
 
+export type ProjectTaskStats = {
+  total: number;
+  done: number;
+};
+
 export type ProjectListItem = {
   id: string;
   title: string;
   description?: string | null;
   status: ProjectStatus;
   color?: string | null;
+  dueDate?: string | null;
   isArchived: boolean;
   createdAt: string;
+  taskStats: ProjectTaskStats;
+  members?: ProjectMember[];
 };
 
 export type ProjectMember = {
@@ -132,8 +140,18 @@ export type ProtocolListItem = {
   id: string;
   title: string;
   meetingDate?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
   status: ProtocolStatus;
   project?: { id: string; title: string } | null;
+};
+
+export type ProtocolTemplate = {
+  id: string;
+  title: string;
+  agendaItems: AgendaItem[];
+  defaultParticipantMembershipIds: string[];
+  usedCount: number;
 };
 
 export type Protocol = ProtocolListItem & {
@@ -145,6 +163,20 @@ export type Protocol = ProtocolListItem & {
   participants?: ProtocolParticipantRef[];
 };
 
+export type TaskChecklistItem = {
+  id: string;
+  label: string;
+  done: boolean;
+};
+
+export type TaskNote = {
+  id: string;
+  text: string;
+  authorMembershipId?: string | null;
+  authorName?: string | null;
+  createdAt: string;
+};
+
 export type Task = {
   id: string;
   title: string;
@@ -152,8 +184,13 @@ export type Task = {
   status: TaskStatus;
   priority: TaskPriority;
   dueDate?: string | null;
+  dueTime?: string | null;
+  completedAt?: string | null;
+  checklist: TaskChecklistItem[];
+  notes: TaskNote[];
   sortOrder: number;
   assignees: TaskAssignee[];
+  createdByMembershipId?: string | null;
   // Present only on the personal "My Tasks" view (cross-project).
   project?: { id: string; title: string; color?: string | null } | null;
   // Set when the task originated from a meeting protocol.

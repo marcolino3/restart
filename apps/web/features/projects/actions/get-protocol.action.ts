@@ -12,6 +12,8 @@ const Document = gql`
       id
       title
       meetingDate
+      startTime
+      endTime
       status
       projectId
       externalParticipants

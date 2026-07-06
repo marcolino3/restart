@@ -1,6 +1,7 @@
 import { Field, ID, InputType } from '@nestjs/graphql';
 import {
   IsArray,
+  IsDateString,
   IsEnum,
   IsHexColor,
   IsNotEmpty,
@@ -34,6 +35,12 @@ export class CreateProjectInput {
   @IsOptional()
   @IsHexColor()
   color?: string | null;
+
+  // ISO date (YYYY-MM-DD) — optional target date shown as "Fällig".
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsDateString()
+  dueDate?: string | null;
 
   // Memberships to add as initial members (besides the creator, who is always
   // added as OWNER). All must belong to the active organization.

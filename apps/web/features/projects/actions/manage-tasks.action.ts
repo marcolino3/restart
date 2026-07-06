@@ -58,6 +58,8 @@ export const createTaskAction = async (
     status: values.status,
     priority: values.priority,
     dueDate: values.dueDate ? toIsoDate(values.dueDate) : null,
+    dueTime: values.dueTime ? values.dueTime : null,
+    checklist: toChecklistInput(values),
     assigneeMembershipIds: values.assigneeMembershipIds ?? [],
   };
   try {
@@ -87,6 +89,8 @@ export const updateTaskAction = async (
     status: values.status,
     priority: values.priority,
     dueDate: values.dueDate ? toIsoDate(values.dueDate) : null,
+    dueTime: values.dueTime ? values.dueTime : null,
+    checklist: toChecklistInput(values),
     assigneeMembershipIds: values.assigneeMembershipIds ?? [],
   };
   try {
@@ -146,6 +150,15 @@ export const deleteTaskAction = async (
     return { success: false as const, error };
   }
 };
+
+/** Form checklist → TaskChecklistItemInput[] (drops empty ids so the backend creates new items). */
+function toChecklistInput(values: TaskFormOutput) {
+  return (values.checklist ?? []).map((item) => ({
+    ...(item.id ? { id: item.id } : {}),
+    label: item.label,
+    done: item.done,
+  }));
+}
 
 /** Date → ISO date string (YYYY-MM-DD) without timezone drift. */
 function toIsoDate(date: Date): string {

@@ -130,8 +130,9 @@ export class TemplatesService {
       const project = await manager.getRepository(Project).save(
         manager.getRepository(Project).create({
           title: (input.title ?? template.title).trim(),
-          description: template.description ?? null,
+          description: input.description ?? template.description ?? null,
           status: ProjectStatus.ACTIVE,
+          dueDate: input.dueDate ?? null,
           organizationId,
           createdByMembershipId: membershipId ?? null,
         }),

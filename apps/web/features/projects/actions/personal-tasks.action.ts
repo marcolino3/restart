@@ -30,6 +30,15 @@ function toIsoDate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+/** Form checklist → TaskChecklistItemInput[] (drops empty ids so the backend creates new items). */
+function toChecklistInput(values: TaskFormOutput) {
+  return (values.checklist ?? []).map((item) => ({
+    ...(item.id ? { id: item.id } : {}),
+    label: item.label,
+    done: item.done,
+  }));
+}
+
 /** Create a personal task (no project): the creator becomes its sole assignee. */
 export const createPersonalTaskAction = async (values: TaskFormOutput) => {
   const locale = await getLocale();
@@ -41,6 +50,8 @@ export const createPersonalTaskAction = async (values: TaskFormOutput) => {
     status: values.status,
     priority: values.priority,
     dueDate: values.dueDate ? toIsoDate(values.dueDate) : null,
+    dueTime: values.dueTime ? values.dueTime : null,
+    checklist: toChecklistInput(values),
   };
   try {
     const { createTask } = await client.request<{ createTask: { id: string } }>(
@@ -68,6 +79,8 @@ export const updatePersonalTaskAction = async (
     status: values.status,
     priority: values.priority,
     dueDate: values.dueDate ? toIsoDate(values.dueDate) : null,
+    dueTime: values.dueTime ? values.dueTime : null,
+    checklist: toChecklistInput(values),
   };
   try {
     const { updateTask } = await client.request<{ updateTask: { id: string } }>(

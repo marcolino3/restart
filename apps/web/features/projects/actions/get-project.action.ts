@@ -14,8 +14,13 @@ const Document = gql`
       description
       status
       color
+      dueDate
       isArchived
       createdAt
+      taskStats {
+        total
+        done
+      }
       members {
         id
         role

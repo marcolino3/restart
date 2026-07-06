@@ -9,6 +9,7 @@ import { TaskAssignee } from '@/project-management/tasks/entities/task-assignee.
 import { Task } from '@/project-management/tasks/entities/task.entity';
 import { ProtocolParticipant } from './entities/protocol-participant.entity';
 import { Protocol } from './entities/protocol.entity';
+import { ProtocolTemplatesService } from './protocol-templates.service';
 import { ProtocolsService } from './protocols.service';
 
 const ORG = 'org-1';
@@ -99,6 +100,10 @@ describe('ProtocolsService', () => {
           useValue: { find: jest.fn(), save: jest.fn() },
         },
         { provide: ProjectAccessService, useValue: access },
+        {
+          provide: ProtocolTemplatesService,
+          useValue: { apply: jest.fn() },
+        },
         { provide: DataSource, useValue: dataSource },
       ],
     }).compile();

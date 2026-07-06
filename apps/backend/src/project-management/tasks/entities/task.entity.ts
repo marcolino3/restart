@@ -15,6 +15,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { TaskAssignee } from './task-assignee.entity';
+import { TaskChecklistItem, TaskNote } from './task-details.output';
 import { TaskPriority } from './task-priority.enum';
 import { TaskStatus } from './task-status.enum';
 
@@ -44,6 +45,26 @@ export class Task extends AbstractEntity<Task> {
   @Field(() => String, { nullable: true })
   @Column('date', { name: 'due_date', nullable: true })
   dueDate?: string | null;
+
+  // Optional time-of-day for the due date (HH:MM). Kept separate from the
+  // date column, mirroring AdmissionReminder's date+time split.
+  @Field(() => String, { nullable: true })
+  @Column('text', { name: 'due_time', nullable: true })
+  dueTime?: string | null;
+
+  // Set on the transition into DONE, cleared when the task is reopened.
+  // Drives the "Erledigt am" column and the 30-day window in "My Tasks".
+  @Field(() => Date, { nullable: true })
+  @Column('timestamptz', { name: 'completed_at', nullable: true })
+  completedAt?: Date | null;
+
+  @Field(() => [TaskChecklistItem])
+  @Column('jsonb', { default: [] })
+  checklist: TaskChecklistItem[];
+
+  @Field(() => [TaskNote])
+  @Column('jsonb', { default: [] })
+  notes: TaskNote[];
 
   // Ordering within a status column on the board.
   @Field(() => Int)

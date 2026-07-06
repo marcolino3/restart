@@ -33,6 +33,7 @@ import { RetentionModule } from './retention/retention.module';
 import { DataBreachesModule } from './data-breaches/data-breaches.module';
 import { DataExportModule } from './data-export/data-export.module';
 import { VvtModule } from './vvt/vvt.module';
+import { ProjectTaskStatsLoaders } from './project-management/projects/loaders/project-task-stats.loaders';
 import { AccessReviewModule } from './access-review/access-review.module';
 import { RetentionPurgeModule } from './retention-purge/retention-purge.module';
 import { CurriculaModule } from './curricula/curricula.module';
@@ -145,6 +146,7 @@ const MAX_QUERY_DEPTH = 12;
             loaders: {
               curriculumNodes: new CurriculumNodeLoaders(dataSource),
               studentEnrollments: new StudentEnrollmentLoaders(dataSource),
+              projectTaskStats: new ProjectTaskStatsLoaders(dataSource),
             },
           }),
           plugins: isProd ? [] : [ApolloServerPluginLandingPageLocalDefault()],

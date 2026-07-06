@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -51,6 +52,7 @@ export function RejectApplicationDialog({
 
   const [reasonId, setReasonId] = useState<string>(NONE_VALUE);
   const [rejectedBy, setRejectedBy] = useState<string>(NONE_VALUE);
+  const [followUpYear, setFollowUpYear] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -73,6 +75,7 @@ export function RejectApplicationDialog({
         rejectedBy === NONE_VALUE
           ? undefined
           : (rejectedBy as "SCHOOL" | "PARENTS" | "OTHER"),
+      followUpYear: followUpYear.trim() || undefined,
     });
     setBusy(false);
     if (res.success) {
@@ -141,6 +144,19 @@ export function RejectApplicationDialog({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">{t("followUpYearLabel")}</Label>
+            <Input
+              value={followUpYear}
+              onChange={(e) => setFollowUpYear(e.target.value)}
+              placeholder={t("followUpYearPlaceholder")}
+              maxLength={40}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              {t("followUpYearHint")}
+            </p>
           </div>
 
           <div className="space-y-1.5">

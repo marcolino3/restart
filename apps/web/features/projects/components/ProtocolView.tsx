@@ -1,20 +1,44 @@
 "use client";
 
-import { format } from "date-fns";
-import { de } from "date-fns/locale";
-import { IconArrowLeft, IconFileText } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconCopy,
+  IconDots,
+  IconFileText,
+  IconLayersSubtract,
+  IconPencil,
+} from "@tabler/icons-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import * as React from "react";
 
 import { ROUTES } from "@/constants/routes";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { handleAction } from "@/lib/actions/handle-action";
 
+import {
+  createProtocolAction,
+  updateProtocolAction,
+} from "../actions/manage-protocols.action";
 import { membershipName } from "../lib/membership-name";
+import { SaveProtocolTemplateDialog } from "./ManageProtocolTemplatesDialog";
+import { ProtocolStatusBadge } from "./ProtocolsList";
 import type { Protocol, Task } from "../types";
 
-type Props = { protocol: Protocol; tasks: Task[] };
+type Props = {
+  protocol: Protocol;
+  tasks: Task[];
+  /** Whether the viewer would be allowed to edit (creator/participant/admin). */
+  canEdit?: boolean;
+};
 
 function Section({
   title,
@@ -36,65 +60,165 @@ function Section({
   );
 }
 
-export function ProtocolView({ protocol, tasks }: Props) {
+export function ProtocolView({ protocol, tasks, canEdit = false }: Props) {
   const t = useTranslations("Protocols");
   const tp = useTranslations("Projects");
   const locale = useLocale();
+  const router = useRouter();
   const s = protocol.sections;
 
-  return (
-    <div className="flex flex-col gap-4 p-4">
-      <Button variant="ghost" size="sm" className="-ml-2 w-fit" asChild>
-        <Link href={ROUTES.admin.protocols(locale)}>
-          <IconArrowLeft className="mr-1 h-4 w-4" />
-          {t("pageTitle")}
-        </Link>
-      </Button>
+  const [saveTemplateOpen, setSaveTemplateOpen] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex flex-wrap items-center gap-2">
+  const participantsCount =
+    (protocol.participants ?? []).length +
+    (protocol.externalParticipants ?? []).length;
+
+  const sublineParts: string[] = [];
+  if (protocol.meetingDate) {
+    sublineParts.push(
+      new Intl.DateTimeFormat(locale === "de" ? "de-CH" : "en-GB", {
+        weekday: "short",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }).format(new Date(protocol.meetingDate))
+    );
+  }
+  if (protocol.startTime && protocol.endTime) {
+    sublineParts.push(`${protocol.startTime}–${protocol.endTime}`);
+  } else if (protocol.startTime) {
+    sublineParts.push(protocol.startTime);
+  }
+  if (participantsCount > 0) {
+    sublineParts.push(t("participantsCount", { count: participantsCount }));
+  }
+
+  const onDuplicate = async () => {
+    setBusy(true);
+    const result = await handleAction({
+      action: () =>
+        createProtocolAction({
+          title: `${protocol.title} ${t("copySuffix")}`,
+          meetingDate: protocol.meetingDate ?? null,
+          startTime: protocol.startTime ?? null,
+          endTime: protocol.endTime ?? null,
+          status: "DRAFT",
+          projectId: protocol.projectId ?? null,
+          participantMembershipIds: (protocol.participants ?? []).map(
+            (p) => p.membershipId
+          ),
+          externalParticipants: protocol.externalParticipants ?? [],
+          sections: protocol.sections,
+        }),
+      successMessage: t("protocolDuplicated"),
+      errorMessage: t("protocolDuplicateError"),
+    });
+    setBusy(false);
+    if (result.success) {
+      router.push(ROUTES.admin.protocolEditor(locale, result.data.id));
+    }
+  };
+
+  const onBackToDraft = async () => {
+    setBusy(true);
+    await handleAction({
+      action: () =>
+        updateProtocolAction({ id: protocol.id, status: "DRAFT" }),
+      successMessage: t("backToDraftSuccess"),
+      errorMessage: t("backToDraftError"),
+    });
+    setBusy(false);
+    router.refresh();
+  };
+
+  return (
+    <div className="flex flex-col gap-4 p-4 print:p-0">
+      {/* Header — title + status, subline, actions */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold">
             {protocol.title}
-            <Badge
-              variant={
-                protocol.status === "FINALIZED" ? "outline" : "secondary"
-              }
-            >
-              {t(`status_${protocol.status}`)}
-            </Badge>
+            <ProtocolStatusBadge status={protocol.status} />
+          </h1>
+          {sublineParts.length > 0 && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              {sublineParts.join(" · ")}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2 print:hidden">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href={ROUTES.admin.protocols(locale)}>
+              <IconArrowLeft className="mr-1 h-4 w-4" />
+              {t("allProtocols")}
+            </Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.print()}
+          >
+            {t("exportPdf")}
+          </Button>
+          {canEdit && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="h-9 w-9 rounded-full"
+                  aria-label={t("moreSettings")}
+                >
+                  <IconDots className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-60">
+                <DropdownMenuItem onClick={() => setSaveTemplateOpen(true)}>
+                  <IconLayersSubtract className="mr-2 h-4 w-4" />
+                  {t("saveAsTemplate")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onDuplicate} disabled={busy}>
+                  <IconCopy className="mr-2 h-4 w-4" />
+                  {t("duplicate")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onBackToDraft} disabled={busy}>
+                  <IconPencil className="mr-2 h-4 w-4" />
+                  {t("backToDraft")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </div>
+
+      {(protocol.project ||
+        (protocol.participants ?? []).length > 0 ||
+        protocol.externalParticipants.length > 0) && (
+        <Card>
+          <CardContent className="space-y-1 pt-6 text-sm text-muted-foreground">
             {protocol.project && (
-              <Badge variant="outline">{protocol.project.title}</Badge>
+              <div>
+                {t("project")}: {protocol.project.title}
+              </div>
             )}
-            <Badge variant="secondary" className="ml-auto">
-              {t("readOnly")}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-1 text-sm text-muted-foreground">
-          {protocol.meetingDate && (
-            <div>
-              {t("meetingDate")}:{" "}
-              {format(new Date(protocol.meetingDate), "dd. MMMM yyyy", {
-                locale: de,
-              })}
-            </div>
-          )}
-          {(protocol.participants ?? []).length > 0 && (
-            <div>
-              {t("participants")}:{" "}
-              {(protocol.participants ?? [])
-                .map((p) => membershipName(p.membership))
-                .join(", ")}
-            </div>
-          )}
-          {protocol.externalParticipants.length > 0 && (
-            <div>
-              {t("externalParticipants")}:{" "}
-              {protocol.externalParticipants.join(", ")}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            {(protocol.participants ?? []).length > 0 && (
+              <div>
+                {t("participants")}:{" "}
+                {(protocol.participants ?? [])
+                  .map((p) => membershipName(p.membership))
+                  .join(", ")}
+              </div>
+            )}
+            {protocol.externalParticipants.length > 0 && (
+              <div>
+                {t("externalParticipants")}:{" "}
+                {protocol.externalParticipants.join(", ")}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Section title={t("agenda")} show={s.agendaItems.length > 0}>
         {s.agendaItems.map((a, i) => (
@@ -172,6 +296,15 @@ export function ProtocolView({ protocol, tasks }: Props) {
           </div>
         ))}
       </Section>
+
+      {canEdit && (
+        <SaveProtocolTemplateDialog
+          open={saveTemplateOpen}
+          onOpenChange={setSaveTemplateOpen}
+          protocolId={protocol.id}
+          defaultTitle={protocol.title}
+        />
+      )}
     </div>
   );
 }

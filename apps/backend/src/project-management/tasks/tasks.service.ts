@@ -4,15 +4,20 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { randomUUID } from 'node:crypto';
 import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { ProjectMember } from '@/project-management/project-members/entities/project-member.entity';
 import { ProjectAccessService } from '@/project-management/projects/project-access.service';
+import { AddTaskNoteInput } from './dto/add-task-note.input';
 import { CreateTaskInput } from './dto/create-task.input';
 import { MoveTaskInput } from './dto/move-task.input';
+import { TaskChecklistItemInput } from './dto/task-checklist-item.input';
 import { UpdateTaskInput } from './dto/update-task.input';
 import { TaskAssignee } from './entities/task-assignee.entity';
+import { TaskChecklistItem } from './entities/task-details.output';
 import { Task } from './entities/task.entity';
+import { TaskStatus } from './entities/task-status.enum';
 
 const TASK_RELATIONS = {
   assignees: { membership: { user: true } },
@@ -170,6 +175,9 @@ export class TasksService {
             status: input.status,
             priority: input.priority,
             dueDate: input.dueDate ?? null,
+            dueTime: input.dueTime ?? null,
+            checklist: this.normalizeChecklist(input.checklist ?? []),
+            completedAt: input.status === TaskStatus.DONE ? new Date() : null,
             sortOrder: 0,
             organizationId,
             projectId: null,
@@ -211,6 +219,9 @@ export class TasksService {
           status: input.status,
           priority: input.priority,
           dueDate: input.dueDate ?? null,
+          dueTime: input.dueTime ?? null,
+          checklist: this.normalizeChecklist(input.checklist ?? []),
+          completedAt: input.status === TaskStatus.DONE ? new Date() : null,
           sortOrder,
           organizationId,
           projectId: input.projectId,
@@ -256,9 +267,13 @@ export class TasksService {
       if (input.title !== undefined) task.title = input.title.trim();
       if (input.description !== undefined)
         task.description = input.description ?? null;
-      if (input.status !== undefined) task.status = input.status;
+      if (input.status !== undefined)
+        this.applyStatusTransition(task, input.status);
       if (input.priority !== undefined) task.priority = input.priority;
       if (input.dueDate !== undefined) task.dueDate = input.dueDate ?? null;
+      if (input.dueTime !== undefined) task.dueTime = input.dueTime ?? null;
+      if (input.checklist !== undefined)
+        task.checklist = this.normalizeChecklist(input.checklist ?? []);
       await manager.getRepository(Task).save(task);
 
       if (assigneeIds !== undefined) {
@@ -312,11 +327,49 @@ export class TasksService {
     const toSave = input.orderedTaskIds.map((id, index) => {
       const sibling = byId.get(id)!;
       sibling.sortOrder = index;
-      sibling.status = input.status;
+      this.applyStatusTransition(sibling, input.status);
       return sibling;
     });
     await this.tasksRepo.save(toSave);
     return this.findOne(input.id, organizationId, membershipId, canSeeAll);
+  }
+
+  /**
+   * Append a note to a task. The author's display name is snapshotted so the
+   * note stays attributable even if the membership is later removed.
+   */
+  async addNote(
+    input: AddTaskNoteInput,
+    organizationId: string,
+    membershipId: string | null,
+    canSeeAll: boolean,
+  ): Promise<Task> {
+    const task = await this.loadTask(input.taskId, organizationId);
+    await this.authorizeEdit(task, organizationId, membershipId, canSeeAll);
+
+    let authorName: string | null = null;
+    if (membershipId) {
+      const membership = await this.membershipsRepo.findOne({
+        where: { id: membershipId, organizationId },
+        relations: { user: true },
+      });
+      authorName = membership?.user
+        ? `${membership.user.firstName} ${membership.user.lastName}`.trim()
+        : null;
+    }
+
+    task.notes = [
+      ...(task.notes ?? []),
+      {
+        id: randomUUID(),
+        text: input.text.trim(),
+        authorMembershipId: membershipId,
+        authorName,
+        createdAt: new Date().toISOString(),
+      },
+    ];
+    await this.tasksRepo.save(task);
+    return this.findOne(task.id, organizationId, membershipId, canSeeAll);
   }
 
   async remove(
@@ -330,6 +383,26 @@ export class TasksService {
     task.isActive = false;
     await this.tasksRepo.save(task);
     return true;
+  }
+
+  /** Sets/clears completedAt exactly on the transition into/out of DONE. */
+  private applyStatusTransition(task: Task, status: TaskStatus): void {
+    if (task.status === status) return;
+    task.status = status;
+    task.completedAt = status === TaskStatus.DONE ? new Date() : null;
+  }
+
+  /** Ensure every checklist entry carries a stable id and a trimmed label. */
+  private normalizeChecklist(
+    items: TaskChecklistItemInput[],
+  ): TaskChecklistItem[] {
+    return items
+      .map((item) => ({
+        id: item.id ?? randomUUID(),
+        label: item.label.trim(),
+        done: item.done,
+      }))
+      .filter((item) => item.label.length > 0);
   }
 
   private async loadTask(id: string, organizationId: string): Promise<Task> {

@@ -42,6 +42,7 @@ export class ProjectsService {
           description: input.description ?? null,
           status: input.status,
           color: input.color ?? null,
+          dueDate: input.dueDate ?? null,
           organizationId,
           // May be null when a platform SuperAdmin (no org membership) creates.
           createdByMembershipId: creatorMembershipId ?? null,
@@ -91,9 +92,11 @@ export class ProjectsService {
     membershipId: string | null,
     canSeeAll: boolean,
   ): Promise<Project[]> {
+    // Members are loaded for the list's avatar row / member count.
     if (canSeeAll) {
       return this.projectsRepo.find({
         where: { organizationId, isActive: true },
+        relations: { members: { membership: { user: true } } },
         order: { createdAt: 'DESC' },
       });
     }
@@ -106,6 +109,7 @@ export class ProjectsService {
 
     return this.projectsRepo.find({
       where: { id: In(projectIds), organizationId, isActive: true },
+      relations: { members: { membership: { user: true } } },
       order: { createdAt: 'DESC' },
     });
   }
@@ -147,6 +151,7 @@ export class ProjectsService {
       project.description = input.description ?? null;
     if (input.status !== undefined) project.status = input.status;
     if (input.color !== undefined) project.color = input.color ?? null;
+    if (input.dueDate !== undefined) project.dueDate = input.dueDate ?? null;
 
     return this.projectsRepo.save(project);
   }

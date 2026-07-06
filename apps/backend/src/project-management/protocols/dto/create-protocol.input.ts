@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
@@ -27,6 +28,24 @@ export class CreateProtocolInput {
   @IsOptional()
   @IsDateString()
   meetingDate?: string | null;
+
+  // Optional meeting window (HH:MM).
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/)
+  startTime?: string | null;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/)
+  endTime?: string | null;
+
+  // Vorlage anwenden: kopiert Traktanden + Standard-Teilnehmende (nur beim
+  // Erstellen; explizit mitgegebene sections/participants gewinnen).
+  @Field(() => ID, { nullable: true })
+  @IsOptional()
+  @IsUUID()
+  templateId?: string | null;
 
   @Field(() => ProtocolStatus, { nullable: true })
   @IsOptional()

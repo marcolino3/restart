@@ -10,6 +10,7 @@ import {
   canSeeAllProjects,
   actingMembershipId,
 } from '@/project-management/common/project-auth';
+import { AddTaskNoteInput } from './dto/add-task-note.input';
 import { CreateTaskInput } from './dto/create-task.input';
 import { MoveTaskInput } from './dto/move-task.input';
 import { UpdateTaskInput } from './dto/update-task.input';
@@ -123,6 +124,21 @@ export class TasksResolver {
     @CurrentUser() user: TokenPayload,
   ): Promise<Task> {
     return this.tasksService.move(
+      input,
+      orgId,
+      actingMembershipId(user),
+      canSeeAllProjects(user),
+    );
+  }
+
+  @Mutation(() => Task)
+  @Permissions('PROJECT_READ')
+  addTaskNote(
+    @Args('input') input: AddTaskNoteInput,
+    @CurrentOrgId() orgId: string,
+    @CurrentUser() user: TokenPayload,
+  ): Promise<Task> {
+    return this.tasksService.addNote(
       input,
       orgId,
       actingMembershipId(user),

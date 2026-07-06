@@ -15,6 +15,20 @@ const Document = gql`
       status
       priority
       dueDate
+      dueTime
+      completedAt
+      checklist {
+        id
+        label
+        done
+      }
+      notes {
+        id
+        text
+        authorName
+        createdAt
+      }
+      createdByMembershipId
       sortOrder
       protocol {
         id

@@ -34,6 +34,7 @@ export type RejectedApplication = {
   rejectionReasonLabel: string | null;
   rejectionReasonColor: string | null;
   rejectedBy: AdmissionRejectedBy | null;
+  followUpYear: string | null;
   rejectedAt: string;
 };
 

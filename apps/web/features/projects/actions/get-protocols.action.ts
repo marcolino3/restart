@@ -4,7 +4,13 @@ import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-clien
 import { gql } from "graphql-request";
 import type { ProtocolListItem } from "../types";
 
-type Response = { protocolsByOrg: ProtocolListItem[] };
+// List rows carry a minimal participants projection so the table can show a
+// participant count without loading full membership data.
+export type ProtocolListRow = ProtocolListItem & {
+  participants?: { id: string }[];
+};
+
+type Response = { protocolsByOrg: ProtocolListRow[] };
 
 const Document = gql`
   query ProtocolsByOrg {
@@ -12,10 +18,15 @@ const Document = gql`
       id
       title
       meetingDate
+      startTime
+      endTime
       status
       project {
         id
         title
+      }
+      participants {
+        id
       }
     }
   }
