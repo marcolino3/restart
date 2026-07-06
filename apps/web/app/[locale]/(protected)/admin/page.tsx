@@ -44,7 +44,7 @@ export default async function DashboardPage() {
     timeZone: TIME_ZONE,
   }).format(now);
 
-  const firstName = userRes?.data?.user?.firstName ?? "";
+  const firstName = userRes?.data?.firstName ?? "";
   const head = (
     <PageHead
       stacked
