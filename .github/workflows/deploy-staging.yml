@@ -1,8 +1,10 @@
 name: Deploy Staging
 
 on:
-  push:
-    branches: [main]
+  # Manual-only: staging deploys are triggered on demand — from the Actions tab
+  # ("Run workflow" on Deploy Staging) or via `gh workflow run deploy-staging.yml`.
+  # No automatic deploy on push to main.
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
