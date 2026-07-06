@@ -100,9 +100,9 @@ export function RejectApplicationDialog({
           <DialogDescription>{t("rejectDialogHint")}</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label className="text-xs">{t("rejectionReason")}</Label>
+        <div className="space-y-[18px]">
+          <div className="space-y-[7px]">
+            <Label className="text-[12.5px] font-semibold">{t("rejectionReason")}</Label>
             <Select value={reasonId} onValueChange={setReasonId}>
               <SelectTrigger>
                 <SelectValue placeholder={t("rejectionReasonSelect")} />
@@ -127,8 +127,8 @@ export function RejectApplicationDialog({
             </Select>
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs">{t("rejectedByLabel")}</Label>
+          <div className="space-y-[7px]">
+            <Label className="text-[12.5px] font-semibold">{t("rejectedByLabel")}</Label>
             <Select value={rejectedBy} onValueChange={setRejectedBy}>
               <SelectTrigger>
                 <SelectValue placeholder={t("rejectedBySelect")} />
@@ -146,21 +146,21 @@ export function RejectApplicationDialog({
             </Select>
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs">{t("followUpYearLabel")}</Label>
+          <div className="space-y-[7px]">
+            <Label className="text-[12.5px] font-semibold">{t("followUpYearLabel")}</Label>
             <Input
               value={followUpYear}
               onChange={(e) => setFollowUpYear(e.target.value)}
               placeholder={t("followUpYearPlaceholder")}
               maxLength={40}
             />
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[12.5px] text-muted-foreground">
               {t("followUpYearHint")}
             </p>
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs">{t("rejectionNote")}</Label>
+          <div className="space-y-[7px]">
+            <Label className="text-[12.5px] font-semibold">{t("rejectionNote")}</Label>
             <Textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}

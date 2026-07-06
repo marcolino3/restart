@@ -381,7 +381,7 @@ function AddMemberDialog({
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("addMember")}</DialogTitle>
         </DialogHeader>

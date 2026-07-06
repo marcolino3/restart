@@ -25,6 +25,8 @@ import type { TimeEntry } from "../types";
 interface Props {
   employeeId: string;
   entry?: TimeEntry;
+  /** Vorbelegtes Datum für neue Einträge (z.B. "+ Eintrag" pro Wochentag). */
+  defaultDate?: Date;
 }
 
 const isoAt = (base: Date, hour: number, minute = 0): string => {
@@ -33,13 +35,15 @@ const isoAt = (base: Date, hour: number, minute = 0): string => {
   return d.toISOString();
 };
 
-export const TimeEntryForm = ({ employeeId, entry }: Props) => {
+export const TimeEntryForm = ({ employeeId, entry, defaultDate }: Props) => {
   const t = useTranslations("TimeTracking");
   const tc = useTranslations("Common");
   const { close } = useSheet();
   const isEdit = Boolean(entry);
 
-  const baseDate = entry ? new Date(entry.entryDate) : new Date();
+  const baseDate = entry
+    ? new Date(entry.entryDate)
+    : (defaultDate ?? new Date());
   const defaultValues: TimeEntryFormInput = {
     date: baseDate,
     startTime: entry?.startedAt ?? isoAt(baseDate, 8),

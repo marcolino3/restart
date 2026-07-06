@@ -14,6 +14,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -156,7 +157,7 @@ export function FinalizeEnrollmentDialog({
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-2">
+        <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             {tC("cancel")}
           </Button>
@@ -167,7 +168,7 @@ export function FinalizeEnrollmentDialog({
           >
             {t("confirmEnroll")}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

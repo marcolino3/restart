@@ -1,6 +1,7 @@
 import { endOfWeek } from "date-fns";
 import { getTranslations } from "next-intl/server";
 
+import { PageHead } from "@/components/common/PageHead";
 import { getMyTasksAction } from "@/features/projects/actions/get-my-tasks.action";
 import { getProjectsAction } from "@/features/projects/actions/get-projects.action";
 import { MyTasksTable } from "@/features/projects/components/MyTasksTable";
@@ -30,12 +31,11 @@ const MyTasksPage = async () => {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <div>
-        <h1 className="text-2xl font-bold">{t("myTasksTitle")}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t("myTasksSummary", { open: openTasks.length, dueThisWeek })}
-        </p>
-      </div>
+      <PageHead
+        stacked
+        title={t("myTasksTitle")}
+        subtitle={t("myTasksSummary", { open: openTasks.length, dueThisWeek })}
+      />
       <MyTasksTable tasks={result.data} projects={projects} />
     </div>
   );

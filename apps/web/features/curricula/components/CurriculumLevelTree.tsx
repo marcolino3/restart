@@ -20,16 +20,17 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   Archive,
-  ChevronDown,
   ChevronRight,
   ChevronsDownUp,
   ChevronsUpDown,
   GripVertical,
+  Languages,
   RotateCcw,
 } from "lucide-react";
 import { ArchiveConfirmationDialog } from "@/components/common/ArchiveConfirmationDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { handleAction } from "@/lib/actions/handle-action";
 import { archiveCurriculumNodeAction } from "../actions/archive-curriculum-node.action";
 import { unarchiveCurriculumNodeAction } from "../actions/unarchive-curriculum-node.action";
@@ -39,8 +40,10 @@ import {
   pickTranslation,
   type CurriculumLocale,
   type CurriculumNodeDTO,
+  type CurriculumNodeType,
   type CurriculumTreeNode,
 } from "../types";
+import { LocaleBadge } from "./LocaleBadge";
 import { CurriculumNodeTranslationsDialog } from "./CurriculumNodeTranslationsDialog";
 import { LessonClassificationBadges } from "./LessonClassificationBadges";
 import { PrerequisitesEditor } from "@/features/record-keeping/components/PrerequisitesEditor";
@@ -100,12 +103,53 @@ function nodesStructurallyEqual(
   return true;
 }
 
-const LOCALE_PRESENT_CLS: Record<CurriculumLocale, string> = {
-  DE: "bg-amber-600 text-white",
-  FR: "bg-blue-600 text-white",
-  IT: "bg-emerald-600 text-white",
-  EN: "bg-violet-600 text-white",
-};
+/** Color-dot palette for the area sidebar (design handoff `.cu-area .swd`). */
+const AREA_DOT_CLASSES = [
+  "bg-status-rose-foreground",
+  "bg-status-amber-foreground",
+  "bg-primary",
+  "bg-status-sky-foreground",
+  "bg-status-green-foreground",
+  "bg-status-slate-foreground",
+];
+
+/** Node label styled per node type (design handoff `.cu-th b` / `.cu-grp` / `.nm`). */
+function NodeName({
+  node,
+  name,
+}: {
+  node: CurriculumTreeNode;
+  name: string;
+}) {
+  switch (node.nodeType) {
+    case "GROUP":
+      return (
+        <span className="truncate text-[12px] font-[650] tracking-[0.04em] uppercase text-muted-foreground">
+          {name}
+        </span>
+      );
+    case "LESSON":
+      return <span className="truncate text-[13px] font-medium">{name}</span>;
+    default:
+      return <span className="truncate text-[13.5px] font-[650]">{name}</span>;
+  }
+}
+
+/** Counts descendants of a given node type in the subtree below `node`. */
+function countDescendants(
+  node: CurriculumTreeNode,
+  type: CurriculumNodeType,
+): number {
+  let count = 0;
+  const walk = (n: CurriculumTreeNode) => {
+    for (const child of n.children) {
+      if (child.nodeType === type) count++;
+      walk(child);
+    }
+  };
+  walk(node);
+  return count;
+}
 
 export function CurriculumLevelTree({
   curriculumId,
@@ -161,6 +205,33 @@ export function CurriculumLevelTree({
 
   const tree = useMemo(() => buildTree(nodes), [nodes]);
 
+  // Continuous lesson sequence numbers in depth-first order across the level
+  // (design handoff `.seq`).
+  const seqById = useMemo(() => {
+    const map = new Map<string, number>();
+    let counter = 0;
+    const walk = (list: CurriculumTreeNode[]) => {
+      for (const n of list) {
+        if (n.nodeType === "LESSON") map.set(n.id, ++counter);
+        walk(n.children);
+      }
+    };
+    walk(tree);
+    return map;
+  }, [tree]);
+
+  // AREA roots feed the left sidebar; anything else at root level renders in
+  // the main panel (fallback for irregular data).
+  const areaRoots = useMemo(
+    () => tree.filter((n) => n.nodeType === "AREA"),
+    [tree],
+  );
+  const otherRoots = useMemo(
+    () => tree.filter((n) => n.nodeType !== "AREA"),
+    [tree],
+  );
+  const [activeAreaId, setActiveAreaId] = useState<string | null>(null);
+
   // Build name index per node id for filter matching.
   const nodeNameById = useMemo(() => {
     const map = new Map<string, string>();
@@ -202,6 +273,30 @@ export function CurriculumLevelTree({
     for (const root of tree) walk(root);
     return { visible: visibleSet, autoExpand: autoExpandSet };
   }, [filterActive, filter, tree, nodeNameById]);
+
+  // Active sidebar area: falls back to the first area (or, while filtering,
+  // the first area that still has matches).
+  const visibleAreas = useMemo(
+    () => (visible ? areaRoots.filter((a) => visible.has(a.id)) : areaRoots),
+    [areaRoots, visible],
+  );
+  const activeArea =
+    visibleAreas.find((a) => a.id === activeAreaId) ?? visibleAreas[0] ?? null;
+
+  const areaSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+  );
+
+  const handleAreaDragEnd = (e: DragEndEvent) => {
+    if (filterActive) return;
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const ids = areaRoots.map((a) => a.id);
+    const oldIndex = ids.indexOf(String(active.id));
+    const newIndex = ids.indexOf(String(over.id));
+    if (oldIndex < 0 || newIndex < 0) return;
+    void handleReorder(null, arrayMove(ids, oldIndex, newIndex));
+  };
 
   const isExpanded = (id: string) =>
     autoExpand.has(id) || manualExpanded.has(id);
@@ -314,7 +409,7 @@ export function CurriculumLevelTree({
               placeholder={t("filterNodes")}
               value={internalFilter}
               onChange={(e) => setInternalFilter(e.target.value)}
-              className="max-w-sm h-8"
+              className="h-9 w-[280px] rounded-full"
             />
           )}
           <Button variant="outline" size="sm" onClick={toggleAll}>
@@ -337,14 +432,91 @@ export function CurriculumLevelTree({
         <p className="text-sm text-muted-foreground py-8 text-center">
           {t("noNodesYet")}
         </p>
+      ) : areaRoots.length > 0 ? (
+        <div className="grid items-start gap-4 md:grid-cols-[240px_minmax(0,1fr)]">
+          <nav aria-label={t("areaCount")} className="flex flex-col gap-1">
+            <DndContext
+              sensors={areaSensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleAreaDragEnd}
+            >
+              <SortableContext
+                items={areaRoots.map((a) => a.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {areaRoots.map((area, i) => (
+                  <SortableAreaItem
+                    key={area.id}
+                    area={area}
+                    active={activeArea?.id === area.id}
+                    dimmed={visible ? !visible.has(area.id) : false}
+                    dotClass={AREA_DOT_CLASSES[i % AREA_DOT_CLASSES.length]}
+                    lessonCount={countDescendants(area, "LESSON")}
+                    localeUpper={localeUpper}
+                    dragDisabled={filterActive}
+                    onSelect={() => setActiveAreaId(area.id)}
+                    onEdit={setEditingNode}
+                    onArchive={handleArchive}
+                    onUnarchive={handleUnarchive}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+          </nav>
+          <div className="min-w-0 rounded-card border bg-card px-2.5 py-2 shadow-xs">
+            {activeArea && activeArea.children.length > 0 ? (
+              <SortableGroup
+                siblings={activeArea.children}
+                parentId={activeArea.id}
+                depth={0}
+                localeUpper={localeUpper}
+                visible={visible}
+                seqById={seqById}
+                isExpanded={isExpanded}
+                onToggle={toggleNode}
+                onReorder={handleReorder}
+                onArchive={handleArchive}
+                onUnarchive={handleUnarchive}
+                onEdit={setEditingNode}
+                onClassificationChange={handleClassificationChange}
+                dragDisabled={filterActive}
+                allLessons={allLessons}
+              />
+            ) : (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                {t("noNodesYet")}
+              </p>
+            )}
+            {otherRoots.length > 0 && (
+              <SortableGroup
+                siblings={otherRoots}
+                parentId={null}
+                depth={0}
+                localeUpper={localeUpper}
+                visible={visible}
+                seqById={seqById}
+                isExpanded={isExpanded}
+                onToggle={toggleNode}
+                onReorder={handleReorder}
+                onArchive={handleArchive}
+                onUnarchive={handleUnarchive}
+                onEdit={setEditingNode}
+                onClassificationChange={handleClassificationChange}
+                dragDisabled={filterActive}
+                allLessons={allLessons}
+              />
+            )}
+          </div>
+        </div>
       ) : (
-        <div className="space-y-1">
+        <div className="rounded-card border bg-card px-2.5 py-2 shadow-xs">
           <SortableGroup
             siblings={tree}
             parentId={null}
             depth={0}
             localeUpper={localeUpper}
             visible={visible}
+            seqById={seqById}
             isExpanded={isExpanded}
             onToggle={toggleNode}
             onReorder={handleReorder}
@@ -410,6 +582,7 @@ interface SortableGroupProps {
   depth: number;
   localeUpper: CurriculumLocale;
   visible: Set<string> | null;
+  seqById: Map<string, number>;
   isExpanded: (id: string) => boolean;
   onToggle: (id: string) => void;
   onReorder: (parentId: string | null, ids: string[]) => void;
@@ -430,6 +603,7 @@ function SortableGroup({
   depth,
   localeUpper,
   visible,
+  seqById,
   isExpanded,
   onToggle,
   onReorder,
@@ -479,6 +653,7 @@ function SortableGroup({
               node={node}
               depth={depth}
               localeUpper={localeUpper}
+              seqById={seqById}
               expanded={expanded}
               onToggle={() => onToggle(node.id)}
               onArchive={onArchive}
@@ -495,6 +670,7 @@ function SortableGroup({
                   depth={depth + 1}
                   localeUpper={localeUpper}
                   visible={visible}
+                  seqById={seqById}
                   isExpanded={isExpanded}
                   onToggle={onToggle}
                   onReorder={onReorder}
@@ -518,6 +694,7 @@ interface SortableNodeRowProps {
   node: CurriculumTreeNode;
   depth: number;
   localeUpper: CurriculumLocale;
+  seqById: Map<string, number>;
   expanded: boolean;
   onToggle: () => void;
   onArchive: (id: string) => void;
@@ -536,6 +713,7 @@ function SortableNodeRow({
   node,
   depth,
   localeUpper,
+  seqById,
   expanded,
   onToggle,
   onArchive,
@@ -558,7 +736,7 @@ function SortableNodeRow({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    paddingLeft: depth * 24,
+    paddingLeft: depth * 14,
   };
 
   const t = useTranslations("Curricula");
@@ -571,45 +749,93 @@ function SortableNodeRow({
 
   const archivedRow = node.isArchived;
 
+  const isLesson = node.nodeType === "LESSON";
+  const isGroup = node.nodeType === "GROUP";
+  const isTopicLike = node.nodeType === "TOPIC" || node.nodeType === "AREA";
+  const seq = seqById.get(node.id);
+
   return (
-    <div ref={setNodeRef} style={style} className={isDragging ? "opacity-50" : ""}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        isDragging && "opacity-50",
+        isTopicLike && depth === 0 && "border-b last:border-b-0",
+      )}
+    >
       <div
-        className={`flex items-center gap-1 py-1.5 px-2 hover:bg-accent rounded-md transition-colors group ${archivedRow ? "opacity-50" : ""}`}
+        aria-label={t(NODE_TYPE_I18N_KEY[node.nodeType])}
+        className={cn(
+          "group flex items-center gap-2 transition-colors hover:bg-row-hover",
+          isTopicLike && "rounded-lg px-2 py-2",
+          isGroup && "rounded-md px-2 pt-2.5 pb-1",
+          isLesson && "rounded-[7px] px-2 py-1.5",
+          archivedRow && "opacity-50",
+        )}
       >
+        <span
+          {...attributes}
+          {...listeners}
+          className={cn(
+            "shrink-0 p-1 text-muted-foreground transition-opacity",
+            dragDisabled
+              ? "opacity-0 group-hover:opacity-30"
+              : "cursor-grab opacity-0 group-hover:opacity-100 active:cursor-grabbing",
+          )}
+          aria-label="drag"
+        >
+          <GripVertical className="h-3.5 w-3.5" />
+        </span>
         {hasChildren ? (
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6"
+            className="h-6 w-6 shrink-0"
             onClick={onToggle}
             aria-label={expanded ? tCommon("collapse") : tCommon("expand")}
           >
-            {expanded ? (
-              <ChevronDown className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronRight className="h-3.5 w-3.5" />
-            )}
+            <ChevronRight
+              className={cn(
+                "h-3.5 w-3.5 text-muted-foreground transition-transform",
+                expanded && "rotate-90",
+              )}
+            />
           </Button>
-        ) : (
-          <span className="inline-block h-6 w-6" />
+        ) : !isLesson ? (
+          <span className="inline-block h-6 w-6 shrink-0" />
+        ) : null}
+        {isLesson && (
+          <span className="w-9 shrink-0 text-right font-mono text-[11px] tabular-nums text-muted-foreground">
+            {seq}
+          </span>
         )}
-        <span
-          {...attributes}
-          {...listeners}
-          className={
-            dragDisabled
-              ? "p-1 text-muted-foreground opacity-30"
-              : "cursor-grab active:cursor-grabbing p-1 text-muted-foreground"
-          }
-          aria-label="drag"
-        >
-          <GripVertical className="h-4 w-4" />
-        </span>
-        <span className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-          {t(NODE_TYPE_I18N_KEY[node.nodeType])}
-        </span>
-        <span className="flex-1 truncate text-sm">{name}</span>
-        {node.nodeType === "LESSON" && !archivedRow && (
+        {hasChildren ? (
+          <button
+            type="button"
+            onClick={onToggle}
+            className="flex min-w-0 flex-1 items-center text-left"
+          >
+            <NodeName node={node} name={name} />
+          </button>
+        ) : (
+          <span className="flex min-w-0 flex-1 items-center">
+            <NodeName node={node} name={name} />
+          </span>
+        )}
+        {isTopicLike && (
+          <span className="shrink-0 font-mono text-[11.5px] whitespace-nowrap text-muted-foreground">
+            {t("topicMeta", {
+              groups: countDescendants(node, "GROUP"),
+              lessons: countDescendants(node, "LESSON"),
+            })}
+          </span>
+        )}
+        {isGroup && (
+          <span className="shrink-0 font-mono text-[10.5px] tabular-nums text-muted-foreground">
+            {node.children.length}
+          </span>
+        )}
+        {isLesson && !archivedRow && (
           <LessonClassificationBadges
             nodeId={node.id}
             lessonType={node.lessonType}
@@ -617,30 +843,22 @@ function SortableNodeRow({
             onChange={(next) => onClassificationChange(node.id, next)}
           />
         )}
-        <span className="flex items-center gap-1">
-          {ALL_LOCALES.map((loc) => {
-            const present = availableLocales.has(loc);
-            const baseCls =
-              "text-[10px] uppercase tracking-wide font-medium px-1.5 py-0.5 rounded cursor-pointer transition-opacity hover:opacity-80";
-            const colorCls = present
-              ? LOCALE_PRESENT_CLS[loc]
-              : "bg-muted text-muted-foreground/60";
-            return (
-              <button
-                key={loc}
-                type="button"
-                className={`${baseCls} ${colorCls}`}
-                title={`${t(`locale${loc}`)} – ${t("editTranslations")}`}
-                aria-label={`${t(`locale${loc}`)} – ${t("editTranslations")}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(node);
-                }}
-              >
-                {t(`locale${loc}`)}
-              </button>
-            );
-          })}
+        <span className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+          {ALL_LOCALES.map((loc) => (
+            <button
+              key={loc}
+              type="button"
+              className="transition-opacity hover:opacity-80"
+              title={`${t(`locale${loc}`)} – ${t("editTranslations")}`}
+              aria-label={`${t(`locale${loc}`)} – ${t("editTranslations")}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(node);
+              }}
+            >
+              <LocaleBadge locale={loc} active={availableLocales.has(loc)} />
+            </button>
+          ))}
         </span>
         {node.nodeType === "LESSON" && allLessons && !archivedRow && (
           <span
@@ -686,6 +904,142 @@ function SortableNodeRow({
         )}
       </div>
       {children}
+    </div>
+  );
+}
+
+interface SortableAreaItemProps {
+  area: CurriculumTreeNode;
+  active: boolean;
+  /** True while a filter is active and this area has no matches. */
+  dimmed: boolean;
+  dotClass: string;
+  lessonCount: number;
+  localeUpper: CurriculumLocale;
+  dragDisabled: boolean;
+  onSelect: () => void;
+  onEdit: (node: CurriculumNodeDTO) => void;
+  onArchive: (id: string) => void;
+  onUnarchive: (id: string) => void;
+}
+
+/**
+ * Sidebar entry for an AREA root (design handoff `.cu-area`): color dot,
+ * name and lesson count; active area gets the elevated card look. Reorder,
+ * translations and archive/restore stay available via hover actions.
+ */
+function SortableAreaItem({
+  area,
+  active,
+  dimmed,
+  dotClass,
+  lessonCount,
+  localeUpper,
+  dragDisabled,
+  onSelect,
+  onEdit,
+  onArchive,
+  onUnarchive,
+}: SortableAreaItemProps) {
+  const t = useTranslations("Curricula");
+  const tCommon = useTranslations("Common");
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: area.id, disabled: dragDisabled });
+
+  const name =
+    pickTranslation(area.translations, localeUpper)?.name ?? "(untitled)";
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cn("group/area relative", isDragging && "opacity-50")}
+    >
+      <button
+        type="button"
+        onClick={onSelect}
+        className={cn(
+          "flex w-full items-center gap-2.5 rounded-ctl px-3 py-2.5 text-left text-[13.5px] transition-colors",
+          active
+            ? "border bg-card font-[650] shadow-xs"
+            : "font-medium text-muted-foreground hover:bg-row-hover",
+          (dimmed || area.isArchived) && "opacity-50",
+        )}
+      >
+        <span className={cn("size-2.5 shrink-0 rounded-[4px]", dotClass)} />
+        <span className="min-w-0 flex-1 truncate">{name}</span>
+        <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground transition-opacity group-hover/area:opacity-0">
+          {lessonCount}
+        </span>
+      </button>
+      <span className="absolute top-1/2 right-1.5 flex -translate-y-1/2 items-center opacity-0 transition-opacity group-focus-within/area:opacity-100 group-hover/area:opacity-100">
+        <span
+          {...attributes}
+          {...listeners}
+          className={cn(
+            "p-1 text-muted-foreground",
+            dragDisabled
+              ? "opacity-30"
+              : "cursor-grab active:cursor-grabbing",
+          )}
+          aria-label="drag"
+        >
+          <GripVertical className="h-3.5 w-3.5" />
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(area);
+          }}
+          aria-label={t("editTranslations")}
+          title={t("editTranslations")}
+        >
+          <Languages className="h-3.5 w-3.5" />
+        </Button>
+        {area.isArchived ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={(e) => {
+              e.stopPropagation();
+              onUnarchive(area.id);
+            }}
+            aria-label={t("restoreNode")}
+            title={t("restoreNode")}
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+          </Button>
+        ) : (
+          <ArchiveConfirmationDialog
+            title={t("archiveNodeTitle")}
+            description={t("archiveNodeDescription")}
+            onConfirm={async () => {
+              await onArchive(area.id);
+              return { success: true };
+            }}
+            trigger={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                aria-label={tCommon("archive")}
+              >
+                <Archive className="h-3.5 w-3.5" />
+              </Button>
+            }
+          />
+        )}
+      </span>
     </div>
   );
 }

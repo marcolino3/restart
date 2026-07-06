@@ -175,14 +175,14 @@ export function ReminderForm({
               date < new Date(new Date().setHours(0, 0, 0, 0))
             }
           />
-          <div className="space-y-2">
-            <Label className="text-xs">{t("reminderTimeLabel")}</Label>
+          <div className="space-y-[7px]">
+            <Label className="text-[12.5px] font-semibold">{t("reminderTimeLabel")}</Label>
             <Input type="time" {...form.register("time")} />
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <Label className="text-xs">{t("reminderQuickSelect")}</Label>
+        <div className="space-y-[7px]">
+          <Label className="text-[12.5px] font-semibold">{t("reminderQuickSelect")}</Label>
           <div className="flex flex-wrap gap-1.5">
             {PRESETS.map((p) => (
               <button

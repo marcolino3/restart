@@ -30,9 +30,6 @@ import {
   ChevronLeft,
   ChevronRight,
   GripVertical,
-  Kanban,
-  Layers,
-  LayoutList,
   Bell,
   Mail,
   MoreHorizontal,
@@ -42,7 +39,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHead } from "@/components/common/PageHead";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,7 +62,10 @@ import type {
 } from "../types";
 import { AdmissionCardVisual } from "./AdmissionCard";
 import { AdmissionsList } from "./AdmissionsList";
-import { CreateApplicationDialog } from "./CreateApplicationDialog";
+import {
+  CreateApplicationDialog,
+  type GradeLevelOption,
+} from "./CreateApplicationDialog";
 import { ManageRejectionReasonsDialog } from "./ManageRejectionReasonsDialog";
 import { ManageStagesDialog } from "./ManageStagesDialog";
 
@@ -157,6 +157,8 @@ interface Props {
   /** Org-global table column selection; `null` ⇒ default set. */
   initialTableColumns: string[] | null;
   initialRejectionReasons: AdmissionRejectionReason[];
+  /** Grade levels for the "desired grade" select in the create sheet. */
+  gradeLevels: GradeLevelOption[];
   canCreate: boolean;
   canMove: boolean;
   canEnroll: boolean;
@@ -178,6 +180,7 @@ export function AdmissionsKanban({
   initialApplications,
   initialTableColumns,
   initialRejectionReasons,
+  gradeLevels,
   canCreate,
   canMove,
   canManageStages,
@@ -502,65 +505,32 @@ export function AdmissionsKanban({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Page head — title, dynamic subtitle, primary action (design). */}
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">{t("pageTitle")}</h1>
-          <p className="text-sm text-muted-foreground">
-            {t("kanbanActiveCount", { count: totalCount })}
-            {openRemindersTotal > 0 &&
-              ` · ${t("kanbanOpenReminders", { count: openRemindersTotal })}`}
-          </p>
-        </div>
-        {canCreate && (
-          <Button className="gap-1.5" onClick={() => setShowCreate(true)}>
-            <Plus className="h-4 w-4" />
-            {t("newApplication")}
-          </Button>
-        )}
-      </div>
+      {/* Page head — title + static subtitle (design handoff). */}
+      <PageHead
+        title={t("pageTitle")}
+        subtitle={t("pageSubtitle")}
+        className="mb-0"
+      />
 
-      {/* Toolbar — search · view toggle · reminders/rejected chips · ⋯ menu. */}
+      {/* Toolbar — search · count · chips · view toggle · manage · create. */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative w-full max-w-xs">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative w-[280px]">
+          <Search
+            size={14}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
           <Input
             placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 rounded-full pl-9"
+            className="h-9 rounded-full pl-8"
           />
         </div>
-        <div
-          className="flex items-center rounded-md border bg-card p-0.5"
-          role="tablist"
-          aria-label={t("viewToggle")}
-        >
-          <Button
-            size="sm"
-            variant={view === "board" ? "secondary" : "ghost"}
-            className="h-7 gap-1 px-2"
-            onClick={() => setView("board")}
-            aria-pressed={view === "board"}
-            title={t("viewBoard")}
-          >
-            <Kanban className="h-4 w-4" />
-            <span className="hidden sm:inline">{t("viewBoard")}</span>
-          </Button>
-          <Button
-            size="sm"
-            variant={view === "list" ? "secondary" : "ghost"}
-            className="h-7 gap-1 px-2"
-            onClick={() => setView("list")}
-            aria-pressed={view === "list"}
-            title={t("viewList")}
-          >
-            <LayoutList className="h-4 w-4" />
-            <span className="hidden sm:inline">{t("viewList")}</span>
-          </Button>
-        </div>
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {t("totalApplications", { count: totalCount })}
+        </span>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           <Button
             size="sm"
             variant="outline"
@@ -615,12 +585,6 @@ export function AdmissionsKanban({
                 {t("emailTemplatesNavLabel")}
               </DropdownMenuItem>
               {canManageStages && (
-                <DropdownMenuItem onClick={() => setShowStages(true)}>
-                  <Layers className="mr-2 h-4 w-4" />
-                  {t("manageStages")}
-                </DropdownMenuItem>
-              )}
-              {canManageStages && (
                 <DropdownMenuItem onClick={() => setShowReasons(true)}>
                   <Ban className="mr-2 h-4 w-4" />
                   {t("manageRejectionReasons")}
@@ -628,6 +592,54 @@ export function AdmissionsKanban({
               )}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Board / list segmented toggle (tabs look, design handoff). */}
+          <div
+            className="flex items-center rounded-full bg-muted p-0.5"
+            role="tablist"
+            aria-label={t("viewToggle")}
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={view === "board"}
+              onClick={() => setView("board")}
+              className={cn(
+                "h-7 rounded-full px-3 text-xs font-[600] transition-colors",
+                view === "board"
+                  ? "bg-background text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t("viewBoard")}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={view === "list"}
+              onClick={() => setView("list")}
+              className={cn(
+                "h-7 rounded-full px-3 text-xs font-[600] transition-colors",
+                view === "list"
+                  ? "bg-background text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t("viewList")}
+            </button>
+          </div>
+
+          {canManageStages && (
+            <Button variant="outline" onClick={() => setShowStages(true)}>
+              {t("manageStages")}
+            </Button>
+          )}
+          {canCreate && (
+            <Button className="gap-1.5" onClick={() => setShowCreate(true)}>
+              <Plus size={16} />
+              {t("newApplication")}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -636,7 +648,7 @@ export function AdmissionsKanban({
           {initialStages.map((stage) => (
             <div
               key={stage.id}
-              className="h-[300px] w-[280px] shrink-0 animate-pulse rounded-lg border bg-muted/30"
+              className="h-[300px] w-60 shrink-0 animate-pulse rounded-lg bg-muted"
             />
           ))}
         </div>
@@ -708,7 +720,7 @@ export function AdmissionsKanban({
                 className="rotate-1"
               />
             ) : activeStageId ? (
-              <div className="h-12 w-[280px] rounded-md border bg-card px-3 py-2 text-sm font-semibold shadow-lg">
+              <div className="h-12 w-60 rounded-lg border bg-card px-3 py-2 text-[13px] font-[600] shadow-lg">
                 {stageOrder.find((s) => s.id === activeStageId)?.name}
               </div>
             ) : null}
@@ -719,6 +731,7 @@ export function AdmissionsKanban({
       {showCreate && (
         <CreateApplicationDialog
           stages={initialStages}
+          gradeLevels={gradeLevels}
           initialStageId={createStageId}
           existingFamilies={Object.values(applicationsById).map((a) => ({
             id: a.familyId,
@@ -838,26 +851,29 @@ function KanbanColumn({
         ref={setSortableRef}
         style={sortableStyle}
         className={cn(
-          "relative flex h-[300px] w-10 shrink-0 cursor-pointer flex-col items-center justify-between gap-1 rounded-md border bg-card py-2 transition hover:shadow-md",
+          "flex h-[300px] w-10 shrink-0 cursor-pointer flex-col items-center justify-between gap-2 rounded-lg bg-muted py-2 transition hover:bg-muted/80",
           isOver && "ring-2 ring-primary",
           isDragging && "opacity-40",
         )}
         onClick={onToggleCollapsed}
         title={t("expandStage")}
       >
-        <span
-          aria-hidden
-          className="absolute inset-x-0 top-0 h-1 rounded-t-md"
-          style={{ backgroundColor: stage.color ?? "var(--muted)" }}
-        />
         <ChevronRight className="h-4 w-4 text-muted-foreground" />
         <span
-          className="flex-1 text-xs font-semibold"
+          aria-hidden
+          className="h-2 w-2 shrink-0 rounded-full"
+          style={{ background: stage.color ?? "var(--muted-foreground)" }}
+        />
+        <span
+          className="flex-1 text-xs font-[600]"
           style={{ writingMode: "vertical-rl" }}
         >
           {stage.name}
         </span>
-        <Badge variant="secondary" className="text-[10px]">
+        <Badge
+          variant="secondary"
+          className="font-mono text-[10px] tabular-nums"
+        >
           {count}
         </Badge>
       </div>
@@ -865,70 +881,67 @@ function KanbanColumn({
   }
 
   return (
-    <Card
+    <div
       ref={setSortableRef}
       style={sortableStyle}
       className={cn(
-        "relative flex w-[300px] shrink-0 flex-col gap-0 overflow-hidden",
+        "flex w-60 shrink-0 flex-col rounded-lg bg-muted p-2",
         isOver && "ring-2 ring-primary",
         stage.stageType === "REJECTED" && "opacity-95",
         isDragging && "opacity-50",
       )}
     >
-      {/* Stage colour top-strip */}
-      <span
-        aria-hidden
-        className="absolute inset-x-0 top-0 h-1"
-        style={{ backgroundColor: stage.color ?? "var(--muted)" }}
-      />
-      <CardHeader className="pb-2 pt-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-1">
-            {canReorderStages && (
-              <button
-                type="button"
-                {...attributes}
-                {...listeners}
-                className="shrink-0 cursor-grab rounded text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing"
-                aria-label={t("dragStage")}
-                title={t("dragStage")}
-              >
-                <GripVertical className="h-4 w-4" />
-              </button>
-            )}
-            <CardTitle className="min-w-0 truncate text-sm font-semibold">
-              {stage.name}
-            </CardTitle>
-          </div>
-          <div className="flex items-center gap-1.5">
-            {avgDays !== null && avgDays > 0 && (
-              <span
-                className="text-[10px] text-muted-foreground"
-                title={t("avgDaysInStage", { count: avgDays })}
-              >
-                ⌀ {avgDays}d
-              </span>
-            )}
-            <Badge variant="secondary" className="text-[10px]">
-              {count}
-            </Badge>
-            <StageSortMenu sort={sort} onChangeSort={onChangeSort} />
-            <button
-              type="button"
-              onClick={onToggleCollapsed}
-              className="rounded text-muted-foreground/60 hover:text-foreground"
-              aria-label={t("collapseStage")}
-              title={t("collapseStage")}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent
+      {/* Column head — colour dot · name · count · controls. */}
+      <div className="flex items-center gap-2 px-1.5 py-1">
+        {canReorderStages && (
+          <button
+            type="button"
+            {...attributes}
+            {...listeners}
+            className="shrink-0 cursor-grab rounded text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing"
+            aria-label={t("dragStage")}
+            title={t("dragStage")}
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+        )}
+        <span
+          aria-hidden
+          className="h-2 w-2 shrink-0 rounded-full"
+          style={{ background: stage.color ?? "var(--muted-foreground)" }}
+        />
+        <span className="min-w-0 flex-1 truncate text-[13px] font-[600]">
+          {stage.name}
+        </span>
+        {avgDays !== null && avgDays > 0 && (
+          <span
+            className="font-mono text-[10px] tabular-nums text-muted-foreground"
+            title={t("avgDaysInStage", { count: avgDays })}
+          >
+            ⌀ {avgDays}d
+          </span>
+        )}
+        <Badge
+          variant="secondary"
+          className="font-mono text-[10px] tabular-nums"
+        >
+          {count}
+        </Badge>
+        <StageSortMenu sort={sort} onChangeSort={onChangeSort} />
+        <button
+          type="button"
+          onClick={onToggleCollapsed}
+          className="rounded text-muted-foreground/60 hover:text-foreground"
+          aria-label={t("collapseStage")}
+          title={t("collapseStage")}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+      </div>
+      <div
         ref={setDropRef}
         className={cn(
-          "flex flex-col gap-1.5 p-3 pt-1",
+          "grid content-start gap-2 pt-1",
           COLUMN_MIN_HEIGHT,
           isOver && "rounded-md bg-accent/50",
         )}
@@ -938,13 +951,14 @@ function KanbanColumn({
           strategy={verticalListSortingStrategy}
         >
           {applications.length === 0 ? (
-            <p className="mt-2 text-xs italic text-muted-foreground">—</p>
+            <p className="mt-1 px-1.5 text-xs italic text-muted-foreground">
+              —
+            </p>
           ) : (
             applications.map((a) => (
               <DraggableApplication
                 key={a.id}
                 application={a}
-                stageColor={stage.color}
                 cardFields={stage.cardFields}
                 onOpen={onOpenCard}
                 canDrag={canDrag}
@@ -956,13 +970,14 @@ function KanbanColumn({
           <button
             type="button"
             onClick={onAddCard}
-            className="mt-2 w-full rounded-md border border-dashed py-1.5 text-xs font-medium text-muted-foreground transition hover:border-primary hover:text-foreground"
+            className="flex items-center gap-1 rounded-md px-1.5 py-1.5 text-left text-xs font-[600] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
+            <Plus size={14} />
             {t("addApplicationToStage")}
           </button>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -1035,13 +1050,11 @@ function StageSortMenu({
 
 function DraggableApplication({
   application,
-  stageColor,
   cardFields,
   onOpen,
   canDrag,
 }: {
   application: KanbanApplication;
-  stageColor: string | null;
   cardFields: string[] | null;
   onOpen: (id: string) => void;
   canDrag: boolean;
@@ -1068,7 +1081,6 @@ function DraggableApplication({
     >
       <AdmissionCardVisual
         application={application}
-        stageColor={stageColor}
         cardFields={cardFields}
         onOpen={onOpen}
       />

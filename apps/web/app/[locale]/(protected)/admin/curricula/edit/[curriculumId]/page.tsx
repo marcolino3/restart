@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageHead } from "@/components/common/PageHead";
 import { ROUTES } from "@/constants/routes";
+import { LocaleBadge } from "@/features/curricula/components/LocaleBadge";
 import { getCurriculumByIdAction } from "@/features/curricula/actions/get-curriculum-by-id.action";
 import { getCurriculumLevelsAction } from "@/features/curricula/actions/get-curriculum-levels.action";
 import { getCurriculumNodesAction } from "@/features/curricula/actions/get-curriculum-nodes.action";
@@ -13,6 +15,7 @@ import { CurriculumLevelsTable } from "@/features/curricula/components/Curriculu
 import { getLessonsForOrgAction } from "@/features/record-keeping/actions/get-lessons-for-org.action";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  CURRICULUM_LOCALES,
   pickTranslation,
   type CurriculumLocale,
   type CurriculumNodeDTO,
@@ -55,15 +58,44 @@ const EditCurriculumPage = async ({ params }: PageProps) => {
     pickTranslation(curriculum.translations, localeUpper)?.name ??
     curriculum.slug;
 
+  const allNodes = levelNodes.flatMap((entry) => entry.nodes);
+  const countByType = (type: CurriculumNodeDTO["nodeType"]) =>
+    allNodes.filter((n) => n.nodeType === type && !n.isArchived).length;
+  const presentLocales = new Set(
+    curriculum.translations.map((tr) => tr.locale),
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Button variant="ghost" size="sm" asChild className="-ml-2 w-fit">
         <Link href={ROUTES.admin.curricula(locale)}>
           <ChevronLeft className="mr-1 h-4 w-4" />
           {t("backToCurricula")}
         </Link>
       </Button>
-      <h1 className="text-2xl font-bold">{headerName}</h1>
+      <PageHead
+        stacked
+        title={
+          <span className="flex flex-wrap items-center gap-3">
+            {headerName}
+            <span className="inline-flex gap-1">
+              {CURRICULUM_LOCALES.map((loc) => (
+                <LocaleBadge
+                  key={loc}
+                  locale={loc}
+                  active={presentLocales.has(loc)}
+                  className="text-[10px]"
+                />
+              ))}
+            </span>
+          </span>
+        }
+        subtitle={t("curriculumStats", {
+          lessons: countByType("LESSON"),
+          areas: countByType("AREA"),
+          topics: countByType("TOPIC"),
+        })}
+      />
 
       <Tabs defaultValue="structure" className="w-full">
         <TabsList className="mb-4">

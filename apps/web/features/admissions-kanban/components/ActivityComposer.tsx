@@ -225,8 +225,8 @@ export function ActivityComposer({
                 namespace="Admissions"
               />
               {showDirection && (
-                <div className="space-y-1">
-                  <Label className="text-xs">{t("activityDirection")}</Label>
+                <div className="space-y-[7px]">
+                  <Label className="text-[12.5px] font-semibold">{t("activityDirection")}</Label>
                   <div className="flex gap-1">
                     <button
                       type="button"

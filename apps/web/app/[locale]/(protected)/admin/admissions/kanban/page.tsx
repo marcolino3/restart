@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 import { getAdmissionsDataAction } from "@/features/admissions-kanban/actions/get-admissions-data.action";
 import { getRejectedApplicationsAction } from "@/features/admissions-kanban/actions/get-rejected-applications.action";
+import { getGradeLevelsAction } from "@/features/grade-levels/actions/get-grade-levels.action";
 import { AdmissionsKanban } from "@/features/admissions-kanban/components/AdmissionsKanban";
 
 const has = (permissions: string[], code: string, isSuperAdmin: boolean) =>
@@ -9,10 +10,11 @@ const has = (permissions: string[], code: string, isSuperAdmin: boolean) =>
 
 const AdmissionsKanbanPage = async () => {
   const t = await getTranslations("Admissions");
-  const [user, data, rejected] = await Promise.all([
+  const [user, data, rejected, gradeLevels] = await Promise.all([
     getCurrentUserAction(),
     getAdmissionsDataAction(),
     getRejectedApplicationsAction(),
+    getGradeLevelsAction(),
   ]);
 
   if (!user?.success) {
@@ -38,6 +40,17 @@ const AdmissionsKanbanPage = async () => {
         initialApplications={data.data.applications}
         initialTableColumns={data.data.boardSettings.tableColumns}
         initialRejectionReasons={data.data.rejectionReasons}
+        gradeLevels={
+          gradeLevels.success
+            ? [...gradeLevels.data]
+                .sort((a, b) => a.sortOrder - b.sortOrder)
+                .map((g) => ({
+                  id: g.id,
+                  name: g.name,
+                  shortCode: g.shortCode,
+                }))
+            : []
+        }
         rejectedCount={rejected.success ? rejected.data.length : 0}
         canCreate={has(
           permissions,

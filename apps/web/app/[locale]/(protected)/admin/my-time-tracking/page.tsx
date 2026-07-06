@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { OpenSheetButton } from "@/components/buttons/OpenSheetButton";
+import { PageHead } from "@/components/common/PageHead";
 import { getEmployeeAbsenceCategoriesByOrgIdAction } from "@/features/employee-absences/actions/get-employee-absence-categories-by-org-id.action";
 import { EmployeeAbsenceNoticeForm } from "@/features/employee-absences/components/EmployeeAbsenceNoticeForm";
 import { getMyTimeTrackingAction } from "@/features/time-tracking/actions/get-my-time-tracking.action";
@@ -27,19 +28,21 @@ const MyTimeTracking = async () => {
 
   return (
     <div className="space-y-6 p-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t("myTime")}</h1>
-        {absenceRes.success && absenceRes.data && (
-          <OpenSheetButton
-            buttonLabel="createAbsenceNotice"
-            icon={<PlusIcon />}
-            title="createAbsenceNotice"
-            description="createAbsenceNoticeDescription"
-          >
-            <EmployeeAbsenceNoticeForm absenceCategories={absenceRes.data} />
-          </OpenSheetButton>
-        )}
-      </div>
+      <PageHead
+        title={t("myTime")}
+        action={
+          absenceRes.success && absenceRes.data ? (
+            <OpenSheetButton
+              buttonLabel="createAbsenceNotice"
+              icon={<PlusIcon />}
+              title="createAbsenceNotice"
+              description="createAbsenceNoticeDescription"
+            >
+              <EmployeeAbsenceNoticeForm absenceCategories={absenceRes.data} />
+            </OpenSheetButton>
+          ) : undefined
+        }
+      />
 
       <MyTimeTrackingView data={data} />
     </div>

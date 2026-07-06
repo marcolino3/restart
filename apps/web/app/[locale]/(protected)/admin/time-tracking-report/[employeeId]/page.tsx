@@ -1,5 +1,6 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { Download } from "lucide-react";
+import { PageHead } from "@/components/common/PageHead";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 import { canSeeTimeReport } from "@/lib/navigation/nav-visibility";
 import { getEmployeeReportAction } from "@/features/time-tracking/actions/get-time-report.action";
@@ -32,15 +33,17 @@ const EmployeeReportPage = async ({ params }: Props) => {
 
   return (
     <div className="space-y-6 p-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t("report")}</h1>
-        <Button asChild variant="outline">
-          <a href={pdfHref} download>
-            <Download className="mr-2 size-4" />
-            {t("downloadPdf")}
-          </a>
-        </Button>
-      </div>
+      <PageHead
+        title={t("report")}
+        action={
+          <Button asChild variant="outline">
+            <a href={pdfHref} download>
+              <Download className="mr-2 size-4" />
+              {t("downloadPdf")}
+            </a>
+          </Button>
+        }
+      />
       <TimeBalanceCards balance={balance} vacation={vacation} />
       {missingRecordDays.length > 0 ? (
         <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4">

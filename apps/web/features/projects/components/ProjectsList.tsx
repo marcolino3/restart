@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import { ROUTES } from "@/constants/routes";
+import { PageHead } from "@/components/common/PageHead";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -164,24 +165,23 @@ export function ProjectsList({
   return (
     <div className="flex flex-col gap-4 p-4">
       {/* Page head — title, dynamic counts subtitle, primary action (design). */}
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">{t("pageTitle")}</h1>
-          <p className="text-sm text-muted-foreground">
-            {t("projectCountsSummary", {
-              active: activeCount,
-              onHold: onHoldCount,
-              completed: completedCount,
-            })}
-          </p>
-        </div>
-        {canCreate && (
-          <Button className="gap-1.5" onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4" />
-            {t("newProject")}
-          </Button>
-        )}
-      </div>
+      <PageHead
+        stacked
+        title={t("pageTitle")}
+        subtitle={t("projectCountsSummary", {
+          active: activeCount,
+          onHold: onHoldCount,
+          completed: completedCount,
+        })}
+        action={
+          canCreate && (
+            <Button className="gap-1.5" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4" />
+              {t("newProject")}
+            </Button>
+          )
+        }
+      />
 
       {/* Toolbar — search · cards/list toggle · filter chips · ⋯ menu. */}
       <div className="flex flex-wrap items-center gap-2">

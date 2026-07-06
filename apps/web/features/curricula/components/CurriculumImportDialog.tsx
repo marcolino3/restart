@@ -14,6 +14,7 @@ import { Form } from "@/components/ui/form";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -149,12 +150,13 @@ export function CurriculumImportDialog() {
           {t("importFromFile")}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>{t("importTitle")}</DialogTitle>
           <DialogDescription>{t("importDescription")}</DialogDescription>
         </DialogHeader>
 
+        <DialogBody>
         {!plan && (
           <div className="space-y-3">
             <div className="bg-muted p-4 rounded-lg text-sm space-y-1">
@@ -257,6 +259,7 @@ export function CurriculumImportDialog() {
             </div>
           </div>
         )}
+        </DialogBody>
 
         <DialogFooter>
           {plan && (

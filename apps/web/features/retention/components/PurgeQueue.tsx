@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -168,7 +170,7 @@ export function PurgeQueue({ initial }: { initial: PurgeCandidate[] }) {
           <DialogHeader>
             <DialogTitle>{t("confirmExecuteTitle")}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <DialogBody>
             <p className="text-muted-foreground text-sm">
               {confirming &&
                 t("confirmExecuteBody", {
@@ -176,20 +178,20 @@ export function PurgeQueue({ initial }: { initial: PurgeCandidate[] }) {
                   subject: confirming.subjectLabel,
                 })}
             </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setConfirming(null)}>
-                {t("cancel")}
-              </Button>
-              <Button
-                variant="destructive"
-                disabled={pending}
-                onClick={() => confirming && execute(confirming.id)}
-              >
-                <Trash2 className="mr-1 h-4 w-4" />
-                {t("execute")}
-              </Button>
-            </div>
-          </div>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirming(null)}>
+              {t("cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={pending}
+              onClick={() => confirming && execute(confirming.id)}
+            >
+              <Trash2 className="mr-1 h-4 w-4" />
+              {t("execute")}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
