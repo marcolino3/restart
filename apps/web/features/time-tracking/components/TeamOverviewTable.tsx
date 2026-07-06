@@ -10,14 +10,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { PersonCell } from "@/components/common/PersonCell";
+import { EmployeeAvatar } from "@/features/employees/components/EmployeeAvatar";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/constants/routes";
-import { formatDurationMinutes } from "@/lib/formatting/duration";
+import { formatSignedDurationMinutes } from "../format";
 import type { EmployeeWorkTimeOverviewRow } from "../types";
 
 interface Props {
   rows: EmployeeWorkTimeOverviewRow[];
 }
+
+/** Vor-/Nachname aus dem flachen `employeeName` für die Initialen ableiten. */
+const nameParts = (name?: string | null) => {
+  const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  return {
+    firstName: parts[0],
+    lastName: parts.length > 1 ? parts[parts.length - 1] : undefined,
+  };
+};
 
 export const TeamOverviewTable = ({ rows }: Props) => {
   const t = useTranslations("TimeTracking");
@@ -25,7 +36,7 @@ export const TeamOverviewTable = ({ rows }: Props) => {
   const locale = useLocale();
 
   return (
-    <div className="rounded-md border">
+    <div className="overflow-hidden rounded-card border bg-card shadow-xs">
       <Table>
         <TableHeader>
           <TableRow>
@@ -44,33 +55,46 @@ export const TeamOverviewTable = ({ rows }: Props) => {
               </TableCell>
             </TableRow>
           ) : (
-            rows.map((r) => (
-              <TableRow key={r.employeeId} className="cursor-pointer">
-                <TableCell>
-                  <Link
-                    href={ROUTES.admin.timeTrackingReportEmployee(
-                      locale,
-                      r.employeeId
+            rows.map((r) => {
+              const { firstName, lastName } = nameParts(r.employeeName);
+              return (
+                <TableRow key={r.employeeId}>
+                  <TableCell>
+                    <Link
+                      href={ROUTES.admin.timeTrackingReportEmployee(
+                        locale,
+                        r.employeeId
+                      )}
+                      className="block"
+                    >
+                      <PersonCell
+                        avatar={
+                          <EmployeeAvatar
+                            firstName={firstName}
+                            lastName={lastName}
+                            className="size-8"
+                          />
+                        }
+                        name={r.employeeName ?? r.employeeId}
+                      />
+                    </Link>
+                  </TableCell>
+                  <TableCell
+                    className={cn(
+                      "text-right font-mono text-[12.5px] font-medium tabular-nums",
+                      r.netBalanceMinutes > 0 &&
+                        "text-status-green-foreground",
+                      r.netBalanceMinutes < 0 && "text-status-rose-foreground"
                     )}
-                    className="text-primary underline-offset-4 hover:underline"
                   >
-                    {r.employeeName ?? r.employeeId}
-                  </Link>
-                </TableCell>
-                <TableCell
-                  className={cn(
-                    "text-right font-medium",
-                    r.netBalanceMinutes > 0 && "text-green-600",
-                    r.netBalanceMinutes < 0 && "text-red-600"
-                  )}
-                >
-                  {formatDurationMinutes(r.netBalanceMinutes)}
-                </TableCell>
-                <TableCell className="text-right">
-                  {r.vacationDaysUsed}
-                </TableCell>
-              </TableRow>
-            ))
+                    {formatSignedDurationMinutes(r.netBalanceMinutes)}
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-[12.5px] tabular-nums">
+                    {r.vacationDaysUsed}
+                  </TableCell>
+                </TableRow>
+              );
+            })
           )}
         </TableBody>
       </Table>

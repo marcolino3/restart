@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -281,7 +282,7 @@ function ContractDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>
             {contract ? tE("contract.edit") : tE("contract.create")}
@@ -294,8 +295,9 @@ function ContractDialog({
               toast.error(tE("validationError"));
             })}
           >
-            <div className="border-t border-border">
-              <dl className="divide-y divide-border">
+            <DialogBody>
+              <div className="border-t border-border">
+                <dl className="divide-y divide-border">
                 <FormRow label={tE("hr.entryDate")}>
                   <DatePickerFormField
                     name="startDate"
@@ -377,8 +379,9 @@ function ContractDialog({
                   />
                 </FormRow>
               </dl>
-            </div>
-            <DialogFooter className="mt-6">
+              </div>
+            </DialogBody>
+            <DialogFooter>
               <Button
                 type="button"
                 variant="outline"

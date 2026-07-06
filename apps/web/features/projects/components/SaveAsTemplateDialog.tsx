@@ -10,6 +10,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -72,7 +73,7 @@ export function SaveAsTemplateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("saveAsTemplate")}</DialogTitle>
           <DialogDescription>{t("saveAsTemplateSubtitle")}</DialogDescription>
@@ -105,7 +106,7 @@ export function SaveAsTemplateDialog({
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end gap-2">
+        <DialogFooter>
           <Button
             type="button"
             variant="outline"
@@ -116,7 +117,7 @@ export function SaveAsTemplateDialog({
           <Button onClick={onSubmit} disabled={!title.trim() || submitting}>
             {tc("save")}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

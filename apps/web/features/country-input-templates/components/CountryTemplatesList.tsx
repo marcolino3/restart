@@ -139,7 +139,7 @@ export const CountryTemplatesList = ({
       </Table>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("addCountry")}</DialogTitle>
             <DialogDescription>{t("addCountryDescription")}</DialogDescription>

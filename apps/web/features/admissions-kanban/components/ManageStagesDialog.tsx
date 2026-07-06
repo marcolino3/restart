@@ -26,7 +26,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ColorPicker } from "@/components/ui/color-picker";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -243,28 +245,28 @@ export function ManageStagesDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[640px]">
+      <DialogContent className="sm:max-w-[640px]">
         <DialogHeader>
           <DialogTitle>{t("manageStages")}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <DialogBody className="space-y-4">
           <section className="space-y-2 rounded-md border p-3">
             <h3 className="text-sm font-semibold">{t("addStage")}</h3>
             <p className="text-xs text-muted-foreground">
               {t("addStageHint")}
             </p>
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-              <div className="space-y-1">
-                <Label className="text-xs">{t("stageName")}</Label>
+              <div className="space-y-[7px]">
+                <Label className="text-[12.5px] font-semibold">{t("stageName")}</Label>
                 <Input
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder={t("stageNamePlaceholder")}
                 />
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs">{t("stageType")}</Label>
+              <div className="space-y-[7px]">
+                <Label className="text-[12.5px] font-semibold">{t("stageType")}</Label>
                 <Select
                   value={newType}
                   onValueChange={(v) => setNewType(v as StageType)}
@@ -281,8 +283,8 @@ export function ManageStagesDialog({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs">{t("stageColor")}</Label>
+              <div className="space-y-[7px]">
+                <Label className="text-[12.5px] font-semibold">{t("stageColor")}</Label>
                 <ColorPicker
                   value={newColor}
                   onChange={(v) => setNewColor(v ?? "#94A3B8")}
@@ -367,12 +369,12 @@ export function ManageStagesDialog({
             </div>
           </section>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={onClose}>
-              {tC("close")}
-            </Button>
-          </div>
-        </div>
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            {tC("close")}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

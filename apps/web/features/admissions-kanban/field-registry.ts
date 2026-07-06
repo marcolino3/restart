@@ -40,9 +40,10 @@ export const TABLE_COLUMN_KEYS = [
 
 export type TableColumnKey = (typeof TABLE_COLUMN_KEYS)[number];
 
-/** Default card fields — mirrors the historic hard-coded card layout. */
+/** Default card fields — mirrors the design-handoff card layout. */
 export const DEFAULT_CARD_FIELDS: CardFieldKey[] = [
   "birthYear",
+  "familyName",
   "siblings",
   "reminders",
   "daysInStage",

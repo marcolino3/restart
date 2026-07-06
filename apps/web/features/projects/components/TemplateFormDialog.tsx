@@ -13,8 +13,10 @@ import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -91,7 +93,7 @@ export function TemplateFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? t("editTemplate") : t("newTemplate")}
@@ -100,7 +102,11 @@ export function TemplateFormDialog({
         </DialogHeader>
 
         <FormProvider {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex min-h-0 flex-1 flex-col"
+          >
+            <DialogBody className="space-y-4">
             <InputFormField name="title" label="title" namespace="Projects" />
             <TextareaFormField
               name="description"
@@ -174,8 +180,9 @@ export function TemplateFormDialog({
                 </div>
               ))}
             </div>
+            </DialogBody>
 
-            <div className="mt-6 flex justify-end gap-2">
+            <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
@@ -186,7 +193,7 @@ export function TemplateFormDialog({
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {tc("save")}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </FormProvider>
       </DialogContent>

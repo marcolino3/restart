@@ -628,7 +628,7 @@ function EditTeamDialog({ item, onOpenChange, onSubmit }: EditDialogProps) {
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("editTeam")}</DialogTitle>
         </DialogHeader>
@@ -686,7 +686,7 @@ function AddSubteamDialog({
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>
             {t("addSubteam")} — {parent.name}

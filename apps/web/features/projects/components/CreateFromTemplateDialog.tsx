@@ -11,6 +11,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -85,7 +86,7 @@ export function CreateFromTemplateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("createFromTemplate")}</DialogTitle>
           <DialogDescription>
@@ -132,7 +133,7 @@ export function CreateFromTemplateDialog({
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end gap-2">
+        <DialogFooter>
           <Button
             type="button"
             variant="outline"
@@ -143,7 +144,7 @@ export function CreateFromTemplateDialog({
           <Button onClick={onSubmit} disabled={!templateId || submitting}>
             {t("createProject")}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

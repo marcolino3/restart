@@ -38,7 +38,7 @@ export function ReminderDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>
             {childName ? `${title} — ${childName}` : title}

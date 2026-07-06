@@ -290,6 +290,7 @@
     "moreSettings": "Einstellungen",
     "newApplication": "Neue Bewerbung",
     "newApplicationHint": "Erfasse eine neue Interessens-Anmeldung. Weitere Angaben lassen sich später auf der Bewerbung ergänzen.",
+    "newApplicationDescription": "Mindestens eine Bezugsperson empfohlen. Weitere können später ergänzt werden.",
     "createSuccess": "Bewerbung erstellt",
     "createError": "Bewerbung konnte nicht erstellt werden",
     "updateOk": "Änderungen gespeichert",
@@ -606,7 +607,7 @@
     "followUpYearPlaceholder": "z.B. 2027/28",
     "followUpYearHint": "Optional — Kind für ein späteres Schuljahr auf der Warteliste vormerken.",
     "followUpYearColumn": "Wiedervorlage",
-    "addApplicationToStage": "+ Hinzufügen"
+    "addApplicationToStage": "Hinzufügen"
   },
   "Forbidden": {
     "title": "Zugriff verweigert",
@@ -1469,7 +1470,12 @@
     "since": "eingeschult seit",
     "status": "Status",
     "searchPlaceholder": "Nach Name suchen...",
-    "birthInfo": "geb. {date} · {age} J."
+    "birthInfo": "geb. {date} · {age} J.",
+    "joinedOn": "Eintritt {date}",
+    "recentEvents": "Letzte Ereignisse",
+    "noRecentEvents": "Noch keine Ereignisse erfasst.",
+    "learningState": "Lernstand",
+    "recordedBy": "erfasst von {name}"
   },
   "ContactPersons": {
     "contactPersons": "Bezugspersonen",
@@ -1482,6 +1488,8 @@
     "contactPersonArchived": "Bezugsperson erfolgreich archiviert",
     "contactPersonArchiveError": "Fehler beim Archivieren der Bezugsperson",
     "noContactPersonsFound": "Keine Bezugspersonen gefunden.",
+    "contactPersonsCount": "{count, plural, one {# Bezugsperson} other {# Bezugspersonen}}",
+    "searchPlaceholder": "Bezugspersonen suchen …",
     "personSection": "Person",
     "contactSection": "Kontakt",
     "addressSection": "Adresse",
@@ -1646,6 +1654,10 @@
     "filterCurricula": "Curricula filtern…",
     "filterLevels": "Stufen filtern…",
     "filterNodes": "Einträge filtern…",
+    "languages": "Sprachen",
+    "countSubtitle": "{count, plural, =0 {Keine Curricula} one {# Curriculum} other {# Curricula}}",
+    "topicMeta": "{groups, plural, one {# Gruppe} other {# Gruppen}} · {lessons, plural, one {# Lektion} other {# Lektionen}}",
+    "curriculumStats": "{lessons, plural, one {# Lektion} other {# Lektionen}} · {areas, plural, one {# Bereich} other {# Bereiche}} · {topics, plural, one {# Thema} other {# Themen}}",
     "localeDE": "Deutsch",
     "localeFR": "Französisch",
     "localeIT": "Italienisch",
@@ -1664,6 +1676,7 @@
   "Roles": {
     "title": "Rollen & Berechtigungen",
     "description": "Verwalte die Berechtigungen pro Rolle in deiner Organisation.",
+    "rolesCount": "{count, plural, one {# Rolle} other {# Rollen}}",
     "selectRole": "Rolle auswählen",
     "systemRole": "Systemrolle",
     "permissionsCount": "{count, plural, =0 {Keine Berechtigungen} one {# Berechtigung} other {# Berechtigungen}}",
@@ -1802,6 +1815,29 @@
     "transferOk": "Klasse aktualisiert",
     "transferError": "Wechsel fehlgeschlagen",
     "capacityExceededWarn": "{className}: jetzt {count} von {max} – Kapazität überschritten"
+  },
+  "Dashboard": {
+    "greetingMorning": "Guten Morgen, {name}",
+    "greetingAfternoon": "Guten Tag, {name}",
+    "greetingEvening": "Guten Abend, {name}",
+    "subtitle": "{date} — hier ist der Überblick für deine Schule.",
+    "noOrgHint": "Wähle zuerst eine Organisation, um das Dashboard zu sehen.",
+    "statStudents": "Schüler:innen aktiv",
+    "statStudentsSub": "in {count, plural, one {# Klasse} other {# Klassen}}",
+    "statApplications": "Offene Bewerbungen",
+    "statApplicationsSub": "{count, plural, =0 {keine neuen diese Woche} one {# neu diese Woche} other {# neu diese Woche}}",
+    "statReminders": "Offene Erinnerungen",
+    "statRemindersSub": "{count, plural, =0 {keine überfällig} one {# überfällig} other {# überfällig}}",
+    "statMastered": "Gemeistert-Quote",
+    "statMasteredSub": "{mastered} von {total} erfassten Lektionen",
+    "statMasteredEmpty": "noch keine Erfassungen",
+    "attentionTitle": "Braucht Aufmerksamkeit",
+    "attentionHint": "Kinder mit auffälligen Mustern — hier zuerst ansetzen.",
+    "attentionEmpty": "Keine auffälligen Muster — alles im grünen Bereich.",
+    "attentionDaysShort": "{count, plural, one {# Tag} other {# Tage}}",
+    "admissionsTitle": "Aufnahmeprozess",
+    "admissionsActive": "{count} aktiv",
+    "admissionsHint": "Bewerbungen nach Stage."
   },
   "RecordKeeping": {
     "pickADate": "Datum wählen",
@@ -2603,7 +2639,16 @@
     "absencesByCategory": "Absenzen nach Kategorie",
     "absenceCategory": "Kategorie",
     "absenceFullDays": "100 %",
-    "absencePartialDays": "< 100 %"
+    "absencePartialDays": "< 100 %",
+    "weekView": "Woche",
+    "listView": "Liste",
+    "today": "heute",
+    "running": "läuft",
+    "noRunningEntry": "Keine laufende Erfassung",
+    "addEntryShort": "+ Eintrag",
+    "employeesLabel": "Mitarbeitende",
+    "employeesCount": "{count, plural, one {# Mitarbeiter:in} other {# Mitarbeitende}}",
+    "netBalanceTotal": "Saldo gesamt"
   },
   "ThemePicker": {
     "theme": "Theme"

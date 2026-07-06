@@ -24,7 +24,9 @@ import { Button } from "@/components/ui/button";
 import { ColorPicker } from "@/components/ui/color-picker";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -161,20 +163,20 @@ export function ManageRejectionReasonsDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[560px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("manageRejectionReasons")}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <DialogBody className="space-y-4">
           <section className="space-y-2 rounded-md border p-3">
             <h3 className="text-sm font-semibold">{t("addRejectionReason")}</h3>
             <p className="text-xs text-muted-foreground">
               {t("rejectionReasonsHint")}
             </p>
             <div className="flex items-end gap-2">
-              <div className="flex-1 space-y-1">
-                <Label className="text-xs">{t("rejectionReasonLabel")}</Label>
+              <div className="flex-1 space-y-[7px]">
+                <Label className="text-[12.5px] font-semibold">{t("rejectionReasonLabel")}</Label>
                 <Input
                   value={newLabel}
                   onChange={(e) => setNewLabel(e.target.value)}
@@ -235,12 +237,12 @@ export function ManageRejectionReasonsDialog({
             )}
           </section>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={onClose}>
-              {tC("close")}
-            </Button>
-          </div>
-        </div>
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            {tC("close")}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

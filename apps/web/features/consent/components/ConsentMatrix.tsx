@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -233,35 +235,37 @@ export function ConsentMatrix({
           <DialogHeader>
             <DialogTitle>{t("uploadEvidenceTitle")}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            <p className="text-muted-foreground text-sm">
-              {t("uploadEvidenceHint")}
-            </p>
-            <input
-              type="file"
-              accept="application/pdf"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="block w-full text-sm"
-            />
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setEvidenceFor(null);
-                  setFile(null);
-                }}
-              >
-                {t("cancel")}
-              </Button>
-              <Button
-                disabled={!file || uploading || pending}
-                onClick={grantWithEvidence}
-              >
-                <Check className="mr-1 h-4 w-4" />
-                {t("grant")}
-              </Button>
+          <DialogBody>
+            <div className="space-y-3">
+              <p className="text-muted-foreground text-sm">
+                {t("uploadEvidenceHint")}
+              </p>
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                className="block w-full text-sm"
+              />
             </div>
-          </div>
+          </DialogBody>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setEvidenceFor(null);
+                setFile(null);
+              }}
+            >
+              {t("cancel")}
+            </Button>
+            <Button
+              disabled={!file || uploading || pending}
+              onClick={grantWithEvidence}
+            >
+              <Check className="mr-1 h-4 w-4" />
+              {t("grant")}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

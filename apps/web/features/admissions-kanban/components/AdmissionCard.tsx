@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Bell, BellRing, Mail, Phone, User2, Users2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -11,8 +11,6 @@ import type { KanbanApplication } from "../types";
 
 interface Props {
   application: KanbanApplication;
-  /** Vertical color strip (matches the column's stage colour). */
-  stageColor?: string | null;
   /** Per-stage field selection; `null`/omitted ⇒ default set. */
   cardFields?: string[] | null;
   dragging?: boolean;
@@ -59,9 +57,12 @@ const sourceKey = (source: KanbanApplication["source"]): string => {
   }
 };
 
+/** ISO date (`2019-04-01`) → Swiss format (`01.04.2019`). */
+const swissDate = (iso: string): string =>
+  iso.slice(0, 10).split("-").reverse().join(".");
+
 export function AdmissionCardVisual({
   application,
-  stageColor,
   cardFields,
   dragging,
   onOpen,
@@ -84,18 +85,22 @@ export function AdmissionCardVisual({
   }, [application.stageEnteredAt]);
 
   const fields = resolveCardFields(cardFields);
-  const birthYear = application.childDateOfBirth
-    ? application.childDateOfBirth.slice(0, 4)
-    : null;
+  // Design layout: the days-in-stage badge lives in row 1 (right of the name)
+  // and the desired grade level renders as an outline badge in its own row —
+  // pull both out of the configurable meta-chip row.
+  const showDays = fields.includes("daysInStage");
+  const showGrade = fields.includes("gradeLevel");
+  const metaFields = fields.filter(
+    (k) => k !== "daysInStage" && k !== "gradeLevel",
+  );
 
   const chip = (key: CardFieldKey): React.ReactNode => {
     switch (key) {
       case "birthYear":
-        return birthYear ? (
-          <span
-            key={key}
-            title={t("fieldBirthYear")}
-          >{`Jg. ${birthYear}`}</span>
+        return application.childDateOfBirth ? (
+          <span key={key} className="tabular-nums" title={t("fieldBirthYear")}>
+            {`geb. ${swissDate(application.childDateOfBirth)}`}
+          </span>
         ) : null;
       case "age": {
         if (!application.childDateOfBirth) return null;
@@ -106,7 +111,7 @@ export function AdmissionCardVisual({
         if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age -= 1;
         if (age < 0) return null;
         return (
-          <span key={key} title={t("fieldAge")}>
+          <span key={key} className="tabular-nums" title={t("fieldAge")}>
             {t("ageYears", { count: age })}
           </span>
         );
@@ -115,26 +120,6 @@ export function AdmissionCardVisual({
         return application.childGender ? (
           <span key={key} title={t("fieldGender")}>
             {GENDER_GLYPH[application.childGender]}
-          </span>
-        ) : null;
-      case "gradeLevel":
-        return application.desiredGradeLevelName ? (
-          <span
-            key={key}
-            className="inline-flex items-center gap-1"
-            title={application.desiredGradeLevelName}
-          >
-            <span
-              aria-hidden
-              className="inline-block h-2 w-2 shrink-0 rounded-full ring-1 ring-border"
-              style={{
-                backgroundColor:
-                  application.desiredGradeLevelColor ?? "var(--muted)",
-              }}
-            />
-            <span className="truncate">
-              {application.desiredGradeLevelName}
-            </span>
           </span>
         ) : null;
       case "source":
@@ -159,7 +144,7 @@ export function AdmissionCardVisual({
         return application.family.childrenCount > 1 ? (
           <span
             key={key}
-            className="inline-flex items-center gap-0.5 rounded bg-primary/10 px-1 text-primary"
+            className="inline-flex items-center gap-0.5 rounded bg-primary/10 px-1 tabular-nums text-primary"
             title={t("fieldSiblings")}
           >
             <Users2 className="h-2.5 w-2.5" />
@@ -184,28 +169,20 @@ export function AdmissionCardVisual({
         ) : null;
       case "contactPhone":
         return application.family.primaryPhone ? (
-          <span key={key} className="inline-flex items-center gap-0.5">
+          <span
+            key={key}
+            className="inline-flex items-center gap-0.5 tabular-nums"
+          >
             <Phone className="h-2.5 w-2.5 shrink-0" />
             {application.family.primaryPhone}
           </span>
-        ) : null;
-      case "daysInStage":
-        return daysInStage !== null && daysInStage > 0 ? (
-          <Badge
-            key={key}
-            variant={daysInStage > 14 ? "destructive" : "outline"}
-            className="px-1.5 text-[10px] leading-none"
-            title={t("daysShort", { count: daysInStage })}
-          >
-            {daysInStage}d
-          </Badge>
         ) : null;
       case "reminders":
         return application.openRemindersCount > 0 ? (
           <span
             key={key}
             className={cn(
-              "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold",
+              "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-[600] tabular-nums",
               application.overdueRemindersCount > 0
                 ? "bg-status-rose text-status-rose-foreground"
                 : "bg-status-amber text-status-amber-foreground",
@@ -228,12 +205,12 @@ export function AdmissionCardVisual({
     }
   };
 
-  const chips = fields.map(chip).filter(Boolean);
+  const metaChips = metaFields.map(chip).filter(Boolean);
 
   return (
     <div
       className={cn(
-        "group relative flex items-stretch overflow-hidden rounded-md border bg-card text-sm shadow-sm transition hover:shadow-md",
+        "group grid gap-1.5 rounded-card border bg-card p-2.5 text-sm shadow-xs transition hover:shadow-md",
         dragging ? "opacity-90 shadow-lg" : "",
         onOpen && "cursor-pointer hover:bg-accent/40",
         className,
@@ -241,33 +218,67 @@ export function AdmissionCardVisual({
       role={onOpen ? "button" : undefined}
       onClick={onOpen ? () => onOpen(application.id) : undefined}
     >
-      {/* Stage colour strip */}
-      <span
-        aria-hidden
-        className="w-1 shrink-0"
-        style={{ backgroundColor: stageColor ?? "var(--muted)" }}
-      />
-
-      <div className="flex flex-1 items-center gap-2 py-2 pl-2 pr-2">
+      {/* Row 1 — avatar · name · days-in-stage */}
+      <div className="flex items-center gap-2">
         <StudentAvatar
           studentId={application.id}
           firstName={application.childFirstName}
           lastName={application.childLastName}
-          className="h-8 w-8 shrink-0"
-          fallbackClassName="text-[10px]"
+          className="h-6 w-6 shrink-0"
+          fallbackClassName="text-[9px]"
         />
-
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold leading-tight">
-            {application.childFirstName} {application.childLastName}
-          </div>
-          {chips.length > 0 && (
-            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted-foreground">
-              {chips}
-            </div>
-          )}
-        </div>
+        <span className="min-w-0 flex-1 truncate text-[13px] font-medium leading-tight">
+          {application.childFirstName} {application.childLastName}
+        </span>
+        {showDays && daysInStage !== null && daysInStage > 0 && (
+          <span
+            className={cn(
+              "shrink-0 font-mono text-[10px] tabular-nums",
+              daysInStage > 14
+                ? "font-[600] text-destructive"
+                : "text-muted-foreground",
+            )}
+            title={t("daysShort", { count: daysInStage })}
+          >
+            {daysInStage}d
+          </span>
+        )}
       </div>
+
+      {/* Row 2 — configurable meta chips, `·`-separated */}
+      {metaChips.length > 0 && (
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted-foreground">
+          {metaChips.map((c, i) => (
+            <Fragment key={i}>
+              {i > 0 && (
+                <span aria-hidden className="text-muted-foreground/60">
+                  ·
+                </span>
+              )}
+              {c}
+            </Fragment>
+          ))}
+        </div>
+      )}
+
+      {/* Row 3 — desired grade level as outline badge */}
+      {showGrade && application.desiredGradeLevelName && (
+        <Badge
+          variant="outline"
+          className="h-4 w-fit px-1.5 text-[10px] font-medium leading-none"
+          style={
+            application.desiredGradeLevelColor
+              ? {
+                  borderColor: application.desiredGradeLevelColor,
+                  color: application.desiredGradeLevelColor,
+                }
+              : undefined
+          }
+          title={t("fieldGradeLevel")}
+        >
+          {application.desiredGradeLevelName}
+        </Badge>
+      )}
     </div>
   );
 }

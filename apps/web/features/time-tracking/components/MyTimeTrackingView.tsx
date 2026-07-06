@@ -1,9 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSheet } from "@/components/providers/sheet-provider";
 import { TimeBalanceCards } from "./TimeBalanceCards";
-import { ClockButton } from "./ClockButton";
+import { TimerBand } from "./TimerBand";
+import { WeekTimeEntries } from "./WeekTimeEntries";
 import { TimeEntriesTable } from "./TimeEntriesTable";
+import { TimeEntryForm } from "./TimeEntryForm";
 import type { MyTimeTrackingData } from "../types";
 
 interface Props {
@@ -12,6 +19,8 @@ interface Props {
 
 export const MyTimeTrackingView = ({ data }: Props) => {
   const t = useTranslations("TimeTracking");
+  const { open } = useSheet();
+  const [view, setView] = useState<"week" | "list">("week");
 
   if (!data.employeeId) {
     return (
@@ -19,28 +28,14 @@ export const MyTimeTrackingView = ({ data }: Props) => {
     );
   }
 
+  const employeeId = data.employeeId;
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <TimeBalanceCards balance={data.balance} vacation={data.vacation} />
-      </div>
-      <div className="flex items-center gap-3">
-        <ClockButton
-          employeeId={data.employeeId}
-          isRunning={Boolean(data.openEntry)}
-        />
-        {data.openEntry && (
-          <span className="text-sm text-muted-foreground">
-            {t("clockRunningSince", {
-              time: new Date(data.openEntry.startedAt)
-                .toISOString()
-                .substring(11, 16),
-            })}
-          </span>
-        )}
-      </div>
+      <TimerBand employeeId={employeeId} openEntry={data.openEntry} />
+      <TimeBalanceCards balance={data.balance} vacation={data.vacation} />
       {data.missingRecordDays.length > 0 && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4">
+        <div className="rounded-card border border-destructive/30 bg-destructive/5 p-4">
           <h2 className="mb-1 font-semibold text-destructive">
             {t("missingRecords", { count: data.missingRecordDays.length })}
           </h2>
@@ -51,7 +46,43 @@ export const MyTimeTrackingView = ({ data }: Props) => {
           </p>
         </div>
       )}
-      <TimeEntriesTable employeeId={data.employeeId} entries={data.entries} />
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-lg font-semibold">{t("entries")}</h2>
+          <div className="ml-auto flex items-center gap-3">
+            <Tabs
+              value={view}
+              onValueChange={(v) => setView(v as "week" | "list")}
+            >
+              <TabsList>
+                <TabsTrigger value="week">{t("weekView")}</TabsTrigger>
+                <TabsTrigger value="list">{t("listView")}</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Button
+              size="sm"
+              onClick={() =>
+                open({
+                  title: t("addEntry"),
+                  content: <TimeEntryForm employeeId={employeeId} />,
+                  side: "right",
+                })
+              }
+            >
+              <Plus className="size-4" /> {t("addEntry")}
+            </Button>
+          </div>
+        </div>
+        {view === "week" ? (
+          <WeekTimeEntries employeeId={employeeId} entries={data.entries} />
+        ) : (
+          <TimeEntriesTable
+            employeeId={employeeId}
+            entries={data.entries}
+            showHeader={false}
+          />
+        )}
+      </div>
     </div>
   );
 };

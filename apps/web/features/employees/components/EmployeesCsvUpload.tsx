@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -149,12 +150,13 @@ export const EmployeesCsvUpload = ({
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>{tE("csvImport")}</DialogTitle>
           <DialogDescription>{tE("csvImportDescription")}</DialogDescription>
         </DialogHeader>
 
+        <DialogBody>
         <div className="space-y-4">
           {/* Format info */}
           <div className="bg-muted p-4 rounded-lg">
@@ -266,6 +268,7 @@ export const EmployeesCsvUpload = ({
             </div>
           )}
         </div>
+        </DialogBody>
       </DialogContent>
     </Dialog>
   );

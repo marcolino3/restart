@@ -290,6 +290,7 @@
     "moreSettings": "Settings",
     "newApplication": "New application",
     "newApplicationHint": "Record a new expression of interest. Further details can be added later on the application.",
+    "newApplicationDescription": "At least one contact person recommended. More can be added later.",
     "createSuccess": "Application created",
     "createError": "Could not create application",
     "updateOk": "Changes saved",
@@ -606,7 +607,7 @@
     "followUpYearPlaceholder": "e.g. 2027/28",
     "followUpYearHint": "Optional — keep the child on the waitlist for a later school year.",
     "followUpYearColumn": "Waitlist",
-    "addApplicationToStage": "+ Add"
+    "addApplicationToStage": "Add"
   },
   "Forbidden": {
     "title": "Access denied",
@@ -1469,7 +1470,12 @@
     "since": "enrolled since",
     "status": "Status",
     "searchPlaceholder": "Search by name...",
-    "birthInfo": "b. {date} · {age} yr"
+    "birthInfo": "b. {date} · {age} yr",
+    "joinedOn": "Joined {date}",
+    "recentEvents": "Recent events",
+    "noRecentEvents": "No events recorded yet.",
+    "learningState": "Learning progress",
+    "recordedBy": "recorded by {name}"
   },
   "ContactPersons": {
     "contactPersons": "Contact Persons",
@@ -1482,6 +1488,8 @@
     "contactPersonArchived": "Contact person archived successfully",
     "contactPersonArchiveError": "Error archiving contact person",
     "noContactPersonsFound": "No contact persons found.",
+    "contactPersonsCount": "{count, plural, one {# contact person} other {# contact persons}}",
+    "searchPlaceholder": "Search contact persons …",
     "personSection": "Person",
     "contactSection": "Contact",
     "addressSection": "Address",
@@ -1646,6 +1654,10 @@
     "filterCurricula": "Filter curricula…",
     "filterLevels": "Filter levels…",
     "filterNodes": "Filter entries…",
+    "languages": "Languages",
+    "countSubtitle": "{count, plural, =0 {No curricula} one {# curriculum} other {# curricula}}",
+    "topicMeta": "{groups, plural, one {# group} other {# groups}} · {lessons, plural, one {# lesson} other {# lessons}}",
+    "curriculumStats": "{lessons, plural, one {# lesson} other {# lessons}} · {areas, plural, one {# area} other {# areas}} · {topics, plural, one {# topic} other {# topics}}",
     "localeDE": "German",
     "localeFR": "French",
     "localeIT": "Italian",
@@ -1664,6 +1676,7 @@
   "Roles": {
     "title": "Roles & Permissions",
     "description": "Manage permissions per role in your organization.",
+    "rolesCount": "{count, plural, one {# role} other {# roles}}",
     "selectRole": "Select role",
     "systemRole": "System role",
     "permissionsCount": "{count, plural, =0 {No permissions} one {# permission} other {# permissions}}",
@@ -1802,6 +1815,29 @@
     "transferOk": "Classroom updated",
     "transferError": "Transfer failed",
     "capacityExceededWarn": "{className}: now {count} of {max} – over capacity"
+  },
+  "Dashboard": {
+    "greetingMorning": "Good morning, {name}",
+    "greetingAfternoon": "Good afternoon, {name}",
+    "greetingEvening": "Good evening, {name}",
+    "subtitle": "{date} — here's the overview for your school.",
+    "noOrgHint": "Select an organization first to see the dashboard.",
+    "statStudents": "Active students",
+    "statStudentsSub": "in {count, plural, one {# class} other {# classes}}",
+    "statApplications": "Open applications",
+    "statApplicationsSub": "{count, plural, =0 {none new this week} one {# new this week} other {# new this week}}",
+    "statReminders": "Open reminders",
+    "statRemindersSub": "{count, plural, =0 {none overdue} one {# overdue} other {# overdue}}",
+    "statMastered": "Mastered rate",
+    "statMasteredSub": "{mastered} of {total} recorded lessons",
+    "statMasteredEmpty": "no records yet",
+    "attentionTitle": "Needs attention",
+    "attentionHint": "Children with conspicuous patterns — start here first.",
+    "attentionEmpty": "No conspicuous patterns — all clear.",
+    "attentionDaysShort": "{count, plural, one {# day} other {# days}}",
+    "admissionsTitle": "Admissions",
+    "admissionsActive": "{count} active",
+    "admissionsHint": "Applications by stage."
   },
   "RecordKeeping": {
     "pickADate": "Pick a date",
@@ -2603,7 +2639,16 @@
     "absencesByCategory": "Absences by category",
     "absenceCategory": "Category",
     "absenceFullDays": "100 %",
-    "absencePartialDays": "< 100 %"
+    "absencePartialDays": "< 100 %",
+    "weekView": "Week",
+    "listView": "List",
+    "today": "today",
+    "running": "running",
+    "noRunningEntry": "No running time entry",
+    "addEntryShort": "+ Entry",
+    "employeesLabel": "Employees",
+    "employeesCount": "{count, plural, one {# employee} other {# employees}}",
+    "netBalanceTotal": "Total balance"
   },
   "ThemePicker": {
     "theme": "Theme"

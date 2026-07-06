@@ -3,7 +3,7 @@
 import { memo, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { Badge } from "@/components/ui/badge";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -19,29 +19,31 @@ interface Props {
   data: HeatmapData;
 }
 
-const STATUS_CLS: Record<LessonRecordStatus, string> = {
-  PLANNING: "bg-slate-100 text-slate-700",
-  INTRODUCED: "bg-sky-100 text-sky-800",
-  PRACTICED: "bg-amber-100 text-amber-800",
-  MASTERED: "bg-emerald-100 text-emerald-800",
-  NEEDS_MORE: "bg-rose-100 text-rose-800",
+const STATUS_VARIANT: Record<LessonRecordStatus, BadgeProps["variant"]> = {
+  PLANNING: "slate",
+  INTRODUCED: "sky",
+  PRACTICED: "amber",
+  MASTERED: "green",
+  NEEDS_MORE: "rose",
 };
 
 /**
- * Hintergrund einer Zelle basierend auf MASTERED-Anteil:
- *   0%   = neutral grau
- *   1-33% = sanftes Sky/Amber
- *   34-66% = mittleres Amber
- *   67-99% = sanftes Emerald
- *   100% = sattes Emerald
+ * Hintergrund einer Zelle basierend auf MASTERED-Anteil (Theme-Heatmap-Tokens
+ * `--hm-*`, gemappt auf die `bg-heatmap-*`-Utilities pro Theme):
+ *   leer  = keine Lektionen (heatmap-empty)
+ *   0%    = neutral (heatmap-0)
+ *   1-33% = sanft (heatmap-1)
+ *   34-66% = mittel (heatmap-2)
+ *   67-99% = kräftig (heatmap-3)
+ *   100%  = satt (heatmap-4)
  */
 const cellBgClass = (masteredRatio: number, total: number): string => {
-  if (total === 0) return "bg-muted/30";
-  if (masteredRatio === 0) return "bg-slate-100";
-  if (masteredRatio < 0.34) return "bg-sky-100";
-  if (masteredRatio < 0.67) return "bg-amber-100";
-  if (masteredRatio < 1) return "bg-emerald-100";
-  return "bg-emerald-300";
+  if (total === 0) return "bg-heatmap-empty";
+  if (masteredRatio === 0) return "bg-heatmap-0";
+  if (masteredRatio < 0.34) return "bg-heatmap-1";
+  if (masteredRatio < 0.67) return "bg-heatmap-2";
+  if (masteredRatio < 1) return "bg-heatmap-3";
+  return "bg-heatmap-4";
 };
 
 function ClassroomHeatmapImpl({ data }: Props) {
@@ -187,8 +189,8 @@ function ClassroomHeatmapImpl({ data }: Props) {
                                     className="flex items-center justify-between gap-3"
                                   >
                                     <Badge
-                                      variant="outline"
-                                      className={`text-[10px] ${STATUS_CLS[status]}`}
+                                      variant={STATUS_VARIANT[status]}
+                                      className="text-[10px]"
                                     >
                                       {t(status)}
                                     </Badge>
@@ -246,23 +248,23 @@ function ClassroomHeatmapImpl({ data }: Props) {
       <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
         <span>{t("MASTERED")}-Anteil:</span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-3 w-6 rounded border bg-slate-100" />
+          <span className="inline-block h-3 w-6 rounded border bg-heatmap-0" />
           0%
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-3 w-6 rounded border bg-sky-100" />
+          <span className="inline-block h-3 w-6 rounded border bg-heatmap-1" />
           1-33%
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-3 w-6 rounded border bg-amber-100" />
+          <span className="inline-block h-3 w-6 rounded border bg-heatmap-2" />
           34-66%
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-3 w-6 rounded border bg-emerald-100" />
+          <span className="inline-block h-3 w-6 rounded border bg-heatmap-3" />
           67-99%
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-3 w-6 rounded border bg-emerald-300" />
+          <span className="inline-block h-3 w-6 rounded border bg-heatmap-4" />
           100%
         </span>
       </div>
