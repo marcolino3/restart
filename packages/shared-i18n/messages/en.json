@@ -293,6 +293,7 @@
     "newApplicationDescription": "At least one contact person recommended. More can be added later.",
     "createSuccess": "Application created",
     "createError": "Could not create application",
+    "createSubmit": "Create application",
     "updateOk": "Changes saved",
     "updateError": "Could not save changes",
     "archiveOk": "Archived",
