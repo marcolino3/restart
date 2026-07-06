@@ -99,7 +99,7 @@ export function AdmissionCardVisual({
       case "birthYear":
         return application.childDateOfBirth ? (
           <span key={key} className="tabular-nums" title={t("fieldBirthYear")}>
-            {`geb. ${swissDate(application.childDateOfBirth)}`}
+            {t("cardBorn", { date: swissDate(application.childDateOfBirth) })}
           </span>
         ) : null;
       case "age": {
@@ -137,7 +137,9 @@ export function AdmissionCardVisual({
       case "familyName":
         return application.family.name ? (
           <span key={key} className="truncate" title={t("fieldFamilyName")}>
-            {application.family.name}
+            {t("cardFamilyName", {
+              name: application.family.name.replace(/^Familie\s+/i, ""),
+            })}
           </span>
         ) : null;
       case "siblings":
