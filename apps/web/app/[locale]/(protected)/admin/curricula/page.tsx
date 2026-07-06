@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageHead } from "@/components/common/PageHead";
 import { ROUTES } from "@/constants/routes";
 import { getCurriculaAction } from "@/features/curricula/actions/get-curricula.action";
 import { CurriculaTable } from "@/features/curricula/components/CurriculaTable";
@@ -23,19 +24,22 @@ const CurriculaPage = async ({ searchParams }: PageProps) => {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <h1 className="text-2xl font-bold">{t("curricula")}</h1>
-        <div className="flex items-center gap-3">
-          <ShowArchivedToggle />
-          <CurriculumImportDialog />
-          <Button asChild>
-            <Link href={ROUTES.admin.curriculaCreate(locale)}>
-              <PlusIcon className="mr-2 h-4 w-4" />
-              {t("createCurriculum")}
-            </Link>
-          </Button>
-        </div>
-      </div>
+      <PageHead
+        title={t("curricula")}
+        subtitle={t("countSubtitle", { count: list.length })}
+        action={
+          <div className="flex items-center gap-3">
+            <ShowArchivedToggle />
+            <CurriculumImportDialog />
+            <Button asChild>
+              <Link href={ROUTES.admin.curriculaCreate(locale)}>
+                <PlusIcon className="mr-2 h-4 w-4" />
+                {t("createCurriculum")}
+              </Link>
+            </Button>
+          </div>
+        }
+      />
       <CurriculaTable data={list} />
     </div>
   );

@@ -313,7 +313,7 @@ export function CurriculumLevelsTable({
           )}
         </Button>
       </div>
-      <div className="rounded-md border">
+      <div className="overflow-hidden rounded-card border bg-card shadow-xs">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((hg) => (

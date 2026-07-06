@@ -19,6 +19,7 @@ import {
   MoreHorizontal,
   Pencil,
   RotateCcw,
+  Search,
   Trash2,
 } from "lucide-react";
 import { ArchiveConfirmationDialog } from "@/components/common/ArchiveConfirmationDialog";
@@ -47,10 +48,12 @@ import { archiveCurriculumAction } from "../actions/archive-curriculum.action";
 import { unarchiveCurriculumAction } from "../actions/unarchive-curriculum.action";
 import { hardDeleteCurriculumAction } from "../actions/hard-delete-curriculum.action";
 import {
+  CURRICULUM_LOCALES,
   pickTranslation,
   type CurriculumDTO,
   type CurriculumLocale,
 } from "../types";
+import { LocaleBadge } from "./LocaleBadge";
 
 interface Props {
   data: CurriculumDTO[];
@@ -94,23 +97,46 @@ export function CurriculaTable({ data, headerActions }: Props) {
       {
         accessorKey: "name",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 uppercase"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
-            {t("name")} <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
+            {t("name")} <ArrowUpDown className="h-3.5 w-3.5" />
+          </button>
         ),
         cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <span>{row.original.name}</span>
-            {row.original.isArchived && (
-              <span className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                {t("archived")}
-              </span>
-            )}
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold">{row.original.name}</span>
+              {row.original.isArchived && (
+                <span className="rounded-full bg-status-slate px-2 py-0.5 text-[10px] font-[650] text-status-slate-foreground">
+                  {t("archived")}
+                </span>
+              )}
+            </div>
+            <small className="block text-[12px] text-muted-foreground">
+              {row.original.slug}
+            </small>
           </div>
         ),
+      },
+      {
+        id: "languages",
+        enableSorting: false,
+        header: () => t("languages"),
+        cell: ({ row }) => {
+          const present = new Set(
+            row.original.translations.map((tr) => tr.locale),
+          );
+          return (
+            <span className="inline-flex gap-1">
+              {CURRICULUM_LOCALES.map((loc) => (
+                <LocaleBadge key={loc} locale={loc} active={present.has(loc)} />
+              ))}
+            </span>
+          );
+        },
       },
       {
         id: "actions",
@@ -217,15 +243,19 @@ export function CurriculaTable({ data, headerActions }: Props) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 flex-wrap">
-        <Input
-          placeholder={t("filterCurricula")}
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
-        />
+        <div className="relative w-[280px]">
+          <Search className="pointer-events-none absolute top-1/2 left-3.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={t("filterCurricula")}
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="h-9 rounded-full pl-9"
+            aria-label={t("filterCurricula")}
+          />
+        </div>
         {headerActions && <div className="ml-auto">{headerActions}</div>}
       </div>
-      <div className="rounded-md border">
+      <div className="overflow-hidden rounded-card border bg-card shadow-xs">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((hg) => (
