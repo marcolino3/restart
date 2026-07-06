@@ -2634,7 +2634,16 @@
     "absencesByCategory": "Absences by category",
     "absenceCategory": "Category",
     "absenceFullDays": "100 %",
-    "absencePartialDays": "< 100 %"
+    "absencePartialDays": "< 100 %",
+    "weekView": "Week",
+    "listView": "List",
+    "today": "today",
+    "running": "running",
+    "noRunningEntry": "No running time entry",
+    "addEntryShort": "+ Entry",
+    "employeesLabel": "Employees",
+    "employeesCount": "{count, plural, one {# employee} other {# employees}}",
+    "netBalanceTotal": "Total balance"
   },
   "ThemePicker": {
     "theme": "Theme"

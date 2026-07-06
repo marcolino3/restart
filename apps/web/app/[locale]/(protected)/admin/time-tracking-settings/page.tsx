@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { PageHead } from "@/components/common/PageHead";
 import { requireAdminPersona } from "@/features/users/guards/require-admin-persona";
 import { getTimeTrackingSettingsAction } from "@/features/time-tracking/actions/settings.action";
 import { getTimeTrackingPeriodsAction } from "@/features/time-tracking/actions/periods.action";
@@ -38,7 +39,7 @@ const TimeTrackingSettingsPage = async () => {
 
   return (
     <div className="space-y-6 p-4">
-      <h1 className="text-2xl font-bold">{t("settings")}</h1>
+      <PageHead title={t("settings")} />
       <Tabs defaultValue="general">
         <TabsList>
           <TabsTrigger value="general">{t("general")}</TabsTrigger>

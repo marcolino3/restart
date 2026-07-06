@@ -2634,7 +2634,16 @@
     "absencesByCategory": "Absenzen nach Kategorie",
     "absenceCategory": "Kategorie",
     "absenceFullDays": "100 %",
-    "absencePartialDays": "< 100 %"
+    "absencePartialDays": "< 100 %",
+    "weekView": "Woche",
+    "listView": "Liste",
+    "today": "heute",
+    "running": "läuft",
+    "noRunningEntry": "Keine laufende Erfassung",
+    "addEntryShort": "+ Eintrag",
+    "employeesLabel": "Mitarbeitende",
+    "employeesCount": "{count, plural, one {# Mitarbeiter:in} other {# Mitarbeitende}}",
+    "netBalanceTotal": "Saldo gesamt"
   },
   "ThemePicker": {
     "theme": "Theme"

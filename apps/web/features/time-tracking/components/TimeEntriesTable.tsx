@@ -25,12 +25,18 @@ import type { TimeEntry } from "../types";
 interface Props {
   employeeId: string;
   entries: TimeEntry[];
+  /** Kopfzeile (Titel + "Eintrag hinzufügen") ausblenden, wenn der Parent sie stellt. */
+  showHeader?: boolean;
 }
 
 const timeStr = (iso?: string | null) =>
   iso ? new Date(iso).toISOString().substring(11, 16) : "–";
 
-export const TimeEntriesTable = ({ employeeId, entries }: Props) => {
+export const TimeEntriesTable = ({
+  employeeId,
+  entries,
+  showHeader = true,
+}: Props) => {
   const t = useTranslations("TimeTracking");
   const tc = useTranslations("Common");
   const router = useRouter();
@@ -45,13 +51,15 @@ export const TimeEntriesTable = ({ employeeId, entries }: Props) => {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">{t("entries")}</h2>
-        <Button size="sm" onClick={() => openForm()}>
-          <Plus className="size-4" /> {t("addEntry")}
-        </Button>
-      </div>
-      <div className="rounded-md border">
+      {showHeader && (
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">{t("entries")}</h2>
+          <Button size="sm" onClick={() => openForm()}>
+            <Plus className="size-4" /> {t("addEntry")}
+          </Button>
+        </div>
+      )}
+      <div className="overflow-hidden rounded-card border bg-card shadow-xs">
         <Table>
           <TableHeader>
             <TableRow>
