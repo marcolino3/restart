@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -176,18 +177,20 @@ export function RetentionPoliciesList({
         open={!!editingType}
         onOpenChange={(open) => !open && setEditingType(null)}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>
               {editingType ? t(`entity.${editingType}`) : ""}
             </DialogTitle>
           </DialogHeader>
-          <RetentionPolicyForm
-            key={editingType ?? "none"}
-            initial={editingPolicy}
-            submitting={pending}
-            onSubmit={onSubmit}
-          />
+          <DialogBody>
+            <RetentionPolicyForm
+              key={editingType ?? "none"}
+              initial={editingPolicy}
+              submitting={pending}
+              onSubmit={onSubmit}
+            />
+          </DialogBody>
         </DialogContent>
       </Dialog>
     </div>

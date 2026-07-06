@@ -13,6 +13,7 @@ import { useTranslations as useT } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -166,14 +167,22 @@ export function SendEmailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{t("emailSendTitle")}</DialogTitle>
           <DialogDescription>{t("emailSendDescription")}</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-1.5">
-          <Label className="text-xs">{t("emailTemplateLabel")}</Label>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex min-h-0 flex-1 flex-col"
+          >
+            <DialogBody className="space-y-4">
+              <div className="space-y-[7px]">
+                <Label className="text-[12.5px] font-semibold">
+                  {t("emailTemplateLabel")}
+                </Label>
           <Select
             value={templateId ?? undefined}
             onValueChange={onTemplateChange}
@@ -202,16 +211,11 @@ export function SendEmailDialog({
               {t("emailLoadingPreview")}
             </p>
           )}
-        </div>
+              </div>
 
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="mt-4 space-y-4"
-          >
-            {contacts.length > 0 && (
-              <div className="space-y-1.5">
-                <Label className="text-xs">{t("emailRecipientLabel")}</Label>
+              {contacts.length > 0 && (
+              <div className="space-y-[7px]">
+                <Label className="text-[12.5px] font-semibold">{t("emailRecipientLabel")}</Label>
                 <div className="flex flex-wrap gap-1.5">
                   {contacts.map((contact) => {
                     const role = roleLabel(contact.role);
@@ -264,6 +268,7 @@ export function SendEmailDialog({
               label="emailBody"
               namespace="Admissions"
             />
+            </DialogBody>
 
             <DialogFooter>
               <Button

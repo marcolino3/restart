@@ -9,8 +9,10 @@ import { DatePicker, toIsoDate } from "@/components/form/DatePicker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -115,13 +117,13 @@ export function CreateProtocolDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{t("newProtocol")}</DialogTitle>
           <DialogDescription>{t("templateHint")}</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <DialogBody className="space-y-4">
           <div className="space-y-1">
             <Label>{t("templateLabel")}</Label>
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
@@ -212,9 +214,9 @@ export function CreateProtocolDialog({
               </Select>
             </div>
           </div>
-        </div>
+        </DialogBody>
 
-        <div className="mt-2 flex justify-end gap-2">
+        <DialogFooter>
           <Button
             type="button"
             variant="outline"
@@ -225,7 +227,7 @@ export function CreateProtocolDialog({
           <Button onClick={onSubmit} disabled={!title.trim() || submitting}>
             {t("createProtocol")}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

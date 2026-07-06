@@ -11,8 +11,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -183,13 +185,17 @@ export function CreateApplicationDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[640px]">
+      <DialogContent className="sm:max-w-[640px]">
         <DialogHeader>
           <DialogTitle>{t("newApplication")}</DialogTitle>
           <DialogDescription>{t("newApplicationHint")}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex min-h-0 flex-1 flex-col"
+          >
+            <DialogBody className="space-y-4">
             <section className="space-y-3 rounded-md border p-3">
               <h3 className="text-sm font-semibold">{t("childSection")}</h3>
               <div className="grid grid-cols-2 gap-3">
@@ -328,14 +334,15 @@ export function CreateApplicationDialog({
               />
             </section>
 
-            <div className="flex justify-end gap-2 pt-2">
+            </DialogBody>
+            <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>
                 {tC("cancel")}
               </Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {tC("save")}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>

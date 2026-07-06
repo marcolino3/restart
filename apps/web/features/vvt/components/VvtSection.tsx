@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -245,34 +246,38 @@ export function VvtSection({
       </section>
 
       <Dialog open={actOpen} onOpenChange={setActOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>
               {actEditing ? t("editActivity") : t("addActivity")}
             </DialogTitle>
           </DialogHeader>
-          <ProcessingActivityForm
-            key={actEditing?.id ?? "new"}
-            initial={actEditing}
-            submitting={pending}
-            onSubmit={saveActivity}
-          />
+          <DialogBody>
+            <ProcessingActivityForm
+              key={actEditing?.id ?? "new"}
+              initial={actEditing}
+              submitting={pending}
+              onSubmit={saveActivity}
+            />
+          </DialogBody>
         </DialogContent>
       </Dialog>
 
       <Dialog open={subOpen} onOpenChange={setSubOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>
               {subEditing ? t("editSubprocessor") : t("addSubprocessor")}
             </DialogTitle>
           </DialogHeader>
-          <SubprocessorForm
-            key={subEditing?.id ?? "new"}
-            initial={subEditing}
-            submitting={pending}
-            onSubmit={saveSubprocessor}
-          />
+          <DialogBody>
+            <SubprocessorForm
+              key={subEditing?.id ?? "new"}
+              initial={subEditing}
+              submitting={pending}
+              onSubmit={saveSubprocessor}
+            />
+          </DialogBody>
         </DialogContent>
       </Dialog>
     </div>

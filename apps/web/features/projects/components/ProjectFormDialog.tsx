@@ -14,6 +14,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -240,7 +241,7 @@ export function ProjectFormDialog({
               </div>
             )}
 
-            <div className="mt-6 flex justify-end gap-2">
+            <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
@@ -251,7 +252,7 @@ export function ProjectFormDialog({
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {isEdit ? tc("save") : t("createProject")}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>

@@ -11,6 +11,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -218,7 +219,7 @@ export function ManageProtocolTemplatesDialog({
 
         <p className="text-xs text-muted-foreground">{t("templatesTip")}</p>
 
-        <div className="flex justify-end gap-2">
+        <DialogFooter>
           <Button
             type="button"
             variant="outline"
@@ -229,7 +230,7 @@ export function ManageProtocolTemplatesDialog({
           <Button type="button" onClick={onSave} disabled={busy}>
             {tc("save")}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -285,7 +286,7 @@ export function SaveProtocolTemplateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("saveAsTemplate")}</DialogTitle>
           <DialogDescription>{t("templatesHint")}</DialogDescription>
@@ -294,7 +295,7 @@ export function SaveProtocolTemplateDialog({
           <Label>{t("templateName")}</Label>
           <Input value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
-        <div className="flex justify-end gap-2">
+        <DialogFooter>
           <Button
             type="button"
             variant="outline"
@@ -309,7 +310,7 @@ export function SaveProtocolTemplateDialog({
           >
             {tc("save")}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

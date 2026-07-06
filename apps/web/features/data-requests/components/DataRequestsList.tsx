@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogBody,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -203,11 +204,13 @@ export function DataRequestsList({
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("newRequest")}</DialogTitle>
           </DialogHeader>
-          <DataRequestForm submitting={pending} onSubmit={onCreate} />
+          <DialogBody>
+            <DataRequestForm submitting={pending} onSubmit={onCreate} />
+          </DialogBody>
         </DialogContent>
       </Dialog>
     </div>

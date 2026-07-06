@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -135,7 +136,7 @@ export default function CreateEmployeeNoteDialog({
               label="confidential"
               description="confidentialDescription"
             />
-            <div className="flex justify-end gap-2 pt-2">
+            <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
@@ -146,7 +147,7 @@ export default function CreateEmployeeNoteDialog({
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {tC("save")}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -144,18 +145,20 @@ export function ConsentPurposesList({
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>
               {editing ? t("editPurpose") : t("addPurpose")}
             </DialogTitle>
           </DialogHeader>
-          <ConsentPurposeForm
-            key={editing?.id ?? "new"}
-            initial={editing}
-            submitting={pending}
-            onSubmit={onSubmit}
-          />
+          <DialogBody>
+            <ConsentPurposeForm
+              key={editing?.id ?? "new"}
+              initial={editing}
+              submitting={pending}
+              onSubmit={onSubmit}
+            />
+          </DialogBody>
         </DialogContent>
       </Dialog>
     </div>
