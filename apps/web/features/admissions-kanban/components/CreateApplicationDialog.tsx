@@ -297,7 +297,7 @@ export function CreateApplicationDialog({
                 />
                 <DatePickerFormField
                   name="desiredEnrollmentDate"
-                  label="desiredEnrollmentDate"
+                  label="desiredEntry"
                   namespace="Admissions"
                 />
                 {gradeLevelOptions.length > 0 && (

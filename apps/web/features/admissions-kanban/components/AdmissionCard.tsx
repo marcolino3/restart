@@ -137,7 +137,9 @@ export function AdmissionCardVisual({
       case "familyName":
         return application.family.name ? (
           <span key={key} className="truncate" title={t("fieldFamilyName")}>
-            {t("cardFamilyName", { name: application.family.name })}
+            {t("cardFamilyName", {
+              name: application.family.name.replace(/^Familie\s+/i, ""),
+            })}
           </span>
         ) : null;
       case "siblings":
