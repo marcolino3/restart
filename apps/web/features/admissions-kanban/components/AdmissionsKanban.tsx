@@ -30,11 +30,10 @@ import {
   ChevronLeft,
   ChevronRight,
   GripVertical,
-  Bell,
-  Mail,
   MoreHorizontal,
   Plus,
   Search,
+  Settings2,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +61,7 @@ import type {
 } from "../types";
 import { AdmissionCardVisual } from "./AdmissionCard";
 import { AdmissionsList } from "./AdmissionsList";
+import { AdmissionsSubNav } from "./AdmissionsSubNav";
 import {
   CreateApplicationDialog,
   type GradeLevelOption,
@@ -485,15 +485,6 @@ export function AdmissionsKanban({
     [columns],
   );
 
-  const overdueRemindersTotal = useMemo(
-    () =>
-      Object.values(applicationsById).reduce(
-        (sum, a) => sum + (a.overdueRemindersCount ?? 0),
-        0,
-      ),
-    [applicationsById],
-  );
-
   const openRemindersTotal = useMemo(
     () =>
       Object.values(applicationsById).reduce(
@@ -505,93 +496,50 @@ export function AdmissionsKanban({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Page head — title + static subtitle (design handoff). */}
+      {/* Page head — title + live counts + primary action (design handoff). */}
       <PageHead
         title={t("pageTitle")}
-        subtitle={t("pageSubtitle")}
+        subtitle={
+          openRemindersTotal > 0
+            ? `${t("kanbanActiveCount", { count: totalCount })} · ${t(
+                "kanbanOpenReminders",
+                { count: openRemindersTotal },
+              )}`
+            : t("kanbanActiveCount", { count: totalCount })
+        }
         className="mb-0"
+        action={
+          canCreate ? (
+            <Button className="gap-1.5" onClick={() => setShowCreate(true)}>
+              <Plus size={16} />
+              {t("newApplication")}
+            </Button>
+          ) : undefined
+        }
       />
 
-      {/* Toolbar — search · count · chips · view toggle · manage · create. */}
+      {/* Chip-row sub-nav (design handoff) + compact secondary controls. */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative w-[280px]">
-          <Search
-            size={14}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-          />
-          <Input
-            placeholder={t("searchPlaceholder")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-9 rounded-full pl-8"
-          />
-        </div>
-        <span className="text-xs tabular-nums text-muted-foreground">
-          {t("totalApplications", { count: totalCount })}
-        </span>
+        <AdmissionsSubNav
+          active="kanban"
+          reminderCount={openRemindersTotal}
+          rejectedCount={rejectedCount}
+          className="mb-0"
+        />
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            className="rounded-full"
-            onClick={() => router.push(`/admin/admissions/reminders`)}
-          >
-            <Bell className="mr-1 h-4 w-4" />
-            {t("remindersNavLabel")}
-            {openRemindersTotal > 0 && (
-              <span
-                className={cn(
-                  "ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-semibold leading-none",
-                  overdueRemindersTotal > 0
-                    ? "bg-destructive text-destructive-foreground"
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
-                {openRemindersTotal}
-              </span>
-            )}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="rounded-full"
-            onClick={() => router.push(`/admin/admissions/rejected`)}
-          >
-            <Ban className="mr-1 h-4 w-4" />
-            {t("rejectedListTitle")}
-            {rejectedCount > 0 && (
-              <span className="ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-muted px-1 text-[10px] font-semibold leading-none text-muted-foreground">
-                {rejectedCount}
-              </span>
-            )}
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                size="icon"
-                variant="outline"
-                className="h-9 w-9 rounded-full"
-                aria-label={t("moreSettings")}
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem
-                onClick={() => router.push(`/admin/admissions/email-templates`)}
-              >
-                <Mail className="mr-2 h-4 w-4" />
-                {t("emailTemplatesNavLabel")}
-              </DropdownMenuItem>
-              {canManageStages && (
-                <DropdownMenuItem onClick={() => setShowReasons(true)}>
-                  <Ban className="mr-2 h-4 w-4" />
-                  {t("manageRejectionReasons")}
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="relative w-[220px]">
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              placeholder={t("searchPlaceholder")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-9 rounded-full pl-8"
+            />
+          </div>
 
           {/* Board / list segmented toggle (tabs look, design handoff). */}
           <div
@@ -630,15 +578,28 @@ export function AdmissionsKanban({
           </div>
 
           {canManageStages && (
-            <Button variant="outline" onClick={() => setShowStages(true)}>
-              {t("manageStages")}
-            </Button>
-          )}
-          {canCreate && (
-            <Button className="gap-1.5" onClick={() => setShowCreate(true)}>
-              <Plus size={16} />
-              {t("newApplication")}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="h-9 w-9 rounded-full"
+                  aria-label={t("moreSettings")}
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => setShowStages(true)}>
+                  <Settings2 className="mr-2 h-4 w-4" />
+                  {t("manageStages")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowReasons(true)}>
+                  <Ban className="mr-2 h-4 w-4" />
+                  {t("manageRejectionReasons")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </div>
@@ -648,7 +609,7 @@ export function AdmissionsKanban({
           {initialStages.map((stage) => (
             <div
               key={stage.id}
-              className="h-[300px] w-60 shrink-0 animate-pulse rounded-lg bg-muted"
+              className="h-[300px] w-60 shrink-0 animate-pulse rounded-card bg-muted"
             />
           ))}
         </div>
@@ -720,7 +681,7 @@ export function AdmissionsKanban({
                 className="rotate-1"
               />
             ) : activeStageId ? (
-              <div className="h-12 w-60 rounded-lg border bg-card px-3 py-2 text-[13px] font-[600] shadow-lg">
+              <div className="h-12 w-60 rounded-card border bg-card px-3 py-2 text-[13px] font-[650] shadow-lg">
                 {stageOrder.find((s) => s.id === activeStageId)?.name}
               </div>
             ) : null}
@@ -851,7 +812,7 @@ function KanbanColumn({
         ref={setSortableRef}
         style={sortableStyle}
         className={cn(
-          "flex h-[300px] w-10 shrink-0 cursor-pointer flex-col items-center justify-between gap-2 rounded-lg bg-muted py-2 transition hover:bg-muted/80",
+          "flex h-[300px] w-10 shrink-0 cursor-pointer flex-col items-center justify-between gap-2 rounded-card bg-muted py-2 transition hover:bg-muted/80",
           isOver && "ring-2 ring-primary",
           isDragging && "opacity-40",
         )}
@@ -865,7 +826,7 @@ function KanbanColumn({
           style={{ background: stage.color ?? "var(--muted-foreground)" }}
         />
         <span
-          className="flex-1 text-xs font-[600]"
+          className="flex-1 text-xs font-[650]"
           style={{ writingMode: "vertical-rl" }}
         >
           {stage.name}
@@ -885,7 +846,7 @@ function KanbanColumn({
       ref={setSortableRef}
       style={sortableStyle}
       className={cn(
-        "flex w-60 shrink-0 flex-col rounded-lg bg-muted p-2",
+        "flex w-60 shrink-0 flex-col rounded-card bg-muted p-2",
         isOver && "ring-2 ring-primary",
         stage.stageType === "REJECTED" && "opacity-95",
         isDragging && "opacity-50",
@@ -910,7 +871,7 @@ function KanbanColumn({
           className="h-2 w-2 shrink-0 rounded-full"
           style={{ background: stage.color ?? "var(--muted-foreground)" }}
         />
-        <span className="min-w-0 flex-1 truncate text-[13px] font-[600]">
+        <span className="min-w-0 flex-1 truncate text-[13px] font-[650]">
           {stage.name}
         </span>
         {avgDays !== null && avgDays > 0 && (
@@ -970,7 +931,7 @@ function KanbanColumn({
           <button
             type="button"
             onClick={onAddCard}
-            className="flex items-center gap-1 rounded-md px-1.5 py-1.5 text-left text-xs font-[600] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="flex items-center gap-1 rounded-ctl px-1.5 py-1.5 text-left text-xs font-[600] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             <Plus size={14} />
             {t("addApplicationToStage")}
