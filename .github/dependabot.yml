@@ -88,6 +88,10 @@ updates:
         versions: [">=0.8.0"]
       - dependency-name: "typescript"
         versions: [">=6.0.0"]
+      # Codegen 7: Dokument-Parser bricht auf bestehenden TS-Files
+      # (Missing initializer in const declaration) — Major braucht eigene Migration
+      - dependency-name: "@graphql-codegen/cli"
+        versions: [">=7.0.0"]
 
   # E2E
   - package-ecosystem: "npm"

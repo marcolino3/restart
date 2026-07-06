@@ -219,9 +219,7 @@ export const auth = betterAuth({
       // session.impersonatedBy auf den ursprünglichen SuperAdmin).
       if (ctx.path === '/admin/stop-impersonating') {
         const impersonatedBy = session?.session?.impersonatedBy as
-          | string
-          | undefined
-          | null;
+          string | undefined | null;
         if (!impersonatedBy) {
           throw new APIError('FORBIDDEN', { message: 'Not impersonating' });
         }

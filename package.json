@@ -2,7 +2,7 @@
   "name": "restart",
   "version": "0.0.1",
   "private": true,
-  "description": "Colibri (Restart) \u2013 Multi-tenant SaaS monorepo",
+  "description": "Colibri (Restart) – Multi-tenant SaaS monorepo",
   "packageManager": "pnpm@10.18.0",
   "engines": {
     "node": ">=20"
@@ -17,7 +17,7 @@
     "clean": "turbo run clean && rm -rf node_modules .turbo"
   },
   "devDependencies": {
-    "turbo": "^2.9.14"
+    "turbo": "^2.10.3"
   },
   "pnpm": {
     "overrides": {
