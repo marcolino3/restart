@@ -12,6 +12,8 @@ interface Props {
   active: TabKey;
   reminderCount?: number;
   rejectedCount?: number;
+  /** Layout override (e.g. `mb-0` when embedded above a toolbar row). */
+  className?: string;
 }
 
 /**
@@ -22,6 +24,7 @@ export function AdmissionsSubNav({
   active,
   reminderCount,
   rejectedCount,
+  className,
 }: Props) {
   const t = useTranslations("Admissions");
 
@@ -63,7 +66,7 @@ export function AdmissionsSubNav({
   const pathname = usePathname();
 
   return (
-    <nav className="mb-5 flex flex-wrap items-center gap-2">
+    <nav className={cn("mb-5 flex flex-wrap items-center gap-2", className)}>
       {tabs.map(({ key, href, label, icon: Icon, count }) => {
         const isActive = key === active || pathname === href;
         return (
