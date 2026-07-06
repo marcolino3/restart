@@ -52,7 +52,7 @@ test.describe('Admissions reminders — happy path', () => {
     await createDialog.getByLabel(/child last name/i).fill(childLast)
     // Stage defaults to the first seeded stage, source to MANUAL — only the
     // child's name is required.
-    await createDialog.getByRole('button', { name: /^save$/i }).click()
+    await createDialog.getByRole('button', { name: /^create application$/i }).click()
     await expect(createDialog).toBeHidden({ timeout: 15000 })
 
     // 2. Open the new application's detail page (its card is the only one).
