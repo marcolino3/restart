@@ -293,6 +293,7 @@
     "newApplicationDescription": "Mindestens eine Bezugsperson empfohlen. Weitere können später ergänzt werden.",
     "createSuccess": "Bewerbung erstellt",
     "createError": "Bewerbung konnte nicht erstellt werden",
+    "createSubmit": "Bewerbung erstellen",
     "updateOk": "Änderungen gespeichert",
     "updateError": "Änderungen konnten nicht gespeichert werden",
     "archiveOk": "Archiviert",
