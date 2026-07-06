@@ -30,8 +30,6 @@ import {
   ChevronLeft,
   ChevronRight,
   GripVertical,
-  Bell,
-  Mail,
   MoreHorizontal,
   Plus,
   Search,
@@ -62,6 +60,7 @@ import type {
 } from "../types";
 import { AdmissionCardVisual } from "./AdmissionCard";
 import { AdmissionsList } from "./AdmissionsList";
+import { AdmissionsSubNav } from "./AdmissionsSubNav";
 import {
   CreateApplicationDialog,
   type GradeLevelOption,
@@ -485,15 +484,6 @@ export function AdmissionsKanban({
     [columns],
   );
 
-  const overdueRemindersTotal = useMemo(
-    () =>
-      Object.values(applicationsById).reduce(
-        (sum, a) => sum + (a.overdueRemindersCount ?? 0),
-        0,
-      ),
-    [applicationsById],
-  );
-
   const openRemindersTotal = useMemo(
     () =>
       Object.values(applicationsById).reduce(
@@ -512,7 +502,16 @@ export function AdmissionsKanban({
         className="mb-0"
       />
 
-      {/* Toolbar — search · count · chips · view toggle · manage · create. */}
+      {/* Sub-navigation chip row shared with the reminders/rejected/templates
+          screens (design handoff). */}
+      <AdmissionsSubNav
+        active="kanban"
+        reminderCount={openRemindersTotal}
+        rejectedCount={rejectedCount}
+        className="mb-0"
+      />
+
+      {/* Toolbar — search · count · view toggle · manage · create. */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative w-[280px]">
           <Search
@@ -531,67 +530,26 @@ export function AdmissionsKanban({
         </span>
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            className="rounded-full"
-            onClick={() => router.push(`/admin/admissions/reminders`)}
-          >
-            <Bell className="mr-1 h-4 w-4" />
-            {t("remindersNavLabel")}
-            {openRemindersTotal > 0 && (
-              <span
-                className={cn(
-                  "ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-semibold leading-none",
-                  overdueRemindersTotal > 0
-                    ? "bg-destructive text-destructive-foreground"
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
-                {openRemindersTotal}
-              </span>
-            )}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="rounded-full"
-            onClick={() => router.push(`/admin/admissions/rejected`)}
-          >
-            <Ban className="mr-1 h-4 w-4" />
-            {t("rejectedListTitle")}
-            {rejectedCount > 0 && (
-              <span className="ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-muted px-1 text-[10px] font-semibold leading-none text-muted-foreground">
-                {rejectedCount}
-              </span>
-            )}
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                size="icon"
-                variant="outline"
-                className="h-9 w-9 rounded-full"
-                aria-label={t("moreSettings")}
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem
-                onClick={() => router.push(`/admin/admissions/email-templates`)}
-              >
-                <Mail className="mr-2 h-4 w-4" />
-                {t("emailTemplatesNavLabel")}
-              </DropdownMenuItem>
-              {canManageStages && (
+          {canManageStages && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="h-9 w-9 rounded-full"
+                  aria-label={t("moreSettings")}
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem onClick={() => setShowReasons(true)}>
                   <Ban className="mr-2 h-4 w-4" />
                   {t("manageRejectionReasons")}
                 </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           {/* Board / list segmented toggle (tabs look, design handoff). */}
           <div
