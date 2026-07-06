@@ -66,14 +66,14 @@ describe("AdmissionCardVisual (config-driven)", () => {
     expect(screen.getByText("Lina Muster")).toBeInTheDocument();
     expect(screen.getByText("Familie Muster")).toBeInTheDocument();
     expect(screen.getByText("anna@example.ch")).toBeInTheDocument();
-    // Birth year is NOT in the configured set.
-    expect(screen.queryByText("Jg. 2019")).not.toBeInTheDocument();
+    // Birth date is NOT in the configured set.
+    expect(screen.queryByText("geb. 01.04.2019")).not.toBeInTheDocument();
   });
 
   it("falls back to the default field set when cardFields is null", () => {
     render(<AdmissionCardVisual application={application()} cardFields={null} />);
-    // birthYear is part of the default set.
-    expect(screen.getByText("Jg. 2019")).toBeInTheDocument();
+    // birthYear (Swiss-formatted birth date) is part of the default set.
+    expect(screen.getByText("geb. 01.04.2019")).toBeInTheDocument();
     // contactEmail is not a default field.
     expect(screen.queryByText("anna@example.ch")).not.toBeInTheDocument();
   });

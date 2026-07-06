@@ -290,6 +290,7 @@
     "moreSettings": "Settings",
     "newApplication": "New application",
     "newApplicationHint": "Record a new expression of interest. Further details can be added later on the application.",
+    "newApplicationDescription": "At least one contact person recommended. More can be added later.",
     "createSuccess": "Application created",
     "createError": "Could not create application",
     "updateOk": "Changes saved",
@@ -606,7 +607,7 @@
     "followUpYearPlaceholder": "e.g. 2027/28",
     "followUpYearHint": "Optional — keep the child on the waitlist for a later school year.",
     "followUpYearColumn": "Waitlist",
-    "addApplicationToStage": "+ Add"
+    "addApplicationToStage": "Add"
   },
   "Forbidden": {
     "title": "Access denied",

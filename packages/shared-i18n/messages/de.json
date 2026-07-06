@@ -290,6 +290,7 @@
     "moreSettings": "Einstellungen",
     "newApplication": "Neue Bewerbung",
     "newApplicationHint": "Erfasse eine neue Interessens-Anmeldung. Weitere Angaben lassen sich später auf der Bewerbung ergänzen.",
+    "newApplicationDescription": "Mindestens eine Bezugsperson empfohlen. Weitere können später ergänzt werden.",
     "createSuccess": "Bewerbung erstellt",
     "createError": "Bewerbung konnte nicht erstellt werden",
     "updateOk": "Änderungen gespeichert",
@@ -606,7 +607,7 @@
     "followUpYearPlaceholder": "z.B. 2027/28",
     "followUpYearHint": "Optional — Kind für ein späteres Schuljahr auf der Warteliste vormerken.",
     "followUpYearColumn": "Wiedervorlage",
-    "addApplicationToStage": "+ Hinzufügen"
+    "addApplicationToStage": "Hinzufügen"
   },
   "Forbidden": {
     "title": "Zugriff verweigert",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,14 +10,13 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
@@ -27,6 +26,7 @@ import { TextareaFormField } from "@/components/form/form-fields/TextareaFormFie
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
 
 import { createApplicationAction } from "../actions/create-application.action";
+import { getGradeLevelsAction } from "@/features/grade-levels/actions/get-grade-levels.action";
 import type { KanbanStage } from "../types";
 
 const Schema = z.object({
@@ -35,6 +35,7 @@ const Schema = z.object({
   childGender: z.enum(["MALE", "FEMALE", "OTHER"]).optional(),
   childDateOfBirth: z.date().nullable().optional(),
   admissionStageId: z.string().optional(),
+  desiredGradeLevelId: z.string().optional(),
   source: z
     .enum(["MANUAL", "PUBLIC_FORM", "OPEN_DAY", "REFERRAL", "OTHER"])
     .optional(),
@@ -58,8 +59,17 @@ interface ExistingFamily {
   contactNames: string[];
 }
 
+/** Minimal grade-level shape needed for the "desired grade" select. */
+export interface GradeLevelOption {
+  id: string;
+  name: string;
+  shortCode?: string | null;
+}
+
 interface Props {
   stages: KanbanStage[];
+  /** Org grade levels for the "desired grade" select; empty ⇒ field hidden. */
+  gradeLevels?: GradeLevelOption[];
   existingFamilies: ExistingFamily[];
   onClose: () => void;
   onCreated: () => void;
@@ -69,6 +79,7 @@ interface Props {
 
 export function CreateApplicationDialog({
   stages,
+  gradeLevels: gradeLevelsProp,
   existingFamilies,
   onClose,
   onCreated,
@@ -78,6 +89,33 @@ export function CreateApplicationDialog({
   const tC = useTranslations("Common");
   const router = useRouter();
   const [familySearch, setFamilySearch] = useState("");
+
+  // Grade levels power the "desired grade" select. Callers may pass them in;
+  // otherwise fetch them once via the org-scoped server action so the sheet is
+  // self-contained and doesn't require the parent to plumb the data through.
+  const [gradeLevels, setGradeLevels] = useState<GradeLevelOption[]>(
+    gradeLevelsProp ?? [],
+  );
+  useEffect(() => {
+    if (gradeLevelsProp && gradeLevelsProp.length > 0) {
+      setGradeLevels(gradeLevelsProp);
+      return;
+    }
+    let active = true;
+    void getGradeLevelsAction().then((res) => {
+      if (!active || !res.success) return;
+      setGradeLevels(
+        res.data.map((g) => ({
+          id: g.id,
+          name: g.name,
+          shortCode: g.shortCode,
+        })),
+      );
+    });
+    return () => {
+      active = false;
+    };
+  }, [gradeLevelsProp]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(Schema),
@@ -140,6 +178,7 @@ export function CreateApplicationDialog({
       childDateOfBirth: dob,
       childNotes: values.childNotes || undefined,
       admissionStageId: values.admissionStageId || undefined,
+      desiredGradeLevelId: values.desiredGradeLevelId || undefined,
       source: values.source ?? "MANUAL",
       familyId: values.familyId || undefined,
       familyName:
@@ -159,6 +198,10 @@ export function CreateApplicationDialog({
   const stageOptions = stages.map((s) => ({
     value: s.id,
     label: s.name,
+  }));
+  const gradeLevelOptions = gradeLevels.map((g) => ({
+    value: g.id,
+    label: g.shortCode ? `${g.name} (${g.shortCode})` : g.name,
   }));
   // Option-labels for SelectFormField are i18n keys translated against the
   // configured namespace (Admissions). Hence "genderMale" rather than t("genderMale").
@@ -184,168 +227,182 @@ export function CreateApplicationDialog({
   const selectedFamilyId = form.watch("familyId");
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[640px]">
-        <DialogHeader>
-          <DialogTitle>{t("newApplication")}</DialogTitle>
-          <DialogDescription>{t("newApplicationHint")}</DialogDescription>
-        </DialogHeader>
+    <Sheet open onOpenChange={(open) => !open && onClose()}>
+      <SheetContent side="right" className="w-full gap-0 sm:max-w-[560px]">
+        <SheetHeader>
+          <SheetTitle>{t("newApplication")}</SheetTitle>
+          <SheetDescription>{t("newApplicationDescription")}</SheetDescription>
+        </SheetHeader>
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
             className="flex min-h-0 flex-1 flex-col"
           >
-            <DialogBody className="space-y-4">
-            <section className="space-y-3 rounded-md border p-3">
-              <h3 className="text-sm font-semibold">{t("childSection")}</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <InputFormField
-                  name="childFirstName"
-                  label="childFirstName"
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-4">
+              <section className="space-y-3 rounded-card border p-3">
+                <h3 className="text-[13px] font-[650]">
+                  {t("childSection")}
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <InputFormField
+                    name="childFirstName"
+                    label="childFirstName"
+                    namespace="Admissions"
+                  />
+                  <InputFormField
+                    name="childLastName"
+                    label="childLastName"
+                    namespace="Admissions"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <SelectFormField
+                    name="childGender"
+                    label="childGender"
+                    options={genderOptions}
+                    namespace="Admissions"
+                  />
+                  <DatePickerFormField
+                    name="childDateOfBirth"
+                    label="childDateOfBirth"
+                    namespace="Admissions"
+                  />
+                </div>
+                <TextareaFormField
+                  name="childNotes"
+                  label="childNotes"
                   namespace="Admissions"
                 />
-                <InputFormField
-                  name="childLastName"
-                  label="childLastName"
-                  namespace="Admissions"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <SelectFormField
-                  name="childGender"
-                  label="childGender"
-                  options={genderOptions}
-                  namespace="Admissions"
-                />
-                <DatePickerFormField
-                  name="childDateOfBirth"
-                  label="childDateOfBirth"
-                  namespace="Admissions"
-                />
-              </div>
-              <TextareaFormField
-                name="childNotes"
-                label="childNotes"
-                namespace="Admissions"
-              />
-            </section>
+              </section>
 
-            <section className="space-y-3 rounded-md border p-3">
-              <h3 className="text-sm font-semibold">{t("familySection")}</h3>
-              <p className="text-xs text-muted-foreground">
-                {t("familySectionHint")}
-              </p>
-              <div className="space-y-2">
-                <Input
-                  placeholder={t("familySearchPlaceholder")}
-                  value={familySearch}
-                  onChange={(e) => setFamilySearch(e.target.value)}
-                />
-                {familyMatches.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {familyMatches.map((f) => {
-                      const selected = selectedFamilyId === f.id;
-                      return (
-                        <button
-                          key={f.id}
-                          type="button"
-                          onClick={() =>
-                            form.setValue(
-                              "familyId",
-                              selected ? undefined : f.id,
-                            )
-                          }
-                          className={`rounded-md border px-2 py-1 text-xs ${
-                            selected
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "bg-card hover:bg-accent"
-                          }`}
-                        >
-                          {f.name}
-                          {f.contactNames.length > 0 && (
-                            <span className="ml-1 opacity-70">
-                              ({f.contactNames[0]})
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
+              <section className="space-y-3 rounded-card border p-3">
+                <h3 className="text-[13px] font-[650]">
+                  {t("familySection")}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {t("familySectionHint")}
+                </p>
+                <div className="space-y-2">
+                  <Input
+                    placeholder={t("familySearchPlaceholder")}
+                    value={familySearch}
+                    onChange={(e) => setFamilySearch(e.target.value)}
+                  />
+                  {familyMatches.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {familyMatches.map((f) => {
+                        const selected = selectedFamilyId === f.id;
+                        return (
+                          <button
+                            key={f.id}
+                            type="button"
+                            onClick={() =>
+                              form.setValue(
+                                "familyId",
+                                selected ? undefined : f.id,
+                              )
+                            }
+                            className={`rounded-ctl border px-2 py-1 text-xs ${
+                              selected
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "bg-card hover:bg-accent"
+                            }`}
+                          >
+                            {f.name}
+                            {f.contactNames.length > 0 && (
+                              <span className="ml-1 opacity-70">
+                                ({f.contactNames[0]})
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                {!selectedFamilyId && (
+                  <InputFormField
+                    name="familyName"
+                    label="familyNameOptional"
+                    namespace="Admissions"
+                  />
                 )}
-              </div>
-              {!selectedFamilyId && (
-                <InputFormField
-                  name="familyName"
-                  label="familyNameOptional"
-                  namespace="Admissions"
-                />
-              )}
-            </section>
+              </section>
 
-            <section className="space-y-3 rounded-md border p-3">
-              <h3 className="text-sm font-semibold">{t("parentSection")}</h3>
-              <p className="text-xs text-muted-foreground">
-                {t("parentSectionHint")}
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <InputFormField
-                  name="parentFirstName"
-                  label="parentFirstName"
+              <section className="space-y-3 rounded-card border p-3">
+                <h3 className="text-[13px] font-[650]">
+                  {t("parentSection")}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {t("parentSectionHint")}
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <InputFormField
+                    name="parentFirstName"
+                    label="parentFirstName"
+                    namespace="Admissions"
+                  />
+                  <InputFormField
+                    name="parentLastName"
+                    label="parentLastName"
+                    namespace="Admissions"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <InputFormField
+                    name="parentEmail"
+                    label="parentEmail"
+                    type="email"
+                    namespace="Admissions"
+                  />
+                  <InputFormField
+                    name="parentPhone"
+                    label="parentPhone"
+                    namespace="Admissions"
+                  />
+                </div>
+                <SelectFormField
+                  name="parentRole"
+                  label="parentRole"
+                  options={parentRoleOptions}
                   namespace="Admissions"
                 />
-                <InputFormField
-                  name="parentLastName"
-                  label="parentLastName"
-                  namespace="Admissions"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <InputFormField
-                  name="parentEmail"
-                  label="parentEmail"
-                  type="email"
-                  namespace="Admissions"
-                />
-                <InputFormField
-                  name="parentPhone"
-                  label="parentPhone"
-                  namespace="Admissions"
-                />
-              </div>
-              <SelectFormField
-                name="parentRole"
-                label="parentRole"
-                options={parentRoleOptions}
-                namespace="Admissions"
-              />
-            </section>
+              </section>
 
-            <section className="grid grid-cols-2 gap-3">
-              <SelectFormFieldWithoutTranslations
-                name="admissionStageId"
-                label={t("initialStage")}
-                options={stageOptions}
-              />
-              <SelectFormField
-                name="source"
-                label="source"
-                options={sourceOptions}
-                namespace="Admissions"
-              />
-            </section>
-
-            </DialogBody>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
-                {tC("cancel")}
-              </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {tC("save")}
-              </Button>
-            </DialogFooter>
+              <section className="grid grid-cols-2 gap-3">
+                <SelectFormFieldWithoutTranslations
+                  name="admissionStageId"
+                  label={t("initialStage")}
+                  options={stageOptions}
+                />
+                <SelectFormField
+                  name="source"
+                  label="source"
+                  options={sourceOptions}
+                  namespace="Admissions"
+                />
+                {gradeLevelOptions.length > 0 && (
+                  <SelectFormFieldWithoutTranslations
+                    name="desiredGradeLevelId"
+                    label={t("desiredGradeLevel")}
+                    options={gradeLevelOptions}
+                  />
+                )}
+              </section>
+            </div>
+            <SheetFooter>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  {tC("cancel")}
+                </Button>
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                  {tC("save")}
+                </Button>
+              </div>
+            </SheetFooter>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
