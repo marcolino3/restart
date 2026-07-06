@@ -3,6 +3,11 @@ import { z } from "zod";
 export const GradeLevelFormSchema = z
   .object({
     name: z.string().trim().min(1),
+    // Parent grade level (creates a subgroup). null/undefined = top-level Stufe.
+    parentId: z.preprocess(
+      (v) => (v === "" || v === undefined ? null : v),
+      z.string().uuid().nullable(),
+    ),
     shortCode: z
       .string()
       .trim()

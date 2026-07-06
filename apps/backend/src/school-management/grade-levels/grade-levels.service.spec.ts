@@ -39,6 +39,8 @@ describe('GradeLevelsService', () => {
     findOne: jest.Mock;
     create: jest.Mock;
     save: jest.Mock;
+    count: jest.Mock;
+    update: jest.Mock;
   };
   let schoolClassRepo: { createQueryBuilder: jest.Mock };
   let qb: QueryBuilderMock;
@@ -49,6 +51,8 @@ describe('GradeLevelsService', () => {
       findOne: jest.fn(),
       create: jest.fn((v: Partial<GradeLevel>) => v),
       save: jest.fn((v: unknown) => Promise.resolve(v)),
+      count: jest.fn().mockResolvedValue(0),
+      update: jest.fn().mockResolvedValue({ affected: 0 }),
     };
     qb = createQueryBuilderMock();
     schoolClassRepo = { createQueryBuilder: jest.fn(() => qb) };
@@ -181,6 +185,115 @@ describe('GradeLevelsService', () => {
       await expect(service.remove('gl-1', ORG_ID)).rejects.toBeInstanceOf(
         ConflictException,
       );
+    });
+
+    it('lifts subgroups to top level before soft-deleting the parent', async () => {
+      gradeLevelRepo.findOne.mockResolvedValue({
+        id: 'gl-1',
+        name: 'Unterstufe',
+        organizationId: ORG_ID,
+      });
+      qb.getCount.mockResolvedValue(0);
+
+      await expect(service.remove('gl-1', ORG_ID)).resolves.toBe(true);
+
+      expect(gradeLevelRepo.update).toHaveBeenCalledWith(
+        { parentId: 'gl-1', organizationId: ORG_ID },
+        { parentId: null },
+      );
+    });
+  });
+
+  describe('subgroups (one-level nesting)', () => {
+    it('creates a subgroup under a top-level parent', async () => {
+      gradeLevelRepo.findOne
+        // assertValidParent → parent lookup (top-level)
+        .mockResolvedValueOnce({ id: 'root-1', parentId: null })
+        // duplicate-name lookup
+        .mockResolvedValueOnce(null);
+
+      await service.create({ name: 'Gruppe A', parentId: 'root-1' }, ORG_ID);
+
+      expect(gradeLevelRepo.findOne).toHaveBeenNthCalledWith(1, {
+        where: { id: 'root-1', organizationId: ORG_ID, isActive: true },
+      });
+      expect(gradeLevelRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Gruppe A',
+          parentId: 'root-1',
+          organizationId: ORG_ID,
+        }),
+      );
+    });
+
+    it('rejects nesting deeper than one level', async () => {
+      // Parent is itself a subgroup (parentId set) → second level not allowed.
+      gradeLevelRepo.findOne.mockResolvedValueOnce({
+        id: 'sub-1',
+        parentId: 'root-1',
+      });
+
+      await expect(
+        service.create({ name: 'Gruppe A', parentId: 'sub-1' }, ORG_ID),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(gradeLevelRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('rejects a parent from a foreign org (multi-tenant isolation)', async () => {
+      // Parent lookup is org-scoped and returns nothing → NotFound.
+      gradeLevelRepo.findOne.mockResolvedValueOnce(null);
+
+      await expect(
+        service.create({ name: 'Gruppe A', parentId: 'foreign-root' }, ORG_ID),
+      ).rejects.toThrow('not found');
+      expect(gradeLevelRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'foreign-root', organizationId: ORG_ID, isActive: true },
+      });
+    });
+
+    it('rejects turning a level that has subgroups into a subgroup itself', async () => {
+      gradeLevelRepo.findOne.mockResolvedValueOnce({
+        id: 'gl-1',
+        organizationId: ORG_ID,
+        parentId: null,
+      });
+      gradeLevelRepo.count.mockResolvedValueOnce(1); // has children
+
+      await expect(
+        service.update({ id: 'gl-1', parentId: 'root-2' }, ORG_ID),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('promotes a subgroup to top level when parentId is set to null', async () => {
+      gradeLevelRepo.findOne.mockResolvedValueOnce({
+        id: 'sub-1',
+        organizationId: ORG_ID,
+        parentId: 'root-1',
+      });
+
+      const result = await service.update(
+        { id: 'sub-1', parentId: null },
+        ORG_ID,
+      );
+
+      expect(result.parentId).toBeNull();
+      // No parent validation needed when promoting to root.
+      expect(gradeLevelRepo.count).not.toHaveBeenCalled();
+    });
+
+    it('leaves the hierarchy untouched when parentId is omitted', async () => {
+      gradeLevelRepo.findOne.mockResolvedValueOnce({
+        id: 'sub-1',
+        organizationId: ORG_ID,
+        parentId: 'root-1',
+      });
+
+      const result = await service.update(
+        { id: 'sub-1', name: 'Renamed' },
+        ORG_ID,
+      );
+
+      expect(result.parentId).toBe('root-1');
     });
   });
 });

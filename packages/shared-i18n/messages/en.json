@@ -1393,7 +1393,15 @@
     "ageFromYears": "from {from} years",
     "ageToYears": "up to {to} years",
     "ageRangeInvalid": "\"Age to\" must be greater than or equal to \"Age from\"",
-    "noSearchResults": "No grade levels found for \"{query}\""
+    "noSearchResults": "No grade levels found for \"{query}\"",
+    "parentLevel": "Parent grade level",
+    "addSubgroup": "Add subgroup",
+    "createSubgroup": "Create subgroup",
+    "editSubgroup": "Edit subgroup",
+    "subgroupCreated": "Subgroup created successfully",
+    "subgroupCreateError": "Error creating subgroup",
+    "subgroupUpdated": "Subgroup saved successfully",
+    "subgroupUpdateError": "Error saving subgroup"
   },
   "Students": {
     "pickADate": "Pick a date",

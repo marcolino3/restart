@@ -35,10 +35,14 @@ export default function CreateSchoolClassPageForm({
   const locale = useLocale();
   const router = useRouter();
 
-  const gradeLevelOptions = gradeLevels.map((gl) => ({
-    label: gl.name,
-    value: gl.id,
-  }));
+  // Only top-level Stufen are assignable to classes — subgroups ("Untergruppen")
+  // are purely organizational and never carry class/student assignments.
+  const gradeLevelOptions = gradeLevels
+    .filter((gl) => gl.parentId == null)
+    .map((gl) => ({
+      label: gl.name,
+      value: gl.id,
+    }));
 
   const teacherOptions = teachers.map((t) => ({
     label: `${t.firstName} ${t.lastName}`.trim(),

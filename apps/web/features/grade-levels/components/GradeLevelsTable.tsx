@@ -20,7 +20,14 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import {
+  CornerDownRight,
+  GripVertical,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +55,7 @@ import { Form } from "@/components/ui/form";
 import { ColorPickerFormField } from "@/components/form/form-fields/ColorPickerFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { NumberFormField } from "@/components/form/form-fields/NumberFormField";
+import { SelectFormFieldWithoutTranslations } from "@/components/form/form-fields/SelectFormFieldWithoutTranslations";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { PageHead } from "@/components/common/PageHead";
 import { handleAction } from "@/lib/actions/handle-action";
@@ -68,6 +76,34 @@ interface Props {
   initialGradeLevels: GradeLevelItem[];
 }
 
+/** A top-level Stufe together with its (one-level-deep) subgroups. */
+interface GradeLevelTreeNode extends GradeLevelItem {
+  children: GradeLevelItem[];
+}
+
+type DialogState =
+  | { mode: "create"; parentId: string | null }
+  | { mode: "edit"; item: GradeLevelItem };
+
+const bySortOrder = (a: GradeLevelItem, b: GradeLevelItem) =>
+  a.sortOrder - b.sortOrder || a.name.localeCompare(b.name);
+
+function buildTree(items: GradeLevelItem[]): GradeLevelTreeNode[] {
+  const roots = items.filter((i) => i.parentId == null).sort(bySortOrder);
+  const childrenByParent = new Map<string, GradeLevelItem[]>();
+  for (const item of items) {
+    if (item.parentId != null) {
+      const list = childrenByParent.get(item.parentId) ?? [];
+      list.push(item);
+      childrenByParent.set(item.parentId, list);
+    }
+  }
+  return roots.map((root) => ({
+    ...root,
+    children: (childrenByParent.get(root.id) ?? []).sort(bySortOrder),
+  }));
+}
+
 export function GradeLevelsTable({ initialGradeLevels }: Props) {
   const t = useTranslations("GradeLevels");
   const router = useRouter();
@@ -75,8 +111,7 @@ export function GradeLevelsTable({ initialGradeLevels }: Props) {
   const [items, setItems] =
     React.useState<GradeLevelItem[]>(initialGradeLevels);
   const [query, setQuery] = React.useState("");
-  const [creating, setCreating] = React.useState(false);
-  const [editing, setEditing] = React.useState<GradeLevelItem | null>(null);
+  const [dialog, setDialog] = React.useState<DialogState | null>(null);
 
   React.useEffect(() => {
     setItems(initialGradeLevels);
@@ -86,52 +121,111 @@ export function GradeLevelsTable({ initialGradeLevels }: Props) {
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   );
 
+  const roots = React.useMemo(() => buildTree(items), [items]);
+
   const normalizedQuery = query.trim().toLowerCase();
-  const filtered = normalizedQuery
-    ? items.filter(
-        (item) =>
-          item.name.toLowerCase().includes(normalizedQuery) ||
-          (item.shortCode ?? "").toLowerCase().includes(normalizedQuery),
-      )
-    : items;
+  const matches = React.useCallback(
+    (item: GradeLevelItem) =>
+      item.name.toLowerCase().includes(normalizedQuery) ||
+      (item.shortCode ?? "").toLowerCase().includes(normalizedQuery),
+    [normalizedQuery],
+  );
+
+  // Keep a Stufe when it matches or any of its subgroups match; keep the
+  // matching subgroups within it.
+  const visibleRoots = React.useMemo(() => {
+    if (!normalizedQuery) return roots;
+    return roots
+      .map((root) => {
+        const matchingChildren = root.children.filter(matches);
+        if (matches(root)) return root;
+        if (matchingChildren.length > 0)
+          return { ...root, children: matchingChildren };
+        return null;
+      })
+      .filter((r): r is GradeLevelTreeNode => r !== null);
+  }, [roots, normalizedQuery, matches]);
+
   // Reordering a filtered list is ambiguous — drag only on the full list.
   const dndDisabled = normalizedQuery.length > 0;
 
-  const handleDragEnd = (e: DragEndEvent) => {
-    const { active, over } = e;
-    if (!over || active.id === over.id) return;
-    const ids = items.map((i) => i.id);
-    const oldIndex = ids.indexOf(String(active.id));
-    const newIndex = ids.indexOf(String(over.id));
-    if (oldIndex < 0 || newIndex < 0) return;
-    const nextIds = arrayMove(ids, oldIndex, newIndex);
-    setItems((prev) => {
-      const byId = new Map(prev.map((p) => [p.id, p]));
-      return nextIds.map((id, index) => ({
-        ...byId.get(id)!,
-        sortOrder: index,
-      }));
-    });
+  const parentOptions = React.useMemo(
+    () => roots.map((r) => ({ label: r.name, value: r.id })),
+    [roots],
+  );
+
+  const rootIds = React.useMemo(() => roots.map((r) => r.id), [roots]);
+
+  const reorderSiblings = (siblingIds: string[]) => {
     void handleAction({
-      action: () => reorderGradeLevelsAction(nextIds),
+      action: () => reorderGradeLevelsAction(siblingIds),
       successMessage: t("gradeLevelsReordered"),
       errorMessage: t("reorderError"),
       onSuccess: () => router.refresh(),
     });
   };
 
-  const handleCreateSubmit = async (values: GradeLevelFormType) => {
+  const handleDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    // Root-level drag: both ids are top-level Stufen.
+    if (rootIds.includes(activeId) && rootIds.includes(overId)) {
+      const oldIndex = rootIds.indexOf(activeId);
+      const newIndex = rootIds.indexOf(overId);
+      const nextIds = arrayMove(rootIds, oldIndex, newIndex);
+      applyOrder(nextIds);
+      reorderSiblings(nextIds);
+      return;
+    }
+
+    // Subgroup drag: only within the same parent Stufe.
+    const parent = roots.find((r) =>
+      r.children.some((c) => c.id === activeId),
+    );
+    if (!parent) return;
+    const childIds = parent.children.map((c) => c.id);
+    if (!childIds.includes(overId)) return; // cross-parent drag → ignore
+    const oldIndex = childIds.indexOf(activeId);
+    const newIndex = childIds.indexOf(overId);
+    const nextIds = arrayMove(childIds, oldIndex, newIndex);
+    applyOrder(nextIds);
+    reorderSiblings(nextIds);
+  };
+
+  const applyOrder = (orderedIds: string[]) => {
+    const orderIndex = new Map(orderedIds.map((id, index) => [id, index]));
+    setItems((prev) =>
+      prev.map((it) =>
+        orderIndex.has(it.id)
+          ? { ...it, sortOrder: orderIndex.get(it.id)! }
+          : it,
+      ),
+    );
+  };
+
+  const handleCreateSubmit = async (
+    parentId: string | null,
+    values: GradeLevelFormType,
+  ) => {
     await handleAction({
       action: () =>
         createGradeLevelAction({
           name: values.name,
+          parentId,
           color: values.color ?? null,
           shortCode: values.shortCode ?? null,
           ageMin: values.ageMin ?? null,
           ageMax: values.ageMax ?? null,
         }),
-      successMessage: t("gradeLevelCreated"),
-      errorMessage: t("gradeLevelCreateError"),
+      successMessage: parentId
+        ? t("subgroupCreated")
+        : t("gradeLevelCreated"),
+      errorMessage: parentId
+        ? t("subgroupCreateError")
+        : t("gradeLevelCreateError"),
       onSuccess: (data) => {
         if (data) {
           setItems((prev) => [
@@ -139,33 +233,42 @@ export function GradeLevelsTable({ initialGradeLevels }: Props) {
             { ...data, classCount: 0, studentCount: 0 },
           ]);
         }
-        setCreating(false);
+        setDialog(null);
         router.refresh();
       },
     });
   };
 
-  const handleEditSubmit = async (values: GradeLevelFormType) => {
-    if (!editing) return;
+  const handleEditSubmit = async (
+    item: GradeLevelItem,
+    values: GradeLevelFormType,
+  ) => {
+    const isSubgroup = item.parentId != null;
     await handleAction({
       action: () =>
         updateGradeLevelAction({
-          id: editing.id,
+          id: item.id,
           name: values.name,
           color: values.color ?? null,
           shortCode: values.shortCode ?? null,
           ageMin: values.ageMin ?? null,
           ageMax: values.ageMax ?? null,
+          // Only subgroups expose the parent picker; roots keep their hierarchy.
+          ...(isSubgroup ? { parentId: values.parentId ?? null } : {}),
         }),
-      successMessage: t("gradeLevelUpdated"),
-      errorMessage: t("gradeLevelUpdateError"),
+      successMessage: isSubgroup
+        ? t("subgroupUpdated")
+        : t("gradeLevelUpdated"),
+      errorMessage: isSubgroup
+        ? t("subgroupUpdateError")
+        : t("gradeLevelUpdateError"),
       onSuccess: (data) => {
         if (data) {
           setItems((prev) =>
             prev.map((it) => (it.id === data.id ? { ...it, ...data } : it)),
           );
         }
-        setEditing(null);
+        setDialog(null);
         router.refresh();
       },
     });
@@ -174,19 +277,28 @@ export function GradeLevelsTable({ initialGradeLevels }: Props) {
   const handleDelete = async (id: string) => {
     const result = await deleteGradeLevelAction(id);
     if (result.success) {
-      setItems((prev) => prev.filter((it) => it.id !== id));
+      setItems((prev) =>
+        // Deleting a Stufe lifts its subgroups to top level (server-side); mirror
+        // that optimistically so the UI stays consistent until the refresh.
+        prev
+          .filter((it) => it.id !== id)
+          .map((it) => (it.parentId === id ? { ...it, parentId: null } : it)),
+      );
       router.refresh();
     }
     return result;
   };
 
+  const editingItem = dialog?.mode === "edit" ? dialog.item : null;
+  const editingIsSubgroup = editingItem?.parentId != null;
+
   return (
     <div>
       <PageHead
         title={t("gradeLevels")}
-        subtitle={t("countSubtitle", { count: items.length })}
+        subtitle={t("countSubtitle", { count: roots.length })}
         action={
-          <Button onClick={() => setCreating(true)}>
+          <Button onClick={() => setDialog({ mode: "create", parentId: null })}>
             <Plus />
             {t("newGradeLevel")}
           </Button>
@@ -209,82 +321,115 @@ export function GradeLevelsTable({ initialGradeLevels }: Props) {
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext
-          items={filtered.map((i) => i.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className="overflow-hidden rounded-card border bg-card shadow-xs">
-            <Table>
-              <TableHeader>
+        <div className="overflow-hidden rounded-card border bg-card shadow-xs">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-9" aria-label={t("drag")} />
+                <TableHead>{t("gradeLevel")}</TableHead>
+                <TableHead>{t("shortCode")}</TableHead>
+                <TableHead>{t("ageRange")}</TableHead>
+                <TableHead>{t("classes")}</TableHead>
+                <TableHead>{t("students")}</TableHead>
+                <TableHead className="w-32" aria-label={t("edit")} />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visibleRoots.length === 0 ? (
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-9" aria-label={t("drag")} />
-                  <TableHead>{t("gradeLevel")}</TableHead>
-                  <TableHead>{t("shortCode")}</TableHead>
-                  <TableHead>{t("ageRange")}</TableHead>
-                  <TableHead>{t("classes")}</TableHead>
-                  <TableHead>{t("students")}</TableHead>
-                  <TableHead className="w-24" aria-label={t("edit")} />
+                  <TableCell
+                    colSpan={7}
+                    className="py-10 text-center text-muted-foreground"
+                  >
+                    {normalizedQuery
+                      ? t("noSearchResults", { query: query.trim() })
+                      : t("noGradeLevelsFound")}
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.length === 0 ? (
-                  <TableRow className="hover:bg-transparent">
-                    <TableCell
-                      colSpan={7}
-                      className="py-10 text-center text-muted-foreground"
-                    >
-                      {normalizedQuery
-                        ? t("noSearchResults", { query: query.trim() })
-                        : t("noGradeLevelsFound")}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filtered.map((item) => (
-                    <SortableRow
-                      key={item.id}
-                      item={item}
-                      dndDisabled={dndDisabled}
-                      onEdit={() => setEditing(item)}
-                      onDelete={() => handleDelete(item.id)}
-                    />
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </SortableContext>
+              ) : (
+                <SortableContext
+                  items={visibleRoots.map((r) => r.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {visibleRoots.map((root) => (
+                    <React.Fragment key={root.id}>
+                      <SortableRow
+                        item={root}
+                        dndDisabled={dndDisabled}
+                        onEdit={() => setDialog({ mode: "edit", item: root })}
+                        onDelete={() => handleDelete(root.id)}
+                        onAddSubgroup={() =>
+                          setDialog({ mode: "create", parentId: root.id })
+                        }
+                      />
+                      <SortableContext
+                        items={root.children.map((c) => c.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        {root.children.map((child) => (
+                          <SortableRow
+                            key={child.id}
+                            item={child}
+                            isSubgroup
+                            dndDisabled={dndDisabled}
+                            onEdit={() =>
+                              setDialog({ mode: "edit", item: child })
+                            }
+                            onDelete={() => handleDelete(child.id)}
+                          />
+                        ))}
+                      </SortableContext>
+                    </React.Fragment>
+                  ))}
+                </SortableContext>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </DndContext>
 
       <p className="mt-3 text-[12.5px] text-muted-foreground">
         {t("gradeLevelsHint")}
       </p>
 
-      {creating && (
+      {dialog?.mode === "create" && (
         <GradeLevelDialog
-          title={t("createGradeLevel")}
+          title={
+            dialog.parentId ? t("createSubgroup") : t("createGradeLevel")
+          }
           defaultValues={{
             name: "",
             shortCode: "",
             ageMin: null,
             ageMax: null,
             color: null,
+            parentId: dialog.parentId,
           }}
-          onOpenChange={(open) => !open && setCreating(false)}
-          onSubmit={handleCreateSubmit}
+          parentOptions={dialog.parentId ? parentOptions : undefined}
+          onOpenChange={(open) => !open && setDialog(null)}
+          onSubmit={(values) => handleCreateSubmit(dialog.parentId, values)}
         />
       )}
-      {editing && (
+      {editingItem && (
         <GradeLevelDialog
-          title={t("editGradeLevel")}
+          title={
+            editingIsSubgroup ? t("editSubgroup") : t("editGradeLevel")
+          }
           defaultValues={{
-            name: editing.name,
-            shortCode: editing.shortCode ?? "",
-            ageMin: editing.ageMin ?? null,
-            ageMax: editing.ageMax ?? null,
-            color: editing.color ?? null,
+            name: editingItem.name,
+            shortCode: editingItem.shortCode ?? "",
+            ageMin: editingItem.ageMin ?? null,
+            ageMax: editingItem.ageMax ?? null,
+            color: editingItem.color ?? null,
+            parentId: editingItem.parentId ?? null,
           }}
-          onOpenChange={(open) => !open && setEditing(null)}
-          onSubmit={handleEditSubmit}
+          parentOptions={
+            editingIsSubgroup
+              ? parentOptions.filter((o) => o.value !== editingItem.id)
+              : undefined
+          }
+          onOpenChange={(open) => !open && setDialog(null)}
+          onSubmit={(values) => handleEditSubmit(editingItem, values)}
         />
       )}
     </div>
@@ -308,11 +453,20 @@ function AgeRange({ item }: { item: GradeLevelItem }) {
 interface SortableRowProps {
   item: GradeLevelItem;
   dndDisabled: boolean;
+  isSubgroup?: boolean;
   onEdit: () => void;
   onDelete: () => Promise<{ success: boolean; error?: unknown }>;
+  onAddSubgroup?: () => void;
 }
 
-function SortableRow({ item, dndDisabled, onEdit, onDelete }: SortableRowProps) {
+function SortableRow({
+  item,
+  dndDisabled,
+  isSubgroup = false,
+  onEdit,
+  onDelete,
+  onAddSubgroup,
+}: SortableRowProps) {
   const t = useTranslations("GradeLevels");
   const inUse = (item.classCount ?? 0) > 0;
   const {
@@ -333,7 +487,10 @@ function SortableRow({ item, dndDisabled, onEdit, onDelete }: SortableRowProps) 
     <TableRow
       ref={setNodeRef}
       style={style}
-      className={cn(isDragging && "relative z-10 bg-row-hover opacity-80")}
+      className={cn(
+        isDragging && "relative z-10 bg-row-hover opacity-80",
+        isSubgroup && "bg-muted/30",
+      )}
     >
       <TableCell className="w-9 pr-0">
         <span
@@ -349,14 +506,24 @@ function SortableRow({ item, dndDisabled, onEdit, onDelete }: SortableRowProps) 
         </span>
       </TableCell>
       <TableCell>
-        <span className="inline-flex items-center gap-[9px]">
+        <span
+          className={cn(
+            "inline-flex items-center gap-[9px]",
+            isSubgroup && "pl-6",
+          )}
+        >
+          {isSubgroup && (
+            <CornerDownRight className="size-3.5 shrink-0 text-muted-foreground" />
+          )}
           {item.color && (
             <i
               className="inline-block size-[9px] shrink-0 rounded-full"
               style={{ background: item.color }}
             />
           )}
-          <b className="font-semibold">{item.name}</b>
+          <span className={cn(isSubgroup ? "font-medium" : "font-semibold")}>
+            {item.name}
+          </span>
         </span>
       </TableCell>
       <TableCell className="font-mono text-[12.5px] tabular-nums">
@@ -366,13 +533,37 @@ function SortableRow({ item, dndDisabled, onEdit, onDelete }: SortableRowProps) 
         <AgeRange item={item} />
       </TableCell>
       <TableCell className="font-mono text-[12.5px] tabular-nums">
-        {item.classCount ?? 0}
+        {isSubgroup ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          (item.classCount ?? 0)
+        )}
       </TableCell>
       <TableCell className="font-mono text-[12.5px] tabular-nums">
-        {item.studentCount ?? 0}
+        {isSubgroup ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          (item.studentCount ?? 0)
+        )}
       </TableCell>
-      <TableCell className="w-24">
+      <TableCell className="w-32">
         <span className="flex items-center justify-end gap-1">
+          {onAddSubgroup && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8"
+                  onClick={onAddSubgroup}
+                  aria-label={t("addSubgroup")}
+                >
+                  <Plus className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("addSubgroup")}</TooltipContent>
+            </Tooltip>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -432,6 +623,7 @@ function DeleteTriggerButton({
 interface GradeLevelDialogProps {
   title: string;
   defaultValues: GradeLevelFormInput;
+  parentOptions?: { label: string; value: string }[];
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: GradeLevelFormType) => Promise<void>;
 }
@@ -439,6 +631,7 @@ interface GradeLevelDialogProps {
 function GradeLevelDialog({
   title,
   defaultValues,
+  parentOptions,
   onOpenChange,
   onSubmit,
 }: GradeLevelDialogProps) {
@@ -462,6 +655,14 @@ function GradeLevelDialog({
             className="space-y-4"
             id="grade-level-form"
           >
+            {parentOptions && (
+              <SelectFormFieldWithoutTranslations
+                name="parentId"
+                label={t("parentLevel")}
+                placeholder={t("parentLevel")}
+                options={parentOptions}
+              />
+            )}
             <InputFormField name="name" label="name" namespace="GradeLevels" />
             <InputFormField
               name="shortCode"

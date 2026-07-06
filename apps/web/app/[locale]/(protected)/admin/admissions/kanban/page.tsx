@@ -43,6 +43,7 @@ const AdmissionsKanbanPage = async () => {
         gradeLevels={
           gradeLevels.success
             ? [...gradeLevels.data]
+                .filter((g) => g.parentId == null)
                 .sort((a, b) => a.sortOrder - b.sortOrder)
                 .map((g) => ({
                   id: g.id,

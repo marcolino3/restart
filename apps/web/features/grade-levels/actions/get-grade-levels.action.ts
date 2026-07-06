@@ -6,6 +6,7 @@ import { gql } from "graphql-request";
 export type GradeLevelItem = {
   id: string;
   name: string;
+  parentId: string | null;
   color: string | null;
   shortCode: string | null;
   ageMin: number | null;
@@ -24,6 +25,7 @@ const GetGradeLevelsDocument = gql`
     gradeLevelsByOrgId {
       id
       name
+      parentId
       color
       shortCode
       ageMin

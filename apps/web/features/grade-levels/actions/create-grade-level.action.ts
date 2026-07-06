@@ -10,6 +10,7 @@ const CreateGradeLevelDocument = gql`
     createGradeLevel(input: $input) {
       id
       name
+      parentId
       color
       shortCode
       ageMin
@@ -23,6 +24,7 @@ type CreateGradeLevelResponse = {
   createGradeLevel: {
     id: string;
     name: string;
+    parentId: string | null;
     color: string | null;
     shortCode: string | null;
     ageMin: number | null;
@@ -33,6 +35,7 @@ type CreateGradeLevelResponse = {
 
 export type CreateGradeLevelActionInput = {
   name: string;
+  parentId?: string | null;
   color?: string | null;
   shortCode?: string | null;
   ageMin?: number | null;
@@ -51,6 +54,7 @@ export const createGradeLevelAction = async (
       {
         input: {
           name: input.name,
+          parentId: input.parentId ?? null,
           ...(input.color ? { color: input.color } : {}),
           shortCode: input.shortCode ?? null,
           ageMin: input.ageMin ?? null,
