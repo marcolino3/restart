@@ -83,6 +83,65 @@ test.describe('Grade levels — CRUD', () => {
     ).toHaveCount(0, { timeout: 15000 })
   })
 
+  test('create a subgroup and lift it to top level on parent delete', async ({
+    page,
+  }) => {
+    await openPage(page)
+
+    const parent = `E2E Stufe ${Date.now()}`
+    const subgroup = `E2E Untergruppe ${Date.now()}`
+
+    // --- Create the parent Stufe ------------------------------------------
+    await page.getByRole('button', { name: /new grade level/i }).click()
+    const createDialog = page.getByRole('dialog')
+    await createDialog.getByLabel('Name', { exact: true }).fill(parent)
+    await createDialog.getByRole('button', { name: /save/i }).click()
+    const parentRow = page.getByRole('row', { name: new RegExp(parent) })
+    await expect(parentRow).toBeVisible({ timeout: 15000 })
+
+    // --- Add a subgroup via the parent row's "add subgroup" action --------
+    // The parent picker is pre-selected with the parent Stufe, so only the
+    // name needs filling.
+    await parentRow.getByRole('button', { name: /add subgroup/i }).click()
+    const subDialog = page.getByRole('dialog')
+    await expect(
+      subDialog.getByRole('heading', { name: /create subgroup/i }),
+    ).toBeVisible()
+    await expect(subDialog.getByText(/parent grade level/i)).toBeVisible()
+    await subDialog.getByLabel('Name', { exact: true }).fill(subgroup)
+    await subDialog.getByRole('button', { name: /save/i }).click()
+
+    const subRow = page.getByRole('row', { name: new RegExp(subgroup) })
+    await expect(subRow).toBeVisible({ timeout: 15000 })
+
+    // --- Deleting the parent lifts the subgroup to top level (no orphan) ---
+    await parentRow
+      .getByRole('button', { name: new RegExp(`delete ${parent}`, 'i') })
+      .click()
+    await page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: /^delete$/i })
+      .click()
+    await expect(parentRow).toHaveCount(0, { timeout: 15000 })
+    // Subgroup survives as a (now top-level) Stufe.
+    await expect(
+      page.getByRole('row', { name: new RegExp(subgroup) }),
+    ).toBeVisible({ timeout: 15000 })
+
+    // --- Cleanup -----------------------------------------------------------
+    await page
+      .getByRole('row', { name: new RegExp(subgroup) })
+      .getByRole('button', { name: new RegExp(`delete ${subgroup}`, 'i') })
+      .click()
+    await page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: /^delete$/i })
+      .click()
+    await expect(
+      page.getByRole('row', { name: new RegExp(subgroup) }),
+    ).toHaveCount(0, { timeout: 15000 })
+  })
+
   test('reorder persists via drag and drop', async ({ page }) => {
     await openPage(page)
 
