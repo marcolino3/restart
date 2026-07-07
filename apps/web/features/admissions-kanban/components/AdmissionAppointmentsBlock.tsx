@@ -1,19 +1,36 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { toast } from "sonner";
 import { CalendarClock, Plus, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { cn } from "@/lib/utils";
 
-import type { AdmissionAppointment } from "../actions/get-admission-appointments.action";
+import type {
+  AdmissionAppointment,
+  AppointmentStatus,
+} from "../actions/get-admission-appointments.action";
 import { deleteAdmissionAppointmentAction } from "../actions/mutate-admission-appointment.action";
 import type { AdmissionAppointmentType } from "../types";
 import type { AppointmentMember } from "./AppointmentForm";
 import { AppointmentDialog } from "./AppointmentDialog";
+
+/** Status values that are still "open" — a past date makes them overdue. */
+const OPEN_STATUSES: AppointmentStatus[] = ["SCHEDULED", "RESCHEDULING"];
+
+/**
+ * An appointment counts as "past" when its end (or start, if no period) lies
+ * before now AND it is still in an open status. COMPLETED/CANCELLED are final
+ * and never rendered as past.
+ */
+function isPast(a: AdmissionAppointment, now: number): boolean {
+  if (!OPEN_STATUSES.includes(a.status)) return false;
+  const end = new Date(a.endsAt ?? a.scheduledAt).getTime();
+  return end < now;
+}
 
 interface Props {
   applicationId: string;
@@ -68,17 +85,21 @@ export function AdmissionAppointmentsBlock({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] =
     useState<AdmissionAppointment | null>(null);
-  const [, startTransition] = useTransition();
+  const [deleting, setDeleting] = useState<AdmissionAppointment | null>(null);
 
-  const scheduledCount = appointments.filter(
-    (a) => a.status === "SCHEDULED",
+  // Snapshot "now" once per mount — stable across renders and keeps the render
+  // pure (Date.now() directly in render is flagged by the React compiler).
+  const [now] = useState(() => Date.now());
+  const scheduledCount = appointments.filter((a) =>
+    OPEN_STATUSES.includes(a.status),
   ).length;
 
+  // Newest first (latest scheduled date on top).
   const sorted = appointments
     .slice()
     .sort(
       (a, b) =>
-        new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
+        new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime(),
     );
 
   const openCreate = () => {
@@ -91,17 +112,13 @@ export function AdmissionAppointmentsBlock({
     setDialogOpen(true);
   };
 
-  const onDelete = (a: AdmissionAppointment) => {
-    if (!confirm(t("appointmentDeleteConfirm"))) return;
-    startTransition(async () => {
-      const res = await deleteAdmissionAppointmentAction(a.id, applicationId);
-      if (!res.success) {
-        toast.error(res.error ?? t("appointmentDeleteError"));
-        return;
-      }
-      toast.success(t("appointmentDeleteOk"));
-      onChanged();
-    });
+  const confirmDelete = async () => {
+    if (!deleting) return { success: false as const };
+    const res = await deleteAdmissionAppointmentAction(
+      deleting.id,
+      applicationId,
+    );
+    return { success: res.success, error: res.success ? undefined : res.error };
   };
 
   return (
@@ -141,68 +158,93 @@ export function AdmissionAppointmentsBlock({
         )}
 
         {sorted.length > 0 && (
-          <ul className="space-y-1">
+          <ul className="space-y-0.5">
             {sorted.map((a) => {
               const cancelled = a.status === "CANCELLED";
+              const past = isPast(a, now);
+              // Meta line: duration · location · assignees — only the parts present.
+              const meta = [
+                a.durationMinutes
+                  ? `${a.durationMinutes} ${t("appointmentMinutesAbbr")}`
+                  : null,
+                a.location || null,
+                a.assignedNames.length > 0
+                  ? formatAssignees(a.assignedNames)
+                  : null,
+              ].filter(Boolean);
               return (
-                <li
-                  key={a.id}
-                  className="group -mx-1 flex items-start gap-2 rounded px-1 py-1 text-xs transition hover:bg-muted/40"
-                >
-                  <span
-                    aria-hidden
-                    className="mt-1 inline-block h-2 w-2 shrink-0 rounded-full ring-1 ring-border"
-                    style={{
-                      backgroundColor:
-                        a.appointmentTypeColor ?? "var(--muted)",
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => openEdit(a)}
-                    disabled={!canEdit}
-                    className="min-w-0 flex-1 text-left leading-tight disabled:cursor-default"
+                <li key={a.id}>
+                  <div
+                    className={cn(
+                      "group relative flex items-start gap-2 rounded-md border border-transparent px-2 py-1.5",
+                      "transition-colors hover:border-border hover:bg-muted/50",
+                    )}
                   >
-                    <div
-                      className={cn(
-                        "flex items-center gap-1.5 truncate font-medium text-foreground",
-                        cancelled && "line-through text-muted-foreground",
-                      )}
-                    >
-                      <span className="truncate">
-                        {a.appointmentTypeLabel ?? t("appointmentTypeNone")}
-                      </span>
-                      <StatusBadge status={a.status} t={t} />
-                    </div>
-                    <div
-                      className={cn(
-                        "truncate text-[11px] text-muted-foreground",
-                        cancelled && "line-through",
-                      )}
-                    >
-                      {formatDateTime(a.scheduledAt)}
-                      {a.endsAt
-                        ? ` – ${formatPeriodEnd(a.scheduledAt, a.endsAt)}`
-                        : ""}
-                      {a.durationMinutes
-                        ? ` · ${a.durationMinutes} ${t("appointmentMinutesAbbr")}`
-                        : ""}
-                      {a.location ? ` · ${a.location}` : ""}
-                      {a.assignedNames.length > 0
-                        ? ` · ${formatAssignees(a.assignedNames)}`
-                        : ""}
-                    </div>
-                  </button>
-                  {canEdit && (
                     <button
                       type="button"
-                      className="opacity-0 transition group-hover:opacity-100"
-                      onClick={() => onDelete(a)}
-                      aria-label={t("appointmentDelete")}
+                      onClick={() => openEdit(a)}
+                      disabled={!canEdit}
+                      className="min-w-0 flex-1 space-y-0.5 text-left disabled:cursor-default"
                     >
-                      <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                      {/* Line 1: dot + type + status — dot centred to this line */}
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          aria-hidden
+                          className="size-2 shrink-0 rounded-full ring-1 ring-inset ring-black/10"
+                          style={{
+                            backgroundColor:
+                              a.appointmentTypeColor ??
+                              "var(--muted-foreground)",
+                          }}
+                        />
+                        <span
+                          className={cn(
+                            "truncate text-xs font-medium text-foreground",
+                            cancelled && "text-muted-foreground line-through",
+                          )}
+                        >
+                          {a.appointmentTypeLabel ??
+                            a.title ??
+                            t("appointmentTypeNone")}
+                        </span>
+                        {/* Title as a secondary label when a type is also set. */}
+                        {a.appointmentTypeLabel && a.title && (
+                          <span className="truncate text-[11px] text-muted-foreground">
+                            {a.title}
+                          </span>
+                        )}
+                        <StatusBadge status={a.status} past={past} t={t} />
+                      </div>
+                      {/* Line 2: date / period */}
+                      <div
+                        className={cn(
+                          "truncate font-mono text-[11px] tabular-nums text-muted-foreground",
+                          cancelled && "line-through",
+                        )}
+                      >
+                        {formatDateTime(a.scheduledAt)}
+                        {a.endsAt
+                          ? ` – ${formatPeriodEnd(a.scheduledAt, a.endsAt)}`
+                          : ""}
+                      </div>
+                      {/* Line 3 (optional): duration · location · assignees */}
+                      {meta.length > 0 && (
+                        <div className="truncate text-[11px] text-muted-foreground/80">
+                          {meta.join(" · ")}
+                        </div>
+                      )}
                     </button>
-                  )}
+                    {canEdit && (
+                      <button
+                        type="button"
+                        className="mt-[3px] shrink-0 rounded p-0.5 text-muted-foreground/60 opacity-0 transition hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+                        onClick={() => setDeleting(a)}
+                        aria-label={t("appointmentDelete")}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </li>
               );
             })}
@@ -222,34 +264,71 @@ export function AdmissionAppointmentsBlock({
           onSaved={onChanged}
         />
       )}
+
+      <DeleteConfirmationDialog
+        open={!!deleting}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title={t("appointmentDeleteTitle")}
+        description={
+          deleting
+            ? t("appointmentDeleteDescription", {
+                label:
+                  deleting.appointmentTypeLabel ??
+                  deleting.title ??
+                  t("appointmentTypeNone"),
+                when: formatDateTime(deleting.scheduledAt),
+              })
+            : undefined
+        }
+        onConfirm={confirmDelete}
+        onSuccess={onChanged}
+      />
     </section>
   );
 }
 
+// Status → Design-Handoff status-pill palette (theme-aware --status-* tokens).
+// Each status maps to a distinct shade so the states read as one graded system:
+//   sky = active/planned · green = done · rose = cancelled ·
+//   amber = needs rescheduling / past (attention).
+const STATUS_BADGE: Record<
+  AppointmentStatus,
+  { variant: string; labelKey: string }
+> = {
+  SCHEDULED: { variant: "sky", labelKey: "appointmentStatusScheduled" },
+  COMPLETED: { variant: "green", labelKey: "appointmentStatusCompleted" },
+  CANCELLED: { variant: "rose", labelKey: "appointmentStatusCancelled" },
+  RESCHEDULING: {
+    variant: "amber",
+    labelKey: "appointmentStatusRescheduling",
+  },
+};
+
 function StatusBadge({
   status,
+  past,
   t,
 }: {
-  status: AdmissionAppointment["status"];
+  status: AppointmentStatus;
+  past: boolean;
   t: (key: string) => string;
 }) {
-  if (status === "COMPLETED") {
+  // A past, still-open appointment reads as "Vergangen" (amber) — a nudge to
+  // set a final status — instead of its literal open status.
+  if (past) {
     return (
-      <Badge variant="green" className="shrink-0 text-[9px]">
-        {t("appointmentStatusCompleted")}
+      <Badge variant="amber" className="shrink-0 text-[9px]">
+        {t("appointmentStatusPast")}
       </Badge>
     );
   }
-  if (status === "CANCELLED") {
-    return (
-      <Badge variant="secondary" className="shrink-0 text-[9px]">
-        {t("appointmentStatusCancelled")}
-      </Badge>
-    );
-  }
+  const { variant, labelKey } = STATUS_BADGE[status];
   return (
-    <Badge variant="outline" className="shrink-0 text-[9px]">
-      {t("appointmentStatusScheduled")}
+    <Badge
+      variant={variant as never}
+      className="shrink-0 text-[9px]"
+    >
+      {t(labelKey)}
     </Badge>
   );
 }

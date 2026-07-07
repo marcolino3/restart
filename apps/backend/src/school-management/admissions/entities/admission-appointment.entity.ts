@@ -44,6 +44,14 @@ export class AdmissionAppointment extends AbstractEntity<AdmissionAppointment> {
   @Column('uuid', { name: 'appointment_type_id', nullable: true })
   appointmentTypeId?: string | null;
 
+  /**
+   * Free-text title, used when no appointment type is set (or as an extra label
+   * alongside the type). Optional.
+   */
+  @Field(() => String, { nullable: true })
+  @Column('text', { nullable: true })
+  title?: string | null;
+
   @Field(() => AdmissionAppointmentType, { nullable: true })
   @ManyToOne(() => AdmissionAppointmentType, {
     nullable: true,

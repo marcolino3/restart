@@ -3,12 +3,20 @@
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
 
+/** Lifecycle status of an appointment (mirrors the backend enum). */
+export type AppointmentStatus =
+  | "SCHEDULED"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "RESCHEDULING";
+
 export type AdmissionAppointment = {
   id: string;
   applicationId: string;
   appointmentTypeId: string | null;
   appointmentTypeLabel: string | null;
   appointmentTypeColor: string | null;
+  title: string | null;
   scheduledAt: string;
   endsAt: string | null;
   assignedToMembershipIds: string[];
@@ -16,7 +24,7 @@ export type AdmissionAppointment = {
   durationMinutes: number | null;
   location: string | null;
   note: string | null;
-  status: "SCHEDULED" | "COMPLETED" | "CANCELLED";
+  status: AppointmentStatus;
   createdAt: string;
 };
 
@@ -31,6 +39,7 @@ const Document = gql`
         label
         color
       }
+      title
       scheduledAt
       endsAt
       assignees {
@@ -70,6 +79,7 @@ export const getAdmissionAppointmentsAction = async (
           label: string;
           color: string | null;
         } | null;
+        title: string | null;
         scheduledAt: string;
         endsAt: string | null;
         assignees: Array<{
@@ -82,7 +92,7 @@ export const getAdmissionAppointmentsAction = async (
         durationMinutes: number | null;
         location: string | null;
         note: string | null;
-        status: "SCHEDULED" | "COMPLETED" | "CANCELLED";
+        status: AppointmentStatus;
         createdAt: string;
       }>;
     }>(Document, { applicationId });
@@ -94,6 +104,7 @@ export const getAdmissionAppointmentsAction = async (
         appointmentTypeId: a.appointmentTypeId,
         appointmentTypeLabel: a.appointmentType?.label ?? null,
         appointmentTypeColor: a.appointmentType?.color ?? null,
+        title: a.title,
         scheduledAt: a.scheduledAt,
         endsAt: a.endsAt,
         assignedToMembershipIds: (a.assignees ?? []).map(

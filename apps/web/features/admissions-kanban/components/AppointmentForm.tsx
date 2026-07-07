@@ -55,6 +55,7 @@ const NO_TYPE = "__none__";
 const Schema = z
   .object({
     appointmentTypeId: z.string(),
+    title: z.string().max(200).optional(),
     scheduledDate: z.date(),
     time: z.string().regex(/^\d{2}:\d{2}$/),
     // Period end — both optional; when a date is given, the time defaults to the
@@ -66,7 +67,7 @@ const Schema = z
     durationMinutes: z.string().optional(),
     location: z.string().max(500).optional(),
     note: z.string().max(5000).optional(),
-    status: z.enum(["SCHEDULED", "COMPLETED", "CANCELLED"]),
+    status: z.enum(["SCHEDULED", "COMPLETED", "CANCELLED", "RESCHEDULING"]),
   })
   .refine((v) => !v.isPeriod || !!v.endDate, {
     path: ["endDate"],
@@ -126,6 +127,7 @@ export function AppointmentForm({
       { value: "SCHEDULED", label: t("appointmentStatusScheduled") },
       { value: "COMPLETED", label: t("appointmentStatusCompleted") },
       { value: "CANCELLED", label: t("appointmentStatusCancelled") },
+      { value: "RESCHEDULING", label: t("appointmentStatusRescheduling") },
     ],
     [t],
   );
@@ -134,6 +136,7 @@ export function AppointmentForm({
     resolver: zodResolver(Schema),
     defaultValues: {
       appointmentTypeId: initial?.appointmentTypeId ?? NO_TYPE,
+      title: initial?.title ?? "",
       scheduledDate: initialAt ?? new Date(),
       time: initialAt ? hhmm(initialAt) : "09:00",
       isPeriod: !!initialEnd,
@@ -151,6 +154,7 @@ export function AppointmentForm({
   });
 
   const isPeriod = form.watch("isPeriod");
+  const noType = form.watch("appointmentTypeId") === NO_TYPE;
   const scheduledDate = form.watch("scheduledDate");
   // The end of a period can never precede its start: block every day before the
   // selected start date in the end date-picker.
@@ -175,6 +179,9 @@ export function AppointmentForm({
 
     const appointmentTypeId =
       values.appointmentTypeId === NO_TYPE ? null : values.appointmentTypeId;
+    // Free title only applies when no type is selected.
+    const title =
+      appointmentTypeId === null ? values.title?.trim() || null : null;
     const assignedToMembershipIds = values.assignedToMembershipIds;
     const durationMinutes = values.durationMinutes?.trim()
       ? Number(values.durationMinutes)
@@ -185,6 +192,7 @@ export function AppointmentForm({
           id: initial!.id,
           applicationId,
           appointmentTypeId,
+          title,
           scheduledAt: at.toISOString(),
           endsAt,
           assignedToMembershipIds,
@@ -196,6 +204,7 @@ export function AppointmentForm({
       : await createAdmissionAppointmentAction({
           applicationId,
           appointmentTypeId,
+          title,
           scheduledAt: at.toISOString(),
           endsAt,
           assignedToMembershipIds,
@@ -215,6 +224,7 @@ export function AppointmentForm({
     if (!isEdit) {
       form.reset({
         appointmentTypeId: NO_TYPE,
+        title: "",
         scheduledDate: new Date(),
         time: "09:00",
         isPeriod: false,
@@ -243,11 +253,26 @@ export function AppointmentForm({
           options={typeOptions}
         />
 
+        {/* Free title — only when no appointment type is selected. */}
+        {noType && (
+          <InputFormField
+            name="title"
+            label="appointmentTitleLabel"
+            namespace="Admissions"
+            placeholder={t("appointmentTitlePlaceholder")}
+          />
+        )}
+
         <div className="grid grid-cols-2 gap-3">
           <DatePickerFormField
             name="scheduledDate"
-            label={isPeriod ? "appointmentStartDateLabel" : "appointmentDateLabel"}
+            label={
+              isPeriod ? "appointmentStartDateLabel" : "appointmentDateLabel"
+            }
             namespace="Admissions"
+            // Appointments are typically in the future — allow any date
+            // (the component otherwise blocks future dates by default).
+            disabledDate={() => false}
           />
           <div className="space-y-[7px]">
             <Label className="text-[12.5px] font-semibold">
@@ -339,14 +364,14 @@ export function AppointmentForm({
               onClick={onCancel}
               disabled={form.formState.isSubmitting}
             >
-              {t("reminderCancel")}
+              {t("appointmentCancel")}
             </Button>
           )}
           <Button type="submit" size="sm" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting && (
               <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
             )}
-            {isEdit ? t("reminderSubmit") : t("reminderNewSubmit")}
+            {isEdit ? t("appointmentSubmit") : t("appointmentNewSubmit")}
           </Button>
         </div>
       </form>

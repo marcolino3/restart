@@ -3,6 +3,7 @@
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
 import { revalidatePath } from "next/cache";
+import type { AppointmentStatus } from "./get-admission-appointments.action";
 
 const CreateDoc = gql`
   mutation CreateAdmissionAppointment($input: CreateAdmissionAppointmentInput!) {
@@ -29,6 +30,7 @@ const DeleteDoc = gql`
 export interface CreateAdmissionAppointmentInput {
   applicationId: string;
   appointmentTypeId?: string | null;
+  title?: string | null;
   scheduledAt: string;
   endsAt?: string | null;
   assignedToMembershipIds?: string[];
@@ -48,6 +50,7 @@ export const createAdmissionAppointmentAction = async (
       input: {
         applicationId: input.applicationId,
         appointmentTypeId: input.appointmentTypeId ?? null,
+        title: input.title ?? null,
         scheduledAt: input.scheduledAt,
         endsAt: input.endsAt ?? null,
         assignedToMembershipIds: input.assignedToMembershipIds ?? [],
@@ -71,13 +74,14 @@ export interface UpdateAdmissionAppointmentInput {
   id: string;
   applicationId: string;
   appointmentTypeId?: string | null;
+  title?: string | null;
   scheduledAt?: string;
   endsAt?: string | null;
   assignedToMembershipIds?: string[];
   durationMinutes?: number | null;
   location?: string | null;
   note?: string | null;
-  status?: "SCHEDULED" | "COMPLETED" | "CANCELLED";
+  status?: AppointmentStatus;
 }
 
 export const updateAdmissionAppointmentAction = async (

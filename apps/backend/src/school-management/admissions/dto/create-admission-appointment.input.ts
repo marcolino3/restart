@@ -20,6 +20,12 @@ export class CreateAdmissionAppointmentInput {
   @IsUUID()
   appointmentTypeId?: string;
 
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  title?: string;
+
   @Field(() => String)
   @IsISO8601()
   scheduledAt: string;
