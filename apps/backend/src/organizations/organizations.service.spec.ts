@@ -31,6 +31,12 @@ jest.mock(
     seedOrgAdmissionStages: jest.fn().mockResolvedValue(undefined),
   }),
 );
+jest.mock(
+  '@/school-management/admission-sources/seeds/default-admission-sources',
+  () => ({
+    seedOrgAdmissionSources: jest.fn().mockResolvedValue(undefined),
+  }),
+);
 
 // ── helpers ────────────────────────────────────────────────────────
 const mockOrg = (overrides: Partial<Organization> = {}): Organization =>

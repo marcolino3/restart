@@ -10,7 +10,11 @@ const Document = gql`
       organizationId
       admissionStageId
       status
-      source
+      admissionSource {
+        id
+        name
+        color
+      }
       stageEnteredAt
       createdAt
       position
@@ -143,7 +147,7 @@ export type AdmissionApplicationDetail = {
   admissionStageId: string;
   stageName: string;
   status: string;
-  source: string;
+  admissionSource: { id: string; name: string; color: string | null } | null;
   stageEnteredAt: string;
   createdAt: string;
   childFirstName: string;
@@ -179,7 +183,11 @@ export const getApplicationDetailAction = async (
         id: string;
         admissionStageId: string;
         status: string;
-        source: string;
+        admissionSource: {
+          id: string;
+          name: string;
+          color: string | null;
+        } | null;
         stageEnteredAt: string;
         createdAt: string;
         childFirstName: string;
@@ -237,7 +245,7 @@ export const getApplicationDetailAction = async (
         admissionStageId: app.admissionStageId,
         stageName: app.admissionStage.name,
         status: app.status,
-        source: app.source,
+        admissionSource: app.admissionSource,
         stageEnteredAt: app.stageEnteredAt,
         createdAt: app.createdAt,
         childFirstName: app.childFirstName,

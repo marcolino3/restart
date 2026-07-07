@@ -119,6 +119,8 @@ export enum AdmissionActivityType {
 
 export type AdmissionApplication = {
   __typename?: 'AdmissionApplication';
+  admissionSource?: Maybe<AdmissionSource>;
+  admissionSourceId?: Maybe<Scalars['ID']['output']>;
   admissionStage?: Maybe<AdmissionStage>;
   admissionStageId: Scalars['ID']['output'];
   assignedGradeLevel?: Maybe<GradeLevel>;
@@ -148,21 +150,11 @@ export type AdmissionApplication = {
   rejectionReason?: Maybe<Scalars['String']['output']>;
   rejectionReasonId?: Maybe<Scalars['ID']['output']>;
   rejectionReasonRef?: Maybe<AdmissionRejectionReason>;
-  source: AdmissionApplicationSource;
   stageEnteredAt: Scalars['DateTime']['output'];
   status: AdmissionApplicationStatus;
   updatedAt: Scalars['DateTime']['output'];
   version: Scalars['Int']['output'];
 };
-
-/** Where the application originated from. */
-export enum AdmissionApplicationSource {
-  Manual = 'MANUAL',
-  OpenDay = 'OPEN_DAY',
-  Other = 'OTHER',
-  PublicForm = 'PUBLIC_FORM',
-  Referral = 'REFERRAL'
-}
 
 /** Lifecycle status of an admission application — independent of the configurable stage. */
 export enum AdmissionApplicationStatus {
@@ -406,6 +398,22 @@ export enum AdmissionReminderFilter {
   Today = 'TODAY',
   Week = 'WEEK'
 }
+
+export type AdmissionSource = {
+  __typename?: 'AdmissionSource';
+  color?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  name: Scalars['String']['output'];
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['String']['output'];
+  position: Scalars['Int']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
 
 export type AdmissionStage = {
   __typename?: 'AdmissionStage';
@@ -782,6 +790,7 @@ export type CreateAdmissionActivityInput = {
 };
 
 export type CreateAdmissionApplicationInput = {
+  admissionSourceId?: InputMaybe<Scalars['ID']['input']>;
   admissionStageId?: InputMaybe<Scalars['ID']['input']>;
   assignedGradeLevelId?: InputMaybe<Scalars['ID']['input']>;
   childDateOfBirth?: InputMaybe<Scalars['String']['input']>;
@@ -794,7 +803,6 @@ export type CreateAdmissionApplicationInput = {
   desiredSchoolClassId?: InputMaybe<Scalars['ID']['input']>;
   familyId?: InputMaybe<Scalars['ID']['input']>;
   familyName?: InputMaybe<Scalars['String']['input']>;
-  source?: InputMaybe<AdmissionApplicationSource>;
 };
 
 export type CreateAdmissionAppointmentInput = {
@@ -827,6 +835,12 @@ export type CreateAdmissionReminderInput = {
   dueAt: Scalars['String']['input'];
   note?: InputMaybe<Scalars['String']['input']>;
   title: Scalars['String']['input'];
+};
+
+export type CreateAdmissionSourceInput = {
+  color?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+  position?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type CreateAdmissionStageInput = {
@@ -2291,6 +2305,7 @@ export type Mutation = {
   archiveAdmissionApplication: Scalars['Boolean']['output'];
   archiveAdmissionAppointmentType: Scalars['Boolean']['output'];
   archiveAdmissionRejectionReason: Scalars['Boolean']['output'];
+  archiveAdmissionSource: Scalars['Boolean']['output'];
   archiveAdmissionStage: Scalars['Boolean']['output'];
   archiveConsentPurpose: Scalars['Boolean']['output'];
   archiveContactPerson: Scalars['Boolean']['output'];
@@ -2311,6 +2326,7 @@ export type Mutation = {
   createAdmissionAppointmentType: AdmissionAppointmentType;
   createAdmissionRejectionReason: AdmissionRejectionReason;
   createAdmissionReminder: AdmissionReminder;
+  createAdmissionSource: AdmissionSource;
   createAdmissionStage: AdmissionStage;
   createCompanyVacation: CompanyVacation;
   createConsentPurpose: ConsentPurpose;
@@ -2405,6 +2421,7 @@ export type Mutation = {
   reorderAdmissionApplications: Array<AdmissionApplication>;
   reorderAdmissionAppointmentTypes: Array<AdmissionAppointmentType>;
   reorderAdmissionRejectionReasons: Array<AdmissionRejectionReason>;
+  reorderAdmissionSources: Array<AdmissionSource>;
   reorderAdmissionStages: Array<AdmissionStage>;
   reorderConsentPurposes: Array<ConsentPurpose>;
   reorderCurricula: Array<Curriculum>;
@@ -2446,6 +2463,7 @@ export type Mutation = {
   updateAdmissionBoardSettings: AdmissionBoardSettings;
   updateAdmissionRejectionReason: AdmissionRejectionReason;
   updateAdmissionReminder: AdmissionReminder;
+  updateAdmissionSource: AdmissionSource;
   updateAdmissionStage: AdmissionStage;
   updateCompanyVacation: CompanyVacation;
   updateConsentPurpose: ConsentPurpose;
@@ -2532,6 +2550,11 @@ export type MutationArchiveAdmissionAppointmentTypeArgs = {
 
 
 export type MutationArchiveAdmissionRejectionReasonArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationArchiveAdmissionSourceArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -2634,6 +2657,11 @@ export type MutationCreateAdmissionRejectionReasonArgs = {
 
 export type MutationCreateAdmissionReminderArgs = {
   input: CreateAdmissionReminderInput;
+};
+
+
+export type MutationCreateAdmissionSourceArgs = {
+  input: CreateAdmissionSourceInput;
 };
 
 
@@ -3105,6 +3133,11 @@ export type MutationReorderAdmissionRejectionReasonsArgs = {
 };
 
 
+export type MutationReorderAdmissionSourcesArgs = {
+  input: ReorderAdmissionSourcesInput;
+};
+
+
 export type MutationReorderAdmissionStagesArgs = {
   input: ReorderAdmissionStagesInput;
 };
@@ -3305,6 +3338,11 @@ export type MutationUpdateAdmissionRejectionReasonArgs = {
 
 export type MutationUpdateAdmissionReminderArgs = {
   input: UpdateAdmissionReminderInput;
+};
+
+
+export type MutationUpdateAdmissionSourceArgs = {
+  input: UpdateAdmissionSourceInput;
 };
 
 
@@ -4056,6 +4094,8 @@ export type Query = {
   admissionEmails: Array<AdmissionEmail>;
   admissionRejectionReasons: Array<AdmissionRejectionReason>;
   admissionReminders: Array<AdmissionReminder>;
+  admissionSourceById: AdmissionSource;
+  admissionSources: Array<AdmissionSource>;
   admissionStageById: AdmissionStage;
   admissionStages: Array<AdmissionStage>;
   areaLessonCountsByOrg: Array<AreaLessonCount>;
@@ -4246,6 +4286,16 @@ export type QueryAdmissionRejectionReasonsArgs = {
 
 export type QueryAdmissionRemindersArgs = {
   applicationId: Scalars['ID']['input'];
+};
+
+
+export type QueryAdmissionSourceByIdArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryAdmissionSourcesArgs = {
+  includeArchived?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 
@@ -4795,6 +4845,10 @@ export type ReorderAdmissionAppointmentTypesInput = {
 };
 
 export type ReorderAdmissionRejectionReasonsInput = {
+  ids: Array<Scalars['ID']['input']>;
+};
+
+export type ReorderAdmissionSourcesInput = {
   ids: Array<Scalars['ID']['input']>;
 };
 
@@ -5359,6 +5413,7 @@ export type UpdateAdmissionActivityInput = {
 };
 
 export type UpdateAdmissionApplicationInput = {
+  admissionSourceId?: InputMaybe<Scalars['ID']['input']>;
   assignedGradeLevelId?: InputMaybe<Scalars['ID']['input']>;
   childDateOfBirth?: InputMaybe<Scalars['String']['input']>;
   childFirstName?: InputMaybe<Scalars['String']['input']>;
@@ -5368,7 +5423,6 @@ export type UpdateAdmissionApplicationInput = {
   desiredEnrollmentDate?: InputMaybe<Scalars['String']['input']>;
   desiredSchoolClassId?: InputMaybe<Scalars['ID']['input']>;
   id: Scalars['ID']['input'];
-  source?: InputMaybe<AdmissionApplicationSource>;
 };
 
 export type UpdateAdmissionAppointmentInput = {
@@ -5409,6 +5463,13 @@ export type UpdateAdmissionReminderInput = {
   id: Scalars['ID']['input'];
   note?: InputMaybe<Scalars['String']['input']>;
   title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateAdmissionSourceInput = {
+  color?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
+  position?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type UpdateAdmissionStageInput = {
@@ -6219,17 +6280,22 @@ export type AdmissionsKanbanRejectionReasonsQueryVariables = Exact<{ [key: strin
 
 export type AdmissionsKanbanRejectionReasonsQuery = { __typename?: 'Query', admissionRejectionReasons: Array<{ __typename?: 'AdmissionRejectionReason', id: string, label: string, color?: string | null, position: number }> };
 
+export type AdmissionsKanbanSourcesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type AdmissionsKanbanSourcesQuery = { __typename?: 'Query', admissionSources: Array<{ __typename?: 'AdmissionSource', id: string, name: string, color?: string | null, isArchived: boolean, position: number }> };
+
 export type AdmissionsKanbanApplicationsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type AdmissionsKanbanApplicationsQuery = { __typename?: 'Query', admissionApplications: Array<{ __typename?: 'AdmissionApplication', id: string, admissionStageId: string, position: number, childFirstName: string, childLastName: string, childDateOfBirth?: string | null, childGender?: Gender | null, status: AdmissionApplicationStatus, source: AdmissionApplicationSource, stageEnteredAt: any, familyId: string, enrolledStudentId?: string | null, assignedGradeLevelId?: string | null, assignedGradeLevel?: { __typename?: 'GradeLevel', id: string, name: string, shortCode?: string | null, color?: string | null, parent?: { __typename?: 'GradeLevel', id: string, name: string, shortCode?: string | null, color?: string | null } | null } | null, family?: { __typename?: 'Family', id: string, name?: string | null, contactPersons: Array<{ __typename?: 'ContactPerson', id: string, firstName: string, lastName: string, email?: string | null, phone?: string | null, mobile?: string | null, roles: Array<RelationshipType> }> } | null }> };
+export type AdmissionsKanbanApplicationsQuery = { __typename?: 'Query', admissionApplications: Array<{ __typename?: 'AdmissionApplication', id: string, admissionStageId: string, position: number, childFirstName: string, childLastName: string, childDateOfBirth?: string | null, childGender?: Gender | null, status: AdmissionApplicationStatus, stageEnteredAt: any, familyId: string, enrolledStudentId?: string | null, assignedGradeLevelId?: string | null, admissionSource?: { __typename?: 'AdmissionSource', id: string, name: string, color?: string | null } | null, assignedGradeLevel?: { __typename?: 'GradeLevel', id: string, name: string, shortCode?: string | null, color?: string | null, parent?: { __typename?: 'GradeLevel', id: string, name: string, shortCode?: string | null, color?: string | null } | null } | null, family?: { __typename?: 'Family', id: string, name?: string | null, contactPersons: Array<{ __typename?: 'ContactPerson', id: string, firstName: string, lastName: string, email?: string | null, phone?: string | null, mobile?: string | null, roles: Array<RelationshipType> }> } | null }> };
 
 export type AdmissionApplicationDetailQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type AdmissionApplicationDetailQuery = { __typename?: 'Query', admissionApplicationById: { __typename?: 'AdmissionApplication', id: string, organizationId: string, admissionStageId: string, status: AdmissionApplicationStatus, source: AdmissionApplicationSource, stageEnteredAt: any, createdAt: any, position: number, childFirstName: string, childLastName: string, childDateOfBirth?: string | null, childGender?: Gender | null, childNotes?: string | null, assignedGradeLevelId?: string | null, desiredSchoolClassId?: string | null, desiredEnrollmentDate?: string | null, enrolledStudentId?: string | null, familyId: string, family?: { __typename?: 'Family', id: string, name?: string | null, notes?: string | null, contactPersons: Array<{ __typename?: 'ContactPerson', id: string, salutation?: Salutation | null, firstName: string, lastName: string, email?: string | null, phone?: string | null, mobile?: string | null, roles: Array<RelationshipType>, occupation?: string | null }> } | null, admissionStage?: { __typename?: 'AdmissionStage', id: string, name: string, stageType: AdmissionStageType } | null, desiredSchoolClass?: { __typename?: 'SchoolClass', id: string, name: string } | null, assignedGradeLevel?: { __typename?: 'GradeLevel', id: string, name: string, color?: string | null } | null }, admissionAuditLogs: Array<{ __typename?: 'AdmissionAuditLog', id: string, action: AdmissionAuditAction, createdAt: any, fieldName?: string | null, oldValue?: string | null, newValue?: string | null, fromStage?: { __typename?: 'AdmissionStage', id: string, name: string } | null, toStage?: { __typename?: 'AdmissionStage', id: string, name: string } | null, actorMembership?: { __typename?: 'Membership', id: string, user?: { __typename?: 'User', firstName: string, lastName: string } | null } | null }>, admissionApplicationsByFamily?: Array<{ __typename?: 'AdmissionApplication', id: string }> };
+export type AdmissionApplicationDetailQuery = { __typename?: 'Query', admissionApplicationById: { __typename?: 'AdmissionApplication', id: string, organizationId: string, admissionStageId: string, status: AdmissionApplicationStatus, stageEnteredAt: any, createdAt: any, position: number, childFirstName: string, childLastName: string, childDateOfBirth?: string | null, childGender?: Gender | null, childNotes?: string | null, assignedGradeLevelId?: string | null, desiredSchoolClassId?: string | null, desiredEnrollmentDate?: string | null, enrolledStudentId?: string | null, familyId: string, admissionSource?: { __typename?: 'AdmissionSource', id: string, name: string, color?: string | null } | null, family?: { __typename?: 'Family', id: string, name?: string | null, notes?: string | null, contactPersons: Array<{ __typename?: 'ContactPerson', id: string, salutation?: Salutation | null, firstName: string, lastName: string, email?: string | null, phone?: string | null, mobile?: string | null, roles: Array<RelationshipType>, occupation?: string | null }> } | null, admissionStage?: { __typename?: 'AdmissionStage', id: string, name: string, stageType: AdmissionStageType } | null, desiredSchoolClass?: { __typename?: 'SchoolClass', id: string, name: string } | null, assignedGradeLevel?: { __typename?: 'GradeLevel', id: string, name: string, color?: string | null } | null }, admissionAuditLogs: Array<{ __typename?: 'AdmissionAuditLog', id: string, action: AdmissionAuditAction, createdAt: any, fieldName?: string | null, oldValue?: string | null, newValue?: string | null, fromStage?: { __typename?: 'AdmissionStage', id: string, name: string } | null, toStage?: { __typename?: 'AdmissionStage', id: string, name: string } | null, actorMembership?: { __typename?: 'Membership', id: string, user?: { __typename?: 'User', firstName: string, lastName: string } | null } | null }>, admissionApplicationsByFamily?: Array<{ __typename?: 'AdmissionApplication', id: string }> };
 
 export type AdmissionApplicationSiblingsQueryVariables = Exact<{
   familyId: Scalars['ID']['input'];
@@ -8031,8 +8097,9 @@ export const AdmissionsKanbanRemindersDocument = {"kind":"Document","definitions
 export const AdmissionsKanbanStagesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AdmissionsKanbanStages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"admissionStages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"position"}},{"kind":"Field","name":{"kind":"Name","value":"stageType"}},{"kind":"Field","name":{"kind":"Name","value":"isDefault"}},{"kind":"Field","name":{"kind":"Name","value":"isArchived"}},{"kind":"Field","name":{"kind":"Name","value":"cardFields"}}]}}]}}]} as unknown as DocumentNode<AdmissionsKanbanStagesQuery, AdmissionsKanbanStagesQueryVariables>;
 export const AdmissionsBoardSettingsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AdmissionsBoardSettings"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"admissionBoardSettings"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"tableColumns"}}]}}]}}]} as unknown as DocumentNode<AdmissionsBoardSettingsQuery, AdmissionsBoardSettingsQueryVariables>;
 export const AdmissionsKanbanRejectionReasonsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AdmissionsKanbanRejectionReasons"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"admissionRejectionReasons"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"position"}}]}}]}}]} as unknown as DocumentNode<AdmissionsKanbanRejectionReasonsQuery, AdmissionsKanbanRejectionReasonsQueryVariables>;
-export const AdmissionsKanbanApplicationsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AdmissionsKanbanApplications"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"admissionApplications"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"admissionStageId"}},{"kind":"Field","name":{"kind":"Name","value":"position"}},{"kind":"Field","name":{"kind":"Name","value":"childFirstName"}},{"kind":"Field","name":{"kind":"Name","value":"childLastName"}},{"kind":"Field","name":{"kind":"Name","value":"childDateOfBirth"}},{"kind":"Field","name":{"kind":"Name","value":"childGender"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"source"}},{"kind":"Field","name":{"kind":"Name","value":"stageEnteredAt"}},{"kind":"Field","name":{"kind":"Name","value":"familyId"}},{"kind":"Field","name":{"kind":"Name","value":"enrolledStudentId"}},{"kind":"Field","name":{"kind":"Name","value":"assignedGradeLevelId"}},{"kind":"Field","name":{"kind":"Name","value":"assignedGradeLevel"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"shortCode"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"parent"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"shortCode"}},{"kind":"Field","name":{"kind":"Name","value":"color"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"family"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"contactPersons"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"phone"}},{"kind":"Field","name":{"kind":"Name","value":"mobile"}},{"kind":"Field","name":{"kind":"Name","value":"roles"}}]}}]}}]}}]}}]} as unknown as DocumentNode<AdmissionsKanbanApplicationsQuery, AdmissionsKanbanApplicationsQueryVariables>;
-export const AdmissionApplicationDetailDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AdmissionApplicationDetail"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"admissionApplicationById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"organizationId"}},{"kind":"Field","name":{"kind":"Name","value":"admissionStageId"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"source"}},{"kind":"Field","name":{"kind":"Name","value":"stageEnteredAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"position"}},{"kind":"Field","name":{"kind":"Name","value":"childFirstName"}},{"kind":"Field","name":{"kind":"Name","value":"childLastName"}},{"kind":"Field","name":{"kind":"Name","value":"childDateOfBirth"}},{"kind":"Field","name":{"kind":"Name","value":"childGender"}},{"kind":"Field","name":{"kind":"Name","value":"childNotes"}},{"kind":"Field","name":{"kind":"Name","value":"assignedGradeLevelId"}},{"kind":"Field","name":{"kind":"Name","value":"desiredSchoolClassId"}},{"kind":"Field","name":{"kind":"Name","value":"desiredEnrollmentDate"}},{"kind":"Field","name":{"kind":"Name","value":"enrolledStudentId"}},{"kind":"Field","name":{"kind":"Name","value":"familyId"}},{"kind":"Field","name":{"kind":"Name","value":"family"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"contactPersons"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"salutation"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"phone"}},{"kind":"Field","name":{"kind":"Name","value":"mobile"}},{"kind":"Field","name":{"kind":"Name","value":"roles"}},{"kind":"Field","name":{"kind":"Name","value":"occupation"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"admissionStage"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"stageType"}}]}},{"kind":"Field","name":{"kind":"Name","value":"desiredSchoolClass"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"assignedGradeLevel"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"color"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"admissionAuditLogs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"applicationId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"action"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"fieldName"}},{"kind":"Field","name":{"kind":"Name","value":"oldValue"}},{"kind":"Field","name":{"kind":"Name","value":"newValue"}},{"kind":"Field","name":{"kind":"Name","value":"fromStage"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"toStage"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"actorMembership"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"admissionApplicationsByFamily"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"familyId"},"value":{"kind":"StringValue","value":"00000000-0000-0000-0000-000000000000","block":false}}],"directives":[{"kind":"Directive","name":{"kind":"Name","value":"skip"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"BooleanValue","value":true}}]}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<AdmissionApplicationDetailQuery, AdmissionApplicationDetailQueryVariables>;
+export const AdmissionsKanbanSourcesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AdmissionsKanbanSources"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"admissionSources"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"isArchived"}},{"kind":"Field","name":{"kind":"Name","value":"position"}}]}}]}}]} as unknown as DocumentNode<AdmissionsKanbanSourcesQuery, AdmissionsKanbanSourcesQueryVariables>;
+export const AdmissionsKanbanApplicationsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AdmissionsKanbanApplications"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"admissionApplications"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"admissionStageId"}},{"kind":"Field","name":{"kind":"Name","value":"position"}},{"kind":"Field","name":{"kind":"Name","value":"childFirstName"}},{"kind":"Field","name":{"kind":"Name","value":"childLastName"}},{"kind":"Field","name":{"kind":"Name","value":"childDateOfBirth"}},{"kind":"Field","name":{"kind":"Name","value":"childGender"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"admissionSource"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"stageEnteredAt"}},{"kind":"Field","name":{"kind":"Name","value":"familyId"}},{"kind":"Field","name":{"kind":"Name","value":"enrolledStudentId"}},{"kind":"Field","name":{"kind":"Name","value":"assignedGradeLevelId"}},{"kind":"Field","name":{"kind":"Name","value":"assignedGradeLevel"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"shortCode"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"parent"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"shortCode"}},{"kind":"Field","name":{"kind":"Name","value":"color"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"family"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"contactPersons"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"phone"}},{"kind":"Field","name":{"kind":"Name","value":"mobile"}},{"kind":"Field","name":{"kind":"Name","value":"roles"}}]}}]}}]}}]}}]} as unknown as DocumentNode<AdmissionsKanbanApplicationsQuery, AdmissionsKanbanApplicationsQueryVariables>;
+export const AdmissionApplicationDetailDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AdmissionApplicationDetail"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"admissionApplicationById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"organizationId"}},{"kind":"Field","name":{"kind":"Name","value":"admissionStageId"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"admissionSource"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"stageEnteredAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"position"}},{"kind":"Field","name":{"kind":"Name","value":"childFirstName"}},{"kind":"Field","name":{"kind":"Name","value":"childLastName"}},{"kind":"Field","name":{"kind":"Name","value":"childDateOfBirth"}},{"kind":"Field","name":{"kind":"Name","value":"childGender"}},{"kind":"Field","name":{"kind":"Name","value":"childNotes"}},{"kind":"Field","name":{"kind":"Name","value":"assignedGradeLevelId"}},{"kind":"Field","name":{"kind":"Name","value":"desiredSchoolClassId"}},{"kind":"Field","name":{"kind":"Name","value":"desiredEnrollmentDate"}},{"kind":"Field","name":{"kind":"Name","value":"enrolledStudentId"}},{"kind":"Field","name":{"kind":"Name","value":"familyId"}},{"kind":"Field","name":{"kind":"Name","value":"family"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"contactPersons"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"salutation"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"phone"}},{"kind":"Field","name":{"kind":"Name","value":"mobile"}},{"kind":"Field","name":{"kind":"Name","value":"roles"}},{"kind":"Field","name":{"kind":"Name","value":"occupation"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"admissionStage"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"stageType"}}]}},{"kind":"Field","name":{"kind":"Name","value":"desiredSchoolClass"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"assignedGradeLevel"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"color"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"admissionAuditLogs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"applicationId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"action"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"fieldName"}},{"kind":"Field","name":{"kind":"Name","value":"oldValue"}},{"kind":"Field","name":{"kind":"Name","value":"newValue"}},{"kind":"Field","name":{"kind":"Name","value":"fromStage"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"toStage"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"actorMembership"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"admissionApplicationsByFamily"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"familyId"},"value":{"kind":"StringValue","value":"00000000-0000-0000-0000-000000000000","block":false}}],"directives":[{"kind":"Directive","name":{"kind":"Name","value":"skip"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"BooleanValue","value":true}}]}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<AdmissionApplicationDetailQuery, AdmissionApplicationDetailQueryVariables>;
 export const AdmissionApplicationSiblingsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AdmissionApplicationSiblings"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"familyId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"admissionApplicationsByFamily"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"familyId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"familyId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"childFirstName"}},{"kind":"Field","name":{"kind":"Name","value":"childLastName"}},{"kind":"Field","name":{"kind":"Name","value":"childDateOfBirth"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"admissionStage"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"color"}}]}}]}}]}}]} as unknown as DocumentNode<AdmissionApplicationSiblingsQuery, AdmissionApplicationSiblingsQueryVariables>;
 export const OrgAdmissionRemindersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"OrgAdmissionReminders"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"AdmissionReminderFilter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"orgAdmissionReminders"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"applicationId"}},{"kind":"Field","name":{"kind":"Name","value":"dueAt"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"note"}},{"kind":"Field","name":{"kind":"Name","value":"completedAt"}},{"kind":"Field","name":{"kind":"Name","value":"application"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"childFirstName"}},{"kind":"Field","name":{"kind":"Name","value":"childLastName"}}]}},{"kind":"Field","name":{"kind":"Name","value":"assignedToMembership"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}}]}}]}}]}}]} as unknown as DocumentNode<OrgAdmissionRemindersQuery, OrgAdmissionRemindersQueryVariables>;
 export const RejectedAdmissionApplicationsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"RejectedAdmissionApplications"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"admissionApplications"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"includeFinished"},"value":{"kind":"BooleanValue","value":true}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"childFirstName"}},{"kind":"Field","name":{"kind":"Name","value":"childLastName"}},{"kind":"Field","name":{"kind":"Name","value":"stageEnteredAt"}},{"kind":"Field","name":{"kind":"Name","value":"rejectionReason"}},{"kind":"Field","name":{"kind":"Name","value":"rejectionReasonId"}},{"kind":"Field","name":{"kind":"Name","value":"rejectedBy"}},{"kind":"Field","name":{"kind":"Name","value":"followUpYear"}},{"kind":"Field","name":{"kind":"Name","value":"family"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"assignedGradeLevel"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"admissionRejectionReasons"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"includeArchived"},"value":{"kind":"BooleanValue","value":true}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"color"}}]}}]}}]} as unknown as DocumentNode<RejectedAdmissionApplicationsQuery, RejectedAdmissionApplicationsQueryVariables>;

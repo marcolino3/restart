@@ -40,6 +40,7 @@ const AdmissionsKanbanPage = async () => {
         initialApplications={data.data.applications}
         initialTableColumns={data.data.boardSettings.tableColumns}
         initialRejectionReasons={data.data.rejectionReasons}
+        initialSources={data.data.sources}
         gradeLevels={
           gradeLevels.success
             ? [...gradeLevels.data]

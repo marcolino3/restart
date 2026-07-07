@@ -5,6 +5,7 @@ import { gql } from "graphql-request";
 import type {
   AdmissionBoardSettings,
   AdmissionRejectionReason,
+  AdmissionSource,
   KanbanApplication,
   KanbanStage,
 } from "../types";
@@ -54,6 +55,18 @@ const RejectionReasonsDocument = gql`
   }
 `;
 
+const SourcesDocument = gql`
+  query AdmissionsKanbanSources {
+    admissionSources {
+      id
+      name
+      color
+      isArchived
+      position
+    }
+  }
+`;
+
 const ApplicationsDocument = gql`
   query AdmissionsKanbanApplications {
     admissionApplications {
@@ -65,7 +78,11 @@ const ApplicationsDocument = gql`
       childDateOfBirth
       childGender
       status
-      source
+      admissionSource {
+        id
+        name
+        color
+      }
       stageEnteredAt
       familyId
       enrolledStudentId
@@ -117,7 +134,7 @@ type ApplicationsResp = {
     childDateOfBirth: string | null;
     childGender: KanbanApplication["childGender"];
     status: KanbanApplication["status"];
-    source: KanbanApplication["source"];
+    admissionSource: KanbanApplication["admissionSource"];
     stageEnteredAt: string;
     familyId: string;
     enrolledStudentId: string | null;
@@ -157,6 +174,7 @@ export type AdmissionsKanbanData = {
   familyChildCount: Record<string, number>;
   boardSettings: AdmissionBoardSettings;
   rejectionReasons: AdmissionRejectionReason[];
+  sources: AdmissionSource[];
 };
 
 export const getAdmissionsDataAction = async (): Promise<
@@ -171,6 +189,7 @@ export const getAdmissionsDataAction = async (): Promise<
       remindersResp,
       boardSettingsResp,
       rejectionReasonsResp,
+      sourcesResp,
     ] = await Promise.all([
       client.request<StagesResp>(StagesDocument),
       client.request<ApplicationsResp>(ApplicationsDocument),
@@ -191,6 +210,9 @@ export const getAdmissionsDataAction = async (): Promise<
           RejectionReasonsDocument,
         )
         .catch(() => ({ admissionRejectionReasons: [] })),
+      client
+        .request<{ admissionSources: AdmissionSource[] }>(SourcesDocument)
+        .catch(() => ({ admissionSources: [] })),
     ]);
 
     const now = Date.now();
@@ -240,7 +262,7 @@ export const getAdmissionsDataAction = async (): Promise<
         childDateOfBirth: a.childDateOfBirth,
         childGender: a.childGender,
         status: a.status,
-        source: a.source,
+        admissionSource: a.admissionSource,
         stageEnteredAt: a.stageEnteredAt,
         familyId: a.familyId,
         enrolledStudentId: a.enrolledStudentId,
@@ -306,6 +328,7 @@ export const getAdmissionsDataAction = async (): Promise<
             boardSettingsResp.admissionBoardSettings?.tableColumns ?? null,
         },
         rejectionReasons: rejectionReasonsResp.admissionRejectionReasons ?? [],
+        sources: sourcesResp.admissionSources ?? [],
       },
     };
   } catch (error) {

@@ -78,6 +78,7 @@ export default async function AdmissionDetailRoute({ params }: PageProps) {
   const rejectionReasons = kanbanData.success
     ? kanbanData.data.rejectionReasons
     : [];
+  const sources = kanbanData.success ? kanbanData.data.sources : [];
 
   // Flat list incl. subgroups — the edit-details dialog assigns any level.
   const gradeLevels = gradeLevelsRes.success
@@ -106,6 +107,7 @@ export default async function AdmissionDetailRoute({ params }: PageProps) {
       members={members}
       gradeLevels={gradeLevels}
       schoolClasses={schoolClasses}
+      sources={sources}
       initialActivities={activities.success ? activities.data : []}
       initialReminders={reminders.success ? reminders.data : []}
       initialAppointments={appointments.success ? appointments.data : []}

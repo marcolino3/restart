@@ -27,7 +27,7 @@ import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFor
 
 import { createApplicationAction } from "../actions/create-application.action";
 import { getGradeLevelsAction } from "@/features/grade-levels/actions/get-grade-levels.action";
-import type { KanbanStage } from "../types";
+import type { AdmissionSource, KanbanStage } from "../types";
 
 const Schema = z.object({
   childFirstName: z.string().min(1).max(120),
@@ -37,9 +37,7 @@ const Schema = z.object({
   admissionStageId: z.string().optional(),
   assignedGradeLevelId: z.string().optional(),
   desiredEnrollmentDate: z.date().nullable().optional(),
-  source: z
-    .enum(["MANUAL", "PUBLIC_FORM", "OPEN_DAY", "REFERRAL", "OTHER"])
-    .optional(),
+  admissionSourceId: z.string().uuid().nullable().optional(),
   childNotes: z.string().max(2000).optional(),
   familyId: z.string().optional(),
   familyName: z.string().max(200).optional(),
@@ -71,6 +69,8 @@ interface Props {
   stages: KanbanStage[];
   /** Org grade levels for the "desired grade" select; empty ⇒ field hidden. */
   gradeLevels?: GradeLevelOption[];
+  /** Org intake channels ("Eingangskanäle") for the source select. */
+  sources?: AdmissionSource[];
   existingFamilies: ExistingFamily[];
   onClose: () => void;
   onCreated: () => void;
@@ -81,6 +81,7 @@ interface Props {
 export function CreateApplicationDialog({
   stages,
   gradeLevels: gradeLevelsProp,
+  sources = [],
   existingFamilies,
   onClose,
   onCreated,
@@ -127,7 +128,8 @@ export function CreateApplicationDialog({
         (initialStageId && stages.some((s) => s.id === initialStageId)
           ? initialStageId
           : stages[0]?.id) ?? stages[0]?.id,
-      source: "MANUAL",
+      admissionSourceId:
+        sources.find((s) => !s.isArchived)?.id ?? sources[0]?.id ?? null,
       parentRole: "MOTHER",
     },
   });
@@ -184,7 +186,7 @@ export function CreateApplicationDialog({
       admissionStageId: values.admissionStageId || undefined,
       assignedGradeLevelId: values.assignedGradeLevelId || undefined,
       desiredEnrollmentDate: enrollmentDate,
-      source: values.source ?? "MANUAL",
+      admissionSourceId: values.admissionSourceId ?? undefined,
       familyId: values.familyId || undefined,
       familyName:
         !values.familyId && values.familyName ? values.familyName : undefined,
@@ -215,13 +217,10 @@ export function CreateApplicationDialog({
     { value: "FEMALE", label: "genderFemale" },
     { value: "OTHER", label: "genderOther" },
   ];
-  const sourceOptions = [
-    { value: "MANUAL", label: "sourceManual" },
-    { value: "PUBLIC_FORM", label: "sourcePublicForm" },
-    { value: "OPEN_DAY", label: "sourceOpenDay" },
-    { value: "REFERRAL", label: "sourceReferral" },
-    { value: "OTHER", label: "sourceOther" },
-  ];
+  // Intake channels come from the org-configured list (literal names, not i18n).
+  const sourceOptions = sources
+    .filter((s) => !s.isArchived)
+    .map((s) => ({ value: s.id, label: s.name }));
   const parentRoleOptions = [
     { value: "MOTHER", label: "roleMother" },
     { value: "FATHER", label: "roleFather" },
@@ -291,10 +290,11 @@ export function CreateApplicationDialog({
                   translateOptions={false}
                 />
                 <SelectFormField
-                  name="source"
-                  label="source"
+                  name="admissionSourceId"
+                  label="intakeChannel"
                   options={sourceOptions}
                   namespace="Admissions"
+                  translateOptions={false}
                 />
                 <DatePickerFormField
                   name="desiredEnrollmentDate"
