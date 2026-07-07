@@ -6,6 +6,7 @@ import { getAdmissionActivitiesAction } from "@/features/admissions-kanban/actio
 import { getAdmissionRemindersAction } from "@/features/admissions-kanban/actions/get-admission-reminders.action";
 import { getAdmissionAppointmentsAction } from "@/features/admissions-kanban/actions/get-admission-appointments.action";
 import { getAdmissionAppointmentTypesAction } from "@/features/admissions-kanban/actions/appointment-types-actions";
+import { getAdmissionDocumentsAction } from "@/features/admissions-kanban/actions/get-admission-documents.action";
 import { getAdmissionsDataAction } from "@/features/admissions-kanban/actions/get-admissions-data.action";
 import { getAdmissionEmailsAction } from "@/features/admissions-kanban/actions/get-admission-emails.action";
 import { getEmailTemplatesAction } from "@/features/email-templates/actions/get-email-templates.action";
@@ -31,6 +32,7 @@ export default async function AdmissionDetailRoute({ params }: PageProps) {
     reminders,
     appointments,
     appointmentTypes,
+    documents,
     kanbanData,
     emails,
     templates,
@@ -42,6 +44,7 @@ export default async function AdmissionDetailRoute({ params }: PageProps) {
     getAdmissionAppointmentsAction(id),
     // Bare array + can throw (no {success} wrapper) — swallow to a safe [].
     getAdmissionAppointmentTypesAction().catch(() => []),
+    getAdmissionDocumentsAction(id),
     getAdmissionsDataAction(),
     getAdmissionEmailsAction(id),
     getEmailTemplatesAction("ADMISSION"),
@@ -87,6 +90,7 @@ export default async function AdmissionDetailRoute({ params }: PageProps) {
       initialReminders={reminders.success ? reminders.data : []}
       initialAppointments={appointments.success ? appointments.data : []}
       appointmentTypes={appointmentTypes}
+      initialDocuments={documents.success ? documents.data : []}
       initialEmails={emails.success ? emails.data : []}
       emailTemplates={
         templates.success

@@ -417,6 +417,7 @@
     "stageDefault": "Standard",
     "manageRejectionReasons": "Absagegründe",
     "appointments": "Termine",
+    "documents": "Dokumente",
     "appointmentNew": "Neuer Termin",
     "appointmentEmpty": "Noch keine Termine erfasst.",
     "appointmentTypeLabel": "Termin-Art",
@@ -2830,5 +2831,24 @@
     "mismatch": "Die Passwörter stimmen nicht überein.",
     "error": "Passwort konnte nicht gesetzt werden.",
     "success": "Passwort gesetzt. Du kannst dich jetzt einloggen."
+  },
+  "Documents": {
+    "empty": "Noch keine Dokumente hochgeladen.",
+    "uploadButton": "Dokument hochladen",
+    "uploadDialogTitle": "Dokument hochladen",
+    "fileLabel": "Datei",
+    "chooseFile": "Datei auswählen",
+    "titleLabel": "Titel (optional)",
+    "tagsLabel": "Schlagwörter",
+    "tagsPlaceholder": "Tippen und Enter drücken …",
+    "cancel": "Abbrechen",
+    "uploadOk": "Dokument hochgeladen",
+    "uploadError": "Dokument konnte nicht hochgeladen werden",
+    "uploadTypeError": "Dieser Dateityp ist nicht erlaubt (PDF oder Bild).",
+    "uploadSizeError": "Datei ist zu gross (max. {max}).",
+    "download": "Herunterladen",
+    "delete": "Löschen",
+    "deleteTitle": "Dokument löschen",
+    "deleteDescription": "«{name}» wirklich löschen? Das kann nicht rückgängig gemacht werden."
   }
 }

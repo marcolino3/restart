@@ -1,7 +1,11 @@
 import { CommonModule } from '@/common/common.module';
 import { DatabaseModule } from '@/database/database.module';
 import { OrganizationSettingsModule } from '@/organization-settings/organization-settings.module';
+import { UsersModule } from '@/users/users.module';
 import { Module } from '@nestjs/common';
+import { AdmissionDocumentsController } from './admission-documents.controller';
+import { AdmissionDocumentsResolver } from './admission-documents.resolver';
+import { AdmissionDocumentsService } from './admission-documents.service';
 import { AdmissionActivitiesResolver } from './admission-activities.resolver';
 import { AdmissionActivitiesService } from './admission-activities.service';
 import { AdmissionAppointmentsResolver } from './admission-appointments.resolver';
@@ -19,8 +23,16 @@ import { EmailTemplatesService } from './email-templates.service';
 import { SmtpService } from './smtp.service';
 
 @Module({
-  imports: [CommonModule, DatabaseModule, OrganizationSettingsModule],
+  imports: [
+    CommonModule,
+    DatabaseModule,
+    OrganizationSettingsModule,
+    UsersModule,
+  ],
+  controllers: [AdmissionDocumentsController],
   providers: [
+    AdmissionDocumentsResolver,
+    AdmissionDocumentsService,
     AdmissionApplicationsResolver,
     AdmissionApplicationsService,
     AdmissionAuditLogsService,
@@ -38,6 +50,7 @@ import { SmtpService } from './smtp.service';
     SmtpService,
   ],
   exports: [
+    AdmissionDocumentsService,
     AdmissionApplicationsService,
     AdmissionAuditLogsService,
     AdmissionRemindersService,
