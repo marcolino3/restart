@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 
 import { getAdmissionActivitiesAction } from "../actions/get-admission-activities.action";
 import { getAdmissionRemindersAction } from "../actions/get-admission-reminders.action";
+import { getAdmissionAppointmentsAction } from "../actions/get-admission-appointments.action";
 import { getAdmissionEmailsAction } from "../actions/get-admission-emails.action";
 import type {
   AdmissionApplicationDetail,
@@ -29,11 +30,17 @@ import type {
 } from "../actions/get-application-detail.action";
 import type { AdmissionActivity } from "../actions/get-admission-activities.action";
 import type { AdmissionReminder } from "../actions/get-admission-reminders.action";
+import type { AdmissionAppointment } from "../actions/get-admission-appointments.action";
 import type { AdmissionEmail } from "../actions/get-admission-emails.action";
-import type { AdmissionRejectionReason, KanbanStage } from "../types";
+import type {
+  AdmissionAppointmentType,
+  AdmissionRejectionReason,
+  KanbanStage,
+} from "../types";
 import { ActivityComposer } from "./ActivityComposer";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { AdmissionRemindersBlock } from "./AdmissionRemindersBlock";
+import { AdmissionAppointmentsBlock } from "./AdmissionAppointmentsBlock";
 import { AdmissionEmailHistory } from "./AdmissionEmailHistory";
 import { RejectApplicationDialog } from "./RejectApplicationDialog";
 import { FinalizeEnrollmentDialog } from "./FinalizeEnrollmentDialog";
@@ -46,6 +53,8 @@ interface Props {
   rejectionReasons: AdmissionRejectionReason[];
   initialActivities: AdmissionActivity[];
   initialReminders: AdmissionReminder[];
+  initialAppointments: AdmissionAppointment[];
+  appointmentTypes: AdmissionAppointmentType[];
   initialEmails: AdmissionEmail[];
   emailTemplates: SendableTemplate[];
   /** Org memberships for reminder assignee pickers. */
@@ -62,6 +71,8 @@ export function AdmissionDetailPage({
   rejectionReasons,
   initialActivities,
   initialReminders,
+  initialAppointments,
+  appointmentTypes,
   initialEmails,
   emailTemplates,
   members,
@@ -76,6 +87,8 @@ export function AdmissionDetailPage({
     useState<AdmissionActivity[]>(initialActivities);
   const [reminders, setReminders] =
     useState<AdmissionReminder[]>(initialReminders);
+  const [appointments, setAppointments] =
+    useState<AdmissionAppointment[]>(initialAppointments);
   const [emails, setEmails] = useState<AdmissionEmail[]>(initialEmails);
   const [sendOpen, setSendOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -108,6 +121,14 @@ export function AdmissionDetailPage({
     startTransition(async () => {
       const res = await getAdmissionRemindersAction(detail.id);
       if (res.success) setReminders(res.data);
+      router.refresh();
+    });
+  };
+
+  const refreshAppointments = () => {
+    startTransition(async () => {
+      const res = await getAdmissionAppointmentsAction(detail.id);
+      if (res.success) setAppointments(res.data);
       router.refresh();
     });
   };
@@ -245,6 +266,8 @@ export function AdmissionDetailPage({
                   onSaved={refreshActivities}
                   members={members}
                   onReminderSaved={refreshReminders}
+                  appointmentTypes={appointmentTypes}
+                  onAppointmentSaved={refreshAppointments}
                 />
               </div>
             )}
@@ -331,6 +354,16 @@ export function AdmissionDetailPage({
             canEdit={canEdit}
             onChanged={refreshReminders}
             members={members}
+            childName={childName}
+          />
+
+          <AdmissionAppointmentsBlock
+            applicationId={detail.id}
+            appointments={appointments}
+            types={appointmentTypes}
+            members={members}
+            canEdit={canEdit}
+            onChanged={refreshAppointments}
             childName={childName}
           />
 
@@ -431,7 +464,15 @@ export function AdmissionDetailPage({
                         {l.action}
                       </Badge>
                       <span className="text-muted-foreground">
-                        {new Date(l.createdAt).toLocaleString()}
+                        {new Date(l.createdAt).toLocaleString("de-CH", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                          timeZone: "Europe/Zurich",
+                        })}
                       </span>
                     </div>
                     {l.action === "STAGE_CHANGED" && (

@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
-import { SelectFormFieldWithoutTranslations } from "@/components/form/form-fields/SelectFormFieldWithoutTranslations";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
 import { SliderFormField } from "@/components/form/form-fields/SliderFormField";
 import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
@@ -52,11 +51,13 @@ export function StepContract({ teamOptions, draftId }: Props) {
               placeholder="selectPlaceholder"
               options={FUNCTION_OPTIONS}
             />
-            <SelectFormFieldWithoutTranslations
+            <SelectFormField
               name="teamId"
-              label={t("team")}
-              placeholder={t("selectTeam")}
+              label="team"
+              namespace="EmployeeOnboarding"
+              placeholder="selectTeam"
               options={teamOptions}
+              translateOptions={false}
             />
             <DatePickerFormField
               name="startDate"

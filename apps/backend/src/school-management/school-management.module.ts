@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AdmissionAppointmentTypesModule } from './admission-appointment-types/admission-appointment-types.module';
 import { AdmissionBoardSettingsModule } from './admission-board-settings/admission-board-settings.module';
 import { AdmissionRejectionReasonsModule } from './admission-rejection-reasons/admission-rejection-reasons.module';
 import { AdmissionStagesModule } from './admission-stages/admission-stages.module';
@@ -20,6 +21,7 @@ import { StudentsModule } from './students/students.module';
     SchoolClassEnrollmentsModule,
     AdmissionStagesModule,
     AdmissionRejectionReasonsModule,
+    AdmissionAppointmentTypesModule,
     AdmissionBoardSettingsModule,
     ContactPersonsModule,
     FamiliesModule,

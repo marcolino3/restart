@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import {
   FormField,
   FormItem,
@@ -22,8 +23,18 @@ interface Props {
   label?: string;
   description?: string;
   placeholder?: string;
-  options: { label: string; value: string }[];
+  /**
+   * Option labels are i18n keys (`string`) when `translateOptions` is true
+   * (default), or arbitrary rendered content (`ReactNode`) when it is false.
+   */
+  options: { label: string | ReactNode; value: string }[];
   width?: string;
+  /**
+   * Whether option labels are i18n keys to translate. `false` for dynamic
+   * option labels (names, classes, periods from the DB) or ReactNode labels.
+   * Default `true`.
+   */
+  translateOptions?: boolean;
   /** i18n namespace for `label`, `description`, `placeholder` und option-labels. Default `"Common"`. */
   namespace?: string;
 }
@@ -35,6 +46,7 @@ export const SelectFormField = ({
   placeholder,
   options,
   width = "w-full",
+  translateOptions = true,
   namespace = "Common",
 }: Props) => {
   const t = useTranslations(namespace);
@@ -55,7 +67,9 @@ export const SelectFormField = ({
               <SelectContent>
                 {options.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
-                    {t(option.label)}
+                    {translateOptions
+                      ? t(option.label as string)
+                      : option.label}
                   </SelectItem>
                 ))}
               </SelectContent>

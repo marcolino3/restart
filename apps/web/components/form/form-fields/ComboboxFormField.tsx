@@ -42,6 +42,13 @@ type ComboboxFormFieldProps<TFormValues extends FieldValues> = {
   width?: string;
   className?: string;
   translateOptions?: boolean;
+  /** Show a clear (×) button to reset a single-select back to empty. */
+  clearable?: boolean;
+  /**
+   * Render the popover in modal mode — required when the combobox lives inside
+   * a Radix Dialog, so focus/scroll stay trapped in the popover.
+   */
+  modal?: boolean;
   /** i18n namespace for label/description/placeholder/option-labels. Default `"Common"`. */
   namespace?: string;
 };
@@ -58,6 +65,8 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
   width,
   className,
   translateOptions = true,
+  clearable = false,
+  modal = false,
   namespace = "Common",
 }: ComboboxFormFieldProps<TFormValues>) {
   const t = useTranslations(namespace);
@@ -96,7 +105,8 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
         return (
           <FormItem className={cn(className, width || "w-full", "min-w-0 flex flex-col gap-2")}>
             {label && <FormLabel>{t(label)}</FormLabel>}
-            <Popover>
+            <div className="flex items-center gap-1">
+            <Popover modal={modal}>
               <PopoverTrigger asChild>
                 <FormControl>
                   <Button
@@ -154,6 +164,18 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
                 </Command>
               </PopoverContent>
             </Popover>
+            {clearable && !multiple && field.value && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
+                onClick={() => field.onChange(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+            </div>
 
             {multiple && selectedOptions.length > 0 && (
               <div className="flex flex-wrap gap-1.5">

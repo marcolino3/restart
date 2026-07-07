@@ -4,6 +4,8 @@ import { OrganizationSettingsModule } from '@/organization-settings/organization
 import { Module } from '@nestjs/common';
 import { AdmissionActivitiesResolver } from './admission-activities.resolver';
 import { AdmissionActivitiesService } from './admission-activities.service';
+import { AdmissionAppointmentsResolver } from './admission-appointments.resolver';
+import { AdmissionAppointmentsService } from './admission-appointments.service';
 import { AdmissionApplicationsResolver } from './admission-applications.resolver';
 import { AdmissionApplicationsService } from './admission-applications.service';
 import { AdmissionAuditLogsService } from './admission-audit-logs.service';
@@ -27,6 +29,8 @@ import { SmtpService } from './smtp.service';
     AdmissionRemindersResolver,
     AdmissionRemindersService,
     AdmissionReminderNotifierService,
+    AdmissionAppointmentsResolver,
+    AdmissionAppointmentsService,
     EmailTemplatesResolver,
     EmailTemplatesService,
     AdmissionEmailsResolver,
@@ -37,6 +41,7 @@ import { SmtpService } from './smtp.service';
     AdmissionApplicationsService,
     AdmissionAuditLogsService,
     AdmissionRemindersService,
+    AdmissionAppointmentsService,
     EmailTemplatesService,
     AdmissionEmailsService,
   ],
