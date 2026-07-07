@@ -27,6 +27,7 @@ import {
   ArrowUpAZ,
   ArrowUpDown,
   Ban,
+  CalendarClock,
   ChevronLeft,
   ChevronRight,
   GripVertical,
@@ -66,6 +67,7 @@ import {
   type GradeLevelOption,
 } from "./CreateApplicationDialog";
 import { ManageRejectionReasonsDialog } from "./ManageRejectionReasonsDialog";
+import { ManageAppointmentTypesDialog } from "./ManageAppointmentTypesDialog";
 import { ManageStagesDialog } from "./ManageStagesDialog";
 
 const COLLAPSED_KEY = "admissions-kanban:collapsed-stages";
@@ -221,6 +223,7 @@ export function AdmissionsKanban({
   const [createStageId, setCreateStageId] = useState<string | null>(null);
   const [showStages, setShowStages] = useState(false);
   const [showReasons, setShowReasons] = useState(false);
+  const [manageTypesOpen, setManageTypesOpen] = useState(false);
 
   // Local stage ordering — mirrors the backend order on first render but can
   // be reordered by drag-and-drop. Persisted indirectly via the backend
@@ -547,6 +550,10 @@ export function AdmissionsKanban({
                   <Ban className="mr-2 h-4 w-4" />
                   {t("manageRejectionReasons")}
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setManageTypesOpen(true)}>
+                  <CalendarClock className="mr-2 h-4 w-4" />
+                  {t("manageAppointmentTypes")}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -719,6 +726,13 @@ export function AdmissionsKanban({
         <ManageRejectionReasonsDialog
           reasons={initialRejectionReasons}
           onClose={() => setShowReasons(false)}
+        />
+      )}
+
+      {manageTypesOpen && canManageStages && (
+        <ManageAppointmentTypesDialog
+          types={[]}
+          onClose={() => setManageTypesOpen(false)}
         />
       )}
     </div>

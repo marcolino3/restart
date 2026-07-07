@@ -63,6 +63,14 @@ export type AdmissionRejectionReason = {
   position: number;
 };
 
+/** Org-configurable appointment type (Termin-Art). */
+export type AdmissionAppointmentType = {
+  id: string;
+  label: string;
+  color: string | null;
+  position: number;
+};
+
 export type KanbanFamilySnippet = {
   id: string;
   name: string | null;

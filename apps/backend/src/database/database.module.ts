@@ -23,7 +23,10 @@ import { EmployeePeriodOpeningBalance } from '@/employee-management/time-trackin
 import { EmployeePaidOvertime } from '@/employee-management/employee-paid-overtime/entities/employee-paid-overtime.entity';
 import { WorkDayBalance } from '@/employee-management/work-day-balances/entities/work-day-balance.entity';
 import { AdmissionStage } from '@/school-management/admission-stages/entities/admission-stage.entity';
+import { AdmissionAppointmentType } from '@/school-management/admission-appointment-types/entities/admission-appointment-type.entity';
 import { AdmissionRejectionReason } from '@/school-management/admission-rejection-reasons/entities/admission-rejection-reason.entity';
+import { AdmissionAppointment } from '@/school-management/admissions/entities/admission-appointment.entity';
+import { AdmissionAppointmentAssignee } from '@/school-management/admissions/entities/admission-appointment-assignee.entity';
 import { AdmissionBoardSettings } from '@/school-management/admission-board-settings/entities/admission-board-settings.entity';
 import { AdmissionActivity } from '@/school-management/admissions/entities/admission-activity.entity';
 import { AdmissionApplication } from '@/school-management/admissions/entities/admission-application.entity';
@@ -115,11 +118,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       StudentNote,
       AdmissionStage,
       AdmissionRejectionReason,
+      AdmissionAppointmentType,
       AdmissionBoardSettings,
       AdmissionApplication,
       AdmissionAuditLog,
       AdmissionActivity,
       AdmissionReminder,
+      AdmissionAppointment,
+      AdmissionAppointmentAssignee,
       AdmissionEmail,
       EmailTemplate,
       ContactPerson,
