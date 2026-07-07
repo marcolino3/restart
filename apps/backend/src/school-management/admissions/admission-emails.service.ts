@@ -61,7 +61,7 @@ export class AdmissionEmailsService {
   ): Promise<AdmissionEmailPreview> {
     const application = await this.applicationsRepo.findOne({
       where: { id: applicationId, organizationId },
-      relations: ['admissionStage', 'desiredGradeLevel', 'desiredSchoolClass'],
+      relations: ['admissionStage', 'assignedGradeLevel', 'desiredSchoolClass'],
     });
     if (!application) {
       throw new NotFoundException(
@@ -215,7 +215,7 @@ export class AdmissionEmailsService {
       childFirstName: firstName,
       childLastName: lastName,
       childFullName: `${firstName} ${lastName}`.trim(),
-      desiredGradeLevel: application.desiredGradeLevel?.name ?? '',
+      desiredGradeLevel: application.assignedGradeLevel?.name ?? '',
       desiredSchoolClass: application.desiredSchoolClass?.name ?? '',
       desiredEnrollmentDate: application.desiredEnrollmentDate ?? '',
       stageName: application.admissionStage?.name ?? '',

@@ -33,6 +33,7 @@ export class GradeLevel
   @Column('uuid', { name: 'parent_id', nullable: true })
   parentId?: string | null;
 
+  @Field(() => GradeLevel, { nullable: true })
   @ManyToOne(() => GradeLevel, (level) => level.children, {
     onDelete: 'SET NULL',
     nullable: true,

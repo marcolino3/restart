@@ -69,11 +69,18 @@ const ApplicationsDocument = gql`
       stageEnteredAt
       familyId
       enrolledStudentId
-      desiredGradeLevelId
-      desiredGradeLevel {
+      assignedGradeLevelId
+      assignedGradeLevel {
         id
         name
+        shortCode
         color
+        parent {
+          id
+          name
+          shortCode
+          color
+        }
       }
       family {
         id
@@ -114,8 +121,19 @@ type ApplicationsResp = {
     stageEnteredAt: string;
     familyId: string;
     enrolledStudentId: string | null;
-    desiredGradeLevelId: string | null;
-    desiredGradeLevel: { id: string; name: string; color: string | null } | null;
+    assignedGradeLevelId: string | null;
+    assignedGradeLevel: {
+      id: string;
+      name: string;
+      shortCode: string | null;
+      color: string | null;
+      parent: {
+        id: string;
+        name: string;
+        shortCode: string | null;
+        color: string | null;
+      } | null;
+    } | null;
     family: {
       id: string;
       name: string | null;
@@ -226,9 +244,29 @@ export const getAdmissionsDataAction = async (): Promise<
         stageEnteredAt: a.stageEnteredAt,
         familyId: a.familyId,
         enrolledStudentId: a.enrolledStudentId,
-        desiredGradeLevelId: a.desiredGradeLevelId,
-        desiredGradeLevelName: a.desiredGradeLevel?.name ?? null,
-        desiredGradeLevelColor: a.desiredGradeLevel?.color ?? null,
+        assignedGradeLevelId: a.assignedGradeLevelId,
+        assignedGradeLevelName: a.assignedGradeLevel?.name ?? null,
+        assignedGradeLevelColor: a.assignedGradeLevel?.color ?? null,
+        // Split the assigned node into Stufe + optional Untergruppe: a node with
+        // a `parent` is itself a subgroup (parent = Stufe); otherwise it is the
+        // Stufe and there is no subgroup.
+        assignedStufe: a.assignedGradeLevel
+          ? a.assignedGradeLevel.parent ?? {
+              id: a.assignedGradeLevel.id,
+              name: a.assignedGradeLevel.name,
+              shortCode: a.assignedGradeLevel.shortCode,
+              color: a.assignedGradeLevel.color,
+            }
+          : null,
+        assignedUntergruppe:
+          a.assignedGradeLevel && a.assignedGradeLevel.parent
+            ? {
+                id: a.assignedGradeLevel.id,
+                name: a.assignedGradeLevel.name,
+                shortCode: a.assignedGradeLevel.shortCode,
+                color: a.assignedGradeLevel.color,
+              }
+            : null,
         openRemindersCount: reminderCounts.get(a.id)?.open ?? 0,
         overdueRemindersCount: reminderCounts.get(a.id)?.overdue ?? 0,
         family: {

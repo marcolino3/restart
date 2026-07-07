@@ -36,11 +36,11 @@ export function AdmissionDocumentsBlock({
       <div className="flex items-center justify-between border-b px-4 py-2.5">
         <div className="flex items-center gap-2">
           <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <span className="text-[15px] font-[650] tracking-[-0.01em]">
             {t("documents")}
           </span>
           {documents.length > 0 && (
-            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground">
+            <span className="rounded-full bg-accent px-[9px] py-0.5 font-mono text-[11px] font-[600] leading-none tabular-nums text-accent-foreground">
               {documents.length}
             </span>
           )}

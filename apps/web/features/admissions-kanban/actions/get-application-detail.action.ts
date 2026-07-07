@@ -12,13 +12,14 @@ const Document = gql`
       status
       source
       stageEnteredAt
+      createdAt
       position
       childFirstName
       childLastName
       childDateOfBirth
       childGender
       childNotes
-      desiredGradeLevelId
+      assignedGradeLevelId
       desiredSchoolClassId
       desiredEnrollmentDate
       enrolledStudentId
@@ -48,7 +49,7 @@ const Document = gql`
         id
         name
       }
-      desiredGradeLevel {
+      assignedGradeLevel {
         id
         name
         color
@@ -144,14 +145,15 @@ export type AdmissionApplicationDetail = {
   status: string;
   source: string;
   stageEnteredAt: string;
+  createdAt: string;
   childFirstName: string;
   childLastName: string;
   childDateOfBirth: string | null;
   childGender: string | null;
   childNotes: string | null;
-  desiredGradeLevelId: string | null;
-  desiredGradeLevelName: string | null;
-  desiredGradeLevelColor: string | null;
+  assignedGradeLevelId: string | null;
+  assignedGradeLevelName: string | null;
+  assignedGradeLevelColor: string | null;
   desiredSchoolClassId: string | null;
   desiredSchoolClassName: string | null;
   desiredEnrollmentDate: string | null;
@@ -179,12 +181,13 @@ export const getApplicationDetailAction = async (
         status: string;
         source: string;
         stageEnteredAt: string;
+        createdAt: string;
         childFirstName: string;
         childLastName: string;
         childDateOfBirth: string | null;
         childGender: string | null;
         childNotes: string | null;
-        desiredGradeLevelId: string | null;
+        assignedGradeLevelId: string | null;
         desiredSchoolClassId: string | null;
         desiredEnrollmentDate: string | null;
         enrolledStudentId: string | null;
@@ -197,7 +200,7 @@ export const getApplicationDetailAction = async (
         };
         admissionStage: { id: string; name: string; stageType: string };
         desiredSchoolClass: { id: string; name: string } | null;
-        desiredGradeLevel: { id: string; name: string; color: string | null } | null;
+        assignedGradeLevel: { id: string; name: string; color: string | null } | null;
       };
       admissionAuditLogs: Array<{
         id: string;
@@ -236,14 +239,15 @@ export const getApplicationDetailAction = async (
         status: app.status,
         source: app.source,
         stageEnteredAt: app.stageEnteredAt,
+        createdAt: app.createdAt,
         childFirstName: app.childFirstName,
         childLastName: app.childLastName,
         childDateOfBirth: app.childDateOfBirth,
         childGender: app.childGender,
         childNotes: app.childNotes,
-        desiredGradeLevelId: app.desiredGradeLevelId,
-        desiredGradeLevelName: app.desiredGradeLevel?.name ?? null,
-        desiredGradeLevelColor: app.desiredGradeLevel?.color ?? null,
+        assignedGradeLevelId: app.assignedGradeLevelId,
+        assignedGradeLevelName: app.assignedGradeLevel?.name ?? null,
+        assignedGradeLevelColor: app.assignedGradeLevel?.color ?? null,
         desiredSchoolClassId: app.desiredSchoolClassId,
         desiredSchoolClassName: app.desiredSchoolClass?.name ?? null,
         desiredEnrollmentDate: app.desiredEnrollmentDate,

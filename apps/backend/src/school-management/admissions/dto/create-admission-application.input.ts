@@ -65,7 +65,7 @@ export class CreateAdmissionApplicationInput {
   @Field(() => ID, { nullable: true })
   @IsOptional()
   @IsUUID()
-  desiredGradeLevelId?: string;
+  assignedGradeLevelId?: string;
 
   @Field(() => ID, { nullable: true })
   @IsOptional()

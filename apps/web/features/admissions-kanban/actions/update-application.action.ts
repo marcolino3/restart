@@ -21,7 +21,8 @@ export type UpdateApplicationInput = {
   childDateOfBirth?: string | null;
   childGender?: "MALE" | "FEMALE" | "OTHER" | null;
   childNotes?: string | null;
-  desiredGradeLevelId?: string | null;
+  source?: "MANUAL" | "PUBLIC_FORM" | "OPEN_DAY" | "REFERRAL" | "OTHER";
+  assignedGradeLevelId?: string | null;
   desiredSchoolClassId?: string | null;
   desiredEnrollmentDate?: string | null;
 };

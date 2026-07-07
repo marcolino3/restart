@@ -17,8 +17,8 @@ interface PageHeadProps {
 }
 
 /**
- * Page heading from the design handoff (`.pagehead`): large bold title,
- * muted subtitle and an action slot on the right.
+ * Page heading from the design handoff (`.pagehead`): a compact semibold title
+ * (18px/600), muted subtitle (14px) and an action slot on the right.
  */
 export function PageHead({
   title,
@@ -28,12 +28,12 @@ export function PageHead({
   className,
 }: PageHeadProps) {
   const heading = (
-    <h2 className="text-[26px] font-bold leading-none tracking-[-0.025em]">
+    <h2 className="text-[18px] font-[600] leading-tight tracking-[-0.01em]">
       {title}
     </h2>
   );
   const sub = subtitle ? (
-    <p className={cn("text-[13.5px] text-muted-foreground", stacked && "pt-1.5")}>
+    <p className={cn("text-[14px] text-muted-foreground", stacked && "pt-0.5")}>
       {subtitle}
     </p>
   ) : null;

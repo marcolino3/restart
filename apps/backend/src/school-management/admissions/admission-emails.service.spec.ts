@@ -202,7 +202,7 @@ describe('AdmissionEmailsService', () => {
         childFirstName: 'Mia',
         childLastName: 'Muster',
         admissionStage: { name: 'Erstgespräch' },
-        desiredGradeLevel: { name: '1. Klasse' },
+        assignedGradeLevel: { name: '1. Klasse' },
         desiredSchoolClass: null,
       });
       templateRepo.findOne.mockResolvedValue({

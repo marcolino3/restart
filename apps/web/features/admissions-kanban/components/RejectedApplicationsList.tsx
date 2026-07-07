@@ -73,7 +73,7 @@ export function RejectedApplicationsList({ applications }: Props) {
         case "family":
           return (a.familyName ?? "").toLowerCase();
         case "grade":
-          return (a.desiredGradeLevelName ?? "").toLowerCase();
+          return (a.assignedGradeLevelName ?? "").toLowerCase();
         case "reason":
           return (
             a.rejectionReasonLabel ??
@@ -198,7 +198,7 @@ export function RejectedApplicationsList({ applications }: Props) {
                 </TableCell>
                 <TableCell className="text-sm">{a.familyName ?? "—"}</TableCell>
                 <TableCell className="text-sm">
-                  {a.desiredGradeLevelName ?? "—"}
+                  {a.assignedGradeLevelName ?? "—"}
                 </TableCell>
                 <TableCell className="text-sm">
                   {a.rejectionReasonLabel ? (

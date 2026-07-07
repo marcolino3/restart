@@ -1,13 +1,12 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Bell, BellRing, Mail, Phone, User2, Users2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { StudentAvatar } from "@/features/students/components/StudentAvatar";
 import { cn } from "@/lib/utils";
 import { resolveCardFields, type CardFieldKey } from "../field-registry";
-import type { KanbanApplication } from "../types";
+import type { GradeLevelBadge, KanbanApplication } from "../types";
 
 interface Props {
   application: KanbanApplication;
@@ -90,8 +89,15 @@ export function AdmissionCardVisual({
   // pull both out of the configurable meta-chip row.
   const showDays = fields.includes("daysInStage");
   const showGrade = fields.includes("gradeLevel");
+  const showReminders = fields.includes("reminders");
+  // days / grade / source / reminders render in dedicated rows (row 1 badge /
+  // row 3 pills), so keep them out of the `·`-separated meta-chip row.
   const metaFields = fields.filter(
-    (k) => k !== "daysInStage" && k !== "gradeLevel",
+    (k) =>
+      k !== "daysInStage" &&
+      k !== "gradeLevel" &&
+      k !== "source" &&
+      k !== "reminders",
   );
 
   const chip = (key: CardFieldKey): React.ReactNode => {
@@ -136,7 +142,7 @@ export function AdmissionCardVisual({
         );
       case "familyName":
         return application.family.name ? (
-          <span key={key} className="truncate" title={t("fieldFamilyName")}>
+          <span key={key} title={t("fieldFamilyName")}>
             {application.family.name}
           </span>
         ) : null;
@@ -154,17 +160,17 @@ export function AdmissionCardVisual({
       case "contactName": {
         const name = application.family.contactNames[0];
         return name ? (
-          <span key={key} className="inline-flex items-center gap-0.5 truncate">
-            <User2 className="h-2.5 w-2.5 shrink-0" />
-            <span className="truncate">{name}</span>
+          <span key={key} className="inline-flex items-baseline gap-0.5 align-baseline">
+            <User2 className="h-2.5 w-2.5 shrink-0 translate-y-px" />
+            {name}
           </span>
         ) : null;
       }
       case "contactEmail":
         return application.family.primaryEmail ? (
-          <span key={key} className="inline-flex items-center gap-0.5 truncate">
-            <Mail className="h-2.5 w-2.5 shrink-0" />
-            <span className="truncate">{application.family.primaryEmail}</span>
+          <span key={key} className="inline-flex items-baseline gap-0.5 align-baseline">
+            <Mail className="h-2.5 w-2.5 shrink-0 translate-y-px" />
+            {application.family.primaryEmail}
           </span>
         ) : null;
       case "contactPhone":
@@ -207,36 +213,37 @@ export function AdmissionCardVisual({
 
   const metaChips = metaFields.map(chip).filter(Boolean);
 
+  const showSource = fields.includes("source");
+
   return (
     <div
       className={cn(
-        "group grid gap-1.5 rounded-card border bg-card p-2.5 text-sm shadow-xs transition hover:shadow-md",
+        // .kan-card: bg-panel, 1px border, radius = card-4px, shadow,
+        // padding 12px 14px, flex column gap-8px.
+        "group flex min-w-0 flex-col gap-2 overflow-hidden rounded-[calc(var(--radius-card)-4px)] border bg-card px-3.5 py-3 shadow-xs",
         dragging ? "opacity-90 shadow-lg" : "",
-        onOpen && "cursor-pointer hover:bg-accent/40",
+        onOpen && "cursor-pointer",
         className,
       )}
       role={onOpen ? "button" : undefined}
       onClick={onOpen ? () => onOpen(application.id) : undefined}
     >
-      {/* Row 1 — avatar · name · days-in-stage */}
-      <div className="flex items-center gap-2">
-        <StudentAvatar
-          studentId={application.id}
-          firstName={application.childFirstName}
-          lastName={application.childLastName}
-          className="h-6 w-6 shrink-0"
-          fallbackClassName="text-[9px]"
-        />
-        <span className="min-w-0 flex-1 truncate text-[13px] font-medium leading-tight">
+      {/* Row 1 (.r1) — initials (.ava) · name · days (.d) */}
+      <div className="flex items-center gap-[9px]">
+        <span
+          aria-hidden
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px] bg-accent text-[10px] font-[700] uppercase text-accent-foreground"
+        >
+          {`${application.childFirstName.charAt(0)}${application.childLastName.charAt(0)}`}
+        </span>
+        <span className="min-w-0 flex-1 truncate text-[13.5px] font-[600] leading-tight">
           {application.childFirstName} {application.childLastName}
         </span>
         {showDays && daysInStage !== null && daysInStage > 0 && (
           <span
             className={cn(
-              "shrink-0 font-mono text-[10px] tabular-nums",
-              daysInStage > 14
-                ? "font-[600] text-destructive"
-                : "text-muted-foreground",
+              "shrink-0 font-mono text-[10.5px] font-[600] tabular-nums",
+              daysInStage > 14 ? "text-destructive" : "text-muted-foreground",
             )}
             title={t("daysShort", { count: daysInStage })}
           >
@@ -245,40 +252,84 @@ export function AdmissionCardVisual({
         )}
       </div>
 
-      {/* Row 2 — configurable meta chips, `·`-separated */}
+      {/* Row 2 (.kan-card small) — configurable meta chips joined by " · " on a
+          single, non-wrapping line with ellipsis overflow, matching the concept
+          where this is one `<small>` text run, not wrapping flex chips. */}
       {metaChips.length > 0 && (
-        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[12px] leading-tight text-muted-foreground">
           {metaChips.map((c, i) => (
-            <Fragment key={i}>
-              {i > 0 && (
-                <span aria-hidden className="text-muted-foreground/60">
+            <span key={i} className="inline-flex max-w-full items-baseline">
+              <span className="truncate">{c}</span>
+              {i < metaChips.length - 1 && (
+                <span aria-hidden className="ml-1.5 text-muted-foreground/60">
                   ·
                 </span>
               )}
-              {c}
-            </Fragment>
+            </span>
           ))}
         </div>
       )}
 
-      {/* Row 3 — desired grade level as outline badge */}
-      {showGrade && application.desiredGradeLevelName && (
-        <Badge
-          variant="outline"
-          className="h-4 w-fit px-1.5 text-[10px] font-medium leading-none"
-          style={
-            application.desiredGradeLevelColor
-              ? {
-                  borderColor: application.desiredGradeLevelColor,
-                  color: application.desiredGradeLevelColor,
-                }
-              : undefined
-          }
-          title={t("fieldGradeLevel")}
-        >
-          {application.desiredGradeLevelName}
-        </Badge>
-      )}
+      {/* Row 3 (.tags) — Stufe · Untergruppe · Kanal · reminders as filled pill
+          badges (.pill: 11px/600, radius-full, px-[11px] py-1). */}
+      {(showGrade && application.assignedStufe) ||
+      showSource ||
+      (showReminders && application.openRemindersCount > 0) ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {showGrade && application.assignedStufe && (
+            <GradePill
+              level={application.assignedStufe}
+              title={t("assignedGradeLevel")}
+            />
+          )}
+          {showGrade && application.assignedUntergruppe && (
+            <GradePill
+              level={application.assignedUntergruppe}
+              // Subgroups inherit the Stufe colour when they have none of their
+              // own, so the pair reads as a group.
+              fallbackColor={application.assignedStufe?.color ?? null}
+              title={t("fieldSubgroup")}
+            />
+          )}
+          {showSource && (
+            <Badge
+              variant="secondary"
+              className="rounded-full px-[11px] py-1 text-[11px] font-[600]"
+              title={t("fieldSource")}
+            >
+              {t(sourceKey(application.source))}
+            </Badge>
+          )}
+          {showReminders && chip("reminders")}
+        </div>
+      ) : null}
     </div>
+  );
+}
+
+/** A single grade-level pill (Stufe or Untergruppe) — prefers the shortCode. */
+function GradePill({
+  level,
+  fallbackColor = null,
+  title,
+}: {
+  level: GradeLevelBadge;
+  fallbackColor?: string | null;
+  title: string;
+}) {
+  const color = level.color ?? fallbackColor;
+  return (
+    <Badge
+      variant="secondary"
+      className="rounded-full px-[11px] py-1 text-[11px] font-[600]"
+      style={
+        color
+          ? { backgroundColor: `${color}22`, color }
+          : undefined
+      }
+      title={title}
+    >
+      {level.shortCode ?? level.name}
+    </Badge>
   );
 }

@@ -5,19 +5,22 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  Ban,
   ClipboardList,
   GraduationCap,
   History,
   Mail,
+  Mars,
+  Pencil,
   Phone,
   Send,
   Users2,
+  Venus,
+  VenusAndMars,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { StudentAvatar } from "@/features/students/components/StudentAvatar";
 import { cn } from "@/lib/utils";
 
 import { getAdmissionActivitiesAction } from "../actions/get-admission-activities.action";
@@ -45,6 +48,11 @@ import { AdmissionRemindersBlock } from "./AdmissionRemindersBlock";
 import { AdmissionAppointmentsBlock } from "./AdmissionAppointmentsBlock";
 import { AdmissionDocumentsBlock } from "./AdmissionDocumentsBlock";
 import { AdmissionEmailHistory } from "./AdmissionEmailHistory";
+import type { GradeLevelOption } from "./CreateApplicationDialog";
+import {
+  EditApplicationDetailsDialog,
+  type SchoolClassOption,
+} from "./EditApplicationDetailsDialog";
 import { RejectApplicationDialog } from "./RejectApplicationDialog";
 import { FinalizeEnrollmentDialog } from "./FinalizeEnrollmentDialog";
 import { SendEmailDialog, type SendableTemplate } from "./SendEmailDialog";
@@ -63,6 +71,10 @@ interface Props {
   emailTemplates: SendableTemplate[];
   /** Org memberships for reminder assignee pickers. */
   members: ReminderMember[];
+  /** Org grade levels (flat, incl. subgroups) for the edit-details dialog. */
+  gradeLevels: GradeLevelOption[];
+  /** Org school classes for the edit-details dialog. */
+  schoolClasses: SchoolClassOption[];
   canEdit: boolean;
   canEnroll: boolean;
   canSendEmail: boolean;
@@ -81,6 +93,8 @@ export function AdmissionDetailPage({
   initialEmails,
   emailTemplates,
   members,
+  gradeLevels,
+  schoolClasses,
   canEdit,
   canEnroll,
   canSendEmail,
@@ -100,6 +114,7 @@ export function AdmissionDetailPage({
   const [sendOpen, setSendOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [enrollOpen, setEnrollOpen] = useState(false);
+  const [editDetailsOpen, setEditDetailsOpen] = useState(false);
   const [, startTransition] = useTransition();
 
   const stage = stages.find((s) => s.id === detail.admissionStageId);
@@ -157,106 +172,176 @@ export function AdmissionDetailPage({
   };
 
   const childName = `${detail.childFirstName} ${detail.childLastName}`;
-  const birthYear = detail.childDateOfBirth
-    ? detail.childDateOfBirth.slice(0, 4)
+  const swissBirthDate = detail.childDateOfBirth
+    ? detail.childDateOfBirth.slice(0, 10).split("-").reverse().join(".")
+    : null;
+  // Header subtitle dates — long German form ("29. Juni 2025"), Swiss locale.
+  const longDate = (iso: string | null): string | null => {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toLocaleDateString("de-CH", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "Europe/Zurich",
+    });
+  };
+  const receivedDate = longDate(detail.createdAt) ?? "—";
+  const desiredEntry = longDate(detail.desiredEnrollmentDate);
+  // "Gewünschter Eintritt" in the Angaben card shows month + year ("August
+  // 2027"), matching the design's coarser granularity.
+  const desiredEntryMonth = detail.desiredEnrollmentDate
+    ? (() => {
+        const d = new Date(detail.desiredEnrollmentDate);
+        return Number.isNaN(d.getTime())
+          ? null
+          : d.toLocaleDateString("de-CH", {
+              month: "long",
+              year: "numeric",
+              timeZone: "Europe/Zurich",
+            });
+      })()
+    : null;
+  const childAge =
+    detail.childDateOfBirth &&
+    !Number.isNaN(new Date(detail.childDateOfBirth).getTime())
+      ? Math.floor(
+          (Date.now() - new Date(detail.childDateOfBirth).getTime()) /
+            (365.25 * 24 * 60 * 60 * 1000),
+        )
+      : null;
+  // Kind row: "Name · geb. dd.mm.yyyy · N J." (age/birthdate only when known).
+  const childLine = [
+    childName,
+    swissBirthDate ? `${t("bornAbbr")} ${swissBirthDate}` : null,
+    childAge !== null ? t("ageYears", { count: childAge }) : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  // Stufe / Klasse: "<Stufe> · <Klasse>", falling back to "offen" for an
+  // unassigned class (matches the design's "Unterstufe · offen").
+  const stufeKlasse =
+    detail.assignedGradeLevelName || detail.desiredSchoolClassName
+      ? [
+          detail.assignedGradeLevelName ?? "—",
+          detail.desiredSchoolClassName ?? t("classOpen"),
+        ].join(" · ")
+      : null;
+  // Primary contact for the Angaben card (first listed), with role + phone.
+  const primaryContact = detail.contactPersons[0] ?? null;
+  const primaryContactLine = primaryContact
+    ? `${primaryContact.firstName} ${primaryContact.lastName}`.trim() +
+      (primaryContact.roles?.[0]
+        ? ` (${t(contactRoleKey(primaryContact.roles[0]))})`
+        : "")
+    : null;
+  const primaryContactPhone = primaryContact
+    ? (primaryContact.mobile ?? primaryContact.phone ?? null)
+    : null;
+  // Days the application has spent in the current stage (client-only; Date.now
+  // differs between SSR and hydration, but this renders inside the client tree).
+  const daysInStage = detail.stageEnteredAt
+    ? Math.max(
+        0,
+        Math.floor(
+          (Date.now() - new Date(detail.stageEnteredAt).getTime()) /
+            (1000 * 60 * 60 * 24),
+        ),
+      )
     : null;
 
   return (
     <div className="flex h-full min-h-screen flex-col">
-      {/* Header */}
-      <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
-        <div className="flex items-center gap-3 px-4 py-3 sm:px-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.back()}
-            className="gap-1.5"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {t("detailBack")}
-          </Button>
-          <div className="flex-1" />
-          {canSendEmail && (
+      {/* Header — title + stage badge · subtitle · actions (design: no avatar) */}
+      <div className="px-4 pt-6 sm:px-6">
+        <div className="flex flex-wrap items-start gap-x-3 gap-y-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-[26px] font-bold leading-none tracking-[-0.02em]">
+                {childName}
+              </h1>
+              {stage && (
+                <Badge
+                  variant="secondary"
+                  className="rounded-full px-2.5 py-0.5 text-[12px] font-[600]"
+                  style={
+                    stage.color
+                      ? {
+                          backgroundColor: `${stage.color}1f`,
+                          color: stage.color,
+                        }
+                      : undefined
+                  }
+                >
+                  {stage.name}
+                </Badge>
+              )}
+            </div>
+            <p className="mt-1.5 text-[14px] text-muted-foreground">
+              {t("applicationReceivedOn", { date: receivedDate })}
+              {desiredEntry && ` · ${t("desiredEntryLabel", { date: desiredEntry })}`}
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Button
               variant="outline"
-              size="sm"
               className="gap-1.5"
-              onClick={() => setSendOpen(true)}
+              onClick={() => router.back()}
             >
-              <Send className="h-4 w-4" />
-              {t("emailSend")}
+              <ArrowLeft className="h-4 w-4" />
+              {t("backToKanban")}
             </Button>
-          )}
-          {canReject && detail.status === "ACTIVE" && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 text-destructive hover:text-destructive"
-              onClick={() => setRejectOpen(true)}
-            >
-              <Ban className="h-4 w-4" />
-              {t("rejectApplication")}
-            </Button>
-          )}
-          {canEnroll && detail.status === "ACTIVE" && (
-            <Button
-              size="sm"
-              className="gap-1.5"
-              onClick={() => setEnrollOpen(true)}
-            >
-              <GraduationCap className="h-4 w-4" />
-              {t("finalizeEnrollment")}
-            </Button>
-          )}
-          {stage && (
-            <Badge
-              variant="outline"
-              className="text-xs"
-              style={
-                stage.color
-                  ? { borderColor: stage.color, color: stage.color }
-                  : undefined
-              }
-            >
-              {stage.name}
-            </Badge>
-          )}
+            {canReject && detail.status === "ACTIVE" && (
+              <Button
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => setRejectOpen(true)}
+              >
+                {t("rejectApplication")}
+              </Button>
+            )}
+            {canSendEmail && (
+              <Button
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => setSendOpen(true)}
+              >
+                <Send className="h-4 w-4" />
+                {t("emailSend")}
+              </Button>
+            )}
+            {canEnroll && detail.status === "ACTIVE" && (
+              <Button className="gap-1.5" onClick={() => setEnrollOpen(true)}>
+                <GraduationCap className="h-4 w-4" />
+                {t("enroll")}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Stage tracker (design: chip row of stages with the active one filled) */}
+      {/* Stage tabs — large pills, active one filled with days-in-stage. */}
       {stages.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 px-4 pt-4 sm:px-6">
           {stages.map((s, i) => {
-            const done = i < currentStageIndex;
             const active = i === currentStageIndex;
             return (
               <span
                 key={s.id}
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium",
+                  "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[13px] font-[600]",
                   active
-                    ? "font-semibold"
-                    : done
-                      ? ""
-                      : "border-border text-muted-foreground",
+                    ? "border-transparent bg-foreground text-background"
+                    : "border-border bg-card text-muted-foreground",
                 )}
-                style={
-                  s.color
-                    ? active
-                      ? {
-                          backgroundColor: s.color,
-                          borderColor: s.color,
-                          color: "#fff",
-                        }
-                      : done
-                        ? { borderColor: s.color, color: s.color }
-                        : undefined
-                    : undefined
-                }
               >
-                {done && "✓ "}
                 {s.name}
+                {active && daysInStage !== null && (
+                  <span className="font-mono tabular-nums opacity-80">
+                    · {daysInStage}d
+                  </span>
+                )}
               </span>
             );
           })}
@@ -297,53 +382,62 @@ export function AdmissionDetailPage({
 
         {/* Right: Angaben / Bezugspersonen / Erinnerungen / E-Mail-Verlauf */}
         <aside className="flex w-full min-w-0 flex-col gap-4 lg:sticky lg:top-[68px] lg:max-h-[calc(100vh-90px)] lg:overflow-y-auto">
-          <div className="flex items-center gap-3 rounded-lg border bg-card p-4 shadow-sm">
-            <StudentAvatar
-              studentId={detail.id}
-              firstName={detail.childFirstName}
-              lastName={detail.childLastName}
-              className="h-14 w-14 shrink-0"
-              fallbackClassName="text-base"
-            />
-            <div className="min-w-0">
-              <div className="truncate text-lg font-semibold leading-tight">
-                {childName}
-              </div>
-              <div className="mt-0.5 text-xs text-muted-foreground">
-                {birthYear ? `${t("bornAbbr")} ${birthYear}` : "—"}
-                {detail.childGender &&
-                  ` · ${genderLabel(detail.childGender, t)}`}
-              </div>
-            </div>
-          </div>
-
-          <DataCard title={t("tabOverview")}>
+          {/* Angaben — design card: Kind · Eintritt · Stufe/Klasse · Kontakt. */}
+          <DataCard
+            title={t("detailsSection")}
+            headerAction={
+              canEdit ? (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="ml-auto h-7 w-7 text-muted-foreground hover:text-foreground"
+                  aria-label={t("editDetails")}
+                  onClick={() => setEditDetailsOpen(true)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+              ) : undefined
+            }
+          >
+            <DataRow label={t("fieldChild")} value={childLine} />
             <DataRow
-              label={t("desiredGradeLevel")}
-              value={detail.desiredGradeLevelName}
-              dotColor={detail.desiredGradeLevelColor}
-            />
-            <DataRow
-              label={t("desiredSchoolClass")}
-              value={detail.desiredSchoolClassName}
+              label={t("childGender")}
+              value={genderBadge(detail.childGender, t)}
             />
             <DataRow
               label={t("desiredEnrollmentDate")}
-              value={detail.desiredEnrollmentDate}
+              value={desiredEntryMonth}
             />
             <DataRow
-              label={t("source")}
-              value={sourceLabel(detail.source, t)}
+              label={t("stufeKlasse")}
+              value={stufeKlasse}
+              dotColor={detail.assignedGradeLevelColor}
             />
+            <DataRow label={t("source")} value={sourceLabel(detail.source, t)} />
             <DataRow
-              label={t("childDateOfBirth")}
-              value={detail.childDateOfBirth}
+              label={t("contactPersonLabel")}
+              value={primaryContactLine}
+            />
+            <DataRow label={t("phone")} value={primaryContactPhone} />
+            <DataRow
+              label={t("email")}
+              value={
+                primaryContact?.email ? (
+                  <a
+                    href={`mailto:${primaryContact.email}`}
+                    className="hover:underline"
+                  >
+                    {primaryContact.email}
+                  </a>
+                ) : null
+              }
             />
           </DataCard>
 
           <DataCard
             title={`${t("familySection")}${detail.familyName ? ` · ${detail.familyName}` : ""}`}
-            icon={<Users2 className="h-3.5 w-3.5" />}
+            icon={<Users2 className="h-3.5 w-3.5 text-muted-foreground" />}
+            count={detail.contactPersons.length || undefined}
           >
             {detail.contactPersons.length === 0 ? (
               <p className="text-xs italic text-muted-foreground">
@@ -394,11 +488,11 @@ export function AdmissionDetailPage({
             <div className="flex items-center justify-between border-b px-4 py-2.5">
               <div className="flex items-center gap-2">
                 <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <span className="text-[15px] font-[650] tracking-[-0.01em]">
                   {t("tabEmails")}
                 </span>
                 {emails.length > 0 && (
-                  <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground">
+                  <span className="rounded-full bg-accent px-[9px] py-0.5 font-mono text-[11px] font-[600] leading-none tabular-nums text-accent-foreground">
                     {emails.length}
                   </span>
                 )}
@@ -459,12 +553,12 @@ export function AdmissionDetailPage({
 
       {/* Audit log — kept, as a collapsible section (design has no audit tab) */}
       <div className="px-4 pb-8 sm:px-6">
-        <details className="rounded-lg border bg-card shadow-sm">
+        <details className="rounded-[var(--radius-card)] border bg-card shadow-sm">
           <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground">
             <History className="h-4 w-4" />
             {t("tabAudit")}
             {detail.auditLogs.length > 0 && (
-              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium leading-none">
+              <span className="rounded-full bg-accent px-[9px] py-0.5 font-mono text-[11px] font-[600] leading-none tabular-nums text-accent-foreground">
                 {detail.auditLogs.length}
               </span>
             )}
@@ -528,6 +622,15 @@ export function AdmissionDetailPage({
         />
       )}
 
+      {canEdit && editDetailsOpen && (
+        <EditApplicationDetailsDialog
+          detail={detail}
+          gradeLevels={gradeLevels}
+          schoolClasses={schoolClasses}
+          onClose={() => setEditDetailsOpen(false)}
+        />
+      )}
+
       {canReject && rejectOpen && (
         <RejectApplicationDialog
           applicationId={detail.id}
@@ -556,45 +659,67 @@ export function AdmissionDetailPage({
 function DataCard({
   title,
   icon,
+  count,
+  headerAction,
   children,
 }: {
   title: string;
   icon?: React.ReactNode;
+  count?: number;
+  /** Optional action rendered at the right edge of the card header. */
+  headerAction?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-lg border bg-card p-4 shadow-sm">
-      <h3 className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+    <section className="rounded-[var(--radius-card)] border bg-card px-[22px] py-5 shadow-sm">
+      <h3 className="mb-1 flex items-center gap-[9px] text-[15px] font-[650] tracking-[-0.01em]">
         {icon}
         {title}
+        {count !== undefined && (
+          <span className="ml-auto rounded-full bg-accent px-[9px] py-0.5 font-mono text-[11px] font-[600] leading-none tabular-nums text-accent-foreground">
+            {count}
+          </span>
+        )}
+        {headerAction}
       </h3>
-      <div className="space-y-1.5 text-sm">{children}</div>
+      <div className="mt-1">{children}</div>
     </section>
   );
 }
 
+/**
+ * Key-value row (.kv): label (soft, 500, 12.5px) left · value (600, 13.5px)
+ * right, 1px divider between rows. Renders even when empty as a muted "—" so
+ * editable fields always show a slot.
+ */
 function DataRow({
   label,
   value,
   dotColor,
+  placeholder = "—",
 }: {
   label: string;
-  value: string | null;
+  /** Plain string or richer content (badge, link); null renders the placeholder. */
+  value: React.ReactNode | null;
   dotColor?: string | null;
+  placeholder?: string;
 }) {
-  if (!value) return null;
   return (
-    <div className="flex justify-between gap-3">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="inline-flex items-center gap-1.5 text-right">
-        {dotColor !== undefined && (
+    <div className="flex items-center justify-between gap-3 border-b border-border py-2.5 text-[13.5px] last:border-b-0">
+      <span className="shrink-0 font-[500] text-[12.5px] text-muted-foreground">
+        {label}
+      </span>
+      <span className="inline-flex items-center gap-1.5 text-right font-[600]">
+        {dotColor !== undefined && value && (
           <span
             aria-hidden
             className="inline-block h-2 w-2 shrink-0 rounded-full ring-1 ring-border"
             style={{ backgroundColor: dotColor ?? "var(--muted)" }}
           />
         )}
-        <span>{value}</span>
+        <span className={value ? "" : "font-normal text-muted-foreground"}>
+          {value ?? placeholder}
+        </span>
       </span>
     </div>
   );
@@ -602,36 +727,84 @@ function DataRow({
 
 function ContactCard({ contact }: { contact: AdmissionDetailContact }) {
   return (
-    <li className="space-y-1 rounded-md border bg-background/40 p-2 text-xs">
-      <div className="flex items-center justify-between gap-2">
-        <span className="truncate font-medium text-sm">
-          {contact.firstName} {contact.lastName}
-        </span>
-        {(contact.roles ?? []).slice(0, 1).map((r) => (
-          <Badge key={r} variant="secondary" className="shrink-0 text-[10px]">
-            {r}
-          </Badge>
-        ))}
+    <li className="flex items-center gap-3 rounded-[calc(var(--radius-card)-5px)] border bg-muted px-[13px] py-2.5 text-xs">
+      <div className="min-w-0 flex-1 space-y-0.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="truncate text-sm font-medium">
+            {contact.firstName} {contact.lastName}
+          </span>
+          {(contact.roles ?? []).slice(0, 1).map((r) => (
+            <Badge key={r} variant="secondary" className="shrink-0 text-[10px]">
+              {r}
+            </Badge>
+          ))}
+        </div>
+        {contact.email && (
+          <a
+            href={`mailto:${contact.email}`}
+            className="flex items-center gap-1.5 truncate text-muted-foreground hover:text-foreground"
+          >
+            <Mail className="h-3 w-3 shrink-0" />
+            <span className="truncate">{contact.email}</span>
+          </a>
+        )}
+        {(contact.mobile || contact.phone) && (
+          <a
+            href={`tel:${contact.mobile ?? contact.phone}`}
+            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <Phone className="h-3 w-3 shrink-0" />
+            {contact.mobile ?? contact.phone}
+          </a>
+        )}
       </div>
-      {contact.email && (
-        <a
-          href={`mailto:${contact.email}`}
-          className="flex items-center gap-1.5 truncate text-muted-foreground hover:text-foreground"
-        >
-          <Mail className="h-3 w-3 shrink-0" />
-          <span className="truncate">{contact.email}</span>
-        </a>
-      )}
-      {(contact.mobile || contact.phone) && (
-        <a
-          href={`tel:${contact.mobile ?? contact.phone}`}
-          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
-        >
-          <Phone className="h-3 w-3 shrink-0" />
-          {contact.mobile ?? contact.phone}
-        </a>
-      )}
     </li>
+  );
+}
+
+/**
+ * Gender pill for the Angaben card — icon + label on the status color
+ * tokens (sky = male, rose = female, neutral = other). Centralized here so
+ * the colors stay semantic instead of per-instance styling.
+ */
+const GENDER_BADGE: Record<
+  string,
+  { icon: LucideIcon; className: string; labelKey: string }
+> = {
+  MALE: {
+    icon: Mars,
+    className: "bg-status-sky text-status-sky-foreground",
+    labelKey: "genderMale",
+  },
+  FEMALE: {
+    icon: Venus,
+    className: "bg-status-rose text-status-rose-foreground",
+    labelKey: "genderFemale",
+  },
+  OTHER: {
+    icon: VenusAndMars,
+    className: "bg-muted text-muted-foreground",
+    labelKey: "genderOther",
+  },
+};
+
+function genderBadge(
+  gender: string | null,
+  t: (key: string) => string,
+): React.ReactNode | null {
+  const meta = gender ? GENDER_BADGE[gender] : undefined;
+  if (!meta) return null;
+  const Icon = meta.icon;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-[600]",
+        meta.className,
+      )}
+    >
+      <Icon className="h-3 w-3 shrink-0" aria-hidden />
+      {t(meta.labelKey)}
+    </span>
   );
 }
 
@@ -652,15 +825,18 @@ function sourceLabel(source: string, t: (key: string) => string): string {
   }
 }
 
-function genderLabel(gender: string, t: (key: string) => string): string {
-  switch (gender) {
-    case "MALE":
-      return t("genderMale");
-    case "FEMALE":
-      return t("genderFemale");
+/** Maps a contact-person role code to its i18n key (falls back to the raw code). */
+function contactRoleKey(role: string): string {
+  switch (role) {
+    case "MOTHER":
+      return "roleMother";
+    case "FATHER":
+      return "roleFather";
+    case "LEGAL_GUARDIAN":
+      return "roleLegalGuardian";
     case "OTHER":
-      return t("genderOther");
+      return "roleOther";
     default:
-      return gender;
+      return role;
   }
 }

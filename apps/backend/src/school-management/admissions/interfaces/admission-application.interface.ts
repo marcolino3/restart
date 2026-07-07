@@ -12,7 +12,7 @@ export interface IAdmissionApplication extends IBase {
   childDateOfBirth?: string | null;
   childGender?: Gender | null;
   childNotes?: string | null;
-  desiredGradeLevelId?: string | null;
+  assignedGradeLevelId?: string | null;
   desiredSchoolClassId?: string | null;
   desiredEnrollmentDate?: string | null;
   status: AdmissionApplicationStatus;

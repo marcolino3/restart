@@ -19,7 +19,7 @@ const Document = gql`
       family {
         name
       }
-      desiredGradeLevel {
+      assignedGradeLevel {
         name
       }
     }
@@ -43,7 +43,7 @@ type Resp = {
     rejectedBy: AdmissionRejectedBy | null;
     followUpYear: string | null;
     family: { name: string | null } | null;
-    desiredGradeLevel: { name: string } | null;
+    assignedGradeLevel: { name: string } | null;
   }>;
   admissionRejectionReasons: Array<{
     id: string;
@@ -74,7 +74,7 @@ export const getRejectedApplicationsAction = async (): Promise<
           childFirstName: a.childFirstName,
           childLastName: a.childLastName,
           familyName: a.family?.name ?? null,
-          desiredGradeLevelName: a.desiredGradeLevel?.name ?? null,
+          assignedGradeLevelName: a.assignedGradeLevel?.name ?? null,
           rejectionReason: a.rejectionReason,
           rejectionReasonLabel: ref?.label ?? null,
           rejectionReasonColor: ref?.color ?? null,
