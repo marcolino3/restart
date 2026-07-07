@@ -68,9 +68,9 @@ export class AdmissionReminder extends AbstractEntity<AdmissionReminder> {
   /**
    * When the due-reminder notification email was sent to the assignee. Set once
    * by the daily notifier cron so an overdue reminder is not re-mailed every
-   * morning; `null` means no notification has been sent yet.
+   * morning; `null` means no notification has been sent yet. Server-internal —
+   * deliberately NOT a GraphQL `@Field` (nothing on the client needs it).
    */
-  @Field(() => Date, { nullable: true })
   @Column('timestamptz', { name: 'notified_at', nullable: true })
   notifiedAt?: Date | null;
 
