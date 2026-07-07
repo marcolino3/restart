@@ -8,9 +8,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * migrationsTransactionMode='each' commits it on its own — so any later
  * migration may safely reference them. `IF NOT EXISTS` keeps it idempotent.
  */
-export class AddAdmissionAppointmentStatuses1783061330000
-  implements MigrationInterface
-{
+export class AddAdmissionAppointmentStatuses1783061330000 implements MigrationInterface {
   name = 'AddAdmissionAppointmentStatuses1783061330000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

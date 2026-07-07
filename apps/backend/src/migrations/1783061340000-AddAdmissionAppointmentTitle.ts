@@ -4,9 +4,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Free-text `title` on admission appointments — used when no appointment type
  * is set (or as an extra label alongside the type). Forward-only / additive.
  */
-export class AddAdmissionAppointmentTitle1783061340000
-  implements MigrationInterface
-{
+export class AddAdmissionAppointmentTitle1783061340000 implements MigrationInterface {
   name = 'AddAdmissionAppointmentTitle1783061340000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
