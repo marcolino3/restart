@@ -9,9 +9,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * PG16 rule (55P04): ADD VALUE only, committed on its own via
  * migrationsTransactionMode='each' before any usage. Idempotent.
  */
-export class AddAdmissionAppointmentRescheduling1783061350000
-  implements MigrationInterface
-{
+export class AddAdmissionAppointmentRescheduling1783061350000 implements MigrationInterface {
   name = 'AddAdmissionAppointmentRescheduling1783061350000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
