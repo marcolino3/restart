@@ -32,6 +32,11 @@ import type {
   AdmissionActivityType,
 } from "../actions/get-admission-activities.action";
 import { updateAdmissionActivityAction } from "../actions/update-admission-activity.action";
+import type { AdmissionAppointmentType } from "../types";
+import {
+  AppointmentForm,
+  type AppointmentMember,
+} from "./AppointmentForm";
 import { ReminderForm, type ReminderMember } from "./ReminderForm";
 
 interface Props {
@@ -39,10 +44,14 @@ interface Props {
   initial?: AdmissionActivity | null;
   onSaved: () => void;
   onCancel?: () => void;
-  /** Assignee options — enables the "Erinnerung" composer tab when provided. */
+  /** Assignee options — enables the "Erinnerung" + "Termin" composer tabs when provided. */
   members?: ReminderMember[];
   /** Called after a reminder is created from the composer's Erinnerung tab. */
   onReminderSaved?: () => void;
+  /** Appointment types — enables the "Termin" composer tab when provided. */
+  appointmentTypes?: AdmissionAppointmentType[];
+  /** Called after an appointment is created from the composer's Termin tab. */
+  onAppointmentSaved?: () => void;
 }
 
 const ACTIVITY_TYPES: Array<{
@@ -75,12 +84,16 @@ export function ActivityComposer({
   onCancel,
   members,
   onReminderSaved,
+  appointmentTypes,
+  onAppointmentSaved,
 }: Props) {
   const t = useTranslations("Admissions");
   const [reminderMode, setReminderMode] = useState(false);
-  // The "Erinnerung" tab is only offered on the create composer (not when
-  // editing an existing activity) and only when assignee options are available.
+  const [appointmentMode, setAppointmentMode] = useState(false);
+  // The "Erinnerung"/"Termin" tabs are only offered on the create composer (not
+  // when editing an existing activity) and only when their options are given.
   const showReminderTab = !initial && !!members;
+  const showAppointmentTab = !initial && !!members && !!appointmentTypes;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(Schema),
@@ -178,11 +191,12 @@ export function ActivityComposer({
             type="button"
             onClick={() => {
               setReminderMode(false);
+              setAppointmentMode(false);
               form.setValue("type", value);
             }}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition",
-              !reminderMode && type === value
+              !reminderMode && !appointmentMode && type === value
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-border bg-background text-muted-foreground hover:bg-muted",
             )}
@@ -194,7 +208,10 @@ export function ActivityComposer({
         {showReminderTab && (
           <button
             type="button"
-            onClick={() => setReminderMode(true)}
+            onClick={() => {
+              setAppointmentMode(false);
+              setReminderMode(true);
+            }}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition",
               reminderMode
@@ -206,6 +223,24 @@ export function ActivityComposer({
             {t("activityTypeReminder")}
           </button>
         )}
+        {showAppointmentTab && (
+          <button
+            type="button"
+            onClick={() => {
+              setReminderMode(false);
+              setAppointmentMode(true);
+            }}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition",
+              appointmentMode
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-background text-muted-foreground hover:bg-muted",
+            )}
+          >
+            <CalendarClock className="h-3.5 w-3.5" />
+            {t("activityTypeAppointment")}
+          </button>
+        )}
       </div>
 
       {reminderMode && members ? (
@@ -213,6 +248,14 @@ export function ActivityComposer({
           applicationId={applicationId}
           members={members}
           onSaved={() => onReminderSaved?.()}
+          compact
+        />
+      ) : appointmentMode && members && appointmentTypes ? (
+        <AppointmentForm
+          applicationId={applicationId}
+          types={appointmentTypes}
+          members={members as AppointmentMember[]}
+          onSaved={() => onAppointmentSaved?.()}
           compact
         />
       ) : (

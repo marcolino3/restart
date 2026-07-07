@@ -4,6 +4,8 @@ import { getCurrentUserAction } from "@/features/users/actions/get-current-user.
 import { getApplicationDetailAction } from "@/features/admissions-kanban/actions/get-application-detail.action";
 import { getAdmissionActivitiesAction } from "@/features/admissions-kanban/actions/get-admission-activities.action";
 import { getAdmissionRemindersAction } from "@/features/admissions-kanban/actions/get-admission-reminders.action";
+import { getAdmissionAppointmentsAction } from "@/features/admissions-kanban/actions/get-admission-appointments.action";
+import { getAdmissionAppointmentTypesAction } from "@/features/admissions-kanban/actions/appointment-types-actions";
 import { getAdmissionsDataAction } from "@/features/admissions-kanban/actions/get-admissions-data.action";
 import { getAdmissionEmailsAction } from "@/features/admissions-kanban/actions/get-admission-emails.action";
 import { getEmailTemplatesAction } from "@/features/email-templates/actions/get-email-templates.action";
@@ -22,16 +24,28 @@ export default async function AdmissionDetailRoute({ params }: PageProps) {
   const { id } = await params;
   const t = await getTranslations("Admissions");
 
-  const [user, detail, activities, reminders, kanbanData, emails, templates] =
-    await Promise.all([
-      getCurrentUserAction(),
-      getApplicationDetailAction(id),
-      getAdmissionActivitiesAction(id),
-      getAdmissionRemindersAction(id),
-      getAdmissionsDataAction(),
-      getAdmissionEmailsAction(id),
-      getEmailTemplatesAction("ADMISSION"),
-    ]);
+  const [
+    user,
+    detail,
+    activities,
+    reminders,
+    appointments,
+    appointmentTypes,
+    kanbanData,
+    emails,
+    templates,
+  ] = await Promise.all([
+    getCurrentUserAction(),
+    getApplicationDetailAction(id),
+    getAdmissionActivitiesAction(id),
+    getAdmissionRemindersAction(id),
+    getAdmissionAppointmentsAction(id),
+    // Bare array + can throw (no {success} wrapper) — swallow to a safe [].
+    getAdmissionAppointmentTypesAction().catch(() => []),
+    getAdmissionsDataAction(),
+    getAdmissionEmailsAction(id),
+    getEmailTemplatesAction("ADMISSION"),
+  ]);
 
   if (!user?.success) {
     return (
@@ -71,6 +85,8 @@ export default async function AdmissionDetailRoute({ params }: PageProps) {
       members={members}
       initialActivities={activities.success ? activities.data : []}
       initialReminders={reminders.success ? reminders.data : []}
+      initialAppointments={appointments.success ? appointments.data : []}
+      appointmentTypes={appointmentTypes}
       initialEmails={emails.success ? emails.data : []}
       emailTemplates={
         templates.success
