@@ -55,7 +55,7 @@ import { Form } from "@/components/ui/form";
 import { ColorPickerFormField } from "@/components/form/form-fields/ColorPickerFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { NumberFormField } from "@/components/form/form-fields/NumberFormField";
-import { SelectFormFieldWithoutTranslations } from "@/components/form/form-fields/SelectFormFieldWithoutTranslations";
+import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { PageHead } from "@/components/common/PageHead";
 import { handleAction } from "@/lib/actions/handle-action";
@@ -656,11 +656,13 @@ function GradeLevelDialog({
             id="grade-level-form"
           >
             {parentOptions && (
-              <SelectFormFieldWithoutTranslations
+              <SelectFormField
                 name="parentId"
-                label={t("parentLevel")}
-                placeholder={t("parentLevel")}
+                label="parentLevel"
+                namespace="GradeLevels"
+                placeholder="parentLevel"
                 options={parentOptions}
+                translateOptions={false}
               />
             )}
             <InputFormField name="name" label="name" namespace="GradeLevels" />

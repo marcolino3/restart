@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
-import { SelectFormFieldWithoutTranslations } from "@/components/form/form-fields/SelectFormFieldWithoutTranslations";
+import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
 import { cn } from "@/lib/utils";
 
@@ -197,11 +197,13 @@ export function ReminderForm({
           </div>
         </div>
 
-        <SelectFormFieldWithoutTranslations
+        <SelectFormField
           name="assignedToMembershipId"
-          label={t("reminderAssignee")}
-          placeholder={t("reminderAssigneeUnassigned")}
+          label="reminderAssignee"
+          namespace="Admissions"
+          placeholder="reminderAssigneeUnassigned"
           options={memberOptions}
+          translateOptions={false}
         />
 
         <TextareaFormField

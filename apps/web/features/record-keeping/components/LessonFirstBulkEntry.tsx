@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
-import { SelectFormFieldWithoutTranslations } from "@/components/form/form-fields/SelectFormFieldWithoutTranslations";
+import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { StudentAvatar } from "@/features/students/components/StudentAvatar";
 
 import { createLessonRecordsBulkAction } from "../actions/create-lesson-records-bulk.action";
@@ -338,10 +338,12 @@ export const LessonFirstBulkEntry = ({ lessons }: Props) => {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <SelectFormFieldWithoutTranslations
+              <SelectFormField
                 name="status"
-                label={t("status")}
+                label="status"
+                namespace="RecordKeeping"
                 options={statusOptions}
+                translateOptions={false}
               />
 
               <DatePickerFormField

@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
-import { SelectFormFieldWithoutTranslations } from "@/components/form/form-fields/SelectFormFieldWithoutTranslations";
+import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 
 import {
   type EnrollmentClass,
@@ -119,11 +119,13 @@ export function FinalizeEnrollmentDialog({
             className="space-y-4"
             id="finalize-enrollment-form"
           >
-            <SelectFormFieldWithoutTranslations
+            <SelectFormField
               name="schoolClassId"
-              label={t("schoolClass")}
-              placeholder={t("selectSchoolClass")}
+              label="schoolClass"
+              namespace="Admissions"
+              placeholder="selectSchoolClass"
               options={classOptions}
+              translateOptions={false}
             />
             <DatePickerFormField
               name="enrollmentDate"

@@ -9,7 +9,7 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { NumberFormField } from "@/components/form/form-fields/NumberFormField";
-import { SelectFormFieldWithoutTranslations } from "@/components/form/form-fields/SelectFormFieldWithoutTranslations";
+import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { useSheet } from "@/components/providers/sheet-provider";
 import { formatDurationMinutes } from "@/lib/formatting/duration";
 import {
@@ -81,11 +81,13 @@ export const OpeningBalanceForm = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="form-gap-y">
-        <SelectFormFieldWithoutTranslations
+        <SelectFormField
           name="periodId"
-          label={t("period")}
-          placeholder={t("selectPeriod")}
+          label="period"
+          namespace="TimeTracking"
+          placeholder="selectPeriod"
           options={periods.map((p) => ({ label: p.label, value: p.id }))}
+          translateOptions={false}
         />
         <InputFormField
           name="openingWorkTime"

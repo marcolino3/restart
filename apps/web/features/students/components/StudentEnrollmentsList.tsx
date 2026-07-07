@@ -18,7 +18,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
-import { SelectFormFieldWithoutTranslations } from "@/components/form/form-fields/SelectFormFieldWithoutTranslations";
+import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
 import { EnrollmentItem } from "../actions/get-student-enrollments.action";
 import { updateEnrollmentAction } from "../actions/update-enrollment.action";
@@ -129,11 +129,13 @@ export function StudentEnrollmentsList({
                   onSubmit={form.handleSubmit(handleAssign)}
                   className="space-y-4"
                 >
-                  <SelectFormFieldWithoutTranslations
+                  <SelectFormField
                     name="schoolClassId"
-                    label={tS("selectClass")}
-                    placeholder={tS("selectClass")}
+                    label="selectClass"
+                    namespace="Students"
+                    placeholder="selectClass"
                     options={schoolClassOptions}
+                    translateOptions={false}
                   />
                   <DatePickerFormField
                     name="enrolledAt"
