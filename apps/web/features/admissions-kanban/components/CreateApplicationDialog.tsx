@@ -22,7 +22,6 @@ import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
-import { SelectFormFieldWithoutTranslations } from "@/components/form/form-fields/SelectFormFieldWithoutTranslations";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
 
@@ -284,10 +283,12 @@ export function CreateApplicationDialog({
 
               {/* Stage · Quelle · Stufe — two columns, self-labeled selects. */}
               <div className="grid grid-cols-2 gap-3">
-                <SelectFormFieldWithoutTranslations
+                <SelectFormField
                   name="admissionStageId"
-                  label={t("initialStage")}
+                  label="initialStage"
+                  namespace="Admissions"
                   options={stageOptions}
+                  translateOptions={false}
                 />
                 <SelectFormField
                   name="source"
@@ -301,10 +302,12 @@ export function CreateApplicationDialog({
                   namespace="Admissions"
                 />
                 {gradeLevelOptions.length > 0 && (
-                  <SelectFormFieldWithoutTranslations
+                  <SelectFormField
                     name="desiredGradeLevelId"
-                    label={t("desiredGradeLevel")}
+                    label="desiredGradeLevel"
+                    namespace="Admissions"
                     options={gradeLevelOptions}
+                    translateOptions={false}
                   />
                 )}
               </div>

@@ -15,8 +15,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
-import { SelectFormFieldWithoutTranslations } from "@/components/form/form-fields/SelectFormFieldWithoutTranslations";
-import { ComboboxFormFieldWithoutTranslation } from "@/components/form/form-fields/ComboboxFormFieldWithoutTranslation";
+import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
+import { ComboboxFormField } from "@/components/form/form-fields/ComboboxFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
 import { cn } from "@/lib/utils";
 
@@ -246,11 +246,13 @@ export function AppointmentForm({
         onSubmit={form.handleSubmit(onSubmit)}
         className={cn("space-y-4", compact && "space-y-3")}
       >
-        <SelectFormFieldWithoutTranslations
+        <SelectFormField
           name="appointmentTypeId"
-          label={t("appointmentTypeLabel")}
-          placeholder={t("appointmentTypeNone")}
+          label="appointmentTypeLabel"
+          namespace="Admissions"
+          placeholder="appointmentTypeNone"
           options={typeOptions}
+          translateOptions={false}
         />
 
         {/* Free title — only when no appointment type is selected. */}
@@ -316,7 +318,7 @@ export function AppointmentForm({
           </div>
         )}
 
-        <ComboboxFormFieldWithoutTranslation
+        <ComboboxFormField
           name="assignedToMembershipIds"
           namespace="Admissions"
           label="appointmentAssignee"
@@ -324,7 +326,9 @@ export function AppointmentForm({
           searchPlaceholder="appointmentAssigneeSearch"
           emptyText="appointmentAssigneeEmpty"
           options={memberOptions}
+          translateOptions={false}
           multiple
+          modal
         />
 
         <div className="grid grid-cols-2 gap-3">
@@ -348,10 +352,12 @@ export function AppointmentForm({
         />
 
         {isEdit && (
-          <SelectFormFieldWithoutTranslations
+          <SelectFormField
             name="status"
-            label={t("appointmentStatusLabel")}
+            label="appointmentStatusLabel"
+            namespace="Admissions"
             options={statusOptions}
+            translateOptions={false}
           />
         )}
 

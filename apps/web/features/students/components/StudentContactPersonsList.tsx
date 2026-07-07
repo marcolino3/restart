@@ -34,7 +34,7 @@ import {
 import { Form } from "@/components/ui/form";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { CheckboxFormField } from "@/components/form/form-fields/CheckboxFormField";
-import { ComboboxFormFieldWithoutTranslation } from "@/components/form/form-fields/ComboboxFormFieldWithoutTranslation";
+import { ComboboxFormField } from "@/components/form/form-fields/ComboboxFormField";
 import { handleAction } from "@/lib/actions/handle-action";
 import { ROUTES } from "@/constants/routes";
 import { RELATIONSHIP_TYPES } from "@/features/contact-persons/schemas/contact-person-form.schema";
@@ -232,18 +232,22 @@ export function StudentContactPersonsList({
                   onSubmit={assignForm.handleSubmit(handleLink)}
                   className="space-y-4"
                 >
-                  <ComboboxFormFieldWithoutTranslation
+                  <ComboboxFormField
                     name="contactPersonId"
                     label="selectContactPerson"
                     namespace="Students"
                     options={contactPersonOptions}
+                    translateOptions={false}
+                    modal
                     width="w-full"
                   />
-                  <ComboboxFormFieldWithoutTranslation
+                  <ComboboxFormField
                     name="relationshipType"
                     label="relationshipType"
                     namespace="ContactPersons"
                     options={relationshipOptions}
+                    translateOptions={false}
+                    modal
                     width="w-full"
                   />
                   <div className="grid grid-cols-2 gap-3">
@@ -420,11 +424,13 @@ export function StudentContactPersonsList({
               onSubmit={editForm.handleSubmit(handleUpdate)}
               className="space-y-4"
             >
-              <ComboboxFormFieldWithoutTranslation
+              <ComboboxFormField
                 name="relationshipType"
                 label="relationshipType"
                 namespace="ContactPersons"
                 options={relationshipOptions}
+                translateOptions={false}
+                modal
                 width="w-full"
               />
               <div className="grid grid-cols-2 gap-3">

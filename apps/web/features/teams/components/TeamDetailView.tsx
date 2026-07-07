@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { ComboboxFormField } from "@/components/form/form-fields/ComboboxFormField";
-import { SelectFormFieldWithoutTranslations } from "@/components/form/form-fields/SelectFormFieldWithoutTranslations";
+import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import {
   Select,
   SelectContent,
@@ -399,13 +399,15 @@ function AddMemberDialog({
               translateOptions={false}
               width="w-full"
             />
-            <SelectFormFieldWithoutTranslations
+            <SelectFormField
               name="role"
-              label={t("role")}
+              label="role"
+              namespace="Teams"
               options={[
                 { value: "MEMBER", label: t("roleMember") },
                 { value: "LEAD", label: t("roleLead") },
               ]}
+              translateOptions={false}
             />
           </form>
         </Form>
