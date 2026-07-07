@@ -24,7 +24,7 @@ const application = (
   childDateOfBirth: "2019-04-01",
   childGender: "FEMALE",
   status: "ACTIVE",
-  source: "PUBLIC_FORM",
+  admissionSource: { id: "src-1", name: "Online-Formular", color: null },
   stageEnteredAt: "2025-01-01T00:00:00.000Z",
   familyId: "fam-1",
   family: {

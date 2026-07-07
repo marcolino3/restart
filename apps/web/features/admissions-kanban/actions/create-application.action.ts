@@ -28,13 +28,7 @@ export type CreateApplicationInput = {
   assignedGradeLevelId?: string | null;
   desiredSchoolClassId?: string | null;
   desiredEnrollmentDate?: string | null;
-  source?:
-    | "MANUAL"
-    | "PUBLIC_FORM"
-    | "OPEN_DAY"
-    | "REFERRAL"
-    | "OTHER"
-    | null;
+  admissionSourceId?: string | null;
   contactPersons?: Array<{
     firstName: string;
     lastName: string;

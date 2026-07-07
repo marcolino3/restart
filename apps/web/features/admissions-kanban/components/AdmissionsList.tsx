@@ -8,9 +8,6 @@ import {
   ArrowUpDown,
   Bell,
   BellRing,
-  Globe,
-  PartyPopper,
-  UserPlus2,
   Users2,
 } from "lucide-react";
 
@@ -44,17 +41,6 @@ interface Props {
 /** `"child"` is the fixed leading column; the rest are configurable. */
 type SortKey = "child" | TableColumnKey;
 type SortDir = "asc" | "desc";
-
-const SOURCE_ICON: Record<
-  KanbanApplication["source"],
-  React.ComponentType<{ className?: string }> | null
-> = {
-  PUBLIC_FORM: Globe,
-  OPEN_DAY: PartyPopper,
-  REFERRAL: UserPlus2,
-  MANUAL: null,
-  OTHER: null,
-};
 
 const GENDER_GLYPH: Record<
   NonNullable<KanbanApplication["childGender"]>,
@@ -108,7 +94,7 @@ export function AdmissionsList({
       case "gender":
         return a.childGender ?? "ZZZ";
       case "source":
-        return a.source;
+        return a.admissionSource?.name ?? "";
       case "status":
         return a.status;
       case "days":
@@ -223,17 +209,25 @@ export function AdmissionsList({
             )}
           </TableCell>
         );
-      case "source": {
-        const Icon = SOURCE_ICON[a.source];
+      case "source":
         return (
           <TableCell key={key}>
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              {Icon && <Icon className="h-3.5 w-3.5" />}
-              {sourceLabel(a.source, t)}
-            </span>
+            {a.admissionSource ? (
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                {a.admissionSource.color && (
+                  <span
+                    aria-hidden
+                    className="inline-block h-2 w-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: a.admissionSource.color }}
+                  />
+                )}
+                {a.admissionSource.name}
+              </span>
+            ) : (
+              <span className="text-xs text-muted-foreground/50">—</span>
+            )}
           </TableCell>
         );
-      }
       case "status":
         return (
           <TableCell key={key} className="text-sm">
@@ -431,22 +425,3 @@ function statusVariant(
   }
 }
 
-function sourceLabel(
-  source: KanbanApplication["source"],
-  t: (key: string) => string,
-): string {
-  switch (source) {
-    case "PUBLIC_FORM":
-      return t("sourcePublicForm");
-    case "OPEN_DAY":
-      return t("sourceOpenDay");
-    case "REFERRAL":
-      return t("sourceReferral");
-    case "OTHER":
-      return t("sourceOther");
-    case "MANUAL":
-      return t("sourceManual");
-    default:
-      return source;
-  }
-}

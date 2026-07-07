@@ -40,6 +40,7 @@ import type { AdmissionEmail } from "../actions/get-admission-emails.action";
 import type {
   AdmissionAppointmentType,
   AdmissionRejectionReason,
+  AdmissionSource,
   KanbanStage,
 } from "../types";
 import { ActivityComposer } from "./ActivityComposer";
@@ -75,6 +76,8 @@ interface Props {
   gradeLevels: GradeLevelOption[];
   /** Org school classes for the edit-details dialog. */
   schoolClasses: SchoolClassOption[];
+  /** Org intake channels ("Eingangskanäle") for the edit-details dialog. */
+  sources: AdmissionSource[];
   canEdit: boolean;
   canEnroll: boolean;
   canSendEmail: boolean;
@@ -95,6 +98,7 @@ export function AdmissionDetailPage({
   members,
   gradeLevels,
   schoolClasses,
+  sources,
   canEdit,
   canEnroll,
   canSendEmail,
@@ -413,7 +417,11 @@ export function AdmissionDetailPage({
               value={stufeKlasse}
               dotColor={detail.assignedGradeLevelColor}
             />
-            <DataRow label={t("source")} value={sourceLabel(detail.source, t)} />
+            <DataRow
+              label={t("intakeChannel")}
+              value={detail.admissionSource?.name ?? null}
+              dotColor={detail.admissionSource?.color ?? undefined}
+            />
             <DataRow
               label={t("contactPersonLabel")}
               value={primaryContactLine}
@@ -627,6 +635,7 @@ export function AdmissionDetailPage({
           detail={detail}
           gradeLevels={gradeLevels}
           schoolClasses={schoolClasses}
+          sources={sources}
           onClose={() => setEditDetailsOpen(false)}
         />
       )}
@@ -808,22 +817,6 @@ function genderBadge(
   );
 }
 
-function sourceLabel(source: string, t: (key: string) => string): string {
-  switch (source) {
-    case "MANUAL":
-      return t("sourceManual");
-    case "PUBLIC_FORM":
-      return t("sourcePublicForm");
-    case "OPEN_DAY":
-      return t("sourceOpenDay");
-    case "REFERRAL":
-      return t("sourceReferral");
-    case "OTHER":
-      return t("sourceOther");
-    default:
-      return source;
-  }
-}
 
 /** Maps a contact-person role code to its i18n key (falls back to the raw code). */
 function contactRoleKey(role: string): string {

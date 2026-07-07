@@ -30,6 +30,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Columns3,
+  Inbox,
   Mail,
   MoreHorizontal,
   Plus,
@@ -54,6 +55,7 @@ import { cn } from "@/lib/utils";
 import { moveApplicationAction } from "../actions/move-application.action";
 import type {
   AdmissionRejectionReason,
+  AdmissionSource,
   KanbanApplication,
   KanbanStage,
 } from "../types";
@@ -64,6 +66,7 @@ import {
   type GradeLevelOption,
 } from "./CreateApplicationDialog";
 import { ManageRejectionReasonsDialog } from "./ManageRejectionReasonsDialog";
+import { ManageSourcesDialog } from "./ManageSourcesDialog";
 import { ManageAppointmentTypesDialog } from "./ManageAppointmentTypesDialog";
 import { ManageStagesDialog } from "./ManageStagesDialog";
 
@@ -119,7 +122,7 @@ const stageSortValue = (
     case "family":
       return (a.family.name ?? "ZZZ").toLowerCase();
     case "source":
-      return a.source;
+      return a.admissionSource?.name ?? "ZZZ";
     case "status":
       return a.status;
     case "daysInStage":
@@ -155,6 +158,8 @@ interface Props {
   /** Org-global table column selection; `null` ⇒ default set. */
   initialTableColumns: string[] | null;
   initialRejectionReasons: AdmissionRejectionReason[];
+  /** Org intake channels — power the source select + "verwalten" dialog. */
+  initialSources: AdmissionSource[];
   /** Grade levels for the "desired grade" select in the create sheet. */
   gradeLevels: GradeLevelOption[];
   canCreate: boolean;
@@ -178,6 +183,7 @@ export function AdmissionsKanban({
   initialApplications,
   initialTableColumns,
   initialRejectionReasons,
+  initialSources,
   gradeLevels,
   canCreate,
   canMove,
@@ -219,6 +225,7 @@ export function AdmissionsKanban({
   const [createStageId, setCreateStageId] = useState<string | null>(null);
   const [showStages, setShowStages] = useState(false);
   const [showReasons, setShowReasons] = useState(false);
+  const [showSources, setShowSources] = useState(false);
   const [manageTypesOpen, setManageTypesOpen] = useState(false);
 
   // Local stage ordering — mirrors the backend order on first render but can
@@ -577,6 +584,10 @@ export function AdmissionsKanban({
                   <Ban className="mr-2 h-4 w-4" />
                   {t("manageRejectionReasons")}
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowSources(true)}>
+                  <Inbox className="mr-2 h-4 w-4" />
+                  {t("manageSources")}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setManageTypesOpen(true)}>
                   <CalendarClock className="mr-2 h-4 w-4" />
                   {t("manageAppointmentTypes")}
@@ -675,6 +686,7 @@ export function AdmissionsKanban({
         <CreateApplicationDialog
           stages={initialStages}
           gradeLevels={gradeLevels}
+          sources={initialSources}
           initialStageId={createStageId}
           existingFamilies={Object.values(applicationsById).map((a) => ({
             id: a.familyId,
@@ -704,6 +716,13 @@ export function AdmissionsKanban({
         <ManageRejectionReasonsDialog
           reasons={initialRejectionReasons}
           onClose={() => setShowReasons(false)}
+        />
+      )}
+
+      {showSources && canManageStages && (
+        <ManageSourcesDialog
+          sources={initialSources}
+          onClose={() => setShowSources(false)}
         />
       )}
 

@@ -14,7 +14,6 @@ import {
   MaxLength,
   ValidateNested,
 } from 'class-validator';
-import { AdmissionApplicationSource } from '../enums/admission-application-source.enum';
 
 @InputType()
 export class CreateAdmissionApplicationInput {
@@ -77,10 +76,10 @@ export class CreateAdmissionApplicationInput {
   @IsISO8601()
   desiredEnrollmentDate?: string;
 
-  @Field(() => AdmissionApplicationSource, { nullable: true })
+  @Field(() => ID, { nullable: true })
   @IsOptional()
-  @IsEnum(AdmissionApplicationSource)
-  source?: AdmissionApplicationSource;
+  @IsUUID()
+  admissionSourceId?: string;
 
   @Field(() => [CreateContactPersonInput], { nullable: true })
   @IsOptional()

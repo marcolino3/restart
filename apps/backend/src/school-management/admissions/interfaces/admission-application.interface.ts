@@ -16,7 +16,9 @@ export interface IAdmissionApplication extends IBase {
   desiredSchoolClassId?: string | null;
   desiredEnrollmentDate?: string | null;
   status: AdmissionApplicationStatus;
+  /** Legacy enum column, retained until the contract migration drops it. */
   source: AdmissionApplicationSource;
+  admissionSourceId?: string | null;
   enrolledStudentId?: string | null;
   stageEnteredAt: Date;
   position: number;

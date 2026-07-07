@@ -24,18 +24,11 @@ import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFor
 import { updateApplicationAction } from "../actions/update-application.action";
 import { updateApplicationContactAction } from "../actions/update-application-contact.action";
 import type { AdmissionApplicationDetail } from "../actions/get-application-detail.action";
+import type { AdmissionSource } from "../types";
 import type { GradeLevelOption } from "./CreateApplicationDialog";
 
 /** Sentinel for "no selection" — Radix Select items cannot use an empty value. */
 const NONE = "__none__";
-
-const SOURCES = [
-  "MANUAL",
-  "PUBLIC_FORM",
-  "OPEN_DAY",
-  "REFERRAL",
-  "OTHER",
-] as const;
 
 const Schema = z.object({
   childFirstName: z.string().min(1),
@@ -45,7 +38,7 @@ const Schema = z.object({
   desiredEnrollmentDate: z.date().nullable().optional(),
   childDateOfBirth: z.date().nullable().optional(),
   childGender: z.enum(["MALE", "FEMALE", "OTHER", NONE]).optional(),
-  source: z.enum(SOURCES),
+  admissionSourceId: z.string().optional(),
   // Contact-person fields — only rendered (and submitted) when the
   // application has a first contact person.
   contactFirstName: z.string().optional(),
@@ -67,6 +60,7 @@ interface Props {
   detail: AdmissionApplicationDetail;
   gradeLevels: GradeLevelOption[];
   schoolClasses: SchoolClassOption[];
+  sources: AdmissionSource[];
   onClose: () => void;
 }
 
@@ -95,6 +89,7 @@ export function EditApplicationDetailsDialog({
   detail,
   gradeLevels,
   schoolClasses,
+  sources,
   onClose,
 }: Props) {
   const t = useTranslations("Admissions");
@@ -113,11 +108,6 @@ export function EditApplicationDetailsDialog({
       ? detail.childGender
       : NONE;
 
-  const initialSource: FormValues["source"] = (
-    SOURCES as readonly string[]
-  ).includes(detail.source)
-    ? (detail.source as FormValues["source"])
-    : "MANUAL";
 
   const form = useForm<FormValues>({
     resolver: zodResolver(Schema),
@@ -133,7 +123,7 @@ export function EditApplicationDetailsDialog({
         ? new Date(detail.childDateOfBirth)
         : null,
       childGender: initialGender,
-      source: initialSource,
+      admissionSourceId: detail.admissionSource?.id ?? NONE,
       contactFirstName: contact?.firstName ?? "",
       contactLastName: contact?.lastName ?? "",
       contactEmail: contact?.email ?? "",
@@ -166,7 +156,10 @@ export function EditApplicationDetailsDialog({
         values.childGender && values.childGender !== NONE
           ? values.childGender
           : null,
-      source: values.source,
+      admissionSourceId:
+        values.admissionSourceId && values.admissionSourceId !== NONE
+          ? values.admissionSourceId
+          : null,
     });
     if (!appRes.success) {
       toast.error(t("updateError"), { description: appRes.error });
@@ -229,12 +222,15 @@ export function EditApplicationDetailsDialog({
     { value: "FEMALE", label: t("genderFemale") },
     { value: "OTHER", label: t("genderOther") },
   ];
+  // Intake channels from the org-configured list; archived ones drop out unless
+  // this application still points at one (keep it selectable to avoid data loss).
   const sourceOptions = [
-    { value: "MANUAL", label: t("sourceManual") },
-    { value: "PUBLIC_FORM", label: t("sourcePublicForm") },
-    { value: "OPEN_DAY", label: t("sourceOpenDay") },
-    { value: "REFERRAL", label: t("sourceReferral") },
-    { value: "OTHER", label: t("sourceOther") },
+    noneOption,
+    ...sources
+      .filter(
+        (s) => !s.isArchived || s.id === detail.admissionSource?.id,
+      )
+      .map((s) => ({ value: s.id, label: s.name })),
   ];
   const roleOptions = [
     noneOption,
@@ -315,8 +311,8 @@ export function EditApplicationDetailsDialog({
                   disabledDate={(date) => date < new Date("1900-01-01")}
                 />
                 <SelectFormField
-                  name="source"
-                  label="source"
+                  name="admissionSourceId"
+                  label="intakeChannel"
                   namespace="Admissions"
                   options={sourceOptions}
                   translateOptions={false}

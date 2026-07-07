@@ -40,21 +40,6 @@ const statusKey = (status: KanbanApplication["status"]): string => {
   }
 };
 
-const sourceKey = (source: KanbanApplication["source"]): string => {
-  switch (source) {
-    case "PUBLIC_FORM":
-      return "sourcePublicForm";
-    case "OPEN_DAY":
-      return "sourceOpenDay";
-    case "REFERRAL":
-      return "sourceReferral";
-    case "OTHER":
-      return "sourceOther";
-    case "MANUAL":
-    default:
-      return "sourceManual";
-  }
-};
 
 /** ISO date (`2019-04-01`) → Swiss format (`01.04.2019`). */
 const swissDate = (iso: string): string =>
@@ -129,11 +114,11 @@ export function AdmissionCardVisual({
           </span>
         ) : null;
       case "source":
-        return (
+        return application.admissionSource ? (
           <span key={key} title={t("fieldSource")}>
-            {t(sourceKey(application.source))}
+            {application.admissionSource.name}
           </span>
-        );
+        ) : null;
       case "status":
         return (
           <span key={key} title={t("fieldStatus")}>
@@ -291,13 +276,21 @@ export function AdmissionCardVisual({
               title={t("fieldSubgroup")}
             />
           )}
-          {showSource && (
+          {showSource && application.admissionSource && (
             <Badge
               variant="secondary"
               className="rounded-full px-[11px] py-1 text-[11px] font-[600]"
+              style={
+                application.admissionSource.color
+                  ? {
+                      backgroundColor: `${application.admissionSource.color}22`,
+                      color: application.admissionSource.color,
+                    }
+                  : undefined
+              }
               title={t("fieldSource")}
             >
-              {t(sourceKey(application.source))}
+              {application.admissionSource.name}
             </Badge>
           )}
           {showReminders && chip("reminders")}

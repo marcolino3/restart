@@ -11,12 +11,21 @@ export type AdmissionApplicationStatus =
   | "ENROLLED"
   | "ARCHIVED";
 
-export type AdmissionApplicationSource =
-  | "MANUAL"
-  | "PUBLIC_FORM"
-  | "OPEN_DAY"
-  | "REFERRAL"
-  | "OTHER";
+/** Org-configurable intake channel (Eingangskanal) an application came in through. */
+export type AdmissionSource = {
+  id: string;
+  name: string;
+  color: string | null;
+  isArchived: boolean;
+  position: number;
+};
+
+/** Minimal intake-channel shape as embedded on an application. */
+export type AdmissionSourceRef = {
+  id: string;
+  name: string;
+  color: string | null;
+};
 
 export type Gender = "MALE" | "FEMALE" | "OTHER";
 
@@ -89,7 +98,7 @@ export type KanbanApplication = {
   childDateOfBirth: string | null;
   childGender: Gender | null;
   status: AdmissionApplicationStatus;
-  source: AdmissionApplicationSource;
+  admissionSource: AdmissionSourceRef | null;
   stageEnteredAt: string;
   familyId: string;
   family: KanbanFamilySnippet;

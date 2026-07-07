@@ -2,12 +2,13 @@ import { AbstractEntity } from '@/database/abstract.entity';
 import { Gender } from '@/database/enums/gender.enum';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { AdmissionRejectionReason } from '@/school-management/admission-rejection-reasons/entities/admission-rejection-reason.entity';
+import { AdmissionSource } from '@/school-management/admission-sources/entities/admission-source.entity';
 import { AdmissionStage } from '@/school-management/admission-stages/entities/admission-stage.entity';
 import { Family } from '@/school-management/families/entities/family.entity';
 import { GradeLevel } from '@/school-management/grade-levels/entities/grade-level.entity';
 import { SchoolClass } from '@/school-management/school-classes/entities/school-class.entity';
 import { Student } from '@/school-management/students/entities/student.entity';
-import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
+import { Field, HideField, ID, Int, ObjectType } from '@nestjs/graphql';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { AdmissionApplicationSource } from '../enums/admission-application-source.enum';
 import { AdmissionApplicationStatus } from '../enums/admission-application-status.enum';
@@ -114,12 +115,28 @@ export class AdmissionApplication
   })
   status: AdmissionApplicationStatus;
 
-  @Field(() => AdmissionApplicationSource)
+  /**
+   * Legacy enum column, kept during the expand/contract migration so a rollback
+   * of the app code is safe. No longer exposed to GraphQL nor written by new
+   * code — the intake channel now lives in `admissionSource`. Dropped in a later
+   * contract migration.
+   */
+  @HideField()
   @Column('enum', {
     enum: AdmissionApplicationSource,
     default: AdmissionApplicationSource.MANUAL,
   })
   source: AdmissionApplicationSource;
+
+  /** Intake channel ("Eingangskanal") — org-configurable, replaces `source`. */
+  @Field(() => ID, { nullable: true })
+  @Column('uuid', { name: 'admission_source_id', nullable: true })
+  admissionSourceId?: string | null;
+
+  @Field(() => AdmissionSource, { nullable: true })
+  @ManyToOne(() => AdmissionSource, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'admission_source_id' })
+  admissionSource?: AdmissionSource | null;
 
   @Field(() => ID, { nullable: true })
   @Column('uuid', { name: 'enrolled_student_id', nullable: true })

@@ -24,7 +24,6 @@ import { RejectAdmissionApplicationInput } from './dto/reject-application.input'
 import { ReorderAdmissionApplicationsInput } from './dto/reorder-applications.input';
 import { UpdateAdmissionApplicationInput } from './dto/update-admission-application.input';
 import { AdmissionApplication } from './entities/admission-application.entity';
-import { AdmissionApplicationSource } from './enums/admission-application-source.enum';
 import { AdmissionApplicationStatus } from './enums/admission-application-status.enum';
 import { AdmissionAuditAction } from './enums/admission-audit-action.enum';
 
@@ -185,7 +184,9 @@ export class AdmissionApplicationsService {
           desiredSchoolClassId: input.desiredSchoolClassId ?? null,
           desiredEnrollmentDate: input.desiredEnrollmentDate ?? null,
           status: AdmissionApplicationStatus.ACTIVE,
-          source: input.source ?? AdmissionApplicationSource.MANUAL,
+          // Intake channel now lives in the org-scoped `admissionSource` table;
+          // the legacy `source` enum column keeps its DB default until dropped.
+          admissionSourceId: input.admissionSourceId ?? null,
           position,
           stageEnteredAt: new Date(),
         }),
