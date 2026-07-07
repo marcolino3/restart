@@ -34,7 +34,7 @@ const AdmissionsKanbanPage = async () => {
   const permissions = user.data.permissions ?? [];
 
   return (
-    <div className="p-4">
+    <div className="px-4 pb-4 pt-2">
       <AdmissionsKanban
         initialStages={data.data.stages}
         initialApplications={data.data.applications}

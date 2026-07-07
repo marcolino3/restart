@@ -35,7 +35,7 @@ const Schema = z.object({
   childGender: z.enum(["MALE", "FEMALE", "OTHER"]).optional(),
   childDateOfBirth: z.date().nullable().optional(),
   admissionStageId: z.string().optional(),
-  desiredGradeLevelId: z.string().optional(),
+  assignedGradeLevelId: z.string().optional(),
   desiredEnrollmentDate: z.date().nullable().optional(),
   source: z
     .enum(["MANUAL", "PUBLIC_FORM", "OPEN_DAY", "REFERRAL", "OTHER"])
@@ -182,7 +182,7 @@ export function CreateApplicationDialog({
       childDateOfBirth: dob,
       childNotes: values.childNotes || undefined,
       admissionStageId: values.admissionStageId || undefined,
-      desiredGradeLevelId: values.desiredGradeLevelId || undefined,
+      assignedGradeLevelId: values.assignedGradeLevelId || undefined,
       desiredEnrollmentDate: enrollmentDate,
       source: values.source ?? "MANUAL",
       familyId: values.familyId || undefined,
@@ -303,8 +303,8 @@ export function CreateApplicationDialog({
                 />
                 {gradeLevelOptions.length > 0 && (
                   <SelectFormField
-                    name="desiredGradeLevelId"
-                    label="desiredGradeLevel"
+                    name="assignedGradeLevelId"
+                    label="assignedGradeLevel"
                     namespace="Admissions"
                     options={gradeLevelOptions}
                     translateOptions={false}

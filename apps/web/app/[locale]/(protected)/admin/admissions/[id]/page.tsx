@@ -10,6 +10,8 @@ import { getAdmissionDocumentsAction } from "@/features/admissions-kanban/action
 import { getAdmissionsDataAction } from "@/features/admissions-kanban/actions/get-admissions-data.action";
 import { getAdmissionEmailsAction } from "@/features/admissions-kanban/actions/get-admission-emails.action";
 import { getEmailTemplatesAction } from "@/features/email-templates/actions/get-email-templates.action";
+import { getGradeLevelsAction } from "@/features/grade-levels/actions/get-grade-levels.action";
+import { getSchoolClassesAction } from "@/features/school-classes/actions/get-school-classes.action";
 import { getOrgMembershipsAction } from "@/features/projects/actions/get-org-memberships.action";
 import { AdmissionDetailPage } from "@/features/admissions-kanban/components/AdmissionDetailPage";
 import { mapReminderMembers } from "@/features/admissions-kanban/lib/map-reminder-members";
@@ -36,6 +38,8 @@ export default async function AdmissionDetailRoute({ params }: PageProps) {
     kanbanData,
     emails,
     templates,
+    gradeLevelsRes,
+    schoolClassesRes,
   ] = await Promise.all([
     getCurrentUserAction(),
     getApplicationDetailAction(id),
@@ -48,6 +52,8 @@ export default async function AdmissionDetailRoute({ params }: PageProps) {
     getAdmissionsDataAction(),
     getAdmissionEmailsAction(id),
     getEmailTemplatesAction("ADMISSION"),
+    getGradeLevelsAction(),
+    getSchoolClassesAction(),
   ]);
 
   if (!user?.success) {
@@ -73,6 +79,18 @@ export default async function AdmissionDetailRoute({ params }: PageProps) {
     ? kanbanData.data.rejectionReasons
     : [];
 
+  // Flat list incl. subgroups — the edit-details dialog assigns any level.
+  const gradeLevels = gradeLevelsRes.success
+    ? [...gradeLevelsRes.data]
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map((g) => ({ id: g.id, name: g.name, shortCode: g.shortCode }))
+    : [];
+  const schoolClasses = schoolClassesRes.success
+    ? [...schoolClassesRes.data]
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map((c) => ({ id: c.id, name: c.name }))
+    : [];
+
   const membersRes = user.data.orgId
     ? await getOrgMembershipsAction(user.data.orgId)
     : null;
@@ -86,6 +104,8 @@ export default async function AdmissionDetailRoute({ params }: PageProps) {
       stages={stages}
       rejectionReasons={rejectionReasons}
       members={members}
+      gradeLevels={gradeLevels}
+      schoolClasses={schoolClasses}
       initialActivities={activities.success ? activities.data : []}
       initialReminders={reminders.success ? reminders.data : []}
       initialAppointments={appointments.success ? appointments.data : []}

@@ -102,7 +102,7 @@ export function AdmissionsList({
       case "stage":
         return stagePosById.get(a.admissionStageId) ?? 999;
       case "gradeLevel":
-        return a.desiredGradeLevelName ?? "ZZZ";
+        return a.assignedGradeLevelName ?? "ZZZ";
       case "family":
         return a.family.name ?? "";
       case "gender":
@@ -181,16 +181,16 @@ export function AdmissionsList({
       case "gradeLevel":
         return (
           <TableCell key={key} className="text-sm">
-            {a.desiredGradeLevelName ? (
+            {a.assignedGradeLevelName ? (
               <span className="inline-flex items-center gap-1.5">
                 <span
                   aria-hidden
                   className="inline-block h-2 w-2 shrink-0 rounded-full ring-1 ring-border"
                   style={{
-                    backgroundColor: a.desiredGradeLevelColor ?? "var(--muted)",
+                    backgroundColor: a.assignedGradeLevelColor ?? "var(--muted)",
                   }}
                 />
-                <span className="truncate">{a.desiredGradeLevelName}</span>
+                <span className="truncate">{a.assignedGradeLevelName}</span>
               </span>
             ) : (
               <span className="text-muted-foreground">—</span>

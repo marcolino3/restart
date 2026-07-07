@@ -1,4 +1,5 @@
 import { Gender } from '@/database/enums/gender.enum';
+import { AdmissionApplicationSource } from '../enums/admission-application-source.enum';
 import { Field, ID, InputType } from '@nestjs/graphql';
 import {
   IsEnum,
@@ -46,7 +47,7 @@ export class UpdateAdmissionApplicationInput {
   @Field(() => ID, { nullable: true })
   @IsOptional()
   @IsUUID()
-  desiredGradeLevelId?: string | null;
+  assignedGradeLevelId?: string | null;
 
   @Field(() => ID, { nullable: true })
   @IsOptional()
@@ -57,4 +58,9 @@ export class UpdateAdmissionApplicationInput {
   @IsOptional()
   @IsISO8601()
   desiredEnrollmentDate?: string | null;
+
+  @Field(() => AdmissionApplicationSource, { nullable: true })
+  @IsOptional()
+  @IsEnum(AdmissionApplicationSource)
+  source?: AdmissionApplicationSource;
 }

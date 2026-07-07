@@ -103,16 +103,16 @@ export function AdmissionRemindersBlock({
           ) : (
             <Bell className="h-3.5 w-3.5 text-muted-foreground" />
           )}
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <span className="text-[15px] font-[650] tracking-[-0.01em]">
             {t("reminders")}
           </span>
           {open.length > 0 && (
             <span
               className={cn(
-                "rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none",
+                "rounded-full px-[9px] py-0.5 font-mono text-[11px] font-[600] leading-none tabular-nums",
                 hasOverdue
                   ? "bg-destructive/10 text-destructive"
-                  : "bg-muted text-muted-foreground",
+                  : "bg-accent text-accent-foreground",
               )}
             >
               {open.length}

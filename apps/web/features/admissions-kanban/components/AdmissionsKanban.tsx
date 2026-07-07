@@ -16,7 +16,6 @@ import {
 } from "@dnd-kit/core";
 import {
   SortableContext,
-  horizontalListSortingStrategy,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
@@ -30,7 +29,8 @@ import {
   CalendarClock,
   ChevronLeft,
   ChevronRight,
-  GripVertical,
+  Columns3,
+  Mail,
   MoreHorizontal,
   Plus,
   Search,
@@ -38,7 +38,6 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PageHead } from "@/components/common/PageHead";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,7 +52,6 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 import { moveApplicationAction } from "../actions/move-application.action";
-import { reorderAdmissionStagesAction } from "../actions/stage-actions";
 import type {
   AdmissionRejectionReason,
   KanbanApplication,
@@ -61,7 +59,6 @@ import type {
 } from "../types";
 import { AdmissionCardVisual } from "./AdmissionCard";
 import { AdmissionsList } from "./AdmissionsList";
-import { AdmissionsSubNav } from "./AdmissionsSubNav";
 import {
   CreateApplicationDialog,
   type GradeLevelOption,
@@ -118,7 +115,7 @@ const stageSortValue = (
     case "gender":
       return a.childGender ?? "ZZZ";
     case "gradeLevel":
-      return a.desiredGradeLevelName ?? "ZZZ";
+      return a.assignedGradeLevelName ?? "ZZZ";
     case "family":
       return (a.family.name ?? "ZZZ").toLowerCase();
     case "source":
@@ -216,7 +213,6 @@ export function AdmissionsKanban({
 
   const [search, setSearch] = useState("");
   const [activeApp, setActiveApp] = useState<KanbanApplication | null>(null);
-  const [activeStageId, setActiveStageId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   // Stage preselected when the create dialog is opened via a column's
   // "+ Hinzufügen" button; null for the global "Neue Bewerbung" button.
@@ -374,16 +370,9 @@ export function AdmissionsKanban({
     return null;
   };
 
-  const isStageId = (id: string) => stageOrder.some((s) => s.id === id);
-
   const onDragStart = (e: DragStartEvent) => {
     const id = String(e.active.id);
-    if (isStageId(id)) {
-      setActiveStageId(id);
-      setActiveApp(null);
-      return;
-    }
-    setActiveStageId(null);
+    // Only Cards are draggable; stage columns are fixed.
     setActiveApp(applicationsById[id] ?? null);
   };
 
@@ -391,29 +380,6 @@ export function AdmissionsKanban({
     const { active, over } = e;
     const activeId = String(active.id);
     const overId = over ? String(over.id) : null;
-
-    // ----- Stage reorder -----
-    if (activeStageId) {
-      setActiveStageId(null);
-      if (!canManageStages || !overId || !isStageId(overId)) return;
-      if (activeId === overId) return;
-      const fromIdx = stageOrder.findIndex((s) => s.id === activeId);
-      const toIdx = stageOrder.findIndex((s) => s.id === overId);
-      if (fromIdx < 0 || toIdx < 0) return;
-      const next = [...stageOrder];
-      const [moved] = next.splice(fromIdx, 1);
-      next.splice(toIdx, 0, moved);
-      const prev = stageOrder;
-      setStageOrder(next);
-      startTransition(async () => {
-        const res = await reorderAdmissionStagesAction(next.map((s) => s.id));
-        if (!res.success) {
-          setStageOrder(prev);
-          toast.error(t("stageReorderError"), { description: res.error });
-        }
-      });
-      return;
-    }
 
     setActiveApp(null);
     if (!canMove) return;
@@ -498,23 +464,32 @@ export function AdmissionsKanban({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Page head — title + static subtitle (design handoff). */}
-      <PageHead
-        title={t("pageTitle")}
-        subtitle={t("pageSubtitle")}
-        className="mb-0"
-      />
+      {/* Row 1 — title + combined meta · "Neue Bewerbung" on the right. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <h2 className="text-[26px] font-bold leading-none tracking-[-0.025em]">
+          {t("pageTitle")}
+        </h2>
+        <span className="text-[13.5px] text-muted-foreground">
+          {t("activeApplicationsCount", { count: totalCount })}
+          {openRemindersTotal > 0 && (
+            <>
+              {" · "}
+              {t("remindersTodayCount", { count: openRemindersTotal })}
+            </>
+          )}
+        </span>
+        {canCreate && (
+          <Button
+            className="ml-auto gap-1.5"
+            onClick={() => setShowCreate(true)}
+          >
+            <Plus size={16} />
+            {t("newApplication")}
+          </Button>
+        )}
+      </div>
 
-      {/* Sub-navigation chip row shared with the reminders/rejected/templates
-          screens (design handoff). */}
-      <AdmissionsSubNav
-        active="kanban"
-        reminderCount={openRemindersTotal}
-        rejectedCount={rejectedCount}
-        className="mb-0"
-      />
-
-      {/* Toolbar — search · count · view toggle · manage · create. */}
+      {/* Row 2 — search + view tabs (left) · nav chips + more menu (right). */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative w-[280px]">
           <Search
@@ -528,11 +503,59 @@ export function AdmissionsKanban({
             className="h-9 rounded-full pl-8"
           />
         </div>
-        <span className="text-xs tabular-nums text-muted-foreground">
-          {t("totalApplications", { count: totalCount })}
-        </span>
+
+        {/* Board / list segmented control (saas-konzept .seg). */}
+        <div
+          className="inline-flex items-center gap-0.5 rounded-full border bg-card p-[3px]"
+          role="tablist"
+          aria-label={t("viewToggle")}
+        >
+          {(["board", "list"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              role="tab"
+              aria-selected={view === v}
+              onClick={() => setView(v)}
+              className={cn(
+                "rounded-full px-3.5 py-[5px] text-[12.5px] font-[600] transition-colors",
+                view === v
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {v === "board" ? t("viewBoard") : t("viewList")}
+            </button>
+          ))}
+        </div>
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
+          {/* Navigation chips — reminders · rejected (with counts). */}
+          <button
+            type="button"
+            onClick={() => router.push("/admin/admissions/reminders")}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border bg-card px-4 text-[13px] font-medium text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
+          >
+            {t("remindersNavLabel")}
+            {openRemindersTotal > 0 && (
+              <span className="tabular-nums text-muted-foreground/70">
+                · {openRemindersTotal}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push("/admin/admissions/rejected")}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border bg-card px-4 text-[13px] font-medium text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
+          >
+            {t("subNavRejected")}
+            {rejectedCount > 0 && (
+              <span className="tabular-nums text-muted-foreground/70">
+                · {rejectedCount}
+              </span>
+            )}
+          </button>
+
           {canManageStages && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -546,6 +569,10 @@ export function AdmissionsKanban({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => setShowStages(true)}>
+                  <Columns3 className="mr-2 h-4 w-4" />
+                  {t("manageStages")}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowReasons(true)}>
                   <Ban className="mr-2 h-4 w-4" />
                   {t("manageRejectionReasons")}
@@ -554,56 +581,17 @@ export function AdmissionsKanban({
                   <CalendarClock className="mr-2 h-4 w-4" />
                   {t("manageAppointmentTypes")}
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() =>
+                    router.push("/admin/admissions/email-templates")
+                  }
+                >
+                  <Mail className="mr-2 h-4 w-4" />
+                  {t("manageEmailTemplates")}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          )}
-
-          {/* Board / list segmented toggle (tabs look, design handoff). */}
-          <div
-            className="flex items-center rounded-full bg-muted p-0.5"
-            role="tablist"
-            aria-label={t("viewToggle")}
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={view === "board"}
-              onClick={() => setView("board")}
-              className={cn(
-                "h-7 rounded-full px-3 text-xs font-[600] transition-colors",
-                view === "board"
-                  ? "bg-background text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {t("viewBoard")}
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={view === "list"}
-              onClick={() => setView("list")}
-              className={cn(
-                "h-7 rounded-full px-3 text-xs font-[600] transition-colors",
-                view === "list"
-                  ? "bg-background text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {t("viewList")}
-            </button>
-          </div>
-
-          {canManageStages && (
-            <Button variant="outline" onClick={() => setShowStages(true)}>
-              {t("manageStages")}
-            </Button>
-          )}
-          {canCreate && (
-            <Button className="gap-1.5" onClick={() => setShowCreate(true)}>
-              <Plus size={16} />
-              {t("newApplication")}
-            </Button>
           )}
         </div>
       </div>
@@ -633,12 +621,8 @@ export function AdmissionsKanban({
           onDragStart={onDragStart}
           onDragEnd={onDragEnd}
         >
-          <SortableContext
-            items={stageOrder.map((s) => s.id)}
-            strategy={horizontalListSortingStrategy}
-          >
-            <div className="flex gap-3 overflow-x-auto pb-2">
-              {stageOrder.map((stage) => {
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {stageOrder.map((stage) => {
                 const ids = columns[stage.id]?.appIds ?? [];
                 const sort = stageSorts[stage.id];
                 const visibleApps = sortApplications(
@@ -657,7 +641,6 @@ export function AdmissionsKanban({
                     applications={visibleApps}
                     onOpenCard={openApplication}
                     canDrag={canMove}
-                    canReorderStages={canManageStages}
                     collapsed={collapsed}
                     onToggleCollapsed={() => toggleCollapsed(stage.id)}
                     sort={sort}
@@ -670,8 +653,7 @@ export function AdmissionsKanban({
                   />
                 );
               })}
-            </div>
-          </SortableContext>
+          </div>
 
           <DragOverlay>
             {activeApp ? (
@@ -684,10 +666,6 @@ export function AdmissionsKanban({
                 dragging
                 className="rotate-1"
               />
-            ) : activeStageId ? (
-              <div className="h-12 w-60 rounded-lg border bg-card px-3 py-2 text-[13px] font-[600] shadow-lg">
-                {stageOrder.find((s) => s.id === activeStageId)?.name}
-              </div>
             ) : null}
           </DragOverlay>
         </DndContext>
@@ -745,7 +723,6 @@ interface ColumnProps {
   applications: KanbanApplication[];
   onOpenCard: (id: string) => void;
   canDrag: boolean;
-  canReorderStages: boolean;
   collapsed: boolean;
   onToggleCollapsed: () => void;
   sort: StageSort | undefined;
@@ -760,7 +737,6 @@ function KanbanColumn({
   applications,
   onOpenCard,
   canDrag,
-  canReorderStages,
   collapsed,
   onToggleCollapsed,
   sort,
@@ -776,21 +752,8 @@ function KanbanColumn({
     id: `drop:${stage.id}`,
   });
 
-  // Make the column itself a sortable item so admins can reorder stages by
-  // dragging the header handle. The same `stage.id` works as the active drag
-  // target — `onDragEnd` differentiates app-drags from stage-drags.
-  const {
-    attributes,
-    listeners,
-    setNodeRef: setSortableRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: stage.id, disabled: !canReorderStages });
-  const sortableStyle = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  // Stage columns are intentionally NOT draggable — only Cards move between
+  // stages. (Stage order is managed via the "Stages verwalten" dialog.)
 
   // Client-only average days-in-stage; same hydration rationale as the
   // per-card daysInStage badge.
@@ -820,12 +783,9 @@ function KanbanColumn({
   if (collapsed) {
     return (
       <div
-        ref={setSortableRef}
-        style={sortableStyle}
         className={cn(
           "flex h-[300px] w-10 shrink-0 cursor-pointer flex-col items-center justify-between gap-2 rounded-lg bg-muted py-2 transition hover:bg-muted/80",
           isOver && "ring-2 ring-primary",
-          isDragging && "opacity-40",
         )}
         onClick={onToggleCollapsed}
         title={t("expandStage")}
@@ -854,51 +814,43 @@ function KanbanColumn({
 
   return (
     <div
-      ref={setSortableRef}
-      style={sortableStyle}
       className={cn(
-        "flex w-60 shrink-0 flex-col rounded-lg bg-muted p-2",
+        // .kan-col: bg = color-mix(panel 55%, bg), 1px border, radius-card,
+        // p-3, gap-[9px]. A 3px stage-colour bar sits on top via ::before —
+        // here rendered as a rounded child element.
+        "relative flex w-60 shrink-0 flex-col gap-[9px] overflow-hidden rounded-card border p-3",
         isOver && "ring-2 ring-primary",
         stage.stageType === "REJECTED" && "opacity-95",
-        isDragging && "opacity-50",
       )}
+      style={{
+        background: "color-mix(in oklab, var(--card) 55%, var(--background))",
+      }}
     >
-      {/* Column head — colour dot · name · count · controls. */}
-      <div className="flex items-center gap-2 px-1.5 py-1">
-        {canReorderStages && (
-          <button
-            type="button"
-            {...attributes}
-            {...listeners}
-            className="shrink-0 cursor-grab rounded text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing"
-            aria-label={t("dragStage")}
-            title={t("dragStage")}
-          >
-            <GripVertical className="h-4 w-4" />
-          </button>
-        )}
+      {/* .kan-col::before — 3px stage-colour bar across the top. */}
+      <span
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-[3px]"
+        style={{ background: stage.color ?? "var(--muted-foreground)" }}
+      />
+      {/* Column head (.ch) — colour dot · name · avg · count · controls. */}
+      <div className="flex items-center gap-2 px-1.5 pb-1.5 pt-1 text-[13.5px] font-[650]">
         <span
           aria-hidden
           className="h-2 w-2 shrink-0 rounded-full"
           style={{ background: stage.color ?? "var(--muted-foreground)" }}
         />
-        <span className="min-w-0 flex-1 truncate text-[13px] font-[600]">
-          {stage.name}
-        </span>
+        <span className="min-w-0 flex-1 truncate">{stage.name}</span>
         {avgDays !== null && avgDays > 0 && (
           <span
-            className="font-mono text-[10px] tabular-nums text-muted-foreground"
+            className="shrink-0 whitespace-nowrap font-mono text-[10.5px] font-normal tabular-nums text-muted-foreground"
             title={t("avgDaysInStage", { count: avgDays })}
           >
             ⌀ {avgDays}d
           </span>
         )}
-        <Badge
-          variant="secondary"
-          className="font-mono text-[10px] tabular-nums"
-        >
+        <span className="shrink-0 font-mono text-[11px] font-[600] tabular-nums text-muted-foreground">
           {count}
-        </Badge>
+        </span>
         <StageSortMenu sort={sort} onChangeSort={onChangeSort} />
         <button
           type="button"
@@ -913,9 +865,11 @@ function KanbanColumn({
       <div
         ref={setDropRef}
         className={cn(
-          "grid content-start gap-2 pt-1",
+          // `grid-cols-1` pins the track width to the column so a long meta
+          // line / nowrap pill can't blow the card wider than its container.
+          "grid grid-cols-1 content-start gap-[9px]",
           COLUMN_MIN_HEIGHT,
-          isOver && "rounded-md bg-accent/50",
+          isOver && "rounded-md bg-accent/40",
         )}
       >
         <SortableContext
@@ -942,7 +896,7 @@ function KanbanColumn({
           <button
             type="button"
             onClick={onAddCard}
-            className="flex items-center gap-1 rounded-md px-1.5 py-1.5 text-left text-xs font-[600] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="flex items-center justify-center gap-1.5 rounded-[calc(var(--radius-card)-4px)] border-[1.5px] border-dashed border-border p-2 text-center text-[12.5px] font-[550] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
           >
             <Plus size={14} />
             {t("addApplicationToStage")}

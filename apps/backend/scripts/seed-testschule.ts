@@ -1868,7 +1868,7 @@ async function main() {
             organization_id, family_id, admission_stage_id,
             child_first_name, child_last_name, child_date_of_birth, child_gender,
             child_notes, status, source, stage_entered_at, position,
-            desired_grade_level_id)
+            assigned_grade_level_id)
          VALUES ($1, 1, true, false, $9::timestamptz, $9::timestamptz,
             $2, $3, $4,
             $5, $6, $7::date, $8::${appGenderEnum},
@@ -1899,7 +1899,7 @@ async function main() {
     `✓ Admission pipeline: families +${familiesCreated}, parents +${parentsCreated}, applications +${applicationsCreated}`,
   );
 
-  // Backfill desired_grade_level_id for existing rows that are still NULL.
+  // Backfill assigned_grade_level_id for existing rows that are still NULL.
   // The mapping mirrors `gradeLevelForBirthYear` above and is safe to re-run.
   // pg returns DATE columns as `Date` objects — coerce explicitly to YYYY-MM-DD.
   let backfilled = 0;
@@ -1908,7 +1908,7 @@ async function main() {
     child_date_of_birth: Date | string | null;
   }>(
     `SELECT id, child_date_of_birth FROM admission_applications
-      WHERE organization_id = $1 AND desired_grade_level_id IS NULL`,
+      WHERE organization_id = $1 AND assigned_grade_level_id IS NULL`,
     [ORG_ID],
   );
   for (const row of missing) {
@@ -1922,7 +1922,7 @@ async function main() {
     const gradeLevelId = gradeLevelForBirthYear(year);
     if (!gradeLevelId) continue;
     await c.query(
-      `UPDATE admission_applications SET desired_grade_level_id = $1 WHERE id = $2`,
+      `UPDATE admission_applications SET assigned_grade_level_id = $1 WHERE id = $2`,
       [gradeLevelId, row.id],
     );
     backfilled++;

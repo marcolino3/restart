@@ -62,7 +62,7 @@ export class AdmissionApplicationsService {
       relations: [
         'family',
         'admissionStage',
-        'desiredGradeLevel',
+        'assignedGradeLevel',
         'desiredSchoolClass',
       ],
       order: { admissionStageId: 'ASC', position: 'ASC', createdAt: 'ASC' },
@@ -78,7 +78,7 @@ export class AdmissionApplicationsService {
       relations: [
         'family',
         'admissionStage',
-        'desiredGradeLevel',
+        'assignedGradeLevel',
         'desiredSchoolClass',
         'enrolledStudent',
       ],
@@ -181,7 +181,7 @@ export class AdmissionApplicationsService {
           childDateOfBirth: input.childDateOfBirth ?? null,
           childGender: input.childGender ?? null,
           childNotes: input.childNotes ?? null,
-          desiredGradeLevelId: input.desiredGradeLevelId ?? null,
+          assignedGradeLevelId: input.assignedGradeLevelId ?? null,
           desiredSchoolClassId: input.desiredSchoolClassId ?? null,
           desiredEnrollmentDate: input.desiredEnrollmentDate ?? null,
           status: AdmissionApplicationStatus.ACTIVE,

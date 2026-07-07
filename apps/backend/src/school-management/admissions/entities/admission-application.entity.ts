@@ -80,14 +80,19 @@ export class AdmissionApplication
   @Column('text', { name: 'child_notes', nullable: true })
   childNotes?: string | null;
 
+  /**
+   * Grade level assigned by the school. May reference either a top-level Stufe
+   * or a subgroup (Untergruppe); the Stufe is derived via `parent`. Set by the
+   * school, not requested by the parents — hence "assigned", not "desired".
+   */
   @Field(() => ID, { nullable: true })
-  @Column('uuid', { name: 'desired_grade_level_id', nullable: true })
-  desiredGradeLevelId?: string | null;
+  @Column('uuid', { name: 'assigned_grade_level_id', nullable: true })
+  assignedGradeLevelId?: string | null;
 
   @Field(() => GradeLevel, { nullable: true })
   @ManyToOne(() => GradeLevel, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'desired_grade_level_id' })
-  desiredGradeLevel?: GradeLevel | null;
+  @JoinColumn({ name: 'assigned_grade_level_id' })
+  assignedGradeLevel?: GradeLevel | null;
 
   @Field(() => ID, { nullable: true })
   @Column('uuid', { name: 'desired_school_class_id', nullable: true })

@@ -25,7 +25,7 @@ export type CreateApplicationInput = {
   childDateOfBirth?: string | null;
   childGender?: "MALE" | "FEMALE" | "OTHER" | null;
   childNotes?: string | null;
-  desiredGradeLevelId?: string | null;
+  assignedGradeLevelId?: string | null;
   desiredSchoolClassId?: string | null;
   desiredEnrollmentDate?: string | null;
   source?:

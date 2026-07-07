@@ -29,7 +29,7 @@ export type RejectedApplication = {
   childFirstName: string;
   childLastName: string;
   familyName: string | null;
-  desiredGradeLevelName: string | null;
+  assignedGradeLevelName: string | null;
   rejectionReason: string | null;
   rejectionReasonLabel: string | null;
   rejectionReasonColor: string | null;
@@ -94,9 +94,25 @@ export type KanbanApplication = {
   familyId: string;
   family: KanbanFamilySnippet;
   enrolledStudentId: string | null;
-  desiredGradeLevelId: string | null;
-  desiredGradeLevelName: string | null;
-  desiredGradeLevelColor: string | null;
+  assignedGradeLevelId: string | null;
+  assignedGradeLevelName: string | null;
+  assignedGradeLevelColor: string | null;
+  /**
+   * Grade level assigned by the school, split into the Stufe (top level) and an
+   * optional Untergruppe. The assigned node may be either a top-level Stufe
+   * (then `untergruppe` is null) or a subgroup (then `stufe` is its parent).
+   * Rendered as separate badges on the card.
+   */
+  assignedStufe: GradeLevelBadge | null;
+  assignedUntergruppe: GradeLevelBadge | null;
   openRemindersCount: number;
   overdueRemindersCount: number;
+};
+
+/** Minimal grade-level shape for a card badge (Stufe or Untergruppe). */
+export type GradeLevelBadge = {
+  id: string;
+  name: string;
+  shortCode: string | null;
+  color: string | null;
 };
