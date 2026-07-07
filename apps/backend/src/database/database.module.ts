@@ -33,6 +33,7 @@ import { AdmissionApplication } from '@/school-management/admissions/entities/ad
 import { AdmissionAuditLog } from '@/school-management/admissions/entities/admission-audit-log.entity';
 import { AdmissionEmail } from '@/school-management/admissions/entities/admission-email.entity';
 import { AdmissionReminder } from '@/school-management/admissions/entities/admission-reminder.entity';
+import { AdmissionDocument } from '@/school-management/admissions/entities/admission-document.entity';
 import { EmailTemplate } from '@/school-management/admissions/entities/email-template.entity';
 import { ContactPerson } from '@/school-management/contact-persons/entities/contact-person.entity';
 import { StudentContactPerson } from '@/school-management/contact-persons/entities/student-contact-person.entity';
@@ -124,6 +125,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       AdmissionAuditLog,
       AdmissionActivity,
       AdmissionReminder,
+      AdmissionDocument,
       AdmissionAppointment,
       AdmissionAppointmentAssignee,
       AdmissionEmail,

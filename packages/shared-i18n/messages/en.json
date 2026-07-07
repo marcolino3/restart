@@ -417,6 +417,7 @@
     "stageDefault": "Default",
     "manageRejectionReasons": "Rejection reasons",
     "appointments": "Appointments",
+    "documents": "Documents",
     "appointmentNew": "New appointment",
     "appointmentEmpty": "No appointments yet.",
     "appointmentTypeLabel": "Appointment type",
@@ -2830,5 +2831,24 @@
     "mismatch": "The passwords do not match.",
     "error": "Could not set the password.",
     "success": "Password set. You can now log in."
+  },
+  "Documents": {
+    "empty": "No documents uploaded yet.",
+    "uploadButton": "Upload document",
+    "uploadDialogTitle": "Upload document",
+    "fileLabel": "File",
+    "chooseFile": "Choose file",
+    "titleLabel": "Title (optional)",
+    "tagsLabel": "Tags",
+    "tagsPlaceholder": "Type and press Enter …",
+    "cancel": "Cancel",
+    "uploadOk": "Document uploaded",
+    "uploadError": "Could not upload the document",
+    "uploadTypeError": "This file type is not allowed (PDF or image).",
+    "uploadSizeError": "File is too large (max. {max}).",
+    "download": "Download",
+    "delete": "Delete",
+    "deleteTitle": "Delete document",
+    "deleteDescription": "Really delete “{name}”? This cannot be undone."
   }
 }

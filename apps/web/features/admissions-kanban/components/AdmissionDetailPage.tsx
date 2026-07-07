@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { getAdmissionActivitiesAction } from "../actions/get-admission-activities.action";
 import { getAdmissionRemindersAction } from "../actions/get-admission-reminders.action";
 import { getAdmissionAppointmentsAction } from "../actions/get-admission-appointments.action";
+import { getAdmissionDocumentsAction } from "../actions/get-admission-documents.action";
 import { getAdmissionEmailsAction } from "../actions/get-admission-emails.action";
 import type {
   AdmissionApplicationDetail,
@@ -31,6 +32,7 @@ import type {
 import type { AdmissionActivity } from "../actions/get-admission-activities.action";
 import type { AdmissionReminder } from "../actions/get-admission-reminders.action";
 import type { AdmissionAppointment } from "../actions/get-admission-appointments.action";
+import type { AdmissionDocument } from "../actions/get-admission-documents.action";
 import type { AdmissionEmail } from "../actions/get-admission-emails.action";
 import type {
   AdmissionAppointmentType,
@@ -41,6 +43,7 @@ import { ActivityComposer } from "./ActivityComposer";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { AdmissionRemindersBlock } from "./AdmissionRemindersBlock";
 import { AdmissionAppointmentsBlock } from "./AdmissionAppointmentsBlock";
+import { AdmissionDocumentsBlock } from "./AdmissionDocumentsBlock";
 import { AdmissionEmailHistory } from "./AdmissionEmailHistory";
 import { RejectApplicationDialog } from "./RejectApplicationDialog";
 import { FinalizeEnrollmentDialog } from "./FinalizeEnrollmentDialog";
@@ -55,6 +58,7 @@ interface Props {
   initialReminders: AdmissionReminder[];
   initialAppointments: AdmissionAppointment[];
   appointmentTypes: AdmissionAppointmentType[];
+  initialDocuments: AdmissionDocument[];
   initialEmails: AdmissionEmail[];
   emailTemplates: SendableTemplate[];
   /** Org memberships for reminder assignee pickers. */
@@ -73,6 +77,7 @@ export function AdmissionDetailPage({
   initialReminders,
   initialAppointments,
   appointmentTypes,
+  initialDocuments,
   initialEmails,
   emailTemplates,
   members,
@@ -89,6 +94,8 @@ export function AdmissionDetailPage({
     useState<AdmissionReminder[]>(initialReminders);
   const [appointments, setAppointments] =
     useState<AdmissionAppointment[]>(initialAppointments);
+  const [documents, setDocuments] =
+    useState<AdmissionDocument[]>(initialDocuments);
   const [emails, setEmails] = useState<AdmissionEmail[]>(initialEmails);
   const [sendOpen, setSendOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -129,6 +136,14 @@ export function AdmissionDetailPage({
     startTransition(async () => {
       const res = await getAdmissionAppointmentsAction(detail.id);
       if (res.success) setAppointments(res.data);
+      router.refresh();
+    });
+  };
+
+  const refreshDocuments = () => {
+    startTransition(async () => {
+      const res = await getAdmissionDocumentsAction(detail.id);
+      if (res.success) setDocuments(res.data);
       router.refresh();
     });
   };
@@ -365,6 +380,13 @@ export function AdmissionDetailPage({
             canEdit={canEdit}
             onChanged={refreshAppointments}
             childName={childName}
+          />
+
+          <AdmissionDocumentsBlock
+            applicationId={detail.id}
+            documents={documents}
+            canEdit={canEdit}
+            onChanged={refreshDocuments}
           />
 
           {/* E-Mail-Verlauf */}
