@@ -9,6 +9,7 @@ import { AdmissionApplicationsService } from './admission-applications.service';
 import { AdmissionAuditLogsService } from './admission-audit-logs.service';
 import { AdmissionEmailsResolver } from './admission-emails.resolver';
 import { AdmissionEmailsService } from './admission-emails.service';
+import { AdmissionReminderNotifierService } from './admission-reminder-notifier.service';
 import { AdmissionRemindersResolver } from './admission-reminders.resolver';
 import { AdmissionRemindersService } from './admission-reminders.service';
 import { EmailTemplatesResolver } from './email-templates.resolver';
@@ -25,6 +26,7 @@ import { SmtpService } from './smtp.service';
     AdmissionActivitiesService,
     AdmissionRemindersResolver,
     AdmissionRemindersService,
+    AdmissionReminderNotifierService,
     EmailTemplatesResolver,
     EmailTemplatesService,
     AdmissionEmailsResolver,
