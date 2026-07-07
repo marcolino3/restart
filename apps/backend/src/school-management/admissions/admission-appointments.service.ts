@@ -159,6 +159,7 @@ export class AdmissionAppointmentsService {
       organizationId,
       applicationId: input.applicationId,
       appointmentTypeId: input.appointmentTypeId ?? null,
+      title: input.title?.trim() || null,
       scheduledAt,
       endsAt,
       durationMinutes: input.durationMinutes ?? null,
@@ -193,6 +194,9 @@ export class AdmissionAppointmentsService {
     if (input.applicationId !== undefined) {
       await this.assertApplication(input.applicationId, organizationId);
       existing.applicationId = input.applicationId;
+    }
+    if (input.title !== undefined) {
+      existing.title = input.title?.toString().trim() || null;
     }
     if (input.scheduledAt !== undefined) {
       existing.scheduledAt = new Date(input.scheduledAt);
