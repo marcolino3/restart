@@ -1,9 +1,11 @@
 name: Deploy Staging
 
 on:
-  # Manual-only: staging deploys are triggered on demand — from the Actions tab
-  # ("Run workflow" on Deploy Staging) or via `gh workflow run deploy-staging.yml`.
-  # No automatic deploy on push to main.
+  # Automatic on every push to main, plus on-demand from the Actions tab
+  # ("Run workflow") or via `gh workflow run deploy-staging.yml`.
+  # Production stays manual (workflow_dispatch + approval gate).
+  push:
+    branches: [main]
   workflow_dispatch:
 
 env:
