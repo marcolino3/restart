@@ -11,9 +11,10 @@ import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
+import {
+  DateTimeCalendarFormField,
+  type DateTimePreset,
+} from "@/components/form/form-fields/DateTimeCalendarFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
@@ -59,8 +60,7 @@ function addDays(base: Date, days: number): Date {
 
 const Schema = z.object({
   title: z.string().trim().min(1, { message: "required" }),
-  dueDate: z.date(),
-  time: z.string().regex(/^\d{2}:\d{2}$/),
+  dueAt: z.date(),
   assignedToMembershipId: z.string(),
   note: z.string().max(5000).optional(),
 });
@@ -87,33 +87,35 @@ export function ReminderForm({
     [members, t],
   );
 
+  // Quick-select presets rendered inside the date-time popover (left column).
+  const presets = useMemo<DateTimePreset[]>(
+    () =>
+      PRESETS.map((p) => ({
+        key: p.key,
+        label: t(p.labelKey),
+        resolve: () => addDays(new Date(), p.days),
+      })),
+    [t],
+  );
+
+  const defaultDueAt = () => {
+    const d = addDays(new Date(), 7);
+    d.setHours(9, 0, 0, 0);
+    return d;
+  };
+
   const form = useForm<FormValues>({
     resolver: zodResolver(Schema),
     defaultValues: {
       title: initial?.title ?? "",
-      dueDate: initialDue ?? addDays(new Date(), 7),
-      time: initialDue
-        ? initialDue.toLocaleTimeString("de-CH", {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-          })
-        : "09:00",
+      dueAt: initialDue ?? defaultDueAt(),
       assignedToMembershipId: initial?.assignedToMembershipId ?? UNASSIGNED,
       note: initial?.note ?? "",
     },
   });
 
-  const applyPreset = (days: number) => {
-    form.setValue("dueDate", addDays(new Date(), days), {
-      shouldValidate: true,
-    });
-  };
-
   const onSubmit = async (values: FormValues) => {
-    const [hh, mm] = values.time.split(":").map(Number);
-    const due = new Date(values.dueDate);
-    due.setHours(hh || 9, mm || 0, 0, 0);
+    const due = new Date(values.dueAt);
     const assignedToMembershipId =
       values.assignedToMembershipId === UNASSIGNED
         ? null
@@ -144,8 +146,7 @@ export function ReminderForm({
     if (!isEdit) {
       form.reset({
         title: "",
-        dueDate: addDays(new Date(), 7),
-        time: "09:00",
+        dueAt: defaultDueAt(),
         assignedToMembershipId: UNASSIGNED,
         note: "",
       });
@@ -166,45 +167,26 @@ export function ReminderForm({
           placeholder={t("reminderTitlePlaceholder")}
         />
 
-        <div className="grid grid-cols-2 gap-3">
-          <DatePickerFormField
-            name="dueDate"
+        <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
+          <DateTimeCalendarFormField
+            name="dueAt"
             label="reminderDueLabel"
             namespace="Admissions"
+            presets={presets}
             disabledDate={(date) =>
               date < new Date(new Date().setHours(0, 0, 0, 0))
             }
           />
-          <div className="space-y-[7px]">
-            <Label className="text-[12.5px] font-semibold">{t("reminderTimeLabel")}</Label>
-            <Input type="time" {...form.register("time")} />
-          </div>
-        </div>
 
-        <div className="space-y-[7px]">
-          <Label className="text-[12.5px] font-semibold">{t("reminderQuickSelect")}</Label>
-          <div className="flex flex-wrap gap-1.5">
-            {PRESETS.map((p) => (
-              <button
-                key={p.key}
-                type="button"
-                onClick={() => applyPreset(p.days)}
-                className="inline-flex h-7 items-center rounded-full border border-border bg-background px-3 text-[11px] font-medium text-foreground transition hover:border-primary hover:bg-primary/5 hover:text-primary"
-              >
-                {t(p.labelKey)}
-              </button>
-            ))}
-          </div>
+          <SelectFormField
+            name="assignedToMembershipId"
+            label="reminderAssignee"
+            namespace="Admissions"
+            placeholder="reminderAssigneeUnassigned"
+            options={memberOptions}
+            translateOptions={false}
+          />
         </div>
-
-        <SelectFormField
-          name="assignedToMembershipId"
-          label="reminderAssignee"
-          namespace="Admissions"
-          placeholder="reminderAssigneeUnassigned"
-          options={memberOptions}
-          translateOptions={false}
-        />
 
         <TextareaFormField
           name="note"

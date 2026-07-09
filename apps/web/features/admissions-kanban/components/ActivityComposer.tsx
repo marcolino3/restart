@@ -19,8 +19,16 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DateTimePickerFormField } from "@/components/form/form-fields/DateTimePickerFormField";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DateTimeCalendarFormField } from "@/components/form/form-fields/DateTimeCalendarFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
 import { cn } from "@/lib/utils";
@@ -39,11 +47,29 @@ import {
 } from "./AppointmentForm";
 import { ReminderForm, type ReminderMember } from "./ReminderForm";
 
+/** A contact person offered in the call "Mit" (with whom) dropdown. */
+export interface WithOption {
+  id: string;
+  /** Display name shown in the dropdown and stored as the activity subject. */
+  name: string;
+  /** Optional role label, e.g. "Mutter", shown muted next to the name. */
+  role?: string | null;
+}
+
+/** Sentinel value for the "andere" (other) option — opens a free input. */
+const WITH_OTHER = "__other__";
+
 interface Props {
   applicationId: string;
   initial?: AdmissionActivity | null;
   onSaved: () => void;
   onCancel?: () => void;
+  /**
+   * Contact persons of the application, offered in the call "Mit" dropdown.
+   * When present, the "Mit" field becomes a select (contacts + "andere");
+   * "andere" reveals a free text input. Falls back to a plain input if empty.
+   */
+  withOptions?: WithOption[];
   /** Assignee options — enables the "Erinnerung" + "Termin" composer tabs when provided. */
   members?: ReminderMember[];
   /** Called after a reminder is created from the composer's Erinnerung tab. */
@@ -62,10 +88,28 @@ const ACTIVITY_TYPES: Array<{
   // "MEETING" (Termin) intentionally not offered here — real appointments are
   // created via the dedicated "Termin" (appointment) tab below. Existing MEETING
   // activities still render in the timeline; the enum keeps the value.
+  // Order mirrors the design: Notiz · Anruf · E-Mail (Notiz first).
+  { value: "NOTE", icon: StickyNote, labelKey: "activityTypeNote" },
   { value: "CALL", icon: Phone, labelKey: "activityTypeCall" },
   { value: "EMAIL", icon: Mail, labelKey: "activityTypeEmail" },
-  { value: "NOTE", icon: StickyNote, labelKey: "activityTypeNote" },
 ];
+
+/**
+ * Call outcome — UI-only for now. There is no `outcome`/`callResult` field on
+ * `AdmissionActivity` in the backend (entity/DTO checked: only
+ * type/occurredAt/subject/body/direction/durationMinutes/location exist), so
+ * this selection is NOT persisted yet. Adding it requires a backend enum
+ * migration (`AdmissionActivityOutcome`: REACHED/NOT_REACHED/CALLBACK_ARRANGED)
+ * — deliberately left out of this PR per the "no enum migration mixed with UI
+ * work" rule. TODO: once the backend field exists, wire this into the submit
+ * payload the same way `direction` is wired below.
+ */
+const CALL_OUTCOMES: Array<{ value: string; labelKey: string }> = [
+  { value: "REACHED", labelKey: "activityOutcomeReached" },
+  { value: "NOT_REACHED", labelKey: "activityOutcomeNotReached" },
+  { value: "CALLBACK_ARRANGED", labelKey: "activityOutcomeCallbackArranged" },
+];
+type CallOutcome = (typeof CALL_OUTCOMES)[number]["value"];
 
 const Schema = z.object({
   type: z.enum(["CALL", "EMAIL", "MEETING", "NOTE"]),
@@ -84,6 +128,7 @@ export function ActivityComposer({
   initial,
   onSaved,
   onCancel,
+  withOptions,
   members,
   onReminderSaved,
   appointmentTypes,
@@ -113,14 +158,38 @@ export function ActivityComposer({
     },
   });
   const [saving, setSaving] = useState(false);
+  // UI-only — see CALL_OUTCOMES comment above; not sent to the backend yet.
+  const [callOutcome, setCallOutcome] = useState<CallOutcome | null>(null);
+
+  const hasWithOptions = !!withOptions && withOptions.length > 0;
+  // The call "Mit" dropdown selection: a contact id, WITH_OTHER (free input),
+  // or "" (nothing chosen yet). Only used when hasWithOptions.
+  const initialWithId =
+    initial?.subject && hasWithOptions
+      ? (withOptions!.find((o) => o.name === initial.subject)?.id ?? WITH_OTHER)
+      : "";
+  const [withSelection, setWithSelection] = useState<string>(initialWithId);
+  const withIsOther = withSelection === WITH_OTHER;
 
   const type = form.watch("type");
   const direction = form.watch("direction") ?? null;
 
   const isEdit = !!initial;
+  const showWith = type === "CALL";
+  // The outcome (Erreicht/Nicht erreicht/Rückruf vereinbart) only makes sense
+  // for an OUTBOUND call — on an inbound call the contact already reached us.
+  const showOutcome = type === "CALL" && direction === "OUTBOUND";
   const showDirection = type === "CALL" || type === "EMAIL";
   const showDuration = type === "CALL" || type === "MEETING";
   const showLocation = type === "MEETING";
+  // Follow-up after an outbound call, chosen by outcome:
+  //  - "Nicht erreicht"      → schedule a Reminder (call again later)
+  //  - "Rückruf vereinbart"  → schedule a concrete Appointment
+  const showFollowUpReminder = showOutcome && callOutcome === "NOT_REACHED";
+  const showFollowUpAppointment =
+    showOutcome && callOutcome === "CALLBACK_ARRANGED";
+  // Prefill the appointment title with the "Mit" contact when known.
+  const followUpTitle = form.watch("subject")?.trim() || undefined;
 
   // When type changes, blank out the now-irrelevant inputs so we don't post
   // stale values from a previous selection.
@@ -131,9 +200,16 @@ export function ActivityComposer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
 
+  // Clear the outcome whenever the outcome field is hidden (type change or a
+  // non-outbound direction), so a stale selection can't linger.
+  useEffect(() => {
+    if (!showOutcome) setCallOutcome(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showOutcome]);
+
   const placeholderKey =
     type === "CALL"
-      ? "activitySubjectPlaceholderCall"
+      ? "activityWithPlaceholder"
       : type === "EMAIL"
         ? "activitySubjectPlaceholderEmail"
         : type === "MEETING"
@@ -179,6 +255,8 @@ export function ActivityComposer({
         durationMinutes: "",
         location: "",
       });
+      setCallOutcome(null);
+      setWithSelection("");
     }
     onSaved();
   };
@@ -263,7 +341,73 @@ export function ActivityComposer({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <DateTimePickerFormField
+              {showWith ? (
+                <div className="space-y-[7px]">
+                  <Label className="text-[12.5px] font-semibold">
+                    {t("activityWith")}
+                  </Label>
+                  {hasWithOptions ? (
+                    <div className="space-y-2">
+                      <Select
+                        value={withSelection}
+                        onValueChange={(v) => {
+                          setWithSelection(v);
+                          if (v === WITH_OTHER) {
+                            form.setValue("subject", "");
+                          } else {
+                            const opt = withOptions!.find((o) => o.id === v);
+                            form.setValue("subject", opt?.name ?? "");
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="rounded-ctl!">
+                          <SelectValue placeholder={t("activityWithSelect")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {withOptions!.map((o) => (
+                            <SelectItem key={o.id} value={o.id}>
+                              {o.name}
+                              {o.role ? (
+                                <span className="ml-1.5 text-muted-foreground">
+                                  · {o.role}
+                                </span>
+                              ) : null}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value={WITH_OTHER}>
+                            {t("activityWithOther")}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {withIsOther && (
+                        <Input
+                          autoFocus
+                          value={form.watch("subject") ?? ""}
+                          onChange={(e) =>
+                            form.setValue("subject", e.target.value)
+                          }
+                          placeholder={t("activityWithOtherPlaceholder")}
+                          className="rounded-ctl!"
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <InputFormField
+                      name="subject"
+                      namespace="Admissions"
+                      placeholder={t(placeholderKey)}
+                    />
+                  )}
+                </div>
+              ) : (
+                <InputFormField
+                  name="subject"
+                  label="activitySubject"
+                  namespace="Admissions"
+                  placeholder={t(placeholderKey)}
+                />
+              )}
+              <DateTimeCalendarFormField
                 name="occurredAt"
                 label="activityOccurredAt"
                 namespace="Admissions"
@@ -331,18 +475,78 @@ export function ActivityComposer({
               )}
             </div>
 
-            <InputFormField
-              name="subject"
-              label="activitySubject"
-              namespace="Admissions"
-              placeholder={t(placeholderKey)}
-            />
+            {showOutcome && (
+              <div className="space-y-[7px]">
+                <Label className="text-[12.5px] font-semibold">
+                  {t("activityOutcome")}
+                </Label>
+                <div className="flex flex-wrap gap-1">
+                  {CALL_OUTCOMES.map(({ value, labelKey }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() =>
+                        setCallOutcome(callOutcome === value ? null : value)
+                      }
+                      className={cn(
+                        "inline-flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium transition",
+                        callOutcome === value
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-background text-muted-foreground hover:bg-muted",
+                      )}
+                    >
+                      {t(labelKey)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Follow-up (separate save from the call activity):
+                - "Nicht erreicht"     → a Reminder to call again.
+                - "Rückruf vereinbart" → a concrete Appointment, prefilled
+                  with the "Mit" contact as its title. */}
+            {showFollowUpReminder && members && (
+              <div className="space-y-2 rounded-md border border-dashed bg-muted/30 p-3">
+                <Label className="text-[12.5px] font-semibold">
+                  {t("activityFollowUpReminder")}
+                </Label>
+                <ReminderForm
+                  applicationId={applicationId}
+                  members={members}
+                  onSaved={() => {
+                    onReminderSaved?.();
+                    toast.success(t("reminderCreateOk"));
+                  }}
+                  compact
+                />
+              </div>
+            )}
+            {showFollowUpAppointment && members && appointmentTypes && (
+              <div className="space-y-2 rounded-md border border-dashed bg-muted/30 p-3">
+                <Label className="text-[12.5px] font-semibold">
+                  {t("activityFollowUpAppointment")}
+                </Label>
+                <AppointmentForm
+                  applicationId={applicationId}
+                  types={appointmentTypes}
+                  members={members as AppointmentMember[]}
+                  defaultTitle={followUpTitle}
+                  onSaved={() => {
+                    onAppointmentSaved?.();
+                    toast.success(t("appointmentCreateOk"));
+                  }}
+                />
+              </div>
+            )}
 
             <TextareaFormField
               name="body"
               label="activityBody"
               namespace="Admissions"
-              placeholder={t("activityBodyPlaceholder")}
+              placeholder={t(
+                type === "CALL" ? "activityCallNotePlaceholder" : "activityBodyPlaceholder",
+              )}
             />
 
             <div className="flex justify-end gap-2 pt-1">
@@ -361,7 +565,7 @@ export function ActivityComposer({
                 {saving && (
                   <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
                 )}
-                {t("activitySubmit")}
+                {t(type === "CALL" ? "activityLogSubmit" : "activitySubmit")}
               </Button>
             </div>
           </form>

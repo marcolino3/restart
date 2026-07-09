@@ -25,6 +25,20 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+/**
+ * A quick-select preset shown in the left column of the popover. `resolve`
+ * receives the current value (or now) and returns the new Date; the chosen
+ * day is applied, the existing time of day is preserved by the caller.
+ */
+export type DateTimePreset = {
+  /** Stable key for React. */
+  key: string;
+  /** Already-translated button label. */
+  label: string;
+  /** Returns the target date (time component is ignored / re-applied). */
+  resolve: (current: Date | undefined) => Date;
+};
+
 type DateTimeCalendarFormFieldProps<TFormValues extends FieldValues> = {
   name: FieldPath<TFormValues>;
   label?: string;
@@ -37,6 +51,12 @@ type DateTimeCalendarFormFieldProps<TFormValues extends FieldValues> = {
   minHour?: number;
   maxHour?: number;
   disabledDate?: (date: Date) => boolean;
+  /**
+   * Optional quick-select presets shown as a button column left of the
+   * calendar (shadcn "calendar with presets" pattern). Each preset only sets
+   * the day; the current time of day is preserved.
+   */
+  presets?: DateTimePreset[];
 };
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -56,6 +76,7 @@ export function DateTimeCalendarFormField<TFormValues extends FieldValues>({
   minHour = 6,
   maxHour = 21,
   disabledDate,
+  presets,
 }: DateTimeCalendarFormFieldProps<TFormValues>) {
   const t = useTranslations(namespace);
   const tCommon = useTranslations("Common");
@@ -99,6 +120,18 @@ export function DateTimeCalendarFormField<TFormValues extends FieldValues>({
           field.onChange(updated);
         };
 
+        const handlePreset = (preset: DateTimePreset) => {
+          const target = preset.resolve(value);
+          const merged = new Date(target);
+          if (value) {
+            merged.setHours(value.getHours(), value.getMinutes(), 0, 0);
+          } else {
+            const defaultHour = Math.min(Math.max(9, minHour), maxHour);
+            merged.setHours(defaultHour, 0, 0, 0);
+          }
+          field.onChange(merged);
+        };
+
         return (
           <FormItem className="flex flex-col">
             {label && <FormLabel>{t(label)}</FormLabel>}
@@ -127,6 +160,22 @@ export function DateTimeCalendarFormField<TFormValues extends FieldValues>({
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <div className="flex">
+                  {presets && presets.length > 0 && (
+                    <div className="flex w-[130px] flex-col gap-1 border-r p-2">
+                      {presets.map((preset) => (
+                        <Button
+                          key={preset.key}
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start font-normal"
+                          onClick={() => handlePreset(preset)}
+                        >
+                          {preset.label}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                   <Calendar
                     mode="single"
                     selected={value}

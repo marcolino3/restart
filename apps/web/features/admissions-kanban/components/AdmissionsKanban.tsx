@@ -166,6 +166,16 @@ interface Props {
   gradeLevels: GradeLevelOption[];
   /** Active school classes for the "desired class" select in the create sheet. */
   schoolClasses?: SchoolClassOption[];
+  /**
+   * All org families (id, name, contact names) for the create dialog's family
+   * search — sourced from the `families` query, NOT derived from the loaded
+   * applications, so families without any application are still findable.
+   */
+  existingFamilies: {
+    id: string;
+    name: string;
+    contactNames: string[];
+  }[];
   canCreate: boolean;
   canMove: boolean;
   canEnroll: boolean;
@@ -190,6 +200,7 @@ export function AdmissionsKanban({
   initialSources,
   gradeLevels,
   schoolClasses,
+  existingFamilies,
   canCreate,
   canMove,
   canManageStages,
@@ -709,11 +720,7 @@ export function AdmissionsKanban({
           sources={initialSources}
           initialStageId={createStageId}
           initialFamilyId={createFamilyId}
-          existingFamilies={Object.values(applicationsById).map((a) => ({
-            id: a.familyId,
-            name: a.family.name ?? `${a.childLastName}`,
-            contactNames: a.family.contactNames,
-          }))}
+          existingFamilies={existingFamilies}
           onClose={() => {
             setShowCreate(false);
             setCreateStageId(null);

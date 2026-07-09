@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   ClipboardList,
   GraduationCap,
-  History,
   Mail,
   Mars,
   Pencil,
@@ -135,6 +134,13 @@ export function AdmissionDetailPage({
       role: c.roles?.[0] ?? null,
     }));
   const defaultContact = emailContacts[0] ?? null;
+  // "Mit" options for the call composer: every contact person of the
+  // application (name stored as the activity subject) plus "andere".
+  const withOptions = detail.contactPersons.map((c) => ({
+    id: c.id,
+    name: `${c.firstName} ${c.lastName}`.trim(),
+    role: c.roles?.[0] ? t(contactRoleKey(c.roles[0])) : null,
+  }));
 
   const refreshActivities = () => {
     startTransition(async () => {
@@ -378,6 +384,7 @@ export function AdmissionDetailPage({
                 <ActivityComposer
                   applicationId={detail.id}
                   onSaved={refreshActivities}
+                  withOptions={withOptions}
                   members={members}
                   onReminderSaved={refreshReminders}
                   appointmentTypes={appointmentTypes}
@@ -615,64 +622,6 @@ export function AdmissionDetailPage({
             </DataCard>
           )}
         </aside>
-      </div>
-
-      {/* Audit log — kept, as a collapsible section (design has no audit tab) */}
-      <div className="px-4 pb-8 sm:px-6">
-        <details className="rounded-[var(--radius-card)] border bg-card shadow-sm">
-          <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground">
-            <History className="h-4 w-4" />
-            {t("tabAudit")}
-            {detail.auditLogs.length > 0 && (
-              <span className="rounded-full bg-accent px-[9px] py-0.5 font-mono text-[11px] font-[600] leading-none tabular-nums text-accent-foreground">
-                {detail.auditLogs.length}
-              </span>
-            )}
-          </summary>
-          <div className="border-t p-4">
-            {detail.auditLogs.length === 0 ? (
-              <p className="text-sm italic text-muted-foreground">
-                {t("noAuditLogs")}
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {detail.auditLogs.map((l) => (
-                  <li
-                    key={l.id}
-                    className="space-y-0.5 rounded-md border bg-background/40 p-3 text-xs"
-                  >
-                    <div className="flex items-center justify-between">
-                      <Badge variant="secondary" className="text-[10px]">
-                        {l.action}
-                      </Badge>
-                      <span className="text-muted-foreground">
-                        {new Date(l.createdAt).toLocaleString("de-CH", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          second: "2-digit",
-                          timeZone: "Europe/Zurich",
-                        })}
-                      </span>
-                    </div>
-                    {l.action === "STAGE_CHANGED" && (
-                      <div className="text-muted-foreground">
-                        {l.fromStage?.name ?? "—"} → {l.toStage?.name ?? "—"}
-                      </div>
-                    )}
-                    {l.actorName && (
-                      <div className="text-muted-foreground">
-                        {t("by")}: {l.actorName}
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </details>
       </div>
 
       {canSendEmail && sendOpen && (
