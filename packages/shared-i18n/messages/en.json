@@ -705,7 +705,11 @@
     "primaryContactHint": "The first contact person is shown under details.",
     "primaryContactBadge": "Primary contact",
     "moveContactUp": "Move up",
-    "moveContactDown": "Move down"
+    "moveContactDown": "Move down",
+    "removeContactPerson": "Remove contact person",
+    "dragContact": "Drag to reorder",
+    "collapseContact": "Collapse",
+    "expandContact": "Expand"
   },
   "Forbidden": {
     "title": "Access denied",

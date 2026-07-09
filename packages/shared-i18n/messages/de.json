@@ -705,7 +705,11 @@
     "primaryContactHint": "Die oberste Bezugsperson wird unter Angaben angezeigt.",
     "primaryContactBadge": "Hauptkontakt",
     "moveContactUp": "Nach oben verschieben",
-    "moveContactDown": "Nach unten verschieben"
+    "moveContactDown": "Nach unten verschieben",
+    "removeContactPerson": "Bezugsperson entfernen",
+    "dragContact": "Zum Sortieren ziehen",
+    "collapseContact": "Einklappen",
+    "expandContact": "Ausklappen"
   },
   "Forbidden": {
     "title": "Zugriff verweigert",

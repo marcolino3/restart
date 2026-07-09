@@ -3,6 +3,7 @@ import { getCurrentUserAction } from "@/features/users/actions/get-current-user.
 import { getAdmissionsDataAction } from "@/features/admissions-kanban/actions/get-admissions-data.action";
 import { getRejectedApplicationsAction } from "@/features/admissions-kanban/actions/get-rejected-applications.action";
 import { getGradeLevelsAction } from "@/features/grade-levels/actions/get-grade-levels.action";
+import { getClassesForEnrollmentAction } from "@/features/admissions-kanban/actions/get-school-classes-for-enrollment.action";
 import { AdmissionsKanban } from "@/features/admissions-kanban/components/AdmissionsKanban";
 
 const has = (permissions: string[], code: string, isSuperAdmin: boolean) =>
@@ -10,11 +11,12 @@ const has = (permissions: string[], code: string, isSuperAdmin: boolean) =>
 
 const AdmissionsKanbanPage = async () => {
   const t = await getTranslations("Admissions");
-  const [user, data, rejected, gradeLevels] = await Promise.all([
+  const [user, data, rejected, gradeLevels, schoolClasses] = await Promise.all([
     getCurrentUserAction(),
     getAdmissionsDataAction(),
     getRejectedApplicationsAction(),
     getGradeLevelsAction(),
+    getClassesForEnrollmentAction(),
   ]);
 
   if (!user?.success) {
@@ -51,6 +53,11 @@ const AdmissionsKanbanPage = async () => {
                   name: g.name,
                   shortCode: g.shortCode,
                 }))
+            : []
+        }
+        schoolClasses={
+          schoolClasses.success
+            ? schoolClasses.data.map((c) => ({ id: c.id, name: c.name }))
             : []
         }
         rejectedCount={rejected.success ? rejected.data.length : 0}
