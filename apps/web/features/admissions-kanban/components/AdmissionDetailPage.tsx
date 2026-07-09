@@ -12,6 +12,7 @@ import {
   Mars,
   Pencil,
   Phone,
+  Plus,
   Send,
   Users2,
   Venus,
@@ -543,33 +544,74 @@ export function AdmissionDetailPage({
             </div>
           </section>
 
-          {detail.siblings.length > 0 && (
+          {(detail.siblings.length > 0 || canEdit) && (
             <DataCard
               title={t("tabSiblings", { count: detail.siblings.length })}
             >
-              <ul className="space-y-1.5">
-                {detail.siblings.map((s) => (
-                  <li
-                    key={s.id}
-                    className="flex items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-xs"
-                  >
-                    <span className="truncate font-medium">
-                      {s.childFirstName} {s.childLastName}
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className="shrink-0 text-[10px]"
-                      style={
-                        s.stageColor
-                          ? { borderColor: s.stageColor, color: s.stageColor }
-                          : undefined
-                      }
-                    >
-                      {s.stageName}
-                    </Badge>
-                  </li>
-                ))}
-              </ul>
+              {detail.siblings.length > 0 && (
+                <ul className="space-y-1.5">
+                  {detail.siblings.map((s) => {
+                    const birth = s.childDateOfBirth
+                      ? s.childDateOfBirth
+                          .slice(0, 10)
+                          .split("-")
+                          .reverse()
+                          .join(".")
+                      : null;
+                    return (
+                      <li key={s.id}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            router.push(`/admin/admissions/${s.id}`)
+                          }
+                          className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors hover:bg-accent hover:text-accent-foreground"
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium">
+                              {s.childFirstName} {s.childLastName}
+                            </span>
+                            {birth && (
+                              <span className="block text-[10px] text-muted-foreground">
+                                {birth}
+                              </span>
+                            )}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className="shrink-0 text-[10px]"
+                            style={
+                              s.stageColor
+                                ? {
+                                    borderColor: s.stageColor,
+                                    color: s.stageColor,
+                                  }
+                                : undefined
+                            }
+                          >
+                            {s.stageName}
+                          </Badge>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              {canEdit && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-2 w-full"
+                  onClick={() =>
+                    router.push(
+                      `/admin/admissions/kanban?newSiblingOf=${detail.familyId}`,
+                    )
+                  }
+                >
+                  <Plus className="mr-1 h-3.5 w-3.5" />
+                  {t("addSibling")}
+                </Button>
+              )}
             </DataCard>
           )}
         </aside>

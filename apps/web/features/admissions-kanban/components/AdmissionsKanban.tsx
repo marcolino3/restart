@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
@@ -227,6 +228,20 @@ export function AdmissionsKanban({
   // Stage preselected when the create dialog is opened via a column's
   // "+ Hinzufügen" button; null for the global "Neue Bewerbung" button.
   const [createStageId, setCreateStageId] = useState<string | null>(null);
+  // Family preselected when arriving via "Geschwister anmelden" on a detail
+  // page (`?newSiblingOf=<familyId>`); opens the create dialog with the
+  // sibling's family preselected.
+  const [createFamilyId, setCreateFamilyId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const familyId = searchParams.get("newSiblingOf");
+    if (!familyId) return;
+    setCreateFamilyId(familyId);
+    setShowCreate(true);
+    // Strip the param so a reload doesn't re-open the dialog.
+    router.replace("/admin/admissions/kanban");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
   const [showStages, setShowStages] = useState(false);
   const [showReasons, setShowReasons] = useState(false);
   const [showSources, setShowSources] = useState(false);
@@ -693,6 +708,7 @@ export function AdmissionsKanban({
           schoolClasses={schoolClasses}
           sources={initialSources}
           initialStageId={createStageId}
+          initialFamilyId={createFamilyId}
           existingFamilies={Object.values(applicationsById).map((a) => ({
             id: a.familyId,
             name: a.family.name ?? `${a.childLastName}`,
@@ -701,10 +717,12 @@ export function AdmissionsKanban({
           onClose={() => {
             setShowCreate(false);
             setCreateStageId(null);
+            setCreateFamilyId(null);
           }}
           onCreated={() => {
             setShowCreate(false);
             setCreateStageId(null);
+            setCreateFamilyId(null);
           }}
         />
       )}
