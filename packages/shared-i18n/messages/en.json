@@ -862,6 +862,7 @@
     "selectPlaceholder": "Please select...",
     "noResults": "No results",
     "searchPlaceholder": "Search...",
+    "nSelected": "{count, plural, one {# selected} other {# selected}}",
     "save": "Save",
     "saving": "Saving…",
     "close": "Close",

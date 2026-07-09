@@ -862,6 +862,7 @@
     "selectPlaceholder": "Bitte auswählen...",
     "noResults": "Keine Ergebnisse",
     "searchPlaceholder": "Suchen...",
+    "nSelected": "{count, plural, one {# ausgewählt} other {# ausgewählt}}",
     "save": "Speichern",
     "saving": "Wird gespeichert…",
     "close": "Schliessen",
