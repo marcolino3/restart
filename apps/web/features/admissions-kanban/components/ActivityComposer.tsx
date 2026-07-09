@@ -258,7 +258,6 @@ export function ActivityComposer({
           types={appointmentTypes}
           members={members as AppointmentMember[]}
           onSaved={() => onAppointmentSaved?.()}
-          compact
         />
       ) : (
         <Form {...form}>

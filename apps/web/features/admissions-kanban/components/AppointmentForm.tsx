@@ -9,9 +9,9 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { DateTimeCalendarFormField } from "@/components/form/form-fields/DateTimeCalendarFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
@@ -113,6 +113,15 @@ export function AppointmentForm({
     [members],
   );
 
+  const durationOptions = useMemo(
+    () =>
+      [15, 30, 45, 60, 90, 120].map((m) => ({
+        value: String(m),
+        label: t("appointmentDurationOption", { minutes: m }),
+      })),
+    [t],
+  );
+
   const statusOptions = useMemo(
     () => [
       { value: "SCHEDULED", label: t("appointmentStatusScheduled") },
@@ -143,7 +152,6 @@ export function AppointmentForm({
   });
 
   const isPeriod = form.watch("isPeriod");
-  const noType = form.watch("appointmentTypeId") === NO_TYPE;
   const scheduledAt = form.watch("scheduledAt");
   // The end of a period can never precede its start: block every day before the
   // selected start date in the end date-picker.
@@ -159,9 +167,7 @@ export function AppointmentForm({
 
     const appointmentTypeId =
       values.appointmentTypeId === NO_TYPE ? null : values.appointmentTypeId;
-    // Free title only applies when no type is selected.
-    const title =
-      appointmentTypeId === null ? values.title?.trim() || null : null;
+    const title = values.title?.trim() || null;
     const assignedToMembershipIds = values.assignedToMembershipIds;
     const durationMinutes = values.durationMinutes?.trim()
       ? Number(values.durationMinutes)
@@ -224,120 +230,141 @@ export function AppointmentForm({
         onSubmit={form.handleSubmit(onSubmit)}
         className={cn("space-y-4", compact && "space-y-3")}
       >
-        <SelectFormField
-          name="appointmentTypeId"
-          label="appointmentTypeLabel"
-          namespace="Admissions"
-          placeholder="appointmentTypeNone"
-          options={typeOptions}
-          translateOptions={false}
-        />
-
-        {/* Free title — only when no appointment type is selected. */}
-        {noType && (
+        <div className="grid grid-cols-1 items-start gap-x-4 gap-y-3 sm:grid-cols-2">
+          {/* Row 1: type · title */}
+          <SelectFormField
+            name="appointmentTypeId"
+            label="appointmentTypeLabel"
+            namespace="Admissions"
+            placeholder="appointmentTypeNone"
+            options={typeOptions}
+            translateOptions={false}
+          />
           <InputFormField
             name="title"
             label="appointmentTitleLabel"
             namespace="Admissions"
             placeholder={t("appointmentTitlePlaceholder")}
           />
-        )}
 
-        <DateTimeCalendarFormField
-          name="scheduledAt"
-          label={
-            isPeriod ? "appointmentStartDateLabel" : "appointmentDateLabel"
-          }
-          namespace="Admissions"
-        />
-
-        {/* Period toggle: single date vs. a from–to range (e.g. trial week). */}
-        <div className="flex items-center justify-between rounded-md border border-dashed bg-muted/30 px-3 py-2">
-          <Label
-            htmlFor="appointment-is-period"
-            className="text-[12.5px] font-medium text-muted-foreground"
-          >
-            {t("appointmentPeriodToggle")}
-          </Label>
-          <Switch
-            id="appointment-is-period"
-            checked={isPeriod}
-            onCheckedChange={(v) =>
-              form.setValue("isPeriod", v, { shouldValidate: true })
-            }
-          />
-        </div>
-
-        {isPeriod && (
+          {/* Row 2: when · duration + multi-day checkbox */}
           <DateTimeCalendarFormField
-            name="endAt"
-            label="appointmentEndDateLabel"
+            name="scheduledAt"
+            label="appointmentWhenLabel"
             namespace="Admissions"
-            disabledDate={(date) => date < startDayFloor}
           />
-        )}
+          <div className="flex items-end gap-3">
+            <div className="min-w-0 flex-1">
+              <SelectFormField
+                name="durationMinutes"
+                label="appointmentDurationLabel"
+                namespace="Admissions"
+                placeholder="appointmentDurationPlaceholder"
+                options={durationOptions}
+                translateOptions={false}
+              />
+            </div>
+            <div className="flex h-9 shrink-0 items-center gap-2">
+              <Checkbox
+                id="appointment-is-period"
+                checked={isPeriod}
+                onCheckedChange={(v) => {
+                  const checked = v === true;
+                  form.setValue("isPeriod", checked, { shouldValidate: true });
+                  if (!checked) {
+                    form.setValue("endAt", undefined, {
+                      shouldValidate: true,
+                    });
+                  }
+                }}
+              />
+              <Label
+                htmlFor="appointment-is-period"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                {t("appointmentPeriodCheckbox")}
+              </Label>
+            </div>
+          </div>
 
-        <ComboboxFormField
-          name="assignedToMembershipIds"
-          namespace="Admissions"
-          label="appointmentAssignee"
-          placeholder="appointmentAssigneeUnassigned"
-          searchPlaceholder="appointmentAssigneeSearch"
-          emptyText="appointmentAssigneeEmpty"
-          options={memberOptions}
-          translateOptions={false}
-          multiple
-          modal
-        />
+          {/* Period end — only when multi-day is enabled (single column). */}
+          {isPeriod && (
+            <DateTimeCalendarFormField
+              name="endAt"
+              label="appointmentEndDateLabel"
+              namespace="Admissions"
+              disabledDate={(date) => date < startDayFloor}
+            />
+          )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <InputFormField
-            name="durationMinutes"
-            label="appointmentDurationLabel"
+          {/* Row 3: assignees · location */}
+          <ComboboxFormField
+            name="assignedToMembershipIds"
             namespace="Admissions"
-            type="number"
+            label="appointmentAssignee"
+            placeholder="appointmentAssigneeUnassigned"
+            searchPlaceholder="appointmentAssigneeSearch"
+            emptyText="appointmentAssigneeEmpty"
+            options={memberOptions}
+            translateOptions={false}
+            multiple
+            modal
           />
           <InputFormField
             name="location"
             label="appointmentLocationLabel"
             namespace="Admissions"
           />
+
+          {/* Row 4: note across the full width */}
+          <div className={cn("sm:col-span-2")}>
+            <TextareaFormField
+              name="note"
+              label="appointmentNoteLabel"
+              namespace="Admissions"
+            />
+          </div>
+
+          {isEdit && (
+            <div className={cn("sm:col-span-2")}>
+              <SelectFormField
+                name="status"
+                label="appointmentStatusLabel"
+                namespace="Admissions"
+                options={statusOptions}
+                translateOptions={false}
+              />
+            </div>
+          )}
         </div>
 
-        <TextareaFormField
-          name="note"
-          label="appointmentNoteLabel"
-          namespace="Admissions"
-        />
-
-        {isEdit && (
-          <SelectFormField
-            name="status"
-            label="appointmentStatusLabel"
-            namespace="Admissions"
-            options={statusOptions}
-            translateOptions={false}
-          />
-        )}
-
-        <div className="flex justify-end gap-2 pt-1">
-          {onCancel && (
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <p className="text-xs text-muted-foreground">
+            {t("appointmentHint")}
+          </p>
+          <div className="flex shrink-0 gap-2">
+            {onCancel && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onCancel}
+                disabled={form.formState.isSubmitting}
+              >
+                {t("appointmentCancel")}
+              </Button>
+            )}
             <Button
-              type="button"
-              variant="outline"
+              type="submit"
               size="sm"
-              onClick={onCancel}
               disabled={form.formState.isSubmitting}
             >
-              {t("appointmentCancel")}
+              {form.formState.isSubmitting && (
+                <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+              )}
+              {isEdit ? t("appointmentSubmit") : t("appointmentNewSubmit")}
             </Button>
-          )}
-          <Button type="submit" size="sm" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting && (
-              <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
-            )}
-            {isEdit ? t("appointmentSubmit") : t("appointmentNewSubmit")}
-          </Button>
+          </div>
         </div>
       </form>
     </Form>
