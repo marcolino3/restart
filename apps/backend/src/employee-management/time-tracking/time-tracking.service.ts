@@ -186,7 +186,15 @@ export class TimeTrackingService {
     organizationId: string,
     user: TokenPayload,
   ): Promise<TimeTracking> {
-    const entry = await this.findOne(input.id, organizationId);
+    // Load WITHOUT the `employee` relation so an assigned `employeeId` would win
+    // on save (a loaded relation object would silently revert the FK change).
+    // Stays org-scoped for multi-tenant isolation.
+    const entry = await this.timeTrackingRepo.findOne({
+      where: { id: input.id, organizationId, isActive: true },
+    });
+    if (!entry) {
+      throw new NotFoundException(`TimeTracking entry ${input.id} not found`);
+    }
     await this.access.assertCanManageEmployee(user, entry.employeeId);
     const previousEntryDate = entry.entryDate;
     await this.periods.assertRangeUnlocked(

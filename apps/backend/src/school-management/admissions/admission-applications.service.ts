@@ -235,7 +235,17 @@ export class AdmissionApplicationsService {
     organizationId: string,
     actorMembershipId?: string | null,
   ): Promise<AdmissionApplication> {
-    const application = await this.findOne(input.id, organizationId);
+    // Load WITHOUT relations: a loaded relation object (e.g. `admissionSource`)
+    // would win over an assigned FK id (`admissionSourceId`) on save and silently
+    // revert the change. Assigning only scalar/FK columns keeps the update honest.
+    const application = await this.applicationsRepo.findOne({
+      where: { id: input.id, organizationId },
+    });
+    if (!application) {
+      throw new NotFoundException(
+        `Admission application ${input.id} not found`,
+      );
+    }
     const { id: _id, ...rest } = input;
     Object.assign(application, rest);
     await this.applicationsRepo.save(application);

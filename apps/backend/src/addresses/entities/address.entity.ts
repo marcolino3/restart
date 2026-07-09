@@ -33,6 +33,9 @@ export class Address extends AbstractEntity<Address> implements IAddress {
   @Column('text', { nullable: true })
   state?: string;
 
+  @Column('uuid', { name: 'country_id', nullable: true })
+  countryId?: string | null;
+
   @Field(() => Country, { nullable: true })
   @ManyToOne(() => Country, { nullable: true })
   @JoinColumn({ name: 'country_id' })

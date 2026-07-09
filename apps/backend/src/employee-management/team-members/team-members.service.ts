@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { TeamMember } from './entities/team-member.entity';
 import { CreateTeamMemberInput } from './dto/create-team-member.input';
 import { UpdateTeamMemberInput } from './dto/update-team-member.input';
+import { applyScalarUpdate } from '@/database/apply-scalar-update';
 
 @Injectable()
 export class TeamMembersService {
@@ -83,9 +84,15 @@ export class TeamMembersService {
     input: UpdateTeamMemberInput,
     organizationId: string,
   ): Promise<TeamMember> {
-    const teamMember = await this.findOne(input.id, organizationId);
-    Object.assign(teamMember, input);
-    return this.teamMemberRepo.save(teamMember);
+    const { id: _id, ...patch } = input;
+    // Load WITHOUT the `team`/`employee` relations so assigned `teamId`/
+    // `employeeId` win on save (loaded relation objects would silently revert
+    // the FK changes). Stays org-scoped for multi-tenant isolation.
+    return applyScalarUpdate<TeamMember>(
+      this.teamMemberRepo,
+      { id: input.id, organizationId, isActive: true },
+      patch,
+    );
   }
 
   async remove(id: string, organizationId: string): Promise<boolean> {
