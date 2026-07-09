@@ -108,9 +108,9 @@ export function DateTimeCalendarFormField<TFormValues extends FieldValues>({
                   <Button
                     variant="outline"
                     className={cn(
-                      // Match the Input control background/border so the field
-                      // reads as the same control (component-based styling).
-                      "h-[38px] w-full border-input bg-field pl-3 text-left font-normal hover:bg-field",
+                      // Match the Input control background/border/radius so the
+                      // field reads as the same control (component-based styling).
+                      "h-[38px] w-full rounded-ctl! border-input bg-field pl-3 text-left font-normal hover:bg-field",
                       !value && "text-muted-foreground",
                     )}
                   >

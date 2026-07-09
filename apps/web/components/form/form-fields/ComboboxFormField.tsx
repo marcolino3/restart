@@ -114,22 +114,57 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
                     role="combobox"
                     className={cn(
                       // Match the Input/Select control background/border so
-                      // combobox fields read as the same control.
-                      "h-[38px] w-full justify-between border-input bg-field font-normal hover:bg-field",
+                      // combobox fields read as the same control. Grows only
+                      // when selected chips wrap onto a second line.
+                      // rounded-ctl (not the Button default rounded-full) so it
+                      // matches Input/Select controls.
+                      "h-auto min-h-[38px] w-full items-center justify-between rounded-ctl! border-input bg-field py-1.5 font-normal hover:bg-field",
                       !field.value && "text-muted-foreground"
                     )}
                   >
-                    <span className="truncate">
-                      {!multiple
-                        ? (() => {
-                            const opt = options.find((o) => o.value === field.value);
-                            return opt
-                              ? translateOptions ? t(opt.label) : opt.label
-                              : t(placeholder);
-                          })()
-                        : t(placeholder)}
-                    </span>
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    {multiple && selectedOptions.length > 0 ? (
+                      <span className="flex flex-1 flex-wrap items-center gap-1.5 text-left">
+                        {selectedOptions.map((option: Option | undefined) => {
+                          const optionLabel = translateOptions
+                            ? t(option?.label ?? "")
+                            : (option?.label ?? "");
+                          return (
+                            <Badge
+                              key={option?.value}
+                              variant="accent"
+                              className="gap-1 pr-1"
+                            >
+                              {optionLabel}
+                              <button
+                                type="button"
+                                aria-label={`${tCommon("remove")} ${optionLabel}`}
+                                className="inline-flex size-4 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-accent-foreground/15"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (option?.value !== undefined) {
+                                    toggleValue(option.value);
+                                  }
+                                }}
+                              >
+                                <X className="size-3" />
+                              </button>
+                            </Badge>
+                          );
+                        })}
+                      </span>
+                    ) : (
+                      <span className="truncate">
+                        {!multiple
+                          ? (() => {
+                              const opt = options.find((o) => o.value === field.value);
+                              return opt
+                                ? translateOptions ? t(opt.label) : opt.label
+                                : t(placeholder);
+                            })()
+                          : t(placeholder)}
+                      </span>
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 self-center opacity-50" />
                   </Button>
                 </FormControl>
               </PopoverTrigger>
@@ -176,37 +211,6 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
               </Button>
             )}
             </div>
-
-            {multiple && selectedOptions.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {selectedOptions.map((option: Option | undefined) => {
-                  const optionLabel = translateOptions
-                    ? t(option?.label ?? "")
-                    : (option?.label ?? "");
-                  return (
-                    <Badge
-                      key={option?.value}
-                      variant="accent"
-                      className="gap-1 pr-1"
-                    >
-                      {optionLabel}
-                      <button
-                        type="button"
-                        aria-label={`${tCommon("remove")} ${optionLabel}`}
-                        className="inline-flex size-4 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-accent-foreground/15"
-                        onClick={() => {
-                          if (option?.value !== undefined) {
-                            toggleValue(option.value);
-                          }
-                        }}
-                      >
-                        <X className="size-3" />
-                      </button>
-                    </Badge>
-                  );
-                })}
-              </div>
-            )}
 
             {description && <FormDescription>{t(description)}</FormDescription>}
             <FormMessage />
