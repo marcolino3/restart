@@ -2,7 +2,7 @@ import { Address } from '@/addresses/entities/address.entity';
 import { AbstractEntity } from '@/database/abstract.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { Family } from '@/school-management/families/entities/family.entity';
-import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { RelationshipType } from '../enums/relationship-type.enum';
 import { Salutation } from '../enums/salutation.enum';
@@ -109,6 +109,14 @@ export class ContactPerson
   @ManyToOne(() => Family, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'family_id' })
   family?: Family | null;
+
+  /**
+   * Ordering within a family. The lowest sortOrder is treated as the primary
+   * contact (shown on the admission "Angaben" card). Reorder to change it.
+   */
+  @Field(() => Int)
+  @Column('integer', { name: 'sort_order', default: 0 })
+  sortOrder: number;
 
   @Field(() => String)
   @Column('uuid', { name: 'organization_id' })

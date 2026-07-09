@@ -10,6 +10,7 @@ import { UpdateContactPersonInput } from './dto/update-contact-person.input';
 import { AddressSuggestion } from './dto/address-suggestion.type';
 import { ContactPerson } from './entities/contact-person.entity';
 import { StudentContactPerson } from './entities/student-contact-person.entity';
+import { Family } from '@/school-management/families/entities/family.entity';
 
 @Injectable()
 export class ContactPersonsService {
@@ -81,6 +82,7 @@ export class ContactPersonsService {
     organizationId: string,
   ): Promise<ContactPerson> {
     const { links, ...rest } = input;
+    await this.assertFamilyInOrg(rest.familyId, organizationId);
 
     return this.entityManager.transaction(async (manager) => {
       const contactPerson = manager.create(ContactPerson, {
@@ -117,9 +119,24 @@ export class ContactPersonsService {
   ): Promise<ContactPerson> {
     const contactPerson = await this.findOne(input.id, organizationId);
     const { id: _id, ...rest } = input;
+    await this.assertFamilyInOrg(rest.familyId, organizationId);
     Object.assign(contactPerson, rest);
     await this.contactPersonRepo.save(contactPerson);
     return this.findOne(input.id, organizationId);
+  }
+
+  /** Multi-tenant guard: a familyId may only reference a family of the active org. */
+  private async assertFamilyInOrg(
+    familyId: string | undefined,
+    organizationId: string,
+  ): Promise<void> {
+    if (!familyId) return;
+    const family = await this.entityManager.findOne(Family, {
+      where: { id: familyId, organizationId },
+    });
+    if (!family) {
+      throw new NotFoundException(`Family ${familyId} not found`);
+    }
   }
 
   async archive(id: string, organizationId: string): Promise<boolean> {

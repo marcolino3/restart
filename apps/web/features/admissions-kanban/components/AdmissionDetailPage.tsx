@@ -240,9 +240,8 @@ export function AdmissionDetailPage({
         ? ` (${t(contactRoleKey(primaryContact.roles[0]))})`
         : "")
     : null;
-  const primaryContactPhone = primaryContact
-    ? (primaryContact.mobile ?? primaryContact.phone ?? null)
-    : null;
+  const primaryContactPhone = primaryContact?.phone ?? null;
+  const primaryContactMobile = primaryContact?.mobile ?? null;
   // Days the application has spent in the current stage (client-only; Date.now
   // differs between SSR and hydration, but this renders inside the client tree).
   const daysInStage = detail.stageEnteredAt
@@ -436,7 +435,14 @@ export function AdmissionDetailPage({
               label={t("contactPersonLabel")}
               value={primaryContactLine}
             />
-            <DataRow label={t("phone")} value={primaryContactPhone} />
+            {/* Phone/Mobile as separate rows, each only when present; if the
+                contact has neither, keep one placeholder phone row. */}
+            {(primaryContactPhone || !primaryContactMobile) && (
+              <DataRow label={t("phone")} value={primaryContactPhone} />
+            )}
+            {primaryContactMobile && (
+              <DataRow label={t("mobile")} value={primaryContactMobile} />
+            )}
             <DataRow
               label={t("email")}
               value={
