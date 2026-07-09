@@ -34,6 +34,9 @@ export const updateApplicationAction = async (input: UpdateApplicationInput) => 
       updateAdmissionApplication: { id: string };
     }>(Document, { input });
     revalidatePath("/[locale]/admin/admissions/kanban", "page");
+    // The detail page reads the same application; invalidate it too so an edit
+    // made there is reflected on router.refresh() without a hard reload.
+    revalidatePath("/[locale]/admin/admissions/[id]", "page");
     return { success: true as const, data: data.updateAdmissionApplication };
   } catch (error) {
     console.error(error);
