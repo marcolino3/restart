@@ -16,6 +16,7 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
 type Documents = {
     "\n  query AccessReview {\n    accessReview {\n      membershipId\n      memberName\n      roles\n      sensitivePermissions\n      lastReviewedAt\n    }\n  }\n": typeof types.AccessReviewDocument,
     "\n  mutation RecertifyAccess($membershipId: ID!, $note: String) {\n    recertifyAccess(membershipId: $membershipId, note: $note)\n  }\n": typeof types.RecertifyAccessDocument,
+    "\n  mutation ArchiveApplicationContactPerson($id: ID!) {\n    archiveContactPerson(id: $id)\n  }\n": typeof types.ArchiveApplicationContactPersonDocument,
     "\n  mutation ArchiveAdmissionApplication($id: ID!) {\n    archiveAdmissionApplication(id: $id)\n  }\n": typeof types.ArchiveAdmissionApplicationDocument,
     "\n  mutation RejectAdmissionApplication(\n    $input: RejectAdmissionApplicationInput!\n  ) {\n    rejectAdmissionApplication(input: $input) {\n      id\n      status\n      rejectionReason\n      rejectionReasonId\n      rejectedBy\n    }\n  }\n": typeof types.RejectAdmissionApplicationDocument,
     "\n  mutation DeleteAdmissionApplication($id: ID!) {\n    deleteAdmissionApplication(id: $id)\n  }\n": typeof types.DeleteAdmissionApplicationDocument,
@@ -303,6 +304,7 @@ type Documents = {
 const documents: Documents = {
     "\n  query AccessReview {\n    accessReview {\n      membershipId\n      memberName\n      roles\n      sensitivePermissions\n      lastReviewedAt\n    }\n  }\n": types.AccessReviewDocument,
     "\n  mutation RecertifyAccess($membershipId: ID!, $note: String) {\n    recertifyAccess(membershipId: $membershipId, note: $note)\n  }\n": types.RecertifyAccessDocument,
+    "\n  mutation ArchiveApplicationContactPerson($id: ID!) {\n    archiveContactPerson(id: $id)\n  }\n": types.ArchiveApplicationContactPersonDocument,
     "\n  mutation ArchiveAdmissionApplication($id: ID!) {\n    archiveAdmissionApplication(id: $id)\n  }\n": types.ArchiveAdmissionApplicationDocument,
     "\n  mutation RejectAdmissionApplication(\n    $input: RejectAdmissionApplicationInput!\n  ) {\n    rejectAdmissionApplication(input: $input) {\n      id\n      status\n      rejectionReason\n      rejectionReasonId\n      rejectedBy\n    }\n  }\n": types.RejectAdmissionApplicationDocument,
     "\n  mutation DeleteAdmissionApplication($id: ID!) {\n    deleteAdmissionApplication(id: $id)\n  }\n": types.DeleteAdmissionApplicationDocument,
@@ -610,6 +612,10 @@ export function graphql(source: "\n  query AccessReview {\n    accessReview {\n 
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation RecertifyAccess($membershipId: ID!, $note: String) {\n    recertifyAccess(membershipId: $membershipId, note: $note)\n  }\n"): (typeof documents)["\n  mutation RecertifyAccess($membershipId: ID!, $note: String) {\n    recertifyAccess(membershipId: $membershipId, note: $note)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ArchiveApplicationContactPerson($id: ID!) {\n    archiveContactPerson(id: $id)\n  }\n"): (typeof documents)["\n  mutation ArchiveApplicationContactPerson($id: ID!) {\n    archiveContactPerson(id: $id)\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

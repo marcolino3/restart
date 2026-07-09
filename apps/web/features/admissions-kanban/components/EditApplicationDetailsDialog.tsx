@@ -1,12 +1,12 @@
 "use client";
 
-import { useForm, useFieldArray } from "react-hook-form";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +23,7 @@ import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
 
 import { updateApplicationAction } from "../actions/update-application.action";
+import { archiveApplicationContactAction } from "../actions/archive-application-contact.action";
 import { updateApplicationContactAction } from "../actions/update-application-contact.action";
 import { createApplicationContactAction } from "../actions/create-application-contact.action";
 import type {
@@ -31,20 +32,13 @@ import type {
 } from "../actions/get-application-detail.action";
 import type { AdmissionSource } from "../types";
 import type { GradeLevelOption } from "./CreateApplicationDialog";
-
-/** Sentinel for "no selection" — Radix Select items cannot use an empty value. */
-const NONE = "__none__";
-
-const ContactSchema = z.object({
-  /** null = new person added in this dialog, created on save. */
-  id: z.string().nullable(),
-  firstName: z.string(),
-  lastName: z.string(),
-  email: z.string().email().or(z.literal("")),
-  phone: z.string(),
-  mobile: z.string(),
-  role: z.string(),
-});
+import {
+  ContactPersonsFieldArray,
+  ContactSchema,
+  NONE,
+  refineContacts,
+  type ContactFormValues,
+} from "./ContactPersonsFieldArray";
 
 const Schema = z
   .object({
@@ -58,36 +52,9 @@ const Schema = z
     admissionSourceId: z.string().optional(),
     contacts: z.array(ContactSchema),
   })
-  .superRefine((values, ctx) => {
-    // Existing persons and non-empty new persons need first + last name.
-    // A completely empty new row is allowed — it is skipped on save.
-    values.contacts.forEach((c, i) => {
-      const anyFilled =
-        c.firstName.trim() ||
-        c.lastName.trim() ||
-        c.email.trim() ||
-        c.phone.trim() ||
-        c.mobile.trim();
-      if (!c.id && !anyFilled) return;
-      if (!c.firstName.trim()) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Required",
-          path: ["contacts", i, "firstName"],
-        });
-      }
-      if (!c.lastName.trim()) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Required",
-          path: ["contacts", i, "lastName"],
-        });
-      }
-    });
-  });
+  .superRefine((values, ctx) => refineContacts(values.contacts, ctx));
 
 type FormValues = z.infer<typeof Schema>;
-type ContactFormValues = z.infer<typeof ContactSchema>;
 
 export interface SchoolClassOption {
   id: string;
@@ -126,16 +93,6 @@ const contactToFormValues = (c: AdmissionDetailContact): ContactFormValues => ({
   mobile: c.mobile ?? "",
   role: c.roles?.[0] ?? NONE,
 });
-
-const EMPTY_CONTACT: ContactFormValues = {
-  id: null,
-  firstName: "",
-  lastName: "",
-  email: "",
-  phone: "",
-  mobile: "",
-  role: "MOTHER",
-};
 
 /** True when an existing contact's editable fields differ from the form row. */
 const contactFieldsChanged = (
@@ -195,11 +152,8 @@ export function EditApplicationDetailsDialog({
     },
   });
 
-  const { fields, append, move } = useFieldArray({
-    control: form.control,
-    name: "contacts",
-    keyName: "key",
-  });
+  // Existing contact persons removed in this dialog — archived on save.
+  const [removedIds, setRemovedIds] = useState<string[]>([]);
 
   const onSubmit = async (values: FormValues) => {
     const appRes = await updateApplicationAction({
@@ -232,6 +186,15 @@ export function EditApplicationDetailsDialog({
     if (!appRes.success) {
       toast.error(t("updateError"), { description: appRes.error });
       return;
+    }
+
+    // Existing persons removed from the list are archived (soft-removed).
+    for (const removedId of removedIds) {
+      const archiveRes = await archiveApplicationContactAction(removedId);
+      if (!archiveRes.success) {
+        toast.error(t("updateError"), { description: archiveRes.error });
+        return;
+      }
     }
 
     // Contact persons: list order = priority (index 0 is the primary contact).
@@ -433,85 +396,12 @@ export function EditApplicationDetailsDialog({
                   <p className="text-xs text-muted-foreground">
                     {t("primaryContactHint")}
                   </p>
-              {fields.map((field, index) => (
-                <div
-                  key={field.key}
-                  className="space-y-3 rounded-md border border-border p-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-muted-foreground">
-                      {t("contactPersonLabel")} {index + 1}
-                      {index === 0 ? ` · ${t("primaryContactBadge")}` : ""}
-                    </span>
-                    <div className="flex gap-1">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        disabled={index === 0}
-                        onClick={() => move(index, index - 1)}
-                        aria-label={t("moveContactUp")}
-                      >
-                        <ArrowUp className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        disabled={index === fields.length - 1}
-                        onClick={() => move(index, index + 1)}
-                        aria-label={t("moveContactDown")}
-                      >
-                        <ArrowDown className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <InputFormField
-                      name={`contacts.${index}.firstName`}
-                      label="firstName"
-                    />
-                    <InputFormField
-                      name={`contacts.${index}.lastName`}
-                      label="lastName"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <InputFormField
-                      name={`contacts.${index}.email`}
-                      label="email"
-                      type="email"
-                    />
-                    <SelectFormField
-                      name={`contacts.${index}.role`}
-                      label="role"
-                      options={roleOptions}
-                      translateOptions={false}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <InputFormField
-                      name={`contacts.${index}.phone`}
-                      label="phone"
-                    />
-                    <InputFormField
-                      name={`contacts.${index}.mobile`}
-                      label="mobile"
-                    />
-                  </div>
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => append({ ...EMPTY_CONTACT })}
-              >
-                <Plus className="mr-1 h-3.5 w-3.5" />
-                {t("addContactPerson")}
-              </Button>
+                  <ContactPersonsFieldArray
+                    roleOptions={roleOptions}
+                    onRemoveExisting={(id) =>
+                      setRemovedIds((prev) => [...prev, id])
+                    }
+                  />
                 </div>
               </div>
             </DialogBody>

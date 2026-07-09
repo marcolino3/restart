@@ -65,6 +65,7 @@ import {
   CreateApplicationDialog,
   type GradeLevelOption,
 } from "./CreateApplicationDialog";
+import type { SchoolClassOption } from "./EditApplicationDetailsDialog";
 import { ManageRejectionReasonsDialog } from "./ManageRejectionReasonsDialog";
 import { ManageSourcesDialog } from "./ManageSourcesDialog";
 import { ManageAppointmentTypesDialog } from "./ManageAppointmentTypesDialog";
@@ -162,6 +163,8 @@ interface Props {
   initialSources: AdmissionSource[];
   /** Grade levels for the "desired grade" select in the create sheet. */
   gradeLevels: GradeLevelOption[];
+  /** Active school classes for the "desired class" select in the create sheet. */
+  schoolClasses?: SchoolClassOption[];
   canCreate: boolean;
   canMove: boolean;
   canEnroll: boolean;
@@ -185,6 +188,7 @@ export function AdmissionsKanban({
   initialRejectionReasons,
   initialSources,
   gradeLevels,
+  schoolClasses,
   canCreate,
   canMove,
   canManageStages,
@@ -686,6 +690,7 @@ export function AdmissionsKanban({
         <CreateApplicationDialog
           stages={initialStages}
           gradeLevels={gradeLevels}
+          schoolClasses={schoolClasses}
           sources={initialSources}
           initialStageId={createStageId}
           existingFamilies={Object.values(applicationsById).map((a) => ({
