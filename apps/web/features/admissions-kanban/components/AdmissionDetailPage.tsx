@@ -336,9 +336,19 @@ export function AdmissionDetailPage({
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[13px] font-[600]",
                   active
-                    ? "border-transparent bg-foreground text-background"
+                    ? "border-transparent text-white"
                     : "border-border bg-card text-muted-foreground",
                 )}
+                // Active pill is filled with its stage colour (falls back to the
+                // neutral foreground when the stage has none).
+                style={
+                  active
+                    ? {
+                        backgroundColor: s.color ?? "var(--foreground)",
+                        color: s.color ? "#fff" : "var(--background)",
+                      }
+                    : undefined
+                }
               >
                 {s.name}
                 {active && daysInStage !== null && (

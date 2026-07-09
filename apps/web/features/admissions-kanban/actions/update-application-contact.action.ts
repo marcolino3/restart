@@ -35,6 +35,7 @@ export const updateApplicationContactAction = async (
       updateContactPerson: { id: string };
     }>(Document, { input });
     revalidatePath("/[locale]/admin/admissions/kanban", "page");
+    revalidatePath("/[locale]/admin/admissions/[id]", "page");
     return { success: true as const, data: data.updateContactPerson };
   } catch (error) {
     console.error(error);

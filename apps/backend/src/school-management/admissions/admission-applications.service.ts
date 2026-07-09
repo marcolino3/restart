@@ -63,6 +63,7 @@ export class AdmissionApplicationsService {
         'admissionStage',
         'assignedGradeLevel',
         'desiredSchoolClass',
+        'admissionSource',
       ],
       order: { admissionStageId: 'ASC', position: 'ASC', createdAt: 'ASC' },
     });
@@ -79,6 +80,7 @@ export class AdmissionApplicationsService {
         'admissionStage',
         'assignedGradeLevel',
         'desiredSchoolClass',
+        'admissionSource',
         'enrolledStudent',
       ],
     });
