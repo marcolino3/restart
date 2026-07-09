@@ -1,10 +1,11 @@
-import { Field, ID, InputType } from '@nestjs/graphql';
+import { Field, ID, Int, InputType } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
 import {
   ArrayUnique,
   IsArray,
   IsEmail,
   IsEnum,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -113,6 +114,18 @@ export class CreateContactPersonInput {
   @IsOptional()
   @IsUUID()
   addressId?: string;
+
+  /** Family this contact belongs to (validated against the active org). */
+  @Field(() => ID, { nullable: true })
+  @IsOptional()
+  @IsUUID()
+  familyId?: string;
+
+  /** Ordering within the family; lowest = primary contact. */
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  sortOrder?: number;
 
   @Field(() => [LinkContactPersonInput], { nullable: true })
   @IsOptional()

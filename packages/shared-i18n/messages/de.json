@@ -699,7 +699,13 @@
     "followUpYearPlaceholder": "z.B. 2027/28",
     "followUpYearHint": "Optional — Kind für ein späteres Schuljahr auf der Warteliste vormerken.",
     "followUpYearColumn": "Wiedervorlage",
-    "addApplicationToStage": "Hinzufügen"
+    "addApplicationToStage": "Hinzufügen",
+    "mobile": "Mobil",
+    "addContactPerson": "Bezugsperson hinzufügen",
+    "primaryContactHint": "Die oberste Bezugsperson wird unter Angaben angezeigt.",
+    "primaryContactBadge": "Hauptkontakt",
+    "moveContactUp": "Nach oben verschieben",
+    "moveContactDown": "Nach unten verschieben"
   },
   "Forbidden": {
     "title": "Zugriff verweigert",

@@ -42,6 +42,7 @@ const Document = gql`
           mobile
           roles
           occupation
+          sortOrder
         }
       }
       admissionStage {
@@ -117,6 +118,8 @@ export type AdmissionDetailContact = {
   mobile: string | null;
   roles: string[] | null;
   occupation: string | null;
+  /** Ordering within the family; lowest = primary contact. */
+  sortOrder: number;
 };
 
 export type AdmissionDetailAuditLog = {

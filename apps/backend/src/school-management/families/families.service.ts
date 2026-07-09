@@ -76,7 +76,8 @@ export class FamiliesService {
     return this.contactRepo.find({
       where: { familyId, organizationId, isArchived: false },
       relations: ['address'],
-      order: { lastName: 'ASC', firstName: 'ASC' },
+      // sortOrder first — the lowest is the primary contact shown on the card.
+      order: { sortOrder: 'ASC', lastName: 'ASC', firstName: 'ASC' },
     });
   }
 }
