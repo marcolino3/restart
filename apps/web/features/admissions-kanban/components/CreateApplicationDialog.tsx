@@ -84,6 +84,8 @@ interface Props {
   onCreated: () => void;
   /** Preselected stage when opened from a column's "+ Hinzufügen" button. */
   initialStageId?: string | null;
+  /** Preselected family when registering a sibling from a detail page. */
+  initialFamilyId?: string | null;
 }
 
 /** Small uppercase section label — same look as the edit dialog. */
@@ -104,6 +106,7 @@ export function CreateApplicationDialog({
   onClose,
   onCreated,
   initialStageId,
+  initialFamilyId,
 }: Props) {
   const t = useTranslations("Admissions");
   const tC = useTranslations("Common");
@@ -146,6 +149,7 @@ export function CreateApplicationDialog({
         (initialStageId && stages.some((s) => s.id === initialStageId)
           ? initialStageId
           : stages[0]?.id) ?? stages[0]?.id,
+      familyId: initialFamilyId ?? undefined,
       admissionSourceId:
         sources.find((s) => !s.isArchived)?.id ?? sources[0]?.id ?? null,
       // One open contact card to start with (role MOTHER); more can be added.
