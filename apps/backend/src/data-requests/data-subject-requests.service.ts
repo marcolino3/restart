@@ -77,7 +77,15 @@ export class DataSubjectRequestsService {
     input: UpdateDataSubjectRequestInput,
     organizationId: string,
   ): Promise<DataSubjectRequest> {
-    const request = await this.findOne(input.id, organizationId);
+    // Load WITHOUT the `assigneeMembership` relation so an assigned
+    // `assigneeMembershipId` wins on save (a loaded relation object would
+    // silently revert the FK change). Stays org-scoped for isolation.
+    const request = await this.requestsRepo.findOne({
+      where: { id: input.id, organizationId },
+    });
+    if (!request) {
+      throw new NotFoundException(`Data-subject request ${input.id} not found`);
+    }
 
     const { id: _id, status, receivedAt, ...rest } = input;
     Object.assign(request, rest);
@@ -96,6 +104,8 @@ export class DataSubjectRequestsService {
         : null;
     }
 
-    return this.requestsRepo.save(request);
+    await this.requestsRepo.save(request);
+    // Reload with relations for the return value (parity with previous behaviour).
+    return this.findOne(input.id, organizationId);
   }
 }

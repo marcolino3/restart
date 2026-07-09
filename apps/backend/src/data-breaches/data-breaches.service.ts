@@ -68,7 +68,15 @@ export class DataBreachesService {
     input: UpdateDataBreachInput,
     organizationId: string,
   ): Promise<DataBreachIncident> {
-    const incident = await this.findOne(input.id, organizationId);
+    // Load WITHOUT the `assigneeMembership` relation so an assigned
+    // `assigneeMembershipId` wins on save (a loaded relation object would
+    // silently revert the FK change). Stays org-scoped for isolation.
+    const incident = await this.breachesRepo.findOne({
+      where: { id: input.id, organizationId },
+    });
+    if (!incident) {
+      throw new NotFoundException(`Data breach ${input.id} not found`);
+    }
 
     const {
       id: _id,
@@ -97,6 +105,8 @@ export class DataBreachesService {
           : null;
     }
 
-    return this.breachesRepo.save(incident);
+    await this.breachesRepo.save(incident);
+    // Reload with relations for the return value (parity with previous behaviour).
+    return this.findOne(input.id, organizationId);
   }
 }

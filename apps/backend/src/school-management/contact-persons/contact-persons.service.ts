@@ -117,9 +117,17 @@ export class ContactPersonsService {
     input: UpdateContactPersonInput,
     organizationId: string,
   ): Promise<ContactPerson> {
-    const contactPerson = await this.findOne(input.id, organizationId);
     const { id: _id, ...rest } = input;
     await this.assertFamilyInOrg(rest.familyId, organizationId);
+    // Load WITHOUT the `address` relation so an assigned `addressId` wins on
+    // save (a loaded relation object would silently revert the FK change).
+    // Stays org-scoped for multi-tenant isolation.
+    const contactPerson = await this.contactPersonRepo.findOne({
+      where: { id: input.id, organizationId, isArchived: false },
+    });
+    if (!contactPerson) {
+      throw new NotFoundException(`Contact person ${input.id} not found`);
+    }
     Object.assign(contactPerson, rest);
     await this.contactPersonRepo.save(contactPerson);
     return this.findOne(input.id, organizationId);

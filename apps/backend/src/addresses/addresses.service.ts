@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Address } from './entities/address.entity';
 import { CreateAddressInput } from './dto/create-address.input';
 import { UpdateAddressInput } from './dto/update-address.input';
+import { applyScalarUpdate } from '@/database/apply-scalar-update';
 
 @Injectable()
 export class AddressesService {
@@ -49,13 +50,15 @@ export class AddressesService {
     input: UpdateAddressInput,
     organizationId: string,
   ): Promise<Address> {
-    const address = await this.findOne(input.id, organizationId);
-    const { id: _id, countryId, ...rest } = input;
-    Object.assign(address, rest);
-    if (countryId !== undefined) {
-      address.country = countryId ? ({ id: countryId } as any) : undefined;
-    }
-    await this.addressRepo.save(address);
+    const { id: _id, ...patch } = input;
+    // Load WITHOUT the `country` relation so the assigned `countryId` wins on
+    // save (a loaded relation object would silently revert the FK change).
+    // Stays org-scoped for multi-tenant isolation.
+    await applyScalarUpdate<Address>(
+      this.addressRepo,
+      { id: input.id, organizationId, isArchived: false },
+      patch,
+    );
     return this.findOne(input.id, organizationId);
   }
 

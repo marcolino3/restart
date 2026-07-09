@@ -359,6 +359,9 @@ export function CreateApplicationDialog({
                       name="desiredEnrollmentDate"
                       label="desiredEnrollmentDate"
                       namespace="Admissions"
+                      // Enrollment dates lie in the future — only block the far
+                      // past (default would block future dates).
+                      disabledDate={(date) => date < new Date("1900-01-01")}
                     />
                   </div>
 

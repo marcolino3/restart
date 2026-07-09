@@ -15,7 +15,10 @@ config({ path: join(__dirname, '.env.test') });
  * Usage:
  *   const { module, dataSource } = await createTestingApp([OrganizationsModule]);
  */
-export async function createTestingApp(imports: any[] = []) {
+export async function createTestingApp(
+  imports: any[] = [],
+  options: { loadAllEntities?: boolean } = {},
+) {
   const module: TestingModule = await Test.createTestingModule({
     imports: [
       ConfigModule.forRoot({
@@ -29,7 +32,13 @@ export async function createTestingApp(imports: any[] = []) {
         username: process.env.DB_USERNAME,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_NAME,
-        autoLoadEntities: true,
+        // Registering a partial forFeature set can leave relation targets
+        // unresolved. `loadAllEntities` loads the whole schema via glob so any
+        // cross-entity relation resolves, without pulling in feature *modules*
+        // (which may transitively import ESM-only deps like better-auth).
+        ...(options.loadAllEntities
+          ? { entities: [join(__dirname, '../src/**/*.entity.{ts,js}')] }
+          : { autoLoadEntities: true }),
         synchronize: true,
         dropSchema: true,
       }),

@@ -150,7 +150,7 @@ function SortableContactCard({
     <div
       ref={setNodeRef}
       style={style}
-      className={`space-y-3 rounded-md border border-border bg-background p-3 ${
+      className={`space-y-3 rounded-md border border-border bg-card p-3 ${
         isDragging ? "opacity-50" : ""
       }`}
     >
