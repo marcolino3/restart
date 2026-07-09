@@ -384,6 +384,7 @@
     "sectionContact": "Bezugsperson",
     "tabParents": "Eltern ({count})",
     "tabSiblings": "Geschwister ({count})",
+    "addSibling": "Geschwister anmelden",
     "tabAudit": "Verlauf",
     "noContactPersons": "Noch keine Bezugspersonen erfasst.",
     "noSiblings": "Keine Geschwister in dieser Familie.",
@@ -782,6 +783,8 @@
     "smtpSaveError": "Speichern fehlgeschlagen"
   },
   "Common": {
+    "pickDateTime": "Datum & Uhrzeit wählen",
+    "timeSlotsAria": "Uhrzeit wählen",
     "name": "Name",
     "notSpecified": "—",
     "organization": "Organisation",

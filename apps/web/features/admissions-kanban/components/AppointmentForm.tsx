@@ -10,10 +10,9 @@ import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
+import { DateTimeCalendarFormField } from "@/components/form/form-fields/DateTimeCalendarFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { ComboboxFormField } from "@/components/form/form-fields/ComboboxFormField";
@@ -52,39 +51,37 @@ interface Props {
 /** Sentinel select value meaning "no type" (→ null over the wire). */
 const NO_TYPE = "__none__";
 
+/** Default start for new appointments: today 09:00. */
+const defaultScheduledAt = () => {
+  const d = new Date();
+  d.setHours(9, 0, 0, 0);
+  return d;
+};
+
 const Schema = z
   .object({
     appointmentTypeId: z.string(),
     title: z.string().max(200).optional(),
-    scheduledDate: z.date(),
-    time: z.string().regex(/^\d{2}:\d{2}$/),
-    // Period end — both optional; when a date is given, the time defaults to the
-    // start time. A period must end after it starts (refined below).
+    scheduledAt: z.date(),
+    // Period end — optional; a period must end after it starts (refined below).
     isPeriod: z.boolean(),
-    endDate: z.date().optional(),
-    endTime: z.string().regex(/^\d{2}:\d{2}$/),
+    endAt: z.date().optional(),
     assignedToMembershipIds: z.array(z.string()),
     durationMinutes: z.string().optional(),
     location: z.string().max(500).optional(),
     note: z.string().max(5000).optional(),
     status: z.enum(["SCHEDULED", "COMPLETED", "CANCELLED", "RESCHEDULING"]),
   })
-  .refine((v) => !v.isPeriod || !!v.endDate, {
-    path: ["endDate"],
+  .refine((v) => !v.isPeriod || !!v.endAt, {
+    path: ["endAt"],
     message: "required",
   })
   .refine(
-    (v) => {
-      if (!v.isPeriod || !v.endDate) return true;
-      const start = new Date(v.scheduledDate);
-      const [sh, sm] = v.time.split(":").map(Number);
-      start.setHours(sh || 0, sm || 0, 0, 0);
-      const end = new Date(v.endDate);
-      const [eh, em] = v.endTime.split(":").map(Number);
-      end.setHours(eh || 0, em || 0, 0, 0);
-      return end.getTime() > start.getTime();
-    },
-    { path: ["endDate"], message: "endBeforeStart" },
+    (v) =>
+      !v.isPeriod ||
+      !v.endAt ||
+      v.endAt.getTime() > v.scheduledAt.getTime(),
+    { path: ["endAt"], message: "endBeforeStart" },
   );
 
 type FormValues = z.infer<typeof Schema>;
@@ -103,12 +100,6 @@ export function AppointmentForm({
 
   const initialAt = initial ? new Date(initial.scheduledAt) : null;
   const initialEnd = initial?.endsAt ? new Date(initial.endsAt) : null;
-  const hhmm = (d: Date) =>
-    d.toLocaleTimeString("de-CH", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
   const typeOptions = useMemo(
     () => [
       { value: NO_TYPE, label: t("appointmentTypeNone") },
@@ -137,11 +128,9 @@ export function AppointmentForm({
     defaultValues: {
       appointmentTypeId: initial?.appointmentTypeId ?? NO_TYPE,
       title: initial?.title ?? "",
-      scheduledDate: initialAt ?? new Date(),
-      time: initialAt ? hhmm(initialAt) : "09:00",
+      scheduledAt: initialAt ?? defaultScheduledAt(),
       isPeriod: !!initialEnd,
-      endDate: initialEnd ?? undefined,
-      endTime: initialEnd ? hhmm(initialEnd) : "17:00",
+      endAt: initialEnd ?? undefined,
       assignedToMembershipIds: initial?.assignedToMembershipIds ?? [],
       durationMinutes:
         initial?.durationMinutes != null
@@ -155,27 +144,18 @@ export function AppointmentForm({
 
   const isPeriod = form.watch("isPeriod");
   const noType = form.watch("appointmentTypeId") === NO_TYPE;
-  const scheduledDate = form.watch("scheduledDate");
+  const scheduledAt = form.watch("scheduledAt");
   // The end of a period can never precede its start: block every day before the
   // selected start date in the end date-picker.
   const startDayFloor = useMemo(() => {
-    const d = new Date(scheduledDate ?? new Date());
+    const d = new Date(scheduledAt ?? new Date());
     d.setHours(0, 0, 0, 0);
     return d;
-  }, [scheduledDate]);
+  }, [scheduledAt]);
 
   const onSubmit = async (values: FormValues) => {
-    const [hh, mm] = values.time.split(":").map(Number);
-    const at = new Date(values.scheduledDate);
-    at.setHours(hh || 9, mm || 0, 0, 0);
-
-    let endsAt: string | null = null;
-    if (values.isPeriod && values.endDate) {
-      const [eh, em] = values.endTime.split(":").map(Number);
-      const end = new Date(values.endDate);
-      end.setHours(eh || 0, em || 0, 0, 0);
-      endsAt = end.toISOString();
-    }
+    const endsAt =
+      values.isPeriod && values.endAt ? values.endAt.toISOString() : null;
 
     const appointmentTypeId =
       values.appointmentTypeId === NO_TYPE ? null : values.appointmentTypeId;
@@ -193,7 +173,7 @@ export function AppointmentForm({
           applicationId,
           appointmentTypeId,
           title,
-          scheduledAt: at.toISOString(),
+          scheduledAt: values.scheduledAt.toISOString(),
           endsAt,
           assignedToMembershipIds,
           durationMinutes,
@@ -205,7 +185,7 @@ export function AppointmentForm({
           applicationId,
           appointmentTypeId,
           title,
-          scheduledAt: at.toISOString(),
+          scheduledAt: values.scheduledAt.toISOString(),
           endsAt,
           assignedToMembershipIds,
           durationMinutes,
@@ -225,11 +205,9 @@ export function AppointmentForm({
       form.reset({
         appointmentTypeId: NO_TYPE,
         title: "",
-        scheduledDate: new Date(),
-        time: "09:00",
+        scheduledAt: defaultScheduledAt(),
         isPeriod: false,
-        endDate: undefined,
-        endTime: "17:00",
+        endAt: undefined,
         assignedToMembershipIds: [],
         durationMinutes: "",
         location: "",
@@ -265,24 +243,13 @@ export function AppointmentForm({
           />
         )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <DatePickerFormField
-            name="scheduledDate"
-            label={
-              isPeriod ? "appointmentStartDateLabel" : "appointmentDateLabel"
-            }
-            namespace="Admissions"
-            // Appointments are typically in the future — allow any date
-            // (the component otherwise blocks future dates by default).
-            disabledDate={() => false}
-          />
-          <div className="space-y-[7px]">
-            <Label className="text-[12.5px] font-semibold">
-              {t("appointmentTimeLabel")}
-            </Label>
-            <Input type="time" {...form.register("time")} />
-          </div>
-        </div>
+        <DateTimeCalendarFormField
+          name="scheduledAt"
+          label={
+            isPeriod ? "appointmentStartDateLabel" : "appointmentDateLabel"
+          }
+          namespace="Admissions"
+        />
 
         {/* Period toggle: single date vs. a from–to range (e.g. trial week). */}
         <div className="flex items-center justify-between rounded-md border border-dashed bg-muted/30 px-3 py-2">
@@ -302,20 +269,12 @@ export function AppointmentForm({
         </div>
 
         {isPeriod && (
-          <div className="grid grid-cols-2 gap-3">
-            <DatePickerFormField
-              name="endDate"
-              label="appointmentEndDateLabel"
-              namespace="Admissions"
-              disabledDate={(date) => date < startDayFloor}
-            />
-            <div className="space-y-[7px]">
-              <Label className="text-[12.5px] font-semibold">
-                {t("appointmentEndTimeLabel")}
-              </Label>
-              <Input type="time" {...form.register("endTime")} />
-            </div>
-          </div>
+          <DateTimeCalendarFormField
+            name="endAt"
+            label="appointmentEndDateLabel"
+            namespace="Admissions"
+            disabledDate={(date) => date < startDayFloor}
+          />
         )}
 
         <ComboboxFormField

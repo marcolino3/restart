@@ -384,6 +384,7 @@
     "sectionContact": "Contact person",
     "tabParents": "Parents ({count})",
     "tabSiblings": "Siblings ({count})",
+    "addSibling": "Register sibling",
     "tabAudit": "History",
     "noContactPersons": "No contact persons yet.",
     "noSiblings": "No siblings in this family.",
@@ -782,6 +783,8 @@
     "smtpSaveError": "Save failed"
   },
   "Common": {
+    "pickDateTime": "Pick date & time",
+    "timeSlotsAria": "Pick a time",
     "name": "Name",
     "notSpecified": "—",
     "organization": "Organization",

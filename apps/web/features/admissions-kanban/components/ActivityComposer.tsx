@@ -59,9 +59,11 @@ const ACTIVITY_TYPES: Array<{
   icon: typeof Phone;
   labelKey: string;
 }> = [
+  // "MEETING" (Termin) intentionally not offered here — real appointments are
+  // created via the dedicated "Termin" (appointment) tab below. Existing MEETING
+  // activities still render in the timeline; the enum keeps the value.
   { value: "CALL", icon: Phone, labelKey: "activityTypeCall" },
   { value: "EMAIL", icon: Mail, labelKey: "activityTypeEmail" },
-  { value: "MEETING", icon: CalendarClock, labelKey: "activityTypeMeeting" },
   { value: "NOTE", icon: StickyNote, labelKey: "activityTypeNote" },
 ];
 
