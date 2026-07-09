@@ -349,7 +349,7 @@ export function EditApplicationDetailsDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-[560px] max-w-[95vw]">
+      <DialogContent className="w-[900px] max-w-[95vw]">
         <DialogHeader>
           <DialogTitle>{t("editDetails")}</DialogTitle>
         </DialogHeader>
@@ -358,9 +358,14 @@ export function EditApplicationDetailsDialog({
             onSubmit={form.handleSubmit(onSubmit)}
             className="flex min-h-0 flex-1 flex-col"
           >
-            <DialogBody className="space-y-3.5">
-              <SectionLabel>{t("sectionChild")}</SectionLabel>
-              <div className="grid grid-cols-2 gap-3">
+            <DialogBody>
+              {/* Two columns on wide screens: left = child + application,
+                  right = contact persons. Stacks on narrow screens. */}
+              <div className="grid gap-x-6 gap-y-3.5 lg:grid-cols-2">
+                {/* Left column */}
+                <div className="space-y-3.5">
+                  <SectionLabel>{t("sectionChild")}</SectionLabel>
+                  <div className="grid grid-cols-2 gap-3">
                 <InputFormField
                   name="childFirstName"
                   label="childFirstName"
@@ -421,10 +426,13 @@ export function EditApplicationDetailsDialog({
                 />
               </div>
 
-              <SectionLabel>{t("sectionContact")}</SectionLabel>
-              <p className="text-xs text-muted-foreground">
-                {t("primaryContactHint")}
-              </p>
+                </div>
+                {/* Right column — contact persons */}
+                <div className="space-y-3.5">
+                  <SectionLabel>{t("sectionContact")}</SectionLabel>
+                  <p className="text-xs text-muted-foreground">
+                    {t("primaryContactHint")}
+                  </p>
               {fields.map((field, index) => (
                 <div
                   key={field.key}
@@ -504,6 +512,8 @@ export function EditApplicationDetailsDialog({
                 <Plus className="mr-1 h-3.5 w-3.5" />
                 {t("addContactPerson")}
               </Button>
+                </div>
+              </div>
             </DialogBody>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>
