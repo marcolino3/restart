@@ -12,6 +12,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { AdmissionAppointmentStatus } from '../enums/admission-appointment-status.enum';
+import { AdmissionActivity } from './admission-activity.entity';
 import { AdmissionAppointmentAssignee } from './admission-appointment-assignee.entity';
 import { AdmissionApplication } from './admission-application.entity';
 
@@ -105,4 +106,20 @@ export class AdmissionAppointment extends AbstractEntity<AdmissionAppointment> {
   @ManyToOne(() => Membership, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'created_by_membership_id' })
   createdByMembership?: Membership | null;
+
+  /**
+   * The mirror MEETING activity that surfaces this appointment in the
+   * application's activity timeline. Kept in sync on create/update; on hard
+   * delete the activity is removed too, on cancel it is intentionally left
+   * standing (chronicle history). `SET NULL` so removing the activity
+   * independently never breaks the appointment row.
+   */
+  @Field(() => ID, { nullable: true })
+  @Column('uuid', { name: 'activity_id', nullable: true })
+  activityId?: string | null;
+
+  @Field(() => AdmissionActivity, { nullable: true })
+  @ManyToOne(() => AdmissionActivity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'activity_id' })
+  activity?: AdmissionActivity | null;
 }

@@ -4,14 +4,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { AdmissionAppointmentType } from '@/school-management/admission-appointment-types/entities/admission-appointment-type.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { CreateAdmissionAppointmentInput } from './dto/create-admission-appointment.input';
 import { UpdateAdmissionAppointmentInput } from './dto/update-admission-appointment.input';
+import { AdmissionActivity } from './entities/admission-activity.entity';
 import { AdmissionAppointmentAssignee } from './entities/admission-appointment-assignee.entity';
 import { AdmissionApplication } from './entities/admission-application.entity';
 import { AdmissionAppointment } from './entities/admission-appointment.entity';
+import { AdmissionActivityType } from './enums/admission-activity-type.enum';
 
 @Injectable()
 export class AdmissionAppointmentsService {
@@ -99,6 +101,32 @@ export class AdmissionAppointmentsService {
     }
   }
 
+  /**
+   * Resolve the mirror activity's subject: the appointment title if set,
+   * otherwise the appointment type's label, otherwise a generic fallback.
+   * Truncated to 200 chars (the activity `subject` column limit).
+   */
+  private async resolveActivitySubject(
+    title: string | null,
+    appointmentTypeId: string | null,
+    organizationId: string,
+    manager?: EntityManager,
+  ): Promise<string> {
+    const trimmed = title?.trim();
+    let subject = trimmed || null;
+    if (!subject && appointmentTypeId) {
+      const typesRepo = manager
+        ? manager.getRepository(AdmissionAppointmentType)
+        : this.typesRepo;
+      const type = await typesRepo.findOne({
+        where: { id: appointmentTypeId, organizationId },
+        select: ['label'],
+      });
+      subject = type?.label ?? null;
+    }
+    return (subject ?? 'Termin').slice(0, 200);
+  }
+
   /** A period's end must lie strictly after its start. */
   private assertValidPeriod(scheduledAt: Date, endsAt: Date | null): void {
     if (endsAt && endsAt.getTime() <= scheduledAt.getTime()) {
@@ -155,21 +183,73 @@ export class AdmissionAppointmentsService {
       input.assignedToMembershipIds ?? [],
       organizationId,
     );
-    const entity = this.repo.create({
-      organizationId,
-      applicationId: input.applicationId,
-      appointmentTypeId: input.appointmentTypeId ?? null,
-      title: input.title?.trim() || null,
-      scheduledAt,
-      endsAt,
-      durationMinutes: input.durationMinutes ?? null,
-      location: input.location?.trim() || null,
-      note: input.note?.trim() || null,
-      createdByMembershipId: createdByMembershipId ?? null,
+    const title = input.title?.trim() || null;
+    const note = input.note?.trim() || null;
+    const durationMinutes = input.durationMinutes ?? null;
+    const appointmentTypeId = input.appointmentTypeId ?? null;
+
+    // Appointment + its mirror MEETING activity + assignees must land together —
+    // a half-written chronicle (activity without appointment or vice versa) is
+    // never acceptable, so everything runs in one transaction.
+    const savedId = await this.dataSource.transaction(async (manager) => {
+      const subject = await this.resolveActivitySubject(
+        title,
+        appointmentTypeId,
+        organizationId,
+        manager,
+      );
+      const activityRepo = manager.getRepository(AdmissionActivity);
+      const activity = await activityRepo.save(
+        activityRepo.create({
+          organizationId,
+          applicationId: input.applicationId,
+          type: AdmissionActivityType.MEETING,
+          occurredAt: scheduledAt,
+          subject,
+          body: note,
+          durationMinutes,
+          createdByMembershipId: createdByMembershipId ?? null,
+        }),
+      );
+
+      const appointmentRepo = manager.getRepository(AdmissionAppointment);
+      const saved = await appointmentRepo.save(
+        appointmentRepo.create({
+          organizationId,
+          applicationId: input.applicationId,
+          appointmentTypeId,
+          title,
+          scheduledAt,
+          endsAt,
+          durationMinutes,
+          location: input.location?.trim() || null,
+          note,
+          createdByMembershipId: createdByMembershipId ?? null,
+          activityId: activity.id,
+        }),
+      );
+
+      const assigneeRepo = manager.getRepository(AdmissionAppointmentAssignee);
+      if (assigneeIds.length > 0) {
+        await assigneeRepo.save(
+          assigneeIds.map((membershipId) =>
+            assigneeRepo.create({
+              organizationId,
+              appointmentId: saved.id,
+              membershipId,
+            }),
+          ),
+        );
+      }
+      return saved.id;
     });
-    const saved = await this.repo.save(entity);
-    await this.syncAssignees(saved.id, organizationId, assigneeIds);
-    return (await this.findOneWithRelations(saved.id, organizationId)) ?? saved;
+
+    return (
+      (await this.findOneWithRelations(savedId, organizationId)) ??
+      (await this.repo.findOneOrFail({
+        where: { id: savedId, organizationId },
+      }))
+    );
   }
 
   async update(
@@ -218,7 +298,58 @@ export class AdmissionAppointmentsService {
     if (input.status !== undefined) {
       existing.status = input.status;
     }
-    await this.repo.save(existing);
+
+    // Persist the appointment and keep its mirror activity in sync atomically.
+    // `existing` was loaded WITHOUT relations, so assigning the `activityId` FK
+    // scalar here is honest (no loaded relation object can clobber it on save —
+    // the apply-scalar-update principle).
+    await this.dataSource.transaction(async (manager) => {
+      const subject = await this.resolveActivitySubject(
+        existing.title ?? null,
+        existing.appointmentTypeId ?? null,
+        organizationId,
+        manager,
+      );
+      const activityRepo = manager.getRepository(AdmissionActivity);
+
+      if (existing.activityId) {
+        // Sync the linked activity. Org-scoped lookup preserves isolation.
+        const activity = await activityRepo.findOne({
+          where: { id: existing.activityId, organizationId },
+        });
+        if (activity) {
+          activity.subject = subject;
+          activity.occurredAt = existing.scheduledAt;
+          activity.body = existing.note ?? null;
+          activity.durationMinutes = existing.durationMinutes ?? null;
+          activity.applicationId = existing.applicationId;
+          await activityRepo.save(activity);
+        } else {
+          // Linked activity vanished (e.g. deleted directly) — re-create it.
+          existing.activityId = null;
+        }
+      }
+
+      if (!existing.activityId) {
+        // Backfill: legacy appointment created before mirror activities existed.
+        const activity = await activityRepo.save(
+          activityRepo.create({
+            organizationId,
+            applicationId: existing.applicationId,
+            type: AdmissionActivityType.MEETING,
+            occurredAt: existing.scheduledAt,
+            subject,
+            body: existing.note ?? null,
+            durationMinutes: existing.durationMinutes ?? null,
+            createdByMembershipId: existing.createdByMembershipId ?? null,
+          }),
+        );
+        existing.activityId = activity.id;
+      }
+
+      await manager.getRepository(AdmissionAppointment).save(existing);
+    });
+
     if (input.assignedToMembershipIds !== undefined) {
       const assigneeIds = await this.validateAssignees(
         input.assignedToMembershipIds ?? [],
@@ -234,10 +365,25 @@ export class AdmissionAppointmentsService {
   async remove(id: string, organizationId: string): Promise<boolean> {
     const existing = await this.repo.findOne({
       where: { id, organizationId },
-      select: ['id'],
+      select: ['id', 'activityId'],
     });
     if (!existing) throw new NotFoundException(`Appointment ${id} not found`);
-    await this.repo.delete({ id, organizationId });
+
+    // Hard DELETE removes the mirror activity too: the appointment is gone, so
+    // its chronicle entry has no reason to linger. (CANCEL is a different path —
+    // it runs through update({ status }), which only SYNCS the activity and
+    // never deletes it, so a cancelled appointment stays visible in the
+    // application's activity history. This asymmetry is intentional.)
+    await this.dataSource.transaction(async (manager) => {
+      await manager
+        .getRepository(AdmissionAppointment)
+        .delete({ id, organizationId });
+      if (existing.activityId) {
+        await manager
+          .getRepository(AdmissionActivity)
+          .delete({ id: existing.activityId, organizationId });
+      }
+    });
     return true;
   }
 }

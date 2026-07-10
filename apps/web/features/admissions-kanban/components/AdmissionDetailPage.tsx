@@ -166,6 +166,10 @@ export function AdmissionDetailPage({
     startTransition(async () => {
       const res = await getAdmissionAppointmentsAction(detail.id);
       if (res.success) setAppointments(res.data);
+      // A saved appointment also creates/updates a mirror MEETING activity, so
+      // reload the activity timeline too.
+      const activityRes = await getAdmissionActivitiesAction(detail.id);
+      if (activityRes.success) setActivities(activityRes.data);
       router.refresh();
     });
   };
