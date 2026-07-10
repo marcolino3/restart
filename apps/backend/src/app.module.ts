@@ -148,17 +148,26 @@ const MAX_QUERY_DEPTH = 12;
           playground: false,
           validationRules: [createMaxDepthRule(MAX_QUERY_DEPTH)],
           // Realtime chat runs over graphql-ws on the same /graphql endpoint.
-          // The session cookie rides on the WS upgrade request; onConnect
-          // resolves it once and stashes the result on `extra` for the
-          // context factory below (see chats/pubsub/ws-auth.util.ts).
+          // Web sends the session cookie on the WS upgrade request; native
+          // clients pass it via connectionParams.cookie instead. onConnect
+          // resolves the session once and stashes the result on `extra` for
+          // the context factory below (see chats/pubsub/ws-auth.util.ts).
           subscriptions: {
             'graphql-ws': {
-              onConnect: async (connectionContext: { extra: unknown }) => {
+              onConnect: async (connectionContext: {
+                extra: unknown;
+                connectionParams?: Record<string, unknown>;
+              }) => {
                 const extra = connectionContext.extra as WsExtra;
+                const paramCookie =
+                  typeof connectionContext.connectionParams?.cookie === 'string'
+                    ? (connectionContext.connectionParams.cookie as string)
+                    : null;
                 const wsAuth = await authenticateWsConnection(
                   dataSource.manager,
                   extra.request,
                   allowedOrigins,
+                  paramCookie,
                 );
                 if (!wsAuth) {
                   throw new Error('Unauthorized');

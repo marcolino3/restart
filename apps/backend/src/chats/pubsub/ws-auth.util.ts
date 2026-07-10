@@ -12,32 +12,42 @@ export interface WsAuthResult {
 }
 
 /**
- * Authenticates a graphql-ws connection from the raw upgrade request. The
- * session cookie rides on the upgrade HTTP request's headers (same-origin
- * browsers always send it), so we can reuse the exact better-auth session
- * resolution the HTTP guard uses — cookieParser/helmet do NOT run on the WS
- * upgrade path, but better-auth reads the raw Cookie header itself.
+ * Authenticates a graphql-ws connection. Two transports carry the session:
  *
- * Returns null when there is no valid session (caller should reject the
+ * - Same-origin browsers (web) send the httpOnly cookie automatically on the
+ *   WS upgrade request, so it arrives in `request.headers.cookie`.
+ * - React Native has no cookie store and does not send cookies on WS upgrades,
+ *   so the mobile client passes the serialized cookie via graphql-ws
+ *   `connectionParams` instead; that value arrives here as `cookieOverride`.
+ *
+ * Either way we resolve the session with the exact better-auth logic the HTTP
+ * guard uses. Returns null when there is no valid session (caller rejects the
  * connection). A valid session with a stale/absent org resolves to a result
  * with membershipId/orgId undefined — subscriptions are all org-scoped and
- * their participant filter will then simply deliver nothing.
+ * their participant filter then simply delivers nothing.
  */
 export async function authenticateWsConnection(
   em: EntityManager,
   request: IncomingMessage,
   allowedOrigins: string[],
+  cookieOverride?: string | null,
 ): Promise<WsAuthResult | null> {
   // Defense-in-depth against cross-site WebSocket hijacking: the session cookie
-  // is sameSite, but we additionally reject upgrades from disallowed origins.
+  // is sameSite, but we additionally reject upgrades from a disallowed origin.
+  // A missing origin (native clients) is allowed through — they authenticate
+  // via connectionParams, which a cross-site browser page cannot forge.
   const origin = request.headers.origin;
   if (origin && allowedOrigins.length > 0 && !allowedOrigins.includes(origin)) {
     return null;
   }
 
-  const session = await auth.api.getSession({
-    headers: request.headers as unknown as Headers,
-  });
+  // Build the headers better-auth reads the session from. Prefer the
+  // connectionParams cookie (mobile) over the upgrade request's own header.
+  const headers = new Headers();
+  const cookie = cookieOverride ?? request.headers.cookie;
+  if (cookie) headers.set('cookie', cookie);
+
+  const session = await auth.api.getSession({ headers });
   if (!session?.user?.email) return null;
 
   // Resolve the domain user via the user_emails join, mirroring

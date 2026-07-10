@@ -26,6 +26,10 @@ export default function TabLayout() {
         options={{ title: "Home", tabBarIcon: tabIcon("home") }}
       />
       <Tabs.Screen
+        name="chats"
+        options={{ title: "Chats", tabBarIcon: tabIcon("comments") }}
+      />
+      <Tabs.Screen
         name="employee"
         options={{ title: "Time", tabBarIcon: tabIcon("clock-o") }}
       />
