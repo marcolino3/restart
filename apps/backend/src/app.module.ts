@@ -9,7 +9,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
 import { LoggerModule } from 'nestjs-pino';
-import { DataSource, EntityManager } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { loggerConfig } from './logger.config';
 import { resolveSynchronize } from './database/resolve-synchronize';
 import { createMaxDepthRule } from './common/graphql/max-depth.validation-rule';
@@ -51,6 +51,17 @@ import { HealthModule } from './health/health.module';
 import { UploadModule } from './upload/upload.module';
 import { ContractDocumentsModule } from './employee-management/contract-documents/contract-documents.module';
 import { StorageModule } from './storage/storage.module';
+import { ChatsModule } from './chats/chats.module';
+import {
+  authenticateWsConnection,
+  type WsAuthResult,
+} from './chats/pubsub/ws-auth.util';
+import type { IncomingMessage } from 'http';
+
+// Data attached to a graphql-ws connection during onConnect and read back by
+// the GraphQL context factory. `request` is the raw upgrade request that
+// carries the session cookie.
+type WsExtra = { request: IncomingMessage } & Partial<WsAuthResult>;
 
 // Upper bound on GraphQL query nesting. The deepest legitimate queries in the
 // app (curriculum/team ancestor traversal, admission board with nested cards)
@@ -125,6 +136,10 @@ const MAX_QUERY_DEPTH = 12;
       driver: ApolloDriver,
       useFactory: (dataSource: DataSource, configService: ConfigService) => {
         const isProd = configService.get<string>('NODE_ENV') === 'production';
+        const allowedOrigins = configService
+          .get<string>('ALLOWED_ORIGINS', 'http://localhost:4000')
+          .split(',')
+          .map((origin) => origin.trim());
         return {
           autoSchemaFile: true,
           // Introspection and the Apollo sandbox landing page leak the full
@@ -132,23 +147,58 @@ const MAX_QUERY_DEPTH = 12;
           introspection: !isProd,
           playground: false,
           validationRules: [createMaxDepthRule(MAX_QUERY_DEPTH)],
-          context: ({
-            req,
-            res,
-          }: {
-            req: Request;
-            res: Response;
-            entityManager: EntityManager;
-          }) => ({
-            req,
-            res,
-            entityManager: dataSource.manager, // 💡 wichtig für deine Decorators
-            loaders: {
-              curriculumNodes: new CurriculumNodeLoaders(dataSource),
-              studentEnrollments: new StudentEnrollmentLoaders(dataSource),
-              projectTaskStats: new ProjectTaskStatsLoaders(dataSource),
+          // Realtime chat runs over graphql-ws on the same /graphql endpoint.
+          // The session cookie rides on the WS upgrade request; onConnect
+          // resolves it once and stashes the result on `extra` for the
+          // context factory below (see chats/pubsub/ws-auth.util.ts).
+          subscriptions: {
+            'graphql-ws': {
+              onConnect: async (connectionContext: { extra: unknown }) => {
+                const extra = connectionContext.extra as WsExtra;
+                const wsAuth = await authenticateWsConnection(
+                  dataSource.manager,
+                  extra.request,
+                  allowedOrigins,
+                );
+                if (!wsAuth) {
+                  throw new Error('Unauthorized');
+                }
+                extra.orgId = wsAuth.orgId;
+                extra.membershipId = wsAuth.membershipId;
+                extra.userId = wsAuth.userId;
+              },
             },
-          }),
+          },
+          // Two entry paths reach this factory: normal HTTP (req/res present)
+          // and graphql-ws operations (extra present, req/res undefined). The
+          // subscription branch MUST NOT touch req/res — doing so crashes every
+          // WS message.
+          context: (ctx: {
+            req?: Request;
+            res?: Response;
+            extra?: unknown;
+          }) => {
+            if (ctx.extra) {
+              const extra = ctx.extra as WsExtra;
+              return {
+                req: extra.request,
+                entityManager: dataSource.manager,
+                orgId: extra.orgId,
+                membershipId: extra.membershipId,
+                userId: extra.userId,
+              };
+            }
+            return {
+              req: ctx.req,
+              res: ctx.res,
+              entityManager: dataSource.manager, // 💡 wichtig für deine Decorators
+              loaders: {
+                curriculumNodes: new CurriculumNodeLoaders(dataSource),
+                studentEnrollments: new StudentEnrollmentLoaders(dataSource),
+                projectTaskStats: new ProjectTaskStatsLoaders(dataSource),
+              },
+            };
+          },
           plugins: isProd ? [] : [ApolloServerPluginLandingPageLocalDefault()],
         };
       },
@@ -178,6 +228,7 @@ const MAX_QUERY_DEPTH = 12;
     EmployeeManagementModule,
     SchoolManagementModule,
     ProjectManagementModule,
+    ChatsModule,
     ConsentModule,
     DataRequestsModule,
     RetentionModule,
