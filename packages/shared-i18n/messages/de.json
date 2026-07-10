@@ -306,6 +306,8 @@
     "moveOk": "Stage gewechselt",
     "moveError": "Stage-Wechsel fehlgeschlagen",
     "searchPlaceholder": "Suche nach Kind, Familie, Eltern …",
+    "filterGradeLevel": "Stufe",
+    "filterGradeLevelSearch": "Stufe suchen …",
     "totalApplications": "{count} Bewerbungen",
     "activeApplicationsCount": "{count} aktive Bewerbungen",
     "remindersTodayCount": "{count} Erinnerungen heute",

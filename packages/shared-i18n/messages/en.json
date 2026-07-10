@@ -306,6 +306,8 @@
     "moveOk": "Stage changed",
     "moveError": "Stage change failed",
     "searchPlaceholder": "Search child, family, parents …",
+    "filterGradeLevel": "Grade level",
+    "filterGradeLevelSearch": "Search grade level …",
     "totalApplications": "{count} applications",
     "activeApplicationsCount": "{count} active applications",
     "remindersTodayCount": "{count} reminders today",

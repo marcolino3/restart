@@ -54,3 +54,30 @@ export function buildGradeLevelOptions(
   }
   return options;
 }
+
+/**
+ * Expands a set of selected grade-level ids to every id that should match when
+ * filtering: each selected id itself, plus — when a selected id is a top-level
+ * Stufe — the ids of all its Untergruppen. So filtering by a Stufe includes
+ * applications assigned to any of its subgroups, while filtering by a single
+ * Untergruppe stays narrow.
+ *
+ * Returns a Set for O(1) membership checks. An empty selection returns an empty
+ * Set (the caller treats that as "no filter").
+ */
+export function expandGradeLevelFilter(
+  selectedIds: string[],
+  gradeLevels: GradeLevelOption[],
+): Set<string> {
+  const result = new Set(selectedIds);
+  if (selectedIds.length === 0) return result;
+
+  const selected = new Set(selectedIds);
+  for (const g of gradeLevels) {
+    // g is a subgroup whose parent Stufe is selected → include it.
+    if (g.parentId != null && selected.has(g.parentId)) {
+      result.add(g.id);
+    }
+  }
+  return result;
+}
