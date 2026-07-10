@@ -57,6 +57,7 @@ import {
 import { RejectApplicationDialog } from "./RejectApplicationDialog";
 import { FinalizeEnrollmentDialog } from "./FinalizeEnrollmentDialog";
 import { SendEmailDialog, type SendableTemplate } from "./SendEmailDialog";
+import type { EmailComposerDraft } from "./EmailComposerForm";
 import type { ReminderMember } from "./ReminderForm";
 
 interface Props {
@@ -116,6 +117,9 @@ export function AdmissionDetailPage({
     useState<AdmissionDocument[]>(initialDocuments);
   const [emails, setEmails] = useState<AdmissionEmail[]>(initialEmails);
   const [sendOpen, setSendOpen] = useState(false);
+  // Draft handed over from the inline E-Mail composer tab's "Vorschau", used to
+  // prefill the full SendEmailDialog.
+  const [emailDraft, setEmailDraft] = useState<EmailComposerDraft | null>(null);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [enrollOpen, setEnrollOpen] = useState(false);
   const [editDetailsOpen, setEditDetailsOpen] = useState(false);
@@ -389,6 +393,16 @@ export function AdmissionDetailPage({
                   onReminderSaved={refreshReminders}
                   appointmentTypes={appointmentTypes}
                   onAppointmentSaved={refreshAppointments}
+                  onDocumentUploaded={refreshDocuments}
+                  {...(canSendEmail && {
+                    emailTemplates,
+                    emailContacts,
+                    onEmailSent: refreshEmails,
+                    onEmailPreview: (draft: EmailComposerDraft) => {
+                      setEmailDraft(draft);
+                      setSendOpen(true);
+                    },
+                  })}
                 />
               </div>
             )}
@@ -627,12 +641,18 @@ export function AdmissionDetailPage({
       {canSendEmail && sendOpen && (
         <SendEmailDialog
           open
-          onOpenChange={setSendOpen}
+          onOpenChange={(open) => {
+            setSendOpen(open);
+            if (!open) setEmailDraft(null);
+          }}
           applicationId={detail.id}
           templates={emailTemplates}
           contacts={emailContacts}
-          defaultToEmail={defaultContact?.email ?? null}
-          defaultToName={defaultContact?.name ?? null}
+          defaultToEmail={emailDraft?.toEmail ?? defaultContact?.email ?? null}
+          defaultToName={emailDraft?.toName ?? defaultContact?.name ?? null}
+          initialTemplateId={emailDraft?.templateId ?? null}
+          initialSubject={emailDraft?.subject}
+          initialBodyHtml={emailDraft?.bodyHtml}
           onSent={refreshEmails}
         />
       )}

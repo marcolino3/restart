@@ -13,6 +13,7 @@ import {
   CalendarClock,
   Loader2,
   Mail,
+  Paperclip,
   Phone,
   StickyNote,
 } from "lucide-react";
@@ -28,9 +29,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DocumentUploadDialog } from "@/components/common/DocumentUploadDialog";
 import { DateTimeCalendarFormField } from "@/components/form/form-fields/DateTimeCalendarFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
+import { API_URL } from "@/constants/api-url";
 import { cn } from "@/lib/utils";
 
 import { createAdmissionActivityAction } from "../actions/create-admission-activity.action";
@@ -45,7 +48,12 @@ import {
   AppointmentForm,
   type AppointmentMember,
 } from "./AppointmentForm";
+import {
+  EmailComposerForm,
+  type EmailComposerDraft,
+} from "./EmailComposerForm";
 import { ReminderForm, type ReminderMember } from "./ReminderForm";
+import type { SendableContact, SendableTemplate } from "./SendEmailDialog";
 
 /** A contact person offered in the call "Mit" (with whom) dropdown. */
 export interface WithOption {
@@ -78,6 +86,19 @@ interface Props {
   appointmentTypes?: AdmissionAppointmentType[];
   /** Called after an appointment is created from the composer's Termin tab. */
   onAppointmentSaved?: () => void;
+  /**
+   * Called after a document is attached from the Notiz tab, so the parent can
+   * reload the documents block. When omitted, the attach button is hidden.
+   */
+  onDocumentUploaded?: () => void;
+  /** Email templates — enables the "E-Mail" composer tab when provided. */
+  emailTemplates?: SendableTemplate[];
+  /** Contact persons with an email address, for the "E-Mail" tab recipient. */
+  emailContacts?: SendableContact[];
+  /** Called after an email is sent from the composer's E-Mail tab. */
+  onEmailSent?: () => void;
+  /** Opens the full SendEmailDialog prefilled with the inline draft. */
+  onEmailPreview?: (draft: EmailComposerDraft) => void;
 }
 
 const ACTIVITY_TYPES: Array<{
@@ -88,10 +109,11 @@ const ACTIVITY_TYPES: Array<{
   // "MEETING" (Termin) intentionally not offered here — real appointments are
   // created via the dedicated "Termin" (appointment) tab below. Existing MEETING
   // activities still render in the timeline; the enum keeps the value.
-  // Order mirrors the design: Notiz · Anruf · E-Mail (Notiz first).
+  // "EMAIL" is likewise a dedicated tab (the send form), not an activity type
+  // logged here — see the EmailComposerForm tab below.
+  // Order mirrors the design: Notiz · Anruf first.
   { value: "NOTE", icon: StickyNote, labelKey: "activityTypeNote" },
   { value: "CALL", icon: Phone, labelKey: "activityTypeCall" },
-  { value: "EMAIL", icon: Mail, labelKey: "activityTypeEmail" },
 ];
 
 /**
@@ -133,14 +155,25 @@ export function ActivityComposer({
   onReminderSaved,
   appointmentTypes,
   onAppointmentSaved,
+  onDocumentUploaded,
+  emailTemplates,
+  emailContacts,
+  onEmailSent,
+  onEmailPreview,
 }: Props) {
   const t = useTranslations("Admissions");
+  const tDoc = useTranslations("Documents");
   const [reminderMode, setReminderMode] = useState(false);
   const [appointmentMode, setAppointmentMode] = useState(false);
-  // The "Erinnerung"/"Termin" tabs are only offered on the create composer (not
-  // when editing an existing activity) and only when their options are given.
+  const [emailMode, setEmailMode] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  // The "E-Mail"/"Erinnerung"/"Termin" tabs are only offered on the create
+  // composer (not when editing an existing activity) and only when their
+  // options are given.
   const showReminderTab = !initial && !!members;
   const showAppointmentTab = !initial && !!members && !!appointmentTypes;
+  const showEmailTab =
+    !initial && !!emailTemplates && !!emailContacts && !!onEmailPreview;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(Schema),
@@ -175,6 +208,9 @@ export function ActivityComposer({
   const direction = form.watch("direction") ?? null;
 
   const isEdit = !!initial;
+  // A note is deliberately minimal (design BF): just the body textarea + submit,
+  // no subject/date/direction fields. occurredAt stays at "now".
+  const isNote = type === "NOTE";
   const showWith = type === "CALL";
   // The outcome (Erreicht/Nicht erreicht/Rückruf vereinbart) only makes sense
   // for an OUTBOUND call — on an inbound call the contact already reached us.
@@ -215,6 +251,39 @@ export function ActivityComposer({
         : type === "MEETING"
           ? "activitySubjectPlaceholderMeeting"
           : "activitySubjectPlaceholderNote";
+
+  // Attach a document from the Notiz tab — same endpoint as the documents
+  // block (multipart POST scoped by applicationId), then let the parent reload.
+  const doUploadDocument = async (data: {
+    file: File;
+    title: string;
+    tags: string[];
+  }): Promise<boolean> => {
+    try {
+      const fd = new FormData();
+      fd.append("file", data.file);
+      const params = new URLSearchParams({ applicationId });
+      if (data.title) params.set("title", data.title);
+      if (data.tags.length > 0) params.set("tags", data.tags.join(","));
+      const res = await fetch(
+        `${API_URL}/admission-documents?${params.toString()}`,
+        { method: "POST", body: fd, credentials: "include" },
+      );
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as {
+          message?: string;
+        } | null;
+        toast.error(body?.message ?? tDoc("uploadError"));
+        return false;
+      }
+      toast.success(tDoc("uploadOk"));
+      onDocumentUploaded?.();
+      return true;
+    } catch {
+      toast.error(tDoc("uploadError"));
+      return false;
+    }
+  };
 
   const onSubmit = async (values: FormValues) => {
     setSaving(true);
@@ -272,11 +341,12 @@ export function ActivityComposer({
             onClick={() => {
               setReminderMode(false);
               setAppointmentMode(false);
+              setEmailMode(false);
               form.setValue("type", value);
             }}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition",
-              !reminderMode && !appointmentMode && type === value
+              !reminderMode && !appointmentMode && !emailMode && type === value
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-border bg-background text-muted-foreground hover:bg-muted",
             )}
@@ -285,11 +355,31 @@ export function ActivityComposer({
             {t(labelKey)}
           </button>
         ))}
+        {showEmailTab && (
+          <button
+            type="button"
+            onClick={() => {
+              setReminderMode(false);
+              setAppointmentMode(false);
+              setEmailMode(true);
+            }}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition",
+              emailMode
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-background text-muted-foreground hover:bg-muted",
+            )}
+          >
+            <Mail className="h-3.5 w-3.5" />
+            {t("activityTypeEmail")}
+          </button>
+        )}
         {showReminderTab && (
           <button
             type="button"
             onClick={() => {
               setAppointmentMode(false);
+              setEmailMode(false);
               setReminderMode(true);
             }}
             className={cn(
@@ -308,6 +398,7 @@ export function ActivityComposer({
             type="button"
             onClick={() => {
               setReminderMode(false);
+              setEmailMode(false);
               setAppointmentMode(true);
             }}
             className={cn(
@@ -337,9 +428,18 @@ export function ActivityComposer({
           members={members as AppointmentMember[]}
           onSaved={() => onAppointmentSaved?.()}
         />
+      ) : emailMode && emailTemplates && emailContacts && onEmailPreview ? (
+        <EmailComposerForm
+          applicationId={applicationId}
+          templates={emailTemplates}
+          contacts={emailContacts}
+          onSent={() => onEmailSent?.()}
+          onPreview={onEmailPreview}
+        />
       ) : (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+            {!isNote && (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {showWith ? (
                 <div className="space-y-[7px]">
@@ -474,6 +574,7 @@ export function ActivityComposer({
                 </div>
               )}
             </div>
+            )}
 
             {showOutcome && (
               <div className="space-y-[7px]">
@@ -542,14 +643,31 @@ export function ActivityComposer({
 
             <TextareaFormField
               name="body"
-              label="activityBody"
+              label={isNote ? undefined : "activityBody"}
               namespace="Admissions"
               placeholder={t(
-                type === "CALL" ? "activityCallNotePlaceholder" : "activityBodyPlaceholder",
+                isNote
+                  ? "activityNotePlaceholder"
+                  : type === "CALL"
+                    ? "activityCallNotePlaceholder"
+                    : "activityBodyPlaceholder",
               )}
             />
 
-            <div className="flex justify-end gap-2 pt-1">
+            <div className="flex items-center justify-end gap-2 pt-1">
+              {isNote && onDocumentUploaded && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mr-auto"
+                  onClick={() => setUploadOpen(true)}
+                  disabled={saving}
+                >
+                  <Paperclip className="mr-1.5 h-3.5 w-3.5" />
+                  {t("activityAttachDocument")}
+                </Button>
+              )}
               {onCancel && (
                 <Button
                   type="button"
@@ -570,6 +688,15 @@ export function ActivityComposer({
             </div>
           </form>
         </Form>
+      )}
+
+      {onDocumentUploaded && (
+        <DocumentUploadDialog
+          open={uploadOpen}
+          onOpenChange={setUploadOpen}
+          onSubmit={doUploadDocument}
+          namespace="Documents"
+        />
       )}
     </div>
   );

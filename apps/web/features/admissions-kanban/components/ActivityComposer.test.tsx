@@ -33,10 +33,8 @@ vi.mock("../actions/update-admission-activity.action", () => ({
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 describe("ActivityComposer", () => {
-  it("defaults to the Notiz tab first (design tab order: Notiz · Anruf · E-Mail)", () => {
-    render(
-      <ActivityComposer applicationId="app-1" onSaved={vi.fn()} />,
-    );
+  it("defaults to Notiz first; only Notiz · Anruf without extra options", () => {
+    render(<ActivityComposer applicationId="app-1" onSaved={vi.fn()} />);
     const tabs = screen
       .getAllByRole("button")
       .filter((b) =>
@@ -44,18 +42,62 @@ describe("ActivityComposer", () => {
           (k) => b.textContent === k,
         ),
       );
+    // E-Mail/Erinnerung/Termin are dedicated tabs gated behind their props —
+    // without them only the two activity types remain.
     expect(tabs.map((b) => b.textContent)).toEqual([
       "activityTypeNote",
       "activityTypeCall",
-      "activityTypeEmail",
     ]);
   });
 
-  it("renders the generic subject field (no With/Outcome) in Notiz mode", () => {
+  it("shows the E-Mail tab only when email templates/contacts are provided", () => {
+    const { rerender } = render(
+      <ActivityComposer applicationId="app-1" onSaved={vi.fn()} />,
+    );
+    expect(screen.queryByText("activityTypeEmail")).not.toBeInTheDocument();
+    rerender(
+      <ActivityComposer
+        applicationId="app-1"
+        onSaved={vi.fn()}
+        emailTemplates={[{ id: "t1", name: "Einladung" }]}
+        emailContacts={[
+          { id: "c1", name: "Arta Krasniqi", email: "arta@example.com", role: "MOTHER" },
+        ]}
+        onEmailPreview={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("activityTypeEmail")).toBeInTheDocument();
+  });
+
+  it("Notiz mode is minimal: only the note textarea, no subject/date/outcome", () => {
     render(<ActivityComposer applicationId="app-1" onSaved={vi.fn()} />);
-    expect(screen.getByText("activitySubject")).toBeInTheDocument();
+    // The body textarea (via its note placeholder) is present...
+    expect(
+      screen.getByPlaceholderText("activityNotePlaceholder"),
+    ).toBeInTheDocument();
+    // ...but no subject, no date/time control, no With/Outcome fields.
+    expect(screen.queryByText("activitySubject")).not.toBeInTheDocument();
+    expect(screen.queryByText("activityOccurredAt")).not.toBeInTheDocument();
     expect(screen.queryByText("activityWith")).not.toBeInTheDocument();
     expect(screen.queryByText("activityOutcome")).not.toBeInTheDocument();
+  });
+
+  it("Notiz mode shows the attach-document button when the callback is set", () => {
+    const { rerender } = render(
+      <ActivityComposer applicationId="app-1" onSaved={vi.fn()} />,
+    );
+    // Without the callback the attach button is hidden.
+    expect(
+      screen.queryByText("activityAttachDocument"),
+    ).not.toBeInTheDocument();
+    rerender(
+      <ActivityComposer
+        applicationId="app-1"
+        onSaved={vi.fn()}
+        onDocumentUploaded={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("activityAttachDocument")).toBeInTheDocument();
   });
 
   it("switching to Anruf shows Mit / Wann / Richtung; Ergebnis only when outbound", async () => {
@@ -146,14 +188,29 @@ describe("ActivityComposer", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("switching to E-Mail shows direction but not With/Outcome", async () => {
+  it("E-Mail tab shows the send form (Vorlage/An/Betreff/Vorschau/Senden)", async () => {
     const user = userEvent.setup();
-    render(<ActivityComposer applicationId="app-1" onSaved={vi.fn()} />);
+    render(
+      <ActivityComposer
+        applicationId="app-1"
+        onSaved={vi.fn()}
+        emailTemplates={[{ id: "t1", name: "Einladung" }]}
+        emailContacts={[
+          { id: "c1", name: "Arta Krasniqi", email: "arta@example.com", role: "MOTHER" },
+        ]}
+        onEmailPreview={vi.fn()}
+        onEmailSent={vi.fn()}
+      />,
+    );
     await user.click(screen.getByText("activityTypeEmail"));
 
-    expect(screen.getByText("activityDirection")).toBeInTheDocument();
-    expect(screen.queryByText("activityWith")).not.toBeInTheDocument();
-    expect(screen.queryByText("activityOutcome")).not.toBeInTheDocument();
+    // The send form's fields + actions — not the activity direction/outcome UI.
+    expect(screen.getByText("emailTemplateLabel")).toBeInTheDocument();
+    expect(screen.getByText("emailRecipientLabel")).toBeInTheDocument();
+    expect(screen.getByText("emailSubject")).toBeInTheDocument();
+    expect(screen.getByText("emailPreview")).toBeInTheDocument();
+    expect(screen.getByText("emailSend")).toBeInTheDocument();
+    expect(screen.queryByText("activityDirection")).not.toBeInTheDocument();
   });
 
   it("Anruf: offers a contact dropdown when withOptions are given", async () => {
