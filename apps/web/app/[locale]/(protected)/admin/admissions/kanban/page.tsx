@@ -4,6 +4,7 @@ import { getAdmissionsDataAction } from "@/features/admissions-kanban/actions/ge
 import { getRejectedApplicationsAction } from "@/features/admissions-kanban/actions/get-rejected-applications.action";
 import { getGradeLevelsAction } from "@/features/grade-levels/actions/get-grade-levels.action";
 import { getClassesForEnrollmentAction } from "@/features/admissions-kanban/actions/get-school-classes-for-enrollment.action";
+import { getFamiliesAction } from "@/features/families/actions/get-families.action";
 import { AdmissionsKanban } from "@/features/admissions-kanban/components/AdmissionsKanban";
 
 const has = (permissions: string[], code: string, isSuperAdmin: boolean) =>
@@ -11,13 +12,15 @@ const has = (permissions: string[], code: string, isSuperAdmin: boolean) =>
 
 const AdmissionsKanbanPage = async () => {
   const t = await getTranslations("Admissions");
-  const [user, data, rejected, gradeLevels, schoolClasses] = await Promise.all([
-    getCurrentUserAction(),
-    getAdmissionsDataAction(),
-    getRejectedApplicationsAction(),
-    getGradeLevelsAction(),
-    getClassesForEnrollmentAction(),
-  ]);
+  const [user, data, rejected, gradeLevels, schoolClasses, families] =
+    await Promise.all([
+      getCurrentUserAction(),
+      getAdmissionsDataAction(),
+      getRejectedApplicationsAction(),
+      getGradeLevelsAction(),
+      getClassesForEnrollmentAction(),
+      getFamiliesAction(),
+    ]);
 
   if (!user?.success) {
     return (
@@ -45,19 +48,32 @@ const AdmissionsKanbanPage = async () => {
         initialSources={data.data.sources}
         gradeLevels={
           gradeLevels.success
-            ? [...gradeLevels.data]
-                .filter((g) => g.parentId == null)
-                .sort((a, b) => a.sortOrder - b.sortOrder)
-                .map((g) => ({
-                  id: g.id,
-                  name: g.name,
-                  shortCode: g.shortCode,
-                }))
+            ? // Keep subgroups (parentId != null) so the "Zugeteilte Stufe"
+              // select can render the Stufe → Untergruppe hierarchy. The
+              // dialog's option builder handles ordering/indentation.
+              gradeLevels.data.map((g) => ({
+                id: g.id,
+                name: g.name,
+                shortCode: g.shortCode,
+                parentId: g.parentId,
+                sortOrder: g.sortOrder,
+              }))
             : []
         }
         schoolClasses={
           schoolClasses.success
             ? schoolClasses.data.map((c) => ({ id: c.id, name: c.name }))
+            : []
+        }
+        existingFamilies={
+          families.success
+            ? families.data.map((f) => ({
+                id: f.id,
+                name: f.name,
+                contactNames: f.contactPersons.map((c) =>
+                  `${c.firstName} ${c.lastName}`.trim(),
+                ),
+              }))
             : []
         }
         rejectedCount={rejected.success ? rejected.data.length : 0}

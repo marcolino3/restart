@@ -6,34 +6,67 @@ import { DataSource } from 'typeorm';
 import { AdmissionAppointmentType } from '@/school-management/admission-appointment-types/entities/admission-appointment-type.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { AdmissionAppointmentsService } from './admission-appointments.service';
+import { AdmissionActivity } from './entities/admission-activity.entity';
 import { AdmissionAppointmentAssignee } from './entities/admission-appointment-assignee.entity';
 import { AdmissionApplication } from './entities/admission-application.entity';
 import { AdmissionAppointment } from './entities/admission-appointment.entity';
+import { AdmissionActivityType } from './enums/admission-activity-type.enum';
 
 const ORG_ID = 'org-1';
 
 const createMockRepository = () => ({
   find: jest.fn().mockResolvedValue([]),
   findOne: jest.fn(),
+  findOneOrFail: jest.fn((opts: { where?: { id?: string } }) =>
+    Promise.resolve({ id: opts?.where?.id ?? 'apt-mock' }),
+  ),
   create: jest.fn((d: unknown) => d),
-  save: jest.fn((d: unknown) => Promise.resolve(d)),
+  // Ensure a saved entity always carries an id so create()'s post-save reload
+  // has something to look up.
+  save: jest.fn((d: Record<string, unknown>) =>
+    Promise.resolve({ id: 'apt-1', ...d }),
+  ),
   delete: jest.fn().mockResolvedValue({ affected: 1 }),
 });
 
-// Records the assignee rows written through the transaction manager so tests can
-// assert which memberships were linked.
-function makeDataSource(capture: {
-  assignees: Array<Record<string, unknown>>;
-}) {
+// Routes the transaction manager to per-entity mock repos so tests can assert
+// which appointment / activity / assignee rows were written.
+function makeDataSource(
+  capture: {
+    assignees: Array<Record<string, unknown>>;
+    activities: Array<Record<string, unknown>>;
+  },
+  appointmentRepo: ReturnType<typeof createMockRepository>,
+  typesRepo: ReturnType<typeof createMockRepository>,
+) {
   const assigneeRepo = {
     create: (d: Record<string, unknown>) => d,
     save: (rows: Array<Record<string, unknown>>) => {
-      capture.assignees.push(...rows);
+      const list = Array.isArray(rows) ? rows : [rows];
+      capture.assignees.push(...list);
       return Promise.resolve(rows);
     },
     delete: () => Promise.resolve({ affected: 0 }),
   };
-  const manager = { getRepository: () => assigneeRepo };
+  let activitySeq = 0;
+  const activityRepo = {
+    create: (d: Record<string, unknown>) => d,
+    findOne: jest.fn().mockResolvedValue(null),
+    save: (row: Record<string, unknown>) => {
+      const saved = { id: `act-${++activitySeq}`, ...row };
+      capture.activities.push(saved);
+      return Promise.resolve(saved);
+    },
+    delete: jest.fn().mockResolvedValue({ affected: 1 }),
+  };
+  const manager = {
+    getRepository: (entity: unknown) => {
+      if (entity === AdmissionActivity) return activityRepo;
+      if (entity === AdmissionAppointment) return appointmentRepo;
+      if (entity === AdmissionAppointmentType) return typesRepo;
+      return assigneeRepo;
+    },
+  };
   return {
     transaction: jest.fn((cb: (m: typeof manager) => unknown) => cb(manager)),
   } as unknown as DataSource;
@@ -45,14 +78,17 @@ describe('AdmissionAppointmentsService', () => {
   let applicationsRepo: ReturnType<typeof createMockRepository>;
   let typesRepo: ReturnType<typeof createMockRepository>;
   let membershipsRepo: ReturnType<typeof createMockRepository>;
-  let capture: { assignees: Array<Record<string, unknown>> };
+  let capture: {
+    assignees: Array<Record<string, unknown>>;
+    activities: Array<Record<string, unknown>>;
+  };
 
   beforeEach(async () => {
     repo = createMockRepository();
     applicationsRepo = createMockRepository();
     typesRepo = createMockRepository();
     membershipsRepo = createMockRepository();
-    capture = { assignees: [] };
+    capture = { assignees: [], activities: [] };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -74,7 +110,10 @@ describe('AdmissionAppointmentsService', () => {
           provide: getRepositoryToken(AdmissionAppointmentAssignee),
           useValue: createMockRepository(),
         },
-        { provide: DataSource, useValue: makeDataSource(capture) },
+        {
+          provide: DataSource,
+          useValue: makeDataSource(capture, repo, typesRepo),
+        },
       ],
     }).compile();
 
@@ -124,6 +163,50 @@ describe('AdmissionAppointmentsService', () => {
           createdByMembershipId: 'mem-creator',
         }),
       );
+    });
+
+    it('creates a mirror MEETING activity (subject from title, occurredAt from scheduledAt)', async () => {
+      applicationsRepo.findOne.mockResolvedValue({ id: 'app-1' });
+      await service.create(
+        {
+          applicationId: 'app-1',
+          title: 'Schnuppertag',
+          scheduledAt: '2026-07-10T09:00:00.000Z',
+          note: 'Bitte pünktlich',
+          durationMinutes: 90,
+        },
+        ORG_ID,
+        'mem-creator',
+      );
+      expect(capture.activities).toHaveLength(1);
+      const activity = capture.activities[0];
+      expect(activity.type).toBe(AdmissionActivityType.MEETING);
+      expect(activity.subject).toBe('Schnuppertag');
+      expect(activity.organizationId).toBe(ORG_ID);
+      expect(activity.applicationId).toBe('app-1');
+      expect(activity.body).toBe('Bitte pünktlich');
+      expect(activity.durationMinutes).toBe(90);
+      expect((activity.occurredAt as Date).toISOString()).toBe(
+        '2026-07-10T09:00:00.000Z',
+      );
+      // The appointment is linked back to the activity.
+      const appt = repo.save.mock.calls[0][0] as { activityId?: string };
+      expect(appt.activityId).toBe('act-1');
+    });
+
+    it('falls back to the appointment type label for the activity subject', async () => {
+      applicationsRepo.findOne.mockResolvedValue({ id: 'app-1' });
+      typesRepo.findOne.mockResolvedValue({ label: 'Elterngespräch' });
+      await service.create(
+        {
+          applicationId: 'app-1',
+          appointmentTypeId: 'type-1',
+          scheduledAt: '2026-07-10T09:00:00.000Z',
+        },
+        ORG_ID,
+        null,
+      );
+      expect(capture.activities[0].subject).toBe('Elterngespräch');
     });
 
     it('stores a period (endsAt) and links multiple assignees', async () => {

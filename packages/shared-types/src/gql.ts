@@ -141,6 +141,7 @@ type Documents = {
     "\n  mutation UpdateEmployee($updateEmployeeInput: UpdateEmployeeInput!) {\n    updateEmployee(updateEmployeeInput: $updateEmployeeInput) {\n      id\n    }\n  }\n": typeof types.UpdateEmployeeDocument,
     "\n  mutation UpsertEmployeeEmergencyProfile(\n    $input: UpsertEmployeeEmergencyProfileInput!\n  ) {\n    upsertEmployeeEmergencyProfile(input: $input) {\n      id\n    }\n  }\n": typeof types.UpsertEmployeeEmergencyProfileDocument,
     "\n  mutation UpsertEmployeeHrProfile($input: UpsertEmployeeHrProfileInput!) {\n    upsertEmployeeHrProfile(input: $input) {\n      id\n    }\n  }\n": typeof types.UpsertEmployeeHrProfileDocument,
+    "\n  query Families {\n    families {\n      id\n      name\n      contactPersons {\n        firstName\n        lastName\n      }\n    }\n  }\n": typeof types.FamiliesDocument,
     "\n  mutation CreateGradeLevel($input: CreateGradeLevelInput!) {\n    createGradeLevel(input: $input) {\n      id\n      name\n      parentId\n      color\n      shortCode\n      ageMin\n      ageMax\n      sortOrder\n    }\n  }\n": typeof types.CreateGradeLevelDocument,
     "\n  mutation DeleteGradeLevel($id: ID!) {\n    deleteGradeLevel(id: $id)\n  }\n": typeof types.DeleteGradeLevelDocument,
     "\n  query GetGradeLevels {\n    gradeLevelsByOrgId {\n      id\n      name\n      parentId\n      color\n      shortCode\n      ageMin\n      ageMax\n      sortOrder\n      classCount\n      studentCount\n    }\n  }\n": typeof types.GetGradeLevelsDocument,
@@ -429,6 +430,7 @@ const documents: Documents = {
     "\n  mutation UpdateEmployee($updateEmployeeInput: UpdateEmployeeInput!) {\n    updateEmployee(updateEmployeeInput: $updateEmployeeInput) {\n      id\n    }\n  }\n": types.UpdateEmployeeDocument,
     "\n  mutation UpsertEmployeeEmergencyProfile(\n    $input: UpsertEmployeeEmergencyProfileInput!\n  ) {\n    upsertEmployeeEmergencyProfile(input: $input) {\n      id\n    }\n  }\n": types.UpsertEmployeeEmergencyProfileDocument,
     "\n  mutation UpsertEmployeeHrProfile($input: UpsertEmployeeHrProfileInput!) {\n    upsertEmployeeHrProfile(input: $input) {\n      id\n    }\n  }\n": types.UpsertEmployeeHrProfileDocument,
+    "\n  query Families {\n    families {\n      id\n      name\n      contactPersons {\n        firstName\n        lastName\n      }\n    }\n  }\n": types.FamiliesDocument,
     "\n  mutation CreateGradeLevel($input: CreateGradeLevelInput!) {\n    createGradeLevel(input: $input) {\n      id\n      name\n      parentId\n      color\n      shortCode\n      ageMin\n      ageMax\n      sortOrder\n    }\n  }\n": types.CreateGradeLevelDocument,
     "\n  mutation DeleteGradeLevel($id: ID!) {\n    deleteGradeLevel(id: $id)\n  }\n": types.DeleteGradeLevelDocument,
     "\n  query GetGradeLevels {\n    gradeLevelsByOrgId {\n      id\n      name\n      parentId\n      color\n      shortCode\n      ageMin\n      ageMax\n      sortOrder\n      classCount\n      studentCount\n    }\n  }\n": types.GetGradeLevelsDocument,
@@ -1112,6 +1114,10 @@ export function graphql(source: "\n  mutation UpsertEmployeeEmergencyProfile(\n 
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation UpsertEmployeeHrProfile($input: UpsertEmployeeHrProfileInput!) {\n    upsertEmployeeHrProfile(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpsertEmployeeHrProfile($input: UpsertEmployeeHrProfileInput!) {\n    upsertEmployeeHrProfile(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query Families {\n    families {\n      id\n      name\n      contactPersons {\n        firstName\n        lastName\n      }\n    }\n  }\n"): (typeof documents)["\n  query Families {\n    families {\n      id\n      name\n      contactPersons {\n        firstName\n        lastName\n      }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

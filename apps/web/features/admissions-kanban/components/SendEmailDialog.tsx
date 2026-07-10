@@ -67,6 +67,14 @@ interface Props {
   defaultToEmail?: string | null;
   defaultToName?: string | null;
   onSent: () => void;
+  /**
+   * Prefill from the inline composer's "Vorschau" — the already-picked
+   * template plus edited subject/body, so the dialog continues where the
+   * inline form left off instead of starting blank.
+   */
+  initialTemplateId?: string | null;
+  initialSubject?: string;
+  initialBodyHtml?: string;
 }
 
 export function SendEmailDialog({
@@ -78,12 +86,17 @@ export function SendEmailDialog({
   defaultToEmail,
   defaultToName,
   onSent,
+  initialTemplateId,
+  initialSubject,
+  initialBodyHtml,
 }: Props) {
   const t = useTranslations("Admissions");
   const tc = useT("ContactPersons");
   const [sending, setSending] = useState(false);
   const [loadingPreview, setLoadingPreview] = useState(false);
-  const [templateId, setTemplateId] = useState<string | null>(null);
+  const [templateId, setTemplateId] = useState<string | null>(
+    initialTemplateId ?? null,
+  );
 
   // Default the recipient to the contact matching the supplied email, else the
   // first contact — so the highlighted chip and the email field always agree.
@@ -98,8 +111,8 @@ export function SendEmailDialog({
     defaultValues: {
       toEmail: initialRecipient?.email ?? defaultToEmail ?? "",
       toName: initialRecipient?.name ?? defaultToName ?? "",
-      subject: "",
-      bodyHtml: "",
+      subject: initialSubject ?? "",
+      bodyHtml: initialBodyHtml ?? "",
     },
   });
 

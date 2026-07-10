@@ -46,6 +46,8 @@ interface Props {
   onCancel?: () => void;
   /** Compact variant. */
   compact?: boolean;
+  /** Prefills the title of a new appointment (ignored when editing `initial`). */
+  defaultTitle?: string;
 }
 
 /** Sentinel select value meaning "no type" (→ null over the wire). */
@@ -94,6 +96,7 @@ export function AppointmentForm({
   onSaved,
   onCancel,
   compact = false,
+  defaultTitle,
 }: Props) {
   const t = useTranslations("Admissions");
   const isEdit = !!initial;
@@ -136,7 +139,7 @@ export function AppointmentForm({
     resolver: zodResolver(Schema),
     defaultValues: {
       appointmentTypeId: initial?.appointmentTypeId ?? NO_TYPE,
-      title: initial?.title ?? "",
+      title: initial?.title ?? defaultTitle ?? "",
       scheduledAt: initialAt ?? defaultScheduledAt(),
       isPeriod: !!initialEnd,
       endAt: initialEnd ?? undefined,

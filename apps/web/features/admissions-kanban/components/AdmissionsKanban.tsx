@@ -60,6 +60,11 @@ import type {
   KanbanApplication,
   KanbanStage,
 } from "../types";
+import { DataTableFacetedFilter } from "@/components/common/DataTableFacetedFilter";
+import {
+  buildGradeLevelOptions,
+  expandGradeLevelFilter,
+} from "../lib/grade-level-options";
 import { AdmissionCardVisual } from "./AdmissionCard";
 import { AdmissionsList } from "./AdmissionsList";
 import {
@@ -166,6 +171,16 @@ interface Props {
   gradeLevels: GradeLevelOption[];
   /** Active school classes for the "desired class" select in the create sheet. */
   schoolClasses?: SchoolClassOption[];
+  /**
+   * All org families (id, name, contact names) for the create dialog's family
+   * search — sourced from the `families` query, NOT derived from the loaded
+   * applications, so families without any application are still findable.
+   */
+  existingFamilies: {
+    id: string;
+    name: string;
+    contactNames: string[];
+  }[];
   canCreate: boolean;
   canMove: boolean;
   canEnroll: boolean;
@@ -190,6 +205,7 @@ export function AdmissionsKanban({
   initialSources,
   gradeLevels,
   schoolClasses,
+  existingFamilies,
   canCreate,
   canMove,
   canManageStages,
@@ -223,6 +239,8 @@ export function AdmissionsKanban({
   });
 
   const [search, setSearch] = useState("");
+  // Selected grade-level ids to filter the board by (Stufen and/or Untergruppen).
+  const [gradeLevelFilter, setGradeLevelFilter] = useState<string[]>([]);
   const [activeApp, setActiveApp] = useState<KanbanApplication | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   // Stage preselected when the create dialog is opened via a column's
@@ -389,6 +407,27 @@ export function AdmissionsKanban({
     return hay.includes(searchLc);
   };
 
+  // Grade-level options for the filter (with the Stufe → Untergruppe hierarchy)
+  // and the set of ids that count as a match (a selected Stufe matches all its
+  // subgroups). Memoised so the expansion runs once per selection change.
+  const gradeLevelFilterOptions = useMemo(
+    () => buildGradeLevelOptions(gradeLevels),
+    [gradeLevels],
+  );
+  const gradeLevelMatchSet = useMemo(
+    () => expandGradeLevelFilter(gradeLevelFilter, gradeLevels),
+    [gradeLevelFilter, gradeLevels],
+  );
+  const matchesGradeLevel = (id: string): boolean => {
+    if (gradeLevelMatchSet.size === 0) return true;
+    const a = applicationsById[id];
+    const gid = a?.assignedGradeLevelId ?? null;
+    return gid != null && gradeLevelMatchSet.has(gid);
+  };
+
+  const matchesFilters = (id: string): boolean =>
+    matchesSearch(id) && matchesGradeLevel(id);
+
   const findColumnFor = (appId: string): string | null => {
     for (const col of Object.values(columns)) {
       if (col.appIds.includes(appId)) return col.id;
@@ -530,6 +569,16 @@ export function AdmissionsKanban({
           />
         </div>
 
+        {gradeLevelFilterOptions.length > 0 && (
+          <DataTableFacetedFilter
+            title={t("filterGradeLevel")}
+            options={gradeLevelFilterOptions}
+            selected={gradeLevelFilter}
+            onChange={setGradeLevelFilter}
+            searchPlaceholder={t("filterGradeLevelSearch")}
+          />
+        )}
+
         {/* Board / list segmented control (saas-konzept .seg). */}
         <div
           className="inline-flex items-center gap-0.5 rounded-full border bg-card p-[3px]"
@@ -640,7 +689,7 @@ export function AdmissionsKanban({
           stages={stageOrder}
           tableColumns={initialTableColumns}
           applications={Object.values(applicationsById).filter((a) =>
-            matchesSearch(a.id),
+            matchesFilters(a.id),
           )}
           onOpenCard={openApplication}
         />
@@ -657,7 +706,7 @@ export function AdmissionsKanban({
                 const sort = stageSorts[stage.id];
                 const visibleApps = sortApplications(
                   ids
-                    .filter(matchesSearch)
+                    .filter(matchesFilters)
                     .map((id) => applicationsById[id])
                     .filter(Boolean),
                   sort,
@@ -709,11 +758,7 @@ export function AdmissionsKanban({
           sources={initialSources}
           initialStageId={createStageId}
           initialFamilyId={createFamilyId}
-          existingFamilies={Object.values(applicationsById).map((a) => ({
-            id: a.familyId,
-            name: a.family.name ?? `${a.childLastName}`,
-            contactNames: a.family.contactNames,
-          }))}
+          existingFamilies={existingFamilies}
           onClose={() => {
             setShowCreate(false);
             setCreateStageId(null);

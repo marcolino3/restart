@@ -27,6 +27,8 @@ import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFor
 
 import { createApplicationAction } from "../actions/create-application.action";
 import { getGradeLevelsAction } from "@/features/grade-levels/actions/get-grade-levels.action";
+import { buildGradeLevelOptions } from "../lib/grade-level-options";
+import { filterFamilies } from "../lib/family-search";
 import type { AdmissionSource, KanbanStage } from "../types";
 import type { SchoolClassOption } from "./EditApplicationDetailsDialog";
 import {
@@ -69,6 +71,10 @@ export interface GradeLevelOption {
   id: string;
   name: string;
   shortCode?: string | null;
+  /** `null` ⇒ top-level Stufe; otherwise the id of its parent Stufe. */
+  parentId?: string | null;
+  /** Ordering within its level (Stufen among Stufen, subgroups among siblings). */
+  sortOrder?: number;
 }
 
 interface Props {
@@ -132,6 +138,8 @@ export function CreateApplicationDialog({
           id: g.id,
           name: g.name,
           shortCode: g.shortCode,
+          parentId: g.parentId,
+          sortOrder: g.sortOrder,
         })),
       );
     });
@@ -157,27 +165,10 @@ export function CreateApplicationDialog({
     },
   });
 
-  const dedupedFamilies = useMemo(() => {
-    const seen = new Set<string>();
-    const out: ExistingFamily[] = [];
-    for (const f of existingFamilies) {
-      if (seen.has(f.id)) continue;
-      seen.add(f.id);
-      out.push(f);
-    }
-    return out;
-  }, [existingFamilies]);
-
-  const familyMatches = useMemo(() => {
-    const q = familySearch.trim().toLowerCase();
-    if (!q) return dedupedFamilies.slice(0, 5);
-    return dedupedFamilies
-      .filter((f) => {
-        const hay = [f.name, ...f.contactNames].join(" ").toLowerCase();
-        return hay.includes(q);
-      })
-      .slice(0, 5);
-  }, [dedupedFamilies, familySearch]);
+  const familyMatches = useMemo(
+    () => filterFamilies(existingFamilies, familySearch),
+    [existingFamilies, familySearch],
+  );
 
   const onSubmit = async (values: FormValues) => {
     const dob = values.childDateOfBirth
@@ -236,10 +227,7 @@ export function CreateApplicationDialog({
     value: s.id,
     label: s.name,
   }));
-  const gradeLevelOptions = gradeLevels.map((g) => ({
-    value: g.id,
-    label: g.shortCode ? `${g.name} (${g.shortCode})` : g.name,
-  }));
+  const gradeLevelOptions = buildGradeLevelOptions(gradeLevels);
   const noneOption = { value: NONE, label: t("noneOption") };
   const schoolClassOptions = [
     noneOption,

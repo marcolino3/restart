@@ -32,6 +32,7 @@ import type {
 } from "../actions/get-application-detail.action";
 import type { AdmissionSource } from "../types";
 import type { GradeLevelOption } from "./CreateApplicationDialog";
+import { buildGradeLevelOptions } from "../lib/grade-level-options";
 import {
   ContactPersonsFieldArray,
   ContactSchema,
@@ -268,10 +269,7 @@ export function EditApplicationDetailsDialog({
   const noneOption = { value: NONE, label: t("noneOption") };
   const gradeLevelOptions = [
     noneOption,
-    ...gradeLevels.map((g) => ({
-      value: g.id,
-      label: g.shortCode ? `${g.name} (${g.shortCode})` : g.name,
-    })),
+    ...buildGradeLevelOptions(gradeLevels),
   ];
   const schoolClassOptions = [
     noneOption,

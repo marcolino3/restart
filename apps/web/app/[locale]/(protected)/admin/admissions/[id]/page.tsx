@@ -80,11 +80,16 @@ export default async function AdmissionDetailRoute({ params }: PageProps) {
     : [];
   const sources = kanbanData.success ? kanbanData.data.sources : [];
 
-  // Flat list incl. subgroups — the edit-details dialog assigns any level.
+  // Incl. subgroups (parentId != null) — the edit-details dialog assigns any
+  // level and renders the Stufe → Untergruppe hierarchy in its select.
   const gradeLevels = gradeLevelsRes.success
-    ? [...gradeLevelsRes.data]
-        .sort((a, b) => a.sortOrder - b.sortOrder)
-        .map((g) => ({ id: g.id, name: g.name, shortCode: g.shortCode }))
+    ? gradeLevelsRes.data.map((g) => ({
+        id: g.id,
+        name: g.name,
+        shortCode: g.shortCode,
+        parentId: g.parentId,
+        sortOrder: g.sortOrder,
+      }))
     : [];
   const schoolClasses = schoolClassesRes.success
     ? [...schoolClassesRes.data]
