@@ -166,6 +166,8 @@ export enum AdmissionApplicationStatus {
 
 export type AdmissionAppointment = {
   __typename?: 'AdmissionAppointment';
+  activity?: Maybe<AdmissionActivity>;
+  activityId?: Maybe<Scalars['ID']['output']>;
   application?: Maybe<AdmissionApplication>;
   applicationId: Scalars['ID']['output'];
   appointmentType?: Maybe<AdmissionAppointmentType>;
