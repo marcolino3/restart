@@ -126,6 +126,23 @@ export class ChatsService {
     return count > 0;
   }
 
+  /**
+   * Org members the caller can start a chat with — everyone in the active org
+   * except the caller. Gated by CHAT_READ (not EMPLOYEE_READ), so a chat user
+   * without HR access can still pick recipients. Returns Memberships with the
+   * user relation for name/avatar rendering.
+   */
+  async listContacts(
+    orgId: string,
+    callerMembershipId: string,
+  ): Promise<Membership[]> {
+    const memberships = await this.membershipsRepo.find({
+      where: { organizationId: orgId, isActive: true },
+      relations: { user: true },
+    });
+    return memberships.filter((m) => m.id !== callerMembershipId);
+  }
+
   async findConversation(
     orgId: string,
     conversationId: string,

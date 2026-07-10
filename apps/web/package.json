@@ -65,6 +65,7 @@
     "date-fns": "^4.4.0",
     "embla-carousel-react": "^8.6.0",
     "graphql-request": "^7.4.0",
+    "graphql-ws": "^6.0.8",
     "input-otp": "^1.4.2",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^1.23.0",
