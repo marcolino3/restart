@@ -10,6 +10,13 @@ export interface IStudent extends IBase {
   enrollmentDate?: string | null;
   exitDate?: string | null;
   notes?: string | null;
+  preferredName?: string | null;
+  placeOfBirth?: string | null;
+  firstLanguages?: string[] | null;
+  familyLanguages?: string[] | null;
+  religion?: string | null;
+  socialSecurityNumber?: string | null;
+  externalStudentId?: string | null;
   admissionStageId?: string | null;
   organizationId: string;
   organization?: IOrganization | null;

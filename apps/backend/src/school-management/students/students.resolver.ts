@@ -28,7 +28,7 @@ export class StudentsResolver {
   constructor(private readonly studentsService: StudentsService) {}
 
   @Query(() => [Student], { name: 'studentsByOrgId' })
-  @Permissions('SCHOOL_CLASS_READ')
+  @Permissions('STUDENT_READ')
   findAll(@CurrentOrgId() orgId: string, @CurrentUser() user: TokenPayload) {
     return this.studentsService.findVisibleByUser(
       user.sub,
@@ -39,7 +39,7 @@ export class StudentsResolver {
   }
 
   @Query(() => Student, { name: 'studentById' })
-  @Permissions('SCHOOL_CLASS_READ')
+  @Permissions('STUDENT_READ')
   async findOne(
     @Args('id', { type: () => ID }) id: string,
     @CurrentOrgId() orgId: string,
@@ -56,7 +56,7 @@ export class StudentsResolver {
   }
 
   @Mutation(() => Student)
-  @Permissions('SCHOOL_CLASS_WRITE')
+  @Permissions('STUDENT_WRITE')
   createStudent(
     @Args('input') input: CreateStudentInput,
     @CurrentOrgId() orgId: string,
@@ -65,7 +65,7 @@ export class StudentsResolver {
   }
 
   @Mutation(() => Student)
-  @Permissions('SCHOOL_CLASS_WRITE')
+  @Permissions('STUDENT_WRITE')
   async updateStudent(
     @Args('input') input: UpdateStudentInput,
     @CurrentOrgId() orgId: string,
@@ -82,7 +82,7 @@ export class StudentsResolver {
   }
 
   @Mutation(() => Boolean)
-  @Permissions('SCHOOL_CLASS_DELETE')
+  @Permissions('STUDENT_DELETE')
   async deleteStudent(
     @Args('id', { type: () => ID }) id: string,
     @CurrentOrgId() orgId: string,
@@ -99,7 +99,7 @@ export class StudentsResolver {
   }
 
   @Mutation(() => Student)
-  @Permissions('SCHOOL_CLASS_WRITE')
+  @Permissions('STUDENT_WRITE')
   async moveStudentToStage(
     @Args('studentId', { type: () => ID }) studentId: string,
     @Args('stageId', { type: () => ID }) stageId: string,

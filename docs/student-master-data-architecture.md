@@ -73,7 +73,16 @@ Neue Spalten (alle nullable, additive Migration — forward-only, keine Enum-`AD
 - `family_languages` text[]
 - `social_security_number` text  *(SCHOOL_ONLY — hochsensibel)*
 - `external_student_id` text
-- `photo_file_id` uuid FK → File (nullable, ON DELETE SET NULL)
+
+**Kein `photo_file_id`-FK.** Es gibt im Projekt keine `File`-Entity. Fotos laufen über den
+bestehenden `sharp`-Bild-Upload (`upload/upload.controller.ts`) konventionsbasiert als
+`uploads/students/<studentId>.webp` — genau wie Employee-Fotos/Org-Logos, ohne DB-Spalte
+(Existenz per HEAD-Probe). Für das Student-Foto daher NUR:
+- `students` in `ALLOWED_ENTITIES` (`upload.controller.ts`) aufnehmen + Ownership-Regel in
+  `assertTargetInOrg()` (analog `employees`: Student gehört zur aktiven Org). Spec-Test
+  `upload.controller.spec.ts` (nutzt `'students'` heute als abgelehntes Beispiel) anpassen.
+- Frontend: `UploadFormField` mit `entity="students"` id={studentId} wiederverwenden;
+  `StudentAvatar.tsx` src → `/api/uploads/students/${studentId}.webp` mit DiceBear→Initialen-Fallback.
 
 Neue Join-Tabelle **`student_nationalities`** (M:N Student ↔ Country), analog
 `school_class_grade_levels`. Country-Entity existiert bereits.
