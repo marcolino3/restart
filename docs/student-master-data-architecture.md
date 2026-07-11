@@ -84,8 +84,10 @@ bestehenden `sharp`-Bild-Upload (`upload/upload.controller.ts`) konventionsbasie
 - Frontend: `UploadFormField` mit `entity="students"` id={studentId} wiederverwenden;
   `StudentAvatar.tsx` src → `/api/uploads/students/${studentId}.webp` mit DiceBear→Initialen-Fallback.
 
-Neue Join-Tabelle **`student_nationalities`** (M:N Student ↔ Country), analog
-`school_class_grade_levels`. Country-Entity existiert bereits.
+Nationalitäten als **ISO-Ländercode-Array** (`nationalities text[]`) auf `students`,
+gleiche Quelle wie das Org-Land (`CountryComboboxFormField`, ISO-Codes wie `CH`/`DE`).
+Bewusst KEIN M:N-Join auf die `country`-Tabelle: die ist projektweit ungeseedet
+(kein Seeder, 0 Zeilen in lokal/Staging/Prod) — ein Join wäre funktional leer.
 
 ### Sensible Felder
 - `social_security_number` + `religion`: `@HideField()` erwägen bzw. nur über `STUDENT_READ`
@@ -103,19 +105,19 @@ auf diese umstellen. Rollen-Backfill nötig (bestehende Admin-Rollen bekommen `S
 - `Student`-Type um die Felder erweitern (Codegen-Drift-Gate beachten → nach Backend-Boot
   `pnpm --filter @restart/web codegen` + committen).
 - `create-student.input.ts` / `update-student.input.ts` erweitern (class-validator).
-- Nationalitäten als `countryIds: string[]` im Input; Resolver mappt auf die Join-Tabelle.
+- Nationalitäten als `nationalities: string[]` (ISO-Codes) im Input — plain text[]-Spalte, kein Join-Mapping.
 
 ### Frontend
 - Schüler-Detail/Bearbeiten-Form um die Felder (Blöcke Identität / Sprache / Register).
 - Foto-Upload: bestehende `image-upload/`-Komponente wiederverwenden; `StudentAvatar` so anpassen,
   dass ein echtes Foto den DiceBear-Fallback ersetzt.
-- Nationalität: Country-Multiselect (Combobox). Sprachen: Text[]-Chips-Input.
+- Nationalität: `CountryComboboxFormField` mit `multiple` (ISO-Codes). Sprachen: `TagsInputFormField` (Text-Chips).
 - i18n DE+EN, ss statt ß.
 
 ### Tests
-- Unit: Mapping countryIds↔Join, Input-Validierung.
-- **Integration (echte DB, Port 5435):** Nationalitäten-Join-Writes, Multi-Tenant (Fremd-Org-Student
-  nicht lesbar/änderbar), Foto-FK SET NULL.
+- Unit: Input-Validierung.
+- **Integration (echte DB, Port 5435):** Nationalitäten-`text[]`-Writes (create/replace/omit),
+  Multi-Tenant (Fremd-Org-Student nicht lesbar/änderbar).
 - E2E: Stammdaten bearbeiten + speichern (Happy) + Fremd-Org-Zugriff (Negativ).
 
 ---
@@ -187,9 +189,9 @@ Nicht Teil dieser Umsetzung. Skizze nur als Andock-Referenz:
 
 ## Umsetzungsreihenfolge (wenn Bau startet)
 
-1. **Scope 1 Backend** — Migration (Student-Spalten + `student_nationalities`), `STUDENT_*`-Perms
+1. **Scope 1 Backend** — Migration (Student-Spalten inkl. `nationalities text[]`), `STUDENT_*`-Perms
    + Rollen-Backfill, Entity/DTO/Resolver, Codegen. Tests (Unit + Integration).
-2. **Scope 1 Frontend** — Form-Blöcke, Foto-Upload, Country-Multiselect, i18n. Tests (Unit + E2E).
+2. **Scope 1 Frontend** — Form-Blöcke, Foto-Upload, Nationalitäten-Multiselect (ISO-Codes), i18n. Tests (Unit + E2E).
 3. **Scope 2 Backend** — `StudentRecordCategory` + `StudentRecordEntry` + Doku-Endpoint,
    `STUDENT_RECORD_*`-Perms. Tests.
 4. **Scope 2 Frontend** — „Förderung"-Tab + Kategorie-Verwaltung. Tests.

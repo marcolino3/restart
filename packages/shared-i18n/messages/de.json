@@ -1616,7 +1616,16 @@
     "recentEvents": "Letzte Ereignisse",
     "noRecentEvents": "Noch keine Ereignisse erfasst.",
     "learningState": "Lernstand",
-    "recordedBy": "erfasst von {name}"
+    "recordedBy": "erfasst von {name}",
+    "preferredName": "Rufname",
+    "placeOfBirth": "Geburtsort",
+    "nationalities": "Nationalität(en)",
+    "firstLanguages": "Erstsprache(n)",
+    "familyLanguages": "Familiensprache(n)",
+    "religion": "Religion / Konfession",
+    "socialSecurityNumber": "AHV-Nummer",
+    "externalStudentId": "Externe Schüler-ID",
+    "sensitiveHint": "Religion und AHV-Nummer sind besondere Kategorien personenbezogener Daten (DSGVO Art. 9) — nur mit Berechtigung erfassen."
   },
   "ContactPersons": {
     "contactPersons": "Bezugspersonen",

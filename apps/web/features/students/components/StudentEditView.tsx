@@ -31,6 +31,7 @@ import {
   StudentFormOutput,
 } from "../schemas/student-form.schema";
 import { updateStudentAction } from "../actions/update-student.action";
+import { StudentMasterDataFields } from "./StudentMasterDataFields";
 import { StudentAvatar } from "./StudentAvatar";
 import { StudentEnrollmentsList } from "./StudentEnrollmentsList";
 import { StudentContactPersonsList } from "./StudentContactPersonsList";
@@ -88,6 +89,14 @@ export default function StudentEditView({
         : null,
       exitDate: student.exitDate ? new Date(student.exitDate) : null,
       notes: student.notes ?? "",
+      preferredName: student.preferredName ?? "",
+      placeOfBirth: student.placeOfBirth ?? "",
+      firstLanguages: student.firstLanguages ?? [],
+      familyLanguages: student.familyLanguages ?? [],
+      religion: student.religion ?? "",
+      socialSecurityNumber: student.socialSecurityNumber ?? "",
+      externalStudentId: student.externalStudentId ?? "",
+      nationalities: student.nationalities ?? [],
     },
   });
 
@@ -226,6 +235,7 @@ export default function StudentEditView({
                           width="w-1/2"
                         />
                       </div>
+                      <StudentMasterDataFields />
                     </section>
 
                     <Separator />
@@ -234,6 +244,12 @@ export default function StudentEditView({
                       <h4 className="text-sm font-medium text-foreground">
                         {tS("schoolData")}
                       </h4>
+                      <InputFormField
+                        name="externalStudentId"
+                        label="externalStudentId"
+                        namespace="Students"
+                        width="w-1/2"
+                      />
                       <div className="flex gap-4">
                         <DatePickerFormField
                           name="enrollmentDate"

@@ -1,9 +1,9 @@
 /**
  * Integration test for the student master-data extension (Scope 1).
  *
- * Covers what a mock-based unit test cannot: the real M:N `student_nationalities`
- * join-table writes on create/update (a TypeORM relation, not a scalar column),
- * the new scalar fields, and multi-tenant isolation on update.
+ * Covers what a mock-based unit test cannot: the real text[] array-column
+ * writes on create/update (nationalities + languages), the new scalar fields,
+ * and multi-tenant isolation on update.
  *
  * Requires the PostgreSQL test DB:
  *   docker compose -f docker-compose.test.yml up -d
@@ -20,16 +20,13 @@ import { Student } from '@/school-management/students/entities/student.entity';
 import { AdmissionStage } from '@/school-management/admission-stages/entities/admission-stage.entity';
 import { AdmissionStageType } from '@/school-management/admission-stages/enums/admission-stage-type.enum';
 import { AdmissionStagesService } from '@/school-management/admission-stages/admission-stages.service';
-import { Country } from '@/countries/entities/country.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { createTestingApp, cleanDatabase } from './test-utils';
 
 // Minimal module: wires only StudentsService + its direct deps, avoiding the
 // full StudentsModule -> better-auth (ESM) chain.
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Student, AdmissionStage, Country]),
-  ],
+  imports: [TypeOrmModule.forFeature([Student, AdmissionStage])],
   providers: [StudentsService, AdmissionStagesService],
 })
 class StudentMasterDataTestModule {}
@@ -41,7 +38,6 @@ describe('StudentsService master-data (Integration)', () => {
 
   let orgRepo: Repository<Organization>;
   let stageRepo: Repository<AdmissionStage>;
-  let countryRepo: Repository<Country>;
   let studentRepo: Repository<Student>;
 
   beforeAll(async () => {
@@ -54,7 +50,6 @@ describe('StudentsService master-data (Integration)', () => {
 
     orgRepo = dataSource.getRepository(Organization);
     stageRepo = dataSource.getRepository(AdmissionStage);
-    countryRepo = dataSource.getRepository(Country);
     studentRepo = dataSource.getRepository(Student);
   }, 30000);
 
@@ -111,82 +106,52 @@ describe('StudentsService master-data (Integration)', () => {
     expect(fromDb!.externalStudentId).toBe('EXT-42');
   });
 
-  it('writes the nationalities M:N join on create and reads it back', async () => {
+  it('writes the nationalities ISO-code array on create and reads it back', async () => {
     const org = await seedOrgWithStage();
-    const ch = await countryRepo.save(
-      countryRepo.create({ name: 'Schweiz', isoCode: 'CH' }),
-    );
-    const it = await countryRepo.save(
-      countryRepo.create({ name: 'Italien', isoCode: 'IT' }),
-    );
 
     const created = await service.create(
       {
         firstName: 'Marco',
         lastName: 'Rossi',
-        nationalityCountryIds: [ch.id, it.id],
+        nationalities: ['CH', 'IT'],
       },
       org.id,
     );
 
-    const withRel = await studentRepo.findOne({
-      where: { id: created.id },
-      relations: ['nationalities'],
-    });
-    const isoCodes = (withRel!.nationalities ?? [])
-      .map((c) => c.isoCode)
-      .sort();
-    expect(isoCodes).toEqual(['CH', 'IT']);
+    const fromDb = await studentRepo.findOne({ where: { id: created.id } });
+    expect((fromDb!.nationalities ?? []).sort()).toEqual(['CH', 'IT']);
   });
 
-  it('replaces the nationalities join on update (add + remove)', async () => {
+  it('replaces the nationalities array on update (add + remove)', async () => {
     const org = await seedOrgWithStage();
-    const ch = await countryRepo.save(
-      countryRepo.create({ name: 'Schweiz', isoCode: 'CH' }),
-    );
-    const it = await countryRepo.save(
-      countryRepo.create({ name: 'Italien', isoCode: 'IT' }),
-    );
-    const de = await countryRepo.save(
-      countryRepo.create({ name: 'Deutschland', isoCode: 'DE' }),
-    );
 
     const created = await service.create(
       {
         firstName: 'Nina',
         lastName: 'Muster',
-        nationalityCountryIds: [ch.id, it.id],
+        nationalities: ['CH', 'IT'],
       },
       org.id,
     );
 
     // Update: CH stays, IT removed, DE added.
     await service.update(
-      { id: created.id, nationalityCountryIds: [ch.id, de.id] },
+      { id: created.id, nationalities: ['CH', 'DE'] },
       org.id,
     );
 
-    const withRel = await studentRepo.findOne({
-      where: { id: created.id },
-      relations: ['nationalities'],
-    });
-    const isoCodes = (withRel!.nationalities ?? [])
-      .map((c) => c.isoCode)
-      .sort();
-    expect(isoCodes).toEqual(['CH', 'DE']);
+    const fromDb = await studentRepo.findOne({ where: { id: created.id } });
+    expect((fromDb!.nationalities ?? []).sort()).toEqual(['CH', 'DE']);
   });
 
   it('leaves nationalities untouched when the field is omitted on update', async () => {
     const org = await seedOrgWithStage();
-    const ch = await countryRepo.save(
-      countryRepo.create({ name: 'Schweiz', isoCode: 'CH' }),
-    );
 
     const created = await service.create(
       {
         firstName: 'Tim',
         lastName: 'Muster',
-        nationalityCountryIds: [ch.id],
+        nationalities: ['CH'],
       },
       org.id,
     );
@@ -194,12 +159,9 @@ describe('StudentsService master-data (Integration)', () => {
     // Update a scalar only — nationalities must remain.
     await service.update({ id: created.id, preferredName: 'Timmy' }, org.id);
 
-    const withRel = await studentRepo.findOne({
-      where: { id: created.id },
-      relations: ['nationalities'],
-    });
-    expect((withRel!.nationalities ?? []).map((c) => c.isoCode)).toEqual(['CH']);
-    expect(withRel!.preferredName).toBe('Timmy');
+    const fromDb = await studentRepo.findOne({ where: { id: created.id } });
+    expect(fromDb!.nationalities ?? []).toEqual(['CH']);
+    expect(fromDb!.preferredName).toBe('Timmy');
   });
 
   it('does not update a student of another organization (multi-tenant isolation)', async () => {

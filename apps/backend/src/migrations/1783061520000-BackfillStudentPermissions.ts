@@ -11,9 +11,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  *   STUDENT_WRITE  → ORG_OWNER, ORG_ADMIN, OFFICE
  *   STUDENT_DELETE → ORG_OWNER, ORG_ADMIN, OFFICE
  */
-export class BackfillStudentPermissions1783061520000
-  implements MigrationInterface
-{
+export class BackfillStudentPermissions1783061520000 implements MigrationInterface {
   name = 'BackfillStudentPermissions1783061520000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

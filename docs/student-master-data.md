@@ -29,7 +29,7 @@ aktuell = `leftAt IS NULL`) → `SchoolClass.gradeLevels`.
 |---|---|---|---|
 | Rufname (`preferredName`) | Text | optional | bevorzugter Name im Alltag |
 | Geburtsort (`placeOfBirth`) | Text | optional | Register/Zeugnis |
-| Nationalität(en) | **Referenz auf `Country`** (M:N) | optional | Join-Tabelle `student_nationalities`, analog `school_class_grade_levels` |
+| Nationalität(en) | **ISO-Ländercodes** (`text[]`) | optional | Spalte `nationalities`, gleiche Quelle wie Org-Land (`CountryComboboxFormField`, ISO-Codes) — kein Join auf die ungeseedete `country`-Tabelle |
 | Foto (`photoFileId`) | Bild-Upload (FK → File) | optional | Datenschutz-Gate; ersetzt DiceBear-Fallback |
 
 ### Block B — Sprache & Bildung

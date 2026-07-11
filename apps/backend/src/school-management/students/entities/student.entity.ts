@@ -1,17 +1,8 @@
-import { Country } from '@/countries/entities/country.entity';
 import { AbstractEntity } from '@/database/abstract.entity';
 import { Gender } from '@/database/enums/gender.enum';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { ObjectType, Field, ID } from '@nestjs/graphql';
-import {
-  Column,
-  Entity,
-  Index,
-  JoinColumn,
-  JoinTable,
-  ManyToMany,
-  ManyToOne,
-} from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { AdmissionStage } from '../../admission-stages/entities/admission-stage.entity';
 import { IStudent } from '../interfaces/student.interface';
 
@@ -101,15 +92,15 @@ export class Student extends AbstractEntity<Student> implements IStudent {
   @Column('text', { name: 'external_student_id', nullable: true })
   externalStudentId?: string | null;
 
-  /** Nationalities — M:N to the global Country entity. */
-  @Field(() => [Country], { nullable: true })
-  @ManyToMany(() => Country)
-  @JoinTable({
-    name: 'student_nationalities',
-    joinColumn: { name: 'student_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'country_id', referencedColumnName: 'id' },
-  })
-  nationalities?: Country[];
+  /**
+   * Nationalities as ISO country codes (e.g. `['CH', 'DE']`). Stored as a
+   * text[] to match the project's country pattern (the org `country` field
+   * and `CountryComboboxFormField` both use ISO codes), rather than a relation
+   * to the unseeded `country` table.
+   */
+  @Field(() => [String], { nullable: true })
+  @Column('text', { name: 'nationalities', array: true, nullable: true })
+  nationalities?: string[] | null;
 
   @Field(() => ID, { nullable: true })
   @Column('uuid', { name: 'admission_stage_id', nullable: true })

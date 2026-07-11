@@ -39,6 +39,15 @@ export const updateStudentAction = async (values: StudentFormOutput) => {
       : null,
     exitDate: parsed.exitDate ? toIsoDate(parsed.exitDate) : null,
     notes: parsed.notes || null,
+    // Master data extension (Scope 1) — send explicitly so clearing works.
+    preferredName: parsed.preferredName || null,
+    placeOfBirth: parsed.placeOfBirth || null,
+    firstLanguages: parsed.firstLanguages,
+    familyLanguages: parsed.familyLanguages,
+    religion: parsed.religion || null,
+    socialSecurityNumber: parsed.socialSecurityNumber || null,
+    externalStudentId: parsed.externalStudentId || null,
+    nationalities: parsed.nationalities,
   };
 
   try {

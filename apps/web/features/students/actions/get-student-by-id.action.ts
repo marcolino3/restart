@@ -12,6 +12,14 @@ export type StudentDetail = {
   enrollmentDate?: string | null;
   exitDate?: string | null;
   notes?: string | null;
+  preferredName?: string | null;
+  placeOfBirth?: string | null;
+  firstLanguages?: string[] | null;
+  familyLanguages?: string[] | null;
+  religion?: string | null;
+  socialSecurityNumber?: string | null;
+  externalStudentId?: string | null;
+  nationalities?: string[] | null;
   isActive: boolean;
 };
 
@@ -30,6 +38,14 @@ const GetStudentByIdDocument = gql`
       enrollmentDate
       exitDate
       notes
+      preferredName
+      placeOfBirth
+      firstLanguages
+      familyLanguages
+      religion
+      socialSecurityNumber
+      externalStudentId
+      nationalities
       isActive
     }
   }

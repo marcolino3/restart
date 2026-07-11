@@ -10,9 +10,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Forward-only: enum values cannot be removed in PostgreSQL, so `down` is a
  * no-op.
  */
-export class AddStudentPermissionEnum1783061510000
-  implements MigrationInterface
-{
+export class AddStudentPermissionEnum1783061510000 implements MigrationInterface {
   name = 'AddStudentPermissionEnum1783061510000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

@@ -4,9 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { DateTime } from 'luxon';
-import { Country } from '@/countries/entities/country.entity';
 import { AdmissionStage } from '../admission-stages/entities/admission-stage.entity';
 import { AdmissionStageType } from '../admission-stages/enums/admission-stage-type.enum';
 import { AdmissionStagesService } from '../admission-stages/admission-stages.service';
@@ -21,19 +20,8 @@ export class StudentsService {
     private readonly studentRepo: Repository<Student>,
     @InjectRepository(AdmissionStage)
     private readonly stagesRepo: Repository<AdmissionStage>,
-    @InjectRepository(Country)
-    private readonly countryRepo: Repository<Country>,
     private readonly admissionStagesService: AdmissionStagesService,
   ) {}
-
-  /**
-   * Resolves nationality Country ids to Country entities for the M:N relation.
-   * Countries are global (not org-scoped). Unknown ids are silently dropped.
-   */
-  private async resolveNationalities(ids?: string[] | null): Promise<Country[]> {
-    if (!ids || ids.length === 0) return [];
-    return this.countryRepo.findBy({ id: In(ids) });
-  }
 
   async create(
     input: CreateStudentInput,
@@ -45,14 +33,10 @@ export class StudentsService {
         await this.admissionStagesService.findDefault(organizationId);
       admissionStageId = defaultStage?.id ?? null;
     }
-    // Pull the M:N nationality ids out of the scalar spread and resolve them
-    // to Country entities for the relation.
-    const { nationalityCountryIds, ...scalar } = input;
     const student = this.studentRepo.create({
-      ...scalar,
+      ...input,
       admissionStageId,
       organizationId,
-      nationalities: await this.resolveNationalities(nationalityCountryIds),
     });
     const saved = await this.studentRepo.save(student);
     return this.findOne(saved.id, organizationId);
@@ -240,7 +224,7 @@ export class StudentsService {
   async findOne(id: string, organizationId: string): Promise<Student> {
     const student = await this.studentRepo.findOne({
       where: { id, organizationId, isActive: true },
-      relations: ['admissionStage', 'nationalities'],
+      relations: ['admissionStage'],
     });
     if (!student) {
       throw new NotFoundException(`Student ${id} not found`);
@@ -253,15 +237,9 @@ export class StudentsService {
     organizationId: string,
   ): Promise<Student> {
     const student = await this.findOne(input.id, organizationId);
-    // Object.assign only handles scalars; the M:N nationalities relation must
-    // be resolved and set explicitly. Only touch it when the client sent the
-    // field (undefined = leave as-is; [] = clear).
-    const { nationalityCountryIds, ...scalar } = input;
-    Object.assign(student, scalar);
-    if (nationalityCountryIds !== undefined) {
-      student.nationalities =
-        await this.resolveNationalities(nationalityCountryIds);
-    }
+    // `nationalities` is a plain text[] column now — Object.assign handles it
+    // like any other scalar (undefined = leave as-is; [] = clear).
+    Object.assign(student, input);
     await this.studentRepo.save(student);
     return this.findOne(input.id, organizationId);
   }

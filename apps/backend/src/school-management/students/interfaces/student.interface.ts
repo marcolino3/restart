@@ -17,6 +17,7 @@ export interface IStudent extends IBase {
   religion?: string | null;
   socialSecurityNumber?: string | null;
   externalStudentId?: string | null;
+  nationalities?: string[] | null;
   admissionStageId?: string | null;
   organizationId: string;
   organization?: IOrganization | null;

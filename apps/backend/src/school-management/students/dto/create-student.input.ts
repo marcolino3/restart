@@ -85,12 +85,12 @@ export class CreateStudentInput {
   @IsOptional()
   externalStudentId?: string;
 
-  /** Nationalities as Country ids (mapped to the M:N relation in the service). */
-  @Field(() => [ID], { nullable: true })
+  /** Nationalities as ISO country codes (e.g. `['CH', 'DE']`). */
+  @Field(() => [String], { nullable: true })
   @IsArray()
-  @IsUUID('all', { each: true })
+  @IsString({ each: true })
   @IsOptional()
-  nationalityCountryIds?: string[];
+  nationalities?: string[];
 
   @Field(() => ID, { nullable: true })
   @IsUUID()
