@@ -13,7 +13,9 @@ module.exports = {
         foreground: "hsl(0 0% 4%)",
         card: "hsl(0 0% 100%)",
         "card-foreground": "hsl(0 0% 4%)",
-        primary: "hsl(0 0% 9%)",
+        // Salbei accent — mirrors the web default theme so "own" chat bubbles
+        // and primary actions read the same green across web and mobile.
+        primary: "hsl(131 37% 36%)",
         "primary-foreground": "hsl(0 0% 98%)",
         secondary: "hsl(0 0% 96%)",
         "secondary-foreground": "hsl(0 0% 9%)",

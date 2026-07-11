@@ -23,10 +23,17 @@ export class GqlThrottlerGuard extends ThrottlerGuard {
   // Loopback-IP — bei aktivem Fast Refresh schlägt das sofort gegen `short:
   // 10/s`. Außerhalb von Production deshalb Localhost vom Limit ausnehmen.
   protected async shouldSkip(context: ExecutionContext): Promise<boolean> {
+    // graphql-ws subscriptions have no Express request — the persistent WS
+    // connection carries no per-message HTTP req with a `.header()` method, so
+    // the underlying ThrottlerGuard (which reads headers) would crash. Rate
+    // limiting a long-lived socket per message makes no sense anyway: skip.
+    const { req } = this.getRequestResponse(context);
+    if (!req || typeof (req as { header?: unknown }).header !== 'function') {
+      return true;
+    }
     if (process.env.NODE_ENV === 'production') {
       return super.shouldSkip(context);
     }
-    const { req } = this.getRequestResponse(context);
     const ip =
       (req as { ip?: string; ips?: string[] }).ip ??
       (req as { ips?: string[] }).ips?.[0];

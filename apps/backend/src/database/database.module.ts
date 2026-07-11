@@ -74,6 +74,10 @@ import { ProtocolTemplate } from '@/project-management/protocols/entities/protoc
 import { AccessReviewRecord } from '@/access-review/entities/access-review-record.entity';
 import { PurgeCandidate } from '@/retention-purge/entities/purge-candidate.entity';
 import { Permission } from '@/permissions/entities/permission.entity';
+import { Conversation } from '@/chats/entities/conversation.entity';
+import { ConversationParticipant } from '@/chats/entities/conversation-participant.entity';
+import { Message } from '@/chats/entities/message.entity';
+import { MessageAttachment } from '@/chats/entities/message-attachment.entity';
 import { Role } from '@/roles/entities/role.entity';
 import { UserEmail } from '@/user-emails/entities/user-email.entity';
 import { User } from '@/users/entities/user.entity';
@@ -162,6 +166,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       ProtocolTemplate,
       AccessReviewRecord,
       PurgeCandidate,
+      Conversation,
+      ConversationParticipant,
+      Message,
+      MessageAttachment,
     ]),
   ],
   exports: [TypeOrmModule],

@@ -142,6 +142,8 @@ const PERMISSION_CATALOG: Array<{
     code: PermissionCode.VVT_MANAGE,
     name: 'Verarbeitungsverzeichnis verwalten',
   },
+  { code: PermissionCode.CHAT_READ, name: 'Chats lesen' },
+  { code: PermissionCode.CHAT_WRITE, name: 'Chats schreiben' },
 ];
 
 export async function seedPermissionCatalog(manager: EntityManager) {

@@ -86,6 +86,9 @@ export enum PermissionCode {
 
   VVT_READ = 'VVT_READ',
   VVT_MANAGE = 'VVT_MANAGE',
+
+  CHAT_READ = 'CHAT_READ',
+  CHAT_WRITE = 'CHAT_WRITE',
 }
 
 registerEnumType(PermissionCode, {
