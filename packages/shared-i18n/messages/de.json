@@ -2961,6 +2961,16 @@
     "loadError": "Chats konnten nicht geladen werden.",
     "typeDirect": "Direkt",
     "typeGroup": "Gruppe",
-    "typeTeam": "Team"
+    "typeTeam": "Team",
+    "attach": "Datei anhängen",
+    "attachError": "Datei konnte nicht angehängt werden.",
+    "loadOlder": "Ältere Nachrichten laden",
+    "loadingOlder": "Wird geladen …",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "save": "Speichern",
+    "messageActions": "Nachrichten-Aktionen",
+    "editError": "Nachricht konnte nicht bearbeitet werden.",
+    "deleteError": "Nachricht konnte nicht gelöscht werden."
   }
 }

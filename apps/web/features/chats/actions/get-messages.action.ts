@@ -28,6 +28,12 @@ const ConversationMessagesDocument = graphql(`
           lastName
         }
       }
+      attachments {
+        id
+        originalName
+        mimeType
+        sizeBytes
+      }
     }
   }
 `);

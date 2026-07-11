@@ -2961,6 +2961,16 @@
     "loadError": "Could not load chats.",
     "typeDirect": "Direct",
     "typeGroup": "Group",
-    "typeTeam": "Team"
+    "typeTeam": "Team",
+    "attach": "Attach file",
+    "attachError": "Could not attach the file.",
+    "loadOlder": "Load older messages",
+    "loadingOlder": "Loading …",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "messageActions": "Message actions",
+    "editError": "Could not edit the message.",
+    "deleteError": "Could not delete the message."
   }
 }

@@ -17,9 +17,8 @@ declare module 'graphql-pg-subscriptions' {
       onMessage: (payload: unknown) => void,
     ): Promise<number>;
     unsubscribe(subId: number): void;
+    // v3.3.0 exposes asyncIterator (not asyncIterableIterator). NestJS accepts
+    // a plain AsyncIterator as a subscription source.
     asyncIterator<T>(triggers: string | string[]): AsyncIterator<T>;
-    asyncIterableIterator<T>(
-      triggers: string | string[],
-    ): AsyncIterableIterator<T>;
   }
 }

@@ -12,6 +12,7 @@ import { ConversationParticipant } from './entities/conversation-participant.ent
 import { Message } from './entities/message.entity';
 import { ConversationType } from './entities/conversation-type.enum';
 import { Membership } from '@/memberships/entities/membership.entity';
+import { TeamAccessService } from '@/employee-management/teams/team-access.service';
 
 const ORG = 'org-1';
 const ME = 'membership-me';
@@ -55,6 +56,10 @@ describe('ChatsService', () => {
         { provide: getRepositoryToken(Message), useValue: messagesRepo },
         { provide: getRepositoryToken(Membership), useValue: membershipsRepo },
         { provide: DataSource, useValue: { transaction: jest.fn() } },
+        {
+          provide: TeamAccessService,
+          useValue: { getDirectMembershipIdsForTeam: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -63,31 +68,73 @@ describe('ChatsService', () => {
 
   describe('assertParticipant (multi-tenant gate)', () => {
     it('throws Forbidden when the membership is not a participant', async () => {
-      participantsRepo.findOne.mockResolvedValue(null);
+      // DIRECT conversation → authorization comes from a participant row.
+      conversationsRepo.findOne.mockResolvedValue({
+        id: 'conv-1',
+        type: ConversationType.DIRECT,
+      });
+      participantsRepo.count.mockResolvedValue(0);
 
       await expect(
         service.assertParticipant(ORG, ME, 'conv-1'),
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
-    it('scopes the participant lookup to org, conversation and membership', async () => {
-      participantsRepo.findOne.mockResolvedValue({});
-
-      await service.assertParticipant(ORG, ME, 'conv-1');
-
-      expect(participantsRepo.findOne).toHaveBeenCalledWith({
-        where: {
-          organizationId: ORG,
-          conversationId: 'conv-1',
-          membershipId: ME,
-        },
+    it('resolves DIRECT/GROUP access from a participant row', async () => {
+      conversationsRepo.findOne.mockResolvedValue({
+        id: 'conv-1',
+        type: ConversationType.GROUP,
       });
+      participantsRepo.count.mockResolvedValue(1);
+      participantsRepo.findOne.mockResolvedValue({ id: 'p-1' });
+
+      await expect(
+        service.assertParticipant(ORG, ME, 'conv-1'),
+      ).resolves.toBeTruthy();
+    });
+
+    it('resolves TEAM access LIVE from the team roster, not a participant row', async () => {
+      conversationsRepo.findOne.mockResolvedValue({
+        id: 'conv-t',
+        type: ConversationType.TEAM,
+        teamId: 'team-1',
+      });
+      const teamAccess = service['teamAccess'] as unknown as {
+        getDirectMembershipIdsForTeam: jest.Mock;
+      };
+      teamAccess.getDirectMembershipIdsForTeam.mockResolvedValue([ME]);
+      participantsRepo.findOne.mockResolvedValue({ id: 'read-state' });
+
+      await expect(service.isParticipant(ORG, ME, 'conv-t')).resolves.toBe(
+        true,
+      );
+      expect(teamAccess.getDirectMembershipIdsForTeam).toHaveBeenCalledWith(
+        ORG,
+        'team-1',
+      );
+    });
+
+    it('denies TEAM access when the caller is not in the team roster', async () => {
+      conversationsRepo.findOne.mockResolvedValue({
+        id: 'conv-t',
+        type: ConversationType.TEAM,
+        teamId: 'team-1',
+      });
+      const teamAccess = service['teamAccess'] as unknown as {
+        getDirectMembershipIdsForTeam: jest.Mock;
+      };
+      teamAccess.getDirectMembershipIdsForTeam.mockResolvedValue([OTHER]);
+
+      await expect(service.isParticipant(ORG, ME, 'conv-t')).resolves.toBe(
+        false,
+      );
     });
   });
 
   describe('getMessages', () => {
     it('refuses to load messages of a conversation the caller is not in', async () => {
-      participantsRepo.findOne.mockResolvedValue(null);
+      // No such conversation → isParticipant false → assertParticipant throws.
+      conversationsRepo.findOne.mockResolvedValue(null);
 
       await expect(
         service.getMessages(ORG, ME, {
@@ -157,7 +204,11 @@ describe('ChatsService', () => {
   });
 
   describe('isParticipant', () => {
-    it('is true only when a participant row exists in the org', async () => {
+    it('for DIRECT/GROUP is true only when a participant row exists', async () => {
+      conversationsRepo.findOne.mockResolvedValue({
+        id: 'conv-1',
+        type: ConversationType.DIRECT,
+      });
       participantsRepo.count.mockResolvedValue(1);
       await expect(service.isParticipant(ORG, ME, 'conv-1')).resolves.toBe(
         true,

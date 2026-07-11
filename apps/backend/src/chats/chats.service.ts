@@ -7,9 +7,11 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, LessThan, Repository } from 'typeorm';
 import { Membership } from '@/memberships/entities/membership.entity';
+import { TeamAccessService } from '@/employee-management/teams/team-access.service';
 import { Conversation } from './entities/conversation.entity';
 import { ConversationParticipant } from './entities/conversation-participant.entity';
 import { Message } from './entities/message.entity';
+import { MessageAttachment } from './entities/message-attachment.entity';
 import { ConversationType } from './entities/conversation-type.enum';
 import { ParticipantRole } from './entities/participant-role.enum';
 import { CreateConversationInput } from './dto/create-conversation.input';
@@ -28,6 +30,7 @@ export class ChatsService {
     @InjectRepository(Membership)
     private readonly membershipsRepo: Repository<Membership>,
     private readonly dataSource: DataSource,
+    private readonly teamAccess: TeamAccessService,
   ) {}
 
   /**
@@ -40,32 +43,63 @@ export class ChatsService {
     orgId: string,
     membershipId: string,
   ): Promise<ConversationListItem[]> {
-    const memberships = await this.participantsRepo.find({
+    // 1) DIRECT/GROUP (and any TEAM chats I already have a read-state row for)
+    // come from my participant rows.
+    const participantRows = await this.participantsRepo.find({
       where: { organizationId: orgId, membershipId },
       relations: {
         conversation: {
-          participants: { membership: true },
+          participants: { membership: { user: true } },
           team: true,
         },
       },
     });
+    const byConvId = new Map<
+      string,
+      { conversation: Conversation; lastReadAt: Date | null | undefined }
+    >();
+    for (const p of participantRows) {
+      byConvId.set(p.conversation.id, {
+        conversation: p.conversation,
+        lastReadAt: p.lastReadAt,
+      });
+    }
+
+    // 2) TEAM chats are resolved live: include every TEAM conversation whose
+    // team roster currently contains me, even without a participant row. This
+    // is what makes team membership changes reflect immediately.
+    const teamConversations = await this.conversationsRepo.find({
+      where: { organizationId: orgId, type: ConversationType.TEAM },
+      relations: { participants: { membership: { user: true } }, team: true },
+    });
+    for (const conv of teamConversations) {
+      if (byConvId.has(conv.id) || !conv.teamId) continue;
+      const roster = await this.teamAccess.getDirectMembershipIdsForTeam(
+        orgId,
+        conv.teamId,
+      );
+      if (roster.includes(membershipId)) {
+        byConvId.set(conv.id, { conversation: conv, lastReadAt: null });
+      }
+    }
 
     const items = await Promise.all(
-      memberships.map(async (participant) => {
-        const conversation = participant.conversation;
-        const [lastMessage, unreadCount] = await Promise.all([
-          this.messagesRepo.findOne({
-            where: {
-              organizationId: orgId,
-              conversationId: conversation.id,
-            },
-            order: { createdAt: 'DESC' },
-            relations: { sender: true },
-          }),
-          this.countUnread(orgId, conversation.id, participant.lastReadAt),
-        ]);
-        return { conversation, lastMessage, unreadCount };
-      }),
+      Array.from(byConvId.values()).map(
+        async ({ conversation, lastReadAt }) => {
+          const [lastMessage, unreadCount] = await Promise.all([
+            this.messagesRepo.findOne({
+              where: {
+                organizationId: orgId,
+                conversationId: conversation.id,
+              },
+              order: { createdAt: 'DESC' },
+              relations: { sender: { user: true } },
+            }),
+            this.countUnread(orgId, conversation.id, lastReadAt),
+          ]);
+          return { conversation, lastMessage, unreadCount };
+        },
+      ),
     );
 
     // Most recent activity first; conversations with no messages sort by
@@ -86,44 +120,83 @@ export class ChatsService {
     conversationId: string,
     lastReadAt: Date | null | undefined,
   ): Promise<number> {
+    // Use entity property names (camelCase); TypeORM maps them to the actual
+    // columns. The AbstractEntity timestamp column is "createdAt", not
+    // "created_at" — raw snake_case here would fail at the DB.
     const qb = this.messagesRepo
       .createQueryBuilder('m')
-      .where('m.organization_id = :orgId', { orgId })
-      .andWhere('m.conversation_id = :conversationId', { conversationId });
+      .where('m.organizationId = :orgId', { orgId })
+      .andWhere('m.conversationId = :conversationId', { conversationId });
     if (lastReadAt) {
-      qb.andWhere('m.created_at > :lastReadAt', { lastReadAt });
+      qb.andWhere('m.createdAt > :lastReadAt', { lastReadAt });
     }
     return qb.getCount();
   }
 
-  /** Asserts the membership participates in the conversation (org-scoped). */
-  async assertParticipant(
-    orgId: string,
-    membershipId: string,
-    conversationId: string,
-  ): Promise<ConversationParticipant> {
-    const participant = await this.participantsRepo.findOne({
-      where: {
-        organizationId: orgId,
-        conversationId,
-        membershipId,
-      },
-    });
-    if (!participant) {
-      throw new ForbiddenException('Not a participant of this conversation');
-    }
-    return participant;
-  }
-
+  /**
+   * Whether a membership may access a conversation. For DIRECT/GROUP this is a
+   * stored conversation_participants row. For TEAM the roster is resolved LIVE
+   * from the team's direct members — so removing someone from the team removes
+   * their chat access immediately (no participant-row sync to fall behind).
+   */
   async isParticipant(
     orgId: string,
     membershipId: string,
     conversationId: string,
   ): Promise<boolean> {
+    const conversation = await this.conversationsRepo.findOne({
+      where: { organizationId: orgId, id: conversationId },
+      select: { id: true, type: true, teamId: true },
+    });
+    if (!conversation) return false;
+
+    if (conversation.type === ConversationType.TEAM && conversation.teamId) {
+      const roster = await this.teamAccess.getDirectMembershipIdsForTeam(
+        orgId,
+        conversation.teamId,
+      );
+      return roster.includes(membershipId);
+    }
+
     const count = await this.participantsRepo.count({
       where: { organizationId: orgId, conversationId, membershipId },
     });
     return count > 0;
+  }
+
+  /**
+   * Asserts membership access and returns a ConversationParticipant row usable
+   * for read-state (lastReadAt). For TEAM chats the row is lazily created on
+   * first access since we don't materialize the roster; it is read-state only,
+   * never the authorization gate (that's isParticipant above).
+   */
+  async assertParticipant(
+    orgId: string,
+    membershipId: string,
+    conversationId: string,
+  ): Promise<ConversationParticipant> {
+    const allowed = await this.isParticipant(
+      orgId,
+      membershipId,
+      conversationId,
+    );
+    if (!allowed) {
+      throw new ForbiddenException('Not a participant of this conversation');
+    }
+    let participant = await this.participantsRepo.findOne({
+      where: { organizationId: orgId, conversationId, membershipId },
+    });
+    if (!participant) {
+      // TEAM member with no read-state row yet — create one lazily.
+      participant = await this.participantsRepo.save(
+        this.participantsRepo.create({
+          organizationId: orgId,
+          conversationId,
+          membershipId,
+        }),
+      );
+    }
+    return participant;
   }
 
   /**
@@ -149,7 +222,7 @@ export class ChatsService {
   ): Promise<Conversation> {
     const conversation = await this.conversationsRepo.findOne({
       where: { organizationId: orgId, id: conversationId },
-      relations: { participants: { membership: true }, team: true },
+      relations: { participants: { membership: { user: true } }, team: true },
     });
     if (!conversation) {
       throw new NotFoundException('Conversation not found');
@@ -181,7 +254,7 @@ export class ChatsService {
       },
       order: { createdAt: 'DESC' },
       take: args.limit,
-      relations: { sender: true, attachments: true },
+      relations: { sender: { user: true }, attachments: true },
     });
     // Return chronological (oldest first) for rendering.
     return messages.reverse();
@@ -219,8 +292,28 @@ export class ChatsService {
       throw new BadRequestException('A group conversation needs a name');
     }
 
-    if (input.type === ConversationType.TEAM && !input.teamId) {
-      throw new BadRequestException('A team conversation needs a teamId');
+    if (input.type === ConversationType.TEAM) {
+      if (!input.teamId) {
+        throw new BadRequestException('A team conversation needs a teamId');
+      }
+      // At most one chat per team — return the existing one if present.
+      const existing = await this.conversationsRepo.findOne({
+        where: {
+          organizationId: orgId,
+          type: ConversationType.TEAM,
+          teamId: input.teamId,
+        },
+        relations: { participants: { membership: { user: true } }, team: true },
+      });
+      if (existing) return existing;
+      // The creator must actually belong to the team.
+      const roster = await this.teamAccess.getDirectMembershipIdsForTeam(
+        orgId,
+        input.teamId,
+      );
+      if (!roster.includes(callerMembershipId)) {
+        throw new ForbiddenException('You are not a member of this team');
+      }
     }
 
     await this.assertMembershipsInOrg(orgId, otherIds);
@@ -234,25 +327,30 @@ export class ChatsService {
       });
       await manager.save(conversation);
 
-      const memberIds = [callerMembershipId, ...otherIds];
-      const participants = memberIds.map((membershipId) =>
-        manager.create(ConversationParticipant, {
-          organizationId: orgId,
-          conversationId: conversation.id,
-          membershipId,
-          // The group creator is admin; everyone else is a member.
-          role:
-            input.type === ConversationType.GROUP &&
-            membershipId === callerMembershipId
-              ? ParticipantRole.ADMIN
-              : ParticipantRole.MEMBER,
-        }),
-      );
-      await manager.save(participants);
+      // TEAM chats do NOT materialize participant rows — the roster is derived
+      // live from team membership (read-state rows are created lazily on first
+      // access). DIRECT/GROUP store their explicit participant list.
+      if (input.type !== ConversationType.TEAM) {
+        const memberIds = [callerMembershipId, ...otherIds];
+        const participants = memberIds.map((membershipId) =>
+          manager.create(ConversationParticipant, {
+            organizationId: orgId,
+            conversationId: conversation.id,
+            membershipId,
+            // The group creator is admin; everyone else is a member.
+            role:
+              input.type === ConversationType.GROUP &&
+              membershipId === callerMembershipId
+                ? ParticipantRole.ADMIN
+                : ParticipantRole.MEMBER,
+          }),
+        );
+        await manager.save(participants);
+      }
 
       return manager.findOneOrFail(Conversation, {
         where: { id: conversation.id },
-        relations: { participants: { membership: true }, team: true },
+        relations: { participants: { membership: { user: true } }, team: true },
       });
     });
   }
@@ -286,7 +384,10 @@ export class ChatsService {
         if (total === 2) {
           return this.conversationsRepo.findOne({
             where: { organizationId: orgId, id: conversationId },
-            relations: { participants: { membership: true }, team: true },
+            relations: {
+              participants: { membership: { user: true } },
+              team: true,
+            },
           });
         }
       }
@@ -319,6 +420,12 @@ export class ChatsService {
     senderMembershipId: string,
     conversationId: string,
     body: string,
+    attachment?: {
+      fileId: string;
+      originalName: string;
+      mimeType: string;
+      sizeBytes: number;
+    },
   ): Promise<Message> {
     await this.assertParticipant(orgId, senderMembershipId, conversationId);
 
@@ -330,6 +437,18 @@ export class ChatsService {
         body: body.trim(),
       });
       await manager.save(message);
+
+      if (attachment) {
+        const att = manager.create(MessageAttachment, {
+          organizationId: orgId,
+          messageId: message.id,
+          fileId: attachment.fileId,
+          originalName: attachment.originalName,
+          mimeType: attachment.mimeType,
+          sizeBytes: attachment.sizeBytes,
+        });
+        await manager.save(att);
+      }
 
       await manager.update(
         Conversation,
@@ -350,7 +469,7 @@ export class ChatsService {
 
       return manager.findOneOrFail(Message, {
         where: { id: message.id },
-        relations: { sender: true, attachments: true },
+        relations: { sender: { user: true }, attachments: true },
       });
     });
   }
@@ -368,6 +487,53 @@ export class ChatsService {
     );
     participant.lastReadAt = new Date();
     return this.participantsRepo.save(participant);
+  }
+
+  /**
+   * Edits the body of a message. Only the original sender may edit it (within
+   * their org). Sets editedAt and returns the message with relations loaded.
+   */
+  async editMessage(
+    orgId: string,
+    membershipId: string,
+    messageId: string,
+    body: string,
+  ): Promise<Message> {
+    const message = await this.messagesRepo.findOne({
+      where: { id: messageId, organizationId: orgId },
+    });
+    if (!message) throw new NotFoundException('Message not found');
+    if (message.senderMembershipId !== membershipId) {
+      throw new ForbiddenException('You can only edit your own messages');
+    }
+    message.body = body.trim();
+    message.editedAt = new Date();
+    await this.messagesRepo.save(message);
+    return this.messagesRepo.findOneOrFail({
+      where: { id: messageId },
+      relations: { sender: { user: true }, attachments: true },
+    });
+  }
+
+  /**
+   * Deletes a message. Only the original sender may delete it (within their
+   * org). Returns the conversationId so callers can publish a delete event.
+   */
+  async deleteMessage(
+    orgId: string,
+    membershipId: string,
+    messageId: string,
+  ): Promise<{ conversationId: string }> {
+    const message = await this.messagesRepo.findOne({
+      where: { id: messageId, organizationId: orgId },
+    });
+    if (!message) throw new NotFoundException('Message not found');
+    if (message.senderMembershipId !== membershipId) {
+      throw new ForbiddenException('You can only delete your own messages');
+    }
+    const conversationId = message.conversationId;
+    await this.messagesRepo.remove(message);
+    return { conversationId };
   }
 
   /** Membership ids of every participant of a conversation (org-scoped). */

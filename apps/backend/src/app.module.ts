@@ -161,7 +161,7 @@ const MAX_QUERY_DEPTH = 12;
                 const extra = connectionContext.extra as WsExtra;
                 const paramCookie =
                   typeof connectionContext.connectionParams?.cookie === 'string'
-                    ? (connectionContext.connectionParams.cookie as string)
+                    ? connectionContext.connectionParams.cookie
                     : null;
                 const wsAuth = await authenticateWsConnection(
                   dataSource.manager,
