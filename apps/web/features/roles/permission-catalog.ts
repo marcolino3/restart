@@ -4,6 +4,10 @@ export type CategoryKey =
   | "teams"
   | "employees"
   | "teacher"
+  | "admissions"
+  | "students"
+  | "projects"
+  | "dataProtection"
   | "general";
 
 export type FeatureKey =
@@ -13,12 +17,29 @@ export type FeatureKey =
   | "role"
   | "team"
   | "employee"
+  | "absenceCategory"
   | "timesheet"
   | "schoolClass"
   | "contactPerson"
+  | "family"
   | "admissionStage"
+  | "admissionApplication"
+  | "admissionEmail"
+  | "student"
+  | "studentRecord"
+  | "studentRecordCategory"
+  | "recordKeeping"
   | "curriculumLevel"
   | "curriculum"
+  | "project"
+  | "projectTemplate"
+  | "protocol"
+  | "consent"
+  | "consentSettings"
+  | "dataRequest"
+  | "retention"
+  | "dataBreach"
+  | "vvt"
   | "address";
 
 export type ActionKey =
@@ -30,7 +51,10 @@ export type ActionKey =
   | "assign"
   | "invite"
   | "remove"
-  | "transfer";
+  | "transfer"
+  | "send"
+  | "move"
+  | "enroll";
 
 type Entry = {
   code: string;
@@ -61,6 +85,8 @@ export const PERMISSION_CATALOG: Entry[] = [
 
   { code: "EMPLOYEE_READ", category: "employees", feature: "employee", action: "read" },
   { code: "EMPLOYEE_WRITE", category: "employees", feature: "employee", action: "write" },
+  { code: "EMPLOYEE_ABSENCE_CATEGORY_READ", category: "employees", feature: "absenceCategory", action: "read" },
+  { code: "EMPLOYEE_ABSENCE_CATEGORY_MANAGE", category: "employees", feature: "absenceCategory", action: "manage" },
   { code: "TIMESHEET_READ", category: "employees", feature: "timesheet", action: "read" },
   { code: "TIMESHEET_WRITE", category: "employees", feature: "timesheet", action: "write" },
 
@@ -70,12 +96,57 @@ export const PERMISSION_CATALOG: Entry[] = [
   { code: "CONTACT_PERSON_READ", category: "teacher", feature: "contactPerson", action: "read" },
   { code: "CONTACT_PERSON_WRITE", category: "teacher", feature: "contactPerson", action: "write" },
   { code: "CONTACT_PERSON_DELETE", category: "teacher", feature: "contactPerson", action: "delete" },
-  { code: "ADMISSION_STAGE_READ", category: "teacher", feature: "admissionStage", action: "read" },
-  { code: "ADMISSION_STAGE_MANAGE", category: "teacher", feature: "admissionStage", action: "manage" },
   { code: "CURRICULUM_LEVEL_READ", category: "teacher", feature: "curriculumLevel", action: "read" },
   { code: "CURRICULUM_LEVEL_MANAGE", category: "teacher", feature: "curriculumLevel", action: "manage" },
   { code: "CURRICULUM_READ", category: "teacher", feature: "curriculum", action: "read" },
   { code: "CURRICULUM_MANAGE", category: "teacher", feature: "curriculum", action: "manage" },
+
+  // Admissions (Aufnahmeprozess)
+  { code: "ADMISSION_STAGE_READ", category: "admissions", feature: "admissionStage", action: "read" },
+  { code: "ADMISSION_STAGE_MANAGE", category: "admissions", feature: "admissionStage", action: "manage" },
+  { code: "ADMISSION_APPLICATION_READ", category: "admissions", feature: "admissionApplication", action: "read" },
+  { code: "ADMISSION_APPLICATION_WRITE", category: "admissions", feature: "admissionApplication", action: "write" },
+  { code: "ADMISSION_APPLICATION_MOVE", category: "admissions", feature: "admissionApplication", action: "move" },
+  { code: "ADMISSION_APPLICATION_ENROLL", category: "admissions", feature: "admissionApplication", action: "enroll" },
+  { code: "ADMISSION_APPLICATION_DELETE", category: "admissions", feature: "admissionApplication", action: "delete" },
+  { code: "ADMISSION_EMAIL_SEND", category: "admissions", feature: "admissionEmail", action: "send" },
+  { code: "ADMISSION_EMAIL_TEMPLATE_MANAGE", category: "admissions", feature: "admissionEmail", action: "manage" },
+  { code: "FAMILY_READ", category: "admissions", feature: "family", action: "read" },
+  { code: "FAMILY_WRITE", category: "admissions", feature: "family", action: "write" },
+
+  // Students (Schüler:innen)
+  { code: "STUDENT_READ", category: "students", feature: "student", action: "read" },
+  { code: "STUDENT_WRITE", category: "students", feature: "student", action: "write" },
+  { code: "STUDENT_DELETE", category: "students", feature: "student", action: "delete" },
+  { code: "STUDENT_RECORD_READ", category: "students", feature: "studentRecord", action: "read" },
+  { code: "STUDENT_RECORD_WRITE", category: "students", feature: "studentRecord", action: "write" },
+  { code: "STUDENT_RECORD_DELETE", category: "students", feature: "studentRecord", action: "delete" },
+  { code: "STUDENT_RECORD_CATEGORY_WRITE", category: "students", feature: "studentRecordCategory", action: "manage" },
+  { code: "RECORD_KEEPING_READ", category: "students", feature: "recordKeeping", action: "read" },
+  { code: "RECORD_KEEPING_WRITE", category: "students", feature: "recordKeeping", action: "write" },
+  { code: "RECORD_KEEPING_SETTINGS_MANAGE", category: "students", feature: "recordKeeping", action: "manage" },
+
+  // Projects (Projektmanagement)
+  { code: "PROJECT_READ", category: "projects", feature: "project", action: "read" },
+  { code: "PROJECT_CREATE", category: "projects", feature: "project", action: "create" },
+  { code: "PROJECT_MANAGE_ALL", category: "projects", feature: "project", action: "manage" },
+  { code: "PROJECT_TEMPLATE_MANAGE", category: "projects", feature: "projectTemplate", action: "manage" },
+  { code: "PROTOCOL_READ", category: "projects", feature: "protocol", action: "read" },
+  { code: "PROTOCOL_WRITE", category: "projects", feature: "protocol", action: "write" },
+  { code: "PROTOCOL_DELETE", category: "projects", feature: "protocol", action: "delete" },
+
+  // Data protection (Datenschutz / DSGVO / revDSG)
+  { code: "CONSENT_READ", category: "dataProtection", feature: "consent", action: "read" },
+  { code: "CONSENT_MANAGE", category: "dataProtection", feature: "consent", action: "manage" },
+  { code: "CONSENT_SETTINGS_MANAGE", category: "dataProtection", feature: "consentSettings", action: "manage" },
+  { code: "DATA_REQUEST_READ", category: "dataProtection", feature: "dataRequest", action: "read" },
+  { code: "DATA_REQUEST_MANAGE", category: "dataProtection", feature: "dataRequest", action: "manage" },
+  { code: "RETENTION_READ", category: "dataProtection", feature: "retention", action: "read" },
+  { code: "RETENTION_MANAGE", category: "dataProtection", feature: "retention", action: "manage" },
+  { code: "DATA_BREACH_READ", category: "dataProtection", feature: "dataBreach", action: "read" },
+  { code: "DATA_BREACH_MANAGE", category: "dataProtection", feature: "dataBreach", action: "manage" },
+  { code: "VVT_READ", category: "dataProtection", feature: "vvt", action: "read" },
+  { code: "VVT_MANAGE", category: "dataProtection", feature: "vvt", action: "manage" },
 
   { code: "ADDRESS_READ", category: "general", feature: "address", action: "read" },
   { code: "ADDRESS_WRITE", category: "general", feature: "address", action: "write" },
@@ -88,6 +159,10 @@ export const CATEGORY_ORDER: CategoryKey[] = [
   "teams",
   "employees",
   "teacher",
+  "admissions",
+  "students",
+  "projects",
+  "dataProtection",
   "general",
 ];
 

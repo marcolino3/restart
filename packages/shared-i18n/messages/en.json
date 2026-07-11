@@ -1844,7 +1844,11 @@
       "teams": "Teams",
       "employees": "Employees & Time Tracking",
       "teacher": "Teaching (Teacher)",
-      "general": "General"
+      "general": "General",
+      "admissions": "Admissions",
+      "students": "Students",
+      "projects": "Projects",
+      "dataProtection": "Data protection"
     },
     "action": {
       "read": "Read",
@@ -1855,7 +1859,10 @@
       "assign": "Assign",
       "invite": "Invite",
       "remove": "Remove",
-      "transfer": "Transfer"
+      "transfer": "Transfer",
+      "send": "Send",
+      "move": "Move",
+      "enroll": "Enroll"
     },
     "feature": {
       "organization": "Organization",
@@ -1870,7 +1877,24 @@
       "admissionStage": "Admission stages",
       "curriculumLevel": "Curriculum levels",
       "curriculum": "Curricula",
-      "address": "Addresses"
+      "address": "Addresses",
+      "absenceCategory": "Absence categories",
+      "family": "Families",
+      "admissionApplication": "Applications",
+      "admissionEmail": "Admission emails",
+      "student": "Students",
+      "studentRecord": "Support record",
+      "studentRecordCategory": "Support categories",
+      "recordKeeping": "Progress tracking",
+      "project": "Projects",
+      "projectTemplate": "Project templates",
+      "protocol": "Protocols",
+      "consent": "Consents",
+      "consentSettings": "Consent purposes",
+      "dataRequest": "Data subject requests",
+      "retention": "Retention periods",
+      "dataBreach": "Data breaches",
+      "vvt": "Records of processing"
     }
   },
   "StudentNotes": {

@@ -1844,7 +1844,11 @@
       "teams": "Teams",
       "employees": "Mitarbeiter & Zeiterfassung",
       "teacher": "Pädagogik (Lehrkraft)",
-      "general": "Allgemein"
+      "general": "Allgemein",
+      "admissions": "Aufnahmeprozess",
+      "students": "Schüler:innen",
+      "projects": "Projekte",
+      "dataProtection": "Datenschutz"
     },
     "action": {
       "read": "Lesen",
@@ -1855,7 +1859,10 @@
       "assign": "Zuweisen",
       "invite": "Einladen",
       "remove": "Entfernen",
-      "transfer": "Übertragen"
+      "transfer": "Übertragen",
+      "send": "Versenden",
+      "move": "Verschieben",
+      "enroll": "Einschreiben"
     },
     "feature": {
       "organization": "Organisation",
@@ -1870,7 +1877,24 @@
       "admissionStage": "Aufnahmestufen",
       "curriculumLevel": "Curriculum-Stufen",
       "curriculum": "Curricula",
-      "address": "Adressen"
+      "address": "Adressen",
+      "absenceCategory": "Absenzkategorien",
+      "family": "Familien",
+      "admissionApplication": "Bewerbungen",
+      "admissionEmail": "Aufnahme-E-Mails",
+      "student": "Schüler:innen",
+      "studentRecord": "Förderprofil",
+      "studentRecordCategory": "Förderkategorien",
+      "recordKeeping": "Fortschritts-Erfassung",
+      "project": "Projekte",
+      "projectTemplate": "Projekt-Vorlagen",
+      "protocol": "Protokolle",
+      "consent": "Einwilligungen",
+      "consentSettings": "Einwilligungs-Zwecke",
+      "dataRequest": "Betroffenenanfragen",
+      "retention": "Aufbewahrungsfristen",
+      "dataBreach": "Datenpannen",
+      "vvt": "Verarbeitungsverzeichnis"
     }
   },
   "StudentNotes": {
