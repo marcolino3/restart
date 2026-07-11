@@ -11,6 +11,7 @@ import { GradeLevelsModule } from './grade-levels/grade-levels.module';
 import { SchoolClassEnrollmentsModule } from './school-class-enrollments/school-class-enrollments.module';
 import { SchoolClassesModule } from './school-classes/school-classes.module';
 import { StudentNotesModule } from './student-notes/student-notes.module';
+import { StudentRecordsModule } from './student-records/student-records.module';
 import { StudentsModule } from './students/students.module';
 
 @Module({
@@ -19,6 +20,7 @@ import { StudentsModule } from './students/students.module';
     SchoolClassesModule,
     StudentsModule,
     StudentNotesModule,
+    StudentRecordsModule,
     SchoolClassEnrollmentsModule,
     AdmissionStagesModule,
     AdmissionRejectionReasonsModule,
