@@ -164,6 +164,7 @@ export function ProtocolEditor({
   });
 
   // Todos can only be assigned to people who attend the meeting.
+  // eslint-disable-next-line react-hooks/incompatible-library -- React Hook Form returns non-memoizable functions by design
   const selectedParticipantIds = form.watch("participantMembershipIds") ?? [];
 
   const [saveTemplateOpen, setSaveTemplateOpen] = React.useState(false);

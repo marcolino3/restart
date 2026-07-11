@@ -78,6 +78,7 @@ export const LessonFirstBulkEntry = ({ lessons }: Props) => {
     },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form's watch() returns non-memoizable functions by design
   const studentIds = form.watch("studentIds");
   const observation =
     (form.watch("observation") as LessonRecordObservation | undefined) ??

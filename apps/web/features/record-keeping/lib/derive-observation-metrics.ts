@@ -2,7 +2,6 @@ import type { StudentLessonRecordItem } from "../actions/get-student-lesson-reco
 import type {
   LessonRecordConcentration,
   LessonRecordEngagement,
-  LessonRecordPersistence,
   LessonRecordSelfConfidence,
   LessonRecordStatus,
 } from "../types";
@@ -43,13 +42,6 @@ const CONFIDENCE_SCORE: Record<LessonRecordSelfConfidence, number> = {
   CONFIDENT: 1,
   TENTATIVE: 0,
   INSECURE: -1,
-};
-
-/** Persistenz: SEEKS_HELP zählt positiv (Hatties Help-seeking-Faktor). */
-const PERSISTENCE_SCORE: Record<LessonRecordPersistence, number> = {
-  PERSISTS: 1,
-  SEEKS_HELP: 1,
-  GIVES_UP: 0,
 };
 
 /* ────────────────────────────────────────────────────────────────────────

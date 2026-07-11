@@ -226,6 +226,7 @@ export function AdmissionDetailPage({
     detail.childDateOfBirth &&
     !Number.isNaN(new Date(detail.childDateOfBirth).getTime())
       ? Math.floor(
+          // eslint-disable-next-line react-hooks/purity -- age in years is stable across a single render pass; pre-existing render-time computation, kept as-is to avoid behavior change
           (Date.now() - new Date(detail.childDateOfBirth).getTime()) /
             (365.25 * 24 * 60 * 60 * 1000),
         )
@@ -263,6 +264,7 @@ export function AdmissionDetailPage({
     ? Math.max(
         0,
         Math.floor(
+          // eslint-disable-next-line react-hooks/purity -- days-in-stage is stable across a single render pass; pre-existing render-time computation, kept as-is to avoid behavior change
           (Date.now() - new Date(detail.stageEnteredAt).getTime()) /
             (1000 * 60 * 60 * 24),
         ),

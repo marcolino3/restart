@@ -40,6 +40,7 @@ export function NewChatDialog({ open, onOpenChange, onCreated }: Props) {
 
   useEffect(() => {
     if (!open) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resets dialog state before this effect's own contacts fetch each time the dialog opens
     setSelected([]);
     setGroupName("");
     setQuery("");

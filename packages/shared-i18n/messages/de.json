@@ -622,7 +622,12 @@
     "save": "Speichern",
     "messageActions": "Nachrichten-Aktionen",
     "editError": "Nachricht konnte nicht bearbeitet werden.",
-    "deleteError": "Nachricht konnte nicht gelöscht werden."
+    "deleteError": "Nachricht konnte nicht gelöscht werden.",
+    "attachImage": "Foto anhängen",
+    "attachFile": "Datei anhängen",
+    "emoji": "Emoji",
+    "messageInputPlaceholder": "Nachricht schreiben …",
+    "deleteConfirm": "Diese Nachricht wirklich löschen?"
   },
   "Common": {
     "pickDateTime": "Datum & Uhrzeit wählen",

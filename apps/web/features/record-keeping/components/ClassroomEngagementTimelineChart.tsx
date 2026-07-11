@@ -84,6 +84,7 @@ export function ClassroomEngagementTimelineChart({ schoolClassId }: Props) {
   const granularity = RANGE_GRANULARITY[range];
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resets stale error state at the start of a new async fetch triggered by prop changes, not derivable from render
     setError(null);
     startTransition(async () => {
       const res = await getClassroomEngagementTimelineAction(

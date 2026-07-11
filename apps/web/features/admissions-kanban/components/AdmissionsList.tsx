@@ -73,6 +73,7 @@ export function AdmissionsList({
 
   // Now is computed once per render (client-only since AdmissionsKanban already
   // gates rendering behind `mounted`).
+  // eslint-disable-next-line react-hooks/purity -- client-only render (parent gates behind `mounted`), Date.now() is stable for this render pass
   const now = Date.now();
   const daysInStageFor = (a: KanbanApplication): number => {
     const diff = now - new Date(a.stageEnteredAt).getTime();

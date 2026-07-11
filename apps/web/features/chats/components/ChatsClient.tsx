@@ -103,7 +103,9 @@ export function ChatsClient({
   // activeId is read via a ref so the polling effect doesn't need to re-run
   // (and tear down its interval) every time the open conversation changes.
   const activeIdRef = useRef<string | null>(null);
-  activeIdRef.current = activeId;
+  useEffect(() => {
+    activeIdRef.current = activeId;
+  }, [activeId]);
   const refreshConversations = useCallback(async () => {
     const res = await getConversationsAction();
     if (!res.success) return;
@@ -174,6 +176,7 @@ export function ChatsClient({
   // Load messages + mark read whenever the active conversation changes.
   useEffect(() => {
     if (!activeId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clears stale thread state before this effect's own fetch/mark-read sync when there is no active conversation
       setMessages([]);
       return;
     }

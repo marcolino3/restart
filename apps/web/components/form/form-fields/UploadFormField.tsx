@@ -45,22 +45,26 @@ export const UploadFormField = ({
   const { field } = useController({ name, control });
 
   const [uploading, setUploading] = useState(false);
-  const [preview, setPreview] = useState(field.value || "");
+  // `discoveredPreview` only holds the URL found by the HEAD-probe below, for
+  // the case where the form has no value yet. Once `field.value` is set
+  // (either from the form or from the probe via `field.onChange`), the
+  // preview is derived directly from it below instead of duplicating it in
+  // state.
+  const [discoveredPreview, setDiscoveredPreview] = useState("");
 
   useEffect(() => {
-    if (!field.value) {
-      const imageUrl = `${BACKEND_PUBLIC_URL}/${entity}/${id}.webp`;
-      fetch(imageUrl, { method: "HEAD" }).then((res) => {
-        if (res.ok) {
-          const urlWithTimestamp = `${imageUrl}?t=${Date.now()}`;
-          setPreview(urlWithTimestamp);
-          field.onChange(urlWithTimestamp);
-        }
-      });
-    } else {
-      setPreview(field.value);
-    }
+    if (field.value) return;
+    const imageUrl = `${BACKEND_PUBLIC_URL}/${entity}/${id}.webp`;
+    fetch(imageUrl, { method: "HEAD" }).then((res) => {
+      if (res.ok) {
+        const urlWithTimestamp = `${imageUrl}?t=${Date.now()}`;
+        setDiscoveredPreview(urlWithTimestamp);
+        field.onChange(urlWithTimestamp);
+      }
+    });
   }, [field, entity, id]);
+
+  const preview = field.value || discoveredPreview;
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -82,8 +86,7 @@ export const UploadFormField = ({
 
     if (res.ok && result?.url) {
       const fullUrl = `${BACKEND_PUBLIC_URL}${result.url}?t=${Date.now()}`;
-      field.onChange(fullUrl);
-      setPreview(fullUrl);
+      field.onChange(fullUrl); // `preview` is derived from field.value, updates automatically
     } else {
       alert(result?.error || "Fehler beim Hochladen");
     }
@@ -97,7 +100,7 @@ export const UploadFormField = ({
     });
 
     field.onChange(""); // Wert im Formular zurücksetzen
-    setPreview(""); // Vorschau leeren
+    setDiscoveredPreview(""); // Clear a previously HEAD-probed preview too
   };
 
   return (

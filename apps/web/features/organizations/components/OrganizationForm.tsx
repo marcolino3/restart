@@ -88,6 +88,7 @@ export const OrganizationForm = ({ organization }: OrganizationFormProps) => {
     [organization.domain]
   );
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- React Hook Form returns non-memoizable functions by design
   const nameValue = form.watch("name");
   useEffect(() => {
     if (subdomainTouchedRef.current) return;

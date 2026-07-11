@@ -114,6 +114,7 @@ export function GradeLevelsTable({ initialGradeLevels }: Props) {
   const [dialog, setDialog] = React.useState<DialogState | null>(null);
 
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resyncs local reorderable list with fresh server props after router.refresh()
     setItems(initialGradeLevels);
   }, [initialGradeLevels]);
 

@@ -118,6 +118,7 @@ export function EmployeeOnboardingWizard({
   // automatisch gespeichert"). Subscribes to any field change.
   useEffect(() => {
     if (!draftId) return;
+    // eslint-disable-next-line react-hooks/incompatible-library -- React Hook Form returns non-memoizable functions by design
     const sub = form.watch(() => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {

@@ -125,6 +125,7 @@ export default function ContactPersonForm({
     },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form's watch() returns non-memoizable functions by design
   const currentAddressId = form.watch("addressId");
   const isSharedAddress = sharingWith.length > 0 && Boolean(currentAddressId);
 

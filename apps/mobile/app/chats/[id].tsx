@@ -6,14 +6,13 @@ import {
   Platform,
   Pressable,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSession } from "@/lib/auth-client";
-import { setActiveOrg } from "@/lib/gql-client";
+import { ensureActiveOrg } from "@/lib/active-org";
 import { gqlErrorMessage } from "@/lib/time-tracking";
 import { t } from "@/lib/i18n";
 import {
@@ -21,10 +20,13 @@ import {
   fetchMessages,
   markConversationRead,
   sendMessage,
+  editMessage,
+  deleteMessage,
   type ChatMessage,
 } from "@/features/chats/chats-api";
 import { createChatWsClient } from "@/features/chats/ws-client";
 import { ChatBubble } from "@/features/chats/ChatBubble";
+import { Composer } from "@/features/chats/Composer";
 import { dayLabel } from "@/features/chats/chat-display";
 
 const MESSAGE_ADDED_SUBSCRIPTION = /* GraphQL */ `
@@ -36,13 +38,14 @@ const MESSAGE_ADDED_SUBSCRIPTION = /* GraphQL */ `
       editedAt
       senderMembershipId
       sender { id user { id firstName lastName } }
+      attachments { id mimeType originalName sizeBytes }
     }
   }
 `;
 
 type Row =
   | { kind: "day"; key: string; label: string }
-  | { kind: "message"; key: string; message: ChatMessage; showSender: boolean };
+  | { kind: "message"; key: string; message: ChatMessage; startsRun: boolean };
 
 export default function ChatDetailScreen() {
   const router = useRouter();
@@ -56,8 +59,6 @@ export default function ChatDetailScreen() {
   const [selfMembershipId, setSelfMembershipId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
-  const [sending, setSending] = useState(false);
 
   const wsRef = useRef<ReturnType<typeof createChatWsClient> | null>(null);
 
@@ -65,7 +66,7 @@ export default function ChatDetailScreen() {
     if (!id) return;
     try {
       setError(null);
-      if (activeOrgId) setActiveOrg(activeOrgId);
+      await ensureActiveOrg(activeOrgId);
       // selfMembershipId comes from the conversation list query; fetch both.
       const [convData, msgs] = await Promise.all([
         fetchConversations(),
@@ -132,28 +133,35 @@ export default function ChatDetailScreen() {
         kind: "message",
         key: m.id,
         message: m,
-        showSender: m.senderMembershipId !== lastSender,
+        startsRun: m.senderMembershipId !== lastSender,
       });
       lastSender = m.senderMembershipId;
     }
     return out.reverse();
   }, [messages]);
 
-  const handleSend = async () => {
-    const body = draft.trim();
-    if (!body || sending || !id) return;
-    setSending(true);
-    setDraft("");
-    try {
-      const msg = await sendMessage(id, body);
-      setMessages((prev) =>
-        prev.some((m) => m.id === msg.id) ? prev : [...prev, msg],
-      );
-    } catch (e) {
-      setError(gqlErrorMessage(e));
-    } finally {
-      setSending(false);
-    }
+  const handleSend = async (body: string) => {
+    if (!id) return;
+    const msg = await sendMessage(id, body);
+    setMessages((prev) =>
+      prev.some((m) => m.id === msg.id) ? prev : [...prev, msg],
+    );
+  };
+
+  const handleEdit = async (messageId: string, body: string) => {
+    const updated = await editMessage(messageId, body);
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId
+          ? { ...m, body: updated.body, editedAt: updated.editedAt }
+          : m,
+      ),
+    );
+  };
+
+  const handleDelete = async (messageId: string) => {
+    await deleteMessage(messageId);
+    setMessages((prev) => prev.filter((m) => m.id !== messageId));
   };
 
   return (
@@ -196,41 +204,31 @@ export default function ChatDetailScreen() {
                     {item.label}
                   </Text>
                 </View>
+              ) : item.message.senderMembershipId === selfMembershipId ? (
+                <ChatBubble
+                  message={item.message}
+                  mine
+                  startsRun={item.startsRun}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
               ) : (
                 <ChatBubble
                   message={item.message}
-                  mine={item.message.senderMembershipId === selfMembershipId}
-                  showSender={item.showSender}
+                  mine={false}
+                  startsRun={item.startsRun}
                 />
               )
             }
           />
-          <View className="flex-row items-center gap-2 border-t border-border px-3 py-2">
-            <TextInput
-              value={draft}
-              onChangeText={setDraft}
-              placeholder={t("Chats.messagePlaceholder", {
-                name: title ?? "",
-              })}
-              placeholderTextColor="#9ca3af"
-              className="flex-1 rounded-full border border-border bg-background px-4 py-2.5 text-base text-foreground"
-              onSubmitEditing={() => void handleSend()}
-              returnKeyType="send"
+          {id ? (
+            <Composer
+              conversationId={id}
+              placeholder={t("Chats.messageInputPlaceholder")}
+              onSend={handleSend}
+              onError={(msg) => setError(msg)}
             />
-            <Pressable
-              onPress={() => void handleSend()}
-              disabled={!draft.trim() || sending}
-              className={`h-11 w-11 items-center justify-center rounded-full ${
-                !draft.trim() || sending ? "bg-muted" : "bg-primary"
-              }`}
-            >
-              <FontAwesome
-                name="send"
-                size={16}
-                color={!draft.trim() || sending ? "#9ca3af" : "#fff"}
-              />
-            </Pressable>
-          </View>
+          ) : null}
         </KeyboardAvoidingView>
       )}
     </SafeAreaView>

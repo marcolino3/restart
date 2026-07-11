@@ -10,6 +10,7 @@ import { UpdateContactPersonInput } from './dto/update-contact-person.input';
 import { AddressSuggestion } from './dto/address-suggestion.type';
 import { ContactPerson } from './entities/contact-person.entity';
 import { StudentContactPerson } from './entities/student-contact-person.entity';
+import { RelationshipType } from './enums/relationship-type.enum';
 import { Family } from '@/school-management/families/entities/family.entity';
 
 @Injectable()
@@ -158,7 +159,7 @@ export class ContactPersonsService {
     input: {
       studentId: string;
       contactPersonId: string;
-      relationshipType: any;
+      relationshipType: RelationshipType;
       isPrimaryContact?: boolean;
       hasCustody?: boolean;
       isPickupAuthorized?: boolean;
@@ -176,7 +177,7 @@ export class ContactPersonsService {
   async updateLink(
     id: string,
     patch: {
-      relationshipType?: any;
+      relationshipType?: RelationshipType;
       isPrimaryContact?: boolean;
       hasCustody?: boolean;
       isPickupAuthorized?: boolean;
@@ -231,7 +232,7 @@ export class ContactPersonsService {
     input: {
       studentId: string;
       contactPersonId: string;
-      relationshipType: any;
+      relationshipType: RelationshipType;
       isPrimaryContact?: boolean;
       hasCustody?: boolean;
       isPickupAuthorized?: boolean;

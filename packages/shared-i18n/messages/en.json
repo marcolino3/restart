@@ -622,7 +622,12 @@
     "save": "Save",
     "messageActions": "Message actions",
     "editError": "Could not edit the message.",
-    "deleteError": "Could not delete the message."
+    "deleteError": "Could not delete the message.",
+    "attachImage": "Attach photo",
+    "attachFile": "Attach file",
+    "emoji": "Emoji",
+    "messageInputPlaceholder": "Write a message …",
+    "deleteConfirm": "Delete this message?"
   },
   "Common": {
     "pickDateTime": "Pick date & time",

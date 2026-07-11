@@ -111,6 +111,7 @@
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
     "@types/pdfmake": "^0.3.3",
+    "@types/pg": "^8.20.0",
     "@types/sanitize-html": "^2.16.1",
     "@types/supertest": "^7.2.1",
     "eslint": "^9.18.0",

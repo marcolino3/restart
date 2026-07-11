@@ -50,6 +50,7 @@ export function ConsentPurposeForm({ initial, submitting, onSubmit }: Props) {
   // Auto-generate the slug from the name while creating, until the user edits
   // the slug manually. When editing an existing purpose the slug is preserved.
   const slugTouchedRef = useRef(!!initial?.slug);
+  // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form's watch() returns non-memoizable functions by design
   const nameValue = form.watch("name");
   useEffect(() => {
     if (slugTouchedRef.current) return;

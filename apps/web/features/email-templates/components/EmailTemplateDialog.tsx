@@ -175,6 +175,7 @@ export function EmailTemplateDialog({
                 </p>
               </div>
               <Switch
+                // eslint-disable-next-line react-hooks/incompatible-library -- React Hook Form returns non-memoizable functions by design
                 checked={form.watch("isAutomatic")}
                 onCheckedChange={(v) => form.setValue("isAutomatic", v)}
               />

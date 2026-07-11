@@ -163,6 +163,7 @@ export function ProjectBoard({
   const [view, setView] = React.useState<"board" | "list">("board");
   React.useEffect(() => {
     const v = window.localStorage.getItem(VIEW_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reads view preference from localStorage (external system, unavailable during SSR) on mount
     if (v === "board" || v === "list") setView(v);
   }, []);
   React.useEffect(() => {
@@ -186,6 +187,7 @@ export function ProjectBoard({
   React.useEffect(() => {
     if (tab !== "protocols" || protocols !== null || protocolsLoading) return;
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- kicks off a lazy async fetch (external system) the first time the tab opens; loading flag is set before the request starts
     setProtocolsLoading(true);
     void getProtocolsAction().then((res) => {
       if (cancelled) return;

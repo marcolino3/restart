@@ -52,7 +52,7 @@ export const PhoneFormField = ({
             showMaskOnFocus: true,
           })
         : null,
-    [template?.mask],
+    [template],
   );
 
   return (

@@ -12,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useSession } from "@/lib/auth-client";
-import { setActiveOrg } from "@/lib/gql-client";
+import { ensureActiveOrg } from "@/lib/active-org";
 import { gqlErrorMessage } from "@/lib/time-tracking";
 import { t } from "@/lib/i18n";
 import {
@@ -44,7 +44,9 @@ export default function ChatsTab() {
   const load = useCallback(async () => {
     try {
       setError(null);
-      if (activeOrgId) setActiveOrg(activeOrgId);
+      // Ensure an active org (auto-switch when the user has exactly one) —
+      // otherwise the session has no membership and chat queries fail.
+      await ensureActiveOrg(activeOrgId);
       const result = await fetchConversations();
       setItems(result.conversations);
       setSelfMembershipId(result.selfMembershipId);
@@ -83,13 +85,22 @@ export default function ChatsTab() {
         <Text className="mb-3 text-2xl font-bold text-foreground">
           {t("Chats.pageTitle")}
         </Text>
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder={t("Chats.searchPlaceholder")}
-          placeholderTextColor="#9ca3af"
-          className="rounded-md border border-border bg-background px-3 py-2.5 text-base text-foreground"
-        />
+        <View className="flex-row items-center gap-2">
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder={t("Chats.searchPlaceholder")}
+            placeholderTextColor="#9ca3af"
+            className="flex-1 rounded-md border border-border bg-background px-3 py-2.5 text-base text-foreground"
+          />
+          <Pressable
+            onPress={() => router.push("/chats/new")}
+            accessibilityLabel={t("Chats.newChat")}
+            className="h-11 w-11 shrink-0 items-center justify-center rounded-md bg-primary"
+          >
+            <FontAwesome name="plus" size={16} color="#fff" />
+          </Pressable>
+        </View>
         <View className="mt-2 flex-row gap-1">
           {filterTabs.map(({ key, label }) => (
             <Pressable

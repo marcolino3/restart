@@ -178,6 +178,7 @@ export function CurriculumLevelTree({
   // locale-switch / router.refresh and tear down @dnd-kit's sortable items,
   // which kills the active drag and breaks the grip-handle after navigation.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resyncs local DnD state with fresh server props (post router.refresh) while preserving object identity when structurally unchanged, to avoid tearing down @dnd-kit's sortable items
     setNodes((prev) =>
       nodesStructurallyEqual(prev, initialNodes) ? prev : initialNodes,
     );

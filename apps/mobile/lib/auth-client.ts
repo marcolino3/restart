@@ -4,9 +4,6 @@ import * as SecureStore from "expo-secure-store";
 
 import { API_BASE_URL } from "./env";
 
-// eslint-disable-next-line no-console
-console.log("[auth-client] baseURL:", `${API_BASE_URL}/api/auth`);
-
 export const authClient = createAuthClient({
   baseURL: `${API_BASE_URL}/api/auth`,
   plugins: [

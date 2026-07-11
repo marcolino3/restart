@@ -52,7 +52,7 @@ export const SocialSecurityNumberFormField = ({
             showMaskOnFocus: true,
           })
         : null,
-    [template?.mask],
+    [template],
   );
 
   return (

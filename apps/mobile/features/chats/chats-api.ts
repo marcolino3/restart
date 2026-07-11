@@ -1,5 +1,7 @@
 import { gql } from "graphql-request";
 import { gqlClient } from "@/lib/gql-client";
+import { authClient } from "@/lib/auth-client";
+import { API_BASE_URL } from "@/lib/env";
 
 export type ConversationType = "DIRECT" | "GROUP" | "TEAM";
 
@@ -7,6 +9,13 @@ export type ChatUser = {
   id: string;
   firstName: string;
   lastName: string;
+};
+
+export type MessageAttachment = {
+  id: string;
+  mimeType: string;
+  originalName: string;
+  sizeBytes: number;
 };
 
 export type ChatParticipant = {
@@ -34,7 +43,10 @@ export type ChatMessage = {
   editedAt?: string | null;
   senderMembershipId?: string | null;
   sender?: { id: string; user?: ChatUser | null } | null;
+  attachments?: MessageAttachment[] | null;
 };
+
+export type ChatContact = { id: string; user?: ChatUser | null };
 
 export type ConversationListItem = {
   unreadCount: number;
@@ -101,6 +113,12 @@ const ConversationMessagesDocument = gql`
           lastName
         }
       }
+      attachments {
+        id
+        mimeType
+        originalName
+        sizeBytes
+      }
     }
   }
 `;
@@ -119,6 +137,12 @@ const SendMessageDocument = gql`
           firstName
           lastName
         }
+      }
+      attachments {
+        id
+        mimeType
+        originalName
+        sizeBytes
       }
     }
   }
@@ -176,4 +200,125 @@ export async function markConversationRead(
   conversationId: string,
 ): Promise<void> {
   await gqlClient.request(MarkConversationReadDocument, { conversationId });
+}
+
+const ChatContactsDocument = gql`
+  query ChatContacts {
+    chatContacts {
+      id
+      user {
+        id
+        firstName
+        lastName
+      }
+    }
+  }
+`;
+
+export async function fetchContacts(): Promise<ChatContact[]> {
+  const data = await gqlClient.request<{ chatContacts: ChatContact[] }>(
+    ChatContactsDocument,
+  );
+  return data.chatContacts;
+}
+
+const CreateConversationDocument = gql`
+  mutation CreateConversation($input: CreateConversationInput!) {
+    createConversation(input: $input) {
+      id
+      type
+      name
+    }
+  }
+`;
+
+export async function createConversation(input: {
+  type: ConversationType;
+  name?: string | null;
+  participantMembershipIds: string[];
+}): Promise<{ id: string; type: ConversationType; name?: string | null }> {
+  const data = await gqlClient.request<{
+    createConversation: { id: string; type: ConversationType; name?: string | null };
+  }>(CreateConversationDocument, { input });
+  return data.createConversation;
+}
+
+const EditMessageDocument = gql`
+  mutation EditMessage($messageId: ID!, $body: String!) {
+    editMessage(messageId: $messageId, body: $body) {
+      id
+      body
+      editedAt
+    }
+  }
+`;
+
+export async function editMessage(
+  messageId: string,
+  body: string,
+): Promise<Pick<ChatMessage, "id" | "body" | "editedAt">> {
+  const data = await gqlClient.request<{
+    editMessage: Pick<ChatMessage, "id" | "body" | "editedAt">;
+  }>(EditMessageDocument, { messageId, body });
+  return data.editMessage;
+}
+
+const DeleteMessageDocument = gql`
+  mutation DeleteMessage($messageId: ID!) {
+    deleteMessage(messageId: $messageId)
+  }
+`;
+
+export async function deleteMessage(messageId: string): Promise<void> {
+  await gqlClient.request(DeleteMessageDocument, { messageId });
+}
+
+/** Absolute URL of an attachment's binary on the authenticated chat route. */
+export function attachmentUrl(attachmentId: string): string {
+  return `${API_BASE_URL}/api/chat-attachments/${attachmentId}`;
+}
+
+/**
+ * Uploads a picked file into a conversation via the authenticated multipart
+ * REST route. The backend creates a message carrying the attachment and
+ * publishes it over the messageAdded subscription, so it arrives in realtime
+ * like any text message — no GraphQL round-trip needed here.
+ *
+ * `credentials: "omit"` is required on React Native so the native cookie jar
+ * doesn't override our manual Cookie header (same reason as gql-client.ts).
+ */
+export async function uploadAttachment(
+  conversationId: string,
+  file: { uri: string; name: string; mimeType: string },
+): Promise<void> {
+  const cookie = authClient.getCookie();
+  const form = new FormData();
+  // React Native's FormData takes {uri, name, type} for file parts.
+  form.append("file", {
+    uri: file.uri,
+    name: file.name,
+    type: file.mimeType,
+  } as unknown as Blob);
+
+  const res = await fetch(
+    `${API_BASE_URL}/api/chat-attachments?conversationId=${encodeURIComponent(
+      conversationId,
+    )}`,
+    {
+      method: "POST",
+      credentials: "omit",
+      headers: {
+        "apollo-require-preflight": "true",
+        ...(cookie ? { Cookie: cookie } : {}),
+      },
+      body: form,
+    },
+  );
+  if (!res.ok) {
+    const msg = await res
+      .json()
+      .then((r: { message?: string }) => r?.message)
+      .catch(() => null);
+    throw new Error(msg ?? `Upload failed (${res.status})`);
+  }
 }

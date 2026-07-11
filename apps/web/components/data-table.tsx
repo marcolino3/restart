@@ -184,6 +184,7 @@ export function DataTableDemo() {
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- @tanstack/react-table returns non-memoizable functions by design
   const table = useReactTable({
     data,
     columns,

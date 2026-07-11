@@ -229,6 +229,7 @@ export const OrganizationsTable = ({ data }: Props) => {
       : { success: false as const, error: t("deleteError") };
   };
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions by design
   const table = useReactTable({
     data,
     columns,
