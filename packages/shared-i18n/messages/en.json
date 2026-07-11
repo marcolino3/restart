@@ -1616,7 +1616,16 @@
     "recentEvents": "Recent events",
     "noRecentEvents": "No events recorded yet.",
     "learningState": "Learning progress",
-    "recordedBy": "recorded by {name}"
+    "recordedBy": "recorded by {name}",
+    "preferredName": "Preferred name",
+    "placeOfBirth": "Place of birth",
+    "nationalities": "Nationality/-ies",
+    "firstLanguages": "First language(s)",
+    "familyLanguages": "Family language(s)",
+    "religion": "Religion / confession",
+    "socialSecurityNumber": "Social security number",
+    "externalStudentId": "External student ID",
+    "sensitiveHint": "Religion and social security number are special categories of personal data (GDPR Art. 9) — capture only with authorisation."
   },
   "ContactPersons": {
     "contactPersons": "Contact Persons",

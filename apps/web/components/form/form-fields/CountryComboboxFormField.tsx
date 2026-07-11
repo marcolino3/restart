@@ -15,15 +15,26 @@ const COUNTRY_CODES = [
 type CountryComboboxFormFieldProps<TFormValues extends FieldValues> = {
   name: FieldPath<TFormValues>;
   label?: string;
+  description?: string;
   className?: string;
   width?: string;
+  /** Allow selecting multiple countries (value becomes a string[] of codes). */
+  multiple?: boolean;
+  /**
+   * i18n namespace for the field `label`/`description`. Option labels always
+   * come from the `Countries` namespace. Default `"Common"`.
+   */
+  namespace?: string;
 };
 
 export function CountryComboboxFormField<TFormValues extends FieldValues>({
   name,
   label = "country",
+  description,
   className,
   width,
+  multiple = false,
+  namespace = "Common",
 }: CountryComboboxFormFieldProps<TFormValues>) {
   const t = useTranslations("Countries");
 
@@ -40,9 +51,12 @@ export function CountryComboboxFormField<TFormValues extends FieldValues>({
     <ComboboxFormField<TFormValues>
       name={name}
       label={label}
+      description={description}
+      namespace={namespace}
       options={options}
       placeholder="selectPlaceholder"
       translateOptions={false}
+      multiple={multiple}
       className={className}
       width={width}
     />

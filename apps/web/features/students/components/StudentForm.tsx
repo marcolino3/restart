@@ -21,6 +21,7 @@ import {
 import { createStudentAction } from "../actions/create-student.action";
 import { updateStudentAction } from "../actions/update-student.action";
 import { StudentDetail } from "../actions/get-student-by-id.action";
+import { StudentMasterDataFields } from "./StudentMasterDataFields";
 
 interface Props {
   student?: StudentDetail;
@@ -45,6 +46,14 @@ export default function StudentForm({ student }: Props) {
         : null,
       exitDate: student?.exitDate ? new Date(student.exitDate) : null,
       notes: student?.notes ?? "",
+      preferredName: student?.preferredName ?? "",
+      placeOfBirth: student?.placeOfBirth ?? "",
+      firstLanguages: student?.firstLanguages ?? [],
+      familyLanguages: student?.familyLanguages ?? [],
+      religion: student?.religion ?? "",
+      socialSecurityNumber: student?.socialSecurityNumber ?? "",
+      externalStudentId: student?.externalStudentId ?? "",
+      nationalities: student?.nationalities ?? [],
     },
   });
 
@@ -91,12 +100,19 @@ export default function StudentForm({ student }: Props) {
               width="w-1/2"
             />
           </div>
+          <StudentMasterDataFields />
         </section>
 
         <Separator />
 
         <section className="space-y-4">
           <h3 className="text-lg font-semibold">{tS("schoolData")}</h3>
+          <InputFormField
+            name="externalStudentId"
+            label="externalStudentId"
+            namespace="Students"
+            width="w-1/2"
+          />
           <div className="flex gap-4">
             <DatePickerFormField
               name="enrollmentDate"

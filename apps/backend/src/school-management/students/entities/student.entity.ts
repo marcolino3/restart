@@ -45,6 +45,63 @@ export class Student extends AbstractEntity<Student> implements IStudent {
   @Column('text', { nullable: true })
   notes?: string | null;
 
+  // --- Master data extension (Scope 1) ---
+
+  /** Preferred name used in day-to-day life (e.g. "Sasha" for "Alexander"). */
+  @Field(() => String, { nullable: true })
+  @Column('text', { name: 'preferred_name', nullable: true })
+  preferredName?: string | null;
+
+  /** Place of birth (register/report use). */
+  @Field(() => String, { nullable: true })
+  @Column('text', { name: 'place_of_birth', nullable: true })
+  placeOfBirth?: string | null;
+
+  /**
+   * The child's first language(s). Kept on the student (not just contacts) for
+   * DaZ / language-background analysis.
+   */
+  @Field(() => [String], { nullable: true })
+  @Column('text', { name: 'first_languages', array: true, nullable: true })
+  firstLanguages?: string[] | null;
+
+  /** Language(s) spoken at home. */
+  @Field(() => [String], { nullable: true })
+  @Column('text', { name: 'family_languages', array: true, nullable: true })
+  familyLanguages?: string[] | null;
+
+  /**
+   * Religion / confession. Sensitive (GDPR Art. 9) — never expose to a parent
+   * scope; see docs/student-master-data-architecture.md (SCHOOL_ONLY).
+   */
+  @Field(() => String, { nullable: true })
+  @Column('text', { nullable: true })
+  religion?: string | null;
+
+  /**
+   * Swiss social-security (AHV) number. Highly sensitive — treated like
+   * ContactPerson.socialSecurityNumber, gated by STUDENT_READ, never in a
+   * parent scope.
+   */
+  @Field(() => String, { nullable: true })
+  @Column('text', { name: 'social_security_number', nullable: true })
+  socialSecurityNumber?: string | null;
+
+  /** External / cantonal student id (Matrikelnummer). */
+  @Field(() => String, { nullable: true })
+  @Column('text', { name: 'external_student_id', nullable: true })
+  externalStudentId?: string | null;
+
+  /**
+   * Nationalities as ISO country codes (e.g. `['CH', 'DE']`). Stored as a
+   * text[] to match the project's country pattern (the org `country` field
+   * and `CountryComboboxFormField` both use ISO codes), rather than a relation
+   * to the unseeded `country` table.
+   */
+  @Field(() => [String], { nullable: true })
+  @Column('text', { name: 'nationalities', array: true, nullable: true })
+  nationalities?: string[] | null;
+
   @Field(() => ID, { nullable: true })
   @Column('uuid', { name: 'admission_stage_id', nullable: true })
   admissionStageId?: string | null;

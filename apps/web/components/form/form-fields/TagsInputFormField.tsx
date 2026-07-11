@@ -3,6 +3,7 @@
 
 import { X } from "lucide-react";
 import { useState, KeyboardEvent } from "react";
+import { useTranslations } from "next-intl";
 import {
   ControllerRenderProps,
   FieldPath,
@@ -27,6 +28,12 @@ type Props<TFormValues extends FieldValues> = {
   label?: string;
   description?: string;
   placeholder?: string;
+  /**
+   * i18n namespace from which `label`, `description` and `placeholder` are
+   * translated. When omitted the props are rendered as raw text (backwards
+   * compatible with existing call sites).
+   */
+  namespace?: string;
 };
 
 export function TagsInputFormField<TFormValues extends FieldValues>({
@@ -35,7 +42,10 @@ export function TagsInputFormField<TFormValues extends FieldValues>({
   label,
   description,
   placeholder,
+  namespace,
 }: Props<TFormValues>) {
+  const t = useTranslations(namespace);
+  const tr = (key?: string) => (key && namespace ? t(key) : key);
   const [inputValue, setInputValue] = useState("");
 
   const handleKeyDown = (
@@ -57,11 +67,11 @@ export function TagsInputFormField<TFormValues extends FieldValues>({
       name={name}
       render={({ field }) => (
         <FormItem>
-          {label && <FormLabel>{label}</FormLabel>}
+          {label && <FormLabel>{tr(label)}</FormLabel>}
           <FormControl>
             <div className="space-y-2">
               <Input
-                placeholder={placeholder}
+                placeholder={tr(placeholder)}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => handleKeyDown(e, field)}
@@ -90,7 +100,7 @@ export function TagsInputFormField<TFormValues extends FieldValues>({
               </div>
             </div>
           </FormControl>
-          {description && <FormDescription>{description}</FormDescription>}
+          {description && <FormDescription>{tr(description)}</FormDescription>}
           <FormMessage />
         </FormItem>
       )}

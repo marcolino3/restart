@@ -237,6 +237,8 @@ export class StudentsService {
     organizationId: string,
   ): Promise<Student> {
     const student = await this.findOne(input.id, organizationId);
+    // `nationalities` is a plain text[] column now — Object.assign handles it
+    // like any other scalar (undefined = leave as-is; [] = clear).
     Object.assign(student, input);
     await this.studentRepo.save(student);
     return this.findOne(input.id, organizationId);

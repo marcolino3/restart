@@ -37,6 +37,9 @@ const PERMISSION_CATALOG: Array<{
   { code: PermissionCode.CONTACT_PERSON_READ, name: 'Bezugsperson lesen' },
   { code: PermissionCode.CONTACT_PERSON_WRITE, name: 'Bezugsperson schreiben' },
   { code: PermissionCode.CONTACT_PERSON_DELETE, name: 'Bezugsperson loeschen' },
+  { code: PermissionCode.STUDENT_READ, name: 'Schueler lesen' },
+  { code: PermissionCode.STUDENT_WRITE, name: 'Schueler schreiben' },
+  { code: PermissionCode.STUDENT_DELETE, name: 'Schueler loeschen' },
   { code: PermissionCode.ADMISSION_STAGE_READ, name: 'Aufnahmestufe lesen' },
   {
     code: PermissionCode.ADMISSION_STAGE_MANAGE,

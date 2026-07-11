@@ -35,6 +35,25 @@ export const createStudentAction = async (values: StudentFormOutput) => {
       : {}),
     ...(parsed.exitDate ? { exitDate: toIsoDate(parsed.exitDate) } : {}),
     ...(parsed.notes ? { notes: parsed.notes } : {}),
+    // Master data extension (Scope 1).
+    ...(parsed.preferredName ? { preferredName: parsed.preferredName } : {}),
+    ...(parsed.placeOfBirth ? { placeOfBirth: parsed.placeOfBirth } : {}),
+    ...(parsed.firstLanguages.length
+      ? { firstLanguages: parsed.firstLanguages }
+      : {}),
+    ...(parsed.familyLanguages.length
+      ? { familyLanguages: parsed.familyLanguages }
+      : {}),
+    ...(parsed.religion ? { religion: parsed.religion } : {}),
+    ...(parsed.socialSecurityNumber
+      ? { socialSecurityNumber: parsed.socialSecurityNumber }
+      : {}),
+    ...(parsed.externalStudentId
+      ? { externalStudentId: parsed.externalStudentId }
+      : {}),
+    ...(parsed.nationalities.length
+      ? { nationalities: parsed.nationalities }
+      : {}),
   };
 
   try {
