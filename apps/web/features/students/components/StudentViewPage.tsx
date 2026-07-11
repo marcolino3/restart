@@ -53,6 +53,16 @@ import StudentNotesTimeline from "@/features/student-notes/components/StudentNot
 import CreateStudentNoteInline from "@/features/student-notes/components/CreateStudentNoteInline";
 import { StudentProgressTab } from "@/features/record-keeping/components/StudentProgressTab";
 import { ConsentTab } from "@/features/consent/components/ConsentTab";
+import { StudentRecordTab } from "@/features/student-records/components/StudentRecordTab";
+import { usePermissions } from "@/features/users/context/current-user.context";
+import {
+  getStudentRecordEntriesAction,
+  type StudentRecordEntry,
+} from "@/features/student-records/actions/record-entries-actions";
+import {
+  getStudentRecordCategoriesAction,
+  type StudentRecordCategory,
+} from "@/features/student-records/actions/record-categories-actions";
 
 interface StudentViewPageProps {
   student: StudentDetail;
@@ -238,6 +248,7 @@ export default function StudentViewPage({
   const tR = useTranslations("RecordKeeping");
   const tC = useTranslations("ConsentManagement");
   const tCP = useTranslations("ContactPersons");
+  const tSR = useTranslations("StudentRecords");
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
@@ -323,6 +334,20 @@ export default function StudentViewPage({
     };
   });
 
+  const supportTab = useLazyData<{
+    entries: StudentRecordEntry[];
+    categories: StudentRecordCategory[];
+  }>(async () => {
+    const [entriesResult, categories] = await Promise.all([
+      getStudentRecordEntriesAction(student.id),
+      getStudentRecordCategoriesAction(),
+    ]);
+    return {
+      entries: entriesResult.success ? entriesResult.data : [],
+      categories,
+    };
+  });
+
   useEffect(() => {
     switch (activeTab) {
       case "overview":
@@ -340,6 +365,9 @@ export default function StudentViewPage({
       case "progress":
         progressTab.trigger();
         break;
+      case "support":
+        supportTab.trigger();
+        break;
     }
   }, [
     activeTab,
@@ -348,6 +376,7 @@ export default function StudentViewPage({
     contactPersonsTab,
     logbookTab,
     progressTab,
+    supportTab,
   ]);
 
   const handleTabChange = (value: string) => {
@@ -483,6 +512,9 @@ export default function StudentViewPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overviewTab.data, locale]);
 
+  const { hasPermission } = usePermissions();
+  const canReadRecords = hasPermission("STUDENT_RECORD_READ");
+
   // pf-tabs (saas-konzept): Accent-Unterstrich statt Pill-Container.
   const tabCls =
     "rounded-none border-b-[3px] border-transparent px-0 pb-[11px] text-[13.5px] font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-[650] data-[state=active]:text-foreground data-[state=active]:shadow-none";
@@ -565,6 +597,16 @@ export default function StudentViewPage({
             <TabsTrigger className={tabCls} value="consent">
               {tC("tabConsent")}
             </TabsTrigger>
+            {canReadRecords && (
+              <TabsTrigger
+                className={tabCls}
+                value="support"
+                onMouseEnter={supportTab.trigger}
+                onFocus={supportTab.trigger}
+              >
+                {tSR("title")}
+              </TabsTrigger>
+            )}
             <TabsTrigger
               className={tabCls}
               value="logbook"
@@ -763,6 +805,21 @@ export default function StudentViewPage({
         <TabsContent value="consent">
           <ConsentTab subjectType="STUDENT" subjectId={student.id} />
         </TabsContent>
+
+        {/* Support / Förderung */}
+        {canReadRecords && (
+          <TabsContent value="support">
+            {supportTab.data ? (
+              <StudentRecordTab
+                studentId={student.id}
+                entries={supportTab.data.entries}
+                categories={supportTab.data.categories}
+              />
+            ) : (
+              <TabLoadingSkeleton />
+            )}
+          </TabsContent>
+        )}
 
         {/* Logbook */}
         <TabsContent value="logbook">

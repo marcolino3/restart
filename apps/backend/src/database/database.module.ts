@@ -44,6 +44,9 @@ import { SchoolClassEnrollment } from '@/school-management/school-class-enrollme
 import { SchoolClass } from '@/school-management/school-classes/entities/school-class.entity';
 import { StudentNote } from '@/school-management/student-notes/entities/student-note.entity';
 import { Student } from '@/school-management/students/entities/student.entity';
+import { StudentRecordCategory } from '@/school-management/student-records/entities/student-record-category.entity';
+import { StudentRecordEntry } from '@/school-management/student-records/entities/student-record-entry.entity';
+import { StudentRecordDocument } from '@/school-management/student-records/entities/student-record-document.entity';
 import { CurriculumLevel } from '@/curricula/entities/curriculum-level.entity';
 import { CurriculumLevelTranslation } from '@/curricula/entities/curriculum-level-translation.entity';
 import { Curriculum } from '@/curricula/entities/curriculum.entity';
@@ -117,6 +120,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       SchoolClass,
       SchoolClassEnrollment,
       Student,
+      StudentRecordCategory,
+      StudentRecordEntry,
+      StudentRecordDocument,
       StudentNote,
       AdmissionStage,
       AdmissionRejectionReason,

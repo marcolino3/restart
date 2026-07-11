@@ -40,6 +40,19 @@ const PERMISSION_CATALOG: Array<{
   { code: PermissionCode.STUDENT_READ, name: 'Schueler lesen' },
   { code: PermissionCode.STUDENT_WRITE, name: 'Schueler schreiben' },
   { code: PermissionCode.STUDENT_DELETE, name: 'Schueler loeschen' },
+  { code: PermissionCode.STUDENT_RECORD_READ, name: 'Foerderprofil lesen' },
+  {
+    code: PermissionCode.STUDENT_RECORD_WRITE,
+    name: 'Foerderprofil schreiben',
+  },
+  {
+    code: PermissionCode.STUDENT_RECORD_DELETE,
+    name: 'Foerderprofil loeschen',
+  },
+  {
+    code: PermissionCode.STUDENT_RECORD_CATEGORY_WRITE,
+    name: 'Foerderkategorien verwalten',
+  },
   { code: PermissionCode.ADMISSION_STAGE_READ, name: 'Aufnahmestufe lesen' },
   {
     code: PermissionCode.ADMISSION_STAGE_MANAGE,
