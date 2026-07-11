@@ -21,14 +21,19 @@ import { Message } from './entities/message.entity';
 import { ConversationParticipant } from './entities/conversation-participant.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { ConversationListItem } from './dto/conversation-list-item.output';
+import { MessageDeleted } from './dto/message-deleted.output';
 import { CreateConversationInput } from './dto/create-conversation.input';
 import { SendMessageInput } from './dto/send-message.input';
 import { MessagesPageArgs } from './dto/messages-page.args';
 import { PUB_SUB } from './pubsub/pubsub.provider';
 
-/** Topic for message events of one conversation. */
+/** Topic for new/edited message events of one conversation. */
 const messageTopic = (conversationId: string) =>
   `messageAdded.${conversationId}`;
+
+/** Topic for message-deletion events of one conversation. */
+const deletedTopic = (conversationId: string) =>
+  `messageDeleted.${conversationId}`;
 
 /** Shape a subscription context carries after onConnect (see app.module). */
 interface WsContext {
@@ -142,6 +147,62 @@ export class ChatsResolver {
     return message;
   }
 
+  @Mutation(() => Message)
+  @Permissions('CHAT_WRITE')
+  async editMessage(
+    @Args('messageId', { type: () => ID }) messageId: string,
+    @Args('body') body: string,
+    @CurrentUser() user: TokenPayload,
+    @CurrentOrgId() orgId: string,
+  ): Promise<Message> {
+    const message = await this.chatsService.editMessage(
+      orgId,
+      this.assertMembership(user),
+      messageId,
+      body,
+    );
+    // Reuse the messageAdded topic; the client replaces by id.
+    await this.pubSub.publish(messageTopic(message.conversationId), {
+      messageAdded: message,
+    });
+    return message;
+  }
+
+  @Mutation(() => ID)
+  @Permissions('CHAT_WRITE')
+  async deleteMessage(
+    @Args('messageId', { type: () => ID }) messageId: string,
+    @CurrentUser() user: TokenPayload,
+    @CurrentOrgId() orgId: string,
+  ): Promise<string> {
+    const { conversationId } = await this.chatsService.deleteMessage(
+      orgId,
+      this.assertMembership(user),
+      messageId,
+    );
+    await this.pubSub.publish(deletedTopic(conversationId), {
+      messageDeleted: { id: messageId, conversationId },
+    });
+    return messageId;
+  }
+
+  @Subscription(() => MessageDeleted, {
+    name: 'messageDeleted',
+    filter: (
+      payload: { messageDeleted: { conversationId: string } },
+      variables: { conversationId: string },
+    ) => payload.messageDeleted.conversationId === variables.conversationId,
+    resolve: (payload: { messageDeleted: MessageDeleted }) =>
+      payload.messageDeleted,
+  })
+  messageDeleted(
+    @Args('conversationId', { type: () => ID }) conversationId: string,
+  ) {
+    return this.pubSub.asyncIterator<MessageDeleted>(
+      deletedTopic(conversationId),
+    );
+  }
+
   @Mutation(() => ConversationParticipant)
   @Permissions('CHAT_READ')
   markConversationRead(
@@ -180,13 +241,23 @@ export class ChatsResolver {
         variables.conversationId,
       );
     },
-    resolve: (payload: { messageAdded: Message }) => payload.messageAdded,
+    // The payload crosses Postgres LISTEN/NOTIFY as JSON, so Date columns
+    // arrive as ISO strings. Rehydrate them to Date instances the DateTime
+    // scalar can serialize — otherwise `createdAt`/`editedAt` serialize to null
+    // and the whole (non-nullable) message resolves to null at the subscriber.
+    resolve: (payload: { messageAdded: Message }) => {
+      const m = payload.messageAdded;
+      return {
+        ...m,
+        createdAt: m.createdAt ? new Date(m.createdAt) : m.createdAt,
+        updatedAt: m.updatedAt ? new Date(m.updatedAt) : m.updatedAt,
+        editedAt: m.editedAt ? new Date(m.editedAt) : m.editedAt,
+      };
+    },
   })
   messageAdded(
     @Args('conversationId', { type: () => ID }) conversationId: string,
   ) {
-    return this.pubSub.asyncIterableIterator<Message>(
-      messageTopic(conversationId),
-    );
+    return this.pubSub.asyncIterator<Message>(messageTopic(conversationId));
   }
 }

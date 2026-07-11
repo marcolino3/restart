@@ -32,6 +32,16 @@ export const pubSubProvider: Provider = {
           ? { rejectUnauthorized: false }
           : undefined,
     });
+    // The pg Client must be connected before publish()/subscribe() can issue
+    // NOTIFY/LISTEN — graphql-pg-subscriptions does NOT connect it for us, so
+    // an unconnected client makes the first publish() hang forever (and with
+    // it the sendMessage mutation). Connect eagerly; keep the socket alive.
+    client.connect().catch((err) => {
+      console.error(
+        '[chat pubsub] failed to connect pg LISTEN/NOTIFY client',
+        err,
+      );
+    });
     return new PostgresPubSub({ client });
   },
 };

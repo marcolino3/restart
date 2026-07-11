@@ -29,6 +29,11 @@ import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 
 type GqlContext = {
   req: Request & { user?: TokenPayload };
+  // Populated by the graphql-ws context factory (app.module) after onConnect
+  // already resolved the session. Present only for WS subscription operations.
+  userId?: string;
+  orgId?: string;
+  membershipId?: string;
 };
 
 @Injectable()
@@ -41,6 +46,37 @@ export class GqlBetterAuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const gqlCtx = GqlExecutionContext.create(context).getContext<GqlContext>();
     const req = gqlCtx.req;
+
+    // WS subscriptions: the session was already resolved in onConnect and the
+    // user id/org/membership live on the context (no per-message HTTP req to
+    // re-read a cookie from). Build the TokenPayload from that instead of
+    // calling getSession again, which would fail on the WS transport.
+    if (gqlCtx.userId) {
+      const ctx = gqlCtx.orgId
+        ? await getAuthContext(this.em, gqlCtx.userId, gqlCtx.orgId).catch(
+            () => null,
+          )
+        : null;
+      req.user = ctx
+        ? {
+            sub: gqlCtx.userId,
+            orgId: gqlCtx.orgId,
+            membershipId: ctx.membership?.id ?? gqlCtx.membershipId,
+            persona: ctx.persona ?? undefined,
+            roles: ctx.roles
+              .map((r) => r.name)
+              .filter((n): n is string => Boolean(n)),
+            permissions: ctx.permissions,
+          }
+        : {
+            sub: gqlCtx.userId,
+            orgId: gqlCtx.orgId,
+            membershipId: gqlCtx.membershipId,
+            roles: [],
+            permissions: [],
+          };
+      return true;
+    }
 
     const session = await auth.api.getSession({
       headers: req.headers as unknown as Headers,

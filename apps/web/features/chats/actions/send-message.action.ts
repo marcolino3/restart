@@ -19,6 +19,12 @@ const SendMessageDocument = graphql(`
           lastName
         }
       }
+      attachments {
+        id
+        originalName
+        mimeType
+        sizeBytes
+      }
     }
   }
 `);

@@ -53,9 +53,17 @@ const AdminLayout = async ({ children }: { children: React.ReactNode }) => {
               <ImpersonationBanner asUserName={impersonationInfo.asUserName} />
             )}
             <SiteHeader />
-            <div className="flex flex-1 flex-col">
-              <div className="@container/main flex flex-1 flex-col gap-2">
-                <div className="flex flex-col gap-4 py-4 m-6 md:gap-6 md:py-6">
+            {/* On full-bleed pages the whole content column is pinned to the
+                viewport height under the header, so children can fill it with
+                flex-1 (no per-component viewport math). Other pages keep their
+                natural min-height / scroll behaviour. */}
+            <div className="flex flex-1 flex-col has-[[data-full-bleed]]:h-[calc(100svh-var(--header-height,3.5rem))] has-[[data-full-bleed]]:flex-none has-[[data-full-bleed]]:min-h-0">
+              <div className="@container/main flex flex-1 flex-col gap-2 has-[[data-full-bleed]]:min-h-0">
+                {/* Standard content padding, EXCEPT for full-bleed pages (e.g.
+                    the chat messenger): a page can render a `[data-full-bleed]`
+                    element to drop the margin/padding and fill the area edge to
+                    edge. `:has()` keeps every other page unchanged. */}
+                <div className="flex flex-1 flex-col gap-4 py-4 m-6 md:gap-6 md:py-6 has-[[data-full-bleed]]:m-0 has-[[data-full-bleed]]:min-h-0 has-[[data-full-bleed]]:gap-0 has-[[data-full-bleed]]:p-0">
                   {children}
                 </div>
               </div>

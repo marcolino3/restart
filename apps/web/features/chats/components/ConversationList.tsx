@@ -127,9 +127,12 @@ export function ConversationList({
                 <li key={conversation.id}>
                   <button
                     onClick={() => onSelect(conversation.id)}
+                    aria-current={isActive ? "true" : undefined}
                     className={cn(
                       "flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition",
-                      isActive ? "bg-muted" : "hover:bg-muted/60",
+                      // Active row reads clearly in every theme via an
+                      // accent-tinted background from the primary token.
+                      isActive ? "bg-primary/15" : "hover:bg-muted/60",
                     )}
                   >
                     <span
