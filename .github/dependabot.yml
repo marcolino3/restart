@@ -27,6 +27,21 @@ updates:
       # NativeWind (apps/mobile) ist an Tailwind 3 gebunden — Tailwind 4 bricht die JS-Config-Auflösung
       - dependency-name: "tailwindcss"
         versions: [">=4.0.0"]
+      # Expo koppelt ab SDK 55 die Paket-Major-Version an die SDK-Nummer
+      # (https://expo.dev/changelog/sdk-55). apps/mobile steht auf SDK 54, dort
+      # sind expo-localization@17.x und eslint-config-expo@10.x die korrekten
+      # Versionen — ein 55/56/57er-Paket gehört zu einem anderen SDK und bringt
+      # bei nativen Modulen inkompatible Autolinking-/Podspec-Anforderungen mit.
+      # Beim echten SDK-Upgrade zieht `npx expo install --fix` alles gemeinsam
+      # nach; Einzel-Bumps von Dependabot sind dafür der falsche Weg.
+      - dependency-name: "expo-localization"
+        versions: [">=55.0.0"]
+      - dependency-name: "eslint-config-expo"
+        versions: [">=55.0.0"]
+      # @types/node 26 typisiert Node-26-APIs; CI und Runtime laufen auf Node 22
+      # (node-version in ci.yml/security.yml, engines: ">=20").
+      - dependency-name: "@types/node"
+        versions: [">=26.0.0"]
 
   # Backend
   - package-ecosystem: "npm"
@@ -58,6 +73,27 @@ updates:
       # TypeORM 1.0 = Datenschicht-Major, braucht dedizierten Migrations-PR
       - dependency-name: "typeorm"
         versions: [">=1.0.0"]
+      # sanitize-html 2.17.6 hebt htmlparser2 von ^10.1.0 auf ^12.0.0 — v12 ist
+      # ESM-only (kein CommonJS-Entry mehr). Jest transformiert node_modules
+      # nicht, deshalb brechen die Suiten, die sanitize-email-html.ts laden.
+      # Zur Laufzeit ist es unkritisch (Node löst es über die exports-Map auf).
+      # Erst nachziehen, wenn die Jest-Config ESM in node_modules verarbeitet.
+      - dependency-name: "sanitize-html"
+        versions: [">=2.17.6"]
+      # graphql 17: das Nest/Apollo-Ökosystem ist noch auf 16 festgelegt —
+      # @nestjs/graphql und @apollo/server verlangen ^16.11.0, @nestjs/apollo
+      # ^16.10.0. Erst nachziehen, wenn diese drei 17 als Peer akzeptieren.
+      - dependency-name: "graphql"
+        versions: [">=17.0.0"]
+      # @types/node 26 typisiert Node-26-APIs; CI und Runtime laufen auf Node 22
+      # (node-version in ci.yml/security.yml, engines: ">=20").
+      - dependency-name: "@types/node"
+        versions: [">=26.0.0"]
+      # ESLint 10 — gleicher Blocker wie in /apps/web: eslint-plugin-react@7.37.5
+      # ist über die geteilte Root-Config beteiligt und bricht auf v10.
+      # Das Monorepo hebt ESLint gemeinsam an, nicht paketweise.
+      - dependency-name: "eslint"
+        versions: [">=10.0.0"]
 
   # Frontend
   - package-ecosystem: "npm"
@@ -82,6 +118,12 @@ updates:
           - "patch"
     ignore:
       # Bewusste Pins (siehe MEMORY.md „Bekannte Issues")
+      # ESLint 10: typescript-eslint@8.65 unterstützt v10 inzwischen, der
+      # Blocker ist jetzt eslint-plugin-react@7.37.5 — es ruft die in v10
+      # entfernte Kontext-API auf und stirbt mit
+      # "TypeError: contextOrFilename.getFilename is not a function"
+      # (lokal mit eslint@10.8.0 verifiziert, Lint bricht mit exit 2 ab).
+      # Erst nachziehen, wenn eslint-plugin-react v10 unterstützt.
       - dependency-name: "eslint"
         versions: [">=10.0.0"]
       - dependency-name: "@swc/cli"
@@ -92,6 +134,18 @@ updates:
       # (Missing initializer in const declaration) — Major braucht eigene Migration
       - dependency-name: "@graphql-codegen/cli"
         versions: [">=7.0.0"]
+      # Tiptap 2 -> 3 ist ein koordinierter Umstieg ALLER vier Pakete auf einmal:
+      # @tiptap/react@3 verlangt "@tiptap/pm": "3.27.3" exakt (kein Range).
+      # Dependabot öffnet aber nur Einzel-PRs und keinen für @tiptap/pm, jeder
+      # davon würde also die Peer-Dependency brechen. Braucht einen eigenen
+      # Migrations-PR über extension-link + pm + react + starter-kit gemeinsam.
+      - dependency-name: "@tiptap/*"
+        versions: [">=3.0.0"]
+      # @types/node 26 typisiert Node-26-APIs; CI und Runtime laufen auf Node 22
+      # (siehe node-version in ci.yml/security.yml, engines: ">=20").
+      # Erst nachziehen, wenn die Node-Baseline angehoben wird.
+      - dependency-name: "@types/node"
+        versions: [">=26.0.0"]
 
   # E2E
   - package-ecosystem: "npm"
@@ -113,6 +167,13 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # TypeScript 7 im e2e-Package würde die Version aus dem Rest des Monorepos
+      # herauslaufen lassen (dort 5.9.x, gepinnt weil typescript-eslint@8 nur
+      # "typescript": ">=4.8.4 <6.1.0" unterstützt). Gemeinsam mit dem Monorepo
+      # anheben, nicht einzeln — siehe MEMORY.md „Bekannte Issues".
+      - dependency-name: "typescript"
+        versions: [">=6.0.0"]
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
