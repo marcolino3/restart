@@ -58,6 +58,13 @@ updates:
       # TypeORM 1.0 = Datenschicht-Major, braucht dedizierten Migrations-PR
       - dependency-name: "typeorm"
         versions: [">=1.0.0"]
+      # sanitize-html 2.17.6 hebt htmlparser2 von ^10.1.0 auf ^12.0.0 — v12 ist
+      # ESM-only (kein CommonJS-Entry mehr). Jest transformiert node_modules
+      # nicht, deshalb brechen die Suiten, die sanitize-email-html.ts laden.
+      # Zur Laufzeit ist es unkritisch (Node löst es über die exports-Map auf).
+      # Erst nachziehen, wenn die Jest-Config ESM in node_modules verarbeitet.
+      - dependency-name: "sanitize-html"
+        versions: [">=2.17.6"]
 
   # Frontend
   - package-ecosystem: "npm"
