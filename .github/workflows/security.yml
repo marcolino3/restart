@@ -36,6 +36,11 @@ jobs:
         with:
           fail-on-severity: high
           comment-summary-in-pr: on-failure
+          # Muss mit pnpm.auditConfig.ignoreGhsas in package.json synchron
+          # bleiben — die beiden Checks lesen getrennte Konfigurationen, eine
+          # Ausnahme nur an einer Stelle lässt die andere rot laufen.
+          # Volle Begründung beim "Audit production dependencies"-Step unten.
+          allow-ghsas: GHSA-mh99-v99m-4gvg
 
   gitleaks:
     name: Secret Scanning (gitleaks)
@@ -136,6 +141,10 @@ jobs:
       # Semver-Kontrakt fremder Transitiv-Deps in der Datenschicht (TypeORM).
       # Nicht ausnutzbar: der Glob-Matcher sieht zur Laufzeit keinen
       # Angreifer-Input. Neu bewerten, sobald typeorm auf glob@13 geht.
+      #
+      # Dieselbe GHSA muss auch bei dependency-review (allow-ghsas, oben)
+      # eingetragen sein: der Check bewertet den Lockfile-Diff und meldet die
+      # angehobene brace-expansion-Version sonst als neu eingeführte Vuln.
       - name: Audit production dependencies
         run: pnpm audit --prod --audit-level=high
         continue-on-error: false
