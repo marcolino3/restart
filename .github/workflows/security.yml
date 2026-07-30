@@ -36,6 +36,11 @@ jobs:
         with:
           fail-on-severity: high
           comment-summary-in-pr: on-failure
+          # Muss mit pnpm.auditConfig.ignoreGhsas in package.json synchron
+          # bleiben — die beiden Checks lesen getrennte Konfigurationen, eine
+          # Ausnahme nur an einer Stelle lässt die andere rot laufen.
+          # Volle Begründung beim "Audit production dependencies"-Step unten.
+          allow-ghsas: GHSA-mh99-v99m-4gvg
 
   gitleaks:
     name: Secret Scanning (gitleaks)
@@ -122,6 +127,24 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       # Production deps strikt: HIGH+ failed den Build.
+      #
+      # Bewusste Ausnahme in package.json → pnpm.auditConfig.ignoreGhsas:
+      #   GHSA-mh99-v99m-4gvg (brace-expansion, DoS via unbounded expansion)
+      # Betrifft in --prod nur zwei transitive Pfade:
+      #   apps/backend > typeorm > glob@10 > minimatch@9 > brace-expansion@2.1.4
+      #   apps/mobile  > expo > @expo/cli > … > minimatch@3 > brace-expansion@1.1.18
+      # Beide sind bereits die gepatchten Spitzen ihrer Major-Linie (v1: >=1.1.16,
+      # v2: >=2.1.2); die Advisory-Range <=5.0.7 erfasst sie nur formal. Ein echter
+      # Fix verlangt brace-expansion@>=5.0.8, was minimatch@10 und damit glob@13
+      # voraussetzt — minimatch@9 deklariert "brace-expansion": "^2.0.2",
+      # minimatch@3 deklariert "^1.1.7". Ein Override auf v5 bräche also den
+      # Semver-Kontrakt fremder Transitiv-Deps in der Datenschicht (TypeORM).
+      # Nicht ausnutzbar: der Glob-Matcher sieht zur Laufzeit keinen
+      # Angreifer-Input. Neu bewerten, sobald typeorm auf glob@13 geht.
+      #
+      # Dieselbe GHSA muss auch bei dependency-review (allow-ghsas, oben)
+      # eingetragen sein: der Check bewertet den Lockfile-Diff und meldet die
+      # angehobene brace-expansion-Version sonst als neu eingeführte Vuln.
       - name: Audit production dependencies
         run: pnpm audit --prod --audit-level=high
         continue-on-error: false
