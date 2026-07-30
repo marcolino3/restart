@@ -41,4 +41,23 @@ export default tseslint.config(
       '@typescript-eslint/only-throw-error': ['error', { allow: ['APIError'] }],
     },
   },
+  {
+    // Test files legitimately use `any` for repository/service mocks, jest.fn
+    // casts and partial fixtures — typing every mock adds noise without value.
+    // The no-unsafe-* family is therefore relaxed in test contexts only;
+    // production code under src/ keeps them as warnings.
+    files: [
+      '**/*.spec.ts',
+      '**/*.e2e-spec.ts',
+      '**/*.integration.spec.ts',
+      'test/**/*.ts',
+    ],
+    rules: {
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+    },
+  },
 );

@@ -204,6 +204,7 @@ export function ActivityComposer({
   const [withSelection, setWithSelection] = useState<string>(initialWithId);
   const withIsOther = withSelection === WITH_OTHER;
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form's watch() returns non-memoizable functions by design
   const type = form.watch("type");
   const direction = form.watch("direction") ?? null;
 
@@ -240,7 +241,6 @@ export function ActivityComposer({
   // non-outbound direction), so a stale selection can't linger.
   useEffect(() => {
     if (!showOutcome) setCallOutcome(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showOutcome]);
 
   const placeholderKey =

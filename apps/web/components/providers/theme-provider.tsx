@@ -24,6 +24,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     const current = document.documentElement.getAttribute("data-theme");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- adopts the theme already applied to the DOM by the no-FOUC inline script (external system), not derivable from props/state during render.
     if (isThemeId(current)) setThemeState(current);
   }, []);
 

@@ -54,6 +54,7 @@ export function CurriculumImportDialog() {
     resolver: zodResolver(NameSchema),
     defaultValues: { name: "" },
   });
+  // eslint-disable-next-line react-hooks/incompatible-library -- React Hook Form returns non-memoizable functions by design
   const name = nameForm.watch("name");
 
   const reset = () => {

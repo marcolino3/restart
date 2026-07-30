@@ -64,6 +64,7 @@ export const PrerequisitesEditor = ({
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- marks the start of an async fetch triggered by the dialog opening, not derivable from render
     setLoading(true);
     getLessonPrerequisitesAction(lessonId)
       .then((res) => {

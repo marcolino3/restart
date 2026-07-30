@@ -154,6 +154,7 @@ export function AppointmentForm({
     },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form's watch() returns non-memoizable functions by design
   const isPeriod = form.watch("isPeriod");
   const scheduledAt = form.watch("scheduledAt");
   // The end of a period can never precede its start: block every day before the

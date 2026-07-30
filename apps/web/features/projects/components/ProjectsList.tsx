@@ -131,6 +131,7 @@ export function ProjectsList({
   const [view, setView] = React.useState<"cards" | "list">("cards");
   React.useEffect(() => {
     const v = window.localStorage.getItem(VIEW_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reads view preference from localStorage (external system, unavailable during SSR) on mount
     if (v === "cards" || v === "list") setView(v);
   }, []);
   React.useEffect(() => {

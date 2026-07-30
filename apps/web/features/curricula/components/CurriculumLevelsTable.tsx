@@ -249,6 +249,7 @@ export function CurriculumLevelsTable({
     [t, tCommon, nodesByLevel, loading],
   );
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions by design
   const table = useReactTable({
     data,
     columns,

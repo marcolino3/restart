@@ -358,6 +358,7 @@ export const StudentsTable = ({ data }: Props) => {
     setPagination({ pageIndex: 0, pageSize: newPageSize });
   };
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table's useReactTable() returns non-memoizable functions by design
   const table = useReactTable({
     data,
     columns,

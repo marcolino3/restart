@@ -221,6 +221,7 @@ export function CurriculaTable({ data, headerActions }: Props) {
     [t, tCommon, locale, router, isSuperAdmin],
   );
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions by design
   const table = useReactTable({
     data: rows,
     columns,

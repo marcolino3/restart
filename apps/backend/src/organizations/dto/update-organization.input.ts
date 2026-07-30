@@ -5,13 +5,17 @@ import {
   IsString,
   IsUUID,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, type TransformFnParams } from 'class-transformer';
 import { CreateOrganizationInput } from './create-organization.input';
 import { InputType, Field, PartialType, ID } from '@nestjs/graphql';
 import { IOrganization } from '../interfaces/organization.interface';
 
+// class-transformer types `TransformFnParams.value` as `any`; the inputs
+// here are always plain form/GraphQL string values.
 const EmptyToUndefined = () =>
-  Transform(({ value }) => (value === '' ? undefined : value));
+  Transform(({ value }: TransformFnParams): unknown =>
+    value === '' ? undefined : (value as unknown),
+  );
 
 @InputType()
 export class UpdateOrganizationInput

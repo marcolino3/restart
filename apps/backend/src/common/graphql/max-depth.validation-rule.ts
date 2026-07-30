@@ -2,6 +2,7 @@ import {
   GraphQLError,
   Kind,
   type ASTNode,
+  type ASTVisitor,
   type FragmentDefinitionNode,
   type ValidationContext,
 } from 'graphql';
@@ -18,7 +19,7 @@ import {
  * dev landing page keep working.
  */
 export function createMaxDepthRule(maxDepth: number) {
-  return (context: ValidationContext) => {
+  return (context: ValidationContext): ASTVisitor => {
     const fragments: Record<string, FragmentDefinitionNode> = {};
 
     for (const def of context.getDocument().definitions) {

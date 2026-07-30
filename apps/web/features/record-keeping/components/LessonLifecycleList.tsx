@@ -66,7 +66,9 @@ const CURRENT_RANK: Record<LessonRecordStatus, number> = {
 
 export function LessonLifecycleList({
   lifecycles,
-  areaLessonCounts = [],
+  // Not yet consumed here — reserved for the curriculum-suffix disambiguation
+  // described above; kept in the public Props so callers can keep passing it.
+  areaLessonCounts: _areaLessonCounts = [],
 }: Props) {
   const t = useTranslations("RecordKeeping");
   const locale = useLocale();
@@ -396,7 +398,6 @@ function LifecycleTimeline({
   };
   const markers: Marker[] = [];
   let introCount = 0;
-  let practiceCount = 0;
   for (const h of history) {
     if (h.recordedAt < introducedAt) continue; // shouldn't happen
     if (h.recordedAt > endDate) continue;
@@ -419,10 +420,9 @@ function LifecycleTimeline({
           label: introducedLabel,
         });
       }
-    } else if (h.status === "PRACTICED") {
-      practiceCount++;
-      // Extra practice records get small inline ticks under the bar.
     }
+    // PRACTICED records get small inline ticks under the bar (see
+    // `practiceTicks` below) — no marker/counter needed here.
   }
   // Practice ticks (lighter than NEEDS_MORE markers; just shows activity).
   const practiceTicks = history

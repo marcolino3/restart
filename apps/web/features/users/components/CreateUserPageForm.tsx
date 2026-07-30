@@ -61,6 +61,7 @@ export default function CreateUserPageForm({
     },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form's watch() returns non-memoizable functions by design
   const selectedOrgId = form.watch("organizationId");
 
   useEffect(() => {

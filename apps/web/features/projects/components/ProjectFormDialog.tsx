@@ -88,6 +88,7 @@ export function ProjectFormDialog({
     },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- React Hook Form returns non-memoizable functions by design
   const templateId = form.watch("templateId") ?? null;
 
   const memberOptions = orgMemberships.map((m) => ({

@@ -51,6 +51,10 @@ export const ROUTES = {
     projectTemplates: (locale: string) => `/${locale}/admin/projects/templates`,
     myTasks: (locale: string) => `/${locale}/admin/my-tasks`,
 
+    // Chats
+    chats: (locale: string) => `/${locale}/admin/chats`,
+    chat: (locale: string, id: string) => `/${locale}/admin/chats/${id}`,
+
     // Meeting protocols
     protocols: (locale: string) => `/${locale}/admin/protocols`,
     protocolEditor: (locale: string, id: string) =>

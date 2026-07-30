@@ -4,7 +4,12 @@ import {
   createAuthMiddleware,
   getSessionFromCtx,
 } from 'better-auth/api';
-import { admin, customSession, magicLink } from 'better-auth/plugins';
+import {
+  admin,
+  customSession,
+  magicLink,
+  type SessionWithImpersonatedBy,
+} from 'better-auth/plugins';
 import { mailer } from './mailer';
 import { expo } from '@better-auth/expo';
 import * as jwt from 'jsonwebtoken';
@@ -85,6 +90,13 @@ const buildAppleSocialConfig = () => {
 };
 
 const appleSocial = buildAppleSocialConfig();
+
+// better-auth doesn't publicly export a named type for the hook callback's
+// `ctx` parameter (it's `better-call`'s internal `MiddlewareContext`, not a
+// direct dependency of this package) — derive it structurally instead.
+type AuthHookContext = Parameters<
+  Parameters<typeof createAuthMiddleware>[0]
+>[0];
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:4001',
@@ -197,7 +209,7 @@ export const auth = betterAuth({
     // session.user shape doesn't carry that flag — we look it up directly
     // in our domain DB by email.
 
-    before: createAuthMiddleware(async (ctx: any) => {
+    before: createAuthMiddleware(async (ctx: AuthHookContext) => {
       if (
         ctx.path !== '/admin/impersonate-user' &&
         ctx.path !== '/admin/stop-impersonating'
@@ -206,8 +218,11 @@ export const auth = betterAuth({
       }
       // Explicitly load the session — before-hooks don't auto-populate it.
 
-      const session = (await getSessionFromCtx(ctx)) as any;
-      const email = session?.user?.email as string | undefined;
+      const session = await getSessionFromCtx<
+        Record<string, unknown>,
+        SessionWithImpersonatedBy
+      >(ctx);
+      const email = session?.user?.email;
       if (!email) {
         throw new APIError('UNAUTHORIZED', { message: 'No session' });
       }
@@ -218,8 +233,7 @@ export const auth = betterAuth({
       // Session eine aktive Impersonation ist (better-auth setzt
       // session.impersonatedBy auf den ursprünglichen SuperAdmin).
       if (ctx.path === '/admin/stop-impersonating') {
-        const impersonatedBy = session?.session?.impersonatedBy as
-          string | undefined | null;
+        const impersonatedBy = session.session.impersonatedBy;
         if (!impersonatedBy) {
           throw new APIError('FORBIDDEN', { message: 'Not impersonating' });
         }
@@ -227,16 +241,15 @@ export const auth = betterAuth({
       }
 
       // Impersonate-User (Start): nur SuperAdmins dürfen Impersonation starten.
-      const result: Array<{ is_super_admin: boolean }> = await pool
-        .query(
-          `SELECT u.is_super_admin
+      const queryResult = await pool.query<{ is_super_admin: boolean }>(
+        `SELECT u.is_super_admin
              FROM users u
              INNER JOIN user_emails ue ON ue.user_id = u.id
              WHERE ue.email = $1
              LIMIT 1`,
-          [email],
-        )
-        .then((r) => r.rows);
+        [email],
+      );
+      const result = queryResult.rows;
       const isSuperAdmin = result[0]?.is_super_admin === true;
       if (!isSuperAdmin) {
         throw new APIError('FORBIDDEN', { message: 'SuperAdmin only' });

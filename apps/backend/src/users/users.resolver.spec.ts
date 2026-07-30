@@ -187,7 +187,7 @@ describe('UsersResolver', () => {
   });
 
   describe('CRUD delegation', () => {
-    it('createUser delegates to the service', () => {
+    it('createUser delegates to the service', async () => {
       const input = {
         firstName: 'Max',
         lastName: 'Mustermann',
@@ -197,28 +197,28 @@ describe('UsersResolver', () => {
         persona: Persona.EMPLOYEE,
         roleIds: [],
       };
-      resolver.createUser(input);
+      await resolver.createUser(input);
       expect(usersService.create).toHaveBeenCalledWith(input);
     });
 
-    it('findAll delegates to the service', () => {
-      resolver.findAll();
+    it('findAll delegates to the service', async () => {
+      await resolver.findAll();
       expect(usersService.findAll).toHaveBeenCalled();
     });
 
-    it('findOne delegates with the given id', () => {
-      resolver.findOne('user-2');
+    it('findOne delegates with the given id', async () => {
+      await resolver.findOne('user-2');
       expect(usersService.findOne).toHaveBeenCalledWith('user-2');
     });
 
-    it('updateUser delegates to the service', () => {
+    it('updateUser delegates to the service', async () => {
       const input = { id: 'user-1', firstName: 'Moritz' };
-      resolver.updateUser(input);
+      await resolver.updateUser(input);
       expect(usersService.update).toHaveBeenCalledWith(input);
     });
 
-    it('removeUser delegates to the service', () => {
-      resolver.removeUser('user-1');
+    it('removeUser delegates to the service', async () => {
+      await resolver.removeUser('user-1');
       expect(usersService.remove).toHaveBeenCalledWith('user-1');
     });
   });

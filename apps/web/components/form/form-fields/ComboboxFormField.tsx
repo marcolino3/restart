@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import { FieldPath, FieldValues, useFormContext } from "react-hook-form";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import {
@@ -79,6 +79,8 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
   const triggerRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
   const [isOverflowing, setIsOverflowing] = useState(false);
+  const [open, setOpen] = useState(false);
+  const listboxId = useId();
 
   return (
     <FormField
@@ -170,7 +172,7 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
           <FormItem className={cn(className, width || "w-full", "min-w-0 flex flex-col gap-2")}>
             {label && <FormLabel>{t(label)}</FormLabel>}
             <div className="flex items-center gap-1">
-            <Popover modal={modal}>
+            <Popover modal={modal} open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
                 <FormControl>
                   {/*
@@ -183,6 +185,9 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
                   <div
                     ref={triggerRef}
                     role="combobox"
+                    aria-expanded={open}
+                    aria-controls={listboxId}
+                    aria-haspopup="listbox"
                     tabIndex={0}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
@@ -245,7 +250,7 @@ export function ComboboxFormField<TFormValues extends FieldValues>({
                   </div>
                 </FormControl>
               </PopoverTrigger>
-              <PopoverContent className="p-0" align="start">
+              <PopoverContent id={listboxId} className="p-0" align="start">
                 <Command>
                   <CommandInput
                     placeholder={t(searchPlaceholder)}

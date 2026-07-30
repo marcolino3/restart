@@ -70,6 +70,11 @@ function RootLayoutNav() {
           name="time-entry"
           options={{ presentation: "modal", headerShown: false }}
         />
+        <Stack.Screen name="chats/[id]" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="chats/new"
+          options={{ presentation: "modal", headerShown: false }}
+        />
       </Stack>
     </ThemeProvider>
   );

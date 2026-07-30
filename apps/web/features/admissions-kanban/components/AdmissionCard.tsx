@@ -57,6 +57,7 @@ export function AdmissionCardVisual({
   // only effect so the initial markup matches the server's null state.
   const [daysInStage, setDaysInStage] = useState<number | null>(null);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs Date.now()-derived value post-hydration to avoid SSR/client mismatch (see comment above)
     setDaysInStage(
       Math.max(
         0,

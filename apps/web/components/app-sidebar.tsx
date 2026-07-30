@@ -17,6 +17,7 @@ import {
   IconLayoutDashboard,
   IconLayoutKanban,
   IconListCheck,
+  IconMessage,
   IconReport,
   IconBook,
   IconClipboardCheck,
@@ -59,6 +60,7 @@ import {
   useUser,
 } from "@/features/users/context/current-user.context";
 import { useLocale, useTranslations } from "next-intl";
+import { useChatUnread } from "@/features/chats/lib/chat-unread-context";
 
 type Organization = {
   id: string;
@@ -75,6 +77,7 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
   const tCommon = useTranslations("Common");
   const { hasPermission } = usePermissions();
   const user = useUser();
+  const chatUnread = useChatUnread();
 
   const isSuperAdmin = user?.isSuperAdmin ?? false;
   // SuperAdmin always sees the org-admin block; otherwise persona must be
@@ -169,6 +172,12 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
         title: t("myTasks"),
         url: ROUTES.admin.myTasks(locale),
         icon: IconListCheck,
+      },
+      {
+        title: t("chats"),
+        url: ROUTES.admin.chats(locale),
+        icon: IconMessage,
+        badge: chatUnread || undefined,
       },
       {
         title: t("protocols"),

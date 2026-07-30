@@ -107,7 +107,9 @@ function useLazyData<T>(fetcher: () => Promise<T>) {
   const [loading, setLoading] = useState(false);
   const triggered = useRef(false);
   const fetcherRef = useRef(fetcher);
-  fetcherRef.current = fetcher;
+  useEffect(() => {
+    fetcherRef.current = fetcher;
+  }, [fetcher]);
 
   const trigger = useCallback(() => {
     if (triggered.current) return;

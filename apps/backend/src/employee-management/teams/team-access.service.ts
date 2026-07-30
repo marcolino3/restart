@@ -39,6 +39,32 @@ export class TeamAccessService {
   ) {}
 
   /**
+   * Membership ids of the DIRECT members of a team (org-scoped). Used to
+   * resolve the participant roster of a TEAM chat at read/write time, so the
+   * roster always tracks the live team — a removed member instantly loses
+   * access. Deliberately NOT hierarchy-aware: inherited access (a lead can act
+   * on subteams) is a permission concept, not "is in this chat room".
+   */
+  async getDirectMembershipIdsForTeam(
+    organizationId: string,
+    teamId: string,
+  ): Promise<string[]> {
+    const rows: Array<{ membership_id: string }> = await this.teamsRepo.query(
+      `SELECT m.id AS membership_id
+       FROM team_members tm
+       JOIN memberships m
+         ON m.employee_id = tm.employee_id
+        AND m.organization_id = tm.organization_id
+       WHERE tm.team_id = $1
+         AND tm.organization_id = $2
+         AND tm."isActive" = true
+         AND m."isActive" = true`,
+      [teamId, organizationId],
+    );
+    return rows.map((r) => r.membership_id);
+  }
+
+  /**
    * Effective role per team for an employee, including all descendant teams of
    * the teams the employee directly belongs to.
    */

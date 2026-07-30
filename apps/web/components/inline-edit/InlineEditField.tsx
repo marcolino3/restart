@@ -33,6 +33,7 @@ export function InlineEditField({
   }, [isEditing]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the local draft when the external `value` prop changes (e.g. after a save elsewhere); editValue diverges from value while the user is typing, so it can't be derived in render.
     setEditValue(value);
   }, [value]);
 

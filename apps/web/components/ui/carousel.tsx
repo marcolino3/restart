@@ -111,6 +111,7 @@ const Carousel = React.forwardRef<
         return
       }
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs local scroll-availability state from the embla-carousel API (external library), then subscribes to its "reInit"/"select" events for further updates.
       onSelect(api)
       api.on("reInit", onSelect)
       api.on("select", onSelect)

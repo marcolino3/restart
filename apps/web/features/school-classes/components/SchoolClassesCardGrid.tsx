@@ -97,11 +97,13 @@ export function SchoolClassesCardGrid({ schoolClasses }: Props) {
   const [view, setView] = React.useState<ViewMode>("cards");
 
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resyncs local drag-reorder state with the server-provided list after a refresh
     setItems(schoolClasses);
   }, [schoolClasses]);
 
   React.useEffect(() => {
     const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time read of a client-only persisted preference (localStorage) on mount, not derivable from render
     if (stored === "table" || stored === "cards") setView(stored);
   }, []);
 

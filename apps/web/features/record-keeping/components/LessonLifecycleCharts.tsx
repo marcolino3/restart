@@ -88,16 +88,21 @@ export function LessonLifecycleCharts({ lifecycles }: Props) {
       locale === "de" ? "de-CH" : "en-GB",
       { month: "short", year: "2-digit" },
     );
-    let running = 0;
-    return months.map((m) => {
-      running += byMonth.get(m) ?? 0;
-      return {
+    return months.reduce<
+      { month: string; label: string; cumulative: number; delta: number }[]
+    >((acc, m) => {
+      const delta = byMonth.get(m) ?? 0;
+      const previousCumulative = acc.length
+        ? acc[acc.length - 1].cumulative
+        : 0;
+      acc.push({
         month: m,
         label: monthFmt.format(new Date(`${m}-01T00:00:00Z`)),
-        cumulative: running,
-        delta: byMonth.get(m) ?? 0,
-      };
-    });
+        cumulative: previousCumulative + delta,
+        delta,
+      });
+      return acc;
+    }, []);
   }, [lifecycles, locale]);
 
   // Days-to-mastery distribution — only lessons that actually got mastered.

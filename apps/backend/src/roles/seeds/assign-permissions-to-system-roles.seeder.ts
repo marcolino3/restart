@@ -7,6 +7,8 @@ import { PermissionCode } from '@/permissions/entities/permission-code.enum';
 
 const MATRIX: Record<SystemRole, PermissionCode[]> = {
   ORG_OWNER: [
+    'CHAT_READ',
+    'CHAT_WRITE',
     'ORG_DELETE',
     'ORG_TRANSFER_OWNERSHIP',
     'BILLING_MANAGE',
@@ -76,6 +78,8 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'VVT_MANAGE',
   ] as PermissionCode[],
   ORG_ADMIN: [
+    'CHAT_READ',
+    'CHAT_WRITE',
     'USER_INVITE',
     'USER_REMOVE',
     'ROLE_CREATE',
@@ -141,6 +145,8 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'VVT_MANAGE',
   ] as PermissionCode[],
   HR_MANAGER: [
+    'CHAT_READ',
+    'CHAT_WRITE',
     'EMPLOYEE_READ',
     'EMPLOYEE_WRITE',
     'EMPLOYEE_ABSENCE_CATEGORY_READ',
@@ -167,6 +173,8 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'VVT_READ',
   ] as PermissionCode[],
   OFFICE: [
+    'CHAT_READ',
+    'CHAT_WRITE',
     'EMPLOYEE_READ',
     'EMPLOYEE_ABSENCE_CATEGORY_READ',
     'TIMESHEET_READ',
@@ -216,6 +224,8 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'VVT_MANAGE',
   ] as PermissionCode[],
   TEAM_LEAD: [
+    'CHAT_READ',
+    'CHAT_WRITE',
     'EMPLOYEE_READ',
     'EMPLOYEE_ABSENCE_CATEGORY_READ',
     'TIMESHEET_READ',
@@ -238,6 +248,8 @@ const MATRIX: Record<SystemRole, PermissionCode[]> = {
     'CONSENT_READ',
   ] as PermissionCode[],
   EMPLOYEE: [
+    'CHAT_READ',
+    'CHAT_WRITE',
     'EMPLOYEE_READ',
     'EMPLOYEE_ABSENCE_CATEGORY_READ',
     'TIMESHEET_READ',

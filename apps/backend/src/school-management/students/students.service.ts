@@ -198,7 +198,7 @@ export class StudentsService {
         .from('school_classes', 'sc')
         .where('sc.id = :sid', { sid: schoolClassId })
         .andWhere('sc.organization_id = :orgId', { orgId: organizationId })
-        .getRawOne();
+        .getRawOne<unknown>();
       if (!exists) {
         throw new NotFoundException(`School class ${schoolClassId} not found`);
       }
@@ -214,7 +214,7 @@ export class StudentsService {
       .andWhere('m.organization_id = :orgId', { orgId: organizationId })
       .andWhere('m."isActive" = true')
       .select('1')
-      .getRawOne();
+      .getRawOne<unknown>();
 
     if (!row) {
       throw new ForbiddenException('Not allowed to access this school class');

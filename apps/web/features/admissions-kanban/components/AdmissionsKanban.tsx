@@ -254,6 +254,7 @@ export function AdmissionsKanban({
   useEffect(() => {
     const familyId = searchParams.get("newSiblingOf");
     if (!familyId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reacts to URL query param (external system), not derivable from render
     setCreateFamilyId(familyId);
     setShowCreate(true);
     // Strip the param so a reload doesn't re-open the dialog.
@@ -269,6 +270,15 @@ export function AdmissionsKanban({
   // be reordered by drag-and-drop. Persisted indirectly via the backend
   // (`reorderAdmissionStagesAction`) so a refresh reflects the change.
   const [stageOrder, setStageOrder] = useState<KanbanStage[]>(initialStages);
+  // Re-sync stage order when the `initialStages` prop identity changes (e.g.
+  // after stage add/remove), while still allowing local drag-and-drop reorder
+  // in between. Adjusted during render per React's "you might not need an
+  // effect" guidance, rather than via a useEffect + setState.
+  const [prevInitialStages, setPrevInitialStages] = useState(initialStages);
+  if (prevInitialStages !== initialStages) {
+    setPrevInitialStages(initialStages);
+    setStageOrder(initialStages);
+  }
 
   // View mode (board / list) and per-stage collapse state — both persisted
   // in localStorage so the user's preference survives reloads.
@@ -287,6 +297,7 @@ export function AdmissionsKanban({
   // the DnD tree only after mount to keep the markup deterministic.
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- client-mount detection to defer @dnd-kit's SSR/hydration-sensitive markup; must run once after mount, not derivable from render
     setMounted(true);
     if (typeof window !== "undefined") {
       const v = window.localStorage.getItem(VIEW_KEY);
@@ -338,11 +349,6 @@ export function AdmissionsKanban({
       }
       return { ...prev, [stageId]: sort };
     });
-
-  // Re-sync stage order if the prop changes (e.g. after stage add/remove).
-  useEffect(() => {
-    setStageOrder(initialStages);
-  }, [initialStages]);
 
   const toggleCollapsed = (stageId: string) =>
     setCollapsedStages((prev) => {
@@ -847,6 +853,7 @@ function KanbanColumn({
   const [avgDays, setAvgDays] = useState<number | null>(null);
   useEffect(() => {
     if (applications.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only Date.now()-derived value to avoid SSR/hydration mismatch (see comment above)
       setAvgDays(null);
       return;
     }

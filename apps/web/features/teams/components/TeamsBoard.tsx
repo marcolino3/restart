@@ -100,8 +100,14 @@ export function TeamsBoard({ initialTeams, initialMembers, employees }: Props) {
   );
   const [overTeamId, setOverTeamId] = React.useState<string | null>(null);
 
-  React.useEffect(() => setTeams(initialTeams), [initialTeams]);
-  React.useEffect(() => setMembers(initialMembers), [initialMembers]);
+  React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resyncs local drag/CRUD-optimistic state with server-provided teams after a refresh
+    setTeams(initialTeams);
+  }, [initialTeams]);
+  React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resyncs local drag/CRUD-optimistic state with server-provided members after a refresh
+    setMembers(initialMembers);
+  }, [initialMembers]);
 
   // Alt held at drop time → copy (second membership) instead of move. dnd-kit's
   // DragEndEvent only carries the pointerdown modifiers, so track live keyboard
@@ -824,6 +830,7 @@ function AddMemberDialog({
     resolver: zodResolver(AddMemberSchema),
     defaultValues: { employeeId: "", role: "MEMBER" },
   });
+  // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form's watch() returns non-memoizable functions by design
   const role = form.watch("role");
 
   const onSubmit = async (values: AddMemberType) => {

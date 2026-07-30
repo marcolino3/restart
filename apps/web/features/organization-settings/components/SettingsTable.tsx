@@ -193,6 +193,7 @@ export const SettingsTable = ({ data, organizationId, onEdit, onDelete }: Props)
     },
   ];
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions by design
   const table = useReactTable({
     data,
     columns,

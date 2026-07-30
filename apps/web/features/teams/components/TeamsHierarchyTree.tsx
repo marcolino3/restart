@@ -127,6 +127,7 @@ export function TeamsHierarchyTree({ initialTeams }: Props) {
   const [forbidden, setForbidden] = React.useState<Set<string>>(new Set());
 
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resyncs local drag-reorder state with server-provided teams after a refresh
     setItems(initialTeams);
   }, [initialTeams]);
 

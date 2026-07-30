@@ -122,6 +122,7 @@ export function CurriculumNodeTranslationsDialog({
               ))}
             </TabsList>
             {CURRICULUM_LOCALES.map((loc) => {
+              // eslint-disable-next-line react-hooks/incompatible-library -- React Hook Form returns non-memoizable functions by design
               const draft = form.watch(loc);
               return (
                 <TabsContent key={loc} value={loc} className="mt-3 space-y-3">

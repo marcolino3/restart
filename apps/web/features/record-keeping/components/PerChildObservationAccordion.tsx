@@ -54,6 +54,7 @@ export const PerChildObservationAccordion = ({
       selectedStudents.length > 0 &&
       selectedStudents.length <= AUTO_EXPAND_MAX
     ) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- resyncs open/closed state only when the selection set itself changes, merging with prior manual toggles rather than deriving purely from props
       setOpenIds(new Set(selectedStudents.map((s) => s.studentId)));
     }
   }, [selectedStudents]);
@@ -63,7 +64,8 @@ export const PerChildObservationAccordion = ({
   const toggleOpen = (id: string) =>
     setOpenIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
 
