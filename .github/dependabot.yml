@@ -28,16 +28,39 @@ updates:
       - dependency-name: "tailwindcss"
         versions: [">=4.0.0"]
       # Expo koppelt ab SDK 55 die Paket-Major-Version an die SDK-Nummer
-      # (https://expo.dev/changelog/sdk-55). apps/mobile steht auf SDK 54, dort
-      # sind expo-localization@17.x und eslint-config-expo@10.x die korrekten
-      # Versionen — ein 55/56/57er-Paket gehört zu einem anderen SDK und bringt
-      # bei nativen Modulen inkompatible Autolinking-/Podspec-Anforderungen mit.
+      # (https://expo.dev/changelog/sdk-55). apps/mobile steht auf SDK 54; dort
+      # tragen die Pakete noch ihre eigene Versionierung (expo ~54.0.x,
+      # expo-localization 17.x, expo-linking 8.x, eslint-config-expo 10.x).
+      # Ein 55/56/57er-Paket gehört zu einem anderen SDK und bringt bei nativen
+      # Modulen inkompatible Autolinking-/Podspec-Anforderungen mit.
+      #
+      # Als Familie gesperrt statt paketweise: apps/mobile nutzt 15 expo-*
+      # Pakete, und Dependabot öffnete für jedes einen eigenen PR (#219-#221),
+      # sobald eines fehlte. Die Grenze >=55.0.0 lässt Patches innerhalb der
+      # SDK-54-Reihe durch (z.B. expo ~54.0.35 -> ~54.0.36) und blockt nur den
+      # Sprung in eine fremde SDK-Generation.
+      #
       # Beim echten SDK-Upgrade zieht `npx expo install --fix` alles gemeinsam
       # nach; Einzel-Bumps von Dependabot sind dafür der falsche Weg.
-      - dependency-name: "expo-localization"
+      - dependency-name: "expo"
+        versions: [">=55.0.0"]
+      - dependency-name: "expo-*"
+        versions: [">=55.0.0"]
+      - dependency-name: "@expo/*"
         versions: [">=55.0.0"]
       - dependency-name: "eslint-config-expo"
         versions: [">=55.0.0"]
+
+      # better-auth ist hier bewusst NICHT gesperrt: Backend und Web laufen
+      # problemlos auf ^1.6.25, nur apps/mobile bricht ab 1.6.24 (der
+      # Expo-Client verliert getCookie(), @better-auth/expo passt nicht mehr
+      # auf BetterAuthClientPlugin — 5 Fehler in chats-api.ts, active-org.ts,
+      # auth-client.ts). Isoliert verifiziert 2026-07-31: 1.6.23 = 0 Fehler,
+      # 1.6.24 und 1.6.25 = 5 Fehler.
+      # Ein Root-Ignore würde auch Backend und Web blockieren; stattdessen ist
+      # apps/mobile exakt auf "1.6.23" gepinnt (ohne ^/~), was einen Root-PR
+      # auf dessen package.json verhindert. Nachziehen, sobald
+      # @better-auth/expo die Client-Typen wieder trifft.
       # @types/node 26 typisiert Node-26-APIs; CI und Runtime laufen auf Node 22
       # (node-version in ci.yml/security.yml, engines: ">=20").
       - dependency-name: "@types/node"
