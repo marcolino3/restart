@@ -51,16 +51,20 @@ updates:
       - dependency-name: "eslint-config-expo"
         versions: [">=55.0.0"]
 
-      # better-auth ist hier bewusst NICHT gesperrt: Backend und Web laufen
-      # problemlos auf ^1.6.25, nur apps/mobile bricht ab 1.6.24 (der
-      # Expo-Client verliert getCookie(), @better-auth/expo passt nicht mehr
-      # auf BetterAuthClientPlugin — 5 Fehler in chats-api.ts, active-org.ts,
+      # @better-auth/expo bricht ab 1.6.24 den Mobile-Typecheck: der
+      # Expo-Client verliert getCookie() und das Plugin passt nicht mehr auf
+      # BetterAuthClientPlugin (5 Fehler in chats-api.ts, active-org.ts,
       # auth-client.ts). Isoliert verifiziert 2026-07-31: 1.6.23 = 0 Fehler,
       # 1.6.24 und 1.6.25 = 5 Fehler.
-      # Ein Root-Ignore würde auch Backend und Web blockieren; stattdessen ist
-      # apps/mobile exakt auf "1.6.23" gepinnt (ohne ^/~), was einen Root-PR
-      # auf dessen package.json verhindert. Nachziehen, sobald
-      # @better-auth/expo die Client-Typen wieder trifft.
+      #
+      # Nur das Expo-Paket ist gesperrt, NICHT better-auth selbst — Backend
+      # und Web laufen gesund auf ^1.6.25 und sollen Updates bekommen.
+      #
+      # Ein exakter Pin in apps/mobile/package.json reicht dafür NICHT:
+      # Dependabot schlägt trotzdem vor (#233 kam trotz "1.6.23" und
+      # "19.1.0"). Dieselbe Annahme war schon bei react falsch.
+      - dependency-name: "@better-auth/expo"
+        versions: [">=1.6.24"]
       # @types/node 26 typisiert Node-26-APIs; CI und Runtime laufen auf Node 22
       # (node-version in ci.yml/security.yml, engines: ">=20").
       - dependency-name: "@types/node"
@@ -88,11 +92,19 @@ updates:
         versions: [">=5.7.0"]
       - dependency-name: "react-native-worklets"
         versions: [">=0.6.0"]
-      # react/react-dom bewusst NICHT global gesperrt: apps/web fährt ^19.2.8 und
-      # soll Updates bekommen, apps/mobile muss auf 19.1.0 bleiben (SDK 54).
-      # Dependabot kann das im Root-Scan nicht pro Verzeichnis trennen — die
-      # Mobile-Seite ist stattdessen exakt gepinnt ("19.1.0", ohne ^/~), was
-      # einen Root-PR auf apps/mobile/package.json verhindert.
+      # react/react-dom: ungelöster Zielkonflikt, bewusst NICHT gesperrt.
+      #
+      # apps/web fährt ^19.2.8 und soll Updates bekommen; apps/mobile muss auf
+      # 19.1.0 bleiben (Expo SDK 54). Dependabot kann das im Root-Scan nicht
+      # pro Verzeichnis trennen, und ein exakter Pin hält es NICHT ab — #233
+      # schlug 19.2.8 vor, obwohl apps/mobile auf "19.1.0" stand.
+      #
+      # Ein Root-Ignore würde apps/web dauerhaft von React-Updates
+      # abschneiden, was schlechter wäre. Deshalb bleibt die Regel offen und
+      # solche PRs werden manuell abgelehnt — der Mobile-Typecheck fängt einen
+      # versehentlichen Merge (react 19.2 gegen SDK 54 bricht das Bundling).
+      # Sauber lösbar erst mit einem eigenen dependabot-Eintrag für
+      # /apps/mobile, der die Root-Gruppe für dieses Verzeichnis ersetzt.
 
       # sanitize-html 2.17.6 hebt htmlparser2 auf ^12 (ESM-only, kein CJS-Entry).
       # Jest transformiert node_modules nicht → beide Admissions-E-Mail-Suiten
@@ -284,6 +296,14 @@ updates:
       - "docker"
     commit-message:
       prefix: "chore(deps,docker)"
+    ignore:
+      # Node 25 ist Current, kein LTS. Lokal, CI und die Container laufen
+      # bewusst auf 24 LTS (Krypton, Support bis 2027) — vorher klafften die
+      # Ebenen auf 20/22/26 auseinander. Ein Bump auf 25 macht das rückgängig
+      # und bringt die Laufzeit wieder auf eine Linie ohne Langzeit-Support.
+      # Zusammen mit .nvmrc, engines und ci.yml anheben, nicht per Einzel-PR.
+      - dependency-name: "node"
+        versions: [">=25.0.0"]
 
   - package-ecosystem: "docker"
     directory: "/apps/web"
@@ -296,6 +316,14 @@ updates:
       - "docker"
     commit-message:
       prefix: "chore(deps,docker)"
+    ignore:
+      # Node 25 ist Current, kein LTS. Lokal, CI und die Container laufen
+      # bewusst auf 24 LTS (Krypton, Support bis 2027) — vorher klafften die
+      # Ebenen auf 20/22/26 auseinander. Ein Bump auf 25 macht das rückgängig
+      # und bringt die Laufzeit wieder auf eine Linie ohne Langzeit-Support.
+      # Zusammen mit .nvmrc, engines und ci.yml anheben, nicht per Einzel-PR.
+      - dependency-name: "node"
+        versions: [">=25.0.0"]
 
   # Terraform
   - package-ecosystem: "terraform"
