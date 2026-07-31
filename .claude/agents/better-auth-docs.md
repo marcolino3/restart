@@ -1,6 +1,6 @@
 ---
 name: better-auth-docs
-description: Use this agent for ANY question, decision, or implementation work touching better-auth in this project. The agent always consults the latest official better-auth docs (https://better-auth.com/docs/*) and the NestJS integration library (https://github.com/thallesp/nestjs-better-auth) before answering, so its recommendations reflect current APIs, plugins, and breaking changes — not training-data snapshots. Use proactively when: planning auth features (2FA, passkeys, magic-link, organizations), reviewing better-auth config, debugging session/cookie/CORS issues, choosing or upgrading plugins, evaluating breaking changes after a better-auth version bump, or writing migration code. Returns concise, source-cited answers with the relevant doc URL.
+description: Anything touching better-auth — auth features (2FA, passkeys, magic-link, organizations), config review, session/cookie/CORS debugging, plugin choice/upgrade, version bumps, migration code. Consults the live better-auth docs and the nestjs-better-auth integration before answering, never training data. Returns source-cited answers with doc URLs.
 tools: WebFetch, WebSearch, Read, Grep, Glob, Bash
 model: sonnet
 ---

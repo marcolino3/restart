@@ -16,29 +16,6 @@
 
 ---
 
-## Tech-Stack
-
-### Backend (`apps/backend/`)
-- **NestJS 11** + TypeScript 5.9 + **GraphQL Code-First** (Apollo 5) + **TypeORM** + PostgreSQL 16
-- **Passport** (JWT, Local, Google OAuth, Apple OAuth)
-- **class-validator + class-transformer**, Luxon, bcrypt, nodemailer, sharp
-- Path-Alias: `@/*` -> `src/*`
-
-### Frontend (`apps/web/`)
-- **Next.js 16** App Router + **React 19** Server Components + Server Actions
-- **graphql-request + @graphql-codegen** (Client Preset)
-- **React Hook Form + Zod** + **shadcn/ui** (New York) + Tailwind CSS 4
-- **next-intl** (DE, EN) + Vitest + Sonner
-- Path-Alias: `@/*` -> `./*`
-
-### Infra
-- **Docker Compose** lokal (Postgres 5433, Backend 4001, Frontend 4000)
-- **Kubernetes** (Kustomize) auf Infomaniak Managed K8s (Schweiz)
-- **Terraform** + **GitHub Actions** CI/CD (auto Staging auf main, manuell Production)
-- **Playwright** E2E Tests
-
----
-
 ## Naming Conventions
 
 ### Dateien
@@ -58,15 +35,8 @@
 ### Lokaler Start
 ```bash
 docker compose up postgres -d          # Nur Datenbank
-cd apps/backend && npm run start:dev   # Backend (Port 4001)
-cd apps/web && npm run dev             # Frontend (Port 4000) + Codegen Watch
-```
-
-### Wichtige Commands
-```bash
-# Backend: npm run start:dev | build | test | test:e2e | lint
-# Frontend: npm run dev | build | codegen | test | lint
-# E2E: cd e2e && npx playwright test
+pnpm --filter @restart/backend dev     # Backend (Port 4001)
+pnpm --filter @restart/web dev         # Frontend (Port 4000) + Codegen Watch
 ```
 
 ### Umgebungen
