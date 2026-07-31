@@ -3110,5 +3110,28 @@
       "PUBLIC_TASK": "Public task",
       "LEGITIMATE_INTEREST": "Legitimate interest"
     }
+  },
+  "DataTable": {
+    "searchPlaceholder": "Search …",
+    "clearSearch": "Clear search",
+    "noResults": "No entries found",
+    "noResultsHint": "Try adjusting your search or filters.",
+    "loading": "Loading …",
+    "columns": "Columns",
+    "toggleColumns": "Toggle columns",
+    "rowsPerPage": "Rows per page",
+    "all": "All",
+    "pageOf": "Page {page} of {total}",
+    "rowsSelected": "{selected} of {total} selected",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "firstPage": "First page",
+    "lastPage": "Last page",
+    "sortAscending": "Sort ascending",
+    "sortDescending": "Sort descending",
+    "clearSort": "Clear sorting",
+    "filter": "Filter",
+    "clearFilters": "Reset filters",
+    "resultCount": "{count, plural, =0 {No entries} one {# entry} other {# entries}}"
   }
 }

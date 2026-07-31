@@ -517,10 +517,6 @@ export default function StudentViewPage({
   const { hasPermission } = usePermissions();
   const canReadRecords = hasPermission("STUDENT_RECORD_READ");
 
-  // pf-tabs (saas-konzept): Accent-Unterstrich statt Pill-Container.
-  const tabCls =
-    "rounded-none border-b-[3px] border-transparent px-0 pb-[11px] text-[13.5px] font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-[650] data-[state=active]:text-foreground data-[state=active]:shadow-none";
-
   return (
     <div className="space-y-[18px]">
       <BackButton
@@ -565,15 +561,15 @@ export default function StudentViewPage({
               </Button>
             </div>
           </div>
-          <TabsList className="mt-[14px] h-auto justify-start gap-[22px] rounded-none bg-transparent p-0">
-            <TabsTrigger className={tabCls} value="overview">
+          <TabsList variant="underline" className="mt-[14px]">
+            <TabsTrigger value="overview">
               {tS("overview")}
             </TabsTrigger>
-            <TabsTrigger className={tabCls} value="address" disabled>
+            <TabsTrigger value="address" disabled>
               {t("address")}
             </TabsTrigger>
             <TabsTrigger
-              className={tabCls}
+             
               value="enrollments"
               onMouseEnter={enrollmentsTab.trigger}
               onFocus={enrollmentsTab.trigger}
@@ -581,7 +577,7 @@ export default function StudentViewPage({
               {tS("enrollments")}
             </TabsTrigger>
             <TabsTrigger
-              className={tabCls}
+             
               value="progress"
               onMouseEnter={progressTab.trigger}
               onFocus={progressTab.trigger}
@@ -589,19 +585,19 @@ export default function StudentViewPage({
               {tR("title")}
             </TabsTrigger>
             <TabsTrigger
-              className={tabCls}
+             
               value="contactPersons"
               onMouseEnter={contactPersonsTab.trigger}
               onFocus={contactPersonsTab.trigger}
             >
               {tS("contactPersons")}
             </TabsTrigger>
-            <TabsTrigger className={tabCls} value="consent">
+            <TabsTrigger value="consent">
               {tC("tabConsent")}
             </TabsTrigger>
             {canReadRecords && (
               <TabsTrigger
-                className={tabCls}
+               
                 value="support"
                 onMouseEnter={supportTab.trigger}
                 onFocus={supportTab.trigger}
@@ -610,17 +606,17 @@ export default function StudentViewPage({
               </TabsTrigger>
             )}
             <TabsTrigger
-              className={tabCls}
+             
               value="logbook"
               onMouseEnter={logbookTab.trigger}
               onFocus={logbookTab.trigger}
             >
               {tN("logbook")}
             </TabsTrigger>
-            <TabsTrigger className={tabCls} value="documents" disabled>
+            <TabsTrigger value="documents" disabled>
               {tS("attachments")}
             </TabsTrigger>
-            <TabsTrigger className={tabCls} value="history" disabled>
+            <TabsTrigger value="history" disabled>
               {tS("history")}
             </TabsTrigger>
           </TabsList>

@@ -3110,5 +3110,28 @@
       "PUBLIC_TASK": "Öffentliche Aufgabe",
       "LEGITIMATE_INTEREST": "Berechtigtes Interesse"
     }
+  },
+  "DataTable": {
+    "searchPlaceholder": "Suchen …",
+    "clearSearch": "Suche löschen",
+    "noResults": "Keine Einträge gefunden",
+    "noResultsHint": "Passe die Suche oder Filter an.",
+    "loading": "Wird geladen …",
+    "columns": "Spalten",
+    "toggleColumns": "Spalten ein-/ausblenden",
+    "rowsPerPage": "Zeilen pro Seite",
+    "all": "Alle",
+    "pageOf": "Seite {page} von {total}",
+    "rowsSelected": "{selected} von {total} ausgewählt",
+    "previousPage": "Vorherige Seite",
+    "nextPage": "Nächste Seite",
+    "firstPage": "Erste Seite",
+    "lastPage": "Letzte Seite",
+    "sortAscending": "Aufsteigend sortieren",
+    "sortDescending": "Absteigend sortieren",
+    "clearSort": "Sortierung aufheben",
+    "filter": "Filter",
+    "clearFilters": "Filter zurücksetzen",
+    "resultCount": "{count, plural, =0 {Keine Einträge} one {# Eintrag} other {# Einträge}}"
   }
 }

@@ -17,8 +17,12 @@ interface PageHeadProps {
 }
 
 /**
- * Page heading from the design handoff (`.pagehead`): a compact semibold title
- * (18px/600), muted subtitle (14px) and an action slot on the right.
+ * Page heading from the design handoff (`.pagehead`, see `docs/design/styles.css`):
+ * a 26px/700 title, a muted 13.5px subtitle baseline-aligned next to it and an
+ * action slot on the right.
+ *
+ * This is the only way a page should render its title — see the sibling test
+ * for the type scale.
  */
 export function PageHead({
   title,
@@ -28,25 +32,32 @@ export function PageHead({
   className,
 }: PageHeadProps) {
   const heading = (
-    <h2 className="text-[18px] font-[600] leading-tight tracking-[-0.01em]">
+    <h2 className="text-[26px] font-bold leading-none tracking-[-0.025em]">
       {title}
     </h2>
   );
   const sub = subtitle ? (
-    <p className={cn("text-[14px] text-muted-foreground", stacked && "pt-0.5")}>
+    <p
+      className={cn(
+        "text-[13.5px] text-muted-foreground",
+        stacked ? "pt-1.5" : "pb-[3px]",
+      )}
+    >
       {subtitle}
     </p>
   ) : null;
 
   return (
-    <div className={cn("mb-5 flex flex-wrap items-center gap-4", className)}>
+    <div
+      className={cn("mb-5 flex flex-wrap items-end gap-4", className)}
+    >
       {stacked ? (
         <div>
           {heading}
           {sub}
         </div>
       ) : (
-        <div className="flex items-baseline gap-3">
+        <div className="flex flex-wrap items-end gap-x-4 gap-y-1">
           {heading}
           {sub}
         </div>
