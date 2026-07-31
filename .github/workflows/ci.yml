@@ -97,6 +97,40 @@ jobs:
           NODE_ENV: test
           ALLOWED_ORIGINS: http://localhost:4000
 
+      # Die Integration-Suiten liegen in apps/backend/test/ und laufen deshalb
+      # NICHT im `turbo run test`-Job mit (dessen Jest hat `roots: src`). Ohne
+      # diesen Schritt liefe u.a. migrations-match-entities nie in CI — genau
+      # der Test, der eine unvollständige Migration fangen soll.
+      #
+      # Eigene Datenbank, NICHT colibri_test: createTestingApp läuft mit
+      # `dropSchema: true` und würde der nachfolgenden E2E-Suite sonst das
+      # migrierte Schema samt gebootstrapptem Superadmin unter den Füssen
+      # wegziehen.
+      - name: Create integration test database
+        run: |
+          PGPASSWORD=test psql -h localhost -U test -d colibri_test \
+            -c 'CREATE DATABASE restart_integration'
+
+      # --runInBand ist Pflicht: createTestingApp läuft mit `dropSchema: true`,
+      # parallele Suiten würden einander das Schema wegziehen.
+      # app.e2e-spec.ts ist seit dem Initial-Import kaputt (supertest-Import
+      # lässt sich nicht aufrufen) und daher ausgeklammert — sonst wäre der
+      # Schritt von Beginn an rot und würde ignoriert.
+      - name: Run Backend Integration Tests
+        run: >-
+          pnpm --filter @restart/backend exec jest
+          --config ./test/jest-e2e.json
+          --runInBand
+          --testPathIgnorePatterns "test/app.e2e-spec.ts"
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: restart_integration
+          DB_USERNAME: test
+          DB_PASSWORD: test
+          NODE_ENV: test
+          ALLOWED_ORIGINS: http://localhost:4000
+
       - name: Run E2E Tests
         run: pnpm --filter @restart/e2e exec playwright test
         env:
