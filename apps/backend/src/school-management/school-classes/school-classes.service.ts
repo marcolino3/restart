@@ -4,6 +4,14 @@ import { In, IsNull, Repository } from 'typeorm';
 import { SchoolClass } from './entities/school-class.entity';
 import { SchoolClassTeacher } from './entities/school-class-teacher.entity';
 import { SchoolClassTeacherRole } from '@/database/enums/school-class-teacher-role.enum';
+import { SchoolClassTeacherInput } from './dto/school-class-teacher.input';
+import {
+  today,
+  isInForceOn,
+  schoolYearFor,
+  SchoolYearRange,
+} from './lib/school-year';
+import { Organization } from '@/organizations/entities/organization.entity';
 import { GradeLevel } from '@/school-management/grade-levels/entities/grade-level.entity';
 import { Employee } from '@/employee-management/employees/entities/employee.entity';
 import { Persona } from '@/common/enums/persona.enum';
@@ -22,6 +30,8 @@ export class SchoolClassesService {
     private readonly employeeRepo: Repository<Employee>,
     @InjectRepository(SchoolClassTeacher)
     private readonly teacherAssignmentRepo: Repository<SchoolClassTeacher>,
+    @InjectRepository(Organization)
+    private readonly organizationRepo: Repository<Organization>,
   ) {}
 
   private async resolveTeachers(
@@ -48,69 +58,163 @@ export class SchoolClassesService {
    * fills it automatically. Only assignments in force today are listed, which
    * matches what the old @ManyToMany returned — it had no notion of validity.
    */
-  private hydrateTeachers(classes: SchoolClass[]): SchoolClass[] {
-    const today = new Date().toISOString().slice(0, 10);
+  private hydrateTeachers(
+    classes: SchoolClass[],
+    asOf: string = today(),
+  ): SchoolClass[] {
     for (const schoolClass of classes) {
-      schoolClass.teachers = (schoolClass.teacherAssignments ?? [])
-        .filter(
-          (a) => a.validFrom <= today && (!a.validTo || a.validTo >= today),
-        )
-        .map((a) => a.employee)
-        .filter(Boolean);
+      const inForce = (schoolClass.teacherAssignments ?? []).filter((a) =>
+        isInForceOn(a, asOf),
+      );
+      // LEAD first, so a UI that shows only the first name shows a class
+      // teacher rather than an assistant.
+      inForce.sort((a, b) =>
+        a.role === b.role ? 0 : a.role === SchoolClassTeacherRole.LEAD ? -1 : 1,
+      );
+      schoolClass.teacherAssignments = inForce;
+      schoolClass.teachers = inForce.map((a) => a.employee).filter(Boolean);
     }
     return classes;
   }
 
   /**
-   * Replaces the open assignments of a class with exactly `teacherIds`.
+   * Replaces the open assignments of a class with exactly `wanted`.
    *
-   * Assignments that stay are left untouched so their role, workload and start
-   * date survive an unrelated edit; removed ones are closed rather than deleted,
-   * which is what keeps historical class lists intact.
+   * Three cases, and the difference between them is what keeps the history
+   * usable:
+   * - gone  → closed as of today, never deleted, so past class lists still
+   *           resolve
+   * - new   → opened from today (or an explicit `validFrom` when backdating)
+   * - kept  → only touched if role or workload actually changed, so an
+   *           unrelated edit to the class does not reset a start date
    */
   private async syncTeacherAssignments(
     schoolClassId: string,
-    teacherIds: string[],
+    wanted: SchoolClassTeacherInput[],
     organizationId: string,
   ): Promise<void> {
-    const teachers = await this.resolveTeachers(teacherIds, organizationId);
-    const wanted = new Set(teachers.map((t) => t.id));
+    // Re-resolve against the org so a caller cannot attach an employee from
+    // another tenant by guessing an id.
+    const allowed = await this.resolveTeachers(
+      wanted.map((w) => w.employeeId),
+      organizationId,
+    );
+    const allowedIds = new Set(allowed.map((e) => e.id));
+    const requested = wanted.filter((w) => allowedIds.has(w.employeeId));
+    const requestedById = new Map(requested.map((w) => [w.employeeId, w]));
 
     const existing = await this.teacherAssignmentRepo.find({
       where: { schoolClassId, organizationId, validTo: IsNull() },
     });
+    const now = today();
 
-    const today = new Date().toISOString().slice(0, 10);
-    const toClose = existing.filter((a) => !wanted.has(a.employeeId));
+    const toClose = existing.filter((a) => !requestedById.has(a.employeeId));
     if (toClose.length) {
       await this.teacherAssignmentRepo.update(
         { id: In(toClose.map((a) => a.id)) },
-        { validTo: today },
+        { validTo: now },
       );
     }
 
-    const known = new Set(existing.map((a) => a.employeeId));
-    const toAdd = teachers.filter((t) => !known.has(t.id));
-    if (toAdd.length) {
-      await this.teacherAssignmentRepo.save(
-        toAdd.map((t) =>
+    const existingByEmployee = new Map(existing.map((a) => [a.employeeId, a]));
+    const toSave: SchoolClassTeacher[] = [];
+
+    for (const w of requested) {
+      const role = w.role ?? SchoolClassTeacherRole.LEAD;
+      const workloadPercent = w.workloadPercent ?? null;
+      const current = existingByEmployee.get(w.employeeId);
+
+      if (!current) {
+        toSave.push(
           this.teacherAssignmentRepo.create({
             schoolClassId,
-            employeeId: t.id,
+            employeeId: w.employeeId,
             organizationId,
-            role: SchoolClassTeacherRole.LEAD,
-            validFrom: today,
+            role,
+            workloadPercent,
+            validFrom: w.validFrom ?? now,
           }),
-        ),
-      );
+        );
+        continue;
+      }
+
+      // Untouched unless something actually changed, so an unrelated edit to
+      // the class does not bump the row.
+      if (
+        current.role !== role ||
+        (current.workloadPercent ?? null) !== workloadPercent
+      ) {
+        current.role = role;
+        current.workloadPercent = workloadPercent;
+        toSave.push(current);
+      }
     }
+
+    if (toSave.length) {
+      await this.teacherAssignmentRepo.save(toSave);
+    }
+  }
+
+  /** Normalises the two input shapes into one. `teachers` wins when both are sent. */
+  private toAssignmentInputs(
+    teacherIds?: string[],
+    teachers?: SchoolClassTeacherInput[],
+  ): SchoolClassTeacherInput[] | undefined {
+    if (teachers !== undefined) return teachers;
+    if (teacherIds !== undefined) {
+      return teacherIds.map((employeeId) => ({
+        employeeId,
+        role: SchoolClassTeacherRole.LEAD,
+      }));
+    }
+    return undefined;
+  }
+
+  /**
+   * Full assignment history of a class, newest first.
+   *
+   * Unlike the `teacherAssignments` on a class, this deliberately includes
+   * closed ones — it is what a "who taught this class, and when" view needs.
+   */
+  async findTeacherHistory(
+    schoolClassId: string,
+    organizationId: string,
+  ): Promise<SchoolClassTeacher[]> {
+    // Fails if the class belongs to another org, so the history cannot be
+    // used to probe for foreign class ids.
+    await this.findOne(schoolClassId, organizationId);
+
+    return this.teacherAssignmentRepo.find({
+      where: { schoolClassId, organizationId },
+      relations: { employee: { membership: { user: true } } },
+      order: { validFrom: 'DESC', role: 'ASC' },
+    });
+  }
+
+  /** The org's school year containing `date` (today when omitted). */
+  async schoolYearOf(
+    organizationId: string,
+    date?: string,
+  ): Promise<SchoolYearRange> {
+    const org = await this.organizationRepo.findOne({
+      where: { id: organizationId },
+      select: {
+        id: true,
+        schoolYearStartMonth: true,
+        schoolYearStartDay: true,
+      },
+    });
+    if (!org) {
+      throw new NotFoundException(`Organization ${organizationId} not found`);
+    }
+    return schoolYearFor(date ?? today(), org);
   }
 
   async create(
     input: CreateSchoolClassInput,
     organizationId: string,
   ): Promise<SchoolClass> {
-    const { gradeLevelIds, teacherIds, ...rest } = input;
+    const { gradeLevelIds, teacherIds, teachers, ...rest } = input;
     // Ordering is drag-and-drop only (no form field) — append new classes.
     if (rest.sortOrder === undefined) {
       const max = await this.schoolClassRepo.maximum('sortOrder', {
@@ -132,14 +236,22 @@ export class SchoolClassesService {
 
     const saved = await this.schoolClassRepo.save(schoolClass);
 
-    if (teacherIds?.length) {
-      await this.syncTeacherAssignments(saved.id, teacherIds, organizationId);
+    const assignments = this.toAssignmentInputs(teacherIds, teachers);
+    if (assignments?.length) {
+      await this.syncTeacherAssignments(saved.id, assignments, organizationId);
     }
 
     return this.findOne(saved.id, organizationId);
   }
 
-  async findAllByOrgId(organizationId: string): Promise<SchoolClass[]> {
+  /**
+   * @param asOf Resolve teacher assignments as they stood on this date —
+   *   how a class list looked in a past school year. Defaults to today.
+   */
+  async findAllByOrgId(
+    organizationId: string,
+    asOf?: string,
+  ): Promise<SchoolClass[]> {
     const classes = await this.schoolClassRepo.find({
       where: { organizationId, isActive: true },
       relations: {
@@ -149,7 +261,7 @@ export class SchoolClassesService {
       order: { sortOrder: 'ASC', name: 'ASC' },
     });
     if (classes.length === 0) return classes;
-    this.hydrateTeachers(classes);
+    this.hydrateTeachers(classes, asOf);
 
     const rows: Array<{ class_id: string; enrolled_count: string }> =
       await this.schoolClassRepo
@@ -229,7 +341,11 @@ export class SchoolClassesService {
     return this.hydrateTeachers(visible);
   }
 
-  async findOne(id: string, organizationId: string): Promise<SchoolClass> {
+  async findOne(
+    id: string,
+    organizationId: string,
+    asOf?: string,
+  ): Promise<SchoolClass> {
     const schoolClass = await this.schoolClassRepo.findOne({
       where: { id, organizationId, isActive: true },
       relations: {
@@ -240,14 +356,14 @@ export class SchoolClassesService {
     if (!schoolClass) {
       throw new NotFoundException(`SchoolClass ${id} not found`);
     }
-    return this.hydrateTeachers([schoolClass])[0];
+    return this.hydrateTeachers([schoolClass], asOf)[0];
   }
 
   async update(
     input: UpdateSchoolClassInput,
     organizationId: string,
   ): Promise<SchoolClass> {
-    const { gradeLevelIds, teacherIds, ...rest } = input;
+    const { gradeLevelIds, teacherIds, teachers, ...rest } = input;
     const schoolClass = await this.findOne(input.id, organizationId);
     Object.assign(schoolClass, rest);
 
@@ -260,10 +376,11 @@ export class SchoolClassesService {
         : [];
     }
 
-    if (teacherIds !== undefined) {
+    const assignments = this.toAssignmentInputs(teacherIds, teachers);
+    if (assignments !== undefined) {
       await this.syncTeacherAssignments(
         schoolClass.id,
-        teacherIds,
+        assignments,
         organizationId,
       );
     }

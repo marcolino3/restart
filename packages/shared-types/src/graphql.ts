@@ -1225,8 +1225,10 @@ export type CreateSchoolClassInput = {
   maxCapacity?: InputMaybe<Scalars['Int']['input']>;
   name: Scalars['String']['input'];
   room?: InputMaybe<Scalars['String']['input']>;
+  shortCode?: InputMaybe<Scalars['String']['input']>;
   sortOrder?: InputMaybe<Scalars['Int']['input']>;
   teacherIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  teachers?: InputMaybe<Array<SchoolClassTeacherInput>>;
 };
 
 export type CreateStudentInput = {
@@ -4427,7 +4429,9 @@ export type Query = {
   rolesByOrgId: Array<Role>;
   rolesByOrganizationId: Array<Role>;
   schoolClassById: SchoolClass;
+  schoolClassTeacherHistory: Array<SchoolClassTeacher>;
   schoolClassesByOrgId: Array<SchoolClass>;
+  schoolYear: SchoolYear;
   studentById: Student;
   studentLessonRecordTimeline: StudentTimelineOutput;
   studentNotesByStudentId: Array<StudentNote>;
@@ -4952,7 +4956,23 @@ export type QueryRolesByOrganizationIdArgs = {
 
 
 export type QuerySchoolClassByIdArgs = {
+  asOf?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
+};
+
+
+export type QuerySchoolClassTeacherHistoryArgs = {
+  schoolClassId: Scalars['ID']['input'];
+};
+
+
+export type QuerySchoolClassesByOrgIdArgs = {
+  asOf?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QuerySchoolYearArgs = {
+  date?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -5304,11 +5324,26 @@ export type SchoolClassTeacher = {
   workloadPercent?: Maybe<Scalars['Int']['output']>;
 };
 
+export type SchoolClassTeacherInput = {
+  employeeId: Scalars['ID']['input'];
+  role?: InputMaybe<SchoolClassTeacherRole>;
+  validFrom?: InputMaybe<Scalars['String']['input']>;
+  workloadPercent?: InputMaybe<Scalars['Int']['input']>;
+};
+
 /** Role of a teacher within a class. Several LEAD teachers per class are allowed — co-teaching and job sharing are the normal case. */
 export enum SchoolClassTeacherRole {
   Assistant = 'ASSISTANT',
   Lead = 'LEAD'
 }
+
+export type SchoolYear = {
+  __typename?: 'SchoolYear';
+  end: Scalars['String']['output'];
+  label: Scalars['String']['output'];
+  start: Scalars['String']['output'];
+  startYear: Scalars['Int']['output'];
+};
 
 export type SendAdmissionEmailInput = {
   applicationId: Scalars['ID']['input'];
@@ -6267,8 +6302,10 @@ export type UpdateSchoolClassInput = {
   maxCapacity?: InputMaybe<Scalars['Int']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   room?: InputMaybe<Scalars['String']['input']>;
+  shortCode?: InputMaybe<Scalars['String']['input']>;
   sortOrder?: InputMaybe<Scalars['Int']['input']>;
   teacherIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  teachers?: InputMaybe<Array<SchoolClassTeacherInput>>;
 };
 
 export type UpdateStudentContactPersonInput = {

@@ -7,6 +7,7 @@ import { SchoolClassTeacher } from './entities/school-class-teacher.entity';
 import { GradeLevel } from '@/school-management/grade-levels/entities/grade-level.entity';
 import { Employee } from '@/employee-management/employees/entities/employee.entity';
 import { SchoolClassTeacherRole } from '@/database/enums/school-class-teacher-role.enum';
+import { Organization } from '@/organizations/entities/organization.entity';
 
 const ORG_ID = 'org-1';
 const TODAY = new Date().toISOString().slice(0, 10);
@@ -51,6 +52,7 @@ describe('SchoolClassesService', () => {
     create: jest.Mock;
   };
   let employeeRepo: { find: jest.Mock };
+  let organizationRepo: { findOne: jest.Mock };
 
   beforeEach(async () => {
     qb = createQueryBuilderMock();
@@ -69,6 +71,7 @@ describe('SchoolClassesService', () => {
       create: jest.fn((v: unknown) => v),
     };
     employeeRepo = { find: jest.fn().mockResolvedValue([]) };
+    organizationRepo = { findOne: jest.fn().mockResolvedValue(null) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -79,6 +82,10 @@ describe('SchoolClassesService', () => {
         {
           provide: getRepositoryToken(SchoolClassTeacher),
           useValue: assignmentRepo,
+        },
+        {
+          provide: getRepositoryToken(Organization),
+          useValue: organizationRepo,
         },
       ],
     }).compile();
@@ -161,8 +168,18 @@ describe('SchoolClassesService', () => {
         teacherAssignments: [],
       });
       assignmentRepo.find.mockResolvedValue([
-        { id: 'a-1', employeeId: 'e-stays' },
-        { id: 'a-2', employeeId: 'e-leaves' },
+        {
+          id: 'a-1',
+          employeeId: 'e-stays',
+          role: SchoolClassTeacherRole.LEAD,
+          workloadPercent: null,
+        },
+        {
+          id: 'a-2',
+          employeeId: 'e-leaves',
+          role: SchoolClassTeacherRole.LEAD,
+          workloadPercent: null,
+        },
       ]);
       employeeRepo.find.mockResolvedValue([employee('e-stays')]);
 
@@ -210,6 +227,257 @@ describe('SchoolClassesService', () => {
 
       await service.update({ id: 'sc-1', teacherIds: [] }, ORG_ID);
 
+      expect(assignmentRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            schoolClassId: 'sc-1',
+            organizationId: ORG_ID,
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('teacher assignments with role and workload', () => {
+    const employee = (id: string) => ({ id, membership: {} });
+
+    it('stores role and workload for a new assignment', async () => {
+      schoolClassRepo.findOne.mockResolvedValue({
+        id: 'sc-1',
+        teacherAssignments: [],
+      });
+      assignmentRepo.find.mockResolvedValue([]);
+      employeeRepo.find.mockResolvedValue([employee('e-1'), employee('e-2')]);
+
+      await service.update(
+        {
+          id: 'sc-1',
+          teachers: [
+            {
+              employeeId: 'e-1',
+              role: SchoolClassTeacherRole.LEAD,
+              workloadPercent: 60,
+            },
+            {
+              employeeId: 'e-2',
+              role: SchoolClassTeacherRole.ASSISTANT,
+              workloadPercent: 40,
+            },
+          ],
+        },
+        ORG_ID,
+      );
+
+      expect(assignmentRepo.save).toHaveBeenCalledWith([
+        expect.objectContaining({
+          employeeId: 'e-1',
+          role: SchoolClassTeacherRole.LEAD,
+          workloadPercent: 60,
+        }),
+        expect.objectContaining({
+          employeeId: 'e-2',
+          role: SchoolClassTeacherRole.ASSISTANT,
+          workloadPercent: 40,
+        }),
+      ]);
+    });
+
+    it('leaves an unchanged assignment alone', async () => {
+      schoolClassRepo.findOne.mockResolvedValue({
+        id: 'sc-1',
+        teacherAssignments: [],
+      });
+      assignmentRepo.find.mockResolvedValue([
+        {
+          id: 'a-1',
+          employeeId: 'e-1',
+          role: SchoolClassTeacherRole.LEAD,
+          workloadPercent: 60,
+          validFrom: '2025-08-01',
+        },
+      ]);
+      employeeRepo.find.mockResolvedValue([employee('e-1')]);
+
+      await service.update(
+        {
+          id: 'sc-1',
+          teachers: [
+            {
+              employeeId: 'e-1',
+              role: SchoolClassTeacherRole.LEAD,
+              workloadPercent: 60,
+            },
+          ],
+        },
+        ORG_ID,
+      );
+
+      // Nothing written — the start date from last August survives.
+      expect(assignmentRepo.save).not.toHaveBeenCalled();
+      expect(assignmentRepo.update).not.toHaveBeenCalled();
+    });
+
+    it('updates an existing assignment when the workload changes', async () => {
+      schoolClassRepo.findOne.mockResolvedValue({
+        id: 'sc-1',
+        teacherAssignments: [],
+      });
+      assignmentRepo.find.mockResolvedValue([
+        {
+          id: 'a-1',
+          employeeId: 'e-1',
+          role: SchoolClassTeacherRole.LEAD,
+          workloadPercent: 60,
+          validFrom: '2025-08-01',
+        },
+      ]);
+      employeeRepo.find.mockResolvedValue([employee('e-1')]);
+
+      await service.update(
+        {
+          id: 'sc-1',
+          teachers: [
+            {
+              employeeId: 'e-1',
+              role: SchoolClassTeacherRole.LEAD,
+              workloadPercent: 80,
+            },
+          ],
+        },
+        ORG_ID,
+      );
+
+      expect(assignmentRepo.save).toHaveBeenCalledWith([
+        expect.objectContaining({
+          id: 'a-1',
+          workloadPercent: 80,
+          // Start date untouched — this is a change, not a re-assignment.
+          validFrom: '2025-08-01',
+        }),
+      ]);
+    });
+
+    it('ignores an employee from another organization', async () => {
+      schoolClassRepo.findOne.mockResolvedValue({
+        id: 'sc-1',
+        teacherAssignments: [],
+      });
+      assignmentRepo.find.mockResolvedValue([]);
+      // resolveTeachers is org-scoped and returns nothing for the foreign id.
+      employeeRepo.find.mockResolvedValue([]);
+
+      await service.update(
+        { id: 'sc-1', teachers: [{ employeeId: 'e-foreign' }] },
+        ORG_ID,
+      );
+
+      expect(assignmentRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('sorts LEAD before ASSISTANT in the flat list', async () => {
+      schoolClassRepo.findOne.mockResolvedValue({
+        id: 'sc-1',
+        teacherAssignments: [
+          {
+            employeeId: 'e-assi',
+            employee: employee('e-assi'),
+            role: SchoolClassTeacherRole.ASSISTANT,
+            validFrom: '2025-08-01',
+            validTo: null,
+          },
+          {
+            employeeId: 'e-lead',
+            employee: employee('e-lead'),
+            role: SchoolClassTeacherRole.LEAD,
+            validFrom: '2025-08-01',
+            validTo: null,
+          },
+        ],
+      });
+
+      const result = await service.findOne('sc-1', ORG_ID);
+
+      expect(result.teachers?.map((t) => t.id)).toEqual(['e-lead', 'e-assi']);
+    });
+
+    it('resolves the class as it stood on a past date (asOf)', async () => {
+      // A fresh object per call: hydrateTeachers narrows teacherAssignments in
+      // place, so a shared mock would leak the first call's filter.
+      schoolClassRepo.findOne.mockImplementation(() =>
+        Promise.resolve({
+          id: 'sc-1',
+          teacherAssignments: [
+            {
+              employeeId: 'e-old',
+              employee: employee('e-old'),
+              role: SchoolClassTeacherRole.LEAD,
+              validFrom: '2024-08-01',
+              validTo: '2025-07-31',
+            },
+            {
+              employeeId: 'e-new',
+              employee: employee('e-new'),
+              role: SchoolClassTeacherRole.LEAD,
+              validFrom: '2025-08-01',
+              validTo: null,
+            },
+          ],
+        }),
+      );
+
+      const past = await service.findOne('sc-1', ORG_ID, '2025-03-01');
+      expect(past.teachers?.map((t) => t.id)).toEqual(['e-old']);
+
+      const now = await service.findOne('sc-1', ORG_ID, '2026-03-01');
+      expect(now.teachers?.map((t) => t.id)).toEqual(['e-new']);
+    });
+  });
+
+  describe('schoolYearOf', () => {
+    it('derives the year from the org cut-off', async () => {
+      organizationRepo.findOne.mockResolvedValue({
+        id: ORG_ID,
+        schoolYearStartMonth: 8,
+        schoolYearStartDay: 1,
+      });
+
+      await expect(
+        service.schoolYearOf(ORG_ID, '2026-03-15'),
+      ).resolves.toMatchObject({ label: '2025/26', start: '2025-08-01' });
+    });
+
+    it('rejects an unknown organization', async () => {
+      organizationRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.schoolYearOf(ORG_ID)).rejects.toThrow('not found');
+    });
+  });
+
+  describe('findTeacherHistory', () => {
+    it('checks class ownership before returning the history', async () => {
+      // findOne throws for a class of another org — the history must not be
+      // usable to probe for foreign class ids.
+      schoolClassRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.findTeacherHistory('sc-foreign', ORG_ID),
+      ).rejects.toThrow('not found');
+      expect(assignmentRepo.find).not.toHaveBeenCalled();
+    });
+
+    it('returns closed assignments too, scoped to the org', async () => {
+      schoolClassRepo.findOne.mockResolvedValue({
+        id: 'sc-1',
+        teacherAssignments: [],
+      });
+      assignmentRepo.find.mockResolvedValue([
+        { id: 'a-2', validFrom: '2025-08-01', validTo: null },
+        { id: 'a-1', validFrom: '2024-08-01', validTo: '2025-07-31' },
+      ]);
+
+      const history = await service.findTeacherHistory('sc-1', ORG_ID);
+
+      expect(history).toHaveLength(2);
       expect(assignmentRepo.find).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
