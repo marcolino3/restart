@@ -13,6 +13,17 @@ import {
 import { ICurriculumLevel } from '../interfaces/curriculum-level.interface';
 import { CurriculumLevelTranslation } from './curriculum-level-translation.entity';
 
+/**
+ * Gliederungsebene INNERHALB eines Lehrplans — im UI "Zyklus" (DE) bzw.
+ * "Cycle" (EN). Hierarchie: Curriculum → CurriculumLevel → CurriculumNode
+ * (AREA → TOPIC → GROUP → LESSON).
+ *
+ * NICHT zu verwechseln mit `GradeLevel` (Tabelle `grade_levels`), der
+ * Schulstufe der Organisation ("Vorschule", "Primarstufe"). Die Schulstufe
+ * hängt an `SchoolClass` (M:N), dieser Zyklus am Lehrplan. Tabellen- und
+ * Klassenname bleiben aus Kompatibilitätsgründen `curriculum_levels` /
+ * `CurriculumLevel`; umbenannt wurde nur die Anzeigeebene.
+ */
 @ObjectType()
 @Entity('curriculum_levels')
 @Index('idx_curriculum_levels_org', ['organizationId'])

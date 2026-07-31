@@ -38,6 +38,32 @@ describe('parseCurriculumFile', () => {
     expect(result.sheetsByLocale.DE![0].lesson).toBe('Linear eq.');
   });
 
+  it('accepts "Zyklus" as the level column', () => {
+    const csv = [
+      'Sequence;Zyklus;Area;Topic;Group;Lesson',
+      '1;Zyklus 1;Math;Algebra;Equations;Linear eq.',
+    ].join('\n');
+    const result = parseCurriculumFile(Buffer.from(csv, 'utf-8'), 'file.csv');
+    expect(result.sheetsByLocale.DE).toHaveLength(1);
+    expect(result.sheetsByLocale.DE![0].level).toBe('Zyklus 1');
+  });
+
+  // "Stufe" ist im Schulkontext die Schulstufe (GradeLevel), nicht die
+  // Lehrplan-Gliederungsebene. Würde der Parser sie weiterhin als Level-Spalte
+  // akzeptieren, legte ein Import still einen CurriculumLevel an, obwohl der
+  // Nutzer die Schulstufe meint. Ohne erkannte Level-Spalte findet der Parser
+  // keinen gültigen Header und bricht ab — der Import scheitert also laut,
+  // statt stillschweigend das Falsche anzulegen.
+  it('does NOT treat "Stufe" as the level column', () => {
+    const csv = [
+      'Sequence;Stufe;Area;Topic;Group;Lesson',
+      '1;Primarstufe;Math;Algebra;Equations;Linear eq.',
+    ].join('\n');
+    expect(() =>
+      parseCurriculumFile(Buffer.from(csv, 'utf-8'), 'file.csv'),
+    ).toThrow(/no data rows after header/i);
+  });
+
   it('CSV input is treated as single-sheet DE', () => {
     const csv = [
       'Sequence;Level;Area;Topic;Group;Lesson',
