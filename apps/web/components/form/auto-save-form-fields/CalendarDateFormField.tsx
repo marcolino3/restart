@@ -60,7 +60,7 @@ export const CalendarDateFormField = ({ name, label, onSave }: Props) => {
                         });
                       }}
                       captionLayout="dropdown"
-                      initialFocus
+                      autoFocus
                     />
                   </PopoverContent>
                 </Popover>
