@@ -50,6 +50,26 @@ interface DataTableProps<TData> {
   /** Rendered in place of the "no results" default. */
   emptyState?: React.ReactNode;
   onRowClick?: (row: Row<TData>) => void;
+  /**
+   * Column ids whose cells swallow their own clicks, on top of the default
+   * `select`/`actions`. Only relevant together with `onRowClick`.
+   */
+  interactiveColumnIds?: string[];
+  /**
+   * Renders a leading header cell (e.g. the drag-handle column). The matching
+   * body cell has to come from `renderRow`.
+   */
+  leadingHeader?: React.ReactNode;
+  /**
+   * Wraps the rendered rows, for contexts that must sit inside `<TableBody>` —
+   * a dnd-kit `SortableContext`, for instance.
+   */
+  bodyWrapper?: (rows: React.ReactNode) => React.ReactNode;
+  /**
+   * Replaces the default `<TableRow>` while keeping the shared cell rendering.
+   * Receives the row and its cells; use it for sortable/draggable rows.
+   */
+  renderRow?: (row: Row<TData>, cells: React.ReactNode) => React.ReactNode;
   className?: string;
 }
 
@@ -74,6 +94,10 @@ export function DataTable<TData>({
   isLoading = false,
   emptyState,
   onRowClick,
+  interactiveColumnIds,
+  leadingHeader,
+  bodyWrapper,
+  renderRow,
   className,
 }: DataTableProps<TData>) {
   const t = useTranslations("DataTable");
@@ -112,6 +136,53 @@ export function DataTable<TData>({
         .getColumn(group.id)
         ?.setFilterValue(selected.length > 0 ? selected : undefined);
     }
+  }
+
+  const interactiveIds = React.useMemo(() => {
+    if (!interactiveColumnIds?.length) return INTERACTIVE_COLUMN_IDS;
+    return new Set([...INTERACTIVE_COLUMN_IDS, ...interactiveColumnIds]);
+  }, [interactiveColumnIds]);
+
+  function renderCells(row: Row<TData>) {
+    return row.getVisibleCells().map((cell) => (
+      <TableCell
+        key={cell.id}
+        // Interactive cells (row actions, selection checkboxes) must not also
+        // trigger the row's navigation.
+        onClick={
+          onRowClick && interactiveIds.has(cell.column.id)
+            ? (event) => event.stopPropagation()
+            : undefined
+        }
+      >
+        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+      </TableCell>
+    ));
+  }
+
+  function renderRows() {
+    const rendered = rows.map((row) => {
+      const cells = renderCells(row);
+
+      if (renderRow) {
+        return (
+          <React.Fragment key={row.id}>{renderRow(row, cells)}</React.Fragment>
+        );
+      }
+
+      return (
+        <TableRow
+          key={row.id}
+          data-state={row.getIsSelected() ? "selected" : undefined}
+          onClick={onRowClick ? () => onRowClick(row) : undefined}
+          className={cn(onRowClick && "cursor-pointer")}
+        >
+          {cells}
+        </TableRow>
+      );
+    });
+
+    return bodyWrapper ? bodyWrapper(rendered) : rendered;
   }
 
   return (
@@ -156,6 +227,7 @@ export function DataTable<TData>({
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
+                {leadingHeader}
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id} style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}>
                     {header.isPlaceholder
@@ -174,7 +246,9 @@ export function DataTable<TData>({
             {isLoading ? (
               Array.from({ length: 5 }).map((_, rowIndex) => (
                 <TableRow key={`skeleton-${rowIndex}`}>
-                  {Array.from({ length: columnCount }).map((__, cellIndex) => (
+                  {Array.from({
+                    length: columnCount + (leadingHeader ? 1 : 0),
+                  }).map((__, cellIndex) => (
                     <TableCell key={`skeleton-cell-${cellIndex}`}>
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
@@ -183,7 +257,10 @@ export function DataTable<TData>({
               ))
             ) : rows.length === 0 ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={columnCount} className="h-32 text-center">
+                <TableCell
+                  colSpan={columnCount + (leadingHeader ? 1 : 0)}
+                  className="h-32 text-center"
+                >
                   {emptyState ?? (
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-[13.5px] font-medium">
@@ -197,32 +274,7 @@ export function DataTable<TData>({
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() ? "selected" : undefined}
-                  onClick={onRowClick ? () => onRowClick(row) : undefined}
-                  className={cn(onRowClick && "cursor-pointer")}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      // Interactive cells (row actions, selection checkboxes)
-                      // must not also trigger the row's navigation.
-                      onClick={
-                        onRowClick && INTERACTIVE_COLUMN_IDS.has(cell.column.id)
-                          ? (event) => event.stopPropagation()
-                          : undefined
-                      }
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              renderRows()
             )}
           </TableBody>
         </Table>
