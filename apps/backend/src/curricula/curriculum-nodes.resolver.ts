@@ -17,6 +17,7 @@ import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { StudentsService } from '@/school-management/students/students.service';
+import { GradeLevelsService } from '@/school-management/grade-levels/grade-levels.service';
 import { CurriculumNodesService } from './curriculum-nodes.service';
 import { CurriculumNodeLoaders } from './loaders/curriculum-node-loaders';
 import { CreateCurriculumNodeInput } from './dto/create-curriculum-node.input';
@@ -34,6 +35,7 @@ export class CurriculumNodesResolver {
   constructor(
     private readonly service: CurriculumNodesService,
     private readonly studentsService: StudentsService,
+    private readonly gradeLevelsService: GradeLevelsService,
   ) {}
 
   @Query(() => [CurriculumNode], { name: 'curriculumNodes' })
@@ -62,14 +64,50 @@ export class CurriculumNodesResolver {
     return this.service.findOne(id, orgId);
   }
 
+  /**
+   * Narrows the lesson list to one curriculum cycle. Three ways in, most
+   * specific first:
+   *
+   *   curriculumLevelId  the cycle directly
+   *   forStudentId       student -> enrolment -> class -> stage -> cycle
+   *   forSchoolClassId   class -> stage -> cycle (the progress screen works
+   *                      class-first)
+   *
+   * Every path falls back to all lessons of the org when the chain is
+   * incomplete, so an unconfigured setup never stops teachers from recording.
+   */
   @Query(() => [CurriculumNode], { name: 'lessonsByOrg' })
   @Permissions('CURRICULUM_READ')
-  findAllLessons(
+  async findAllLessons(
     @CurrentOrgId() orgId: string,
     @Args('includeArchived', { type: () => Boolean, nullable: true })
     includeArchived?: boolean,
+    @Args('curriculumLevelId', { type: () => ID, nullable: true })
+    curriculumLevelId?: string | null,
+    @Args('forStudentId', { type: () => ID, nullable: true })
+    forStudentId?: string | null,
+    @Args('forSchoolClassId', { type: () => ID, nullable: true })
+    forSchoolClassId?: string | null,
   ) {
-    return this.service.findAllLessons(orgId, includeArchived ?? false);
+    let levelId = curriculumLevelId ?? null;
+    if (!levelId && forStudentId) {
+      levelId = await this.gradeLevelsService.findCurriculumLevelIdForStudent(
+        forStudentId,
+        orgId,
+      );
+    }
+    if (!levelId && forSchoolClassId) {
+      levelId =
+        await this.gradeLevelsService.findCurriculumLevelIdForSchoolClass(
+          forSchoolClassId,
+          orgId,
+        );
+    }
+    return this.service.findAllLessons(
+      orgId,
+      includeArchived ?? false,
+      levelId,
+    );
   }
 
   @Query(() => [CurriculumNode], { name: 'areasByOrg' })

@@ -6,6 +6,7 @@ export interface IGradeLevel extends IBase {
   parentId?: string | null;
   parent?: IGradeLevel | null;
   children?: IGradeLevel[];
+  curriculumLevelId?: string | null;
   color?: string | null;
   shortCode?: string | null;
   ageMin?: number | null;

@@ -31,6 +31,21 @@ export class CurriculumLevelsResolver {
     );
   }
 
+  /**
+   * Every cycle of the organisation, across all curricula. Used where a cycle
+   * has to be picked without a curriculum context — e.g. linking a school
+   * stage to its cycle in the grade-level form.
+   */
+  @Query(() => [CurriculumLevel], { name: 'curriculumLevelsByOrg' })
+  @Permissions('CURRICULUM_LEVEL_READ')
+  findAllByOrg(
+    @CurrentOrgId() orgId: string,
+    @Args('includeArchived', { type: () => Boolean, nullable: true })
+    includeArchived?: boolean,
+  ) {
+    return this.service.findAllByOrgId(orgId, includeArchived ?? false);
+  }
+
   @Query(() => CurriculumLevel, { name: 'curriculumLevelById' })
   @Permissions('CURRICULUM_LEVEL_READ')
   findOne(

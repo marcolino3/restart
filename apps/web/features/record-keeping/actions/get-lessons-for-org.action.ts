@@ -23,8 +23,8 @@ type Response = {
 };
 
 const Document = gql`
-  query GetLessonsForRecordKeeping {
-    lessonsByOrg(includeArchived: false) {
+  query GetLessonsForRecordKeeping($forSchoolClassId: ID) {
+    lessonsByOrg(includeArchived: false, forSchoolClassId: $forSchoolClassId) {
       id
       position
       lessonType
@@ -49,13 +49,22 @@ const Document = gql`
 const toLocale = (s: string) =>
   s as LessonOption["translations"][number]["locale"];
 
-export const getLessonsForOrgAction = async (): Promise<
+/**
+ * `schoolClassId` narrows the list to the class's curriculum cycle. Without
+ * it — or when the class has no cycle configured — every lesson of the org is
+ * returned, so recording progress works even on an unconfigured setup.
+ */
+export const getLessonsForOrgAction = async (
+  schoolClassId?: string | null,
+): Promise<
   | { success: true; data: LessonOption[] }
   | { success: false; error?: string }
 > => {
   const client = await serverCookieGqlClient();
   try {
-    const { lessonsByOrg } = await client.request<Response>(Document);
+    const { lessonsByOrg } = await client.request<Response>(Document, {
+      forSchoolClassId: schoolClassId || null,
+    });
     const lessons: LessonOption[] = lessonsByOrg.map((n) => ({
       id: n.id,
       position: n.position,

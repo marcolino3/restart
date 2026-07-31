@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { GradeLevel } from './entities/grade-level.entity';
+import { CurriculumLevel } from '@/curricula/entities/curriculum-level.entity';
 import { SchoolClass } from '@/school-management/school-classes/entities/school-class.entity';
 import { CreateGradeLevelInput } from './dto/create-grade-level.input';
 import { UpdateGradeLevelInput } from './dto/update-grade-level.input';
@@ -19,6 +20,8 @@ export class GradeLevelsService {
     private readonly gradeLevelRepo: Repository<GradeLevel>,
     @InjectRepository(SchoolClass)
     private readonly schoolClassRepo: Repository<SchoolClass>,
+    @InjectRepository(CurriculumLevel)
+    private readonly curriculumLevelRepo: Repository<CurriculumLevel>,
   ) {}
 
   private assertValidAgeRange(
@@ -35,6 +38,98 @@ export class GradeLevelsService {
    * top-level Stufe (nesting is limited to a single level). Pass `selfId` on
    * update to reject a level pointing at itself.
    */
+  /**
+   * Resolves which curriculum cycle applies to a child:
+   * student -> active enrolment -> class -> stage -> cycle.
+   *
+   * Returns `null` when any hop is missing (no active enrolment, class without
+   * a stage, stage without a cycle). Callers treat that as "not configured"
+   * and fall back to the unfiltered lesson list, so an incomplete setup never
+   * blocks recording progress.
+   *
+   * A class can carry several stages; the first one that has a cycle wins,
+   * ordered by sortOrder for a stable result.
+   */
+  async findCurriculumLevelIdForStudent(
+    studentId: string,
+    organizationId: string,
+  ): Promise<string | null> {
+    const row = await this.gradeLevelRepo
+      .createQueryBuilder('gl')
+      .select('gl.curriculum_level_id', 'cycle_id')
+      .innerJoin(
+        'school_class_grade_levels',
+        'scgl',
+        'scgl.grade_level_id = gl.id',
+      )
+      .innerJoin(
+        'school_class_enrollments',
+        'sce',
+        'sce.school_class_id = scgl.school_class_id',
+      )
+      .where('sce.student_id = :studentId', { studentId })
+      .andWhere('sce.organization_id = :organizationId', { organizationId })
+      .andWhere('gl.organization_id = :organizationId', { organizationId })
+      .andWhere('sce.left_at IS NULL')
+      .andWhere('sce.is_active = true')
+      .andWhere('gl.curriculum_level_id IS NOT NULL')
+      .orderBy('gl.sort_order', 'ASC')
+      .limit(1)
+      .getRawOne<{ cycle_id: string }>();
+
+    return row?.cycle_id ?? null;
+  }
+
+  /**
+   * Resolves the curriculum cycle of a school class via its stages. Used by
+   * the progress entry screen, which works class-first rather than per child.
+   *
+   * Same `null` semantics as findCurriculumLevelIdForStudent: a class without
+   * stages, or stages without a cycle, means "not configured" and leaves the
+   * lesson list unfiltered.
+   */
+  async findCurriculumLevelIdForSchoolClass(
+    schoolClassId: string,
+    organizationId: string,
+  ): Promise<string | null> {
+    const row = await this.gradeLevelRepo
+      .createQueryBuilder('gl')
+      .select('gl.curriculum_level_id', 'cycle_id')
+      .innerJoin(
+        'school_class_grade_levels',
+        'scgl',
+        'scgl.grade_level_id = gl.id',
+      )
+      .where('scgl.school_class_id = :schoolClassId', { schoolClassId })
+      .andWhere('gl.organization_id = :organizationId', { organizationId })
+      .andWhere('gl.curriculum_level_id IS NOT NULL')
+      .orderBy('gl.sort_order', 'ASC')
+      .limit(1)
+      .getRawOne<{ cycle_id: string }>();
+
+    return row?.cycle_id ?? null;
+  }
+
+  /**
+   * A stage may only point at a cycle of its own organisation. Without this
+   * check a caller could link to another tenant's curriculum and leak its
+   * lesson titles through the progress screen.
+   */
+  private async assertValidCurriculumLevel(
+    curriculumLevelId: string | null | undefined,
+    organizationId: string,
+  ): Promise<void> {
+    if (curriculumLevelId == null) return;
+    const cycle = await this.curriculumLevelRepo.findOne({
+      where: { id: curriculumLevelId, organizationId },
+    });
+    if (!cycle) {
+      throw new NotFoundException(
+        `Curriculum cycle ${curriculumLevelId} not found in this organization`,
+      );
+    }
+  }
+
   private async assertValidParent(
     parentId: string | null | undefined,
     organizationId: string,
@@ -80,6 +175,10 @@ export class GradeLevelsService {
   ): Promise<GradeLevel> {
     this.assertValidAgeRange(input.ageMin, input.ageMax);
     await this.assertValidParent(input.parentId, organizationId);
+    await this.assertValidCurriculumLevel(
+      input.curriculumLevelId,
+      organizationId,
+    );
     const existing = await this.gradeLevelRepo.findOne({
       where: { organizationId, name: input.name },
     });
@@ -171,6 +270,12 @@ export class GradeLevelsService {
       input.ageMin !== undefined ? input.ageMin : gradeLevel.ageMin,
       input.ageMax !== undefined ? input.ageMax : gradeLevel.ageMax,
     );
+    if (input.curriculumLevelId !== undefined) {
+      await this.assertValidCurriculumLevel(
+        input.curriculumLevelId,
+        organizationId,
+      );
+    }
 
     // Re-parenting is opt-in: `parentId === undefined` leaves the hierarchy
     // untouched, `null` promotes to top level, a UUID nests as a subgroup.

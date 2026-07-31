@@ -8,6 +8,12 @@ export const GradeLevelFormSchema = z
       (v) => (v === "" || v === undefined ? null : v),
       z.string().uuid().nullable(),
     ),
+    // Curriculum cycle ("Zyklus") whose lessons apply to this stage.
+    // null = not configured; the lesson list then stays unfiltered.
+    curriculumLevelId: z.preprocess(
+      (v) => (v === "" || v === undefined ? null : v),
+      z.string().uuid().nullable(),
+    ),
     shortCode: z
       .string()
       .trim()

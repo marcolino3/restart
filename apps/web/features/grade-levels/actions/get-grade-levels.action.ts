@@ -7,6 +7,7 @@ export type GradeLevelItem = {
   id: string;
   name: string;
   parentId: string | null;
+  curriculumLevelId: string | null;
   color: string | null;
   shortCode: string | null;
   ageMin: number | null;
@@ -26,6 +27,7 @@ const GetGradeLevelsDocument = gql`
       id
       name
       parentId
+      curriculumLevelId
       color
       shortCode
       ageMin
