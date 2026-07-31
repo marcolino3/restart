@@ -85,6 +85,9 @@ export class LessonRecordsService {
           FROM "school_class_enrollments" e
           INNER JOIN "school_class_teachers" sct
             ON sct.school_class_id = e.school_class_id
+            -- Only assignments in force today: a teacher who left the class
+            -- must lose sight of its students.
+            AND sct.valid_to IS NULL
           INNER JOIN "memberships" m
             ON m.employee_id = sct.employee_id
           WHERE m.user_id = :teacherUid

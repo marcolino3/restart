@@ -42,6 +42,7 @@ import { Family } from '@/school-management/families/entities/family.entity';
 import { GradeLevel } from '@/school-management/grade-levels/entities/grade-level.entity';
 import { SchoolClassEnrollment } from '@/school-management/school-class-enrollments/entities/school-class-enrollment.entity';
 import { SchoolClass } from '@/school-management/school-classes/entities/school-class.entity';
+import { SchoolClassTeacher } from '@/school-management/school-classes/entities/school-class-teacher.entity';
 import { StudentNote } from '@/school-management/student-notes/entities/student-note.entity';
 import { Student } from '@/school-management/students/entities/student.entity';
 import { StudentRecordCategory } from '@/school-management/student-records/entities/student-record-category.entity';
@@ -123,6 +124,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       GradeLevel,
       SchoolClass,
       SchoolClassEnrollment,
+      SchoolClassTeacher,
       Student,
       StudentRecordCategory,
       StudentRecordEntry,

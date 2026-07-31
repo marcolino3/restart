@@ -8,6 +8,8 @@ import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { SchoolClassesService } from './school-classes.service';
 import { SchoolClass } from './entities/school-class.entity';
+import { SchoolClassTeacher } from './entities/school-class-teacher.entity';
+import { SchoolYear } from './dto/school-year.object';
 import { CreateSchoolClassInput } from './dto/create-school-class.input';
 import { UpdateSchoolClassInput } from './dto/update-school-class.input';
 import { ReorderSchoolClassesInput } from './dto/reorder-school-classes.input';
@@ -17,10 +19,17 @@ import { ReorderSchoolClassesInput } from './dto/reorder-school-classes.input';
 export class SchoolClassesResolver {
   constructor(private readonly schoolClassesService: SchoolClassesService) {}
 
+  /**
+   * @param asOf Optional ISO date — returns the classes with the teachers who
+   *   were assigned on that day, for looking at a past school year.
+   */
   @Query(() => [SchoolClass], { name: 'schoolClassesByOrgId' })
   @Permissions('SCHOOL_CLASS_READ')
-  findAll(@CurrentOrgId() orgId: string) {
-    return this.schoolClassesService.findAllByOrgId(orgId);
+  findAll(
+    @CurrentOrgId() orgId: string,
+    @Args('asOf', { type: () => String, nullable: true }) asOf?: string,
+  ) {
+    return this.schoolClassesService.findAllByOrgId(orgId, asOf);
   }
 
   /**
@@ -47,8 +56,35 @@ export class SchoolClassesResolver {
   findOne(
     @Args('id', { type: () => ID }) id: string,
     @CurrentOrgId() orgId: string,
+    @Args('asOf', { type: () => String, nullable: true }) asOf?: string,
   ) {
-    return this.schoolClassesService.findOne(id, orgId);
+    return this.schoolClassesService.findOne(id, orgId, asOf);
+  }
+
+  /**
+   * Every teacher who has ever been assigned to the class, closed assignments
+   * included — the "who taught this class, and when" view.
+   */
+  @Query(() => [SchoolClassTeacher], { name: 'schoolClassTeacherHistory' })
+  @Permissions('SCHOOL_CLASS_READ')
+  findTeacherHistory(
+    @Args('schoolClassId', { type: () => ID }) schoolClassId: string,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.schoolClassesService.findTeacherHistory(schoolClassId, orgId);
+  }
+
+  /**
+   * The school year a date falls into, per the org's cut-off. Lets the UI
+   * label and bound a period without hardcoding 1 August.
+   */
+  @Query(() => SchoolYear, { name: 'schoolYear' })
+  @Permissions('SCHOOL_CLASS_READ')
+  schoolYear(
+    @CurrentOrgId() orgId: string,
+    @Args('date', { type: () => String, nullable: true }) date?: string,
+  ) {
+    return this.schoolClassesService.schoolYearOf(orgId, date);
   }
 
   @Mutation(() => SchoolClass)

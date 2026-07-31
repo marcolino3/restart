@@ -9,6 +9,7 @@ import { Form } from "@/components/ui/form";
 import { ColorPickerFormField } from "@/components/form/form-fields/ColorPickerFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { ComboboxFormField } from "@/components/form/form-fields/ComboboxFormField";
+import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
 import { FormActionButtons } from "@/components/form/form-fields/FormActionButtons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ROUTES } from "@/constants/routes";
@@ -23,17 +24,22 @@ import { SchoolClassDetail } from "../actions/get-school-class-by-id.action";
 import { TeacherOption } from "../actions/get-teachers.action";
 import { GradeLevelItem } from "@/features/grade-levels/actions/get-grade-levels.action";
 import { TeacherImpersonateList } from "@/features/auth/components/TeacherImpersonateList";
+import { TeacherAssignmentField } from "./TeacherAssignmentField";
+import { SchoolClassSummaryAside } from "./SchoolClassSummaryAside";
 
 interface Props {
   schoolClass: SchoolClassDetail;
   gradeLevels: GradeLevelItem[];
   teachers: TeacherOption[];
+  /** Label of the school year the class currently sits in, e.g. "2026/27". */
+  schoolYearLabel?: string | null;
 }
 
 export default function EditSchoolClassPageForm({
   schoolClass,
   gradeLevels,
   teachers,
+  schoolYearLabel,
 }: Props) {
   const tS = useTranslations("SchoolClasses");
   const locale = useLocale();
@@ -47,11 +53,6 @@ export default function EditSchoolClassPageForm({
       label: gl.name,
       value: gl.id,
     }));
-
-  const teacherOptions = teachers.map((t) => ({
-    label: `${t.firstName} ${t.lastName}`.trim(),
-    value: t.id,
-  }));
 
   // Build the impersonatable list from the teachers currently assigned to the class.
   // Looks up the userId via the org-wide teachers list we already have.
@@ -72,8 +73,15 @@ export default function EditSchoolClassPageForm({
     defaultValues: {
       id: schoolClass.id,
       name: schoolClass.name,
+      shortCode: schoolClass.shortCode ?? "",
       gradeLevelIds: schoolClass.gradeLevels?.map((gl) => gl.id) ?? [],
-      teacherIds: schoolClass.teachers?.map((t) => t.id) ?? [],
+      // Assignments carry role and workload. `teacherIds` stays empty so the
+      // backend takes this richer list instead.
+      teachers: (schoolClass.teacherAssignments ?? []).map((a) => ({
+        employeeId: a.employeeId,
+        role: a.role,
+        workloadPercent: a.workloadPercent ?? ("" as unknown as number),
+      })),
       color: schoolClass.color ?? null,
       description: schoolClass.description ?? "",
       maxCapacity: schoolClass.maxCapacity ?? ("" as unknown as number),
@@ -95,55 +103,90 @@ export default function EditSchoolClassPageForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{tS("classDetails")}</CardTitle>
-          </CardHeader>
-          <CardContent className="form-gap-y">
-            <InputFormField name="name" label="name" />
-            <ComboboxFormField
-              name="gradeLevelIds"
-              label="gradeLevel"
-              options={gradeLevelOptions}
-              multiple
-              translateOptions={false}
-              width="w-full"
-            />
-            <ComboboxFormField
-              name="teacherIds"
-              label="teachers"
-              namespace="SchoolClasses"
-              options={teacherOptions}
-              multiple
-              translateOptions={false}
-              width="w-full"
-            />
-            <InputFormField name="description" label="description" />
-            <div className="flex gap-4">
-              <ColorPickerFormField name="color" label="color" width="w-1/4" />
-              <InputFormField name="room" label="room" width="w-1/4" />
-              <InputFormField
-                name="maxCapacity"
-                label="maxCapacity"
-                type="number"
-                width="w-1/4"
-              />
-            </div>
-          </CardContent>
-        </Card>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>{tS("classDetails")}</CardTitle>
+              </CardHeader>
+              <CardContent className="form-gap-y">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <InputFormField name="name" label="name" width="w-full" />
+                  <InputFormField
+                    name="shortCode"
+                    label="shortCode"
+                    namespace="SchoolClasses"
+                    width="w-full"
+                  />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <ComboboxFormField
+                    name="gradeLevelIds"
+                    label="gradeLevel"
+                    options={gradeLevelOptions}
+                    multiple
+                    translateOptions={false}
+                    width="w-full"
+                  />
+                  <InputFormField name="room" label="room" width="w-full" />
+                </div>
+                <TextareaFormField name="description" label="description" />
+              </CardContent>
+            </Card>
 
-        <FormActionButtons
-          disabled={form.formState.isSubmitting}
-          onCancel={() => router.push(ROUTES.admin.schoolClasses(locale))}
-        />
+            <Card>
+              <CardHeader>
+                <CardTitle>{tS("teachers")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  {tS("teachersHint")}
+                </p>
+                <TeacherAssignmentField name="teachers" teachers={teachers} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>{tS("capacity")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <InputFormField
+                    name="maxCapacity"
+                    label="maxCapacity"
+                    type="number"
+                    width="w-full"
+                  />
+                  <ColorPickerFormField
+                    name="color"
+                    label="color"
+                    width="w-full"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <FormActionButtons
+              disabled={form.formState.isSubmitting}
+              onCancel={() => router.push(ROUTES.admin.schoolClasses(locale))}
+            />
+          </div>
+
+          <aside className="space-y-6">
+            <SchoolClassSummaryAside
+              gradeLevels={gradeLevels}
+              enrolledCount={schoolClass.enrolledCount}
+              schoolYearLabel={schoolYearLabel}
+              isActive={schoolClass.isActive}
+            />
+            {/* SuperAdmin-only impersonation panel. The component renders
+                nothing for non-SuperAdmin users — no PII leak. */}
+            <TeacherImpersonateList teachers={impersonatableTeachers} />
+          </aside>
+        </div>
       </form>
-
-      {/* SuperAdmin-only impersonation panel. The component renders nothing
-          for non-SuperAdmin users — no PII leak. */}
-      <div className="mt-6">
-        <TeacherImpersonateList teachers={impersonatableTeachers} />
-      </div>
     </Form>
   );
 }

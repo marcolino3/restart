@@ -11,8 +11,10 @@ import {
   JoinTable,
   ManyToMany,
   ManyToOne,
+  OneToMany,
 } from 'typeorm';
 import { ISchoolClass } from '../interfaces/school-class.interface';
+import { SchoolClassTeacher } from './school-class-teacher.entity';
 
 @ObjectType()
 @Entity('school_classes')
@@ -31,14 +33,37 @@ export class SchoolClass
   @JoinTable({ name: 'school_class_grade_levels' })
   gradeLevels?: GradeLevel[];
 
+  /**
+   * Assignments with role, workload and validity — the owning relation for
+   * `school_class_teachers`.
+   */
+  @Field(() => [SchoolClassTeacher], { nullable: true })
+  @OneToMany(() => SchoolClassTeacher, (assignment) => assignment.schoolClass)
+  teacherAssignments?: SchoolClassTeacher[];
+
+  /**
+   * Flat list of assigned teachers, for consumers that only need the people.
+   *
+   * Deliberately NOT a mapped relation. It used to be a @ManyToMany with a
+   * @JoinTable on `school_class_teachers`, but that table now belongs to
+   * {@link SchoolClassTeacher}. Two mappings over one table make TypeORM treat
+   * it as a plain junction and schedule a DROP for every extra column — role,
+   * workload and validity included. Verified against the schema builder, which
+   * emitted exactly those DROPs while both mappings existed.
+   *
+   * The service populates it from `teacherAssignments`, so reads keep working
+   * unchanged; writes go through the assignments.
+   */
   @Field(() => [Employee], { nullable: true })
-  @ManyToMany(() => Employee)
-  @JoinTable({
-    name: 'school_class_teachers',
-    joinColumn: { name: 'school_class_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'employee_id', referencedColumnName: 'id' },
-  })
   teachers?: Employee[];
+
+  /**
+   * Short label for timetables and compact lists (e.g. "P1a"), where the full
+   * class name does not fit.
+   */
+  @Field(() => String, { nullable: true })
+  @Column('varchar', { name: 'short_code', length: 16, nullable: true })
+  shortCode?: string | null;
 
   @Field(() => String, { nullable: true })
   @Column('varchar', { length: 7, nullable: true })
