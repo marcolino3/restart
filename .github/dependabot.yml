@@ -113,6 +113,8 @@ updates:
         versions: [">=2.17.6"]
 
       # Siehe /apps/backend bzw. /apps/web für die ausführliche Begründung.
+      # Diese Liste muss jede dortige Sperre spiegeln — der Root-Scan kennt
+      # die verzeichnis-spezifischen Einträge nicht.
       - dependency-name: "typescript"
         versions: [">=6.0.0"]
       - dependency-name: "typeorm"
@@ -121,7 +123,20 @@ updates:
         versions: [">=3.0.0"]
       - dependency-name: "graphql"
         versions: [">=16.14.1"]
+      - dependency-name: "class-validator"
+        versions: [">=0.15.0"]
+      - dependency-name: "@swc/cli"
+        versions: [">=0.8.0"]
+      - dependency-name: "@graphql-codegen/cli"
+        versions: [">=7.0.0"]
+      # ESLint 10 blockiert an eslint-plugin-react@7.37.5, das die in v10
+      # entfernte Kontext-API aufruft. Die Sperre muss die ganze Familie
+      # umfassen: @eslint/js und @eslint/eslintrc folgen der ESLint-Major,
+      # und ein PR auf @eslint/js allein (#237) zieht die v10-Typen herein,
+      # ohne dass die eslint-Regel greift.
       - dependency-name: "eslint"
+        versions: [">=10.0.0"]
+      - dependency-name: "@eslint/*"
         versions: [">=10.0.0"]
 
   # Backend
@@ -183,7 +198,10 @@ updates:
       # ESLint 10 — gleicher Blocker wie in /apps/web: eslint-plugin-react@7.37.5
       # ist über die geteilte Root-Config beteiligt und bricht auf v10.
       # Das Monorepo hebt ESLint gemeinsam an, nicht paketweise.
+      # @eslint/js und @eslint/eslintrc folgen der ESLint-Major mit.
       - dependency-name: "eslint"
+        versions: [">=10.0.0"]
+      - dependency-name: "@eslint/*"
         versions: [">=10.0.0"]
 
   # Frontend
@@ -216,6 +234,9 @@ updates:
       # (lokal mit eslint@10.8.0 verifiziert, Lint bricht mit exit 2 ab).
       # Erst nachziehen, wenn eslint-plugin-react v10 unterstützt.
       - dependency-name: "eslint"
+        versions: [">=10.0.0"]
+      # @eslint/js und @eslint/eslintrc folgen der ESLint-Major mit.
+      - dependency-name: "@eslint/*"
         versions: [">=10.0.0"]
       - dependency-name: "@swc/cli"
         versions: [">=0.8.0"]
