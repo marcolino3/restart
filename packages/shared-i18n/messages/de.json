@@ -2581,6 +2581,7 @@
     "occupancy": "Belegung",
     "removeTeacher": "Lehrperson entfernen",
     "reorderError": "Fehler beim Speichern der Reihenfolge",
+    "role": "Rolle",
     "roleAssistant": "Assistenz",
     "roleLead": "Klassenlehrperson",
     "room": "Raum",

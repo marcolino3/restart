@@ -350,6 +350,40 @@ describe('SchoolClasses service (Integration)', () => {
       expect(updated.room).toBe('Atelier 2');
     });
 
+    it('keeps existing assignments when only plain fields change', async () => {
+      // findOne loads teacherAssignments and hydrateTeachers narrows them to
+      // the ones in force today. Saving the entity with that filtered list
+      // made TypeORM treat the rest as detached and null their
+      // school_class_id, which the NOT NULL constraint rejects — a plain
+      // rename failed outright.
+      const created = await service.create(
+        {
+          name: 'Alt',
+          teachers: [
+            { employeeId: teacherA, validFrom: '2025-08-01' },
+            { employeeId: teacherB, validFrom: '2025-08-01' },
+          ],
+        },
+        orgId,
+      );
+      // Close one, so hydrateTeachers drops it from the loaded list — that
+      // dropped row is what TypeORM would otherwise detach on save.
+      await assignmentRepo.update(
+        { schoolClassId: created.id, employeeId: teacherB },
+        { validTo: '2025-12-31' },
+      );
+
+      await service.update({ id: created.id, name: 'Neu' }, orgId);
+
+      const loaded = await service.findOne(created.id, orgId);
+      expect(loaded.name).toBe('Neu');
+      expect(loaded.teachers?.map((t) => t.id)).toEqual([teacherA]);
+      // The closed row must still be intact, not orphaned.
+      const history = await service.findTeacherHistory(created.id, orgId);
+      expect(history).toHaveLength(2);
+      expect(history.every((a) => a.schoolClassId === created.id)).toBe(true);
+    });
+
     it('refuses to update a class of another organization', async () => {
       const foreign = await service.create({ name: 'Fremde' }, otherOrgId);
 

@@ -49,17 +49,21 @@ export function TeacherAssignmentField({ name, teachers }: Props) {
   const { fields, append, remove } = useFieldArray({ control, name });
 
   const byId = new Map(teachers.map((teacher) => [teacher.id, teacher]));
-  // useFieldArray's `fields` are only guaranteed to carry the generated key,
-  // so the values come from the form state instead.
+  // `fields` is the source of truth for what is rendered — it is what
+  // append/remove actually mutate. The watched values are only read for the
+  // role badge, which has to reflect edits made after the initial render.
   const rows = (watch(name) as TeacherAssignmentValue[] | undefined) ?? [];
-  const assignedIds = new Set(rows.map((row) => row?.employeeId));
+  const assignedIds = new Set(
+    (fields as unknown as TeacherAssignmentValue[]).map((f) => f.employeeId),
+  );
   const available = teachers.filter((teacher) => !assignedIds.has(teacher.id));
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-testid="teacher-assignments">
       {fields.map((field, index) => {
-        const employeeId = rows[index]?.employeeId;
-        const teacher = employeeId ? byId.get(employeeId) : undefined;
+        const employeeId = (field as unknown as TeacherAssignmentValue)
+          .employeeId;
+        const teacher = byId.get(employeeId);
 
         return (
           <div
@@ -85,7 +89,10 @@ export function TeacherAssignmentField({ name, teachers }: Props) {
                       value={roleField.value ?? "LEAD"}
                       onValueChange={roleField.onChange}
                     >
-                      <SelectTrigger className="h-8 w-[170px] text-sm">
+                      <SelectTrigger
+                        className="h-8 w-[170px] text-sm"
+                        aria-label={t("role")}
+                      >
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -145,7 +152,7 @@ export function TeacherAssignmentField({ name, teachers }: Props) {
             append({ employeeId, role: "LEAD", workloadPercent: "" })
           }
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full" aria-label={t("assignTeacher")}>
             <SelectValue placeholder={t("assignTeacher")} />
           </SelectTrigger>
           <SelectContent>

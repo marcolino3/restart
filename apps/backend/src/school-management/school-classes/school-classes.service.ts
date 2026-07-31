@@ -426,6 +426,14 @@ export class SchoolClassesService {
       );
     }
 
+    // Saving the entity would cascade over the relations it was loaded with,
+    // and `teacherAssignments` is a filtered view by then (hydrateTeachers
+    // keeps only what is in force today). TypeORM reads the missing rows as
+    // "detached" and nulls their school_class_id, which the NOT NULL
+    // constraint rejects. The assignments were already written above, so the
+    // class row is updated on its own columns only.
+    delete schoolClass.teacherAssignments;
+    delete schoolClass.teachers;
     await this.schoolClassRepo.save(schoolClass);
     return this.findOne(schoolClass.id, organizationId);
   }

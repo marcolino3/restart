@@ -2581,6 +2581,7 @@
     "occupancy": "Occupancy",
     "removeTeacher": "Remove teacher",
     "reorderError": "Failed to save order",
+    "role": "Role",
     "roleAssistant": "Assistant",
     "roleLead": "Class teacher",
     "room": "Room",
