@@ -10,6 +10,8 @@ import { getClassroomAttentionAction } from "@/features/record-keeping/actions/g
 import { getClassroomHeatmapAction } from "@/features/record-keeping/actions/get-classroom-heatmap.action";
 import { getSchoolClassesAction } from "@/features/school-classes/actions/get-school-classes.action";
 import { getStudentsAction } from "@/features/students/actions/get-students.action";
+import { getSetupStatusAction } from "@/features/setup/actions/get-setup-status.action";
+import { SetupChecklist } from "@/features/setup/components/SetupChecklist";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 
 const TIME_ZONE = "Europe/Zurich";
@@ -63,13 +65,17 @@ export default async function DashboardPage() {
     );
   }
 
-  const [studentsRes, classesRes, admissionsRes, remindersRes] =
+  const [studentsRes, classesRes, admissionsRes, remindersRes, setupRes] =
     await Promise.all([
       getStudentsAction(),
       getSchoolClassesAction(),
       getAdmissionsDataAction(),
       getOrgAdmissionRemindersAction("OPEN"),
+      getSetupStatusAction(),
     ]);
+
+  // Optional context — a failed load must not take the dashboard down with it.
+  const setupStatus = setupRes.success ? setupRes.data : null;
 
   const activeClasses = (classesRes.success ? classesRes.data : []).filter(
     (c) => c.isActive
@@ -129,8 +135,11 @@ export default async function DashboardPage() {
   ).length;
 
   return (
-    <div>
+    <div className="flex flex-col gap-4">
       {head}
+      {setupStatus && !setupStatus.complete && (
+        <SetupChecklist status={setupStatus} locale={locale} />
+      )}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label={t("statStudents")}
