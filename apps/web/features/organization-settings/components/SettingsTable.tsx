@@ -1,20 +1,11 @@
 "use client";
 
 import * as React from "react";
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  SortingState,
-  useReactTable,
-} from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowUpDown, Eye, EyeOff, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Eye, EyeOff, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,18 +15,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable } from "@/components/data-table/DataTable";
+import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
+import { useDataTable } from "@/components/data-table/use-data-table";
 import { OrganizationSetting } from "../actions/get-settings.action";
 import { getOrganizationSettingValueAction } from "../actions/get-setting-value.action";
-import { Badge } from "@/components/ui/badge";
 
 interface Props {
   data: OrganizationSetting[];
@@ -48,8 +32,6 @@ export const SettingsTable = ({ data, organizationId, onEdit, onDelete }: Props)
   const t = useTranslations("OrganizationSettings");
   const tCommon = useTranslations("Common");
   const locale = useLocale();
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [revealedValues, setRevealedValues] = React.useState<Record<string, string>>({});
   const [loadingKeys, setLoadingKeys] = React.useState<Set<string>>(new Set());
 
@@ -81,214 +63,150 @@ export const SettingsTable = ({ data, organizationId, onEdit, onDelete }: Props)
     }
   };
 
-  const columns: ColumnDef<OrganizationSetting>[] = [
-    {
-      accessorKey: "key",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          {t("key")}
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => (
-        <code className="bg-muted rounded px-2 py-1 text-sm font-mono">
-          {row.getValue("key")}
-        </code>
-      ),
-    },
-    {
-      id: "value",
-      header: t("valueHeader"),
-      cell: ({ row }) => {
-        const key = row.original.key;
-        const isLoading = loadingKeys.has(key);
-        const revealed = revealedValues[key];
-
-        return (
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-sm">
-              {revealed || "••••••••••••"}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => toggleReveal(key)}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : revealed ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-        );
+  const columns: ColumnDef<OrganizationSetting>[] = React.useMemo(
+    () => [
+      {
+        id: "key",
+        accessorKey: "key",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("key")} />
+        ),
+        meta: { labelKey: "key" },
+        cell: ({ row }) => (
+          <code className="bg-muted rounded px-2 py-1 text-sm font-mono">
+            {row.getValue("key")}
+          </code>
+        ),
       },
-    },
-    {
-      accessorKey: "description",
-      header: t("descriptionLabel"),
-      cell: ({ row }) => (
-        <span className="text-muted-foreground text-sm">
-          {row.getValue("description") || "-"}
-        </span>
-      ),
-    },
-    {
-      accessorKey: "updatedAt",
-      header: t("updatedHeader"),
-      cell: ({ row }) => {
-        const date = new Date(row.getValue("updatedAt"));
-        return (
-          <span className="text-muted-foreground text-sm">
-            {date.toLocaleDateString(locale, {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </span>
-        );
-      },
-    },
-    {
-      id: "actions",
-      enableHiding: false,
-      cell: ({ row }) => {
-        const setting = row.original;
+      {
+        id: "value",
+        header: t("valueHeader"),
+        enableSorting: false,
+        cell: ({ row }) => {
+          const key = row.original.key;
+          const isLoading = loadingKeys.has(key);
+          const revealed = revealedValues[key];
 
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">{tCommon("openMenu")}</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>{tCommon("actions")}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => onEdit(setting)}>
-                <Pencil className="mr-2 h-4 w-4" />
-                {tCommon("edit")}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onDelete(setting)}
-                className="text-destructive"
+          return (
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-sm">
+                {revealed || "••••••••••••"}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => toggleReveal(key)}
+                disabled={isLoading}
               >
-                <Trash2 className="mr-2 h-4 w-4" />
-                {tCommon("delete")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
+                {isLoading ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : revealed ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          );
+        },
       },
-    },
-  ];
+      {
+        id: "description",
+        accessorKey: "description",
+        header: t("descriptionLabel"),
+        cell: ({ row }) => (
+          <span className="text-muted-foreground text-sm">
+            {row.getValue("description") || "-"}
+          </span>
+        ),
+      },
+      {
+        id: "updatedAt",
+        accessorKey: "updatedAt",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("updatedHeader")} />
+        ),
+        meta: { labelKey: "updatedHeader" },
+        cell: ({ row }) => {
+          const date = new Date(row.getValue("updatedAt"));
+          return (
+            <span className="text-muted-foreground text-sm">
+              {date.toLocaleDateString(locale, {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          );
+        },
+      },
+      {
+        id: "actions",
+        enableHiding: false,
+        cell: ({ row }) => {
+          const setting = row.original;
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions by design
-  const table = useReactTable({
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">{tCommon("openMenu")}</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>{tCommon("actions")}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onEdit(setting)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  {tCommon("edit")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onDelete(setting)}
+                  className="text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {tCommon("delete")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        },
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- t/tCommon are stable next-intl translators
+    [loadingKeys, revealedValues, locale, onEdit, onDelete],
+  );
+
+  const { table, globalFilter, setGlobalFilter } = useDataTable({
     data,
     columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    state: {
-      sorting,
-      columnFilters,
-    },
+    getRowId: (row) => row.key,
+    initialPageSize: 10,
   });
 
   return (
-    <div className="w-full">
-      <div className="flex items-center py-4">
-        <Input
-          placeholder={t("filterPlaceholder")}
-          value={(table.getColumn("key")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("key")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
+    <DataTable
+      table={table}
+      globalFilter={globalFilter}
+      onGlobalFilterChange={setGlobalFilter}
+      searchPlaceholder={t("filterPlaceholder")}
+      translateColumn={(key) => t(key)}
+      toolbar={
+        // `ml-auto` mirrors the pre-migration layout: the count badge sits at
+        // the far right of the toolbar row, ahead of the view-options button.
         <Badge variant="secondary" className="ml-auto">
           {t("settingsCount", { count: data.length })}
         </Badge>
-      </div>
-      <div className="overflow-hidden rounded-md border">
-        <Table>
-          <TableHeader className="bg-muted sticky top-0 z-10">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  {t("noSettings")}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      {table.getPageCount() > 1 && (
-        <div className="flex items-center justify-end space-x-2 py-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            {tCommon("previous")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            {tCommon("next")}
-          </Button>
-        </div>
-      )}
-    </div>
+      }
+      emptyState={
+        <span className="text-[13.5px] text-muted-foreground">
+          {t("noSettings")}
+        </span>
+      }
+    />
   );
 };

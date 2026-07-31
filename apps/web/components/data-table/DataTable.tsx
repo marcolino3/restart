@@ -22,6 +22,13 @@ import { DataTableFilter, type FilterGroup } from "./DataTableFilter";
 import { DataTablePagination } from "./DataTablePagination";
 import { DataTableViewOptions } from "./DataTableViewOptions";
 
+/**
+ * Columns whose cells own their click handling. With `onRowClick` set, a click
+ * inside these must not bubble up into the row navigation — otherwise opening
+ * the actions menu or ticking a checkbox also navigates away.
+ */
+const INTERACTIVE_COLUMN_IDS = new Set(["select", "actions"]);
+
 interface DataTableProps<TData> {
   table: TanStackTable<TData>;
   /** Search box value. Omit both search props to hide the search box. */
@@ -198,7 +205,16 @@ export function DataTable<TData>({
                   className={cn(onRowClick && "cursor-pointer")}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell
+                      key={cell.id}
+                      // Interactive cells (row actions, selection checkboxes)
+                      // must not also trigger the row's navigation.
+                      onClick={
+                        onRowClick && INTERACTIVE_COLUMN_IDS.has(cell.column.id)
+                          ? (event) => event.stopPropagation()
+                          : undefined
+                      }
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext(),

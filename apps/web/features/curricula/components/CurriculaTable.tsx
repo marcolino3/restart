@@ -4,36 +4,17 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import {
-  type ColumnDef,
-  type SortingState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import {
   Archive,
-  ArrowUpDown,
   MoreHorizontal,
   Pencil,
   RotateCcw,
-  Search,
   Trash2,
 } from "lucide-react";
 import { ArchiveConfirmationDialog } from "@/components/common/ArchiveConfirmationDialog";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +23,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { handleAction } from "@/lib/actions/handle-action";
+import { DataTable } from "@/components/data-table/DataTable";
+import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
+import { useDataTable } from "@/components/data-table/use-data-table";
 import { ROUTES } from "@/constants/routes";
 import { useUser } from "@/features/users/context/current-user.context";
 import { archiveCurriculumAction } from "../actions/archive-curriculum.action";
@@ -67,8 +51,7 @@ export function CurriculaTable({ data, headerActions }: Props) {
   const tCommon = useTranslations("Common");
   const locale = useLocale();
   const router = useRouter();
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState("");
+
   const [archiveTarget, setArchiveTarget] = useState<{
     id: string;
     name: string;
@@ -97,14 +80,9 @@ export function CurriculaTable({ data, headerActions }: Props) {
       {
         accessorKey: "name",
         header: ({ column }) => (
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 uppercase"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            {t("name")} <ArrowUpDown className="h-3.5 w-3.5" />
-          </button>
+          <DataTableColumnHeader column={column} title={t("name")} />
         ),
+        meta: { labelKey: "name" },
         cell: ({ row }) => (
           <div>
             <div className="flex items-center gap-2">
@@ -221,96 +199,24 @@ export function CurriculaTable({ data, headerActions }: Props) {
     [t, tCommon, locale, router, isSuperAdmin],
   );
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions by design
-  const table = useReactTable({
+  const { table, globalFilter, setGlobalFilter } = useDataTable({
     data: rows,
     columns,
-    state: { sorting, globalFilter },
-    onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    globalFilterFn: (row, _columnId, filterValue) => {
-      const filter = String(filterValue).toLowerCase().trim();
-      if (!filter) return true;
-      return (
-        row.original.slug.toLowerCase().includes(filter) ||
-        row.original.name.toLowerCase().includes(filter)
-      );
-    },
+    paginated: false,
   });
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="relative w-[280px]">
-          <Search className="pointer-events-none absolute top-1/2 left-3.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={t("filterCurricula")}
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            className="h-9 rounded-full pl-9"
-            aria-label={t("filterCurricula")}
-          />
-        </div>
-        {headerActions && <div className="ml-auto">{headerActions}</div>}
-      </div>
-      <div className="overflow-hidden rounded-card border bg-card shadow-xs">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id}>
-                {hg.headers.map((h) => (
-                  <TableHead key={h.id}>
-                    {h.isPlaceholder
-                      ? null
-                      : flexRender(h.column.columnDef.header, h.getContext())}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.length > 0 ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className="cursor-pointer"
-                  onClick={() =>
-                    router.push(
-                      ROUTES.admin.curriculaEdit(locale, row.original.id),
-                    )
-                  }
-                  data-archived={row.original.isArchived || undefined}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className={
-                        row.original.isArchived
-                          ? "text-muted-foreground"
-                          : undefined
-                      }
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
-                >
-                  {t("noCurriculaFound")}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+    <>
+      <DataTable
+        table={table}
+        globalFilter={globalFilter}
+        onGlobalFilterChange={setGlobalFilter}
+        searchPlaceholder={t("filterCurricula")}
+        toolbar={headerActions}
+        translateColumn={(key: string) => tCommon(key)}
+        showPagination={false}
+        emptyState={t("noCurriculaFound")}
+      />
       {archiveTarget && (
         <ArchiveConfirmationDialog
           open={true}
@@ -341,6 +247,6 @@ export function CurriculaTable({ data, headerActions }: Props) {
           onSuccess={() => setHardDeleteTarget(null)}
         />
       )}
-    </div>
+    </>
   );
 }

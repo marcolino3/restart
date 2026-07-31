@@ -1,28 +1,8 @@
 "use client";
 
 import * as React from "react";
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  FilterFn,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import {
-  ArrowUpDown,
-  ChevronDown,
-  MoreHorizontal,
-  Pencil,
-  Search,
-  Trash2,
-  X,
-} from "lucide-react";
+import type { ColumnDef, FilterFn } from "@tanstack/react-table";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -30,35 +10,21 @@ import { useLocale, useTranslations } from "next-intl";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { PersonCell } from "@/components/common/PersonCell";
+import { DataTable } from "@/components/data-table/DataTable";
+import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
+import type { FilterGroup } from "@/components/data-table/DataTableFilter";
+import { useDataTable } from "@/components/data-table/use-data-table";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { TableCard } from "@/components/common/TableCard";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { ROUTES } from "@/constants/routes";
-import { ContactPersonListItem } from "../actions/get-contact-persons.action";
-import { archiveContactPersonAction } from "../actions/archive-contact-person.action";
 import { handleAction } from "@/lib/actions/handle-action";
+import { archiveContactPersonAction } from "../actions/archive-contact-person.action";
+import { ContactPersonListItem } from "../actions/get-contact-persons.action";
 
 interface Props {
   data: ContactPersonListItem[];
@@ -94,14 +60,9 @@ const useColumns = (): ColumnDef<ContactPersonListItem>[] => {
       id: "person",
       accessorFn: (row) => row.lastName ?? "",
       header: ({ column }) => (
-        <Button
-          variant="ghost"
-          className="-ml-3"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          {t("person")} <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+        <DataTableColumnHeader column={column} title={t("person")} />
       ),
+      meta: { labelKey: "person" },
       cell: ({ row }) => (
         <PersonCell
           avatar={
@@ -135,6 +96,12 @@ const useColumns = (): ColumnDef<ContactPersonListItem>[] => {
       id: "occupation",
       accessorKey: "occupation",
       header: tC("occupation"),
+      // The occupation filter is multi-select (see filterGroups below), so it
+      // needs the array-membership variant instead of substring matching.
+      filterFn: (row, id, value) => {
+        const picks = value as string[] | undefined;
+        return !picks?.length || picks.includes(row.getValue<string>(id));
+      },
       cell: ({ getValue }) => (
         <div className="text-sm text-muted-foreground">
           {getValue<string | null>() ?? ""}
@@ -192,196 +159,47 @@ export const ContactPersonsTable = ({ data }: Props) => {
   const router = useRouter();
   const columns = useColumns();
 
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] =
-    React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
-  const [pagination, setPagination] = React.useState({
-    pageIndex: 0,
-    pageSize: 10,
-  });
-
-  const handlePageSizeChange = (value: string) => {
-    const newPageSize = value === "all" ? data.length : Number(value);
-    setPagination({ pageIndex: 0, pageSize: newPageSize });
-  };
-
-  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table's useReactTable() returns non-memoizable functions by design
-  const table = useReactTable({
+  const { table, globalFilter, setGlobalFilter } = useDataTable({
     data,
     columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onPaginationChange: setPagination,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      pagination,
-    },
+    initialPageSize: 10,
   });
 
+  // Occupations are free text, so the filter's options are derived from
+  // whatever values are actually present in the data instead of a fixed enum.
+  const filterGroups: FilterGroup[] = React.useMemo(() => {
+    const occupations = Array.from(
+      new Set(
+        data
+          .map((cp) => cp.occupation)
+          .filter((o): o is string => !!o && o.trim().length > 0),
+      ),
+    ).sort();
+
+    if (occupations.length === 0) return [];
+
+    return [
+      {
+        id: "occupation",
+        label: tC("occupation"),
+        options: occupations.map((o) => ({ value: o, label: o })),
+      },
+    ];
+  }, [data, tC]);
+
   return (
-    <div className="w-full">
-      <div className="flex items-center py-4 gap-2 flex-wrap">
-        <div className="relative w-[280px]">
-          <Search className="pointer-events-none absolute top-1/2 left-3.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={tC("searchPlaceholder")}
-            value={
-              (table.getColumn("person")?.getFilterValue() as string) ?? ""
-            }
-            onChange={(e) =>
-              table.getColumn("person")?.setFilterValue(e.target.value)
-            }
-            className="h-9 rounded-full pl-9"
-            aria-label={tC("searchPlaceholder")}
-          />
-        </div>
-        <Select
-          value={
-            pagination.pageSize >= data.length
-              ? "all"
-              : String(pagination.pageSize)
-          }
-          onValueChange={handlePageSizeChange}
-        >
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder={t("show")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="10">10 {t("items")}</SelectItem>
-            <SelectItem value="25">25 {t("items")}</SelectItem>
-            <SelectItem value="50">50 {t("items")}</SelectItem>
-            <SelectItem value="all">{t("all")}</SelectItem>
-          </SelectContent>
-        </Select>
-        {columnFilters.length > 0 && (
-          <Button
-            variant="ghost"
-            onClick={() => setColumnFilters([])}
-            className="h-8 px-2 lg:px-3"
-          >
-            {t("resetFilters")}
-            <X className="ml-2 h-4 w-4" />
-          </Button>
-        )}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              {t("columns")} <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => (
-                <DropdownMenuCheckboxItem
-                  key={column.id}
-                  className="capitalize"
-                  checked={column.getIsVisible()}
-                  onCheckedChange={(value) =>
-                    column.toggleVisibility(!!value)
-                  }
-                >
-                  {column.id}
-                </DropdownMenuCheckboxItem>
-              ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      <TableCard>
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className="cursor-pointer"
-                  onClick={() => {
-                    router.push(
-                      ROUTES.admin.contactPersonsEdit(locale, row.original.id)
-                    );
-                  }}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      onClick={(e) => {
-                        if (cell.column.id === "actions") {
-                          e.stopPropagation();
-                        }
-                      }}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  {t("noResults")}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableCard>
-
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredRowModel().rows.length} {t("results")}
-        </div>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            {t("previous")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            {t("next")}
-          </Button>
-        </div>
-      </div>
-    </div>
+    <DataTable
+      table={table}
+      globalFilter={globalFilter}
+      onGlobalFilterChange={setGlobalFilter}
+      searchPlaceholder={tC("searchPlaceholder")}
+      filterGroups={filterGroups}
+      translateColumn={(key) => t(key)}
+      onRowClick={(row) => {
+        router.push(
+          ROUTES.admin.contactPersonsEdit(locale, row.original.id),
+        );
+      }}
+    />
   );
 };
