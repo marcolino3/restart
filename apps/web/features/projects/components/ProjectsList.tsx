@@ -17,6 +17,10 @@ import * as React from "react";
 
 import { ROUTES } from "@/constants/routes";
 import { PageHead } from "@/components/common/PageHead";
+import {
+  ViewSwitcher,
+  usePersistedView,
+} from "@/components/common/ViewSwitcher";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -129,15 +133,11 @@ export function ProjectsList({
     "all"
   );
   // Cards/list preference survives reloads via localStorage.
-  const [view, setView] = React.useState<"cards" | "list">("cards");
-  React.useEffect(() => {
-    const v = window.localStorage.getItem(VIEW_KEY);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reads view preference from localStorage (external system, unavailable during SSR) on mount
-    if (v === "cards" || v === "list") setView(v);
-  }, []);
-  React.useEffect(() => {
-    window.localStorage.setItem(VIEW_KEY, view);
-  }, [view]);
+  const [view, setView] = usePersistedView<"cards" | "list">(
+    VIEW_KEY,
+    ["cards", "list"],
+    "cards",
+  );
 
   const unarchived = projects.filter((p) => !p.isArchived);
   const activeCount = unarchived.filter((p) => p.status === "ACTIVE").length;
@@ -196,34 +196,23 @@ export function ProjectsList({
             className="h-9 rounded-full pl-9"
           />
         </div>
-        <div
-          className="flex items-center rounded-md border bg-card p-0.5"
-          role="tablist"
-          aria-label={t("viewToggle")}
-        >
-          <Button
-            size="sm"
-            variant={view === "cards" ? "secondary" : "ghost"}
-            className="h-7 gap-1 px-2"
-            onClick={() => setView("cards")}
-            aria-pressed={view === "cards"}
-            title={t("viewCards")}
-          >
-            <LayoutGrid className="h-4 w-4" />
-            <span className="hidden sm:inline">{t("viewCards")}</span>
-          </Button>
-          <Button
-            size="sm"
-            variant={view === "list" ? "secondary" : "ghost"}
-            className="h-7 gap-1 px-2"
-            onClick={() => setView("list")}
-            aria-pressed={view === "list"}
-            title={t("viewList")}
-          >
-            <LayoutList className="h-4 w-4" />
-            <span className="hidden sm:inline">{t("viewList")}</span>
-          </Button>
-        </div>
+        <ViewSwitcher
+          value={view}
+          onChange={setView}
+          label={t("viewToggle")}
+          options={[
+            {
+              value: "cards",
+              label: t("viewCards"),
+              icon: <LayoutGrid className="h-4 w-4" />,
+            },
+            {
+              value: "list",
+              label: t("viewList"),
+              icon: <LayoutList className="h-4 w-4" />,
+            },
+          ]}
+        />
 
         <div className="ml-auto flex items-center gap-2">
           {showArchived && (

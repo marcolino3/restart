@@ -51,6 +51,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TableCard } from "@/components/common/TableCard";
+import {
+  ViewSwitcher,
+  usePersistedView,
+} from "@/components/common/ViewSwitcher";
 import { DataTable } from "@/components/data-table/DataTable";
 import {
   Select,
@@ -229,20 +233,11 @@ export function MyTasksTable({
   }>({ open: false, task: null });
 
   // View mode persists per browser; read after mount to avoid hydration drift.
-  const [view, setViewState] = React.useState<ViewMode>("list");
-  React.useEffect(() => {
-    const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
-    if (stored === "board" || stored === "list") setViewState(stored);
-  }, []);
-  const setView = (next: ViewMode) => {
-    setViewState(next);
-    try {
-      window.localStorage.setItem(VIEW_STORAGE_KEY, next);
-    } catch {
-      // Persisting the preference is best-effort only.
-    }
-  };
-
+  const [view, setView] = usePersistedView<ViewMode>(
+    VIEW_STORAGE_KEY,
+    ["list", "board"],
+    "list",
+  );
   // Manual drag ordering only makes sense without an active column sort.
   const dndEnabled = sorting.length === 0;
 
@@ -536,26 +531,15 @@ export function MyTasksTable({
           </SelectContent>
         </Select>
         <div className="flex-1" />
-        <div className="inline-flex items-center rounded-md border p-0.5">
-          <Button
-            type="button"
-            variant={view === "board" ? "secondary" : "ghost"}
-            size="sm"
-            className="h-7 px-3"
-            onClick={() => setView("board")}
-          >
-            {t("viewBoard")}
-          </Button>
-          <Button
-            type="button"
-            variant={view === "list" ? "secondary" : "ghost"}
-            size="sm"
-            className="h-7 px-3"
-            onClick={() => setView("list")}
-          >
-            {t("viewList")}
-          </Button>
-        </div>
+        <ViewSwitcher
+          value={view}
+          onChange={setView}
+          label={t("viewToggle")}
+          options={[
+            { value: "board", label: t("viewBoard") },
+            { value: "list", label: t("viewList") },
+          ]}
+        />
         <Button
           size="sm"
           onClick={() => setPersonalDialog({ open: true, task: null })}

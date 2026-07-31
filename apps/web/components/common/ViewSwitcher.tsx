@@ -60,6 +60,9 @@ export function ViewSwitcher<T extends string>({
  *
  * Reads on mount rather than during render — localStorage does not exist on
  * the server, and touching it while rendering would break hydration.
+ *
+ * Both accesses are best-effort: Safari's private mode throws on setItem, and
+ * a blocked storage should cost the user their preference, not the page.
  */
 export function usePersistedView<T extends string>(
   storageKey: string,
@@ -69,7 +72,12 @@ export function usePersistedView<T extends string>(
   const [view, setView] = React.useState<T>(fallback);
 
   React.useEffect(() => {
-    const stored = window.localStorage.getItem(storageKey);
+    let stored: string | null = null;
+    try {
+      stored = window.localStorage.getItem(storageKey);
+    } catch {
+      return;
+    }
     if (stored && (allowed as readonly string[]).includes(stored)) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time read of a client-only preference on mount, not derivable from render
       setView(stored as T);
@@ -82,7 +90,11 @@ export function usePersistedView<T extends string>(
   const change = React.useCallback(
     (next: T) => {
       setView(next);
-      window.localStorage.setItem(storageKey, next);
+      try {
+        window.localStorage.setItem(storageKey, next);
+      } catch {
+        // Persisting the preference is best-effort only.
+      }
     },
     [storageKey],
   );
