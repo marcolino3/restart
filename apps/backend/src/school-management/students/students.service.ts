@@ -86,6 +86,9 @@ export class StudentsService {
           FROM "school_class_enrollments" e
           INNER JOIN "school_class_teachers" sct
             ON sct.school_class_id = e.school_class_id
+            -- Only assignments in force today: a teacher who left the class
+            -- must lose sight of its students.
+            AND sct.valid_to IS NULL
           INNER JOIN "memberships" m
             ON m.employee_id = sct.employee_id
           WHERE m.user_id = :uid
@@ -154,6 +157,9 @@ export class StudentsService {
           FROM "school_class_enrollments" e
           INNER JOIN "school_class_teachers" sct
             ON sct.school_class_id = e.school_class_id
+            -- Only assignments in force today: a teacher who left the class
+            -- must lose sight of its students.
+            AND sct.valid_to IS NULL
           INNER JOIN "memberships" m
             ON m.employee_id = sct.employee_id
           WHERE m.user_id = :uid
@@ -210,6 +216,9 @@ export class StudentsService {
       .from('school_class_teachers', 'sct')
       .innerJoin('memberships', 'm', 'm.employee_id = sct.employee_id')
       .where('sct.school_class_id = :sid', { sid: schoolClassId })
+      // Only assignments in force today — a teacher who left the class must
+      // lose access to it.
+      .andWhere('sct.valid_to IS NULL')
       .andWhere('m.user_id = :uid', { uid: userId })
       .andWhere('m.organization_id = :orgId', { orgId: organizationId })
       .andWhere('m."isActive" = true')

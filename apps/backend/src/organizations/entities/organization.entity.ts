@@ -1,4 +1,4 @@
-import { ObjectType, Field, ID, Float } from '@nestjs/graphql';
+import { ObjectType, Field, ID, Float, Int } from '@nestjs/graphql';
 import { Column, Entity, OneToMany, Index, RelationId } from 'typeorm';
 
 import { AbstractEntity } from '@/database/abstract.entity';
@@ -75,6 +75,34 @@ export class Organization
     default: 'Europe/Berlin',
   })
   timezone!: string;
+
+  /**
+   * Day the school year starts, as month + day (1 August by default).
+   *
+   * There is deliberately no SchoolYear entity. A school year is derived from
+   * this cut-off, so nobody has to create one every August and classes stay
+   * timeless — history lives in the validity ranges on assignments and
+   * enrolments instead. Anything asking "which year is this date in" resolves
+   * it against these two columns.
+   *
+   * Capped at day 28 by a CHECK constraint so the cut-off exists in every
+   * month, February included.
+   */
+  @Field(() => Int)
+  @Column({
+    name: 'school_year_start_month',
+    type: 'smallint',
+    default: 8,
+  })
+  schoolYearStartMonth!: number;
+
+  @Field(() => Int)
+  @Column({
+    name: 'school_year_start_day',
+    type: 'smallint',
+    default: 1,
+  })
+  schoolYearStartDay!: number;
 
   @Field(() => Float, { nullable: true })
   @Column({ name: 'latitude', type: 'float', nullable: true })

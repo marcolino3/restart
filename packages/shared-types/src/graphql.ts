@@ -3865,6 +3865,8 @@ export type Organization = {
   name?: Maybe<Scalars['String']['output']>;
   phone?: Maybe<Scalars['String']['output']>;
   roles?: Maybe<Array<Role>>;
+  schoolYearStartDay: Scalars['Int']['output'];
+  schoolYearStartMonth: Scalars['Int']['output'];
   street?: Maybe<Scalars['String']['output']>;
   subdomain?: Maybe<Scalars['String']['output']>;
   teamIds?: Maybe<Array<Scalars['ID']['output']>>;
@@ -5254,7 +5256,9 @@ export type SchoolClass = {
   organization?: Maybe<Organization>;
   organizationId: Scalars['String']['output'];
   room?: Maybe<Scalars['String']['output']>;
+  shortCode?: Maybe<Scalars['String']['output']>;
   sortOrder: Scalars['Int']['output'];
+  teacherAssignments?: Maybe<Array<SchoolClassTeacher>>;
   teachers?: Maybe<Array<Employee>>;
   updatedAt: Scalars['DateTime']['output'];
   version: Scalars['Int']['output'];
@@ -5278,6 +5282,33 @@ export type SchoolClassEnrollment = {
   updatedAt: Scalars['DateTime']['output'];
   version: Scalars['Int']['output'];
 };
+
+export type SchoolClassTeacher = {
+  __typename?: 'SchoolClassTeacher';
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  employee: Employee;
+  employeeId: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['String']['output'];
+  role: SchoolClassTeacherRole;
+  schoolClass: SchoolClass;
+  schoolClassId: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  validFrom: Scalars['String']['output'];
+  validTo?: Maybe<Scalars['String']['output']>;
+  version: Scalars['Int']['output'];
+  workloadPercent?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Role of a teacher within a class. Several LEAD teachers per class are allowed — co-teaching and job sharing are the normal case. */
+export enum SchoolClassTeacherRole {
+  Assistant = 'ASSISTANT',
+  Lead = 'LEAD'
+}
 
 export type SendAdmissionEmailInput = {
   applicationId: Scalars['ID']['input'];

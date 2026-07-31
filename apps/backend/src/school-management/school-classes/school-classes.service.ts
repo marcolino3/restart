@@ -1,7 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { SchoolClass } from './entities/school-class.entity';
+import { SchoolClassTeacher } from './entities/school-class-teacher.entity';
+import { SchoolClassTeacherRole } from '@/database/enums/school-class-teacher-role.enum';
 import { GradeLevel } from '@/school-management/grade-levels/entities/grade-level.entity';
 import { Employee } from '@/employee-management/employees/entities/employee.entity';
 import { Persona } from '@/common/enums/persona.enum';
@@ -18,6 +20,8 @@ export class SchoolClassesService {
     private readonly gradeLevelRepo: Repository<GradeLevel>,
     @InjectRepository(Employee)
     private readonly employeeRepo: Repository<Employee>,
+    @InjectRepository(SchoolClassTeacher)
+    private readonly teacherAssignmentRepo: Repository<SchoolClassTeacher>,
   ) {}
 
   private async resolveTeachers(
@@ -35,6 +39,71 @@ export class SchoolClassesService {
       },
       relations: { membership: true },
     });
+  }
+
+  /**
+   * Mirrors the assignments onto the flat `teachers` list.
+   *
+   * `teachers` is no longer a mapped relation (see SchoolClass), so nothing
+   * fills it automatically. Only assignments in force today are listed, which
+   * matches what the old @ManyToMany returned — it had no notion of validity.
+   */
+  private hydrateTeachers(classes: SchoolClass[]): SchoolClass[] {
+    const today = new Date().toISOString().slice(0, 10);
+    for (const schoolClass of classes) {
+      schoolClass.teachers = (schoolClass.teacherAssignments ?? [])
+        .filter(
+          (a) => a.validFrom <= today && (!a.validTo || a.validTo >= today),
+        )
+        .map((a) => a.employee)
+        .filter(Boolean);
+    }
+    return classes;
+  }
+
+  /**
+   * Replaces the open assignments of a class with exactly `teacherIds`.
+   *
+   * Assignments that stay are left untouched so their role, workload and start
+   * date survive an unrelated edit; removed ones are closed rather than deleted,
+   * which is what keeps historical class lists intact.
+   */
+  private async syncTeacherAssignments(
+    schoolClassId: string,
+    teacherIds: string[],
+    organizationId: string,
+  ): Promise<void> {
+    const teachers = await this.resolveTeachers(teacherIds, organizationId);
+    const wanted = new Set(teachers.map((t) => t.id));
+
+    const existing = await this.teacherAssignmentRepo.find({
+      where: { schoolClassId, organizationId, validTo: IsNull() },
+    });
+
+    const today = new Date().toISOString().slice(0, 10);
+    const toClose = existing.filter((a) => !wanted.has(a.employeeId));
+    if (toClose.length) {
+      await this.teacherAssignmentRepo.update(
+        { id: In(toClose.map((a) => a.id)) },
+        { validTo: today },
+      );
+    }
+
+    const known = new Set(existing.map((a) => a.employeeId));
+    const toAdd = teachers.filter((t) => !known.has(t.id));
+    if (toAdd.length) {
+      await this.teacherAssignmentRepo.save(
+        toAdd.map((t) =>
+          this.teacherAssignmentRepo.create({
+            schoolClassId,
+            employeeId: t.id,
+            organizationId,
+            role: SchoolClassTeacherRole.LEAD,
+            validFrom: today,
+          }),
+        ),
+      );
+    }
   }
 
   async create(
@@ -61,14 +130,13 @@ export class SchoolClassesService {
       });
     }
 
+    const saved = await this.schoolClassRepo.save(schoolClass);
+
     if (teacherIds?.length) {
-      schoolClass.teachers = await this.resolveTeachers(
-        teacherIds,
-        organizationId,
-      );
+      await this.syncTeacherAssignments(saved.id, teacherIds, organizationId);
     }
 
-    return this.schoolClassRepo.save(schoolClass);
+    return this.findOne(saved.id, organizationId);
   }
 
   async findAllByOrgId(organizationId: string): Promise<SchoolClass[]> {
@@ -76,11 +144,12 @@ export class SchoolClassesService {
       where: { organizationId, isActive: true },
       relations: {
         gradeLevels: true,
-        teachers: { membership: { user: true } },
+        teacherAssignments: { employee: { membership: { user: true } } },
       },
       order: { sortOrder: 'ASC', name: 'ASC' },
     });
     if (classes.length === 0) return classes;
+    this.hydrateTeachers(classes);
 
     const rows: Array<{ class_id: string; enrolled_count: string }> =
       await this.schoolClassRepo
@@ -132,16 +201,17 @@ export class SchoolClassesService {
     }
     // Teacher (or any non-admin role): only return classes where they
     // are assigned via `school_class_teachers`.
-    return this.schoolClassRepo
+    const visible = await this.schoolClassRepo
       .createQueryBuilder('sc')
       .leftJoinAndSelect('sc.gradeLevels', 'gradeLevels')
-      .leftJoinAndSelect('sc.teachers', 'teachers')
+      .leftJoinAndSelect('sc.teacherAssignments', 'assignments')
+      .leftJoinAndSelect('assignments.employee', 'teachers')
       .leftJoinAndSelect('teachers.membership', 'tm')
       .leftJoinAndSelect('tm.user', 'tu')
       .innerJoin(
         'school_class_teachers',
         'sct_user',
-        'sct_user.school_class_id = sc.id',
+        'sct_user.school_class_id = sc.id AND sct_user.valid_to IS NULL',
       )
       .innerJoin(
         'memberships',
@@ -156,6 +226,7 @@ export class SchoolClassesService {
       .orderBy('sc."sortOrder"', 'ASC')
       .addOrderBy('sc.name', 'ASC')
       .getMany();
+    return this.hydrateTeachers(visible);
   }
 
   async findOne(id: string, organizationId: string): Promise<SchoolClass> {
@@ -163,13 +234,13 @@ export class SchoolClassesService {
       where: { id, organizationId, isActive: true },
       relations: {
         gradeLevels: true,
-        teachers: { membership: { user: true } },
+        teacherAssignments: { employee: { membership: { user: true } } },
       },
     });
     if (!schoolClass) {
       throw new NotFoundException(`SchoolClass ${id} not found`);
     }
-    return schoolClass;
+    return this.hydrateTeachers([schoolClass])[0];
   }
 
   async update(
@@ -190,13 +261,15 @@ export class SchoolClassesService {
     }
 
     if (teacherIds !== undefined) {
-      schoolClass.teachers = await this.resolveTeachers(
+      await this.syncTeacherAssignments(
+        schoolClass.id,
         teacherIds,
         organizationId,
       );
     }
 
-    return this.schoolClassRepo.save(schoolClass);
+    await this.schoolClassRepo.save(schoolClass);
+    return this.findOne(schoolClass.id, organizationId);
   }
 
   async remove(id: string, organizationId: string): Promise<boolean> {

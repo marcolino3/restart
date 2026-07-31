@@ -4,6 +4,7 @@ import { IOrganization } from '@/organizations/interfaces/organization.interface
 
 export interface ISchoolClass extends IBase {
   name: string;
+  shortCode?: string | null;
   gradeLevels?: IGradeLevel[];
   color?: string | null;
   description?: string | null;

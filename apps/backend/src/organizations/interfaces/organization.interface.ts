@@ -15,6 +15,8 @@ export interface IOrganization extends IBase {
   email?: string;
   website?: string;
   timezone: string;
+  schoolYearStartMonth: number;
+  schoolYearStartDay: number;
   latitude?: number;
   longitude?: number;
   memberships?: Membership[];

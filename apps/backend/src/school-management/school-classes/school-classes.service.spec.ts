@@ -3,10 +3,13 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 
 import { SchoolClassesService } from './school-classes.service';
 import { SchoolClass } from './entities/school-class.entity';
+import { SchoolClassTeacher } from './entities/school-class-teacher.entity';
 import { GradeLevel } from '@/school-management/grade-levels/entities/grade-level.entity';
 import { Employee } from '@/employee-management/employees/entities/employee.entity';
+import { SchoolClassTeacherRole } from '@/database/enums/school-class-teacher-role.enum';
 
 const ORG_ID = 'org-1';
+const TODAY = new Date().toISOString().slice(0, 10);
 
 type QueryBuilderMock = {
   innerJoin: jest.Mock;
@@ -34,27 +37,49 @@ describe('SchoolClassesService', () => {
   let service: SchoolClassesService;
   let schoolClassRepo: {
     find: jest.Mock;
+    findOne: jest.Mock;
     save: jest.Mock;
     maximum: jest.Mock;
+    create: jest.Mock;
     createQueryBuilder: jest.Mock;
   };
   let qb: QueryBuilderMock;
+  let assignmentRepo: {
+    find: jest.Mock;
+    save: jest.Mock;
+    update: jest.Mock;
+    create: jest.Mock;
+  };
+  let employeeRepo: { find: jest.Mock };
 
   beforeEach(async () => {
     qb = createQueryBuilderMock();
     schoolClassRepo = {
       find: jest.fn(),
+      findOne: jest.fn(),
       save: jest.fn((v: unknown) => Promise.resolve(v)),
       maximum: jest.fn(),
+      create: jest.fn((v: unknown) => v),
       createQueryBuilder: jest.fn(() => qb),
     };
+    assignmentRepo = {
+      find: jest.fn().mockResolvedValue([]),
+      save: jest.fn((v: unknown) => Promise.resolve(v)),
+      update: jest.fn().mockResolvedValue(undefined),
+      create: jest.fn((v: unknown) => v),
+    };
+    employeeRepo = { find: jest.fn().mockResolvedValue([]) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SchoolClassesService,
         { provide: getRepositoryToken(SchoolClass), useValue: schoolClassRepo },
         { provide: getRepositoryToken(GradeLevel), useValue: {} },
-        { provide: getRepositoryToken(Employee), useValue: {} },
+        { provide: getRepositoryToken(Employee), useValue: employeeRepo },
+        {
+          provide: getRepositoryToken(SchoolClassTeacher),
+          useValue: assignmentRepo,
+        },
       ],
     }).compile();
 
@@ -99,6 +124,100 @@ describe('SchoolClassesService', () => {
 
       await expect(service.findAllByOrgId(ORG_ID)).resolves.toEqual([]);
       expect(schoolClassRepo.createQueryBuilder).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('teacher assignments', () => {
+    const employee = (id: string) => ({ id, membership: {} });
+
+    it('derives the flat teachers list from assignments in force today', async () => {
+      schoolClassRepo.findOne.mockResolvedValue({
+        id: 'sc-1',
+        teacherAssignments: [
+          {
+            employeeId: 'e-current',
+            employee: employee('e-current'),
+            validFrom: '2025-08-01',
+            validTo: null,
+          },
+          {
+            // Left the class last summer — must not show up today.
+            employeeId: 'e-past',
+            employee: employee('e-past'),
+            validFrom: '2024-08-01',
+            validTo: '2025-07-31',
+          },
+        ],
+      });
+
+      const result = await service.findOne('sc-1', ORG_ID);
+
+      expect(result.teachers?.map((t) => t.id)).toEqual(['e-current']);
+    });
+
+    it('closes removed assignments instead of deleting them, keeping history', async () => {
+      schoolClassRepo.findOne.mockResolvedValue({
+        id: 'sc-1',
+        teacherAssignments: [],
+      });
+      assignmentRepo.find.mockResolvedValue([
+        { id: 'a-1', employeeId: 'e-stays' },
+        { id: 'a-2', employeeId: 'e-leaves' },
+      ]);
+      employeeRepo.find.mockResolvedValue([employee('e-stays')]);
+
+      await service.update({ id: 'sc-1', teacherIds: ['e-stays'] }, ORG_ID);
+
+      // The departing teacher is end-dated...
+      expect(assignmentRepo.update).toHaveBeenCalledWith(
+        expect.objectContaining({ id: expect.anything() }),
+        { validTo: TODAY },
+      );
+      // ...and the one who stays is left untouched, so their role, workload
+      // and start date survive an unrelated edit.
+      expect(assignmentRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('adds new teachers as LEAD, allowing several per class', async () => {
+      schoolClassRepo.findOne.mockResolvedValue({
+        id: 'sc-1',
+        teacherAssignments: [],
+      });
+      assignmentRepo.find.mockResolvedValue([]);
+      employeeRepo.find.mockResolvedValue([employee('e-1'), employee('e-2')]);
+
+      await service.update({ id: 'sc-1', teacherIds: ['e-1', 'e-2'] }, ORG_ID);
+
+      expect(assignmentRepo.save).toHaveBeenCalledWith([
+        expect.objectContaining({
+          employeeId: 'e-1',
+          role: SchoolClassTeacherRole.LEAD,
+          organizationId: ORG_ID,
+        }),
+        expect.objectContaining({
+          employeeId: 'e-2',
+          role: SchoolClassTeacherRole.LEAD,
+          organizationId: ORG_ID,
+        }),
+      ]);
+    });
+
+    it('only looks at open assignments of the caller organization', async () => {
+      schoolClassRepo.findOne.mockResolvedValue({
+        id: 'sc-1',
+        teacherAssignments: [],
+      });
+
+      await service.update({ id: 'sc-1', teacherIds: [] }, ORG_ID);
+
+      expect(assignmentRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            schoolClassId: 'sc-1',
+            organizationId: ORG_ID,
+          }),
+        }),
+      );
     });
   });
 
