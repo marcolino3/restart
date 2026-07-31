@@ -2553,6 +2553,7 @@
   "SchoolClasses": {
     "actions": "Actions",
     "ageShort": "{from}–{to} y.",
+    "allTeachersAssigned": "All available teachers are assigned.",
     "assignTeacher": "Assign teacher …",
     "capacity": "Capacity",
     "classDetails": "Class Details",
@@ -2577,7 +2578,7 @@
     "noGradeLevelsFound": "No grade levels found.",
     "noSchoolClassesFound": "No school classes found.",
     "noSearchResults": "No classes found for \"{query}\"",
-    "noTeachers": "No teachers available.",
+    "noTeachers": "No teachers available. Add a staff member with the teacher role under “Employees” first.",
     "occupancy": "Occupancy",
     "removeTeacher": "Remove teacher",
     "reorderError": "Failed to save order",
@@ -2613,7 +2614,9 @@
     "unknownTeacher": "Unknown teacher",
     "viewCards": "Cards",
     "viewTable": "Table",
-    "workloadPercent": "Workload in percent"
+    "viewToggle": "Switch view",
+    "workloadPercent": "Workload in percent",
+    "workloadTotal": " · Total {total} %"
   },
   "SetPassword": {
     "title": "Set your password",

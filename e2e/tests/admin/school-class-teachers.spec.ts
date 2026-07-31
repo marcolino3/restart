@@ -18,6 +18,30 @@ import {
 const BACKEND_URL = process.env.BACKEND_URL ?? 'http://localhost:4001'
 
 test.describe('School class teachers', () => {
+  // Classes created during a test, removed in afterEach. Deleting at the end
+  // of the test body only runs when the test passes — a failing run used to
+  // leave its classes behind and pollute the next one.
+  let created: string[] = []
+
+  test.beforeEach(() => {
+    created = []
+  })
+
+  test.afterEach(async ({ page }) => {
+    for (const id of created) {
+      await page.request
+        .post(`${BACKEND_URL}/graphql`, {
+          data: {
+            query: 'mutation D($id: ID!) { deleteSchoolClass(id: $id) }',
+            variables: { id },
+          },
+        })
+        .catch(() => {
+          // Cleanup must not turn a passing test red.
+        })
+    }
+  })
+
   const openList = async (page: Page) => {
     await signInAsSuperAdmin(page)
     await ensureActiveOrg(page)
@@ -50,6 +74,7 @@ test.describe('School class teachers', () => {
     }
     const match = body.data?.schoolClassesByOrgId?.find((c) => c.name === name)
     if (!match) throw new Error(`E2E: class "${name}" not found after create`)
+    created.push(match.id)
     return match.id
   }
 
@@ -81,16 +106,6 @@ test.describe('School class teachers', () => {
     await expect(teachersCard(page).getByText(teacherName)).toBeVisible()
   }
 
-  /** Cleanup via the API — deletion has its own coverage in school-classes.spec. */
-  const deleteClass = async (page: Page, id: string) => {
-    await page.request.post(`${BACKEND_URL}/graphql`, {
-      data: {
-        query: 'mutation D($id: ID!) { deleteSchoolClass(id: $id) }',
-        variables: { id },
-      },
-    })
-  }
-
   test('assigns a teacher with a role and workload, and loads it back', async ({
     page,
   }) => {
@@ -111,7 +126,6 @@ test.describe('School class teachers', () => {
       page.getByRole('spinbutton', { name: /workload/i }),
     ).toHaveValue('80')
 
-    await deleteClass(page, id)
   })
 
   test('changes the role to assistant and keeps it after reload', async ({
@@ -135,7 +149,6 @@ test.describe('School class teachers', () => {
       page.getByRole('combobox', { name: /^role$/i }).first(),
     ).toHaveText(/assistant/i, { timeout: 15000 })
 
-    await deleteClass(page, id)
   })
 
   test('removes a teacher from the class', async ({ page }) => {
@@ -167,7 +180,6 @@ test.describe('School class teachers', () => {
       page.getByRole('combobox', { name: /assign teacher/i }),
     ).toBeVisible()
 
-    await deleteClass(page, id)
   })
 
   test('keeps the teacher when only a plain field changes', async ({ page }) => {
@@ -192,7 +204,48 @@ test.describe('School class teachers', () => {
       timeout: 15000,
     })
 
-    await deleteClass(page, id)
+  })
+
+  test('shows each workload and the total on the class card', async ({
+    page,
+  }) => {
+    await openList(page)
+    const teacherName = await ensureTeacher(page)
+    const className = `E2E Card ${Date.now()}`
+    const id = await createClass(page, className)
+
+    await openEdit(page, id, className)
+    await assignTeacher(page, teacherName)
+    await page.getByRole('spinbutton', { name: /workload/i }).fill('80')
+    await page.getByRole('button', { name: /^save$/i }).click()
+    await expect(page).toHaveURL(/school-classes$/, { timeout: 15000 })
+
+    // The card lists the workload next to the name. The total only appears
+    // once more than one teacher is assigned, so a single one shows just the
+    // percentage.
+    const card = page.getByText(className).first().locator('..')
+    await expect(card).toContainText('80 %', { timeout: 15000 })
+  })
+
+  test('keeps the table visible when a search has no hits', async ({ page }) => {
+    // The empty state used to replace the whole view, so in the table mode the
+    // header and frame vanished too — it read as if the table had broken.
+    await openList(page)
+    await page.getByRole('tab', { name: /^table$/i }).click()
+    await expect(page.getByRole('table')).toBeVisible()
+
+    await page
+      .getByRole('textbox', { name: /search classes/i })
+      .fill('zzz-definitiv-kein-treffer')
+
+    await expect(page.getByText(/no classes found for/i)).toBeVisible({
+      timeout: 15000,
+    })
+    // Still a table, still with its columns.
+    await expect(page.getByRole('table')).toBeVisible()
+    await expect(
+      page.getByRole('columnheader', { name: /teachers/i }),
+    ).toBeVisible()
   })
 
   test('edits the short code and shows it in the summary', async ({ page }) => {
@@ -208,6 +261,5 @@ test.describe('School class teachers', () => {
     await saveAndReopen(page, id, className)
     await expect(page.getByLabel(/short code/i)).toHaveValue('PRA')
 
-    await deleteClass(page, id)
   })
 })

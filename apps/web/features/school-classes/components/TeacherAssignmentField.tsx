@@ -145,7 +145,7 @@ export function TeacherAssignmentField({ name, teachers }: Props) {
         );
       })}
 
-      {available.length > 0 && (
+      {available.length > 0 ? (
         <Select
           value=""
           onValueChange={(employeeId) =>
@@ -163,10 +163,12 @@ export function TeacherAssignmentField({ name, teachers }: Props) {
             ))}
           </SelectContent>
         </Select>
-      )}
-
-      {fields.length === 0 && available.length === 0 && (
-        <p className="text-sm text-muted-foreground">{t("noTeachers")}</p>
+      ) : (
+        // Without this the picker just vanishes once everyone is assigned,
+        // which reads as a missing feature rather than an empty list.
+        <p className="text-sm text-muted-foreground">
+          {fields.length > 0 ? t("allTeachersAssigned") : t("noTeachers")}
+        </p>
       )}
     </div>
   );
