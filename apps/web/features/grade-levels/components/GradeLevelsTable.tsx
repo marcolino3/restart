@@ -74,6 +74,8 @@ import { reorderGradeLevelsAction } from "../actions/reorder-grade-levels.action
 
 interface Props {
   initialGradeLevels: GradeLevelItem[];
+  /** Cycles of the org, for linking a stage to its curriculum cycle. */
+  curriculumLevels?: { id: string; name: string }[];
 }
 
 /** A top-level Stufe together with its (one-level-deep) subgroups. */
@@ -104,7 +106,10 @@ function buildTree(items: GradeLevelItem[]): GradeLevelTreeNode[] {
   }));
 }
 
-export function GradeLevelsTable({ initialGradeLevels }: Props) {
+export function GradeLevelsTable({
+  initialGradeLevels,
+  curriculumLevels = [],
+}: Props) {
   const t = useTranslations("GradeLevels");
   const router = useRouter();
 
@@ -153,6 +158,11 @@ export function GradeLevelsTable({ initialGradeLevels }: Props) {
   const parentOptions = React.useMemo(
     () => roots.map((r) => ({ label: r.name, value: r.id })),
     [roots],
+  );
+
+  const cycleOptions = React.useMemo(
+    () => curriculumLevels.map((c) => ({ label: c.name, value: c.id })),
+    [curriculumLevels],
   );
 
   const rootIds = React.useMemo(() => roots.map((r) => r.id), [roots]);
@@ -220,6 +230,7 @@ export function GradeLevelsTable({ initialGradeLevels }: Props) {
           shortCode: values.shortCode ?? null,
           ageMin: values.ageMin ?? null,
           ageMax: values.ageMax ?? null,
+          curriculumLevelId: values.curriculumLevelId ?? null,
         }),
       successMessage: parentId
         ? t("subgroupCreated")
@@ -254,6 +265,7 @@ export function GradeLevelsTable({ initialGradeLevels }: Props) {
           shortCode: values.shortCode ?? null,
           ageMin: values.ageMin ?? null,
           ageMax: values.ageMax ?? null,
+          curriculumLevelId: values.curriculumLevelId ?? null,
           // Only subgroups expose the parent picker; roots keep their hierarchy.
           ...(isSubgroup ? { parentId: values.parentId ?? null } : {}),
         }),
@@ -405,8 +417,10 @@ export function GradeLevelsTable({ initialGradeLevels }: Props) {
             ageMax: null,
             color: null,
             parentId: dialog.parentId,
+            curriculumLevelId: null,
           }}
           parentOptions={dialog.parentId ? parentOptions : undefined}
+          cycleOptions={cycleOptions}
           onOpenChange={(open) => !open && setDialog(null)}
           onSubmit={(values) => handleCreateSubmit(dialog.parentId, values)}
         />
@@ -423,12 +437,14 @@ export function GradeLevelsTable({ initialGradeLevels }: Props) {
             ageMax: editingItem.ageMax ?? null,
             color: editingItem.color ?? null,
             parentId: editingItem.parentId ?? null,
+            curriculumLevelId: editingItem.curriculumLevelId ?? null,
           }}
           parentOptions={
             editingIsSubgroup
               ? parentOptions.filter((o) => o.value !== editingItem.id)
               : undefined
           }
+          cycleOptions={cycleOptions}
           onOpenChange={(open) => !open && setDialog(null)}
           onSubmit={(values) => handleEditSubmit(editingItem, values)}
         />
@@ -625,6 +641,7 @@ interface GradeLevelDialogProps {
   title: string;
   defaultValues: GradeLevelFormInput;
   parentOptions?: { label: string; value: string }[];
+  cycleOptions?: { label: string; value: string }[];
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: GradeLevelFormType) => Promise<void>;
 }
@@ -633,6 +650,7 @@ function GradeLevelDialog({
   title,
   defaultValues,
   parentOptions,
+  cycleOptions,
   onOpenChange,
   onSubmit,
 }: GradeLevelDialogProps) {
@@ -694,6 +712,21 @@ function GradeLevelDialog({
               label="color"
               namespace="GradeLevels"
             />
+            {cycleOptions && cycleOptions.length > 0 && (
+              <div className="space-y-1">
+                <SelectFormField
+                  name="curriculumLevelId"
+                  label="curriculumLevel"
+                  namespace="GradeLevels"
+                  placeholder="curriculumLevelPlaceholder"
+                  options={cycleOptions}
+                  translateOptions={false}
+                />
+                <p className="text-muted-foreground text-xs">
+                  {t("curriculumLevelHint")}
+                </p>
+              </div>
+            )}
           </form>
         </Form>
         <DialogFooter>

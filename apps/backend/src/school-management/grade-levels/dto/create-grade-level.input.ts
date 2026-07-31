@@ -23,6 +23,12 @@ export class CreateGradeLevelInput {
   @IsUUID()
   parentId?: string | null;
 
+  /** Curriculum cycle ("Zyklus") whose lessons apply to this stage. */
+  @Field(() => ID, { nullable: true })
+  @IsOptional()
+  @IsUUID()
+  curriculumLevelId?: string | null;
+
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()

@@ -1,10 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 
 import { GradeLevelsService } from './grade-levels.service';
 import { GradeLevel } from './entities/grade-level.entity';
 import { SchoolClass } from '@/school-management/school-classes/entities/school-class.entity';
+import { CurriculumLevel } from '@/curricula/entities/curriculum-level.entity';
 
 const ORG_ID = 'org-1';
 
@@ -41,8 +46,10 @@ describe('GradeLevelsService', () => {
     save: jest.Mock;
     count: jest.Mock;
     update: jest.Mock;
+    createQueryBuilder: jest.Mock;
   };
   let schoolClassRepo: { createQueryBuilder: jest.Mock };
+  let curriculumLevelRepo: { findOne: jest.Mock };
   let qb: QueryBuilderMock;
 
   beforeEach(async () => {
@@ -53,15 +60,21 @@ describe('GradeLevelsService', () => {
       save: jest.fn((v: unknown) => Promise.resolve(v)),
       count: jest.fn().mockResolvedValue(0),
       update: jest.fn().mockResolvedValue({ affected: 0 }),
+      createQueryBuilder: jest.fn(),
     };
     qb = createQueryBuilderMock();
     schoolClassRepo = { createQueryBuilder: jest.fn(() => qb) };
+    curriculumLevelRepo = { findOne: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GradeLevelsService,
         { provide: getRepositoryToken(GradeLevel), useValue: gradeLevelRepo },
         { provide: getRepositoryToken(SchoolClass), useValue: schoolClassRepo },
+        {
+          provide: getRepositoryToken(CurriculumLevel),
+          useValue: curriculumLevelRepo,
+        },
       ],
     }).compile();
 
@@ -106,6 +119,132 @@ describe('GradeLevelsService', () => {
 
       await expect(service.findAllByOrgId(ORG_ID)).resolves.toEqual([]);
       expect(schoolClassRepo.createQueryBuilder).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('curriculum cycle link (multi-tenant isolation)', () => {
+    it('rejects a cycle belonging to another organization on create', async () => {
+      gradeLevelRepo.findOne.mockResolvedValue(null);
+      // Scoped lookup finds nothing because the cycle lives in another org.
+      curriculumLevelRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.create(
+          { name: 'Unterstufe', curriculumLevelId: 'cycle-of-other-org' },
+          ORG_ID,
+        ),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(gradeLevelRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('looks the cycle up scoped to the session org', async () => {
+      gradeLevelRepo.findOne.mockResolvedValue(null);
+      curriculumLevelRepo.findOne.mockResolvedValue({ id: 'cycle-1' });
+
+      await service.create(
+        { name: 'Unterstufe', curriculumLevelId: 'cycle-1' },
+        ORG_ID,
+      );
+
+      expect(curriculumLevelRepo.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            id: 'cycle-1',
+            organizationId: ORG_ID,
+          }),
+        }),
+      );
+    });
+
+    it('rejects a foreign cycle on update', async () => {
+      gradeLevelRepo.findOne.mockResolvedValue({
+        id: 'gl-1',
+        organizationId: ORG_ID,
+        isActive: true,
+      });
+      curriculumLevelRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.update(
+          { id: 'gl-1', curriculumLevelId: 'cycle-of-other-org' },
+          ORG_ID,
+        ),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('allows clearing the link with null without a lookup', async () => {
+      gradeLevelRepo.findOne.mockResolvedValue({
+        id: 'gl-1',
+        organizationId: ORG_ID,
+        isActive: true,
+      });
+
+      await service.update({ id: 'gl-1', curriculumLevelId: null }, ORG_ID);
+
+      expect(curriculumLevelRepo.findOne).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('cycle resolution', () => {
+    const rawQb = () => {
+      const b: Record<string, jest.Mock> = {};
+      for (const m of [
+        'select',
+        'innerJoin',
+        'where',
+        'andWhere',
+        'orderBy',
+        'limit',
+      ]) {
+        b[m] = jest.fn().mockReturnValue(b);
+      }
+      b.getRawOne = jest.fn();
+      return b;
+    };
+
+    it('returns the cycle of a student and scopes both joins to the org', async () => {
+      const b = rawQb();
+      b.getRawOne.mockResolvedValue({ cycle_id: 'cycle-1' });
+      gradeLevelRepo.createQueryBuilder = jest.fn(() => b);
+
+      const result = await service.findCurriculumLevelIdForStudent(
+        'student-1',
+        ORG_ID,
+      );
+
+      expect(result).toBe('cycle-1');
+      expect(b.andWhere).toHaveBeenCalledWith(
+        'gl.organization_id = :organizationId',
+        { organizationId: ORG_ID },
+      );
+      expect(b.andWhere).toHaveBeenCalledWith(
+        'sce.organization_id = :organizationId',
+        { organizationId: ORG_ID },
+      );
+    });
+
+    it('returns null when the chain is incomplete (unfiltered fallback)', async () => {
+      const b = rawQb();
+      b.getRawOne.mockResolvedValue(undefined);
+      gradeLevelRepo.createQueryBuilder = jest.fn(() => b);
+
+      await expect(
+        service.findCurriculumLevelIdForStudent('student-1', ORG_ID),
+      ).resolves.toBeNull();
+    });
+
+    it('resolves the cycle of a school class', async () => {
+      const b = rawQb();
+      b.getRawOne.mockResolvedValue({ cycle_id: 'cycle-2' });
+      gradeLevelRepo.createQueryBuilder = jest.fn(() => b);
+
+      await expect(
+        service.findCurriculumLevelIdForSchoolClass('class-1', ORG_ID),
+      ).resolves.toBe('cycle-2');
+      expect(b.andWhere).toHaveBeenCalledWith(
+        'gl.organization_id = :organizationId',
+        { organizationId: ORG_ID },
+      );
     });
   });
 

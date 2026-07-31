@@ -11,6 +11,7 @@ const UpdateGradeLevelDocument = gql`
       id
       name
       parentId
+      curriculumLevelId
       color
       shortCode
       ageMin
@@ -25,6 +26,7 @@ type UpdateGradeLevelResponse = {
     id: string;
     name: string;
     parentId: string | null;
+    curriculumLevelId: string | null;
     color: string | null;
     shortCode: string | null;
     ageMin: number | null;
@@ -37,6 +39,7 @@ export const updateGradeLevelAction = async (input: {
   id: string;
   name?: string;
   parentId?: string | null;
+  curriculumLevelId?: string | null;
   color?: string | null;
   shortCode?: string | null;
   ageMin?: number | null;

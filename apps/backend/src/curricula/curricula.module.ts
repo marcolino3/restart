@@ -3,6 +3,7 @@ import { CommonModule } from '@/common/common.module';
 import { DatabaseModule } from '@/database/database.module';
 import { UsersModule } from '@/users/users.module';
 import { StudentsModule } from '@/school-management/students/students.module';
+import { GradeLevelsModule } from '@/school-management/grade-levels/grade-levels.module';
 import { CurriculaResolver } from './curricula.resolver';
 import { CurriculaService } from './curricula.service';
 import { CurriculumLevelsResolver } from './curriculum-levels.resolver';
@@ -18,7 +19,13 @@ import { RecordKeepingSettingsResolver } from './record-keeping/record-keeping-s
 import { RecordKeepingSettingsService } from './record-keeping/record-keeping-settings.service';
 
 @Module({
-  imports: [CommonModule, DatabaseModule, UsersModule, StudentsModule],
+  imports: [
+    CommonModule,
+    DatabaseModule,
+    UsersModule,
+    StudentsModule,
+    GradeLevelsModule,
+  ],
   controllers: [CurriculaImportController],
   providers: [
     CurriculumLevelsResolver,

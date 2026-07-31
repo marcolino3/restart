@@ -312,16 +312,23 @@ export class CurriculumNodesService {
   /**
    * Alle LESSON-Nodes der Org, mit Translations.
    * Für UI-Pickers (RecordKeeping Bulk-Entry, Prerequisites-Editor).
+   *
+   * `curriculumLevelId` schränkt optional auf einen Zyklus ein — genutzt von
+   * der Fortschrittserfassung, damit einem Kind nur die Lektionen seines
+   * Zyklus angeboten werden. Ohne den Parameter bleibt das Verhalten
+   * unverändert (alle Lektionen der Org).
    */
   async findAllLessons(
     organizationId: string,
     includeArchived = false,
+    curriculumLevelId?: string | null,
   ): Promise<CurriculumNode[]> {
     return this.nodesRepo.find({
       where: {
         organizationId,
         nodeType: CurriculumNodeType.LESSON,
         ...(includeArchived ? {} : { isArchived: false }),
+        ...(curriculumLevelId ? { levelId: curriculumLevelId } : {}),
       },
       relations: ['translations'],
       order: { position: 'ASC', createdAt: 'ASC' },

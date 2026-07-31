@@ -10,6 +10,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { IGradeLevel } from '../interfaces/grade-level.interface';
+import { CurriculumLevel } from '@/curricula/entities/curriculum-level.entity';
 
 @ObjectType()
 @Entity('grade_levels')
@@ -43,6 +44,23 @@ export class GradeLevel
 
   @OneToMany(() => GradeLevel, (level) => level.parent)
   children?: GradeLevel[];
+
+  /**
+   * Optional link to a curriculum cycle ("Zyklus"). Drives which lessons the
+   * progress entry screen offers for a child: child -> enrolment -> class ->
+   * this stage -> cycle -> its LESSON nodes.
+   *
+   * `null` means "not configured" and falls back to showing every lesson of
+   * the organisation, so an incomplete setup never blocks recording progress.
+   */
+  @Field(() => String, { nullable: true })
+  @Column('uuid', { name: 'curriculum_level_id', nullable: true })
+  curriculumLevelId?: string | null;
+
+  @Field(() => CurriculumLevel, { nullable: true })
+  @ManyToOne(() => CurriculumLevel, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'curriculum_level_id' })
+  curriculumLevel?: CurriculumLevel | null;
 
   @Field(() => String, { nullable: true })
   @Column('text', { nullable: true })
