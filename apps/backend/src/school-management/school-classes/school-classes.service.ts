@@ -356,7 +356,29 @@ export class SchoolClassesService {
     if (!schoolClass) {
       throw new NotFoundException(`SchoolClass ${id} not found`);
     }
+    // findAllByOrgId computes this for the grid; the detail view needs it too,
+    // otherwise the class summary shows an empty student count.
+    schoolClass.enrolledCount = await this.countEnrolled(id, organizationId);
     return this.hydrateTeachers([schoolClass], asOf)[0];
+  }
+
+  /** Students currently enrolled in the class (not yet left). */
+  private async countEnrolled(
+    schoolClassId: string,
+    organizationId: string,
+  ): Promise<number> {
+    const row = await this.schoolClassRepo
+      .createQueryBuilder('sc')
+      .innerJoin(
+        'school_class_enrollments',
+        'e',
+        'e.school_class_id = sc.id AND e.left_at IS NULL AND e."isActive" = true',
+      )
+      .select('COUNT(DISTINCT e.student_id)', 'enrolled_count')
+      .where('sc.id = :schoolClassId', { schoolClassId })
+      .andWhere('sc.organization_id = :organizationId', { organizationId })
+      .getRawOne<{ enrolled_count: string }>();
+    return Number(row?.enrolled_count ?? 0);
   }
 
   async update(

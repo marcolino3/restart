@@ -9,6 +9,7 @@ import { Form } from "@/components/ui/form";
 import { ColorPickerFormField } from "@/components/form/form-fields/ColorPickerFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { ComboboxFormField } from "@/components/form/form-fields/ComboboxFormField";
+import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
 import { FormActionButtons } from "@/components/form/form-fields/FormActionButtons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ROUTES } from "@/constants/routes";
@@ -21,6 +22,7 @@ import {
 import { createSchoolClassAction } from "../actions/create-school-class.action";
 import { TeacherOption } from "../actions/get-teachers.action";
 import { GradeLevelItem } from "@/features/grade-levels/actions/get-grade-levels.action";
+import { TeacherAssignmentField } from "./TeacherAssignmentField";
 
 interface Props {
   gradeLevels: GradeLevelItem[];
@@ -44,17 +46,18 @@ export default function CreateSchoolClassPageForm({
       value: gl.id,
     }));
 
-  const teacherOptions = teachers.map((t) => ({
-    label: `${t.firstName} ${t.lastName}`.trim(),
-    value: t.id,
-  }));
-
   const form = useForm({
     resolver: zodResolver(CreateSchoolClassFormSchema),
     defaultValues: {
       name: "",
+      shortCode: "",
       gradeLevelIds: [] as string[],
       teacherIds: [] as string[],
+      teachers: [] as {
+        employeeId: string;
+        role: "LEAD" | "ASSISTANT";
+        workloadPercent: number | string;
+      }[],
       color: null as string | null,
       description: "",
       maxCapacity: "" as unknown as number,
@@ -82,34 +85,55 @@ export default function CreateSchoolClassPageForm({
             <CardTitle>{tS("classDetails")}</CardTitle>
           </CardHeader>
           <CardContent className="form-gap-y">
-            <InputFormField name="name" label="name" />
-            <ComboboxFormField
-              name="gradeLevelIds"
-              label="gradeLevel"
-              options={gradeLevelOptions}
-              multiple
-              translateOptions={false}
-              width="w-full"
-            />
-            <ComboboxFormField
-              name="teacherIds"
-              label="teachers"
-              namespace="SchoolClasses"
-              options={teacherOptions}
-              multiple
-              translateOptions={false}
-              width="w-full"
-            />
-            <InputFormField name="description" label="description" />
-            <div className="flex gap-4">
-              <ColorPickerFormField name="color" label="color" width="w-1/4" />
-              <InputFormField name="room" label="room" width="w-1/4" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <InputFormField name="name" label="name" width="w-full" />
+              <InputFormField
+                name="shortCode"
+                label="shortCode"
+                namespace="SchoolClasses"
+                width="w-full"
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <ComboboxFormField
+                name="gradeLevelIds"
+                label="gradeLevel"
+                options={gradeLevelOptions}
+                multiple
+                translateOptions={false}
+                width="w-full"
+              />
+              <InputFormField name="room" label="room" width="w-full" />
+            </div>
+            <TextareaFormField name="description" label="description" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{tS("teachers")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-4 text-sm text-muted-foreground">
+              {tS("teachersHint")}
+            </p>
+            <TeacherAssignmentField name="teachers" teachers={teachers} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{tS("capacity")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-2">
               <InputFormField
                 name="maxCapacity"
                 label="maxCapacity"
                 type="number"
-                width="w-1/4"
+                width="w-full"
               />
+              <ColorPickerFormField name="color" label="color" width="w-full" />
             </div>
           </CardContent>
         </Card>

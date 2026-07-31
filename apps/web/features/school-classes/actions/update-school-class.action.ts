@@ -27,8 +27,17 @@ export const updateSchoolClassAction = async (
   const input = {
     id: parsed.id,
     name: parsed.name,
+    shortCode: parsed.shortCode || null,
     gradeLevelIds: parsed.gradeLevelIds ?? [],
-    teacherIds: parsed.teacherIds ?? [],
+    // Always sent, and `teacherIds` deliberately is not: the backend gives
+    // `teachers` precedence, and an empty array means "no teachers left",
+    // which is how removing the last one is expressed.
+    teachers: (parsed.teachers ?? []).map((t) => ({
+      employeeId: t.employeeId,
+      role: t.role,
+      workloadPercent:
+        typeof t.workloadPercent === "number" ? t.workloadPercent : null,
+    })),
     color: parsed.color || null,
     description: parsed.description || null,
     // maxCapacity is `number | "" | undefined` after parsing; the schema

@@ -37,6 +37,17 @@ export const createSchoolClassAction = async (
     ...(parsed.teacherIds?.length
       ? { teacherIds: parsed.teacherIds }
       : {}),
+    ...(parsed.shortCode ? { shortCode: parsed.shortCode } : {}),
+    ...(parsed.teachers?.length
+      ? {
+          teachers: parsed.teachers.map((t) => ({
+            employeeId: t.employeeId,
+            role: t.role,
+            workloadPercent:
+              typeof t.workloadPercent === "number" ? t.workloadPercent : null,
+          })),
+        }
+      : {}),
     ...(parsed.color ? { color: parsed.color } : {}),
     ...(parsed.description ? { description: parsed.description } : {}),
     // maxCapacity is `number | "" | undefined` after parsing; the schema

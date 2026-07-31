@@ -20,6 +20,7 @@ type QueryBuilderMock = {
   andWhere: jest.Mock;
   groupBy: jest.Mock;
   getRawMany: jest.Mock;
+  getRawOne: jest.Mock;
 };
 
 const createQueryBuilderMock = (): QueryBuilderMock => {
@@ -31,6 +32,8 @@ const createQueryBuilderMock = (): QueryBuilderMock => {
   qb.andWhere = jest.fn().mockReturnValue(qb);
   qb.groupBy = jest.fn().mockReturnValue(qb);
   qb.getRawMany = jest.fn().mockResolvedValue([]);
+  // findOne counts enrolled students via the same builder.
+  qb.getRawOne = jest.fn().mockResolvedValue({ enrolled_count: '0' });
   return qb;
 };
 

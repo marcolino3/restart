@@ -3,9 +3,27 @@
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
 
+export type SchoolClassTeacherAssignmentDetail = {
+  id: string;
+  employeeId: string;
+  role: "LEAD" | "ASSISTANT";
+  workloadPercent?: number | null;
+  validFrom: string;
+  validTo?: string | null;
+  employee?: {
+    id: string;
+    membership?: {
+      user?: { firstName: string; lastName: string } | null;
+    } | null;
+  } | null;
+};
+
 export type SchoolClassDetail = {
   id: string;
   name: string;
+  shortCode?: string | null;
+  enrolledCount?: number | null;
+  teacherAssignments?: SchoolClassTeacherAssignmentDetail[];
   gradeLevels?: { id: string; name: string }[];
   teachers?: {
     id: string;
@@ -30,6 +48,25 @@ const GetSchoolClassByIdDocument = gql`
     schoolClassById(id: $id) {
       id
       name
+      shortCode
+      enrolledCount
+      teacherAssignments {
+        id
+        employeeId
+        role
+        workloadPercent
+        validFrom
+        validTo
+        employee {
+          id
+          membership {
+            user {
+              firstName
+              lastName
+            }
+          }
+        }
+      }
       gradeLevels {
         id
         name
