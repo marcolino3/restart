@@ -129,6 +129,7 @@ export const ROUTES = {
 
     // Forbidden landing for persona-blocked admin routes
     dashboard: (locale: string) => `/${locale}/admin`,
+    setup: (locale: string) => `/${locale}/admin/setup`,
     forbidden: (locale: string) => `/${locale}/admin/forbidden`,
 
     // Users

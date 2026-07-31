@@ -94,7 +94,7 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
     navMain: [
       {
         title: t("dashboard"),
-        url: "#",
+        url: ROUTES.admin.dashboard(locale),
         icon: IconLayoutDashboard,
       },
       // Zeiterfassung: nur wenn das Feature am eigenen Employee aktiviert ist.
