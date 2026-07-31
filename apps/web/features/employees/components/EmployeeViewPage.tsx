@@ -143,10 +143,6 @@ export default function EmployeeViewPage({
   if (pensum != null) metaChips.push(`${pensum}% ${t("workloadPercent")}`);
   if (entry) metaChips.push(tE("joinedOn", { date: entry }));
 
-  // pf-tabs (saas-konzept): Accent-Unterstrich statt Pill-Container.
-  const tabCls =
-    "rounded-none border-b-[3px] border-transparent px-0 pb-[11px] text-[13.5px] font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-[650] data-[state=active]:text-foreground data-[state=active]:shadow-none";
-
   return (
     <Tabs
       value={activeTab}
@@ -185,23 +181,23 @@ export default function EmployeeViewPage({
                   </Button>
                 </div>
               </div>
-              <TabsList className="mt-[14px] h-auto justify-start gap-[22px] rounded-none bg-transparent p-0">
-                <TabsTrigger className={tabCls} value="overview">
+              <TabsList variant="underline" className="mt-[14px]">
+                <TabsTrigger value="overview">
                   {tE("overview")}
                 </TabsTrigger>
-                <TabsTrigger className={tabCls} value="contracts">
+                <TabsTrigger value="contracts">
                   {tE("tabContract")}
                 </TabsTrigger>
-                <TabsTrigger className={tabCls} value="absences">
+                <TabsTrigger value="absences">
                   {tE("tabAbsences")}
                 </TabsTrigger>
-                <TabsTrigger className={tabCls} value="timetracking">
+                <TabsTrigger value="timetracking">
                   {tE("tabTimeTracking")}
                 </TabsTrigger>
-                <TabsTrigger className={tabCls} value="logbook">
+                <TabsTrigger value="logbook">
                   {tE("tabNotes")}
                 </TabsTrigger>
-                <TabsTrigger className={tabCls} value="documents">
+                <TabsTrigger value="documents">
                   {tE("tabDocuments")}
                 </TabsTrigger>
               </TabsList>

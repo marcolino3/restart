@@ -6,14 +6,15 @@ import { useState } from "react";
 
 import { PageActionsMenu } from "@/components/common/PageActionsMenu";
 
-import { EmployeesCsvUpload } from "./EmployeesCsvUpload";
+import { StudentsCsvUpload } from "./StudentsCsvUpload";
 
 /**
- * Overflow ("…") menu for secondary employee-list actions. Currently holds the
- * CSV import; a home for further bulk/list actions as they get added.
+ * Overflow ("…") menu for secondary student-list actions, keeping the page
+ * header to one primary button. Add further bulk/list actions here rather
+ * than as extra buttons next to the title.
  */
-export function EmployeesActionsMenu() {
-  const tE = useTranslations("Employees");
+export function StudentsActionsMenu() {
+  const tS = useTranslations("Students");
   const [csvOpen, setCsvOpen] = useState(false);
 
   return (
@@ -22,13 +23,13 @@ export function EmployeesActionsMenu() {
         actions={[
           {
             id: "csv-import",
-            label: tE("csvImport"),
+            label: tS("csvImport"),
             icon: <Upload className="mr-2 size-4" />,
             onSelect: () => setCsvOpen(true),
           },
         ]}
       />
-      <EmployeesCsvUpload open={csvOpen} onOpenChange={setCsvOpen} />
+      <StudentsCsvUpload open={csvOpen} onOpenChange={setCsvOpen} />
     </>
   );
 }

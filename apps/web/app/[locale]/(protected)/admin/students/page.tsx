@@ -1,7 +1,7 @@
 import { getStudentsAction } from "@/features/students/actions/get-students.action";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 import { StudentsTable } from "@/features/students/components/StudentsTable";
-import { StudentsCsvUpload } from "@/features/students/components/StudentsCsvUpload";
+import { StudentsActionsMenu } from "@/features/students/components/StudentsActionsMenu";
 import { ROUTES } from "@/constants/routes";
 import { Button } from "@/components/ui/button";
 import { PageHead } from "@/components/common/PageHead";
@@ -45,13 +45,13 @@ const StudentsPage = async () => {
                 {tK("openKanban")}
               </Link>
             </Button>
-            <StudentsCsvUpload />
             <Button asChild>
               <Link href={ROUTES.admin.studentsCreate(locale)}>
                 <PlusIcon />
                 {tC("createStudent")}
               </Link>
             </Button>
+            <StudentsActionsMenu />
           </div>
         }
       />

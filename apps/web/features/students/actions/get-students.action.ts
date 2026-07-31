@@ -15,7 +15,16 @@ export type StudentListItem = {
     id: string;
     name: string;
     color?: string | null;
-    gradeLevels?: { id: string; name: string; color?: string | null }[] | null;
+    gradeLevels?:
+      | {
+          id: string;
+          name: string;
+          color?: string | null;
+          /** `null` = top-level Stufe; set = subgroup of that level. */
+          parentId?: string | null;
+          parent?: { id: string; name: string } | null;
+        }[]
+      | null;
   } | null;
 };
 
@@ -41,6 +50,11 @@ const GetStudentsDocument = gql`
           id
           name
           color
+          parentId
+          parent {
+            id
+            name
+          }
         }
       }
     }

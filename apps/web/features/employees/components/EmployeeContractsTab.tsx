@@ -32,6 +32,7 @@ import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
+import { TableCard } from "@/components/common/TableCard";
 import { handleAction } from "@/lib/actions/handle-action";
 
 import type { EmployeeContract } from "../actions/employee-contracts.actions";
@@ -126,7 +127,7 @@ export default function EmployeeContractsTab({
         )}
       </div>
 
-      <div className="rounded-md border">
+      <TableCard>
         <Table>
           <TableHeader>
             <TableRow>
@@ -210,7 +211,7 @@ export default function EmployeeContractsTab({
             )}
           </TableBody>
         </Table>
-      </div>
+      </TableCard>
 
       {editable && (
         <ContractDialog

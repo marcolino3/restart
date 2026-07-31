@@ -1,52 +1,28 @@
 "use client";
 
 import * as React from "react";
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import { ArrowUpDown, ChevronDown, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { DataTable } from "@/components/data-table/DataTable";
+import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
+import type { FilterGroup } from "@/components/data-table/DataTableFilter";
+import { useDataTable } from "@/components/data-table/use-data-table";
+import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { ROUTES } from "@/constants/routes";
 import { GetOrganizationsQuery } from "@restart/shared-types/graphql";
-import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { removeOrganizationAction } from "../actions/remove-organization.action";
 
 interface Props {
@@ -55,7 +31,7 @@ interface Props {
 
 type OrganizationRow = GetOrganizationsQuery["organizations"][number];
 
-const OrganizationsTableColumns = (): ColumnDef<OrganizationRow>[] => {
+const useColumns = (): ColumnDef<OrganizationRow>[] => {
   const t = useTranslations("Common");
   const locale = useLocale();
 
@@ -63,41 +39,34 @@ const OrganizationsTableColumns = (): ColumnDef<OrganizationRow>[] => {
     {
       id: "select",
       header: ({ table }) => (
-        <div className="flex items-center justify-center">
-          <Checkbox
-            checked={
-              table.getIsAllPageRowsSelected() ||
-              (table.getIsSomePageRowsSelected() && "indeterminate")
-            }
-            onCheckedChange={(value) =>
-              table.toggleAllPageRowsSelected(!!value)
-            }
-            aria-label={t("selectAll")}
-          />
-        </div>
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) =>
+            table.toggleAllPageRowsSelected(!!value)
+          }
+          aria-label={t("selectAll")}
+        />
       ),
       cell: ({ row }) => (
-        <div className="flex items-center justify-center">
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label={t("selectRow")}
-          />
-        </div>
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label={t("selectRow")}
+        />
       ),
       enableSorting: false,
       enableHiding: false,
     },
     {
+      id: "name",
       accessorKey: "name",
       header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          {t("name")} <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+        <DataTableColumnHeader column={column} title={t("name")} />
       ),
+      meta: { labelKey: "name" },
       cell: ({ row }) => (
         <div>
           {row.getValue("name") || (
@@ -108,15 +77,12 @@ const OrganizationsTableColumns = (): ColumnDef<OrganizationRow>[] => {
       filterFn: "includesString",
     },
     {
+      id: "subdomain",
       accessorKey: "subdomain",
       header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          {t("subdomain")} <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+        <DataTableColumnHeader column={column} title={t("subdomain")} />
       ),
+      meta: { labelKey: "subdomain" },
       cell: ({ row }) => (
         <div className="text-muted-foreground">
           {row.getValue("subdomain") || "–"}
@@ -124,6 +90,7 @@ const OrganizationsTableColumns = (): ColumnDef<OrganizationRow>[] => {
       ),
     },
     {
+      id: "domain",
       accessorKey: "domain",
       header: t("domain"),
       cell: ({ row }) => (
@@ -133,18 +100,20 @@ const OrganizationsTableColumns = (): ColumnDef<OrganizationRow>[] => {
       ),
     },
     {
+      id: "isActive",
       accessorKey: "isActive",
       header: t("isActive"),
+      filterFn: (row, id, value) => {
+        const picks = value as string[] | undefined;
+        if (!picks?.length) return true;
+        return picks.includes(String(row.getValue<boolean>(id)));
+      },
       cell: ({ row }) => {
         const value = row.getValue("isActive") as boolean;
         return value ? (
-          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-200 dark:border-green-800">
-            {t("active")}
-          </Badge>
+          <Badge variant="green">{t("active")}</Badge>
         ) : (
-          <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border-red-200 dark:border-red-800">
-            {t("inactive")}
-          </Badge>
+          <Badge variant="slate">{t("inactive")}</Badge>
         );
       },
     },
@@ -194,26 +163,33 @@ const OrganizationsTableColumns = (): ColumnDef<OrganizationRow>[] => {
 
 export const OrganizationsTable = ({ data }: Props) => {
   const t = useTranslations("Common");
-  const columns = OrganizationsTableColumns();
+  const columns = useColumns();
 
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] =
-    React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = React.useState({});
-  const [pagination, setPagination] = React.useState({
-    pageIndex: 0,
-    pageSize: 10,
+  const { table, globalFilter, setGlobalFilter } = useDataTable({
+    data,
+    columns,
+    getRowId: (row) => row.id,
+    initialPageSize: 10,
   });
 
-  const handlePageSizeChange = (value: string) => {
-    const newPageSize = value === "all" ? data.length : Number(value);
-    setPagination({ pageIndex: 0, pageSize: newPageSize });
-  };
+  const filterGroups: FilterGroup[] = React.useMemo(
+    () => [
+      {
+        id: "isActive",
+        label: t("status"),
+        options: [
+          { value: "true", label: t("active") },
+          { value: "false", label: t("inactive") },
+        ],
+      },
+    ],
+    [t],
+  );
+
+  const selectedRows = table.getFilteredSelectedRowModel().rows;
+  const selectedCount = selectedRows.length;
 
   const handleBulkDelete = async () => {
-    const selectedRows = table.getFilteredSelectedRowModel().rows;
     const ids = selectedRows.map((row) => row.original.id);
 
     let errorCount = 0;
@@ -222,53 +198,25 @@ export const OrganizationsTable = ({ data }: Props) => {
       if (!result.success) errorCount++;
     }
 
-    setRowSelection({});
+    table.resetRowSelection();
 
     return errorCount === 0
       ? { success: true as const }
       : { success: false as const, error: t("deleteError") };
   };
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions by design
-  const table = useReactTable({
-    data,
-    columns,
-    getRowId: (row) => row.id,
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onPaginationChange: setPagination,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-      pagination,
-    },
-  });
-
-  const selectedCount = table.getFilteredSelectedRowModel().rows.length;
-
   return (
-    <div className="w-full">
-      {/* Filters */}
-      <div className="flex items-center py-4 gap-2 flex-wrap">
-        <Input
-          placeholder={t("searchName")}
-          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("name")?.setFilterValue(event.target.value)
-          }
-          className="max-w-[250px]"
-        />
-
-        {selectedCount > 0 && (
+    <DataTable
+      table={table}
+      globalFilter={globalFilter}
+      onGlobalFilterChange={setGlobalFilter}
+      searchPlaceholder={t("searchName")}
+      filterGroups={filterGroups}
+      translateColumn={(key) => t(key)}
+      toolbar={
+        // Bulk-delete only shows once rows are selected, sitting alongside the
+        // filter dropdown rather than in a separate row like the old table.
+        selectedCount > 0 ? (
           <DeleteConfirmationDialog
             itemName={`${selectedCount} ${t("selected")}`}
             onConfirm={handleBulkDelete}
@@ -279,133 +227,8 @@ export const OrganizationsTable = ({ data }: Props) => {
               </Button>
             }
           />
-        )}
-
-        <Select
-          value={
-            pagination.pageSize >= data.length
-              ? "all"
-              : String(pagination.pageSize)
-          }
-          onValueChange={handlePageSizeChange}
-        >
-          <SelectTrigger className="w-[140px] ml-auto">
-            <SelectValue placeholder={t("show")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="10">10 {t("items")}</SelectItem>
-            <SelectItem value="all">{t("all")}</SelectItem>
-          </SelectContent>
-        </Select>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              {t("columns")} <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => (
-                <DropdownMenuCheckboxItem
-                  key={column.id}
-                  className="capitalize"
-                  checked={column.getIsVisible()}
-                  onCheckedChange={(value) =>
-                    column.toggleVisibility(!!value)
-                  }
-                >
-                  {column.id}
-                </DropdownMenuCheckboxItem>
-              ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      {/* Table */}
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  {t("noResults")}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Pagination */}
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {selectedCount > 0 ? (
-            <>
-              {selectedCount} / {table.getFilteredRowModel().rows.length}{" "}
-              {t("selected")}
-            </>
-          ) : (
-            <>
-              {table.getFilteredRowModel().rows.length} {t("results")}
-            </>
-          )}
-        </div>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            {t("previous")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            {t("next")}
-          </Button>
-        </div>
-      </div>
-    </div>
+        ) : undefined
+      }
+    />
   );
 };

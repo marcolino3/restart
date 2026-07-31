@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { TableCard } from "@/components/common/TableCard";
 import {
   Table,
   TableBody,
@@ -341,7 +342,7 @@ export function ProjectsList({
           ))}
         </div>
       ) : (
-        <div className="rounded-md border">
+        <TableCard>
           <Table>
             <TableHeader>
               <TableRow>
@@ -411,7 +412,7 @@ export function ProjectsList({
               ))}
             </TableBody>
           </Table>
-        </div>
+        </TableCard>
       )}
 
       <ProjectFormDialog

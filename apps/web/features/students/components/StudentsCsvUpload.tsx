@@ -59,13 +59,28 @@ function downloadTemplate() {
   URL.revokeObjectURL(url);
 }
 
-export const StudentsCsvUpload = () => {
+interface StudentsCsvUploadProps {
+  /**
+   * Controlled open state. When `onOpenChange` is provided the component drops
+   * its own trigger button and is driven from outside (e.g. the actions menu).
+   */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export const StudentsCsvUpload = ({
+  open: controlledOpen,
+  onOpenChange,
+}: StudentsCsvUploadProps = {}) => {
   const t = useTranslations("Common");
   const tS = useTranslations("Students");
   const router = useRouter();
   const [isUploading, setIsUploading] = useState(false);
   const [result, setResult] = useState<UploadResult | null>(null);
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = onOpenChange !== undefined;
+  const open = isControlled ? !!controlledOpen : internalOpen;
+  const setOpen = isControlled ? onOpenChange : setInternalOpen;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,12 +150,14 @@ export const StudentsCsvUpload = () => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <Upload className="mr-2 h-4 w-4" />
-          {tS("csvImport")}
-        </Button>
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button variant="outline">
+            <Upload className="mr-2 h-4 w-4" />
+            {tS("csvImport")}
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>{tS("csvImport")}</DialogTitle>

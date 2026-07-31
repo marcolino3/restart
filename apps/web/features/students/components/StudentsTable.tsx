@@ -1,65 +1,37 @@
 "use client";
 
 import * as React from "react";
+import type { ColumnDef, FilterFn } from "@tanstack/react-table";
+
+import { multiSelectFilter } from "@/lib/table/locale-sorting";
 import {
-  ColumnDef,
-  ColumnFiltersState,
-  FilterFn,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import {
-  ArrowUpDown,
-  ChevronDown,
   Mars,
   MoreHorizontal,
   Pencil,
-  Search,
   Trash2,
   Venus,
   VenusAndMars,
-  X,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { DataTableFacetedFilter } from "@/components/common/DataTableFacetedFilter";
-import { PersonCell } from "@/components/common/PersonCell";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { PersonCell } from "@/components/common/PersonCell";
+import { DataTable } from "@/components/data-table/DataTable";
+import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
+import type { FilterGroup } from "@/components/data-table/DataTableFilter";
+import { useDataTable } from "@/components/data-table/use-data-table";
 import { ROUTES } from "@/constants/routes";
 import { StudentListItem } from "../actions/get-students.action";
 import { deleteStudentAction } from "../actions/delete-student.action";
@@ -90,17 +62,6 @@ const ageFromDob = (dob: string): number => {
   const m = now.getMonth() - b.getMonth();
   if (m < 0 || (m === 0 && now.getDate() < b.getDate())) age -= 1;
   return age;
-};
-
-/** Multi-select facet match for a scalar cell value against a list of picks. */
-const multiSelectFilter: FilterFn<StudentListItem> = (
-  row,
-  columnId,
-  filterValue,
-) => {
-  const picks = filterValue as string[] | undefined;
-  if (!picks?.length) return true;
-  return picks.includes(row.getValue<string>(columnId));
 };
 
 /** Search across first + last name for the merged name column. */
@@ -146,14 +107,9 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
       id: "name",
       accessorKey: "lastName",
       header: ({ column }) => (
-        <Button
-          variant="ghost"
-          className="-ml-3"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          {t("name")} <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+        <DataTableColumnHeader column={column} title={t("name")} />
       ),
+      meta: { labelKey: "name" },
       cell: ({ row }) => {
         const s = row.original;
         const dob = s.dateOfBirth;
@@ -330,306 +286,116 @@ export const StudentsTable = ({ data }: Props) => {
       (a, b) => a.name.localeCompare(b.name),
     );
   }, [data]);
+  /**
+   * Grade levels as a two-level tree: top-level Stufen with their subgroups
+   * indented underneath. A parent that no student sits on directly still shows
+   * up as a heading so its children aren't orphaned.
+   */
   const gradeLevelOptions = React.useMemo(() => {
-    const byName = new Map<string, string | null>();
+    type Node = {
+      name: string;
+      color: string | null;
+      parentName: string | null;
+    };
+
+    const byName = new Map<string, Node>();
+
     for (const s of data) {
       for (const gl of s.currentClass?.gradeLevels ?? []) {
-        if (!byName.has(gl.name)) byName.set(gl.name, gl.color ?? null);
+        if (!byName.has(gl.name)) {
+          byName.set(gl.name, {
+            name: gl.name,
+            color: gl.color ?? null,
+            parentName: gl.parent?.name ?? null,
+          });
+        }
+        // Surface a parent that has no students of its own.
+        if (gl.parent?.name && !byName.has(gl.parent.name)) {
+          byName.set(gl.parent.name, {
+            name: gl.parent.name,
+            color: null,
+            parentName: null,
+          });
+        }
       }
     }
-    return Array.from(byName, ([name, color]) => ({ name, color })).sort(
-      (a, b) => a.name.localeCompare(b.name),
-    );
+
+    const nodes = Array.from(byName.values());
+    const byLabel = (a: Node, b: Node) => a.name.localeCompare(b.name);
+
+    return nodes
+      .filter((n) => !n.parentName)
+      .sort(byLabel)
+      .flatMap((parent) => [
+        { ...parent, depth: 0 },
+        ...nodes
+          .filter((n) => n.parentName === parent.name)
+          .sort(byLabel)
+          .map((child) => ({ ...child, depth: 1 })),
+      ]);
   }, [data]);
 
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] =
-    React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = React.useState({});
-  const [pagination, setPagination] = React.useState({
-    pageIndex: 0,
-    pageSize: 10,
-  });
-
-  const handlePageSizeChange = (value: string) => {
-    const newPageSize = value === "all" ? data.length : Number(value);
-    setPagination({ pageIndex: 0, pageSize: newPageSize });
-  };
-
-  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table's useReactTable() returns non-memoizable functions by design
-  const table = useReactTable({
+  const { table, globalFilter, setGlobalFilter } = useDataTable({
     data,
     columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    onPaginationChange: setPagination,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-      pagination,
-    },
+    initialPageSize: 10,
   });
 
+  // All categorical filters live in one dropdown instead of sitting side by
+  // side in the toolbar.
+  const filterGroups: FilterGroup[] = React.useMemo(() => {
+    const groups: FilterGroup[] = [];
+
+    if (genderOptions.length > 0) {
+      groups.push({
+        id: "gender",
+        label: t("gender"),
+        options: genderOptions.map((gender) => ({
+          value: gender,
+          label: t(gender),
+        })),
+      });
+    }
+
+    if (classOptions.length > 0) {
+      groups.push({
+        id: "class",
+        label: t("class"),
+        options: classOptions.map(({ name, color }) => ({
+          value: name,
+          label: name,
+          color: color ?? undefined,
+        })),
+      });
+    }
+
+    if (gradeLevelOptions.length > 0) {
+      groups.push({
+        id: "gradeLevel",
+        label: t("gradeLevel"),
+        options: gradeLevelOptions.map(({ name, color, depth }) => ({
+          value: name,
+          label: name,
+          color: color ?? undefined,
+          depth,
+        })),
+      });
+    }
+
+    return groups;
+  }, [genderOptions, classOptions, gradeLevelOptions, t]);
+
   return (
-    <div className="w-full">
-      <div className="mb-4 flex items-center gap-2 flex-wrap">
-        <div className="relative w-[280px]">
-          <Search className="pointer-events-none absolute top-1/2 left-3.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={tS("searchPlaceholder")}
-            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-            onChange={(e) =>
-              table.getColumn("name")?.setFilterValue(e.target.value)
-            }
-            className="h-9 rounded-full pl-9"
-            aria-label={tS("searchPlaceholder")}
-          />
-        </div>
-        {genderOptions.length > 0 && (
-          <DataTableFacetedFilter
-            title={t("gender")}
-            selected={
-              (table.getColumn("gender")?.getFilterValue() as string[]) ?? []
-            }
-            onChange={(next) =>
-              table
-                .getColumn("gender")
-                ?.setFilterValue(next.length ? next : undefined)
-            }
-            options={genderOptions.map((g) => {
-              const meta = GENDER_META[g];
-              const Icon = meta?.icon;
-              return {
-                value: g,
-                searchValue: t(g),
-                label: (
-                  <span className="flex items-center gap-2">
-                    {Icon && (
-                      <Icon
-                        className={`h-4 w-4 ${meta.className}`}
-                        aria-hidden
-                      />
-                    )}
-                    {t(g)}
-                  </span>
-                ),
-              };
-            })}
-          />
-        )}
-        {classOptions.length > 0 && (
-          <DataTableFacetedFilter
-            title={t("class")}
-            selected={
-              (table.getColumn("class")?.getFilterValue() as string[]) ?? []
-            }
-            onChange={(next) =>
-              table
-                .getColumn("class")
-                ?.setFilterValue(next.length ? next : undefined)
-            }
-            options={classOptions.map((c) => ({
-              value: c.name,
-              searchValue: c.name,
-              label: (
-                <span className="flex items-center gap-2">
-                  <span
-                    aria-hidden
-                    className="inline-block h-2 w-2 shrink-0 rounded-full ring-1 ring-border"
-                    style={{ backgroundColor: c.color ?? "var(--muted)" }}
-                  />
-                  {c.name}
-                </span>
-              ),
-            }))}
-          />
-        )}
-        {gradeLevelOptions.length > 0 && (
-          <DataTableFacetedFilter
-            title={t("gradeLevel")}
-            selected={
-              (table.getColumn("gradeLevel")?.getFilterValue() as string[]) ??
-              []
-            }
-            onChange={(next) =>
-              table
-                .getColumn("gradeLevel")
-                ?.setFilterValue(next.length ? next : undefined)
-            }
-            options={gradeLevelOptions.map((gl) => ({
-              value: gl.name,
-              searchValue: gl.name,
-              label: (
-                <span className="flex items-center gap-2">
-                  <span
-                    aria-hidden
-                    className="inline-block h-2 w-2 shrink-0 rounded-full ring-1 ring-border"
-                    style={{ backgroundColor: gl.color ?? "var(--muted)" }}
-                  />
-                  {gl.name}
-                </span>
-              ),
-            }))}
-          />
-        )}
-        <Select
-          value={
-            pagination.pageSize >= data.length
-              ? "all"
-              : String(pagination.pageSize)
-          }
-          onValueChange={handlePageSizeChange}
-        >
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder={t("show")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="10">10 {t("items")}</SelectItem>
-            <SelectItem value="25">25 {t("items")}</SelectItem>
-            <SelectItem value="50">50 {t("items")}</SelectItem>
-            <SelectItem value="all">{t("all")}</SelectItem>
-          </SelectContent>
-        </Select>
-        {columnFilters.length > 0 && (
-          <Button
-            variant="ghost"
-            onClick={() => setColumnFilters([])}
-            className="h-9 px-2 lg:px-3"
-          >
-            {t("resetFilters")}
-            <X className="ml-2 h-4 w-4" />
-          </Button>
-        )}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              {t("columns")} <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => (
-                <DropdownMenuCheckboxItem
-                  key={column.id}
-                  className="capitalize"
-                  checked={column.getIsVisible()}
-                  onCheckedChange={(value) =>
-                    column.toggleVisibility(!!value)
-                  }
-                >
-                  {t(column.id)}
-                </DropdownMenuCheckboxItem>
-              ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      <div className="overflow-hidden rounded-card border bg-card shadow-xs">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent">
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="cursor-pointer"
-                  onClick={() => {
-                    router.push(
-                      ROUTES.admin.studentsView(locale, row.original.id)
-                    );
-                  }}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      onClick={(e) => {
-                        if (
-                          cell.column.id === "select" ||
-                          cell.column.id === "actions"
-                        ) {
-                          e.stopPropagation();
-                        }
-                      }}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  {t("noResults")}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredRowModel().rows.length} {t("results")}
-          {table.getFilteredSelectedRowModel().rows.length > 0 && (
-            <span className="ml-2">
-              ({table.getFilteredSelectedRowModel().rows.length}{" "}
-              {t("selected")})
-            </span>
-          )}
-        </div>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            {t("previous")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            {t("next")}
-          </Button>
-        </div>
-      </div>
-    </div>
+    <DataTable
+      table={table}
+      globalFilter={globalFilter}
+      onGlobalFilterChange={setGlobalFilter}
+      searchPlaceholder={tS("searchPlaceholder")}
+      filterGroups={filterGroups}
+      translateColumn={(key) => t(key)}
+      onRowClick={(row) =>
+        router.push(ROUTES.admin.studentsView(locale, row.original.id))
+      }
+    />
   );
 };

@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="salbei">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Restart — SaaS-Konzept mit Themes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position: absolute;" aria-hidden="true"><defs>
+  <g id="i-dash"><rect width="7" height="9" x="3" y="3" rx="1"></rect><rect width="7" height="5" x="14" y="3" rx="1"></rect><rect width="7" height="9" x="14" y="12" rx="1"></rect><rect width="7" height="5" x="3" y="16" rx="1"></rect></g>
+  <g id="i-clock"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></g>
+  <g id="i-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></g>
+  <g id="i-grad"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"></path><path d="M22 10v6"></path><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"></path></g>
+  <g id="i-heart"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></g>
+  <g id="i-check"><path d="m9 11 3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></g>
+  <g id="i-clip"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="m9 14 2 2 4-4"></path></g>
+  <g id="i-book"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path></g>
+  <g id="i-shield"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></g>
+  <g id="i-search"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></g>
+  <g id="i-plus"><path d="M5 12h14"></path><path d="M12 5v14"></path></g>
+  <g id="i-arrow"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></g>
+  <g id="i-report"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></g>
+  <g id="i-kanban"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M8 7v7"></path><path d="M12 7v4"></path><path d="M16 7v9"></path></g>
+  <g id="i-tasks"><path d="m3 17 2 2 4-4"></path><path d="m3 7 2 2 4-4"></path><path d="M13 6h8"></path><path d="M13 12h8"></path><path d="M13 18h8"></path></g>
+  <g id="i-file"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></g>
+  <g id="i-school"><path d="M14 22v-4a2 2 0 1 0-4 0v4"></path><path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2"></path><path d="M18 5v17"></path><path d="m4 6 8-4 8 4"></path><path d="M6 5v17"></path><circle cx="12" cy="9" r="2"></circle></g>
+  <g id="i-layers"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"></path><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"></path><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"></path></g>
+  <g id="i-caloff"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path><path d="m14 14-4 4"></path><path d="m10 14 4 4"></path></g>
+</defs></svg>
+
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="mark">R</span> Restart</div>
+    <nav class="nav" id="nav">
+      <button data-page="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-dash"></use></svg>Dashboard</button>
+      <button data-page="zeit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-clock"></use></svg>Zeiterfassung</button>
+      <button data-page="zeitauswertung"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-report"></use></svg>Zeitauswertung</button>
+      <button data-page="mitarbeitende"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-users"></use></svg>Mitarbeitende</button>
+      <button data-page="schueler"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-grad"></use></svg>Schüler:innen</button>
+      <button data-page="bezugspersonen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-heart"></use></svg>Bezugspersonen</button>
+      <button data-page="fortschritte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"></use></svg>Fortschritte</button>
+      <button data-page="aufnahme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-clip"></use></svg>Aufnahmeprozess<span class="n">9</span></button>
+      <button data-page="projekte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-kanban"></use></svg>Projekte</button>
+      <button data-page="aufgaben"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-tasks"></use></svg>Meine Aufgaben<span class="n">6</span></button>
+      <button data-page="protokolle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-file"></use></svg>Protokolle</button>
+      <div class="grp">Organisation</div>
+      <button data-page="teams"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-users"></use></svg>Teams</button>
+      <button data-page="klassen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-school"></use></svg>Schulklassen</button>
+      <button data-page="stufen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-layers"></use></svg>Stufen</button>
+      <button data-page="lehrplan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-book"></use></svg>Lehrpläne</button>
+      <button data-page="absenzen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-caloff"></use></svg>Absenz-Kategorien</button>
+      <button data-page="rollen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-shield"></use></svg>Rollen &amp; Berechtigungen</button>
+    </nav>
+    <div class="themes">
+      <div class="tl">Theme <b id="theme-name">Salbei</b></div>
+      <div class="sw-row" id="themes">
+        <button class="sw" data-theme="salbei" title="Salbei" style="--c1: #3a7d44; --c2: #f7f5f0;"><i></i></button>
+        <button class="sw" data-theme="lagune" title="Lagune" style="--c1: #2a9d8f; --c2: #faf7f2;"><i></i></button>
+        <button class="sw" data-theme="himmel" title="Himmel" style="--c1: #2f7bd0; --c2: #f4f7fa;"><i></i></button>
+        <button class="sw" data-theme="indigo" title="Indigo" style="--c1: #4f5dd8; --c2: #f4f5fa;"><i></i></button>
+        <button class="sw" data-theme="flieder" title="Flieder" style="--c1: #7d55cc; --c2: #f7f5fa;"><i></i></button>
+        <button class="sw" data-theme="terracotta" title="Terracotta" style="--c1: #bb5d3a; --c2: #faf6f1;"><i></i></button>
+        <button class="sw" data-theme="ozean" title="Ozean" style="--c1: #20708d; --c2: #f3f7f8;"><i></i></button>
+        <button class="sw" data-theme="wald" title="Wald" style="--c1: #2d6a4f; --c2: #f5f7f4;"><i></i></button>
+        <button class="sw" data-theme="beere" title="Beere" style="--c1: #a34d74; --c2: #faf6f8;"><i></i></button>
+        <button class="sw" data-theme="honig" title="Honig" style="--c1: #a97a24; --c2: #faf7f0;"><i></i></button>
+        <button class="sw" data-theme="schiefer" title="Schiefer" style="--c1: #42566b; --c2: #f4f6f8;"><i></i></button>
+        <button class="sw" data-theme="graphit" title="Graphit" style="--c1: #1c1c1a; --c2: #f7f7f6;"><i></i></button>
+      </div>
+    </div>
+    <div class="side-user"><span class="ava">AM</span><span><b>Anna Meier</b><small>Montessori Zürich</small></span></div>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <h1 id="page-title">Dashboard</h1>
+      <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><use href="#i-search"></use></svg>Suche nach Kind, Familie, Eltern …</div>
+      <button class="btn" data-modal="modal-bewerbung"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><use href="#i-plus"></use></svg>Neue Bewerbung</button>
+    </header>
+    <div class="content">
+
+      <!-- ============ DASHBOARD ============ -->
+      <section class="page on" id="page-dashboard" data-screen-label="Dashboard">
+        <div class="pagehead"><div><h2>Guten Morgen, Anna</h2><p style="padding: 4px 0 0;">Mittwoch, 2. Juli — hier ist der Überblick für deine Schule.</p></div></div>
+        <div class="stats">
+          <div class="stat"><span class="lbl">Schüler:innen</span><span class="val">86</span><span class="sub"><b>+3</b> diesen Monat</span></div>
+          <div class="stat"><span class="lbl">Offene Bewerbungen</span><span class="val">12</span><span class="sub">4 neu diese Woche</span></div>
+          <div class="stat"><span class="lbl">Erinnerungen heute</span><span class="val">5</span><span class="sub">2 überfällig</span></div>
+          <div class="stat"><span class="lbl">Gemeistert-Quote</span><span class="val">73%</span><span class="sub"><b>+4%</b> seit April</span></div>
+        </div>
+        <div class="cols2">
+          <div class="panel">
+            <h3>Braucht Aufmerksamkeit<span class="n">4</span></h3>
+            <p class="hint">Kinder mit auffälligen Mustern — hier zuerst ansetzen.</p>
+            <div class="att-row"><span class="ava">MK</span><span class="t"><b>Mia Keller — Goldene Perlen</b><small>Mathematik › Dezimalsystem</small></span><span class="pill rose">Braucht mehr · 14 Tage</span></div>
+            <div class="att-row"><span class="ava">LB</span><span class="t"><b>Luca Bernasconi — Wortarten-Symbole</b><small>Sprache › Grammatik</small></span><span class="pill amber">Stagniert seit 21 Tagen</span></div>
+            <div class="att-row"><span class="ava">JW</span><span class="t"><b>Jonas Widmer — Binomischer Würfel</b><small>Sinnesmaterial</small></span><span class="pill sky">Eingeführt, nie geübt</span></div>
+            <div class="att-row"><span class="ava">AD</span><span class="t"><b>Amara Diallo — Zeitleiste des Lebens</b><small>Kosmische Erziehung</small></span><span class="pill green">Selbstvertrauen steigt</span></div>
+          </div>
+          <div class="panel">
+            <h3>Aufnahmeprozess<span class="n">9 aktiv</span></h3>
+            <p class="hint">Bewerbungen nach Stage.</p>
+            <div class="stage-row"><span class="nm"><span class="dot" style="background: var(--st-slate-fg);"></span>Interesse</span><span class="bar"><i style="width: 34%; background: var(--st-slate-fg);"></i></span><span class="ct">3</span></div>
+            <div class="stage-row"><span class="nm"><span class="dot" style="background: var(--st-sky-fg);"></span>Bewerbung</span><span class="bar"><i style="width: 22%; background: var(--st-sky-fg);"></i></span><span class="ct">2</span></div>
+            <div class="stage-row"><span class="nm"><span class="dot" style="background: var(--st-amber-fg);"></span>Gespräch</span><span class="bar"><i style="width: 11%; background: var(--st-amber-fg);"></i></span><span class="ct">1</span></div>
+            <div class="stage-row"><span class="nm"><span class="dot" style="background: var(--st-green-fg);"></span>Aufgenommen</span><span class="bar"><i style="width: 22%; background: var(--st-green-fg);"></i></span><span class="ct">2</span></div>
+            <div class="stage-row"><span class="nm"><span class="dot" style="background: var(--acc);"></span>Eingeschrieben</span><span class="bar"><i style="width: 11%;"></i></span><span class="ct">1</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SCHÜLER:INNEN ============ -->
+      <section class="page" id="page-schueler" data-screen-label="Schüler:innen">
+        <div class="pagehead"><h2>Schüler:innen</h2><p>86 aktiv · 3 neu im Juli</p><button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><use href="#i-plus"></use></svg>Neue:r Schüler:in</button></div>
+        <div class="chiprow">
+          <span class="chip on">Alle Klassen</span><span class="chip">Primaria A</span><span class="chip">Primaria B</span><span class="chip">Sekundaria</span><span class="chip">Archiviert</span>
+        </div>
+        <div class="tbl">
+          <table>
+            <thead><tr><th>Name</th><th>Klasse</th><th>Stufe</th><th>Bezugsperson</th><th>Fortschritt</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr class="click" data-goto="profil"><td><span class="pcell"><span class="ava">MK</span><span><b>Mia Keller</b><small>geb. 12.03.2019 · 7 J.</small></span></span></td><td><span class="pill acc">Primaria A</span></td><td>US 1</td><td>Sandra Keller</td><td><span class="mono">32/52</span></td><td><span class="pill green">Aktiv</span></td></tr>
+              <tr class="click" data-goto="profil"><td><span class="pcell"><span class="ava">LB</span><span><b>Luca Bernasconi</b><small>geb. 28.06.2018 · 8 J.</small></span></span></td><td><span class="pill acc">Primaria A</span></td><td>US 2</td><td>Paolo Bernasconi</td><td><span class="mono">20/52</span></td><td><span class="pill green">Aktiv</span></td></tr>
+              <tr class="click" data-goto="profil"><td><span class="pcell"><span class="ava">EY</span><span><b>Elif Yilmaz</b><small>geb. 03.11.2017 · 8 J.</small></span></span></td><td><span class="pill acc">Primaria B</span></td><td>US 3</td><td>Derya Yilmaz</td><td><span class="mono">44/52</span></td><td><span class="pill green">Aktiv</span></td></tr>
+              <tr class="click" data-goto="profil"><td><span class="pcell"><span class="ava">JW</span><span><b>Jonas Widmer</b><small>geb. 19.02.2019 · 7 J.</small></span></span></td><td><span class="pill acc">Primaria B</span></td><td>US 1</td><td>Karin Widmer</td><td><span class="mono">11/52</span></td><td><span class="pill green">Aktiv</span></td></tr>
+              <tr class="click" data-goto="profil"><td><span class="pcell"><span class="ava">AD</span><span><b>Amara Diallo</b><small>geb. 07.09.2013 · 12 J.</small></span></span></td><td><span class="pill acc">Sekundaria</span></td><td>OS 1</td><td>Fatou Diallo</td><td><span class="mono">37/52</span></td><td><span class="pill green">Aktiv</span></td></tr>
+              <tr class="click" data-goto="profil"><td><span class="pcell"><span class="ava">NF</span><span><b>Nino Ferrari</b><small>geb. 22.04.2018 · 8 J.</small></span></span></td><td><span class="pill acc">Primaria A</span></td><td>US 2</td><td>Marco Ferrari</td><td><span class="mono">23/52</span></td><td><span class="pill slate">Inaktiv</span></td></tr>
+              <tr class="click" data-goto="profil"><td><span class="pcell"><span class="ava">TB</span><span><b>Timo Brunner</b><small>geb. 15.08.2017 · 8 J.</small></span></span></td><td><span class="pill acc">Primaria B</span></td><td>US 3</td><td>Silvia Brunner</td><td><span class="mono">29/52</span></td><td><span class="pill green">Aktiv</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="font-size: 12.5px; color: var(--soft); margin-top: 12px;">7 von 86 Schüler:innen — Zeile anklicken für das Profil</p>
+      </section>
+
+      <!-- ============ PROFIL ============ -->
+      <section class="page" id="page-profil" data-screen-label="Schülerprofil">
+        <div class="pf-band">
+          <div class="r">
+            <span class="bigava">MK</span>
+            <div><h2>Mia Keller</h2>
+              <div class="meta"><span class="mc">US 1 · Primaria A</span><span class="mc">geb. 12.03.2019 · 7 J.</span><span class="mc">Eintritt Aug. 2025</span></div>
+            </div>
+            <span class="act"><button class="ab">Bericht erstellen</button><button class="ab pri">Lektion erfassen</button></span>
+          </div>
+          <div class="pf-tabs"><span class="on">Übersicht</span><span>Fortschritte</span><span>Beobachtungen</span><span>Eltern &amp; Familie</span><span>Absenzen</span><span>Dokumente</span></div>
+        </div>
+        <div class="cols2">
+          <div class="panel">
+            <h3>Letzte Ereignisse</h3>
+            <div style="margin-top: 10px;">
+              <div class="ev"><span class="ln"><span class="pt" style="border-color: var(--st-green-fg); background: var(--st-green-bg);"></span><span class="vl"></span></span><span class="eb"><span class="when">Heute, 09:40</span><b>Goldene Perlen — Addition gemeistert</b><small>Mathematik › Dezimalsystem · erfasst von Anna Meier</small></span></div>
+              <div class="ev"><span class="ln"><span class="pt" style="border-color: var(--st-amber-fg); background: var(--st-amber-bg);"></span><span class="vl"></span></span><span class="eb"><span class="when">Gestern</span><b>Beobachtung: hohe Konzentration bei Sprachmaterial</b><small>„Arbeitete 40 Minuten selbstständig an den Sandpapierbuchstaben."</small></span></div>
+              <div class="ev"><span class="ln"><span class="pt" style="border-color: var(--st-sky-fg); background: var(--st-sky-bg);"></span><span class="vl"></span></span><span class="eb"><span class="when">Mo, 30. Juni</span><b>Wortarten-Symbole eingeführt</b><small>Sprache › Grammatik · gemeinsam mit Elif Y.</small></span></div>
+              <div class="ev"><span class="ln"><span class="pt" style="border-color: var(--st-rose-fg); background: var(--st-rose-bg);"></span></span><span class="eb"><span class="when">Fr, 27. Juni</span><b>Absenz: krank (2 Tage)</b><small>entschuldigt · gemeldet von Sandra Keller</small></span></div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="panel">
+              <h3>Lernstand</h3>
+              <div class="lstat" style="margin-top: 10px;">
+                <span class="lsb" style="background: var(--st-green-bg); color: var(--st-green-fg);"><small>Gemeistert</small><b>32</b></span>
+                <span class="lsb" style="background: var(--st-amber-bg); color: var(--st-amber-fg);"><small>In Übung</small><b>9</b></span>
+                <span class="lsb" style="background: var(--st-sky-bg); color: var(--st-sky-fg);"><small>Eingeführt</small><b>6</b></span>
+                <span class="lsb" style="background: var(--st-rose-bg); color: var(--st-rose-fg);"><small>Braucht mehr</small><b>2</b></span>
+              </div>
+            </div>
+            <div class="panel ppl">
+              <h3>Bezugspersonen</h3>
+              <div style="margin-top: 10px;">
+                <div class="att-row"><span class="ava">SK</span><span class="t"><b>Sandra Keller</b><small>Mutter · Erziehungsberechtigte · +41 79 512 33 10</small></span></div>
+                <div class="att-row"><span class="ava">PK</span><span class="t"><b>Peter Keller</b><small>Vater · Erziehungsberechtigter · Notfallkontakt</small></span></div>
+                <div class="att-row"><span class="ava">RK</span><span class="t"><b>Rosa Keller</b><small>Grossmutter · Abholberechtigt</small></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ FORTSCHRITTE ============ -->
+      <section class="page" id="page-fortschritte" data-screen-label="Fortschritte">
+        <div class="pagehead"><h2>Fortschritte</h2><p>Primaria A · 24 Kinder</p><button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><use href="#i-plus"></use></svg>Lektion erfassen</button></div>
+        <div class="kpis">
+          <span class="kpi"><small>Gemeistert-Quote</small><b>73%<em>+4%</em></b></span>
+          <span class="kpi"><small>Offene Lektionen</small><b>117</b></span>
+          <span class="kpi"><small>Braucht Aufmerksamkeit</small><b>4</b></span>
+          <span class="kpi"><small>Ø Tage bis gemeistert</small><b>12,4</b></span>
+          <span class="kpi"><small>Einführungen diese Woche</small><b>9</b></span>
+        </div>
+        <div class="tbl hm">
+          <table>
+            <thead><tr><th class="nm" style="width: 180px;">Schüler:innen</th><th>Mathematik</th><th>Sprache</th><th>Kosmische Erz.</th><th>Sinnesmaterial</th><th>Prakt. Leben</th><th>Σ</th></tr></thead>
+            <tbody>
+              <tr><td class="nm">Mia Keller</td><td class="hm-2">3/6</td><td class="hm-3">4/5</td><td class="hm-1">1/4</td><td class="hm-4">5/5</td><td class="hm-4">4/4</td><td class="hm-3">17/24</td></tr>
+              <tr><td class="nm">Luca Bernasconi</td><td class="hm-1">1/6</td><td class="hm-2">2/5</td><td class="hm-0">0/4</td><td class="hm-2">3/5</td><td class="hm-2">2/4</td><td class="hm-2">8/24</td></tr>
+              <tr><td class="nm">Elif Yilmaz</td><td class="hm-3">5/6</td><td class="hm-4">5/5</td><td class="hm-3">3/4</td><td class="hm-4">5/5</td><td class="hm-4">4/4</td><td class="hm-3">22/24</td></tr>
+              <tr><td class="nm">Jonas Widmer</td><td class="hm-0">0/6</td><td class="hm-1">1/5</td><td class="hm-0">0/4</td><td class="hm-2">2/5</td><td class="hm-1">1/4</td><td class="hm-1">4/24</td></tr>
+              <tr><td class="nm">Amara Diallo</td><td class="hm-3">4/6</td><td class="hm-2">3/5</td><td class="hm-2">2/4</td><td class="hm-3">4/5</td><td class="hm-3">3/4</td><td class="hm-3">16/24</td></tr>
+              <tr><td class="nm">Timo Brunner</td><td class="hm-1">2/6</td><td class="hm-0">0/5</td><td class="hm-1">1/4</td><td class="hm-e">—</td><td class="hm-2">2/4</td><td class="hm-1">5/19</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="leg">
+          <span>Gemeistert-Anteil:</span>
+          <span><i class="hm-0"></i>0%</span><span><i class="hm-1"></i>1–33%</span><span><i class="hm-2"></i>34–66%</span><span><i class="hm-3"></i>67–99%</span><span><i class="hm-4"></i>100%</span>
+        </div>
+      </section>
+
+      <!-- ============ AUFNAHME ============ -->
+      <section class="page" id="page-aufnahme" data-screen-label="Aufnahmeprozess">
+        <div class="pagehead"><h2>Aufnahmeprozess</h2><p>9 aktive Bewerbungen · 2 Erinnerungen heute</p><button class="btn" data-modal="modal-bewerbung"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><use href="#i-plus"></use></svg>Neue Bewerbung</button></div>
+        <div class="chiprow">
+          <span class="chip on click" data-goto="aufnahme">Kanban</span>
+          <span class="chip click" data-goto="erinnerungen">Erinnerungen · 4</span>
+          <span class="chip click" data-goto="absagen">Absagen · 3</span>
+          <span class="chip click" data-goto="vorlagen">E-Mail-Vorlagen</span>
+        </div>
+        <div class="kan">
+          <div class="kan-col">
+            <div class="ch"><span class="dot" style="background: var(--st-slate-fg);"></span>Interesse<span class="n">3</span></div>
+            <div class="kan-card"><div class="r1"><span class="ava">SR</span><b>Sofia Ricci</b><span class="d">4d</span></div><small>geb. 12.03.2021 · Familie Ricci</small><div class="tags"><span class="pill slate">US 1</span><span class="pill slate">OpenDay</span></div></div>
+            <div class="kan-card"><div class="r1"><span class="ava">BA</span><b>Ben Achermann</b><span class="d">11d</span></div><small>geb. 28.09.2020 · Familie Achermann</small><div class="tags"><span class="pill slate">US 1</span></div></div>
+            <div class="kan-card"><div class="r1"><span class="ava">NE</span><b>Noor El-Sayed</b><span class="d">2d</span></div><small>geb. 02.06.2021 · Familie El-Sayed</small><div class="tags"><span class="pill slate">US 1</span><span class="pill slate">Empfehlung</span></div></div>
+            <button class="kan-add">+ Hinzufügen</button>
+          </div>
+          <div class="kan-col">
+            <div class="ch"><span class="dot" style="background: var(--st-sky-fg);"></span>Bewerbung<span class="n">2</span></div>
+            <div class="kan-card"><div class="r1"><span class="ava">EG</span><b>Emil Graf</b><span class="d">8d</span></div><small>geb. 17.01.2020 · Familie Graf</small><div class="tags"><span class="pill sky">US 2</span></div></div>
+            <div class="kan-card"><div class="r1"><span class="ava">LP</span><b>Lina Portmann</b><span class="d">15d</span></div><small>geb. 05.11.2020 · Familie Portmann</small><div class="tags"><span class="pill sky">US 1</span><span class="pill amber">Unterlagen fehlen</span></div></div>
+            <button class="kan-add">+ Hinzufügen</button>
+          </div>
+          <div class="kan-col">
+            <div class="ch"><span class="dot" style="background: var(--st-amber-fg);"></span>Aufnahmegespräch<span class="n">1</span></div>
+            <div class="kan-card"><div class="r1"><span class="ava">YH</span><b>Yara Haddad</b><span class="d">6d</span></div><small>geb. 22.04.2019 · Familie Haddad</small><div class="tags"><span class="pill amber">US 3</span><span class="pill amber">Fr 10:30</span></div></div>
+            <button class="kan-add">+ Hinzufügen</button>
+          </div>
+          <div class="kan-col">
+            <div class="ch"><span class="dot" style="background: var(--st-green-fg);"></span>Aufgenommen<span class="n">3</span></div>
+            <div class="kan-card"><div class="r1"><span class="ava">MH</span><b>Matteo Huber</b><span class="d">3d</span></div><small>geb. 09.08.2020 · Familie Huber</small><div class="tags"><span class="pill green">US 2</span></div></div>
+            <div class="kan-card"><div class="r1"><span class="ava">AL</span><b>Alva Lindgren</b><span class="d">21d</span></div><small>geb. 30.05.2021 · Familie Lindgren</small><div class="tags"><span class="pill green">US 1</span><span class="pill green">Vertrag offen</span></div></div>
+            <div class="kan-card"><div class="r1"><span class="ava">LZ</span><b>Leo Zbinden</b><span class="d">1d</span></div><small>geb. 14.02.2020 · Familie Zbinden</small><div class="tags"><span class="pill green">US 2</span></div></div>
+            <button class="kan-add">+ Hinzufügen</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ ZEITERFASSUNG ============ -->
+      <section class="page" id="page-zeit" data-screen-label="Zeiterfassung">
+        <div class="pagehead"><h2>Zeiterfassung</h2><p>30. Juni – 4. Juli · KW 27</p><button class="btn ghost">Woche exportieren</button></div>
+        <div class="timer">
+          <span><span class="tlbl">Läuft seit 08:15</span><span class="tval">2:47:12</span></span>
+          <span class="cat"><i></i>Unterricht · Primaria A</span>
+          <button class="stop">■ Stoppen</button>
+        </div>
+        <div class="week">
+          <div class="day"><div class="dh"><b>Mo</b><small>30.6.</small><span class="sum">8:15</span></div>
+            <div class="te gr"><b>Unterricht</b><small>08:00 – 12:30 · 4:30</small></div>
+            <div class="te am"><b>Vorbereitung</b><small>13:30 – 15:45 · 2:15</small></div>
+            <div class="te sk"><b>Elterngespräch</b><small>16:00 – 17:30 · 1:30</small></div>
+            <button class="te-add">+ Eintrag</button>
+          </div>
+          <div class="day"><div class="dh"><b>Di</b><small>1.7.</small><span class="sum">7:40</span></div>
+            <div class="te gr"><b>Unterricht</b><small>08:00 – 12:30 · 4:30</small></div>
+            <div class="te ro"><b>Teamsitzung</b><small>13:30 – 15:00 · 1:30</small></div>
+            <div class="te am"><b>Vorbereitung</b><small>15:15 – 16:55 · 1:40</small></div>
+            <button class="te-add">+ Eintrag</button>
+          </div>
+          <div class="day today"><div class="dh"><b>Mi</b><small>heute</small><span class="sum">2:47</span></div>
+            <div class="te gr"><b>Unterricht ●</b><small>08:15 – läuft · 2:47</small></div>
+            <button class="te-add">+ Eintrag</button>
+          </div>
+          <div class="day"><div class="dh"><b>Do</b><small>3.7.</small><span class="sum">geplant</span></div>
+            <div class="te pl"><b>Unterricht</b><small>08:00 – 12:30</small></div>
+            <div class="te pl"><b>Weiterbildung</b><small>14:00 – 17:00</small></div>
+            <button class="te-add">+ Eintrag</button>
+          </div>
+          <div class="day"><div class="dh"><b>Fr</b><small>4.7.</small><span class="sum">geplant</span></div>
+            <div class="te pl"><b>Unterricht</b><small>08:00 – 12:30</small></div>
+            <button class="te-add">+ Eintrag</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ MITARBEITENDE ============ -->
+      <section class="page" id="page-mitarbeitende" data-screen-label="Mitarbeitende">
+        <div class="pagehead"><h2>Mitarbeitende</h2><p>14 aktiv · 2 Absenzen heute</p><button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><use href="#i-plus"></use></svg>Neue:r Mitarbeiter:in</button></div>
+        <div class="chiprow"><span class="chip on">Alle</span><span class="chip">Lehrkräfte</span><span class="chip">Administration</span><span class="chip">Betreuung</span><span class="chip">Inaktiv</span></div>
+        <div class="tbl">
+          <table>
+            <thead><tr><th>Person</th><th>Rolle</th><th>Team</th><th>Pensum</th><th>Zeitsaldo</th><th>Status heute</th></tr></thead>
+            <tbody>
+              <tr><td><span class="pcell"><span class="ava">AM</span><span><b>Anna Meier</b><small>anna@montessori-zuerich.ch</small></span></span></td><td><span class="pill acc">TEACHER</span></td><td>Primaria A</td><td><span style="display: inline-flex; align-items: center; gap: 9px;"><span class="bar" style="width: 80px;"><i style="width: 80%;"></i></span>80%</span></td><td><span class="mono">+12:30</span></td><td><span class="pill green">Anwesend</span></td></tr>
+              <tr><td><span class="pcell"><span class="ava">LB</span><span><b>Luis Baumann</b><small>luis@montessori-zuerich.ch</small></span></span></td><td><span class="pill amber">ADMIN</span></td><td>Verwaltung</td><td><span style="display: inline-flex; align-items: center; gap: 9px;"><span class="bar" style="width: 80px;"><i style="width: 100%;"></i></span>100%</span></td><td><span class="mono">−2:15</span></td><td><span class="pill green">Anwesend</span></td></tr>
+              <tr><td><span class="pcell"><span class="ava">CF</span><span><b>Carla Fontana</b><small>carla@montessori-zuerich.ch</small></span></span></td><td><span class="pill acc">TEACHER</span></td><td>Primaria B</td><td><span style="display: inline-flex; align-items: center; gap: 9px;"><span class="bar" style="width: 80px;"><i style="width: 60%;"></i></span>60%</span></td><td><span class="mono">+4:05</span></td><td><span class="pill amber">Weiterbildung</span></td></tr>
+              <tr><td><span class="pcell"><span class="ava">DK</span><span><b>David Kunz</b><small>david@montessori-zuerich.ch</small></span></span></td><td><span class="pill sky">ASSISTANT</span></td><td>Kinderhaus</td><td><span style="display: inline-flex; align-items: center; gap: 9px;"><span class="bar" style="width: 80px;"><i style="width: 50%;"></i></span>50%</span></td><td><span class="mono">+0:45</span></td><td><span class="pill rose">Krank gemeldet</span></td></tr>
+              <tr><td><span class="pcell"><span class="ava">EY</span><span><b>Esra Yildiz</b><small>esra@montessori-zuerich.ch</small></span></span></td><td><span class="pill acc">TEACHER</span></td><td>Sekundaria</td><td><span style="display: inline-flex; align-items: center; gap: 9px;"><span class="bar" style="width: 80px;"><i style="width: 90%;"></i></span>90%</span></td><td><span class="mono">+8:20</span></td><td><span class="pill green">Anwesend</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ LEHRPLAN ============ -->
+      <section class="page" id="page-lehrplan" data-screen-label="Lehrpläne">
+        <div class="pagehead"><h2>Lehrpläne</h2><p>Montessori 6–12 · 186 Lektionen</p><button class="btn ghost">Lehrplan importieren</button></div>
+        <div class="cu">
+          <div class="cu-l">
+            <button class="cu-area on"><span class="swd" style="background: var(--st-rose-fg);"></span>Mathematik<span class="n">52</span></button>
+            <button class="cu-area"><span class="swd" style="background: var(--acc);"></span>Sprache<span class="n">48</span></button>
+            <button class="cu-area"><span class="swd" style="background: var(--st-amber-fg);"></span>Kosmische Erziehung<span class="n">36</span></button>
+            <button class="cu-area"><span class="swd" style="background: var(--st-sky-fg);"></span>Sinnesmaterial<span class="n">28</span></button>
+            <button class="cu-area"><span class="swd" style="background: var(--st-green-fg);"></span>Praktisches Leben<span class="n">22</span></button>
+          </div>
+          <div class="panel" style="padding: 12px;">
+            <div class="cu-sec">Dezimalsystem</div>
+            <div class="cu-it"><b>Goldenes Perlenmaterial — Einführung</b><span class="pill green">18 gemeistert</span></div>
+            <div class="cu-it on"><b>Goldene Perlen — Addition</b><span class="pill amber">9 in Übung</span></div>
+            <div class="cu-it"><b>Goldene Perlen — Subtraktion</b><span class="pill sky">5 eingeführt</span></div>
+            <div class="cu-it"><b>Markenspiel</b><span class="pill slate">Planung</span></div>
+            <div class="cu-sec">Streifenbretter</div>
+            <div class="cu-it"><b>Additionsstreifenbrett</b><span class="pill green">21 gemeistert</span></div>
+            <div class="cu-it"><b>Subtraktionsstreifenbrett</b><span class="pill amber">7 in Übung</span></div>
+            <div class="cu-it"><b>Kleines Multiplikationsbrett</b><span class="pill rose">2 brauchen mehr</span></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="panel">
+              <h3>Goldene Perlen — Addition</h3>
+              <p class="hint">Mathematik › Dezimalsystem · Alter 6–8 · Voraussetzung: Einführung Perlenmaterial</p>
+              <div class="cu-strip">
+                <span class="cu-st" style="background: var(--st-slate-bg); color: var(--st-slate-fg);">4 Planung</span>
+                <span class="cu-st" style="background: var(--st-sky-bg); color: var(--st-sky-fg);">3 Eingeführt</span>
+                <span class="cu-st" style="background: var(--st-amber-bg); color: var(--st-amber-fg);">9 Geübt</span>
+                <span class="cu-st" style="background: var(--st-green-bg); color: var(--st-green-fg);">18 Gemeistert</span>
+                <span class="cu-st" style="background: var(--st-rose-bg); color: var(--st-rose-fg);">2 Braucht mehr</span>
+              </div>
+            </div>
+            <div class="panel">
+              <h3>Braucht mehr Übung</h3>
+              <div style="margin-top: 10px;">
+                <div class="att-row"><span class="ava">MK</span><span class="t"><b>Mia Keller</b><small>zuletzt geübt vor 14 Tagen</small></span><span class="pill rose">14 Tage</span></div>
+                <div class="att-row"><span class="ava">JW</span><span class="t"><b>Jonas Widmer</b><small>zuletzt geübt vor 21 Tagen</small></span><span class="pill rose">21 Tage</span></div>
+              </div>
+            </div>
+            <div class="panel">
+              <h3>Material &amp; Notizen</h3>
+              <p style="font-size: 13px; line-height: 1.6; color: var(--soft); margin-top: 6px;">Goldenes Perlenmaterial, grosse Zahlenkarten, Arbeitsteppich. Statische Addition zuerst, dann dynamisch mit Wechseln. Als Gruppenlektion mit 2–3 Kindern einführen.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ ROLLEN ============ -->
+      <section class="page" id="page-rollen" data-screen-label="Rollen & Berechtigungen">
+        <div class="pagehead"><h2>Rollen &amp; Berechtigungen</h2><p>5 Rollen · 14 Mitarbeitende zugewiesen</p><button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><use href="#i-plus"></use></svg>Neue Rolle</button></div>
+        <div class="tbl">
+          <table>
+            <thead><tr><th>Rolle</th><th>Beschreibung</th><th>Mitglieder</th><th>Berechtigungen</th></tr></thead>
+            <tbody>
+              <tr><td><span class="pill acc">ADMIN</span></td><td>Voller Zugriff auf alle Bereiche der Organisation</td><td class="mono">2</td><td>Alle</td></tr>
+              <tr><td><span class="pill green">TEACHER</span></td><td>Fortschritte, Beobachtungen, eigene Klassen</td><td class="mono">8</td><td>Schüler:innen · Fortschritte · Zeiterfassung</td></tr>
+              <tr><td><span class="pill sky">ASSISTANT</span></td><td>Lesezugriff auf Klassen, eigene Zeiterfassung</td><td class="mono">3</td><td>Zeiterfassung · Schüler:innen (lesen)</td></tr>
+              <tr><td><span class="pill amber">OFFICE</span></td><td>Aufnahmeprozess, Bezugspersonen, Dokumente</td><td class="mono">1</td><td>Aufnahme · Familien · Dokumente</td></tr>
+              <tr><td><span class="pill slate">READONLY</span></td><td>Nur-Lese-Zugriff für Trägerschaft/Vorstand</td><td class="mono">0</td><td>Dashboard (lesen)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ ZEITAUSWERTUNG ============ -->
+      <section class="page" id="page-zeitauswertung" data-screen-label="Zeitauswertung">
+        <div class="pagehead"><h2>Zeitauswertung</h2><p>Juni 2026 · 14 Mitarbeitende</p><button class="btn ghost">Monat exportieren</button></div>
+        <div class="kpis">
+          <span class="kpi"><small>Sollzeit Σ</small><b>1'848 h</b></span>
+          <span class="kpi"><small>Istzeit Σ</small><b>1'872 h<em>+24 h</em></b></span>
+          <span class="kpi"><small>Absenzen</small><b>96 h</b></span>
+          <span class="kpi"><small>Offene Einträge</small><b>3</b></span>
+        </div>
+        <div class="tbl">
+          <table>
+            <thead><tr><th>Mitarbeiter:in</th><th>Pensum</th><th>Soll</th><th>Ist</th><th>Saldo</th><th>Absenzen</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><span class="pcell"><span class="ava">AM</span><span><b>Anna Meier</b><small>Klassenleitung Primaria A</small></span></span></td><td class="mono">100%</td><td class="mono">168.0 h</td><td class="mono">172.5 h</td><td class="mono">+4.5 h</td><td class="mono">8 h</td><td><span class="pill green">Vollständig</span></td></tr>
+              <tr><td><span class="pcell"><span class="ava">MS</span><span><b>Marc Steiner</b><small>Klassenleitung Primaria B</small></span></span></td><td class="mono">80%</td><td class="mono">134.4 h</td><td class="mono">130.2 h</td><td class="mono">−4.2 h</td><td class="mono">16 h</td><td><span class="pill amber">1 offener Tag</span></td></tr>
+              <tr><td><span class="pcell"><span class="ava">NO</span><span><b>Nora Odermatt</b><small>Leitung Kinderhaus</small></span></span></td><td class="mono">100%</td><td class="mono">168.0 h</td><td class="mono">171.0 h</td><td class="mono">+3.0 h</td><td class="mono">—</td><td><span class="pill green">Vollständig</span></td></tr>
+              <tr><td><span class="pcell"><span class="ava">LF</span><span><b>Lea Frei</b><small>Assistenz Primaria</small></span></span></td><td class="mono">60%</td><td class="mono">100.8 h</td><td class="mono">100.8 h</td><td class="mono">±0.0 h</td><td class="mono">—</td><td><span class="pill green">Vollständig</span></td></tr>
+              <tr><td><span class="pcell"><span class="ava">DK</span><span><b>David Kunz</b><small>Sekundaria</small></span></span></td><td class="mono">50%</td><td class="mono">84.0 h</td><td class="mono">79.5 h</td><td class="mono">−4.5 h</td><td class="mono">24 h</td><td><span class="pill sky">Weiterbildung</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="font-size: 12.5px; color: var(--soft); margin-top: 12px;">5 von 14 Mitarbeitenden — Saldo per 30. Juni</p>
+      </section>
+
+      <!-- ============ BEZUGSPERSONEN ============ -->
+      <section class="page" id="page-bezugspersonen" data-screen-label="Bezugspersonen">
+        <div class="pagehead"><h2>Bezugspersonen</h2><p>142 erfasst · 86 Familien</p><button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><use href="#i-plus"></use></svg>Neue Bezugsperson</button></div>
+        <div class="chiprow">
+          <span class="chip on">Alle</span><span class="chip">Erziehungsberechtigte</span><span class="chip">Notfallkontakte</span><span class="chip">Abholberechtigt</span>
+        </div>
+        <div class="tbl">
+          <table>
+            <thead><tr><th>Name</th><th>Beziehung</th><th>Kinder</th><th>Telefon</th><th>Rechte</th></tr></thead>
+            <tbody>
+              <tr><td><span class="pcell"><span class="ava">SK</span><span><b>Sandra Keller</b><small>sandra.keller@bluewin.ch</small></span></span></td><td>Mutter</td><td>Mia Keller</td><td class="mono">+41 79 512 33 10</td><td><span class="pill green">Erziehungsberechtigt</span></td></tr>
+              <tr><td><span class="pcell"><span class="ava">PK</span><span><b>Peter Keller</b><small>p.keller@gmx.ch</small></span></span></td><td>Vater</td><td>Mia Keller</td><td class="mono">+41 78 204 91 55</td><td><span class="pill sky">Notfallkontakt</span></td></tr>
+              <tr><td><span class="pcell"><span class="ava">PB</span><span><b>Paolo Bernasconi</b><small>paolo.bernasconi@sunrise.ch</small></span></span></td><td>Vater</td><td>Luca Bernasconi</td><td class="mono">+41 76 331 08 42</td><td><span class="pill green">Erziehungsberechtigt</span></td></tr>
+              <tr><td><span class="pcell"><span class="ava">DY</span><span><b>Derya Yilmaz</b><small>derya.yilmaz@bluewin.ch</small></span></span></td><td>Mutter</td><td>Elif Yilmaz</td><td class="mono">+41 79 655 12 78</td><td><span class="pill green">Erziehungsberechtigt</span></td></tr>
+              <tr><td><span class="pcell"><span class="ava">RK</span><span><b>Rosa Keller</b><small>kein E-Mail hinterlegt</small></span></span></td><td>Grossmutter</td><td>Mia Keller</td><td class="mono">+41 44 810 22 63</td><td><span class="pill amber">Abholberechtigt</span></td></tr>
+              <tr><td><span class="pcell"><span class="ava">FD</span><span><b>Fatou Diallo</b><small>fatou.diallo@gmail.com</small></span></span></td><td>Mutter</td><td>Amara Diallo</td><td class="mono">+41 77 968 30 14</td><td><span class="pill green">Erziehungsberechtigt</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="font-size: 12.5px; color: var(--soft); margin-top: 12px;">6 von 142 Bezugspersonen</p>
+      </section>
+
+      <!-- ============ PROJEKTE ============ -->
+      <section class="page" id="page-projekte" data-screen-label="Projekte">
+        <div class="pagehead"><h2>Projekte</h2><p>4 aktiv · 1 pausiert · 1 abgeschlossen</p><button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><use href="#i-plus"></use></svg>Neues Projekt</button></div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
+          <div class="panel">
+            <h3>Sommerfest 2026<span class="pill green" style="margin-left: auto;">Aktiv</span></h3>
+            <p class="hint">Planung und Organisation des Schulfests am 22. August.</p>
+            <div class="bar" style="margin-bottom: 10px;"><i style="width: 64%;"></i></div>
+            <p style="font-size: 12px; color: var(--soft);">14 von 22 Aufgaben erledigt</p>
+            <div style="display: flex; gap: 6px; margin-top: 12px;"><span class="ava" style="width: 26px; height: 26px; font-size: 10px;">AM</span><span class="ava" style="width: 26px; height: 26px; font-size: 10px;">LF</span><span class="ava" style="width: 26px; height: 26px; font-size: 10px;">MS</span><span class="ava" style="width: 26px; height: 26px; font-size: 10px;">+3</span></div>
+          </div>
+          <div class="panel">
+            <h3>Umbau Gartenatelier<span class="pill green" style="margin-left: auto;">Aktiv</span></h3>
+            <p class="hint">Neues Aussenatelier für das Kinderhaus bis Herbst.</p>
+            <div class="bar" style="margin-bottom: 10px;"><i style="width: 33%;"></i></div>
+            <p style="font-size: 12px; color: var(--soft);">6 von 18 Aufgaben erledigt</p>
+            <div style="display: flex; gap: 6px; margin-top: 12px;"><span class="ava" style="width: 26px; height: 26px; font-size: 10px;">NO</span><span class="ava" style="width: 26px; height: 26px; font-size: 10px;">DK</span></div>
+          </div>
+          <div class="panel">
+            <h3>Qualitätsentwicklung 26/27<span class="pill green" style="margin-left: auto;">Aktiv</span></h3>
+            <p class="hint">Hospitationen, Lernberichte und Elternfeedback.</p>
+            <div class="bar" style="margin-bottom: 10px;"><i style="width: 19%;"></i></div>
+            <p style="font-size: 12px; color: var(--soft);">3 von 16 Aufgaben erledigt</p>
+            <div style="display: flex; gap: 6px; margin-top: 12px;"><span class="ava" style="width: 26px; height: 26px; font-size: 10px;">AM</span><span class="ava" style="width: 26px; height: 26px; font-size: 10px;">NO</span><span class="ava" style="width: 26px; height: 26px; font-size: 10px;">MS</span></div>
+          </div>
+          <div class="panel">
+            <h3>Zertifizierung Montessori CH<span class="pill green" style="margin-left: auto;">Aktiv</span></h3>
+            <p class="hint">Rezertifizierung durch Montessori Schweiz im Frühjahr 2027.</p>
+            <div class="bar" style="margin-bottom: 10px;"><i style="width: 37%;"></i></div>
+            <p style="font-size: 12px; color: var(--soft);">11 von 30 Aufgaben erledigt</p>
+            <div style="display: flex; gap: 6px; margin-top: 12px;"><span class="ava" style="width: 26px; height: 26px; font-size: 10px;">AM</span><span class="ava" style="width: 26px; height: 26px; font-size: 10px;">+4</span></div>
+          </div>
+          <div class="panel">
+            <h3>Website-Relaunch<span class="pill amber" style="margin-left: auto;">Pausiert</span></h3>
+            <p class="hint">Neuer Webauftritt — wartet auf Budgetfreigabe.</p>
+            <div class="bar" style="margin-bottom: 10px;"><i style="width: 75%;"></i></div>
+            <p style="font-size: 12px; color: var(--soft);">9 von 12 Aufgaben erledigt</p>
+            <div style="display: flex; gap: 6px; margin-top: 12px;"><span class="ava" style="width: 26px; height: 26px; font-size: 10px;">MS</span></div>
+          </div>
+          <div class="panel">
+            <h3>Elternabend-Reihe<span class="pill slate" style="margin-left: auto;">Abgeschlossen</span></h3>
+            <p class="hint">Drei Themenabende im Frühjahrssemester.</p>
+            <div class="bar" style="margin-bottom: 10px;"><i style="width: 100%;"></i></div>
+            <p style="font-size: 12px; color: var(--soft);">8 von 8 Aufgaben erledigt</p>
+            <div style="display: flex; gap: 6px; margin-top: 12px;"><span class="ava" style="width: 26px; height: 26px; font-size: 10px;">AM</span><span class="ava" style="width: 26px; height: 26px; font-size: 10px;">LF</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ MEINE AUFGABEN ============ -->
+      <section class="page" id="page-aufgaben" data-screen-label="Meine Aufgaben">
+        <div class="pagehead"><h2>Meine Aufgaben</h2><p>6 offen · 2 fällig diese Woche</p><button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><use href="#i-plus"></use></svg>Neue Aufgabe</button></div>
+        <div class="chiprow">
+          <span class="chip on">Offen</span><span class="chip">In Arbeit</span><span class="chip">Blockiert</span><span class="chip">Erledigt</span>
+        </div>
+        <div class="tbl">
+          <table>
+            <thead><tr><th>Aufgabe</th><th>Projekt</th><th>Priorität</th><th>Fällig</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><b>Festwirtschaft: Helferliste finalisieren</b></td><td>Sommerfest 2026</td><td><span class="pill rose">Dringend</span></td><td class="mono">Heute</td><td><span class="pill sky">In Arbeit</span></td></tr>
+              <tr><td><b>Offerte Zeltverleih einholen</b></td><td>Sommerfest 2026</td><td><span class="pill amber">Hoch</span></td><td class="mono">4. Juli</td><td><span class="pill slate">Offen</span></td></tr>
+              <tr><td><b>Protokoll Teamsitzung Juni finalisieren</b></td><td><span style="color: var(--soft);">aus Protokoll</span></td><td><span class="pill amber">Hoch</span></td><td class="mono">3. Juli</td><td><span class="pill sky">In Arbeit</span></td></tr>
+              <tr><td><b>Materialliste Gartenatelier prüfen</b></td><td>Umbau Gartenatelier</td><td><span class="pill sky">Mittel</span></td><td class="mono">8. Juli</td><td><span class="pill slate">Offen</span></td></tr>
+              <tr><td><b>Elterninfo Schulbeginn versenden</b></td><td>Qualitätsentwicklung 26/27</td><td><span class="pill sky">Mittel</span></td><td class="mono">11. Aug.</td><td><span class="pill rose">Blockiert</span></td></tr>
+              <tr><td><b>Lernberichte Q4 gegenlesen</b></td><td><span style="color: var(--soft);">—</span></td><td><span class="pill slate">Niedrig</span></td><td class="mono">15. Juli</td><td><span class="pill slate">Offen</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ PROTOKOLLE ============ -->
+      <section class="page" id="page-protokolle" data-screen-label="Protokolle">
+        <div class="pagehead"><h2>Protokolle</h2><p>12 Sitzungen im Schuljahr 25/26</p><button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><use href="#i-plus"></use></svg>Neues Protokoll</button></div>
+        <div class="tbl">
+          <table>
+            <thead><tr><th>Titel</th><th>Sitzung</th><th>Projekt</th><th>Teilnehmende</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><b>Teamsitzung Juli</b></td><td class="mono">Do, 3. Juli 2026</td><td><span style="color: var(--soft);">—</span></td><td class="mono">8</td><td><span class="pill slate">Entwurf</span></td></tr>
+              <tr><td><b>Teamsitzung Juni</b></td><td class="mono">Fr, 26. Juni 2026</td><td><span style="color: var(--soft);">—</span></td><td class="mono">9</td><td><span class="pill green">Finalisiert</span></td></tr>
+              <tr><td><b>Kick-off Sommerfest</b></td><td class="mono">Do, 18. Juni 2026</td><td>Sommerfest 2026</td><td class="mono">5</td><td><span class="pill green">Finalisiert</span></td></tr>
+              <tr><td><b>Baubesprechung Gartenatelier</b></td><td class="mono">Fr, 12. Juni 2026</td><td>Umbau Gartenatelier</td><td class="mono">4</td><td><span class="pill green">Finalisiert</span></td></tr>
+              <tr><td><b>Pädagogische Konferenz Q4</b></td><td class="mono">Fr, 5. Juni 2026</td><td>Qualitätsentwicklung 26/27</td><td class="mono">11</td><td><span class="pill green">Finalisiert</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="font-size: 12.5px; color: var(--soft); margin-top: 12px;">Beschlüsse und offene Punkte werden automatisch als Aufgaben übernommen</p>
+      </section>
+
+      <!-- ============ TEAMS ============ -->
+      <section class="page" id="page-teams" data-screen-label="Teams">
+        <div class="pagehead"><h2>Teams</h2><p>4 Teams · 14 Mitarbeitende</p><button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><use href="#i-plus"></use></svg>Neues Team</button></div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;">
+          <div class="panel">
+            <h3>Primaria-Team<span class="n">6</span></h3>
+            <p class="hint">Teamleitung: Anna Meier</p>
+            <div class="att-row"><span class="ava">AM</span><span class="t"><b>Anna Meier</b><small>Klassenleitung Primaria A · Teamleitung</small></span></div>
+            <div class="att-row"><span class="ava">MS</span><span class="t"><b>Marc Steiner</b><small>Klassenleitung Primaria B</small></span></div>
+            <div class="att-row"><span class="ava">LF</span><span class="t"><b>Lea Frei</b><small>Assistenz · 60%</small></span></div>
+            <p style="font-size: 12px; color: var(--soft); margin-top: 4px;">+3 weitere Mitglieder</p>
+          </div>
+          <div class="panel">
+            <h3>Kinderhaus-Team<span class="n">4</span></h3>
+            <p class="hint">Teamleitung: Nora Odermatt</p>
+            <div class="att-row"><span class="ava">NO</span><span class="t"><b>Nora Odermatt</b><small>Leitung Kinderhaus · Teamleitung</small></span></div>
+            <div class="att-row"><span class="ava">SB</span><span class="t"><b>Sofia Brander</b><small>Pädagogin 3–6</small></span></div>
+            <div class="att-row"><span class="ava">JM</span><span class="t"><b>Julia Marti</b><small>Assistenz · 80%</small></span></div>
+            <p style="font-size: 12px; color: var(--soft); margin-top: 4px;">+1 weiteres Mitglied</p>
+          </div>
+          <div class="panel">
+            <h3>Sekundaria-Team<span class="n">2</span></h3>
+            <p class="hint">Teamleitung: David Kunz</p>
+            <div class="att-row"><span class="ava">DK</span><span class="t"><b>David Kunz</b><small>Lehrperson Sekundaria · Teamleitung</small></span></div>
+            <div class="att-row"><span class="ava">RH</span><span class="t"><b>Rahel Huber</b><small>Lehrperson Sekundaria · 70%</small></span></div>
+          </div>
+          <div class="panel">
+            <h3>Administration<span class="n">2</span></h3>
+            <p class="hint">Teamleitung: Claudia Vogel</p>
+            <div class="att-row"><span class="ava">CV</span><span class="t"><b>Claudia Vogel</b><small>Schulleitung · Teamleitung</small></span></div>
+            <div class="att-row"><span class="ava">TW</span><span class="t"><b>Thomas Weber</b><small>Sekretariat · 50%</small></span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SCHULKLASSEN ============ -->
+      <section class="page" id="page-klassen" data-screen-label="Schulklassen">
+        <div class="pagehead"><h2>Schulklassen</h2><p>4 Klassen · Schuljahr 2026/27</p><button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><use href="#i-plus"></use></svg>Neue Klasse</button></div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;">
+          <div class="panel">
+            <h3>Kinderhaus<span class="pill acc" style="margin-left: auto;">3–6 J.</span></h3>
+            <p class="hint">Nora Odermatt · Sofia Brander · Julia Marti</p>
+            <div class="bar" style="margin-bottom: 8px;"><i style="width: 90%;"></i></div>
+            <p style="font-size: 12px; color: var(--soft);">18 von 20 Plätzen belegt</p>
+          </div>
+          <div class="panel">
+            <h3>Primaria A<span class="pill acc" style="margin-left: auto;">6–9 J.</span></h3>
+            <p class="hint">Anna Meier · Lea Frei</p>
+            <div class="bar" style="margin-bottom: 8px;"><i style="width: 100%;"></i></div>
+            <p style="font-size: 12px; color: var(--soft);">24 von 24 Plätzen belegt — voll</p>
+          </div>
+          <div class="panel">
+            <h3>Primaria B<span class="pill acc" style="margin-left: auto;">9–12 J.</span></h3>
+            <p class="hint">Marc Steiner</p>
+            <div class="bar" style="margin-bottom: 8px;"><i style="width: 92%;"></i></div>
+            <p style="font-size: 12px; color: var(--soft);">22 von 24 Plätzen belegt</p>
+          </div>
+          <div class="panel">
+            <h3>Sekundaria<span class="pill acc" style="margin-left: auto;">12–15 J.</span></h3>
+            <p class="hint">David Kunz · Rahel Huber</p>
+            <div class="bar" style="margin-bottom: 8px;"><i style="width: 92%;"></i></div>
+            <p style="font-size: 12px; color: var(--soft);">22 von 24 Plätzen belegt</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ STUFEN ============ -->
+      <section class="page" id="page-stufen" data-screen-label="Stufen">
+        <div class="pagehead"><h2>Stufen</h2><p>4 Stufen · Vorlage Montessori Schweiz</p><button class="btn ghost">Reihenfolge ändern</button></div>
+        <div class="tbl">
+          <table>
+            <thead><tr><th>Stufe</th><th>Kürzel</th><th>Altersbereich</th><th>Klassen</th><th>Schüler:innen</th></tr></thead>
+            <tbody>
+              <tr><td><b>Kinderhaus</b></td><td class="mono">KH</td><td>3–6 Jahre</td><td class="mono">1</td><td class="mono">18</td></tr>
+              <tr><td><b>Unterstufe</b></td><td class="mono">US 1–3</td><td>6–9 Jahre</td><td class="mono">1</td><td class="mono">24</td></tr>
+              <tr><td><b>Mittelstufe</b></td><td class="mono">MS 1–3</td><td>9–12 Jahre</td><td class="mono">1</td><td class="mono">22</td></tr>
+              <tr><td><b>Oberstufe</b></td><td class="mono">OS 1–3</td><td>12–15 Jahre</td><td class="mono">1</td><td class="mono">22</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="font-size: 12.5px; color: var(--soft); margin-top: 12px;">Stufen steuern Lehrplan-Zuordnung und Heatmap-Gruppierung</p>
+      </section>
+
+      <!-- ============ ABSENZ-KATEGORIEN ============ -->
+      <section class="page" id="page-absenzen" data-screen-label="Absenz-Kategorien">
+        <div class="pagehead"><h2>Absenz-Kategorien</h2><p>6 Kategorien für Mitarbeitende</p><button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><use href="#i-plus"></use></svg>Neue Kategorie</button></div>
+        <div class="tbl">
+          <table>
+            <thead><tr><th>Kategorie</th><th>Kürzel</th><th>Bezahlt</th><th>Ferienabzug</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><span style="display: inline-flex; align-items: center; gap: 9px;"><i style="width: 9px; height: 9px; border-radius: 999px; background: var(--st-green-fg); display: inline-block;"></i><b>Ferien</b></span></td><td class="mono">FE</td><td>Ja</td><td>Ja</td><td><span class="pill green">Aktiv</span></td></tr>
+              <tr><td><span style="display: inline-flex; align-items: center; gap: 9px;"><i style="width: 9px; height: 9px; border-radius: 999px; background: var(--st-rose-fg); display: inline-block;"></i><b>Krankheit</b></span></td><td class="mono">KR</td><td>Ja</td><td>Nein</td><td><span class="pill green">Aktiv</span></td></tr>
+              <tr><td><span style="display: inline-flex; align-items: center; gap: 9px;"><i style="width: 9px; height: 9px; border-radius: 999px; background: var(--st-amber-fg); display: inline-block;"></i><b>Unfall</b></span></td><td class="mono">UN</td><td>Ja</td><td>Nein</td><td><span class="pill green">Aktiv</span></td></tr>
+              <tr><td><span style="display: inline-flex; align-items: center; gap: 9px;"><i style="width: 9px; height: 9px; border-radius: 999px; background: var(--st-sky-fg); display: inline-block;"></i><b>Weiterbildung</b></span></td><td class="mono">WB</td><td>Ja</td><td>Nein</td><td><span class="pill green">Aktiv</span></td></tr>
+              <tr><td><span style="display: inline-flex; align-items: center; gap: 9px;"><i style="width: 9px; height: 9px; border-radius: 999px; background: var(--st-slate-fg); display: inline-block;"></i><b>Unbezahlter Urlaub</b></span></td><td class="mono">UU</td><td>Nein</td><td>Nein</td><td><span class="pill green">Aktiv</span></td></tr>
+              <tr><td><span style="display: inline-flex; align-items: center; gap: 9px;"><i style="width: 9px; height: 9px; border-radius: 999px; background: var(--acc); display: inline-block;"></i><b>Militär / Zivildienst</b></span></td><td class="mono">MI</td><td>Ja</td><td>Nein</td><td><span class="pill slate">Inaktiv</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ PROJEKT-DETAIL ============ -->
+      <section class="page" id="page-projektdetail" data-screen-label="Projekt-Detail">
+        <div class="pagehead"><div><h2 style="display: flex; align-items: center; gap: 12px;">Sommerfest 2026 <span class="pill green">Aktiv</span></h2><p style="padding: 4px 0 0;">14 von 22 Aufgaben erledigt · 6 Mitglieder · Fest am 22. August</p></div><button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><use href="#i-plus"></use></svg>Neue Aufgabe</button></div>
+        <div class="chiprow">
+          <span class="chip click" data-goto="projekte">← Alle Projekte</span>
+          <span class="chip on">Aufgaben</span><span class="chip">Mitglieder</span><span class="chip">Protokolle</span>
+        </div>
+        <div class="kan">
+          <div class="kan-col">
+            <div class="ch"><span class="dot" style="background: var(--st-slate-fg);"></span>Offen<span class="n">3</span></div>
+            <div class="kan-card"><b>Tombola-Preise sammeln</b><small>Anfragen an lokale Geschäfte</small><span class="tags"><span class="pill sky">Mittel</span><span class="pill slate">10. Juli</span></span></div>
+            <div class="kan-card"><b>Sponsoring Bäckerei anfragen</b><small>Brot und Zopf für Festwirtschaft</small><span class="tags"><span class="pill amber">Hoch</span><span class="pill slate">8. Juli</span></span></div>
+            <div class="kan-card"><b>Bühnenprogramm festlegen</b><small>Beiträge der Klassen koordinieren</small><span class="tags"><span class="pill sky">Mittel</span></span></div>
+            <button class="kan-add">+ Aufgabe</button>
+          </div>
+          <div class="kan-col">
+            <div class="ch"><span class="dot" style="background: var(--st-sky-fg);"></span>In Arbeit<span class="n">2</span></div>
+            <div class="kan-card"><div class="r1"><span class="ava">AM</span><b>Helferliste finalisieren</b></div><small>Festwirtschaft · noch 4 Schichten offen</small><span class="tags"><span class="pill rose">Dringend</span><span class="pill amber">Heute</span></span></div>
+            <div class="kan-card"><div class="r1"><span class="ava">LF</span><b>Offerte Zeltverleih einholen</b></div><small>Zwei Anbieter angefragt</small><span class="tags"><span class="pill amber">Hoch</span><span class="pill slate">4. Juli</span></span></div>
+          </div>
+          <div class="kan-col">
+            <div class="ch"><span class="dot" style="background: var(--st-rose-fg);"></span>Blockiert<span class="n">1</span></div>
+            <div class="kan-card"><b>Budget-Freigabe Vorstand</b><small>Wartet auf Sitzung vom 10. Juli</small><span class="tags"><span class="pill amber">Hoch</span><span class="pill rose">Blockiert</span></span></div>
+          </div>
+          <div class="kan-col">
+            <div class="ch"><span class="dot" style="background: var(--st-green-fg);"></span>Erledigt<span class="n">14</span></div>
+            <div class="kan-card" style="opacity: 0.65;"><b>Datum &amp; Ort fixiert</b><small>Sa, 22. August · Schulgelände</small><span class="tags"><span class="pill green">Erledigt</span></span></div>
+            <div class="kan-card" style="opacity: 0.65;"><b>Flyer-Entwurf</b><small>Von Elterngruppe gestaltet</small><span class="tags"><span class="pill green">Erledigt</span></span></div>
+            <p style="font-size: 12px; color: var(--soft); text-align: center; padding: 4px 0;">+12 weitere erledigt</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ PROTOKOLL-DETAIL ============ -->
+      <section class="page" id="page-protokolldetail" data-screen-label="Protokoll-Detail">
+        <div class="pagehead"><div><h2 style="display: flex; align-items: center; gap: 12px;">Teamsitzung Juni <span class="pill green">Finalisiert</span></h2><p style="padding: 4px 0 0;">Fr, 26. Juni 2026 · 14:00–16:00 · 9 Teilnehmende</p></div><span style="margin-left: auto; display: flex; gap: 9px;"><button class="btn ghost">PDF exportieren</button><button class="btn ghost click" data-goto="protokolle">← Alle Protokolle</button></span></div>
+        <div class="cols2">
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="panel">
+              <h3>Traktanden</h3>
+              <div style="margin-top: 8px;">
+                <div class="kv"><small>1</small><span style="flex: 1; font-weight: 550;">Sommerfest — Stand der Planung</span><span class="pill sky">Information</span></div>
+                <div class="kv"><small>2</small><span style="flex: 1; font-weight: 550;">Budget Gartenatelier</span><span class="pill green">Entscheid</span></div>
+                <div class="kv"><small>3</small><span style="flex: 1; font-weight: 550;">Neue Aufnahmen August</span><span class="pill sky">Information</span></div>
+                <div class="kv"><small>4</small><span style="flex: 1; font-weight: 550;">Pausenaufsicht — Regelung</span><span class="pill amber">Diskussion</span></div>
+              </div>
+            </div>
+            <div class="panel">
+              <h3>Beschlüsse<span class="n">2</span></h3>
+              <div style="margin-top: 8px;">
+                <div class="kv"><span style="flex: 1;"><b style="display: block; text-align: left;">Budget Gartenatelier: CHF 18'000 freigegeben</b><small>Verantwortlich: Claudia Vogel</small></span></div>
+                <div class="kv"><span style="flex: 1;"><b style="display: block; text-align: left;">Pausenaufsicht: Rotationsplan ab August</b><small>Verantwortlich: Anna Meier · fällig 10. Aug.</small></span><span class="pill amber">→ Aufgabe</span></div>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="panel ppl">
+              <h3>Teilnehmende<span class="n">9</span></h3>
+              <div style="margin-top: 8px;">
+                <div class="att-row"><span class="ava">CV</span><span class="t"><b>Claudia Vogel</b><small>Schulleitung · Sitzungsleitung</small></span></div>
+                <div class="att-row"><span class="ava">AM</span><span class="t"><b>Anna Meier</b><small>Primaria A · Protokoll</small></span></div>
+                <div class="att-row"><span class="ava">NO</span><span class="t"><b>Nora Odermatt</b><small>Kinderhaus</small></span></div>
+              </div>
+              <p style="font-size: 12px; color: var(--soft); margin-top: 4px;">+6 weitere Teilnehmende</p>
+            </div>
+            <div class="panel">
+              <h3>Offene Punkte<span class="n">2</span></h3>
+              <div style="margin-top: 8px;">
+                <div class="kv"><span style="flex: 1; font-weight: 550;">Elternmitwirkung — Konzept</span><span class="pill acc">Nächste Sitzung</span></div>
+                <div class="kv"><span style="flex: 1; font-weight: 550;">Materialbudget Q1</span><span class="pill slate">Offen</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ MITARBEITER-PROFIL ============ -->
+      <section class="page" id="page-maprofil" data-screen-label="Mitarbeiter-Profil">
+        <div class="pf-band">
+          <div class="r">
+            <span class="bigava">AM</span>
+            <div><h2>Anna Meier</h2>
+              <div class="meta"><span class="mc">TEACHER · Primaria A</span><span class="mc">80% Pensum</span><span class="mc">Eintritt Aug. 2019</span></div>
+            </div>
+            <span class="act"><button class="ab">Absenz erfassen</button><button class="ab pri">Bearbeiten</button></span>
+          </div>
+          <div class="pf-tabs"><span class="on">Übersicht</span><span>Vertrag</span><span>Absenzen</span><span>Zeiterfassung</span><span>Notizen</span><span>Dokumente</span></div>
+        </div>
+        <div class="cols2">
+          <div class="panel">
+            <h3>Vertrag &amp; Pensum</h3>
+            <div style="margin-top: 8px;">
+              <div class="kv"><small>Funktion</small><b>Klassenleitung Primaria A</b></div>
+              <div class="kv"><small>Pensum</small><b><span style="display: inline-flex; align-items: center; gap: 9px;"><span class="bar" style="width: 80px;"><i style="width: 80%;"></i></span>80%</span></b></div>
+              <div class="kv"><small>Vertrag</small><b>Unbefristet · seit Aug. 2019</b></div>
+              <div class="kv"><small>Ferienanspruch</small><b>25 Tage / Jahr</b></div>
+              <div class="kv"><small>Team</small><b>Primaria-Team · Teamleitung</b></div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="panel">
+              <h3>Salden</h3>
+              <div class="lstat" style="margin-top: 10px;">
+                <span class="lsb" style="background: var(--st-green-bg); color: var(--st-green-fg);"><small>Zeitsaldo</small><b>+12:30</b></span>
+                <span class="lsb" style="background: var(--st-sky-bg); color: var(--st-sky-fg);"><small>Restferien</small><b>12 d</b></span>
+                <span class="lsb" style="background: var(--st-rose-bg); color: var(--st-rose-fg);"><small>Krankheitstage</small><b>3 d</b></span>
+                <span class="lsb" style="background: var(--st-amber-bg); color: var(--st-amber-fg);"><small>Weiterbildung</small><b>2 d</b></span>
+              </div>
+            </div>
+            <div class="panel">
+              <h3>Nächste Absenzen</h3>
+              <div style="margin-top: 8px;">
+                <div class="kv"><span style="flex: 1; font-weight: 550;">Ferien · 14.–25. Juli</span><span class="pill green">Genehmigt</span></div>
+                <div class="kv"><span style="flex: 1; font-weight: 550;">Weiterbildung · 3. Sept.</span><span class="pill amber">Beantragt</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ BEWERBUNG-DETAIL ============ -->
+      <section class="page" id="page-bewerbung" data-screen-label="Bewerbung-Detail">
+        <div class="pagehead"><div><h2 style="display: flex; align-items: center; gap: 12px;">Ilir Krasniqi <span class="pill amber">Gespräch</span></h2><p style="padding: 4px 0 0;">Bewerbung eingegangen am 12. Juni · gewünschter Eintritt Aug. 2026</p></div><span style="margin-left: auto; display: flex; gap: 9px;"><button class="btn ghost click" data-goto="aufnahme">← Kanban</button><button class="btn ghost">Absage senden</button><button class="btn">Nächste Stage</button></span></div>
+        <div class="chiprow">
+          <span class="chip on">Interesse ✓</span><span class="chip on">Bewerbung ✓</span><span class="chip on" style="font-weight: 650;">Gespräch</span><span class="chip">Aufgenommen</span><span class="chip">Eingeschrieben</span>
+        </div>
+        <div class="cols2">
+          <div class="panel">
+            <h3>Aktivitäten</h3>
+            <div style="margin-top: 10px;">
+              <div class="ev"><span class="ln"><span class="pt" style="border-color: var(--st-amber-fg); background: var(--st-amber-bg);"></span><span class="vl"></span></span><span class="eb"><span class="when">Morgen, 09:00</span><b>Erinnerung: Rückruf Familie Krasniqi</b><small>Termin für Schnuppertag vereinbaren · Claudia Vogel</small></span></div>
+              <div class="ev"><span class="ln"><span class="pt" style="border-color: var(--st-sky-fg); background: var(--st-sky-bg);"></span><span class="vl"></span></span><span class="eb"><span class="when">Mo, 29. Juni</span><b>Erstgespräch mit Mutter geführt</b><small>„Sehr interessiert, Bruder bereits an Montessori-Schule.“</small></span></div>
+              <div class="ev"><span class="ln"><span class="pt" style="border-color: var(--st-sky-fg); background: var(--st-sky-bg);"></span><span class="vl"></span></span><span class="eb"><span class="when">Do, 18. Juni</span><b>E-Mail: Eingangsbestätigung versendet</b><small>Vorlage „Eingangsbestätigung“ · automatisch</small></span></div>
+              <div class="ev"><span class="ln"><span class="pt" style="border-color: var(--st-slate-fg); background: var(--st-slate-bg);"></span></span><span class="eb"><span class="when">Fr, 12. Juni</span><b>Bewerbung eingegangen</b><small>Über Online-Formular · Stage: Interesse</small></span></div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="panel">
+              <h3>Angaben</h3>
+              <div style="margin-top: 8px;">
+                <div class="kv"><small>Kind</small><b>Ilir Krasniqi · geb. 14.05.2020 · 6 J.</b></div>
+                <div class="kv"><small>Gewünschter Eintritt</small><b>August 2026</b></div>
+                <div class="kv"><small>Stufe / Klasse</small><b>Unterstufe · Primaria A</b></div>
+                <div class="kv"><small>Bezugsperson</small><b>Arta Krasniqi (Mutter)</b></div>
+                <div class="kv"><small>Telefon</small><b>+41 76 442 18 90</b></div>
+              </div>
+            </div>
+            <div class="panel">
+              <h3>Erinnerungen<span class="n">1</span></h3>
+              <div style="margin-top: 8px;">
+                <div class="kv"><span style="flex: 1; font-weight: 550;">Rückruf Familie Krasniqi</span><span class="pill amber">Morgen 09:00</span></div>
+              </div>
+              <button class="kan-add" style="margin-top: 8px;">+ Erinnerung</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ AUFNAHME: ERINNERUNGEN ============ -->
+      <section class="page" id="page-erinnerungen" data-screen-label="Aufnahme-Erinnerungen">
+        <div class="pagehead"><h2>Erinnerungen</h2><p>4 offen · 1 überfällig</p><button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><use href="#i-plus"></use></svg>Neue Erinnerung</button></div>
+        <div class="chiprow">
+          <span class="chip click" data-goto="aufnahme">Kanban</span>
+          <span class="chip on click" data-goto="erinnerungen">Erinnerungen · 4</span>
+          <span class="chip click" data-goto="absagen">Absagen · 3</span>
+          <span class="chip click" data-goto="vorlagen">E-Mail-Vorlagen</span>
+        </div>
+        <div class="tbl">
+          <table>
+            <thead><tr><th>Erinnerung</th><th>Bewerbung</th><th>Fällig</th><th>Zuständig</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><b>Rückruf Familie Krasniqi</b></td><td>Ilir Krasniqi</td><td class="mono">Heute, 09:00</td><td>Claudia Vogel</td><td><span class="pill rose">Überfällig</span></td></tr>
+              <tr><td><b>Schnuppertag bestätigen</b></td><td>Mira Osei</td><td class="mono">Heute, 14:00</td><td>Anna Meier</td><td><span class="pill amber">Heute</span></td></tr>
+              <tr><td><b>Unterlagen nachfragen</b></td><td>Jan Peters</td><td class="mono">4. Juli</td><td>Claudia Vogel</td><td><span class="pill slate">Geplant</span></td></tr>
+              <tr><td><b>Vertrag versenden</b></td><td>Sofia Rossi</td><td class="mono">7. Juli</td><td>Claudia Vogel</td><td><span class="pill slate">Geplant</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ AUFNAHME: ABSAGEN ============ -->
+      <section class="page" id="page-absagen" data-screen-label="Aufnahme-Absagen">
+        <div class="pagehead"><h2>Absagen</h2><p>3 im Schuljahr 25/26</p></div>
+        <div class="chiprow">
+          <span class="chip click" data-goto="aufnahme">Kanban</span>
+          <span class="chip click" data-goto="erinnerungen">Erinnerungen · 4</span>
+          <span class="chip on click" data-goto="absagen">Absagen · 3</span>
+          <span class="chip click" data-goto="vorlagen">E-Mail-Vorlagen</span>
+        </div>
+        <div class="tbl">
+          <table>
+            <thead><tr><th>Kind</th><th>Stage bei Absage</th><th>Grund</th><th>Datum</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><span class="pcell"><span class="ava">LM</span><span><b>Leon Meyer</b><small>geb. 02.08.2019</small></span></span></td><td><span class="pill amber">Gespräch</span></td><td>Kein Platz frei</td><td class="mono">20. Juni 2026</td><td><span style="color: var(--soft); font-size: 12.5px;">Wiedervorlage 2027</span></td></tr>
+              <tr><td><span class="pcell"><span class="ava">ZG</span><span><b>Zoe Graf</b><small>geb. 11.01.2021</small></span></span></td><td><span class="pill sky">Bewerbung</span></td><td>Alter passt nicht zur Stufe</td><td class="mono">12. Juni 2026</td><td></td></tr>
+              <tr><td><span class="pcell"><span class="ava">BK</span><span><b>Ben Keller</b><small>geb. 30.09.2019</small></span></span></td><td><span class="pill slate">Interesse</span></td><td>Familie hat sich anders entschieden</td><td class="mono">2. Juni 2026</td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ AUFNAHME: E-MAIL-VORLAGEN ============ -->
+      <section class="page" id="page-vorlagen" data-screen-label="Aufnahme-Vorlagen">
+        <div class="pagehead"><h2>E-Mail-Vorlagen</h2><p>4 Vorlagen · Deutsch</p><button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><use href="#i-plus"></use></svg>Neue Vorlage</button></div>
+        <div class="chiprow">
+          <span class="chip click" data-goto="aufnahme">Kanban</span>
+          <span class="chip click" data-goto="erinnerungen">Erinnerungen · 4</span>
+          <span class="chip click" data-goto="absagen">Absagen · 3</span>
+          <span class="chip on click" data-goto="vorlagen">E-Mail-Vorlagen</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;">
+          <div class="panel">
+            <h3>Eingangsbestätigung<span class="pill acc" style="margin-left: auto;">Automatisch</span></h3>
+            <p class="hint">Betreff: Deine Bewerbung ist bei uns eingegangen</p>
+            <p style="font-size: 13px; color: var(--soft); line-height: 1.5;">„Liebe Familie {familienname}, vielen Dank für euer Interesse an unserer Schule. Wir melden uns innert 5 Arbeitstagen …“</p>
+            <p style="font-size: 12px; color: var(--soft); margin-top: 10px;">Zuletzt bearbeitet: 14. Mai 2026</p>
+          </div>
+          <div class="panel">
+            <h3>Einladung Schnuppertag<span class="pill slate" style="margin-left: auto;">Manuell</span></h3>
+            <p class="hint">Betreff: Einladung zum Schnuppertag für {kindname}</p>
+            <p style="font-size: 13px; color: var(--soft); line-height: 1.5;">„Wir freuen uns, {kindname} bei uns zu begrüssen. Der Schnuppertag findet statt am {datum} …“</p>
+            <p style="font-size: 12px; color: var(--soft); margin-top: 10px;">Zuletzt bearbeitet: 2. Juni 2026</p>
+          </div>
+          <div class="panel">
+            <h3>Aufnahmebestätigung<span class="pill slate" style="margin-left: auto;">Manuell</span></h3>
+            <p class="hint">Betreff: Herzlich willkommen an unserer Schule</p>
+            <p style="font-size: 13px; color: var(--soft); line-height: 1.5;">„Wir freuen uns sehr, {kindname} ab {eintrittsdatum} bei uns aufzunehmen. Im Anhang findet ihr den Vertrag …“</p>
+            <p style="font-size: 12px; color: var(--soft); margin-top: 10px;">Zuletzt bearbeitet: 20. April 2026</p>
+          </div>
+          <div class="panel">
+            <h3>Absage<span class="pill slate" style="margin-left: auto;">Manuell</span></h3>
+            <p class="hint">Betreff: Deine Bewerbung an unserer Schule</p>
+            <p style="font-size: 13px; color: var(--soft); line-height: 1.5;">„Leider können wir {kindname} zurzeit keinen Platz anbieten. Grund: {grund}. Gerne nehmen wir euch auf die Warteliste …“</p>
+            <p style="font-size: 12px; color: var(--soft); margin-top: 10px;">Zuletzt bearbeitet: 20. April 2026</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: NEUE BEWERBUNG ============ -->
+<div class="ovl" id="modal-bewerbung">
+  <div class="dlg">
+    <div class="dlg-h"><h4>Neue Bewerbung</h4><button class="x" aria-label="Schliessen">×</button></div>
+    <p class="hint">Erfasse eine neue Interessens-Anmeldung. Die Familie erhält automatisch eine Eingangsbestätigung.</p>
+    <div class="frow">
+      <div class="fld"><label>Vorname Kind</label><input type="text" placeholder="z.B. Ilir"></div>
+      <div class="fld"><label>Nachname Kind</label><input type="text" placeholder="z.B. Krasniqi"></div>
+    </div>
+    <div class="frow">
+      <div class="fld"><label>Geburtsdatum</label><input type="text" placeholder="TT.MM.JJJJ"></div>
+      <div class="fld"><label>Gewünschter Eintritt</label><input type="text" placeholder="z.B. August 2026"></div>
+    </div>
+    <div class="fld"><label>Stage</label><select><option>Interesse</option><option>Bewerbung</option><option>Gespräch</option></select></div>
+    <div class="fld"><label>Notiz</label><textarea placeholder="z.B. Erstgespräch mit Mutter"></textarea></div>
+    <div class="dlg-f"><button class="btn ghost" data-close="1">Abbrechen</button><button class="btn" data-close="1">Bewerbung erstellen</button></div>
+  </div>
+</div>
+
+<!-- ============ MODAL: AUFGABE ============ -->
+<div class="ovl" id="modal-aufgabe">
+  <div class="dlg">
+    <div class="dlg-h"><h4>Festwirtschaft: Helferliste finalisieren</h4><button class="x" aria-label="Schliessen">×</button></div>
+    <div style="display: flex; gap: 7px; margin: 4px 0 14px;"><span class="pill acc">Sommerfest 2026</span><span class="pill rose">Dringend</span><span class="pill sky">In Arbeit</span></div>
+    <div class="fld"><label>Beschreibung</label><textarea>Noch 4 Schichten unbesetzt (Grill, Kasse 2×, Abbau). Eltern der Primaria B anfragen.</textarea></div>
+    <div class="frow">
+      <div class="fld"><label>Fällig</label><input type="text" value="Heute, 17:00"></div>
+      <div class="fld"><label>Priorität</label><select><option>Dringend</option><option>Hoch</option><option>Mittel</option><option>Niedrig</option></select></div>
+    </div>
+    <div class="fld"><label>Zugewiesen an</label>
+      <div style="display: flex; gap: 8px; align-items: center;"><span class="ava" style="width: 30px; height: 30px; font-size: 11px;">AM</span><span class="ava" style="width: 30px; height: 30px; font-size: 11px;">LF</span><button class="kan-add" style="flex: 1; margin: 0;">+ Person</button></div>
+    </div>
+    <div class="dlg-f"><button class="btn ghost" data-close="1">Schliessen</button><button class="btn" data-close="1">Als erledigt markieren</button></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var TITLES = {
+    dashboard: "Dashboard", zeit: "Zeiterfassung", zeitauswertung: "Zeitauswertung",
+    mitarbeitende: "Mitarbeitende", maprofil: "Anna Meier — Profil", schueler: "Schüler:innen",
+    profil: "Mia Keller — Profil", bezugspersonen: "Bezugspersonen", fortschritte: "Fortschritte",
+    aufnahme: "Aufnahmeprozess", bewerbung: "Bewerbung — Ilir Krasniqi", erinnerungen: "Aufnahmeprozess — Erinnerungen",
+    absagen: "Aufnahmeprozess — Absagen", vorlagen: "Aufnahmeprozess — E-Mail-Vorlagen",
+    projekte: "Projekte", projektdetail: "Sommerfest 2026 — Projekt", aufgaben: "Meine Aufgaben",
+    protokolle: "Protokolle", protokolldetail: "Teamsitzung Juni — Protokoll",
+    teams: "Teams", klassen: "Schulklassen", stufen: "Stufen", lehrplan: "Lehrpläne",
+    absenzen: "Absenz-Kategorien", rollen: "Rollen & Berechtigungen"
+  };
+  var PARENT = {
+    profil: "schueler", maprofil: "mitarbeitende", projektdetail: "projekte", protokolldetail: "protokolle",
+    bewerbung: "aufnahme", erinnerungen: "aufnahme", absagen: "aufnahme", vorlagen: "aufnahme"
+  };
+  var THEME_NAMES = { salbei: "Salbei", lagune: "Lagune", himmel: "Himmel", indigo: "Indigo", flieder: "Flieder", terracotta: "Terracotta", ozean: "Ozean", wald: "Wald", beere: "Beere", honig: "Honig", schiefer: "Schiefer", graphit: "Graphit" };
+
+  function goTo(page) {
+    document.querySelectorAll(".page").forEach(function (p) { p.classList.toggle("on", p.id === "page-" + page); });
+    document.querySelectorAll("#nav button").forEach(function (b) {
+      b.classList.toggle("on", b.dataset.page === page || PARENT[page] === b.dataset.page);
+    });
+    document.getElementById("page-title").textContent = TITLES[page] || page;
+    localStorage.setItem("restart-saas-page", page);
+    document.querySelector(".content").scrollTop = 0;
+  }
+
+  function setTheme(t) {
+    document.documentElement.setAttribute("data-theme", t);
+    document.querySelectorAll("#themes .sw").forEach(function (s) { s.classList.toggle("on", s.dataset.theme === t); });
+    document.getElementById("theme-name").textContent = THEME_NAMES[t] || t;
+    localStorage.setItem("restart-saas-theme", t);
+  }
+
+  document.querySelectorAll("#nav button").forEach(function (b) {
+    b.addEventListener("click", function () { goTo(b.dataset.page); });
+  });
+  document.querySelectorAll("#themes .sw").forEach(function (s) {
+    s.addEventListener("click", function () { setTheme(s.dataset.theme); });
+  });
+  document.querySelectorAll("tr.click, .click[data-goto]").forEach(function (r) {
+    r.addEventListener("click", function () { if (r.dataset.goto) goTo(r.dataset.goto); });
+  });
+  document.querySelectorAll("#page-projekte .panel").forEach(function (c) {
+    c.addEventListener("click", function () { goTo("projektdetail"); });
+  });
+  document.querySelectorAll("#page-mitarbeitende tbody tr").forEach(function (r) {
+    r.addEventListener("click", function () { goTo("maprofil"); });
+  });
+  document.querySelectorAll("#page-protokolle tbody tr").forEach(function (r) {
+    r.addEventListener("click", function () { goTo("protokolldetail"); });
+  });
+  document.querySelectorAll("#page-aufnahme .kan-card").forEach(function (c) {
+    c.addEventListener("click", function () { goTo("bewerbung"); });
+  });
+  function openModal(id) { var m = document.getElementById(id); if (m) m.classList.add("on"); }
+  document.querySelectorAll("#page-aufgaben tbody tr").forEach(function (r) {
+    r.addEventListener("click", function () { openModal("modal-aufgabe"); });
+  });
+  document.querySelectorAll("[data-modal]").forEach(function (b) {
+    b.addEventListener("click", function () { openModal(b.dataset.modal); });
+  });
+  document.querySelectorAll(".ovl").forEach(function (o) {
+    o.addEventListener("click", function (e) { if (e.target === o) o.classList.remove("on"); });
+  });
+  document.querySelectorAll(".ovl .x, .ovl [data-close]").forEach(function (b) {
+    b.addEventListener("click", function () { b.closest(".ovl").classList.remove("on"); });
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") document.querySelectorAll(".ovl.on").forEach(function (o) { o.classList.remove("on"); });
+  });
+
+  var t0 = localStorage.getItem("restart-saas-theme");
+  setTheme(THEME_NAMES[t0] ? t0 : "salbei");
+  var p0 = localStorage.getItem("restart-saas-page");
+  goTo(TITLES[p0] ? p0 : "dashboard");
+})();
+</script>
+</body>
+</html>

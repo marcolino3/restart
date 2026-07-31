@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TableCard } from "@/components/common/TableCard";
 import {
   ensureCurrentPeriodAction,
   setPeriodStatusAction,
@@ -84,7 +85,7 @@ export const PeriodsSection = ({ periods }: Props) => {
           {t("createCurrentPeriod")}
         </Button>
       </div>
-      <div className="rounded-md border">
+      <TableCard>
         <Table>
           <TableHeader>
             <TableRow>
@@ -141,7 +142,7 @@ export const PeriodsSection = ({ periods }: Props) => {
             )}
           </TableBody>
         </Table>
-      </div>
+      </TableCard>
 
       {/* Lock confirmation — locking blocks all tracking within the period. */}
       <AlertDialog

@@ -19,7 +19,6 @@ import {
   type ColumnDef,
   type SortingFn,
   type SortingState,
-  flexRender,
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
@@ -51,6 +50,8 @@ import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmation
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { TableCard } from "@/components/common/TableCard";
+import { DataTable } from "@/components/data-table/DataTable";
 import {
   Select,
   SelectContent,
@@ -642,95 +643,33 @@ export function MyTasksTable({
             collisionDetection={closestCenter}
             onDragEnd={onDragEnd}
           >
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id}>
-                      <TableHead className="w-8" />
-                      {headerGroup.headers.map((header) => (
-                        <TableHead key={header.id}>
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext(),
-                              )}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableHeader>
-                <TableBody>
-                  {rows.length ? (
-                    <SortableContext
-                      items={rows.map((r) => r.original.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      {rows.map((row) => (
-                        <SortableTaskRow
-                          key={row.id}
-                          id={row.original.id}
-                          dragEnabled={dndEnabled}
-                          onOpen={() => openTask(row.original)}
-                        >
-                          {row.getVisibleCells().map((cell) => (
-                            <TableCell
-                              key={cell.id}
-                              onClick={(e) => {
-                                if (
-                                  cell.column.id === "status" ||
-                                  cell.column.id === "actions"
-                                ) {
-                                  e.stopPropagation();
-                                }
-                              }}
-                            >
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext(),
-                              )}
-                            </TableCell>
-                          ))}
-                        </SortableTaskRow>
-                      ))}
-                    </SortableContext>
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={columns.length + 1}
-                        className="h-24 text-center"
-                      >
-                        {t("noTasks")}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+            <DataTable
+              table={table}
+              showViewOptions={false}
+              emptyState={t("noTasks")}
+              interactiveColumnIds={["status"]}
+              onRowClick={(row) => openTask(row.original)}
+              leadingHeader={<TableHead className="w-8" />}
+              bodyWrapper={(rendered) => (
+                <SortableContext
+                  items={rows.map((r) => r.original.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {rendered}
+                </SortableContext>
+              )}
+              renderRow={(row, cells) => (
+                <SortableTaskRow
+                  id={row.original.id}
+                  dragEnabled={dndEnabled}
+                  onOpen={() => openTask(row.original)}
+                >
+                  {cells}
+                </SortableTaskRow>
+              )}
+            />
           </DndContext>
 
-          <div className="flex items-center justify-end gap-2 py-4">
-            <div className="flex-1 text-sm text-muted-foreground">
-              {openTasks.length} {tc("results")}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              {tc("previous")}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              {tc("next")}
-            </Button>
-          </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">{t("deleteHint")}</p>
@@ -747,7 +686,7 @@ export function MyTasksTable({
 
           {showDone && (
             <>
-              <div className="mt-2 rounded-md border opacity-75">
+              <TableCard className="mt-2 opacity-75">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -788,7 +727,7 @@ export function MyTasksTable({
                     )}
                   </TableBody>
                 </Table>
-              </div>
+              </TableCard>
               <p className="mt-2 text-xs text-muted-foreground">
                 {t("completedHint")}
               </p>

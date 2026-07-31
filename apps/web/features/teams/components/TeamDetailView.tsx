@@ -38,6 +38,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
+import { TableCard } from "@/components/common/TableCard";
 import { handleAction } from "@/lib/actions/handle-action";
 import { ROUTES } from "@/constants/routes";
 import { z } from "zod";
@@ -187,7 +188,7 @@ export function TeamDetailView({ team, initialMembers, employees }: Props) {
               {t("noMembersYet")}
             </p>
           ) : (
-            <div className="rounded-md border">
+            <TableCard>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -283,7 +284,7 @@ export function TeamDetailView({ team, initialMembers, employees }: Props) {
                   })}
                 </TableBody>
               </Table>
-            </div>
+            </TableCard>
           )}
         </CardContent>
       </Card>
