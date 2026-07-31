@@ -244,6 +244,7 @@ type Documents = {
     "\n  query GetTeachersByOrgId {\n    teachersByOrgId {\n      id\n      membership {\n        user {\n          id\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": typeof types.GetTeachersByOrgIdDocument,
     "\n  mutation ReorderSchoolClasses($input: ReorderSchoolClassesInput!) {\n    reorderSchoolClasses(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n": typeof types.ReorderSchoolClassesDocument,
     "\n  mutation UpdateSchoolClass($input: UpdateSchoolClassInput!) {\n    updateSchoolClass(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateSchoolClassDocument,
+    "\n  query GetOrganizationSetupStatus {\n    organizationSetupStatus {\n      complete\n      requiredRemaining\n      steps {\n        key\n        done\n        required\n        count\n      }\n    }\n  }\n": typeof types.GetOrganizationSetupStatusDocument,
     "\n  mutation CreateStudentNote(\n    $createStudentNoteInput: CreateStudentNoteInput!\n  ) {\n    createStudentNote(createStudentNoteInput: $createStudentNoteInput) {\n      id\n    }\n  }\n": typeof types.CreateStudentNoteDocument,
     "\n  query GetStudentNotesByStudentId($studentId: ID!) {\n    studentNotesByStudentId(studentId: $studentId) {\n      id\n      category\n      title\n      content\n      isConfidential\n      date\n      createdAt\n      authorMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": typeof types.GetStudentNotesByStudentIdDocument,
     "\n  query StudentRecordDocumentsByEntry($entryId: ID!) {\n    studentRecordDocumentsByEntry(entryId: $entryId) {\n      id\n      originalName\n      title\n      tags\n      mimeType\n      sizeBytes\n      createdAt\n      uploadedByMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": typeof types.StudentRecordDocumentsByEntryDocument,
@@ -549,6 +550,7 @@ const documents: Documents = {
     "\n  query GetTeachersByOrgId {\n    teachersByOrgId {\n      id\n      membership {\n        user {\n          id\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": types.GetTeachersByOrgIdDocument,
     "\n  mutation ReorderSchoolClasses($input: ReorderSchoolClassesInput!) {\n    reorderSchoolClasses(input: $input) {\n      id\n      name\n      sortOrder\n    }\n  }\n": types.ReorderSchoolClassesDocument,
     "\n  mutation UpdateSchoolClass($input: UpdateSchoolClassInput!) {\n    updateSchoolClass(input: $input) {\n      id\n    }\n  }\n": types.UpdateSchoolClassDocument,
+    "\n  query GetOrganizationSetupStatus {\n    organizationSetupStatus {\n      complete\n      requiredRemaining\n      steps {\n        key\n        done\n        required\n        count\n      }\n    }\n  }\n": types.GetOrganizationSetupStatusDocument,
     "\n  mutation CreateStudentNote(\n    $createStudentNoteInput: CreateStudentNoteInput!\n  ) {\n    createStudentNote(createStudentNoteInput: $createStudentNoteInput) {\n      id\n    }\n  }\n": types.CreateStudentNoteDocument,
     "\n  query GetStudentNotesByStudentId($studentId: ID!) {\n    studentNotesByStudentId(studentId: $studentId) {\n      id\n      category\n      title\n      content\n      isConfidential\n      date\n      createdAt\n      authorMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": types.GetStudentNotesByStudentIdDocument,
     "\n  query StudentRecordDocumentsByEntry($entryId: ID!) {\n    studentRecordDocumentsByEntry(entryId: $entryId) {\n      id\n      originalName\n      title\n      tags\n      mimeType\n      sizeBytes\n      createdAt\n      uploadedByMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": types.StudentRecordDocumentsByEntryDocument,
@@ -1558,6 +1560,10 @@ export function graphql(source: "\n  mutation ReorderSchoolClasses($input: Reord
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation UpdateSchoolClass($input: UpdateSchoolClassInput!) {\n    updateSchoolClass(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateSchoolClass($input: UpdateSchoolClassInput!) {\n    updateSchoolClass(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetOrganizationSetupStatus {\n    organizationSetupStatus {\n      complete\n      requiredRemaining\n      steps {\n        key\n        done\n        required\n        count\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetOrganizationSetupStatus {\n    organizationSetupStatus {\n      complete\n      requiredRemaining\n      steps {\n        key\n        done\n        required\n        count\n      }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

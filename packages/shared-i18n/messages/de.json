@@ -2606,6 +2606,60 @@
     "error": "Passwort konnte nicht gesetzt werden.",
     "success": "Passwort gesetzt. Du kannst dich jetzt einloggen."
   },
+  "Setup": {
+    "loadError": "Der Einrichtungsstatus konnte nicht geladen werden.",
+    "open": "Öffnen",
+    "optional": "optional",
+    "pageDescription": "Übersicht über alle Schritte der Grundeinrichtung.",
+    "pageTitle": "Einrichtung",
+    "progressLabel": "Pflichtschritte",
+    "recordCount": "{count} angelegt",
+    "selectOrganizationFirst": "Bitte zuerst eine Organisation auswählen.",
+    "showAll": "Alle Schritte anzeigen",
+    "stagesWithoutCycle": "{count} ohne Zyklus",
+    "steps": {
+      "ORGANIZATION": {
+        "title": "Organisation",
+        "description": "Name, Land und Zeitzone hinterlegen — das Land steuert die Feld-Masken."
+      },
+      "GRADE_LEVELS": {
+        "title": "Stufen",
+        "description": "Die Schulstufen anlegen, auf denen Klassen aufbauen."
+      },
+      "SCHOOL_CLASSES": {
+        "title": "Klassen",
+        "description": "Klassen anlegen und ihren Stufen zuordnen."
+      },
+      "EMPLOYEES": {
+        "title": "Mitarbeitende",
+        "description": "Lehrkräfte erfassen, damit sie Fortschritte eintragen können."
+      },
+      "CURRICULUM": {
+        "title": "Lehrplan",
+        "description": "Einen Lehrplan importieren oder anlegen."
+      },
+      "CURRICULUM_CYCLE_LINK": {
+        "title": "Zyklus je Stufe",
+        "description": "Jeder Stufe einen Zyklus zuordnen — sonst werden bei der Fortschrittserfassung alle Lektionen angezeigt."
+      },
+      "STUDENTS": {
+        "title": "Schüler",
+        "description": "Kinder erfassen und Klassen zuweisen."
+      },
+      "EMAIL": {
+        "title": "E-Mail-Versand",
+        "description": "SMTP hinterlegen, um Aufnahme-E-Mails zu versenden."
+      },
+      "TIME_TRACKING": {
+        "title": "Zeiterfassung",
+        "description": "Feiertage und Abrechnungsperioden hinterlegen."
+      }
+    },
+    "subtitle": "Diese Schritte fehlen noch, damit die App sinnvoll genutzt werden kann.",
+    "subtitleComplete": "Alle Pflichtschritte sind erledigt.",
+    "title": "Einrichtung abschliessen",
+    "titleComplete": "Einrichtung abgeschlossen"
+  },
   "SiteHeader": {
     "dataProtection": "Datenschutz",
     "dashboard": "Dashboard",

@@ -2606,6 +2606,60 @@
     "error": "Could not set the password.",
     "success": "Password set. You can now log in."
   },
+  "Setup": {
+    "loadError": "Could not load the setup status.",
+    "open": "Open",
+    "optional": "optional",
+    "pageDescription": "Overview of every step of the initial setup.",
+    "pageTitle": "Setup",
+    "progressLabel": "Required steps",
+    "recordCount": "{count} created",
+    "selectOrganizationFirst": "Please select an organisation first.",
+    "showAll": "Show all steps",
+    "stagesWithoutCycle": "{count} without a cycle",
+    "steps": {
+      "ORGANIZATION": {
+        "title": "Organisation",
+        "description": "Set name, country and timezone — the country drives the input masks."
+      },
+      "GRADE_LEVELS": {
+        "title": "Stages",
+        "description": "Create the school stages that classes build on."
+      },
+      "SCHOOL_CLASSES": {
+        "title": "Classes",
+        "description": "Create classes and assign them to stages."
+      },
+      "EMPLOYEES": {
+        "title": "Staff",
+        "description": "Add teachers so they can record progress."
+      },
+      "CURRICULUM": {
+        "title": "Curriculum",
+        "description": "Import or create a curriculum."
+      },
+      "CURRICULUM_CYCLE_LINK": {
+        "title": "Cycle per stage",
+        "description": "Link each stage to a cycle — without it the progress screen offers every lesson."
+      },
+      "STUDENTS": {
+        "title": "Students",
+        "description": "Add children and assign them to classes."
+      },
+      "EMAIL": {
+        "title": "Email delivery",
+        "description": "Configure SMTP to send admission emails."
+      },
+      "TIME_TRACKING": {
+        "title": "Time tracking",
+        "description": "Set up holidays and accounting periods."
+      }
+    },
+    "subtitle": "These steps are still missing before the app is properly usable.",
+    "subtitleComplete": "Every required step is done.",
+    "title": "Finish setting up",
+    "titleComplete": "Setup complete"
+  },
   "SiteHeader": {
     "dataProtection": "Data protection",
     "dashboard": "Dashboard",
