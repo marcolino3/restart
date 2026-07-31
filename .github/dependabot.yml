@@ -83,8 +83,18 @@ updates:
       # graphql 17: das Nest/Apollo-Ökosystem ist noch auf 16 festgelegt —
       # @nestjs/graphql und @apollo/server verlangen ^16.11.0, @nestjs/apollo
       # ^16.10.0. Erst nachziehen, wenn diese drei 17 als Peer akzeptieren.
+      # graphql 17: das Nest/Apollo-Ökosystem ist noch auf 16 festgelegt.
+      # graphql >=16.14.1: bricht den Web-Build. packages/shared-types liefert
+      # rohe .ts-Quellen ohne Build-Step und hat graphql als peerDependency;
+      # ein abweichender graphql-Stand erzeugt einen zweiten, peer-suffigierten
+      # Lockfile-Eintrag (…shared-types_graphql@16.14.2), wodurch das Paket
+      # doppelt aufgelöst wird und Turbopack die Modul-Zuordnung verliert:
+      #   ./…/@restart/shared-types/src/graphql.ts  Unknown module type
+      # Reproduziert 2026-07-31: mit Bump 2 shared-types-Einträge + roter Build,
+      # ohne Bump 0 Einträge + "Compiled successfully". Erst nachziehen, wenn
+      # shared-types einen echten Build-Step bekommt (dist statt src).
       - dependency-name: "graphql"
-        versions: [">=17.0.0"]
+        versions: [">=16.14.1"]
       # @types/node 26 typisiert Node-26-APIs; CI und Runtime laufen auf Node 22
       # (node-version in ci.yml/security.yml, engines: ">=20").
       - dependency-name: "@types/node"
