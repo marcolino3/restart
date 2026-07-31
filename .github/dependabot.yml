@@ -43,6 +43,52 @@ updates:
       - dependency-name: "@types/node"
         versions: [">=26.0.0"]
 
+      # ---------------------------------------------------------------------
+      # WICHTIG: Der Root-Eintrag scannt das GESAMTE Monorepo und öffnet PRs,
+      # die apps/backend, apps/web, apps/mobile und e2e gleichzeitig anfassen.
+      # Ignore-Regeln in den verzeichnis-spezifischen Einträgen unten greifen
+      # dafür NICHT — jede bewusste Sperre muss deshalb AUCH hier stehen,
+      # sonst kommt das Paket über den Root-Scan wieder herein.
+      # ---------------------------------------------------------------------
+
+      # react-native/react/reanimated/worklets sind an die Expo-SDK-54-Matrix
+      # gebunden (PR#169). Ein Bump auf 0.86.x / react 19.2.x zieht sie zurück
+      # in die SDK-56-Reihe und bricht das Bundling (VirtualView-Codegen).
+      # Nur gemeinsam über ein echtes SDK-Upgrade + `npx expo install --fix`.
+      - dependency-name: "react-native"
+        versions: [">=0.82.0"]
+      - dependency-name: "react-native-reanimated"
+        versions: [">=4.2.0"]
+      - dependency-name: "react-native-screens"
+        versions: [">=4.17.0"]
+      - dependency-name: "react-native-safe-area-context"
+        versions: [">=5.7.0"]
+      - dependency-name: "react-native-worklets"
+        versions: [">=0.6.0"]
+      # react/react-dom bewusst NICHT global gesperrt: apps/web fährt ^19.2.8 und
+      # soll Updates bekommen, apps/mobile muss auf 19.1.0 bleiben (SDK 54).
+      # Dependabot kann das im Root-Scan nicht pro Verzeichnis trennen — die
+      # Mobile-Seite ist stattdessen exakt gepinnt ("19.1.0", ohne ^/~), was
+      # einen Root-PR auf apps/mobile/package.json verhindert.
+
+      # sanitize-html 2.17.6 hebt htmlparser2 auf ^12 (ESM-only, kein CJS-Entry).
+      # Jest transformiert node_modules nicht → beide Admissions-E-Mail-Suiten
+      # sterben mit "Cannot use import statement outside a module" (21 Tests).
+      - dependency-name: "sanitize-html"
+        versions: [">=2.17.6"]
+
+      # Siehe /apps/backend bzw. /apps/web für die ausführliche Begründung.
+      - dependency-name: "typescript"
+        versions: [">=6.0.0"]
+      - dependency-name: "typeorm"
+        versions: [">=1.0.0"]
+      - dependency-name: "@tiptap/*"
+        versions: [">=3.0.0"]
+      - dependency-name: "graphql"
+        versions: [">=16.14.1"]
+      - dependency-name: "eslint"
+        versions: [">=10.0.0"]
+
   # Backend
   - package-ecosystem: "npm"
     directory: "/apps/backend"
