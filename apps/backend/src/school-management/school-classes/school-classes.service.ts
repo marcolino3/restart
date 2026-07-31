@@ -7,6 +7,7 @@ import { SchoolClassTeacherRole } from '@/database/enums/school-class-teacher-ro
 import { SchoolClassTeacherInput } from './dto/school-class-teacher.input';
 import {
   today,
+  addDays,
   isInForceOn,
   schoolYearFor,
   SchoolYearRange,
@@ -108,12 +109,30 @@ export class SchoolClassesService {
     });
     const now = today();
 
-    const toClose = existing.filter((a) => !requestedById.has(a.employeeId));
+    const removed = existing.filter((a) => !requestedById.has(a.employeeId));
+
+    // validTo is the LAST day an assignment counts (that is what the CHECK
+    // constraint encodes), so removing someone today makes yesterday their
+    // last day. Setting it to today would leave them in the class until
+    // midnight — the bug an integration test caught after the mocks had all
+    // passed.
+    const toClose = removed.filter((a) => a.validFrom < now);
     if (toClose.length) {
       await this.teacherAssignmentRepo.update(
         { id: In(toClose.map((a) => a.id)) },
-        { validTo: now },
+        { validTo: addDays(now, -1) },
       );
+    }
+
+    // An assignment added and removed on the same day never applied to a
+    // single school day. Closing it is impossible without violating
+    // valid_to >= valid_from, and keeping it would clutter the history with a
+    // correction rather than a fact — so it is dropped.
+    const toDelete = removed.filter((a) => a.validFrom >= now);
+    if (toDelete.length) {
+      await this.teacherAssignmentRepo.delete({
+        id: In(toDelete.map((a) => a.id)),
+      });
     }
 
     const existingByEmployee = new Map(existing.map((a) => [a.employeeId, a]));

@@ -33,6 +33,14 @@ export const today = (): string => {
   return isoDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
 };
 
+/** Shifts an ISO date by whole days. Negative values move backwards. */
+export const addDays = (date: string, days: number): string => {
+  const [year, month, day] = date.split('-').map(Number);
+  const shifted = new Date(Date.UTC(year, month - 1, day));
+  shifted.setUTCDate(shifted.getUTCDate() + days);
+  return shifted.toISOString().slice(0, 10);
+};
+
 /**
  * The school year that `date` falls into.
  *
