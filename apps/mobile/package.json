@@ -22,7 +22,7 @@
     "@restart/shared-schemas": "workspace:*",
     "@restart/shared-types": "workspace:*",
     "better-auth": "^1.6.23",
-    "expo": "~54.0.35",
+    "expo": "~57.0.8",
     "expo-apple-authentication": "~8.0.8",
     "expo-constants": "~18.0.13",
     "expo-document-picker": "~14.0.8",
