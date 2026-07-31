@@ -42,6 +42,7 @@ import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmation
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TableCard } from "@/components/common/TableCard";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -554,7 +555,7 @@ export function ProjectBoard({
             </DragOverlay>
           </DndContext>
         ) : (
-          <div className="rounded-md border">
+          <TableCard>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -643,7 +644,7 @@ export function ProjectBoard({
                 )}
               </TableBody>
             </Table>
-          </div>
+          </TableCard>
         ))}
 
       {/* Members tab — inline panel with the member list. */}
@@ -693,7 +694,7 @@ export function ProjectBoard({
             {t("noProjectProtocols")}
           </p>
         ) : (
-          <div className="rounded-md border">
+          <TableCard>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -738,7 +739,7 @@ export function ProjectBoard({
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </TableCard>
         ))}
 
       {/* Dialogs */}

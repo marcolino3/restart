@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { useSheet } from "@/components/providers/sheet-provider";
+import { TableCard } from "@/components/common/TableCard";
 import { HolidayForm } from "./HolidayForm";
 import { CompanyVacationForm } from "./CompanyVacationForm";
 import {
@@ -53,7 +54,7 @@ export const TimeTrackingSettings = ({ holidays, companyVacations }: Props) => {
             <Plus className="size-4" /> {t("addHoliday")}
           </Button>
         </div>
-        <div className="rounded-md border">
+        <TableCard>
           <Table>
             <TableHeader>
               <TableRow>
@@ -96,7 +97,7 @@ export const TimeTrackingSettings = ({ holidays, companyVacations }: Props) => {
               )}
             </TableBody>
           </Table>
-        </div>
+        </TableCard>
       </section>
 
       {/* Betriebsferien */}
@@ -115,7 +116,7 @@ export const TimeTrackingSettings = ({ holidays, companyVacations }: Props) => {
             <Plus className="size-4" /> {t("addCompanyVacation")}
           </Button>
         </div>
-        <div className="rounded-md border">
+        <TableCard>
           <Table>
             <TableHeader>
               <TableRow>
@@ -152,7 +153,7 @@ export const TimeTrackingSettings = ({ holidays, companyVacations }: Props) => {
               )}
             </TableBody>
           </Table>
-        </div>
+        </TableCard>
       </section>
     </div>
   );

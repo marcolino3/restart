@@ -47,6 +47,7 @@ import { Badge } from "@/components/ui/badge";
 import { ROUTES } from "@/constants/routes";
 import { GetOrganizationsQuery } from "@restart/shared-types/graphql";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
+import { TableCard } from "@/components/common/TableCard";
 import { removeOrganizationAction } from "../actions/remove-organization.action";
 
 interface Props {
@@ -324,7 +325,7 @@ export const OrganizationsTable = ({ data }: Props) => {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border">
+      <TableCard>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -371,7 +372,7 @@ export const OrganizationsTable = ({ data }: Props) => {
             )}
           </TableBody>
         </Table>
-      </div>
+      </TableCard>
 
       {/* Pagination */}
       <div className="flex items-center justify-end space-x-2 py-4">

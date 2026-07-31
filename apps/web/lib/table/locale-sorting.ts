@@ -1,5 +1,13 @@
 import type { Row, SortingFn } from "@tanstack/react-table";
 
+// NB: deliberately no `declare module "@tanstack/react-table"` augmentation
+// here. Registering named sorting/filter fns makes them part of every
+// `TableOptions` in the project, so all remaining hand-rolled
+// `useReactTable()` calls would fail to typecheck until they are migrated.
+// Columns pass `createLocaleSortingFn(locale)` / `localeIncludesFilter` by
+// reference instead — see `useDataTable`, which applies the locale sorter to
+// every text column by default.
+
 /**
  * Locale-aware table sorting and filtering.
  *

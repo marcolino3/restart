@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/tooltip";
 import { ROUTES } from "@/constants/routes";
 import { ArchiveConfirmationDialog } from "@/components/common/ArchiveConfirmationDialog";
+import { TableCard } from "@/components/common/TableCard";
 import { handleAction } from "@/lib/actions/handle-action";
 
 import { pickAbsenceCategoryName, type AbsenceCategoryItem } from "../types";
@@ -129,7 +130,7 @@ export function AbsenceCategoriesTable({ initialItems }: Props) {
         </Button>
       </div>
 
-      <div className="rounded-md border">
+      <TableCard>
         <Table>
           <TableHeader>
             <TableRow>
@@ -183,7 +184,7 @@ export function AbsenceCategoriesTable({ initialItems }: Props) {
             )}
           </TableBody>
         </Table>
-      </div>
+      </TableCard>
     </div>
   );
 }

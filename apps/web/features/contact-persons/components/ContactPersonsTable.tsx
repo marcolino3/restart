@@ -39,6 +39,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { TableCard } from "@/components/common/TableCard";
 import {
   Select,
   SelectContent,
@@ -297,7 +298,7 @@ export const ContactPersonsTable = ({ data }: Props) => {
         </DropdownMenu>
       </div>
 
-      <div className="rounded-md border">
+      <TableCard>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -356,7 +357,7 @@ export const ContactPersonsTable = ({ data }: Props) => {
             )}
           </TableBody>
         </Table>
-      </div>
+      </TableCard>
 
       <div className="flex items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">

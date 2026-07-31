@@ -1,42 +1,16 @@
 "use client";
 
 import * as React from "react";
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  FilterFn,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import { ArrowUpDown, ChevronDown, Search, X } from "lucide-react";
+import type { ColumnDef, FilterFn } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { PersonCell } from "@/components/common/PersonCell";
-import { FilterChip } from "@/components/common/FilterChip";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable } from "@/components/data-table/DataTable";
+import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
+import type { FilterGroup } from "@/components/data-table/DataTableFilter";
+import { useDataTable } from "@/components/data-table/use-data-table";
 import type { BadgeProps } from "@/components/ui/badge";
 import { ROUTES } from "@/constants/routes";
 import { EmployeeListItem } from "../actions/get-employees.action";
@@ -102,14 +76,9 @@ const useColumns = (): ColumnDef<EmployeeListItem>[] => {
       id: "person",
       accessorFn: (row) => row.membership.user?.lastName ?? "",
       header: ({ column }) => (
-        <Button
-          variant="ghost"
-          className="-ml-3"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          {t("person")} <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+        <DataTableColumnHeader column={column} title={t("person")} />
       ),
+      meta: { labelKey: "person" },
       cell: ({ row }) => (
         <PersonCell
           avatar={
@@ -198,8 +167,13 @@ const useColumns = (): ColumnDef<EmployeeListItem>[] => {
       id: "status",
       accessorFn: (row) => row.membership.employee?.isActive ?? true,
       header: tE("statusToday"),
-      filterFn: (row, id, value) =>
-        value === undefined || row.getValue<boolean>(id) === value,
+      // The filter dropdown hands over string values ("true"/"false"), while
+      // the column itself holds a boolean.
+      filterFn: (row, id, value) => {
+        const picks = value as string[] | undefined;
+        if (!picks?.length) return true;
+        return picks.includes(String(row.getValue<boolean>(id)));
+      },
       cell: ({ row, getValue }) =>
         row.original.membership.employee?.status === "DRAFT" ? (
           <Badge variant="amber">{tE("statusDraft")}</Badge>
@@ -218,9 +192,9 @@ const useColumns = (): ColumnDef<EmployeeListItem>[] => {
 };
 
 /**
- * Feste Filter-Gruppen aus dem Design-Handoff (`.chiprow`): Alle · Lehrkräfte ·
- * Administration · Betreuung · Inaktiv. Jede Gruppe bündelt die passenden
- * Personas; "Inaktiv" filtert über den Status.
+ * Persona buckets offered in the filter dropdown: Lehrkräfte, Administration
+ * and Betreuung. Each bucket expands to the personas it covers, so the filter
+ * stays multi-select instead of the previous mutually exclusive chips.
  */
 const PERSONA_GROUPS = [
   { key: "TEACHERS", labelKey: "chipTeachers", personas: ["TEACHER"] },
@@ -236,8 +210,13 @@ const PERSONA_GROUPS = [
   },
 ] as const;
 
-const sameMembers = (a: readonly string[], b: readonly string[]) =>
-  a.length === b.length && a.every((x) => b.includes(x));
+/**
+ * Personas whose `Common` message key differs from the enum value. Everything
+ * else resolves as `Common.<PERSONA>`.
+ */
+const PERSONA_LABEL_KEYS: Record<string, string> = {
+  ASSISTANT: "wordAssistant",
+};
 
 export const EmployeesTable = ({ data }: Props) => {
   const t = useTranslations("Common");
@@ -246,234 +225,53 @@ export const EmployeesTable = ({ data }: Props) => {
   const router = useRouter();
   const columns = useColumns();
 
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] =
-    React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
-  const [pagination, setPagination] = React.useState({
-    pageIndex: 0,
-    pageSize: 10,
-  });
-
-  // TanStack Table returns fresh function instances by design; the
-  // react-hooks "incompatible-library" heuristic is a false positive here.
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
+  const { table, globalFilter, setGlobalFilter } = useDataTable({
     data,
     columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onPaginationChange: setPagination,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      pagination,
-    },
+    initialPageSize: 10,
   });
 
-  // Chip-Filter (design handoff `.chiprow`): feste Gruppen, Einfach-Auswahl —
-  // treibt die persona-/status-Spaltenfilter.
-  const personaFilter = table.getColumn("persona")?.getFilterValue() as
-    | string[]
-    | undefined;
-  const inactiveActive = table.getColumn("status")?.getFilterValue() === false;
-  const activeGroup = personaFilter?.length
-    ? PERSONA_GROUPS.find((g) => sameMembers(g.personas, personaFilter))?.key
-    : undefined;
-  const activeChip = inactiveActive ? "INACTIVE" : (activeGroup ?? "ALL");
-
-  const setChip = (key: string) => {
-    const personaCol = table.getColumn("persona");
-    const statusCol = table.getColumn("status");
-    if (key === "ALL") {
-      personaCol?.setFilterValue(undefined);
-      statusCol?.setFilterValue(undefined);
-    } else if (key === "INACTIVE") {
-      personaCol?.setFilterValue(undefined);
-      statusCol?.setFilterValue(false);
-    } else {
-      const group = PERSONA_GROUPS.find((g) => g.key === key);
-      personaCol?.setFilterValue(group ? [...group.personas] : undefined);
-      statusCol?.setFilterValue(undefined);
-    }
-  };
+  // Persona groups and the active/inactive switch live in one filter dropdown
+  // instead of a row of mutually exclusive chips.
+  const filterGroups: FilterGroup[] = React.useMemo(
+    () => [
+      {
+        id: "persona",
+        label: tE("persona"),
+        options: PERSONA_GROUPS.flatMap((group) =>
+          group.personas.map((persona) => ({
+            value: persona,
+            label: t(PERSONA_LABEL_KEYS[persona] ?? persona),
+          })),
+        ),
+      },
+      {
+        id: "status",
+        label: t("status"),
+        options: [
+          { value: "true", label: t("active") },
+          { value: "false", label: t("inactive") },
+        ],
+      },
+    ],
+    [t, tE],
+  );
 
   return (
-    <div className="w-full">
-      {/* Search first, then filter chips + controls — one row */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="relative w-[280px]">
-          <Search className="pointer-events-none absolute top-1/2 left-3.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={tE("searchPlaceholder")}
-            value={
-              (table.getColumn("person")?.getFilterValue() as string) ?? ""
-            }
-            onChange={(e) =>
-              table.getColumn("person")?.setFilterValue(e.target.value)
-            }
-            className="h-9 rounded-full pl-9"
-            aria-label={tE("searchPlaceholder")}
-          />
-        </div>
-
-        {/* Filter chips (design handoff `.chiprow`) */}
-        <FilterChip active={activeChip === "ALL"} onClick={() => setChip("ALL")}>
-          {t("all")}
-        </FilterChip>
-        {PERSONA_GROUPS.map((g) => (
-          <FilterChip
-            key={g.key}
-            active={activeChip === g.key}
-            onClick={() => setChip(g.key)}
-          >
-            {tE(g.labelKey)}
-          </FilterChip>
-        ))}
-        <FilterChip
-          active={activeChip === "INACTIVE"}
-          onClick={() => setChip("INACTIVE")}
-        >
-          {t("inactive")}
-        </FilterChip>
-
-        {/* Reset filters */}
-        {columnFilters.length > 0 && (
-          <Button
-            variant="ghost"
-            onClick={() => setColumnFilters([])}
-            className="h-9 px-2 lg:px-3"
-          >
-            {t("resetFilters")}
-            <X className="ml-2 h-4 w-4" />
-          </Button>
-        )}
-
-        {/* Column visibility */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              {t("columns")} <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => (
-                <DropdownMenuCheckboxItem
-                  key={column.id}
-                  className="capitalize"
-                  checked={column.getIsVisible()}
-                  onCheckedChange={(value) =>
-                    column.toggleVisibility(!!value)
-                  }
-                >
-                  {t(column.id)}
-                </DropdownMenuCheckboxItem>
-              ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      {/* Table */}
-      <div className="overflow-hidden rounded-card border bg-card shadow-xs">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent">
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => {
-                const empId = row.original.membership.employee?.id;
-                return (
-                  <TableRow
-                    key={row.id}
-                    className={empId ? "cursor-pointer" : ""}
-                    onClick={() => {
-                      if (empId) {
-                        router.push(
-                          ROUTES.admin.employeesView(locale, empId)
-                        );
-                      }
-                    }}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell
-                        key={cell.id}
-                        onClick={(e) => {
-                          if (cell.column.id === "actions") {
-                            e.stopPropagation();
-                          }
-                        }}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                );
-              })
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  {t("noResults")}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Footer */}
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredRowModel().rows.length} {t("results")}
-        </div>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            {t("previous")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            {t("next")}
-          </Button>
-        </div>
-      </div>
-    </div>
+    <DataTable
+      table={table}
+      globalFilter={globalFilter}
+      onGlobalFilterChange={setGlobalFilter}
+      searchPlaceholder={tE("searchPlaceholder")}
+      filterGroups={filterGroups}
+      translateColumn={(key) => t(key)}
+      onRowClick={(row) => {
+        // A membership without an employee record has no detail page.
+        const employeeId = row.original.membership.employee?.id;
+        if (employeeId) {
+          router.push(ROUTES.admin.employeesView(locale, employeeId));
+        }
+      }}
+    />
   );
 };

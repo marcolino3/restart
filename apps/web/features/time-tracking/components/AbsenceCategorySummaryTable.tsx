@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { AbsenceCategorySummary } from "../types";
+import { TableCard } from "@/components/common/TableCard";
 
 /** Absenz-Tage je Kategorie mit Split 100 % / Teilabsenzen (colibri-Parität). */
 export const AbsenceCategorySummaryTable = ({
@@ -21,7 +22,7 @@ export const AbsenceCategorySummaryTable = ({
   const tc = useTranslations("Common");
 
   return (
-    <div className="rounded-md border">
+    <TableCard>
       <Table>
         <TableHeader>
           <TableRow>
@@ -64,6 +65,6 @@ export const AbsenceCategorySummaryTable = ({
           )}
         </TableBody>
       </Table>
-    </div>
+    </TableCard>
   );
 };

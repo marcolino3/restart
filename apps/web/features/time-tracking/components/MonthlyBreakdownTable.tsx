@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { formatDurationMinutes } from "@/lib/formatting/duration";
 import type { MonthlyWorkTimeSummary } from "../types";
+import { TableCard } from "@/components/common/TableCard";
 
 const MONTHS = [
   "Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
@@ -27,7 +28,7 @@ export const MonthlyBreakdownTable = ({
   const tc = useTranslations("Common");
 
   return (
-    <div className="rounded-md border">
+    <TableCard>
       <Table>
         <TableHeader>
           <TableRow>
@@ -70,6 +71,6 @@ export const MonthlyBreakdownTable = ({
           )}
         </TableBody>
       </Table>
-    </div>
+    </TableCard>
   );
 };

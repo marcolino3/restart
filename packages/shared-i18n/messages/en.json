@@ -1675,7 +1675,8 @@
     "worked": "Worked",
     "planned": "Target",
     "daysCount": "{days} days",
-    "noAbsences": "No absences recorded"
+    "noAbsences": "No absences recorded",
+    "persona": "Role"
   },
   "Forbidden": {
     "title": "Access denied",

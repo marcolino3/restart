@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { TableCard } from "@/components/common/TableCard";
 import {
   Table,
   TableBody,
@@ -184,7 +185,7 @@ export function ProtocolsList({
       ) : filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("noResults")}</p>
       ) : (
-        <div className="rounded-md border">
+        <TableCard>
           <Table>
             <TableHeader>
               <TableRow>
@@ -259,7 +260,7 @@ export function ProtocolsList({
               ))}
             </TableBody>
           </Table>
-        </div>
+        </TableCard>
       )}
 
       <p className="text-xs text-muted-foreground">{t("autoTasksHint")}</p>

@@ -1675,7 +1675,8 @@
     "worked": "Geleistet",
     "planned": "Soll",
     "daysCount": "{days} Tage",
-    "noAbsences": "Keine Absenzen erfasst"
+    "noAbsences": "Keine Absenzen erfasst",
+    "persona": "Rolle"
   },
   "Forbidden": {
     "title": "Zugriff verweigert",

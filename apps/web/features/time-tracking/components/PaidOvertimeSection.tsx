@@ -23,6 +23,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { useSheet } from "@/components/providers/sheet-provider";
+import { TableCard } from "@/components/common/TableCard";
 import { formatDurationMinutes } from "@/lib/formatting/duration";
 import { PaidOvertimeForm } from "./PaidOvertimeForm";
 import {
@@ -98,7 +99,7 @@ export const PaidOvertimeSection = ({ employees }: Props) => {
           {t("selectEmployeeFirst")}
         </p>
       ) : (
-        <div className="rounded-md border">
+        <TableCard>
           <Table>
             <TableHeader>
               <TableRow>
@@ -154,7 +155,7 @@ export const PaidOvertimeSection = ({ employees }: Props) => {
               )}
             </TableBody>
           </Table>
-        </div>
+        </TableCard>
       )}
     </section>
   );

@@ -43,6 +43,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { TableCard } from "@/components/common/TableCard";
 import { ROUTES } from "@/constants/routes";
 import { UserListItem } from "../actions/get-users.action";
 
@@ -369,7 +370,7 @@ export const UsersTable = ({ data }: Props) => {
         </DropdownMenu>
       </div>
 
-      <div className="rounded-md border">
+      <TableCard>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -416,7 +417,7 @@ export const UsersTable = ({ data }: Props) => {
             )}
           </TableBody>
         </Table>
-      </div>
+      </TableCard>
 
       <div className="flex items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">

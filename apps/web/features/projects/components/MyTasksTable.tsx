@@ -51,6 +51,7 @@ import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmation
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { TableCard } from "@/components/common/TableCard";
 import {
   Select,
   SelectContent,
@@ -642,7 +643,7 @@ export function MyTasksTable({
             collisionDetection={closestCenter}
             onDragEnd={onDragEnd}
           >
-            <div className="rounded-md border">
+            <TableCard>
               <Table>
                 <TableHeader>
                   {table.getHeaderGroups().map((headerGroup) => (
@@ -707,7 +708,7 @@ export function MyTasksTable({
                   )}
                 </TableBody>
               </Table>
-            </div>
+            </TableCard>
           </DndContext>
 
           <div className="flex items-center justify-end gap-2 py-4">
@@ -747,7 +748,7 @@ export function MyTasksTable({
 
           {showDone && (
             <>
-              <div className="mt-2 rounded-md border opacity-75">
+              <TableCard className="mt-2 opacity-75">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -788,7 +789,7 @@ export function MyTasksTable({
                     )}
                   </TableBody>
                 </Table>
-              </div>
+              </TableCard>
               <p className="mt-2 text-xs text-muted-foreground">
                 {t("completedHint")}
               </p>
