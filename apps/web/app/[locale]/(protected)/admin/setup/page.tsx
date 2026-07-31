@@ -4,6 +4,7 @@ import { PageHead } from "@/components/common/PageHead";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 import { getSetupStatusAction } from "@/features/setup/actions/get-setup-status.action";
 import { SetupChecklist } from "@/features/setup/components/SetupChecklist";
+import { buildSetupLabels } from "@/features/setup/lib/build-setup-labels";
 
 const SetupPage = async () => {
   const t = await getTranslations("Setup");
@@ -30,6 +31,8 @@ const SetupPage = async () => {
     );
   }
 
+  const labels = await buildSetupLabels(setupRes.data);
+
   return (
     <div className="flex flex-col gap-4">
       <PageHead
@@ -38,7 +41,12 @@ const SetupPage = async () => {
         stacked
       />
       {/* full: shows completed steps too, so progress stays visible */}
-      <SetupChecklist status={setupRes.data} locale={locale} variant="full" />
+      <SetupChecklist
+        status={setupRes.data}
+        locale={locale}
+        labels={labels}
+        variant="full"
+      />
     </div>
   );
 };

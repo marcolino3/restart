@@ -12,6 +12,7 @@ import { getSchoolClassesAction } from "@/features/school-classes/actions/get-sc
 import { getStudentsAction } from "@/features/students/actions/get-students.action";
 import { getSetupStatusAction } from "@/features/setup/actions/get-setup-status.action";
 import { SetupChecklist } from "@/features/setup/components/SetupChecklist";
+import { buildSetupLabels } from "@/features/setup/lib/build-setup-labels";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 
 const TIME_ZONE = "Europe/Zurich";
@@ -76,6 +77,10 @@ export default async function DashboardPage() {
 
   // Optional context — a failed load must not take the dashboard down with it.
   const setupStatus = setupRes.success ? setupRes.data : null;
+  const setupLabels =
+    setupStatus && !setupStatus.complete
+      ? await buildSetupLabels(setupStatus)
+      : null;
 
   const activeClasses = (classesRes.success ? classesRes.data : []).filter(
     (c) => c.isActive
@@ -137,8 +142,12 @@ export default async function DashboardPage() {
   return (
     <div className="flex flex-col gap-4">
       {head}
-      {setupStatus && !setupStatus.complete && (
-        <SetupChecklist status={setupStatus} locale={locale} />
+      {setupStatus && setupLabels && !setupStatus.complete && (
+        <SetupChecklist
+          status={setupStatus}
+          locale={locale}
+          labels={setupLabels}
+        />
       )}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
