@@ -5,7 +5,7 @@
   "description": "Colibri (Restart) – Multi-tenant SaaS monorepo",
   "packageManager": "pnpm@10.18.0",
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "scripts": {
     "build": "turbo run build",
