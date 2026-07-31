@@ -26,7 +26,12 @@ const COLUMN_ALIASES: Record<
   string[]
 > = {
   sequence: ['sequence', 'seq', 'reihenfolge', 'nr', 'no', 'ordre'],
-  level: ['level', 'stufe', 'niveau', 'livello'],
+  // "stufe" ist hier bewusst NICHT gelistet: im Schulkontext ist die Stufe die
+  // Schulstufe (GradeLevel), nicht die Lehrplan-Gliederungsebene. Eine
+  // Importdatei mit Spalte "Stufe" hätte sonst still einen CurriculumLevel
+  // angelegt, obwohl der Nutzer die Schulstufe meint. "level" bleibt für
+  // bestehende Dateien erhalten.
+  level: ['zyklus', 'cycle', 'ciclo', 'level', 'niveau', 'livello'],
   area: ['area', 'bereich', 'domaine', 'ambito'],
   topic: ['topic', 'thema', 'sujet', 'argomento'],
   group: ['group', 'gruppe', 'groupe', 'gruppo'],
