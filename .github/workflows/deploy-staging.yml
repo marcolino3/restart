@@ -92,43 +92,70 @@ jobs:
             ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
             ${{ env.FRONTEND_IMAGE }}:latest
 
-      # Image-Vulnerability-Scan — Build schlägt fehl bei CRITICAL.
+      # Image-Vulnerability-Scan — Deploy schlägt fehl bei fixbarem CRITICAL.
       # Greift NACH dem Push, weil Trivy das pushed Image über GHCR pullt
       # (das schließt einen Bug aus, bei dem das gepushte Layer-Set ein
       # anderes als das lokal gebaute ist).
-      - name: Scan backend image with Trivy
+      #
+      # ZWEI STUFEN pro Image — analog zum bewährten fs-Scan in security.yml:
+      #   Stufe 1 REPORT  format=sarif, exit-code=0  -> Security-Tab
+      #   Stufe 2 GATE    format=table, exit-code=1  -> bricht den Deploy ab
+      #
+      # Warum getrennt: Mit format=sarif setzt die Action den Exit-Code
+      # unabhängig von `severity`, auch wenn limit-severities-for-sarif=true
+      # gesetzt ist (der Log zeigt korrekt "Building SARIF report", nicht
+      # "...with all severities"). Ergebnis war exit 1 OHNE jedes Finding:
+      # Trivy meldete "Detecting vulnerabilities... pkg_num=18" und brach ab,
+      # ohne eine einzige Vulnerability-Tabelle auszugeben. Das blockierte
+      # fünf Staging-Deploys in Folge, obwohl 0 CRITICAL im Image sind
+      # (einziger Image-Alert: CVE-2026-59873, node-tar, HIGH).
+      # Das table-Gate respektiert `severity` zuverlässig — genau so läuft
+      # der CRITICAL-Gate-Step in security.yml seit jeher grün.
+      - name: Scan backend image with Trivy (report)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
-          severity: "CRITICAL"
-          # Gate: ein fixbares CRITICAL im Image bricht den Deploy ab.
-          exit-code: "1"
+          severity: "CRITICAL,HIGH"
+          exit-code: "0"
           ignore-unfixed: true
           # Default-Timeout (5m) reicht beim grossen node_modules-Baum nicht und
           # führte zu `context deadline exceeded` (Exit 1, kein echtes Finding).
           timeout: "15m"
           format: "sarif"
           output: "trivy-backend.sarif"
-          # WICHTIG: Ohne dies erzwingt format=sarif intern ALLE Severities
-          # ("Building SARIF report with all severities"), wodurch exit-code=1
-          # auf JEDE Vuln (auch HIGH/MEDIUM) feuert — der Deploy bricht dann ab,
-          # obwohl 0 CRITICAL im Image sind. true koppelt die SARIF an `severity`.
           limit-severities-for-sarif: true
 
-      - name: Scan frontend image with Trivy
+      - name: Backend image CRITICAL gate
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          severity: "CRITICAL"
+          exit-code: "1"
+          ignore-unfixed: true
+          timeout: "15m"
+          format: "table"
+
+      - name: Scan frontend image with Trivy (report)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
-          severity: "CRITICAL"
-          # Gate: ein fixbares CRITICAL im Image bricht den Deploy ab.
-          exit-code: "1"
+          severity: "CRITICAL,HIGH"
+          exit-code: "0"
           ignore-unfixed: true
           timeout: "15m"
           format: "sarif"
           output: "trivy-frontend.sarif"
-          # Siehe Backend-Scan: ohne dies gated der „CRITICAL"-Scan faktisch
-          # auf alle Severities.
           limit-severities-for-sarif: true
+
+      - name: Frontend image CRITICAL gate
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+          severity: "CRITICAL"
+          exit-code: "1"
+          ignore-unfixed: true
+          timeout: "15m"
+          format: "table"
 
       - name: Upload backend image scan results
         if: always()
