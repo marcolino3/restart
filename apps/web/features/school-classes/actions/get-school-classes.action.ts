@@ -18,6 +18,19 @@ export type SchoolClassListItem = {
       user?: { firstName: string; lastName: string } | null;
     };
   }[];
+  /** Assignments in force today, carrying role and workload. */
+  teacherAssignments?: {
+    id: string;
+    employeeId: string;
+    role: "LEAD" | "ASSISTANT";
+    workloadPercent?: number | null;
+    employee?: {
+      id: string;
+      membership?: {
+        user?: { firstName: string; lastName: string } | null;
+      } | null;
+    } | null;
+  }[];
   color?: string | null;
   description?: string | null;
   sortOrder: number;
@@ -48,6 +61,21 @@ const GetSchoolClassesDocument = gql`
           user {
             firstName
             lastName
+          }
+        }
+      }
+      teacherAssignments {
+        id
+        employeeId
+        role
+        workloadPercent
+        employee {
+          id
+          membership {
+            user {
+              firstName
+              lastName
+            }
           }
         }
       }

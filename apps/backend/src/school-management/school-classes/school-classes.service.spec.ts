@@ -11,6 +11,11 @@ import { Organization } from '@/organizations/entities/organization.entity';
 
 const ORG_ID = 'org-1';
 const TODAY = new Date().toISOString().slice(0, 10);
+const YESTERDAY = (() => {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+})();
 
 type QueryBuilderMock = {
   innerJoin: jest.Mock;
@@ -52,6 +57,7 @@ describe('SchoolClassesService', () => {
     find: jest.Mock;
     save: jest.Mock;
     update: jest.Mock;
+    delete: jest.Mock;
     create: jest.Mock;
   };
   let employeeRepo: { find: jest.Mock };
@@ -71,6 +77,7 @@ describe('SchoolClassesService', () => {
       find: jest.fn().mockResolvedValue([]),
       save: jest.fn((v: unknown) => Promise.resolve(v)),
       update: jest.fn().mockResolvedValue(undefined),
+      delete: jest.fn().mockResolvedValue(undefined),
       create: jest.fn((v: unknown) => v),
     };
     employeeRepo = { find: jest.fn().mockResolvedValue([]) };
@@ -176,26 +183,56 @@ describe('SchoolClassesService', () => {
           employeeId: 'e-stays',
           role: SchoolClassTeacherRole.LEAD,
           workloadPercent: null,
+          validFrom: '2025-08-01',
         },
         {
           id: 'a-2',
           employeeId: 'e-leaves',
           role: SchoolClassTeacherRole.LEAD,
           workloadPercent: null,
+          validFrom: '2025-08-01',
         },
       ]);
       employeeRepo.find.mockResolvedValue([employee('e-stays')]);
 
       await service.update({ id: 'sc-1', teacherIds: ['e-stays'] }, ORG_ID);
 
-      // The departing teacher is end-dated...
+      // The departing teacher is end-dated to YESTERDAY: validTo is the last
+      // day that counts, so closing on today would keep them in the class
+      // until midnight.
       expect(assignmentRepo.update).toHaveBeenCalledWith(
         expect.objectContaining({ id: expect.anything() }),
-        { validTo: TODAY },
+        { validTo: YESTERDAY },
       );
       // ...and the one who stays is left untouched, so their role, workload
       // and start date survive an unrelated edit.
       expect(assignmentRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('deletes an assignment added and removed on the same day', async () => {
+      // It never covered a school day and cannot be closed without breaking
+      // valid_to >= valid_from, so it leaves no trace in the history.
+      schoolClassRepo.findOne.mockResolvedValue({
+        id: 'sc-1',
+        teacherAssignments: [],
+      });
+      assignmentRepo.find.mockResolvedValue([
+        {
+          id: 'a-1',
+          employeeId: 'e-today',
+          role: SchoolClassTeacherRole.LEAD,
+          workloadPercent: null,
+          validFrom: TODAY,
+        },
+      ]);
+      employeeRepo.find.mockResolvedValue([]);
+
+      await service.update({ id: 'sc-1', teachers: [] }, ORG_ID);
+
+      expect(assignmentRepo.delete).toHaveBeenCalledWith(
+        expect.objectContaining({ id: expect.anything() }),
+      );
+      expect(assignmentRepo.update).not.toHaveBeenCalled();
     });
 
     it('adds new teachers as LEAD, allowing several per class', async () => {

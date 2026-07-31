@@ -58,3 +58,56 @@ export async function ensureActiveOrg(page: Page): Promise<string> {
   }
   return orgId
 }
+
+/**
+ * Ensures the active org has at least one teacher, and returns the display
+ * name of one.
+ *
+ * Fixture setup, not the feature under test: creating a teacher through the
+ * UI means walking the three-step onboarding wizard, which would make every
+ * class test depend on it. A fresh CI database has no employees at all, so
+ * without this the teacher assignment could not be exercised.
+ */
+export async function ensureTeacher(page: Page): Promise<string> {
+  const gql = async (query: string, variables?: Record<string, unknown>) => {
+    const res = await page.request.post(`${BACKEND_URL}/graphql`, {
+      data: { query, variables },
+    })
+    return res.json() as Promise<{
+      data?: Record<string, unknown>
+      errors?: { message: string }[]
+    }>
+  }
+
+  const existing = await gql(
+    '{ teachersByOrgId { id membership { user { firstName lastName } } } }',
+  )
+  const teachers = (existing.data?.teachersByOrgId ?? []) as {
+    membership?: { user?: { firstName: string; lastName: string } | null }
+  }[]
+  const first = teachers[0]?.membership?.user
+  if (first) return `${first.firstName} ${first.lastName}`.trim()
+
+  const stamp = Date.now()
+  const firstName = 'E2E'
+  const lastName = `Teacher${stamp}`
+  const created = await gql(
+    `mutation Create($input: CreateEmployeeInput!) {
+       createEmployee(createEmployeeInput: $input) { id }
+     }`,
+    {
+      input: {
+        firstName,
+        lastName,
+        email: `e2e.teacher.${stamp}@example.com`,
+        persona: 'TEACHER',
+      },
+    },
+  )
+  if (created.errors?.length) {
+    throw new Error(
+      `E2E fixture: could not create a teacher — ${created.errors[0].message}`,
+    )
+  }
+  return `${firstName} ${lastName}`
+}

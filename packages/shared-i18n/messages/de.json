@@ -2553,6 +2553,7 @@
   "SchoolClasses": {
     "actions": "Aktionen",
     "ageShort": "{from}–{to} J.",
+    "allTeachersAssigned": "Alle verfügbaren Lehrpersonen sind zugewiesen.",
     "assignTeacher": "Lehrperson zuweisen …",
     "capacity": "Kapazität",
     "classDetails": "Klassendetails",
@@ -2577,10 +2578,11 @@
     "noGradeLevelsFound": "Keine Stufen vorhanden.",
     "noSchoolClassesFound": "Keine Schulklassen gefunden.",
     "noSearchResults": "Keine Klassen gefunden für «{query}»",
-    "noTeachers": "Keine Lehrpersonen verfügbar.",
+    "noTeachers": "Keine Lehrpersonen verfügbar. Zuerst unter «Mitarbeitende» eine Person mit Rolle Lehrperson erfassen.",
     "occupancy": "Belegung",
     "removeTeacher": "Lehrperson entfernen",
     "reorderError": "Fehler beim Speichern der Reihenfolge",
+    "role": "Rolle",
     "roleAssistant": "Assistenz",
     "roleLead": "Klassenlehrperson",
     "room": "Raum",
@@ -2612,7 +2614,9 @@
     "unknownTeacher": "Unbekannte Lehrperson",
     "viewCards": "Karten",
     "viewTable": "Tabelle",
-    "workloadPercent": "Pensum in Prozent"
+    "viewToggle": "Ansicht wechseln",
+    "workloadPercent": "Pensum in Prozent",
+    "workloadTotal": " · Total {total} %"
   },
   "SetPassword": {
     "title": "Passwort festlegen",

@@ -90,7 +90,7 @@ test.describe('School classes — CRUD', () => {
     }
 
     // Switch to the table view.
-    await page.getByRole('button', { name: /^table$/i }).click()
+    await page.getByRole('tab', { name: /^table$/i }).click()
     const rowA = page.getByRole('row', { name: new RegExp(a) })
     const rowB = page.getByRole('row', { name: new RegExp(b) })
     await expect(rowA).toBeVisible()

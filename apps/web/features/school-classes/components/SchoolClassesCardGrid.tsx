@@ -50,6 +50,10 @@ import {
 } from "@/components/ui/table";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { PageHead } from "@/components/common/PageHead";
+import {
+  ViewSwitcher,
+  usePersistedView,
+} from "@/components/common/ViewSwitcher";
 import { ROUTES } from "@/constants/routes";
 import { handleAction } from "@/lib/actions/handle-action";
 import { cn } from "@/lib/utils";
@@ -65,12 +69,50 @@ interface Props {
 type ViewMode = "cards" | "table";
 const VIEW_STORAGE_KEY = "restart-school-classes-view";
 
-const teacherNames = (item: SchoolClassListItem): string[] =>
-  (item.teachers ?? [])
+/**
+ * Teacher labels for the card and the table, each with its workload when the
+ * school tracks one ("Anna Meier 80 %").
+ *
+ * Prefers the assignments, which carry the workload; falls back to the flat
+ * `teachers` list so a class saved before assignments existed still shows its
+ * people.
+ */
+const teacherNames = (item: SchoolClassListItem): string[] => {
+  const assignments = item.teacherAssignments ?? [];
+  if (assignments.length > 0) {
+    return assignments
+      .map((a) => {
+        const user = a.employee?.membership?.user;
+        const name = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim();
+        if (!name) return "";
+        return a.workloadPercent != null
+          ? `${name} ${a.workloadPercent} %`
+          : name;
+      })
+      .filter(Boolean);
+  }
+
+  return (item.teachers ?? [])
     .map((te) =>
       `${te.membership?.user?.firstName ?? ""} ${te.membership?.user?.lastName ?? ""}`.trim(),
     )
     .filter(Boolean);
+};
+
+/**
+ * Sum of the tracked workloads, or null when none is set.
+ *
+ * Assignments without a workload are skipped rather than counted as zero — the
+ * total is meant to answer "how much teaching time is on this class", and an
+ * untracked assignment says nothing about that.
+ */
+const totalWorkload = (item: SchoolClassListItem): number | null => {
+  const values = (item.teacherAssignments ?? [])
+    .map((a) => a.workloadPercent)
+    .filter((w): w is number => w != null);
+  if (values.length === 0) return null;
+  return values.reduce((sum, w) => sum + w, 0);
+};
 
 /** Combined age range over all assigned grade levels (min of mins, max of maxes). */
 const ageRange = (
@@ -94,23 +136,16 @@ export function SchoolClassesCardGrid({ schoolClasses }: Props) {
   const [items, setItems] =
     React.useState<SchoolClassListItem[]>(schoolClasses);
   const [query, setQuery] = React.useState("");
-  const [view, setView] = React.useState<ViewMode>("cards");
+  const [view, changeView] = usePersistedView<ViewMode>(
+    VIEW_STORAGE_KEY,
+    ["cards", "table"],
+    "cards",
+  );
 
   React.useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- resyncs local drag-reorder state with the server-provided list after a refresh
     setItems(schoolClasses);
   }, [schoolClasses]);
-
-  React.useEffect(() => {
-    const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time read of a client-only persisted preference (localStorage) on mount, not derivable from render
-    if (stored === "table" || stored === "cards") setView(stored);
-  }, []);
-
-  const changeView = (next: ViewMode) => {
-    setView(next);
-    window.localStorage.setItem(VIEW_STORAGE_KEY, next);
-  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -182,27 +217,31 @@ export function SchoolClassesCardGrid({ schoolClasses }: Props) {
             aria-label={t("searchPlaceholder")}
           />
         </div>
-        <div className="ml-auto flex items-center gap-1.5">
-          <ViewChip
-            active={view === "cards"}
-            onClick={() => changeView("cards")}
-            label={t("viewCards")}
-          >
-            <LayoutGrid className="size-3.5" />
-            {t("viewCards")}
-          </ViewChip>
-          <ViewChip
-            active={view === "table"}
-            onClick={() => changeView("table")}
-            label={t("viewTable")}
-          >
-            <List className="size-3.5" />
-            {t("viewTable")}
-          </ViewChip>
+        <div className="ml-auto">
+          <ViewSwitcher
+            value={view}
+            onChange={changeView}
+            label={t("viewToggle")}
+            options={[
+              {
+                value: "cards",
+                label: t("viewCards"),
+                icon: <LayoutGrid className="size-3.5" />,
+              },
+              {
+                value: "table",
+                label: t("viewTable"),
+                icon: <List className="size-3.5" />,
+              },
+            ]}
+          />
         </div>
       </div>
 
-      {filtered.length === 0 ? (
+      {/* In the table view the empty state stays inside the table, so the
+          header and frame survive a search with no hits — losing them makes
+          it look as though the table itself disappeared. */}
+      {filtered.length === 0 && view === "cards" ? (
         <p className="py-10 text-center text-muted-foreground">
           {normalizedQuery
             ? t("noSearchResults", { query: query.trim() })
@@ -238,13 +277,26 @@ export function SchoolClassesCardGrid({ schoolClasses }: Props) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((item) => (
-                    <SortableClassRow
-                      key={item.id}
-                      item={item}
-                      dndDisabled={dndDisabled}
-                    />
-                  ))}
+                  {filtered.length === 0 ? (
+                    <TableRow className="hover:bg-transparent">
+                      <TableCell
+                        colSpan={7}
+                        className="py-10 text-center text-muted-foreground"
+                      >
+                        {normalizedQuery
+                          ? t("noSearchResults", { query: query.trim() })
+                          : t("noSchoolClassesFound")}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filtered.map((item) => (
+                      <SortableClassRow
+                        key={item.id}
+                        item={item}
+                        dndDisabled={dndDisabled}
+                      />
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -256,35 +308,6 @@ export function SchoolClassesCardGrid({ schoolClasses }: Props) {
 }
 
 /** Filter chip from the design handoff (`.chip` / `.chip.on`). */
-function ViewChip({
-  active,
-  onClick,
-  label,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      aria-label={label}
-      className={cn(
-        "inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-[15px] py-[7px] text-[13px] font-medium transition-colors",
-        active
-          ? "border-primary bg-primary font-semibold text-primary-foreground"
-          : "border-border bg-card text-muted-foreground hover:text-foreground",
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
 function ClassActionsMenu({ item }: { item: SchoolClassListItem }) {
   const t = useTranslations("SchoolClasses");
   const tCommon = useTranslations("Common");
@@ -370,6 +393,7 @@ function SchoolClassCard({ item }: { item: SchoolClassListItem }) {
   const router = useRouter();
 
   const teachers = teacherNames(item);
+  const workloadTotal = totalWorkload(item);
   const enrolled = item.enrolledCount ?? 0;
   const capacity = item.maxCapacity ?? null;
   const isFull = capacity != null && enrolled >= capacity;
@@ -411,7 +435,15 @@ function SchoolClassCard({ item }: { item: SchoolClassListItem }) {
 
       <p className="mb-3.5 text-[12.5px] text-muted-foreground">
         {teachers.length > 0 ? (
-          teachers.join(" · ")
+          <>
+            {teachers.join(" · ")}
+            {/* Only worth showing once it aggregates more than one row. */}
+            {workloadTotal != null && teachers.length > 1 && (
+              <span className="ml-1 font-medium text-foreground">
+                {t("workloadTotal", { total: workloadTotal })}
+              </span>
+            )}
+          </>
         ) : (
           <span aria-hidden>—</span>
         )}
@@ -447,6 +479,7 @@ function SortableClassRow({
   const locale = useLocale();
   const router = useRouter();
   const teachers = teacherNames(item);
+  const workloadTotal = totalWorkload(item);
   const enrolled = item.enrolledCount ?? 0;
   const capacity = item.maxCapacity ?? null;
   const {
@@ -504,6 +537,11 @@ function SortableClassRow({
       </TableCell>
       <TableCell className="text-muted-foreground">
         {teachers.length > 0 ? teachers.join(" · ") : "—"}
+        {workloadTotal != null && teachers.length > 1 && (
+          <span className="ml-1 font-medium text-foreground">
+            {t("workloadTotal", { total: workloadTotal })}
+          </span>
+        )}
       </TableCell>
       <TableCell className="text-muted-foreground">
         {item.room ?? "—"}
