@@ -4,7 +4,7 @@
 #   docker build -f apps/web/Dockerfile -t restart-frontend .
 
 # Stage 1: Prune monorepo down to web + its workspace deps
-FROM node:24-alpine AS pruner
+FROM node:25-alpine AS pruner
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
 RUN npm install -g npm@^11.18.0 corepack && corepack enable
@@ -12,7 +12,7 @@ COPY . .
 RUN pnpm dlx turbo@^2 prune @restart/web --docker
 
 # Stage 2: Install dependencies based on pruned lockfile
-FROM node:24-alpine AS deps
+FROM node:25-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
 RUN npm install -g npm@^11.18.0 corepack && corepack enable
@@ -20,7 +20,7 @@ COPY --from=pruner /app/out/json/ ./
 RUN pnpm install --frozen-lockfile
 
 # Stage 3: Build
-FROM node:24-alpine AS build
+FROM node:25-alpine AS build
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
 RUN npm install -g npm@^11.18.0 corepack && corepack enable
@@ -41,7 +41,7 @@ ENV BACKEND_URL=$BACKEND_URL
 RUN pnpm turbo run build --filter=@restart/web
 
 # Stage 4: Production runtime (Next.js standalone)
-FROM node:24-alpine AS production
+FROM node:25-alpine AS production
 WORKDIR /app
 # npm des Basisimages bündelt tar@7.5.16 (CVE-2026-59873, CRITICAL,
 # node-tar DoS via gzip bomb). Weder pnpm-lock noch pnpm.overrides greifen
