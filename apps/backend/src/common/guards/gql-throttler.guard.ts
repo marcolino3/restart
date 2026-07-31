@@ -21,7 +21,7 @@ export class GqlThrottlerGuard extends ThrottlerGuard {
 
   // SSR sammelt alle Server-Component-Queries einer Seite unter derselben
   // Loopback-IP — bei aktivem Fast Refresh schlägt das sofort gegen `short:
-  // 10/s`. Außerhalb von Production deshalb Localhost vom Limit ausnehmen.
+  // 10/s`. Ausserhalb von Production deshalb Localhost vom Limit ausnehmen.
   protected async shouldSkip(context: ExecutionContext): Promise<boolean> {
     // graphql-ws subscriptions have no Express request — the persistent WS
     // connection carries no per-message HTTP req with a `.header()` method, so

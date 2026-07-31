@@ -20,7 +20,7 @@ export const OBSERVATION_METRICS_THRESHOLDS = {
   radarMinRecords: 20,
   /** Phase 3.E — Self-Assessment-Kalibrierung (braucht Self-Tap-Längsschnitt). */
   calibrationMinSelfAssessments: 5,
-  /** Anzahl Records für Trend-Sparklines (jüngste). Großzügig — Filter
+  /** Anzahl Records für Trend-Sparklines (jüngste). Grosszügig — Filter
    *  übernimmt der Zeitfenster-Selektor auf der Tab-Ebene. */
   sparklineWindow: 200,
   /** Trend-Fenster für Confidence-/Persistence-Wertungen. */
