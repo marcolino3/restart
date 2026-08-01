@@ -21,6 +21,7 @@ export type CreateLessonRecordsBulkInput = {
   studentIds: string[];
   recordedAt: string;
   status: LessonRecordStatus;
+  durationMinutes?: number | null;
   note?: string | null;
   /**
    * Hattie observation seed — values applied to every created row. Per-child
@@ -42,6 +43,7 @@ const Document = gql`
       lessonId
       recordedAt
       status
+      durationMinutes
       note
     }
   }

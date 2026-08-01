@@ -1,12 +1,15 @@
-import { Field, ID, InputType } from '@nestjs/graphql';
+import { Field, ID, InputType, Int } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
 import {
   IsEnum,
+  IsInt,
   IsISO8601,
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   MaxLength,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import { LessonRecordStatus } from '../../enums/lesson-record-status.enum';
@@ -33,6 +36,14 @@ export class UpdateLessonRecordInput {
   @IsString()
   @MaxLength(2000)
   note?: string | null;
+
+  /** Worked-on time in minutes; explicit `null` clears it. */
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(600)
+  durationMinutes?: number | null;
 
   /**
    * Optionale Aktualisierung der Beobachtungs-Badges. Felder, die im Sub-Input

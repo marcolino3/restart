@@ -8,6 +8,7 @@ import { ROUTES } from "@/constants/routes";
 import { StudentAvatar } from "@/features/students/components/StudentAvatar";
 import { getClassroomStudentsAction } from "@/features/record-keeping/actions/get-classroom-students.action";
 import { getMyTeachingSchoolClassesAction } from "@/features/school-classes/actions/get-my-teaching-school-classes.action";
+import { RecordKeepingClassPicker } from "@/features/record-keeping/components/RecordKeepingClassPicker";
 
 interface PageProps {
   searchParams: Promise<{ classId?: string }>;
@@ -45,6 +46,8 @@ const StudentsPage = async ({ searchParams }: PageProps) => {
         <h1 className="text-2xl font-bold">{t("studentsTitle")}</h1>
         <p className="text-sm text-muted-foreground">{t("studentsSubtitle")}</p>
       </div>
+
+      <RecordKeepingClassPicker classes={classes} />
 
       {!selectedClassId ? (
         <p className="text-sm text-muted-foreground italic">

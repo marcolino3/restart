@@ -14,6 +14,7 @@ import { CreateLessonRecordsBulkInput } from './dto/create-lesson-records-bulk.i
 import { LessonRecordObservationInput } from './dto/lesson-record-observation.input';
 import { LessonRecordsFilterInput } from './dto/lesson-records-filter.input';
 import { UpdateLessonRecordInput } from './dto/update-lesson-record.input';
+import { RecentLessonRecordOutput } from './dto/recent-lesson-record.output';
 import {
   AttentionReason,
   StudentAttentionSummaryOutput,
@@ -37,6 +38,11 @@ import {
   DEFAULT_ATTENTION_THRESHOLDS,
   deriveStudentAttentionItems,
 } from './lib/derive-attention';
+
+/** Default number of rows the "recently recorded" widget shows. */
+export const DEFAULT_RECENT_LIMIT = 5;
+/** Hard cap so a caller cannot turn the widget query into a full export. */
+export const MAX_RECENT_LIMIT = 50;
 
 @Injectable()
 export class LessonRecordsService {
@@ -168,6 +174,7 @@ export class LessonRecordsService {
       recordedAt: input.recordedAt,
       status: input.status,
       note: input.note ?? null,
+      durationMinutes: input.durationMinutes ?? null,
       schoolClassEnrollmentId: input.schoolClassEnrollmentId ?? null,
       recordedById,
       organizationId,
@@ -210,6 +217,7 @@ export class LessonRecordsService {
           recordedAt: input.recordedAt,
           status: input.status,
           note: input.note ?? null,
+          durationMinutes: input.durationMinutes ?? null,
           recordedById,
           organizationId,
           ...observationFields,
@@ -227,6 +235,9 @@ export class LessonRecordsService {
     if (input.recordedAt !== undefined) record.recordedAt = input.recordedAt;
     if (input.status !== undefined) record.status = input.status;
     if (input.note !== undefined) record.note = input.note;
+    if (input.durationMinutes !== undefined) {
+      record.durationMinutes = input.durationMinutes;
+    }
     this.applyObservationPatch(record, input.observation);
     return this.recordsRepo.save(record);
   }
@@ -235,6 +246,118 @@ export class LessonRecordsService {
     const record = await this.findById(id, organizationId);
     await this.recordsRepo.delete({ id: record.id, organizationId });
     return true;
+  }
+
+  /**
+   * The caller's own most recent recording ACTS in the active org.
+   *
+   * Grouped by (lesson, recordedAt) so a bulk entry over N children collapses
+   * into ONE row carrying `studentCount = N` — the list is meant to answer
+   * "what did I last record", and N identical rows would drown that. The
+   * AREA name comes from walking the curriculum tree up from the lesson node
+   * (same recursive-CTE shape as the heatmap query).
+   *
+   * Scoped by BOTH organization_id and recorded_by_id: another org's records
+   * are unreachable by construction, and so are a colleague's.
+   */
+  async getRecentLessonRecords(
+    organizationId: string,
+    recordedById: string,
+    limit = DEFAULT_RECENT_LIMIT,
+    locale = 'de',
+  ): Promise<RecentLessonRecordOutput[]> {
+    // Clamp rather than reject: this feeds a dashboard widget, and an
+    // out-of-range limit should not fail the whole page. A meaningless limit
+    // (0, negative, NaN) falls back to the default rather than to 1 — a
+    // single row would look like real data and hide the bad argument.
+    const requested = Math.trunc(Number(limit));
+    const safeLimit =
+      Number.isFinite(requested) && requested > 0
+        ? Math.min(requested, MAX_RECENT_LIMIT)
+        : DEFAULT_RECENT_LIMIT;
+    const normalizedLocale = (locale ?? 'de').toUpperCase();
+
+    const rows = await this.dataSource.query<
+      Array<{
+        lesson_id: string;
+        recorded_at: string;
+        student_count: number;
+        lesson_name: string | null;
+        area_name: string | null;
+      }>
+    >(
+      // RECURSIVE leads the whole WITH clause even though only `up` recurses
+      // — Postgres attaches the keyword to the clause, not the individual CTE.
+      `WITH RECURSIVE grouped AS (
+         SELECT lr.lesson_id,
+                lr.recorded_at,
+                COUNT(DISTINCT lr.student_id)::int AS student_count,
+                MAX(lr."createdAt")                 AS last_created_at
+           FROM lesson_records lr
+          WHERE lr.organization_id = $1
+            AND lr.recorded_by_id = $2
+          GROUP BY lr.lesson_id, lr.recorded_at
+          ORDER BY lr.recorded_at DESC, MAX(lr."createdAt") DESC
+          LIMIT $3
+       ),
+       up AS (
+         SELECT id AS start_id, id AS cur_id, parent_id, node_type, 0 AS depth
+           FROM curriculum_nodes
+          WHERE id IN (SELECT DISTINCT lesson_id FROM grouped)
+            AND organization_id = $1
+          UNION ALL
+         SELECT u.start_id, n.id, n.parent_id, n.node_type, u.depth + 1
+           FROM curriculum_nodes n
+           JOIN up u ON n.id = u.parent_id
+          WHERE n.organization_id = $1
+            AND u.depth < 16
+       ),
+       areas AS (
+         SELECT start_id, cur_id AS area_id
+           FROM up
+          WHERE node_type = 'AREA'
+       )
+       SELECT g.lesson_id::text                       AS lesson_id,
+              g.recorded_at::text                     AS recorded_at,
+              g.student_count                         AS student_count,
+              ${this.localizedNodeNameSql('g.lesson_id', '$4')} AS lesson_name,
+              ${this.localizedNodeNameSql('a.area_id', '$4')}   AS area_name
+         FROM grouped g
+         LEFT JOIN areas a ON a.start_id = g.lesson_id
+        ORDER BY g.recorded_at DESC, g.last_created_at DESC`,
+      [organizationId, recordedById, safeLimit, normalizedLocale],
+    );
+
+    return rows.map((r) => ({
+      lessonId: r.lesson_id,
+      recordedAt: r.recorded_at,
+      studentCount: Number(r.student_count),
+      lessonName: r.lesson_name,
+      areaName: r.area_name,
+    }));
+  }
+
+  /**
+   * Correlated sub-select picking a curriculum node's name in the requested
+   * locale, falling back to EN and then to any row — the same precedence the
+   * heatmap applies in JS, expressed in SQL so the recent-list stays a single
+   * roundtrip.
+   */
+  private localizedNodeNameSql(
+    nodeIdExpr: string,
+    localeParam: string,
+  ): string {
+    return `(
+      SELECT t.name
+        FROM curriculum_node_translations t
+       WHERE t.curriculum_node_id = ${nodeIdExpr}
+       ORDER BY CASE
+                  WHEN UPPER(t.locale::text) = ${localeParam} THEN 0
+                  WHEN UPPER(t.locale::text) = 'EN' THEN 1
+                  ELSE 2
+                END
+       LIMIT 1
+    )`;
   }
 
   /**

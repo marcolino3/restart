@@ -20,8 +20,10 @@ describe('LessonRecordsService', () => {
   let nodesRepo: { findOne: jest.Mock };
   let studentsRepo: { exists: jest.Mock; find: jest.Mock };
   let enrollmentsRepo: { exists: jest.Mock };
+  let dataSource: { query: jest.Mock };
 
   beforeEach(async () => {
+    dataSource = { query: jest.fn() };
     recordsRepo = {
       create: jest.fn((x) => x),
       save: jest.fn((x) => Promise.resolve({ id: 'rec-1', ...x })),
@@ -41,7 +43,7 @@ describe('LessonRecordsService', () => {
           provide: getRepositoryToken(SchoolClassEnrollment),
           useValue: enrollmentsRepo,
         },
-        { provide: DataSource, useValue: {} },
+        { provide: DataSource, useValue: dataSource },
       ],
     }).compile();
 
@@ -246,6 +248,169 @@ describe('LessonRecordsService', () => {
           'org-1',
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
+    });
+  });
+
+  describe('durationMinutes', () => {
+    beforeEach(() => {
+      nodesRepo.findOne.mockResolvedValue({
+        id: 'les-1',
+        nodeType: CurriculumNodeType.LESSON,
+      });
+      studentsRepo.exists.mockResolvedValue(true);
+    });
+
+    const input = {
+      studentId: 'stu-1',
+      lessonId: 'les-1',
+      recordedAt: '2026-05-16',
+      status: LessonRecordStatus.INTRODUCED,
+    };
+
+    it('persists the duration on create', async () => {
+      await service.create({ ...input, durationMinutes: 45 }, 'org-1', 'u-1');
+      expect(recordsRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ durationMinutes: 45 }),
+      );
+    });
+
+    it('stores null when no duration was given', async () => {
+      await service.create(input, 'org-1', 'u-1');
+      expect(recordsRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ durationMinutes: null }),
+      );
+    });
+
+    it('updates the duration and clears it on explicit null', async () => {
+      recordsRepo.findOne.mockResolvedValue({
+        id: 'rec-1',
+        organizationId: 'org-1',
+        durationMinutes: 30,
+      });
+      await service.update({ id: 'rec-1', durationMinutes: 60 }, 'org-1');
+      expect(recordsRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ durationMinutes: 60 }),
+      );
+
+      recordsRepo.findOne.mockResolvedValue({
+        id: 'rec-1',
+        organizationId: 'org-1',
+        durationMinutes: 30,
+      });
+      await service.update({ id: 'rec-1', durationMinutes: null }, 'org-1');
+      expect(recordsRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ durationMinutes: null }),
+      );
+    });
+
+    it('leaves an existing duration untouched when the field is absent', async () => {
+      recordsRepo.findOne.mockResolvedValue({
+        id: 'rec-1',
+        organizationId: 'org-1',
+        durationMinutes: 30,
+      });
+      await service.update({ id: 'rec-1', note: 'x' }, 'org-1');
+      expect(recordsRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ durationMinutes: 30 }),
+      );
+    });
+  });
+
+  describe('getRecentLessonRecords', () => {
+    const row = (over: Partial<Record<string, unknown>> = {}) => ({
+      lesson_id: 'les-1',
+      recorded_at: '2026-05-16',
+      student_count: 3,
+      lesson_name: 'Goldenes Perlenmaterial',
+      area_name: 'Mathematik',
+      ...over,
+    });
+
+    it('scopes the query to the org AND the calling user', async () => {
+      dataSource.query.mockResolvedValue([]);
+      await service.getRecentLessonRecords('org-1', 'user-7');
+
+      const [, params] = dataSource.query.mock.calls[0];
+      expect(params[0]).toBe('org-1');
+      expect(params[1]).toBe('user-7');
+      const sql = dataSource.query.mock.calls[0][0] as string;
+      expect(sql).toContain('lr.organization_id = $1');
+      expect(sql).toContain('lr.recorded_by_id = $2');
+    });
+
+    it('groups by lesson x recordedAt so a bulk entry is one row', async () => {
+      dataSource.query.mockResolvedValue([]);
+      await service.getRecentLessonRecords('org-1', 'user-7');
+      const sql = dataSource.query.mock.calls[0][0] as string;
+      expect(sql).toContain('GROUP BY lr.lesson_id, lr.recorded_at');
+      expect(sql).toContain('COUNT(DISTINCT lr.student_id)');
+    });
+
+    it('sorts by recordedAt DESC then createdAt DESC', async () => {
+      dataSource.query.mockResolvedValue([]);
+      await service.getRecentLessonRecords('org-1', 'user-7');
+      const sql = dataSource.query.mock.calls[0][0] as string;
+      expect(sql).toContain(
+        'ORDER BY g.recorded_at DESC, g.last_created_at DESC',
+      );
+    });
+
+    it('defaults the limit to 5', async () => {
+      dataSource.query.mockResolvedValue([]);
+      await service.getRecentLessonRecords('org-1', 'user-7');
+      expect(dataSource.query.mock.calls[0][1][2]).toBe(5);
+    });
+
+    it('clamps an oversized limit to the hard cap', async () => {
+      dataSource.query.mockResolvedValue([]);
+      await service.getRecentLessonRecords('org-1', 'user-7', 10_000);
+      expect(dataSource.query.mock.calls[0][1][2]).toBe(50);
+    });
+
+    it('falls back to the default for a meaningless limit', async () => {
+      for (const bad of [0, -3, NaN]) {
+        dataSource.query.mockClear();
+        dataSource.query.mockResolvedValue([]);
+        await service.getRecentLessonRecords('org-1', 'user-7', bad);
+        expect(dataSource.query.mock.calls[0][1][2]).toBe(5);
+      }
+    });
+
+    it('passes the locale uppercased for the translation fallback', async () => {
+      dataSource.query.mockResolvedValue([]);
+      await service.getRecentLessonRecords('org-1', 'user-7', 5, 'en');
+      expect(dataSource.query.mock.calls[0][1][3]).toBe('EN');
+    });
+
+    it('maps rows to the output shape with a numeric studentCount', async () => {
+      dataSource.query.mockResolvedValue([
+        row(),
+        row({
+          lesson_id: 'les-2',
+          recorded_at: '2026-05-15',
+          student_count: '1',
+          area_name: null,
+        }),
+      ]);
+
+      const result = await service.getRecentLessonRecords('org-1', 'user-7');
+
+      expect(result).toEqual([
+        {
+          lessonId: 'les-1',
+          recordedAt: '2026-05-16',
+          studentCount: 3,
+          lessonName: 'Goldenes Perlenmaterial',
+          areaName: 'Mathematik',
+        },
+        {
+          lessonId: 'les-2',
+          recordedAt: '2026-05-15',
+          studentCount: 1,
+          lessonName: 'Goldenes Perlenmaterial',
+          areaName: null,
+        },
+      ]);
     });
   });
 });

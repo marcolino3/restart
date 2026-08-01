@@ -55,6 +55,7 @@ export type LessonRecordDTO = {
   lessonId: string;
   recordedAt: string;
   status: LessonRecordStatus;
+  durationMinutes?: number | null;
   note?: string | null;
 };
 

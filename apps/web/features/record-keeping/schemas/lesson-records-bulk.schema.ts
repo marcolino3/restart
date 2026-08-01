@@ -76,6 +76,13 @@ export const lessonRecordsBulkSchema = z.object({
     z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Invalid date" }),
   ]),
   status: z.enum(LESSON_RECORD_STATUSES as [string, ...string[]]),
+  durationMinutes: z
+    .number()
+    .int()
+    .positive()
+    .max(600)
+    .nullable()
+    .optional(),
   note: z.string().trim().max(2000).optional().nullable(),
   observation: observationSchema.optional(),
   perChildObservations: z.record(z.string().uuid(), observationSchema).optional(),

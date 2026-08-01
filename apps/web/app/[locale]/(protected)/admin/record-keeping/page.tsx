@@ -1,4 +1,5 @@
 import { getLessonsForOrgAction } from "@/features/record-keeping/actions/get-lessons-for-org.action";
+import { getMyTeachingSchoolClassesAction } from "@/features/school-classes/actions/get-my-teaching-school-classes.action";
 import { LessonFirstBulkEntry } from "@/features/record-keeping/components/LessonFirstBulkEntry";
 
 interface Props {
@@ -6,18 +7,24 @@ interface Props {
 }
 
 const RecordKeepingPage = async ({ searchParams }: Props) => {
-  // The class picker in the layout writes ?classId=. Passing it down narrows
-  // the lesson list to that class's curriculum cycle; without a configured
-  // cycle the backend returns every lesson, so entry keeps working.
+  // The class picker (now part of LessonFirstBulkEntry's header) writes
+  // ?classId=. Passing it down narrows the lesson list to that class's
+  // curriculum cycle; without a configured cycle the backend returns every
+  // lesson, so entry keeps working.
   const { classId } = await searchParams;
-  const lessonsRes = await getLessonsForOrgAction(classId ?? null);
+  const [lessonsRes, classesRes] = await Promise.all([
+    getLessonsForOrgAction(classId ?? null),
+    getMyTeachingSchoolClassesAction(),
+  ]);
   const lessons = lessonsRes.success ? lessonsRes.data : [];
+  const classes = classesRes.success
+    ? classesRes.data
+        .filter((c) => c.isActive)
+        .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+        .map((c) => ({ id: c.id, name: c.name }))
+    : [];
 
-  return (
-    <div className="flex flex-col gap-6">
-      <LessonFirstBulkEntry lessons={lessons} />
-    </div>
-  );
+  return <LessonFirstBulkEntry lessons={lessons} classes={classes} />;
 };
 
 export default RecordKeepingPage;

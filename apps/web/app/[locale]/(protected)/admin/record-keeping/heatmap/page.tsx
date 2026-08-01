@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { getClassroomHeatmapAction } from "@/features/record-keeping/actions/get-classroom-heatmap.action";
 import { getMyTeachingSchoolClassesAction } from "@/features/school-classes/actions/get-my-teaching-school-classes.action";
 import { ClassroomHeatmap } from "@/features/record-keeping/components/ClassroomHeatmap";
+import { RecordKeepingClassPicker } from "@/features/record-keeping/components/RecordKeepingClassPicker";
 
 interface PageProps {
   searchParams: Promise<{ classId?: string }>;
@@ -64,6 +65,8 @@ const HeatmapPage = async ({ searchParams }: PageProps) => {
         <h1 className="text-2xl font-bold">{t("heatmapTitle")}</h1>
         <p className="text-sm text-muted-foreground">{t("heatmapSubtitle")}</p>
       </div>
+
+      <RecordKeepingClassPicker classes={classes} />
 
       {!selectedClassId ? (
         <p className="text-sm text-muted-foreground italic">

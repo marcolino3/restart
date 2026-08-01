@@ -3,8 +3,16 @@ import { Organization } from '@/organizations/entities/organization.entity';
 import { SchoolClassEnrollment } from '@/school-management/school-class-enrollments/entities/school-class-enrollment.entity';
 import { Student } from '@/school-management/students/entities/student.entity';
 import { User } from '@/users/entities/user.entity';
-import { Field, ID, ObjectType } from '@nestjs/graphql';
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
+import { LessonRecordAttachment } from './lesson-record-attachment.entity';
 import { CurriculumNode } from '../../entities/curriculum-node.entity';
 import { LessonRecordConcentration } from '../../enums/lesson-record-concentration.enum';
 import { LessonRecordDifficulty } from '../../enums/lesson-record-difficulty.enum';
@@ -68,6 +76,19 @@ export class LessonRecord
   @Field(() => String, { nullable: true })
   @Column('text', { nullable: true })
   note?: string | null;
+
+  /**
+   * How long the child actually worked on the lesson, in minutes. Optional —
+   * a teacher recording in passing will not have the number, and forcing a
+   * guess would make the field worthless for the timeline aggregations.
+   */
+  @Field(() => Int, { nullable: true })
+  @Column('int', { name: 'duration_minutes', nullable: true })
+  durationMinutes?: number | null;
+
+  @Field(() => [LessonRecordAttachment], { nullable: true })
+  @OneToMany(() => LessonRecordAttachment, (a) => a.lessonRecord)
+  attachments?: LessonRecordAttachment[];
 
   @Field(() => ID, { nullable: true })
   @Column('uuid', { name: 'recorded_by_id', nullable: true })
