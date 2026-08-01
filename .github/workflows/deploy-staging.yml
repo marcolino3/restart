@@ -228,8 +228,42 @@ jobs:
       # und `backend-secrets` per envFrom und muss sie im Cluster vorfinden.
       # Der Sync im deploy-Job weiter unten laeuft erst nach der Migration —
       # auf einem frischen Namespace waere das zu spaet.
-      - name: Sync manifests (kustomize)
-        run: kubectl apply -k k8s/staging
+      #
+      # Nur ConfigMaps/Secrets, nicht das ganze Overlay: dessen Deployments
+      # tragen den Base-Image-Tag, der erst im deploy-Job per `set image`
+      # gesetzt wird.
+      - name: Sync config & secrets (required by the migration job)
+        run: |
+          set -euo pipefail
+          kubectl kustomize k8s/staging > /tmp/staging-rendered.yaml
+          python3 - <<'PY' > /tmp/staging-config.yaml
+          import re
+          docs = open('/tmp/staging-rendered.yaml').read().split('\n---\n')
+          keep = [d for d in docs
+                  if re.search(r'^kind:\s*(ConfigMap|Secret|SealedSecret)\s*$', d, re.M)]
+          print('\n---\n'.join(keep))
+          PY
+          kubectl apply -n "$NAMESPACE" -f /tmp/staging-config.yaml
+          echo "::notice::ConfigMaps/Secrets synced into $NAMESPACE"
+
+          if ! kubectl get configmap backend-config -n "$NAMESPACE" >/dev/null 2>&1; then
+            echo "::error::configmap/backend-config missing in $NAMESPACE after sync — check k8s/staging overlay"
+            exit 1
+          fi
+          # Das Overlay liefert `backend-secrets` als SealedSecret; das echte
+          # Secret entsteht erst durch den sealed-secrets-Controller, asynchron.
+          for i in $(seq 1 30); do
+            if kubectl get secret backend-secrets -n "$NAMESPACE" >/dev/null 2>&1; then
+              echo "::notice::secret/backend-secrets available"
+              break
+            fi
+            if [ "$i" = "30" ]; then
+              echo "::error::secret/backend-secrets not created within 60s — SealedSecret not decrypted? Check the sealed-secrets controller."
+              kubectl describe sealedsecret backend-secrets -n "$NAMESPACE" 2>&1 | tail -20 || true
+              exit 1
+            fi
+            sleep 2
+          done
 
       - name: Apply migration job
         env:
@@ -238,10 +272,21 @@ jobs:
           # JOB_NAME_SUFFIX = gekürzt, weil k8s-Job-Namen max. 63 Zeichen.
           IMAGE_TAG: ${{ github.sha }}
         run: |
+          # Ohne pipefail verschluckt die Pipeline einen fehlgeschlagenen
+          # `kubectl apply` und der Loop unten wartet bis zum Timeout.
+          set -euo pipefail
           export IMAGE_OWNER=$(echo "$IMAGE_OWNER" | tr '[:upper:]' '[:lower:]')
           JOB_NAME_SUFFIX=$(echo "$IMAGE_TAG" | cut -c1-12)
           JOB_NAME="migrate-${JOB_NAME_SUFFIX}"
           export JOB_NAME_SUFFIX
+
+          # Jobs sind immutable — ein Rest aus einem abgebrochenen Run wuerde
+          # `apply` scheitern lassen.
+          if kubectl get job "$JOB_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
+            echo "::warning::Job $JOB_NAME already exists — deleting it before re-applying"
+            kubectl delete job "$JOB_NAME" -n "$NAMESPACE" --wait=true --timeout=60s
+          fi
+
           envsubst < k8s/base/jobs/migrate-job.yaml | kubectl apply -n "$NAMESPACE" -f -
 
           echo "Waiting for $JOB_NAME to complete…"
@@ -260,9 +305,23 @@ jobs:
               kubectl logs -n "$NAMESPACE" "job/$JOB_NAME" --tail=200 || true
               exit 1
             fi
+
+            # Startet der Pod gar nicht erst, meldet der Job weder Complete noch
+            # Failed — ohne diese Auswertung liefe das stumm in den Timeout.
+            POD_STATE=$(kubectl get pods -n "$NAMESPACE" \
+              -l "job-name=$JOB_NAME" \
+              -o 'jsonpath={.items[*].status.containerStatuses[*].state.waiting.reason}' 2>/dev/null || echo "")
+            case "$POD_STATE" in
+              *CreateContainerConfigError*|*ImagePullBackOff*|*ErrImagePull*|*CrashLoopBackOff*|*InvalidImageName*)
+                echo "::error::Migration pod cannot start: $POD_STATE"
+                kubectl describe pods -n "$NAMESPACE" -l "job-name=$JOB_NAME" 2>&1 | tail -30
+                exit 1
+                ;;
+            esac
             sleep 5
           done
           echo "::error::Timeout waiting for migration job"
+          kubectl describe pods -n "$NAMESPACE" -l "job-name=$JOB_NAME" 2>&1 | tail -30 || true
           kubectl logs -n "$NAMESPACE" "job/$JOB_NAME" --tail=200 || true
           exit 1
 
