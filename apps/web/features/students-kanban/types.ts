@@ -12,6 +12,11 @@ export type KanbanClassroom = {
   sortOrder: number;
   gradeLevelIds: string[];
   studentIds: string[];
+  /**
+   * Subgroup each child sits in, keyed by student id. Null when the class has
+   * no subgroups or nobody has assigned the child yet.
+   */
+  gradeLevelByStudentId: Record<string, string | null>;
 };
 
 /** Special column ID for the "unassigned" lane. */

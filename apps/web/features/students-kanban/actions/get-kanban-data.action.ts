@@ -16,6 +16,8 @@ const SchoolClassesDocument = gql`
       gradeLevels {
         id
         name
+        parentId
+        sortOrder
       }
     }
   }
@@ -31,10 +33,22 @@ const UnassignedDocument = gql`
   }
 `;
 
+const GradeLevelsDocument = gql`
+  query KanbanGradeLevels {
+    gradeLevelsByOrgId {
+      id
+      name
+      parentId
+      sortOrder
+    }
+  }
+`;
+
 const ClassroomStudentsDocument = gql`
   query KanbanClassroomStudents($schoolClassId: ID!) {
     activeEnrollmentsBySchoolClassId(schoolClassId: $schoolClassId) {
       id
+      gradeLevelId
       student {
         id
         firstName
@@ -44,7 +58,13 @@ const ClassroomStudentsDocument = gql`
   }
 `;
 
-export type KanbanGradeLevel = { id: string; name: string };
+export type KanbanGradeLevel = {
+  id: string;
+  name: string;
+  /** Null for a top-level stage; set for a subgroup like US1. */
+  parentId?: string | null;
+  sortOrder: number;
+};
 
 type Resp1 = {
   schoolClassesByOrgId: Array<{
@@ -54,13 +74,15 @@ type Resp1 = {
     maxCapacity?: number | null;
     sortOrder: number;
     isActive: boolean;
-    gradeLevels?: { id: string; name: string }[];
+    gradeLevels?: KanbanGradeLevel[];
   }>;
 };
 type Resp2 = { unassignedStudents: KanbanStudent[] };
+type Resp4 = { gradeLevelsByOrgId: KanbanGradeLevel[] };
 type Resp3 = {
   activeEnrollmentsBySchoolClassId: Array<{
     id: string;
+    gradeLevelId?: string | null;
     student: KanbanStudent;
   }>;
 };
@@ -77,11 +99,15 @@ export const getKanbanDataAction = async (): Promise<
 > => {
   const client = await serverCookieGqlClient();
   try {
-    const [{ schoolClassesByOrgId }, { unassignedStudents }] =
-      await Promise.all([
-        client.request<Resp1>(SchoolClassesDocument),
-        client.request<Resp2>(UnassignedDocument),
-      ]);
+    const [
+      { schoolClassesByOrgId },
+      { unassignedStudents },
+      { gradeLevelsByOrgId },
+    ] = await Promise.all([
+      client.request<Resp1>(SchoolClassesDocument),
+      client.request<Resp2>(UnassignedDocument),
+      client.request<Resp4>(GradeLevelsDocument),
+    ]);
 
     const activeClassrooms = schoolClassesByOrgId
       .filter((c) => c.isActive)
@@ -97,38 +123,41 @@ export const getKanbanDataAction = async (): Promise<
           { schoolClassId: c.id },
         );
         const ids: string[] = [];
+        const gradeLevelByStudentId: Record<string, string | null> = {};
         for (const e of activeEnrollmentsBySchoolClassId) {
           studentsById[e.student.id] = e.student;
           ids.push(e.student.id);
+          gradeLevelByStudentId[e.student.id] = e.gradeLevelId ?? null;
         }
-        return { c, ids };
+        return { c, ids, gradeLevelByStudentId };
       }),
     );
 
-    const gradeLevelMap = new Map<string, string>();
-    for (const c of activeClassrooms) {
-      for (const g of c.gradeLevels ?? []) gradeLevelMap.set(g.id, g.name);
-    }
-    const gradeLevels: KanbanGradeLevel[] = Array.from(gradeLevelMap.entries())
-      .map(([id, name]) => ({ id, name }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    // From the org-wide query, not from the classes: a class carries only its
+    // top-level stages, and the kanban needs their subgroups as well.
+    const gradeLevels: KanbanGradeLevel[] = [...gradeLevelsByOrgId].sort(
+      (a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name),
+    );
 
-    const classrooms: KanbanClassroom[] = classroomEntries.map(({ c, ids }) => ({
-      id: c.id,
-      name: c.name,
-      color: c.color,
-      maxCapacity: c.maxCapacity,
-      sortOrder: c.sortOrder,
-      gradeLevelIds: (c.gradeLevels ?? []).map((g) => g.id),
-      studentIds: ids.sort((a, b) => {
-        const sa = studentsById[a];
-        const sb = studentsById[b];
-        if (!sa || !sb) return 0;
-        return `${sa.lastName} ${sa.firstName}`.localeCompare(
-          `${sb.lastName} ${sb.firstName}`,
-        );
+    const classrooms: KanbanClassroom[] = classroomEntries.map(
+      ({ c, ids, gradeLevelByStudentId }) => ({
+        id: c.id,
+        name: c.name,
+        color: c.color,
+        maxCapacity: c.maxCapacity,
+        sortOrder: c.sortOrder,
+        gradeLevelIds: (c.gradeLevels ?? []).map((g) => g.id),
+        studentIds: ids.sort((a, b) => {
+          const sa = studentsById[a];
+          const sb = studentsById[b];
+          if (!sa || !sb) return 0;
+          return `${sa.lastName} ${sa.firstName}`.localeCompare(
+            `${sb.lastName} ${sb.firstName}`,
+          );
+        }),
+        gradeLevelByStudentId,
       }),
-    }));
+    );
 
     return {
       success: true as const,

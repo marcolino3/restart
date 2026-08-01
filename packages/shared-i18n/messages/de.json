@@ -2861,16 +2861,17 @@
     "sensitiveHint": "Religion und AHV-Nummer sind besondere Kategorien personenbezogener Daten (DSGVO Art. 9) — nur mit Berechtigung erfassen."
   },
   "StudentsKanban": {
-    "title": "Klassen-Zuweisung",
-    "subtitle": "Ziehe ein Kind in eine andere Klasse. Die alte Einschreibung wird zum heutigen Datum beendet, die neue beginnt heute.",
     "backToStudents": "Zurück zur Schüler-Liste",
-    "openKanban": "Klassen-Zuweisung (Kanban)",
-    "unassigned": "Nicht zugewiesen",
-    "searchStudent": "Kind suchen…",
+    "capacityExceededWarn": "{className}: jetzt {count} von {max} – Kapazität überschritten",
     "filterByGrade": "Stufe:",
-    "transferOk": "Klasse aktualisiert",
+    "openKanban": "Klassen-Zuweisung (Kanban)",
+    "searchStudent": "Kind suchen…",
+    "subtitle": "Ziehe ein Kind in eine andere Klasse. Die alte Einschreibung wird zum heutigen Datum beendet, die neue beginnt heute.",
+    "title": "Klassen-Zuweisung",
     "transferError": "Wechsel fehlgeschlagen",
-    "capacityExceededWarn": "{className}: jetzt {count} von {max} – Kapazität überschritten"
+    "transferOk": "Klasse aktualisiert",
+    "unassigned": "Nicht zugewiesen",
+    "withoutSubgroup": "Ohne Untergruppe"
   },
   "Teams": {
     "teams": "Teams",

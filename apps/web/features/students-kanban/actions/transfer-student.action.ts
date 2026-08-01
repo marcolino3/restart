@@ -9,6 +9,12 @@ export type TransferStudentInput = {
   studentId: string;
   /** null = remove from any class (only end the current active enrollment). */
   targetSchoolClassId: string | null;
+  /**
+   * Subgroup within the target class, e.g. US2 inside "Unterstufe". null
+   * places the child in the class without one; omitting the field leaves an
+   * existing assignment untouched.
+   */
+  gradeLevelId?: string | null;
   /** ISO date `YYYY-MM-DD`. Defaults server-side to today. */
   transferDate?: string;
 };

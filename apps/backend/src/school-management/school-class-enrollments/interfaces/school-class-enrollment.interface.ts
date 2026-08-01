@@ -3,6 +3,7 @@ import { IBase } from '@/database/interfaces/base.interface';
 export interface ISchoolClassEnrollment extends IBase {
   studentId: string;
   schoolClassId: string;
+  gradeLevelId?: string | null;
   enrolledAt: string;
   leftAt?: string | null;
   organizationId: string;

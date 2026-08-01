@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 import { transferStudentAction } from "../actions/transfer-student.action";
+import type { KanbanGradeLevel } from "../actions/get-kanban-data.action";
 import {
   UNASSIGNED_COLUMN_ID,
   type KanbanClassroom,
@@ -34,7 +35,7 @@ interface Props {
   initialClassrooms: KanbanClassroom[];
   initialUnassigned: KanbanStudent[];
   initialStudentsById: Record<string, KanbanStudent>;
-  gradeLevels: { id: string; name: string }[];
+  gradeLevels: KanbanGradeLevel[];
 }
 
 type ColumnState = {
@@ -43,6 +44,41 @@ type ColumnState = {
 };
 
 const COLUMN_MIN_HEIGHT = "min-h-[200px]";
+
+/**
+ * A column is a class, optionally narrowed to one of its subgroups. Encoding
+ * both in the droppable id keeps dnd-kit's single-id model intact — the drop
+ * handler decodes it back into the two values the API needs.
+ *
+ * "<classId>" for a class without subgroups, "<classId>::<gradeLevelId>" for
+ * one with them.
+ */
+const columnId = (classId: string, gradeLevelId?: string | null): string =>
+  gradeLevelId ? `${classId}::${gradeLevelId}` : classId;
+
+const decodeColumnId = (
+  id: string,
+): { classId: string; gradeLevelId: string | null } => {
+  const [classId, gradeLevelId] = id.split("::");
+  return { classId, gradeLevelId: gradeLevelId ?? null };
+};
+
+/**
+ * Subgroups a class splits into — the children of the stages it carries.
+ *
+ * A class assigned "Unterstufe" gets US1–US3. One whose stages have no
+ * children (or that has no stages) gets an empty list and stays a single
+ * column, which is what most schools will see.
+ */
+const subgroupsOf = (
+  classroom: KanbanClassroom,
+  gradeLevels: KanbanGradeLevel[],
+): KanbanGradeLevel[] => {
+  const own = new Set(classroom.gradeLevelIds);
+  return gradeLevels
+    .filter((g) => g.parentId != null && own.has(g.parentId))
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
+};
 
 export function StudentsKanban({
   initialClassrooms,
@@ -64,7 +100,28 @@ export function StudentsKanban({
       },
     };
     for (const c of initialClassrooms) {
-      map[c.id] = { id: c.id, studentIds: [...c.studentIds] };
+      const subgroups = subgroupsOf(c, gradeLevels);
+      if (subgroups.length === 0) {
+        map[c.id] = { id: c.id, studentIds: [...c.studentIds] };
+        continue;
+      }
+      // One column per subgroup, plus a lane for children not placed in one.
+      for (const sub of subgroups) {
+        const id = columnId(c.id, sub.id);
+        map[id] = {
+          id,
+          studentIds: c.studentIds.filter(
+            (sid) => c.gradeLevelByStudentId[sid] === sub.id,
+          ),
+        };
+      }
+      map[c.id] = {
+        id: c.id,
+        studentIds: c.studentIds.filter((sid) => {
+          const assigned = c.gradeLevelByStudentId[sid];
+          return !assigned || !subgroups.some((sub) => sub.id === assigned);
+        }),
+      };
     }
     return map;
   });
@@ -129,10 +186,17 @@ export function StudentsKanban({
     if (!fromColumnId) return;
     if (fromColumnId === toColumnId) return; // no-op
 
-    // Capacity-Soft-Warn
-    const target = classroomMeta.find((c) => c.id === toColumnId);
-    if (target?.maxCapacity != null) {
-      const futureCount = columns[toColumnId].studentIds.length + 1;
+    // Capacity-Soft-Warn: zählt die ganze Klasse, nicht die einzelne
+    // Untergruppen-Spalte — die Kapazität hängt an der Klasse.
+    const { classId: toClassId, gradeLevelId: toGradeLevelId } =
+      decodeColumnId(toColumnId);
+    const { classId: fromClassId } = decodeColumnId(fromColumnId);
+    const target = classroomMeta.find((c) => c.id === toClassId);
+    if (target?.maxCapacity != null && fromClassId !== toClassId) {
+      const futureCount =
+        Object.entries(columns)
+          .filter(([id]) => decodeColumnId(id).classId === toClassId)
+          .reduce((sum, [, col]) => sum + col.studentIds.length, 0) + 1;
       if (futureCount > target.maxCapacity) {
         toast.warning(
           t("capacityExceededWarn", {
@@ -169,7 +233,10 @@ export function StudentsKanban({
       const res = await transferStudentAction({
         studentId,
         targetSchoolClassId:
-          toColumnId === UNASSIGNED_COLUMN_ID ? null : toColumnId,
+          toColumnId === UNASSIGNED_COLUMN_ID ? null : toClassId,
+        // Explicit null clears the subgroup when dropping on the class lane.
+        gradeLevelId:
+          toColumnId === UNASSIGNED_COLUMN_ID ? null : toGradeLevelId,
       });
       if (!res.success) {
         // Rollback
@@ -243,33 +310,88 @@ export function StudentsKanban({
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {/* Unassigned column first */}
-          <KanbanColumn
-            id={UNASSIGNED_COLUMN_ID}
-            title={t("unassigned")}
-            students={(columns[UNASSIGNED_COLUMN_ID]?.studentIds ?? [])
-              .filter(matchesSearch)
-              .map((id) => studentsById[id])
-              .filter(Boolean)}
-            count={columns[UNASSIGNED_COLUMN_ID]?.studentIds.length ?? 0}
-            highlight
-          />
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <KanbanColumn
+              id={UNASSIGNED_COLUMN_ID}
+              title={t("unassigned")}
+              students={(columns[UNASSIGNED_COLUMN_ID]?.studentIds ?? [])
+                .filter(matchesSearch)
+                .map((id) => studentsById[id])
+                .filter(Boolean)}
+              count={columns[UNASSIGNED_COLUMN_ID]?.studentIds.length ?? 0}
+              highlight
+            />
+          </div>
+
           {visibleClassrooms.map((c) => {
-            const ids = columns[c.id]?.studentIds ?? [];
+            const subgroups = subgroupsOf(c, gradeLevels);
+            const classTotal = Object.entries(columns)
+              .filter(([id]) => decodeColumnId(id).classId === c.id)
+              .reduce((sum, [, col]) => sum + col.studentIds.length, 0);
+
+            const lane = (id: string, title: string, subtle = false) => {
+              const ids = columns[id]?.studentIds ?? [];
+              return (
+                <KanbanColumn
+                  key={id}
+                  id={id}
+                  title={title}
+                  color={subtle ? null : c.color}
+                  count={ids.length}
+                  highlight={subtle}
+                  students={ids
+                    .filter(matchesSearch)
+                    .map((sid) => studentsById[sid])
+                    .filter(Boolean)}
+                />
+              );
+            };
+
+            // No subgroups: the class stays a single column, as before.
+            if (subgroups.length === 0) {
+              return (
+                <div
+                  key={c.id}
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
+                >
+                  {lane(c.id, c.name)}
+                </div>
+              );
+            }
+
             return (
-              <KanbanColumn
-                key={c.id}
-                id={c.id}
-                title={c.name}
-                color={c.color}
-                count={ids.length}
-                maxCapacity={c.maxCapacity ?? null}
-                students={ids
-                  .filter(matchesSearch)
-                  .map((id) => studentsById[id])
-                  .filter(Boolean)}
-              />
+              <section key={c.id} className="rounded-card border bg-card/40 p-3">
+                <header className="mb-2.5 flex items-center gap-2">
+                  {c.color && (
+                    <span
+                      className="inline-block h-3 w-3 rounded-sm border"
+                      style={{ backgroundColor: c.color }}
+                    />
+                  )}
+                  <h2 className="text-base font-semibold">{c.name}</h2>
+                  <Badge
+                    variant={
+                      c.maxCapacity != null && classTotal > c.maxCapacity
+                        ? "destructive"
+                        : "secondary"
+                    }
+                    className="text-[10px]"
+                  >
+                    <Users className="mr-1 h-3 w-3" />
+                    {c.maxCapacity != null
+                      ? `${classTotal}/${c.maxCapacity}`
+                      : classTotal}
+                  </Badge>
+                </header>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {subgroups.map((sub) =>
+                    lane(columnId(c.id, sub.id), sub.name),
+                  )}
+                  {/* Children in the class but not in any subgroup yet. */}
+                  {lane(c.id, t("withoutSubgroup"), true)}
+                </div>
+              </section>
             );
           })}
         </div>
