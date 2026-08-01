@@ -15,6 +15,15 @@ resources:
 # Production nutzt die Base-Defaults für HPA (min 2 / max 5) und PDB (minAvailable 1).
 # Die Deployment.replicas in der Base sind der Startwert; HPA übernimmt danach.
 
+# Ohne diese Option haengt Kustomize einen Content-Hash an den ConfigMap-Namen
+# (backend-config-<hash>). Der Migration-Job wird NICHT ueber Kustomize
+# gerendert (envsubst + kubectl apply, siehe deploy-production.yml) und
+# referenziert `backend-config` woertlich — mit Suffix findet er sie nie und
+# bleibt in CreateContainerConfigError haengen. Der Hash bringt hier nichts:
+# die Deployments rollen ueber `kubectl set image`, nicht ueber ConfigMap-Aenderungen.
+generatorOptions:
+  disableNameSuffixHash: true
+
 configMapGenerator:
   - name: backend-config
     behavior: merge
