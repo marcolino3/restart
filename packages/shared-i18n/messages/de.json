@@ -2867,6 +2867,7 @@
     "bornWithAge": "geb. {date} · {age} J.",
     "capacityExceededWarn": "{className}: jetzt {count} von {max} – Kapazität überschritten",
     "clearSelection": "Auswahl leeren",
+    "collapsedHint": "{count} Kinder — eingeklappt",
     "deactivate": "Deaktivieren",
     "editStudent": "Bearbeiten",
     "filterByGrade": "Stufe:",

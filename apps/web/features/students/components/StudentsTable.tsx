@@ -165,11 +165,16 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
           return <span className="text-muted-foreground">–</span>;
         }
         return (
-          <Badge
-            variant="accent"
-            className={cls.color ? "border-transparent text-white" : undefined}
-            style={cls.color ? { backgroundColor: cls.color } : undefined}
-          >
+          // Colour as a dot, not as a filled chip: the class palette is
+          // user-chosen and unreadable behind white text at some values. The
+          // class list and the kanban already show it this way.
+          <Badge variant="accent" className="gap-1.5">
+            {cls.color && (
+              <i
+                className="inline-block size-[7px] shrink-0 rounded-full"
+                style={{ background: cls.color }}
+              />
+            )}
             {cls.name}
           </Badge>
         );
@@ -186,14 +191,13 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
         return gradeLevels.length ? (
           <div className="flex flex-wrap gap-1">
             {gradeLevels.map((gl) => (
-              <Badge
-                key={gl.id}
-                variant="secondary"
-                className={
-                  gl.color ? "border-transparent text-white" : undefined
-                }
-                style={gl.color ? { backgroundColor: gl.color } : undefined}
-              >
+              <Badge key={gl.id} variant="secondary" className="gap-1.5">
+                {gl.color && (
+                  <i
+                    className="inline-block size-[7px] shrink-0 rounded-full"
+                    style={{ background: gl.color }}
+                  />
+                )}
                 {gl.name}
               </Badge>
             ))}
