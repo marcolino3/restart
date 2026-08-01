@@ -224,6 +224,13 @@ jobs:
             --dry-run=client -o yaml | kubectl apply -n "$NAMESPACE" -f -
           echo "::notice::ghcr-secret ensured in $NAMESPACE"
 
+      # Wie in deploy-production.yml: der Migration-Job zieht `backend-config`
+      # und `backend-secrets` per envFrom und muss sie im Cluster vorfinden.
+      # Der Sync im deploy-Job weiter unten laeuft erst nach der Migration —
+      # auf einem frischen Namespace waere das zu spaet.
+      - name: Sync manifests (kustomize)
+        run: kubectl apply -k k8s/staging
+
       - name: Apply migration job
         env:
           IMAGE_OWNER: ${{ github.repository_owner }}
