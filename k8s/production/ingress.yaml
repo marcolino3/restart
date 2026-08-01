@@ -5,8 +5,24 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     # HTTPS erzwingen.
+    #
+    # TEMPORÄR: 'force-ssl-redirect' ist ausgesetzt, bis cert-manager das erste
+    # Let's-Encrypt-Zertifikat für restart.colibri-app.ch ausgestellt hat.
+    #
+    # Grund — Henne-Ei-Problem beim HTTP-01-Solver: force-ssl-redirect greift
+    # auch OHNE gültiges Zertifikat. Let's Encrypt ruft
+    # http://restart.colibri-app.ch/.well-known/acme-challenge/<token> über
+    # Port 80 ab, bekommt ein 308 auf HTTPS, trifft dort das selbstsignierte
+    # nginx-Fallback und bricht ab. Challenge scheitert → kein Zertifikat →
+    # Fallback bleibt. Der Prod-Smoke-Test lief deshalb in curl-Exit 60
+    # (Verifikation 2026-08-01: der acme-challenge-Pfad antwortete mit 308).
+    #
+    # 'ssl-redirect: true' bleibt aktiv: sobald das Zertifikat steht, wird
+    # weiterhin auf HTTPS umgeleitet. Nach erfolgreicher Ausstellung
+    # (kubectl get certificate production-tls -n restart-production → READY=True)
+    # muss force-ssl-redirect wieder auf "true" — HSTS ist bereits scharf.
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
     # Body-Size für Uploads.
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
     # Rate-Limit in Production schärfer als staging — Schul-Software hat
