@@ -344,6 +344,11 @@ export function StudentsKanban({
   const openProfile = (studentId: string) =>
     router.push(ROUTES.admin.studentsView(locale, studentId));
 
+  // Any class split into subgroups changes how wide the columns should be.
+  const hasSubgroupLanes = visibleClassrooms.some(
+    (c) => subgroupsOf(c, gradeLevels).length > 0,
+  );
+
   const laneStudents = (id: string): KanbanStudent[] =>
     (columns[id]?.studentIds ?? [])
       .filter(matchesSearch)
@@ -376,17 +381,33 @@ export function StudentsKanban({
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
       >
-        <div className="grid grid-cols-1 items-start gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          <KanbanColumn
-            id={UNASSIGNED_COLUMN_ID}
-            title={t("unassigned")}
-            count={columns[UNASSIGNED_COLUMN_ID]?.studentIds.length ?? 0}
-            students={laneStudents(UNASSIGNED_COLUMN_ID)}
-            selectedIds={selectedIds}
-            onToggleSelect={toggleSelected}
-            onOpen={openProfile}
-            highlight
-          />
+        <div
+          className="grid items-start gap-3"
+          style={{
+            // auto-fit rather than a fixed column count: a class carrying
+            // subgroups needs room for its lanes, and with a fixed count it
+            // stayed 430px wide however empty the rest of the row was —
+            // which is why the third lane wrapped.
+            gridTemplateColumns: hasSubgroupLanes
+              ? "repeat(auto-fit, minmax(min(680px, 100%), 1fr))"
+              : "repeat(auto-fit, minmax(min(280px, 100%), 1fr))",
+          }}
+        >
+          {/* Only shown when somebody is actually unassigned — an empty
+              column would just take room away from the classes. It also
+              reappears the moment a child is dragged out of a class. */}
+          {(columns[UNASSIGNED_COLUMN_ID]?.studentIds.length ?? 0) > 0 && (
+            <KanbanColumn
+              id={UNASSIGNED_COLUMN_ID}
+              title={t("unassigned")}
+              count={columns[UNASSIGNED_COLUMN_ID]?.studentIds.length ?? 0}
+              students={laneStudents(UNASSIGNED_COLUMN_ID)}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelected}
+              onOpen={openProfile}
+              highlight
+            />
+          )}
 
           {visibleClassrooms.map((c) => {
             const subgroups = subgroupsOf(c, gradeLevels);
@@ -407,6 +428,11 @@ export function StudentsKanban({
                 onToggleSelect={toggleSelected}
                 onOpen={openProfile}
                 unassignedLabel={t("withoutSubgroup")}
+                distribution={subgroups.map((sub) => ({
+                  label: sub.name,
+                  count:
+                    columns[columnId(c.id, sub.id)]?.studentIds.length ?? 0,
+                }))}
                 sections={subgroups.map((sub) => ({
                   id: columnId(c.id, sub.id),
                   title: sub.name,
@@ -434,7 +460,7 @@ export function StudentsKanban({
       </DndContext>
 
       {selectedIds.length > 0 && (
-        <div className="sticky bottom-4 flex flex-wrap items-center gap-3 rounded-card border border-primary/40 bg-primary/5 px-4 py-3">
+        <div className="sticky bottom-4 flex flex-wrap items-center gap-3 rounded-card border border-primary/40 bg-card px-4 py-3 shadow-sm">
           <span className="text-sm font-semibold text-primary">
             {t("selectedCount", { count: selectedIds.length })}
           </span>
@@ -479,6 +505,8 @@ interface ColumnProps {
   sections?: SectionProps[];
   /** Heading for the lane holding children not placed in any subgroup. */
   unassignedLabel?: string;
+  /** Per-subgroup counts, shown next to the class name ("US1 1 · US2 2"). */
+  distribution?: { label: string; count: number }[];
 }
 
 function KanbanColumn({
@@ -494,48 +522,89 @@ function KanbanColumn({
   highlight,
   sections,
   unassignedLabel,
+  distribution,
 }: ColumnProps) {
   const overCapacity = maxCapacity != null && count > maxCapacity;
   const lanes = sections ?? [];
 
   return (
-    <Card className={cn("flex flex-col gap-0", highlight && "bg-muted/40")}>
+    <Card
+      className={cn(
+        "flex flex-col gap-0",
+        // "Unassigned" is the odd one out and reads as such in the design:
+        // warm tint and a visible border, not just another grey card.
+        highlight && "border-amber-200/70 bg-amber-50/60 dark:bg-amber-950/20",
+      )}
+    >
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2 truncate text-base">
-            {color && (
+            {color ? (
               <span
                 className="inline-block h-2.5 w-2.5 rounded-full"
                 style={{ backgroundColor: color }}
               />
-            )}
+            ) : highlight ? (
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-600/80" />
+            ) : null}
             <span className="truncate">{title}</span>
+            {/* Plain count next to the name, as in the design. The capacity
+                keeps its badge — it can turn into a warning. */}
+            {maxCapacity == null && (
+              <span className="text-sm font-normal text-muted-foreground">
+                {count}
+              </span>
+            )}
           </CardTitle>
-          <Badge
-            variant={overCapacity ? "destructive" : "secondary"}
-            className="text-[10px]"
-          >
-            <Users className="mr-1 h-3 w-3" />
-            {maxCapacity != null ? `${count}/${maxCapacity}` : count}
-          </Badge>
+
+          {maxCapacity != null && (
+            <Badge
+              variant={overCapacity ? "destructive" : "secondary"}
+              className="text-[10px]"
+            >
+              <Users className="mr-1 h-3 w-3" />
+              {count}/{maxCapacity}
+            </Badge>
+          )}
         </div>
+        {/* Distribution on its own line — squeezed next to the title it ate
+            into the class name, which then truncated to "Klasse …". */}
+        {distribution && distribution.length > 0 && (
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            {distribution.map((d) => `${d.label} ${d.count}`).join(" · ")}
+          </p>
+        )}
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-2 p-3 pt-1">
+      {/* A container query, not a viewport one: whether two subgroups fit
+          side by side depends on how wide this column is, and that changes
+          with the number of classes on the board. */}
+      <CardContent className="@container flex flex-col gap-2 p-3 pt-1">
         {lanes.length > 0 ? (
           <>
-            {lanes.map((section) => (
-              <DropLane
-                key={section.id}
-                id={section.id}
-                label={section.title}
-                count={section.count}
-                students={section.students}
-                selectedIds={selectedIds}
-                onToggleSelect={onToggleSelect}
-                onOpen={onOpen}
-              />
-            ))}
+            <div
+              className="grid gap-2"
+              style={{
+                // auto-fit over a minimum lane width: every subgroup that
+                // still fits gets its own column. Fixed breakpoints left the
+                // third lane below the first two even with room to spare.
+                gridTemplateColumns:
+                  "repeat(auto-fit, minmax(min(210px, 100%), 1fr))",
+              }}
+            >
+              {lanes.map((section) => (
+                <DropLane
+                  key={section.id}
+                  id={section.id}
+                  label={section.title}
+                  count={section.count}
+                  students={section.students}
+                  selectedIds={selectedIds}
+                  onToggleSelect={onToggleSelect}
+                  onOpen={onOpen}
+                />
+              ))}
+            </div>
             {/* The class lane still takes children directly — whoever has not
                 been placed in a subgroup yet. Labelled, or its cards read as
                 belonging to the last subgroup above it. */}
@@ -587,9 +656,12 @@ function DropLane({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   const [collapsed, setCollapsed] = useState(false);
-  // A collapsed lane still has to accept a drop, so it opens on hover-over
-  // rather than refusing the card.
-  const showCards = !collapsed || isOver;
+  // A collapsed lane stays collapsed while a card hovers over it. Expanding on
+  // isOver looked helpful but fed back on itself: the cards appear, the lane
+  // grows, the pointer is no longer over it, isOver flips false, the cards go
+  // away — React gave up with "Maximum update depth exceeded". The lane still
+  // accepts the drop; it just shows a landing strip instead of its contents.
+  const showCards = !collapsed;
 
   return (
     <div>
@@ -600,17 +672,19 @@ function DropLane({
           className="mb-1 flex w-full items-center gap-1.5 px-0.5 text-left"
           aria-expanded={!collapsed}
         >
-          {collapsed ? (
-            <ChevronRight className="size-3 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="size-3 text-muted-foreground" />
-          )}
           <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
             {label}
           </span>
           <span className="rounded bg-muted px-1.5 text-[10px] text-muted-foreground">
             {count ?? students.length}
           </span>
+          {/* Chevron at the far end of the row: leading it pushed the label
+              off the left edge the other headings line up on. */}
+          {collapsed ? (
+            <ChevronRight className="ml-auto size-3 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="ml-auto size-3 text-muted-foreground" />
+          )}
         </button>
       )}
       <div
@@ -618,6 +692,11 @@ function DropLane({
         className={cn(
           "flex flex-col gap-1.5 rounded-md",
           minHeight ? "min-h-[120px]" : "min-h-[36px]",
+          // Collapsed lanes keep a fixed strip so there is something to aim at.
+          // Collapsed keeps a visible, droppable strip — just without the
+          // wording. The counter next to the label already says how many are
+          // inside, so a text would only repeat it.
+          collapsed && "min-h-[32px] border border-dashed bg-muted/30",
           isOver && "bg-accent/50 ring-1 ring-primary/40",
         )}
       >

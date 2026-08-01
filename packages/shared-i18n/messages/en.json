@@ -2867,6 +2867,7 @@
     "bornWithAge": "b. {date} · {age} y.",
     "capacityExceededWarn": "{className}: now {count} of {max} – over capacity",
     "clearSelection": "Clear selection",
+    "collapsedHint": "{count} children — collapsed",
     "deactivate": "Deactivate",
     "editStudent": "Edit",
     "filterByGrade": "Grade:",
