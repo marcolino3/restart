@@ -90,6 +90,7 @@ export default function StudentEditView({
       exitDate: student.exitDate ? new Date(student.exitDate) : null,
       notes: student.notes ?? "",
       preferredName: student.preferredName ?? "",
+      photoUrl: student.photoUrl ?? "",
       placeOfBirth: student.placeOfBirth ?? "",
       firstLanguages: student.firstLanguages ?? [],
       familyLanguages: student.familyLanguages ?? [],
@@ -138,9 +139,9 @@ export default function StudentEditView({
             </Button>
             <div className="shrink-0">
               <StudentAvatar
-                studentId={student.id}
                 firstName={student.firstName}
                 lastName={student.lastName}
+                photoUrl={student.photoUrl}
                 className="h-16 w-16"
                 fallbackClassName="text-xl"
               />
@@ -235,7 +236,7 @@ export default function StudentEditView({
                           width="w-1/2"
                         />
                       </div>
-                      <StudentMasterDataFields />
+                      <StudentMasterDataFields studentId={student.id} />
                     </section>
 
                     <Separator />

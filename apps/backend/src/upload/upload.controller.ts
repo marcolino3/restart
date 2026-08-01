@@ -20,6 +20,7 @@ import { BetterAuthGuard } from '@/auth/guard/better-auth.guard';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { Employee } from '@/employee-management/employees/entities/employee.entity';
 import { SystemRole } from '@/roles/entities/system-role.enum';
+import { Student } from '@/school-management/students/entities/student.entity';
 import { StorageService } from '@/storage/storage.service';
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -39,7 +40,7 @@ const ALLOWED_MIME_TYPES = new Set([
 // Every entity here must have an ownership rule in assertTargetInOrg().
 // Objects are public (served unauthenticated), so writes must be limited to
 // targets the caller actually owns.
-const ALLOWED_ENTITIES = new Set(['organizations', 'employees']);
+const ALLOWED_ENTITIES = new Set(['organizations', 'employees', 'students']);
 
 @Controller('upload')
 @UseGuards(BetterAuthGuard)
@@ -154,6 +155,23 @@ export class UploadController {
         relations: { membership: true },
       });
       if (!employee) {
+        throw new ForbiddenException(
+          'Upload target outside active organization',
+        );
+      }
+      return;
+    }
+
+    // students: the target student must belong to the caller's active org.
+    // Unlike employees the org link is a direct column, so no relation join.
+    if (safeEntity === 'students') {
+      if (!user.orgId) {
+        throw new ForbiddenException('No active organization');
+      }
+      const student = await this.entityManager.findOne(Student, {
+        where: { id: safeId, organizationId: user.orgId },
+      });
+      if (!student) {
         throw new ForbiddenException(
           'Upload target outside active organization',
         );

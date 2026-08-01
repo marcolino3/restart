@@ -529,9 +529,9 @@ export default function StudentViewPage({
         <div className="mb-[18px] overflow-x-auto rounded-card border bg-card px-[22px] pt-[18px] shadow-xs">
           <div className="flex flex-wrap items-center gap-4">
             <StudentAvatar
-              studentId={student.id}
               firstName={student.firstName}
               lastName={student.lastName}
+              photoUrl={student.photoUrl}
               className="size-[52px] shrink-0 rounded-[16px]"
               fallbackClassName="rounded-[16px] text-[18px]"
             />

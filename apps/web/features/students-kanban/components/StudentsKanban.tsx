@@ -874,7 +874,6 @@ function StudentCardVisual({
       >
         <div className="flex items-center gap-2">
           <StudentAvatar
-            studentId={student.id}
             firstName={student.firstName}
             lastName={student.lastName}
             className="size-6 shrink-0"

@@ -1,18 +1,10 @@
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
+import { InitialsAvatar } from "@/components/common/InitialsAvatar";
 
 interface EmployeeAvatarProps {
   firstName?: string | null;
   lastName?: string | null;
   className?: string;
   fallbackClassName?: string;
-}
-
-function getInitials(firstName?: string | null, lastName?: string | null) {
-  return (
-    (firstName?.charAt(0)?.toUpperCase() ?? "") +
-      (lastName?.charAt(0)?.toUpperCase() ?? "") || "?"
-  );
 }
 
 /**
@@ -27,15 +19,11 @@ export function EmployeeAvatar({
   fallbackClassName,
 }: EmployeeAvatarProps) {
   return (
-    <Avatar className={className}>
-      <AvatarFallback
-        className={cn(
-          "bg-accent font-bold text-accent-foreground",
-          fallbackClassName,
-        )}
-      >
-        {getInitials(firstName, lastName)}
-      </AvatarFallback>
-    </Avatar>
+    <InitialsAvatar
+      firstName={firstName}
+      lastName={lastName}
+      className={className}
+      fallbackClassName={fallbackClassName}
+    />
   );
 }

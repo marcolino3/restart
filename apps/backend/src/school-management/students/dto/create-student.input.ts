@@ -56,6 +56,11 @@ export class CreateStudentInput {
   @Field(() => String, { nullable: true })
   @IsString()
   @IsOptional()
+  photoUrl?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsString()
+  @IsOptional()
   placeOfBirth?: string;
 
   @Field(() => [String], { nullable: true })
