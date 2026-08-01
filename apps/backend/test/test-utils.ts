@@ -54,11 +54,17 @@ export async function createTestingApp(
 /**
  * Truncates all tables in the test database (preserving schema).
  * Call between tests for isolation.
+ *
+ * One statement for every table rather than one statement per table: with
+ * `loadAllEntities` a suite carries dozens of entities, and a round trip each
+ * pushed `afterEach` past its timeout on a loaded CI runner. TRUNCATE takes a
+ * table list, and CASCADE covers the FK dependencies between them.
  */
 export async function cleanDatabase(dataSource: DataSource) {
-  const entities = dataSource.entityMetadatas;
-  for (const entity of entities) {
-    const repository = dataSource.getRepository(entity.name);
-    await repository.query(`TRUNCATE TABLE "${entity.tableName}" CASCADE`);
-  }
+  const tables = dataSource.entityMetadatas.map(
+    (entity) => `"${entity.tableName}"`,
+  );
+  if (tables.length === 0) return;
+
+  await dataSource.query(`TRUNCATE TABLE ${tables.join(', ')} CASCADE`);
 }
