@@ -1,31 +1,24 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
 
 import { Badge } from "@/components/ui/badge";
-import { SearchInput } from "@/components/common/SearchInput";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { PersonCell } from "@/components/common/PersonCell";
+import { DataTable } from "@/components/data-table/DataTable";
+import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
+import type { FilterGroup } from "@/components/data-table/DataTableFilter";
+import { useDataTable } from "@/components/data-table/use-data-table";
+import { multiSelectFilter } from "@/lib/table/locale-sorting";
 import { StudentAvatar } from "@/features/students/components/StudentAvatar";
-import { cn } from "@/lib/utils";
 
 import type { AdmissionRejectedBy, RejectedApplication } from "../types";
 
 interface Props {
   applications: RejectedApplication[];
 }
-
-type SortKey = "child" | "family" | "grade" | "reason" | "by" | "date";
-type SortDir = "asc" | "desc";
 
 const rejectedByKey = (by: AdmissionRejectedBy): string => {
   switch (by) {
@@ -39,71 +32,222 @@ const rejectedByKey = (by: AdmissionRejectedBy): string => {
   }
 };
 
+/** The reason label falls back to the free-text reason when unset. */
+const reasonOf = (a: RejectedApplication): string =>
+  a.rejectionReasonLabel ?? a.rejectionReason ?? "";
+
 export function RejectedApplicationsList({ applications }: Props) {
   const t = useTranslations("Admissions");
   const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>("date");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
-  const dateFmt = (iso: string) => {
-    const d = new Date(iso);
-    return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString();
-  };
-
-  const rows = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const filtered = q
-      ? applications.filter((a) =>
-          [
-            `${a.childFirstName} ${a.childLastName}`,
-            a.familyName ?? "",
-            a.rejectionReasonLabel ?? a.rejectionReason ?? "",
-          ]
-            .join(" ")
-            .toLowerCase()
-            .includes(q),
-        )
-      : applications;
-    const dir = sortDir === "asc" ? 1 : -1;
-    const value = (a: RejectedApplication): string | number => {
-      switch (sortKey) {
-        case "child":
-          return `${a.childLastName} ${a.childFirstName}`.toLowerCase();
-        case "family":
-          return (a.familyName ?? "").toLowerCase();
-        case "grade":
-          return (a.assignedGradeLevelName ?? "").toLowerCase();
-        case "reason":
+  const columns = useMemo<ColumnDef<RejectedApplication>[]>(
+    () => [
+      {
+        id: "child",
+        accessorFn: (a) => `${a.childLastName} ${a.childFirstName}`,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("listColChild")} />
+        ),
+        meta: { labelKey: "listColChild" },
+        cell: ({ row }) => {
+          const a = row.original;
           return (
-            a.rejectionReasonLabel ??
-            a.rejectionReason ??
-            ""
-          ).toLowerCase();
-        case "by":
-          return a.rejectedBy ?? "";
-        case "date":
-          return new Date(a.rejectedAt).getTime() || 0;
-        default:
-          return "";
-      }
-    };
-    return [...filtered].sort((a, b) => {
-      const va = value(a);
-      const vb = value(b);
-      if (typeof va === "number" && typeof vb === "number")
-        return dir * (va - vb);
-      return dir * String(va).localeCompare(String(vb));
-    });
-  }, [applications, query, sortKey, sortDir]);
+            <PersonCell
+              avatar={
+                <StudentAvatar
+                  firstName={a.childFirstName}
+                  lastName={a.childLastName}
+                  className="size-8"
+                  fallbackClassName="text-[11px]"
+                />
+              }
+              name={`${a.childFirstName} ${a.childLastName}`.trim() || "—"}
+            />
+          );
+        },
+      },
+      {
+        id: "family",
+        accessorFn: (a) => a.familyName ?? "",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("fieldFamilyName")} />
+        ),
+        meta: { labelKey: "fieldFamilyName" },
+        cell: ({ getValue }) => (
+          <span className="text-sm">{getValue<string>() || "—"}</span>
+        ),
+      },
+      {
+        id: "gradeLevel",
+        accessorFn: (a) => a.assignedGradeLevelName ?? "",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("fieldGradeLevel")} />
+        ),
+        meta: { labelKey: "fieldGradeLevel" },
+        filterFn: multiSelectFilter,
+        cell: ({ getValue }) => (
+          <span className="text-sm">{getValue<string>() || "—"}</span>
+        ),
+      },
+      {
+        id: "reason",
+        accessorFn: reasonOf,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("rejectionReason")} />
+        ),
+        meta: { labelKey: "rejectionReason" },
+        filterFn: multiSelectFilter,
+        cell: ({ row }) => {
+          const a = row.original;
+          if (!a.rejectionReasonLabel) {
+            return (
+              <span className="text-sm text-muted-foreground">
+                {a.rejectionReason ?? "—"}
+              </span>
+            );
+          }
+          return (
+            <span className="inline-flex items-center gap-1.5 text-sm">
+              <span
+                aria-hidden
+                className="inline-block h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-border"
+                style={{
+                  backgroundColor: a.rejectionReasonColor ?? "var(--muted)",
+                }}
+              />
+              {a.rejectionReasonLabel}
+            </span>
+          );
+        },
+      },
+      {
+        id: "rejectedBy",
+        accessorFn: (a) => a.rejectedBy ?? "",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("rejectedByLabel")} />
+        ),
+        meta: { labelKey: "rejectedByLabel" },
+        filterFn: multiSelectFilter,
+        cell: ({ row }) => {
+          const by = row.original.rejectedBy;
+          if (!by) return <span className="text-sm">—</span>;
+          return (
+            <Badge variant="outline" className="text-[10px]">
+              {t(rejectedByKey(by))}
+            </Badge>
+          );
+        },
+      },
+      {
+        id: "followUpYear",
+        accessorFn: (a) => a.followUpYear ?? "",
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title={t("followUpYearColumn")}
+          />
+        ),
+        meta: { labelKey: "followUpYearColumn" },
+        filterFn: multiSelectFilter,
+        cell: ({ getValue }) => {
+          const year = getValue<string | number>();
+          return year ? (
+            <Badge variant="secondary" className="text-[10px]">
+              {year}
+            </Badge>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          );
+        },
+      },
+      {
+        id: "rejectedAt",
+        // Sorted on the timestamp, rendered as a localised date.
+        accessorFn: (a) => new Date(a.rejectedAt).getTime() || 0,
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title={t("rejectedAtLabel")}
+            className="justify-end"
+          />
+        ),
+        meta: { labelKey: "rejectedAtLabel" },
+        cell: ({ row }) => {
+          const d = new Date(row.original.rejectedAt);
+          return (
+            <span className="block text-right text-sm text-muted-foreground">
+              {Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString()}
+            </span>
+          );
+        },
+      },
+    ],
+    [t],
+  );
 
-  const toggleSort = (key: SortKey) => {
-    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else {
-      setSortKey(key);
-      setSortDir("asc");
-    }
-  };
+  const { table, globalFilter, setGlobalFilter } = useDataTable({
+    data: applications,
+    columns,
+    // Most recent rejections first — the list is read as a history.
+    initialSorting: [{ id: "rejectedAt", desc: true }],
+  });
+
+  const filterGroups = useMemo<FilterGroup[]>(() => {
+    const group = (
+      id: string,
+      label: string,
+      values: { value: string; label: string; color?: string }[],
+    ): FilterGroup | null => {
+      const seen = new Map<string, { value: string; label: string; color?: string }>();
+      for (const v of values) {
+        if (v.value && !seen.has(v.value)) seen.set(v.value, v);
+      }
+      if (seen.size === 0) return null;
+      return {
+        id,
+        label,
+        options: Array.from(seen.values()).sort((a, b) =>
+          a.label.localeCompare(b.label),
+        ),
+      };
+    };
+
+    return [
+      group(
+        "gradeLevel",
+        t("fieldGradeLevel"),
+        applications.map((a) => ({
+          value: a.assignedGradeLevelName ?? "",
+          label: a.assignedGradeLevelName ?? "",
+        })),
+      ),
+      group(
+        "reason",
+        t("rejectionReason"),
+        applications.map((a) => ({
+          value: reasonOf(a),
+          label: reasonOf(a),
+          color: a.rejectionReasonColor ?? undefined,
+        })),
+      ),
+      group(
+        "rejectedBy",
+        t("rejectedByLabel"),
+        applications.map((a) => ({
+          value: a.rejectedBy ?? "",
+          label: a.rejectedBy ? t(rejectedByKey(a.rejectedBy)) : "",
+        })),
+      ),
+      group(
+        "followUpYear",
+        t("followUpYearColumn"),
+        applications.map((a) => ({
+          value: a.followUpYear ? String(a.followUpYear) : "",
+          label: a.followUpYear ? String(a.followUpYear) : "",
+        })),
+      ),
+    ].filter((g): g is FilterGroup => g !== null);
+  }, [applications, t]);
 
   if (applications.length === 0) {
     return (
@@ -114,171 +258,14 @@ export function RejectedApplicationsList({ applications }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <SearchInput
-        value={query}
-        onValueChange={setQuery}
-        placeholder={t("rejectedSearchPlaceholder")}
-        containerClassName="w-full max-w-xs"
-      />
-
-      <div className="rounded-md border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <ColHead
-                label={t("listColChild")}
-                sortKey="child"
-                active={sortKey === "child"}
-                dir={sortDir}
-                onClick={toggleSort}
-              />
-              <ColHead
-                label={t("fieldFamilyName")}
-                sortKey="family"
-                active={sortKey === "family"}
-                dir={sortDir}
-                onClick={toggleSort}
-              />
-              <ColHead
-                label={t("fieldGradeLevel")}
-                sortKey="grade"
-                active={sortKey === "grade"}
-                dir={sortDir}
-                onClick={toggleSort}
-              />
-              <ColHead
-                label={t("rejectionReason")}
-                sortKey="reason"
-                active={sortKey === "reason"}
-                dir={sortDir}
-                onClick={toggleSort}
-              />
-              <ColHead
-                label={t("rejectedByLabel")}
-                sortKey="by"
-                active={sortKey === "by"}
-                dir={sortDir}
-                onClick={toggleSort}
-              />
-              <TableHead>{t("followUpYearColumn")}</TableHead>
-              <ColHead
-                label={t("rejectedAtLabel")}
-                sortKey="date"
-                active={sortKey === "date"}
-                dir={sortDir}
-                onClick={toggleSort}
-                align="right"
-              />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((a) => (
-              <TableRow
-                key={a.id}
-                className="cursor-pointer"
-                onClick={() => router.push(`/admin/admissions/${a.id}`)}
-              >
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <StudentAvatar
-                      firstName={a.childFirstName}
-                      lastName={a.childLastName}
-                      className="h-7 w-7 shrink-0"
-                      fallbackClassName="text-[10px]"
-                    />
-                    <span className="font-medium">
-                      {a.childFirstName} {a.childLastName}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-sm">{a.familyName ?? "—"}</TableCell>
-                <TableCell className="text-sm">
-                  {a.assignedGradeLevelName ?? "—"}
-                </TableCell>
-                <TableCell className="text-sm">
-                  {a.rejectionReasonLabel ? (
-                    <span className="inline-flex items-center gap-1.5">
-                      <span
-                        aria-hidden
-                        className="inline-block h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-border"
-                        style={{
-                          backgroundColor:
-                            a.rejectionReasonColor ?? "var(--muted)",
-                        }}
-                      />
-                      {a.rejectionReasonLabel}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">
-                      {a.rejectionReason ?? "—"}
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell className="text-sm">
-                  {a.rejectedBy ? (
-                    <Badge variant="outline" className="text-[10px]">
-                      {t(rejectedByKey(a.rejectedBy))}
-                    </Badge>
-                  ) : (
-                    "—"
-                  )}
-                </TableCell>
-                <TableCell className="text-sm">
-                  {a.followUpYear ? (
-                    <Badge variant="secondary" className="text-[10px]">
-                      {a.followUpYear}
-                    </Badge>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right text-sm text-muted-foreground">
-                  {dateFmt(a.rejectedAt)}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
-  );
-}
-
-function ColHead({
-  label,
-  sortKey,
-  active,
-  dir,
-  onClick,
-  align,
-}: {
-  label: string;
-  sortKey: SortKey;
-  active: boolean;
-  dir: SortDir;
-  onClick: (key: SortKey) => void;
-  align?: "right";
-}) {
-  return (
-    <TableHead className={cn(align === "right" && "text-right")}>
-      <button
-        type="button"
-        onClick={() => onClick(sortKey)}
-        className={cn(
-          "inline-flex items-center hover:text-foreground",
-          active ? "text-foreground" : "text-muted-foreground",
-        )}
-      >
-        {label}
-        {!active ? (
-          <ArrowUpDown className="ml-1 h-3 w-3 opacity-50" />
-        ) : dir === "asc" ? (
-          <ArrowUp className="ml-1 h-3 w-3" />
-        ) : (
-          <ArrowDown className="ml-1 h-3 w-3" />
-        )}
-      </button>
-    </TableHead>
+    <DataTable
+      table={table}
+      globalFilter={globalFilter}
+      onGlobalFilterChange={setGlobalFilter}
+      searchPlaceholder={t("rejectedSearchPlaceholder")}
+      filterGroups={filterGroups}
+      translateColumn={(key) => t(key)}
+      onRowClick={(row) => router.push(`/admin/admissions/${row.original.id}`)}
+    />
   );
 }

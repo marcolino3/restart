@@ -38,16 +38,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Progress } from "@/components/ui/progress";
+import type { ColumnDef } from "@tanstack/react-table";
 import { SearchInput } from "@/components/common/SearchInput";
-import { TableCard } from "@/components/common/TableCard";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable } from "@/components/data-table/DataTable";
+import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
+import { useDataTable } from "@/components/data-table/use-data-table";
 import { cn } from "@/lib/utils";
 
 import { membershipInitials } from "../lib/membership-name";
@@ -160,8 +155,121 @@ export function ProjectsList({
     );
   });
 
-  const openProject = (id: string) =>
-    router.push(ROUTES.admin.projectsBoard(locale, id));
+  const columns = React.useMemo<ColumnDef<ProjectListItem>[]>(
+    () => [
+      {
+        id: "title",
+        accessorFn: (p) => p.title,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("project")} />
+        ),
+        meta: { labelKey: "project" },
+        cell: ({ row }) => {
+          const project = row.original;
+          return (
+            <div className="flex items-center gap-2">
+              {project.color && (
+                <span
+                  className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: project.color }}
+                />
+              )}
+              <div>
+                <div className="font-semibold">{project.title}</div>
+                {project.description && (
+                  <div className="line-clamp-1 text-xs text-muted-foreground">
+                    {project.description}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        id: "status",
+        accessorFn: (p) => t(`status_${p.status}`),
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("status")} />
+        ),
+        meta: { labelKey: "status" },
+        cell: ({ row }) => (
+          <Badge variant={STATUS_VARIANT[row.original.status]}>
+            {t(`status_${row.original.status}`)}
+          </Badge>
+        ),
+      },
+      {
+        id: "progress",
+        accessorFn: progressPercent,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("progress")} />
+        ),
+        meta: { labelKey: "progress" },
+        cell: ({ row }) => (
+          <span className="inline-flex items-center gap-2">
+            <Progress
+              value={progressPercent(row.original)}
+              className="h-1.5 w-[90px] bg-muted"
+            />
+            <span className="font-mono text-xs">
+              {progressPercent(row.original)}%
+            </span>
+          </span>
+        ),
+      },
+      {
+        id: "tasks",
+        accessorFn: (p) => p.taskStats.total,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("colTasks")} />
+        ),
+        meta: { labelKey: "colTasks" },
+        cell: ({ row }) => (
+          <span className="font-mono text-xs">
+            {row.original.taskStats.done} / {row.original.taskStats.total}
+          </span>
+        ),
+      },
+      {
+        id: "members",
+        accessorFn: (p) => p.members?.length ?? 0,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("members")} />
+        ),
+        meta: { labelKey: "members" },
+        cell: ({ getValue }) => (
+          <span className="font-mono text-xs">{getValue<number>()}</span>
+        ),
+      },
+      {
+        id: "dueDate",
+        // Undated projects sort last under ascending order.
+        accessorFn: (p) =>
+          p.dueDate ? new Date(p.dueDate).getTime() : Number.MAX_SAFE_INTEGER,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("dueDate")} />
+        ),
+        meta: { labelKey: "dueDate" },
+        cell: ({ row }) => (
+          <span className="font-mono text-xs">
+            {row.original.dueDate
+              ? format(new Date(row.original.dueDate), "dd. MMM yyyy", {
+                  locale: de,
+                })
+              : "—"}
+          </span>
+        ),
+      },
+    ],
+    [t],
+  );
+
+  const { table } = useDataTable({
+    data: visible,
+    columns,
+    initialSorting: [{ id: "title", desc: false }],
+  });
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -327,77 +435,16 @@ export function ProjectsList({
           ))}
         </div>
       ) : (
-        <TableCard>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("project")}</TableHead>
-                <TableHead>{t("status")}</TableHead>
-                <TableHead>{t("progress")}</TableHead>
-                <TableHead>{t("colTasks")}</TableHead>
-                <TableHead>{t("members")}</TableHead>
-                <TableHead>{t("dueDate")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {visible.map((project) => (
-                <TableRow
-                  key={project.id}
-                  className="cursor-pointer"
-                  onClick={() => openProject(project.id)}
-                >
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {project.color && (
-                        <span
-                          className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: project.color }}
-                        />
-                      )}
-                      <div>
-                        <div className="font-semibold">{project.title}</div>
-                        {project.description && (
-                          <div className="line-clamp-1 text-xs text-muted-foreground">
-                            {project.description}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={STATUS_VARIANT[project.status]}>
-                      {t(`status_${project.status}`)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <span className="inline-flex items-center gap-2">
-                      <Progress
-                        value={progressPercent(project)}
-                        className="h-1.5 w-[90px] bg-muted"
-                      />
-                      <span className="font-mono text-xs">
-                        {progressPercent(project)}%
-                      </span>
-                    </span>
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {project.taskStats.done} / {project.taskStats.total}
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {project.members?.length ?? 0}
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {project.dueDate
-                      ? format(new Date(project.dueDate), "dd. MMM yyyy", {
-                          locale: de,
-                        })
-                      : "—"}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableCard>
+        // The search box and status chips live in the shared toolbar above, so
+        // the list view only needs the table itself.
+        <DataTable
+          table={table}
+          translateColumn={(key) => t(key)}
+          showViewOptions={false}
+          onRowClick={(row) =>
+            router.push(ROUTES.admin.projectsBoard(locale, row.original.id))
+          }
+        />
       )}
 
       <ProjectFormDialog

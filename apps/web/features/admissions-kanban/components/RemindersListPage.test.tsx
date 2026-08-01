@@ -18,6 +18,8 @@ vi.mock("../actions/mutate-admission-reminder.action", () => ({
 }));
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
+  // `useDataTable` builds its locale collator from this.
+  useLocale: () => "de",
 }));
 vi.mock("@/i18n/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
