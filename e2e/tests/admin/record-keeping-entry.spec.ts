@@ -153,7 +153,7 @@ async function seedRecordingFixture(page: Page) {
       input: {
         studentId,
         schoolClassId,
-        startDate: new Date().toISOString().slice(0, 10),
+        enrolledAt: new Date().toISOString().slice(0, 10),
       },
     },
   )
