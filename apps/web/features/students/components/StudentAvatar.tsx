@@ -3,37 +3,31 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
+import { getInitials } from "@/lib/get-initials";
 import { cn } from "@/lib/utils";
 
 interface StudentAvatarProps {
-  studentId: string;
   firstName?: string | null;
   lastName?: string | null;
+  /**
+   * Profile photo of the child. Students have no image field yet, so this is
+   * usually undefined and the initials fallback is what renders.
+   */
+  imageUrl?: string | null;
   className?: string;
   fallbackClassName?: string;
 }
 
-function getInitials(firstName?: string | null, lastName?: string | null) {
-  return (
-    (firstName?.charAt(0)?.toUpperCase() ?? "") +
-      (lastName?.charAt(0)?.toUpperCase() ?? "") || "?"
-  );
-}
-
 export function StudentAvatar({
-  studentId,
   firstName,
   lastName,
+  imageUrl,
   className,
   fallbackClassName,
 }: StudentAvatarProps) {
-  const src = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(
-    studentId,
-  )}&backgroundType=gradientLinear`;
-
   return (
     <Avatar className={className}>
-      <AvatarImage src={src} alt="" />
+      {imageUrl ? <AvatarImage src={imageUrl} alt="" /> : null}
       <AvatarFallback
         className={cn(
           "bg-primary text-primary-foreground font-semibold",

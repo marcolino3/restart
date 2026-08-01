@@ -123,7 +123,6 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
           <PersonCell
             avatar={
               <StudentAvatar
-                studentId={s.id}
                 firstName={s.firstName}
                 lastName={s.lastName}
                 className="size-8"

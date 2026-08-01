@@ -79,7 +79,6 @@ const StudentDetailPage = async ({ params }: PageProps) => {
 
       <div className="flex items-center gap-4">
         <StudentAvatar
-          studentId={student.id}
           firstName={student.firstName}
           lastName={student.lastName}
           className="h-14 w-14"

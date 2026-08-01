@@ -85,7 +85,6 @@ export async function DashboardAttentionPanel({
                 className="flex items-center gap-3 rounded-[calc(var(--radius-card)-5px)] border bg-row-hover px-[13px] py-2.5 transition-colors hover:bg-muted"
               >
                 <StudentAvatar
-                  studentId={s.studentId}
                   firstName={s.firstName}
                   lastName={s.lastName}
                   className="size-[30px]"
