@@ -396,6 +396,7 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
                       value={studentSearch}
                       onValueChange={setStudentSearch}
                       placeholder={t("searchStudentsPlaceholder")}
+                      aria-label={t("searchStudentsPlaceholder")}
                     />
                     {filteredStudents.length === 0 ? (
                       <p className="text-sm text-muted-foreground">

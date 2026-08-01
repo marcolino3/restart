@@ -53,7 +53,7 @@ test.describe('Grade levels — CRUD', () => {
     await expect(row).toContainText('6–9 years')
 
     // --- Search filters by name and short code ---------------------------
-    const search = page.getByRole('textbox', { name: /search grade levels/i })
+    const search = page.getByRole('searchbox', { name: /search grade levels/i })
     await search.fill(unique)
     await expect(page.getByRole('row', { name: new RegExp(unique) })).toBeVisible()
     await search.fill('definitiv-kein-treffer-xyz')

@@ -14,9 +14,10 @@ metadata:
     nginx.ingress.kubernetes.io/limit-rps: "20"
     nginx.ingress.kubernetes.io/limit-rpm: "600"
     nginx.ingress.kubernetes.io/limit-connections: "20"
-    # Security-Header: bewusst in Next.js (next.config.ts) statt im Ingress,
-    # weil moderne nginx-ingress 'snippet'-Annotations standardmässig deaktiviert
-    # (CVE-2023-5043). Für Production ggf. ControllerConfig anpassen.
+    # Security-Header: bewusst in Next.js (apps/web/next.config.ts) statt im
+    # Ingress, weil moderne nginx-ingress 'snippet'-Annotations per Admission-
+    # Webhook ablehnen (beliebige nginx-Config-Injection, CVE-2021-25742).
+    # Snippets clusterweit freizuschalten wäre ein schlechter Tausch.
 spec:
   ingressClassName: nginx
   tls:

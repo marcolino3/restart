@@ -52,6 +52,11 @@ export class Student extends AbstractEntity<Student> implements IStudent {
   @Column('text', { name: 'preferred_name', nullable: true })
   preferredName?: string | null;
 
+  /** URL of the student's photo, pointing at a publicly served asset. */
+  @Field(() => String, { nullable: true })
+  @Column('varchar', { name: 'photo_url', length: 500, nullable: true })
+  photoUrl?: string | null;
+
   /** Place of birth (register/report use). */
   @Field(() => String, { nullable: true })
   @Column('text', { name: 'place_of_birth', nullable: true })

@@ -1,41 +1,32 @@
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
-import { getInitials } from "@/lib/get-initials";
-import { cn } from "@/lib/utils";
+import { InitialsAvatar } from "@/components/common/InitialsAvatar";
 
 interface StudentAvatarProps {
   firstName?: string | null;
   lastName?: string | null;
-  /**
-   * Profile photo of the child. Students have no image field yet, so this is
-   * usually undefined and the initials fallback is what renders.
-   */
-  imageUrl?: string | null;
+  /** Student photo, if one is on file; falls back to initials otherwise. */
+  photoUrl?: string | null;
   className?: string;
   fallbackClassName?: string;
 }
 
+/**
+ * Student avatar: shows the student's photo when available, otherwise falls
+ * back to their initials in an accent circle.
+ */
 export function StudentAvatar({
   firstName,
   lastName,
-  imageUrl,
+  photoUrl,
   className,
   fallbackClassName,
 }: StudentAvatarProps) {
   return (
-    <Avatar className={className}>
-      {imageUrl ? <AvatarImage src={imageUrl} alt="" /> : null}
-      <AvatarFallback
-        className={cn(
-          "bg-primary text-primary-foreground font-semibold",
-          fallbackClassName,
-        )}
-      >
-        {getInitials(firstName, lastName)}
-      </AvatarFallback>
-    </Avatar>
+    <InitialsAvatar
+      firstName={firstName}
+      lastName={lastName}
+      imageUrl={photoUrl}
+      className={className}
+      fallbackClassName={fallbackClassName}
+    />
   );
 }

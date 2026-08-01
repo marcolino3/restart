@@ -194,6 +194,7 @@ export function DataTable<TData>({
               value={globalFilter ?? ""}
               onValueChange={onGlobalFilterChange}
               placeholder={searchPlaceholder}
+              aria-label={searchPlaceholder}
             />
           )}
           {hasFilters && (

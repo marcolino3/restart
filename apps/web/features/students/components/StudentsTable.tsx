@@ -125,6 +125,7 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
               <StudentAvatar
                 firstName={s.firstName}
                 lastName={s.lastName}
+                photoUrl={s.photoUrl}
                 className="size-8"
                 fallbackClassName="text-[11px]"
               />

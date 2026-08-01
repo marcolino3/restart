@@ -30,13 +30,10 @@ metadata:
     nginx.ingress.kubernetes.io/limit-rps: "30"
     nginx.ingress.kubernetes.io/limit-rpm: "1200"
     nginx.ingress.kubernetes.io/limit-connections: "30"
-    # Security-Header.
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload";
-      more_set_headers "X-Frame-Options: DENY";
-      more_set_headers "X-Content-Type-Options: nosniff";
-      more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
-      more_set_headers "Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=()";
+    # Security-Header werden in Next.js gesetzt (apps/web/next.config.ts),
+    # NICHT hier: der nginx-Admission-Webhook lehnt 'configuration-snippet'
+    # ab, weil Snippets beliebige nginx-Config-Injection erlauben
+    # (CVE-2021-25742). Ein `apply` mit dieser Annotation schlägt hart fehl.
 spec:
   ingressClassName: nginx
   tls:

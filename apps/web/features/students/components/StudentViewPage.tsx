@@ -531,6 +531,7 @@ export default function StudentViewPage({
             <StudentAvatar
               firstName={student.firstName}
               lastName={student.lastName}
+              photoUrl={student.photoUrl}
               className="size-[52px] shrink-0 rounded-[16px]"
               fallbackClassName="rounded-[16px] text-[18px]"
             />

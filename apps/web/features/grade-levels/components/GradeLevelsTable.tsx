@@ -321,6 +321,7 @@ export function GradeLevelsTable({
         value={query}
         onValueChange={setQuery}
         placeholder={t("searchPlaceholder")}
+        aria-label={t("searchPlaceholder")}
         containerClassName="mb-4"
       />
 
