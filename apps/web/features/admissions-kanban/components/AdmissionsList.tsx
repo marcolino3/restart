@@ -1,26 +1,24 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  Bell,
-  BellRing,
-  Users2,
-} from "lucide-react";
+import type {
+  AccessorFn,
+  CellContext,
+  ColumnDef,
+  ColumnDefTemplate,
+  FilterFn,
+} from "@tanstack/react-table";
+import { Bell, BellRing, Users2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable } from "@/components/data-table/DataTable";
+import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
+import type { FilterGroup } from "@/components/data-table/DataTableFilter";
+import { useDataTable } from "@/components/data-table/use-data-table";
+import { multiSelectFilter } from "@/lib/table/locale-sorting";
 import { StudentAvatar } from "@/features/students/components/StudentAvatar";
+import { PersonCell } from "@/components/common/PersonCell";
 import { cn } from "@/lib/utils";
 
 import {
@@ -38,10 +36,6 @@ interface Props {
   onOpenCard: (id: string) => void;
 }
 
-/** `"child"` is the fixed leading column; the rest are configurable. */
-type SortKey = "child" | TableColumnKey;
-type SortDir = "asc" | "desc";
-
 const GENDER_GLYPH: Record<
   NonNullable<KanbanApplication["childGender"]>,
   string
@@ -51,6 +45,24 @@ const GENDER_GLYPH: Record<
   OTHER: "⚧",
 };
 
+/** Columns rendered right-aligned because they hold a number. */
+const NUMERIC_COLUMNS = new Set<TableColumnKey>(["days", "reminders"]);
+
+/** Columns offered in the filter dropdown, as categorical multi-selects. */
+const FILTERABLE_COLUMNS = new Set<TableColumnKey>([
+  "stage",
+  "gradeLevel",
+  "gender",
+  "source",
+  "status",
+]);
+
+const daysInStage = (a: KanbanApplication, now: number): number =>
+  Math.max(
+    0,
+    Math.floor((now - new Date(a.stageEnteredAt).getTime()) / 86_400_000),
+  );
+
 export function AdmissionsList({
   stages,
   tableColumns,
@@ -58,9 +70,8 @@ export function AdmissionsList({
   onOpenCard,
 }: Props) {
   const t = useTranslations("Admissions");
-  const columns = resolveTableColumns(tableColumns);
-  const [sortKey, setSortKey] = useState<SortKey>("child");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const tCommon = useTranslations("Common");
+  const columnKeys = resolveTableColumns(tableColumns);
 
   const stageById = useMemo(
     () => new Map(stages.map((s) => [s.id, s])),
@@ -71,326 +82,337 @@ export function AdmissionsList({
     [stages],
   );
 
-  // Now is computed once per render (client-only since AdmissionsKanban already
-  // gates rendering behind `mounted`).
-  // eslint-disable-next-line react-hooks/purity -- client-only render (parent gates behind `mounted`), Date.now() is stable for this render pass
+  // Computed once per render (client-only: AdmissionsKanban gates rendering
+  // behind `mounted`), so every row measures against the same instant.
+  // eslint-disable-next-line react-hooks/purity -- client-only render, stable for this render pass
   const now = Date.now();
-  const daysInStageFor = (a: KanbanApplication): number => {
-    const diff = now - new Date(a.stageEnteredAt).getTime();
-    return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
-  };
 
-  // A comparable sort value for any column. Numbers sort numerically, strings
-  // via localeCompare (handled in the sorter below).
-  const sortValue = (key: SortKey, a: KanbanApplication): string | number => {
-    switch (key) {
-      case "child":
-        return `${a.childLastName} ${a.childFirstName}`;
-      case "stage":
-        return stagePosById.get(a.admissionStageId) ?? 999;
-      case "gradeLevel":
-        return a.assignedGradeLevelName ?? "ZZZ";
-      case "family":
-        return a.family.name ?? "";
-      case "gender":
-        return a.childGender ?? "ZZZ";
-      case "source":
-        return a.admissionSource?.name ?? "";
-      case "status":
-        return a.status;
-      case "days":
-        return daysInStageFor(a);
-      case "contact":
-        return a.family.contactNames[0] ?? "ZZZ";
-      case "reminders":
-        return a.openRemindersCount;
-      default:
-        return "";
-    }
-  };
-
-  const sorted = useMemo(() => {
-    const dir = sortDir === "asc" ? 1 : -1;
-    const arr = [...applications];
-    arr.sort((a, b) => {
-      const va = sortValue(sortKey, a);
-      const vb = sortValue(sortKey, b);
-      if (typeof va === "number" && typeof vb === "number") {
-        return dir * (va - vb);
-      }
-      return dir * String(va).localeCompare(String(vb));
-    });
-    return arr;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [applications, sortKey, sortDir, stagePosById]);
-
-  const toggle = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(key);
-      setSortDir("asc");
-    }
-  };
-
-  const SortIcon = ({ active, dir }: { active: boolean; dir: SortDir }) =>
-    !active ? (
-      <ArrowUpDown className="ml-1 h-3 w-3 opacity-50" />
-    ) : dir === "asc" ? (
-      <ArrowUp className="ml-1 h-3 w-3" />
-    ) : (
-      <ArrowDown className="ml-1 h-3 w-3" />
-    );
-
-  const numericCols = new Set<TableColumnKey>(["days", "reminders"]);
-
-  const renderCell = (key: TableColumnKey, a: KanbanApplication) => {
-    switch (key) {
-      case "stage": {
-        const stage = stageById.get(a.admissionStageId);
+  const columns = useMemo<ColumnDef<KanbanApplication>[]>(() => {
+    /** The fixed leading column: avatar + child name + birth year. */
+    const childColumn: ColumnDef<KanbanApplication> = {
+      id: "child",
+      accessorFn: (a) => `${a.childLastName} ${a.childFirstName}`,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title={t("listColChild")} />
+      ),
+      meta: { labelKey: "listColChild" },
+      cell: ({ row }) => {
+        const a = row.original;
+        const birthYear = a.childDateOfBirth?.slice(0, 4);
         return (
-          <TableCell key={key}>
-            {stage && (
-              <Badge
-                variant="outline"
-                style={
-                  stage.color
-                    ? { borderColor: stage.color, color: stage.color }
-                    : undefined
-                }
-              >
-                {stage.name}
-              </Badge>
-            )}
-          </TableCell>
+          <PersonCell
+            avatar={
+              <StudentAvatar
+                firstName={a.childFirstName}
+                lastName={a.childLastName}
+                className="size-8"
+                fallbackClassName="text-[11px]"
+              />
+            }
+            name={`${a.childFirstName} ${a.childLastName}`.trim() || "—"}
+            subtitle={birthYear ? `Jg. ${birthYear}` : undefined}
+          />
         );
-      }
-      case "gradeLevel":
-        return (
-          <TableCell key={key} className="text-sm">
-            {a.assignedGradeLevelName ? (
-              <span className="inline-flex items-center gap-1.5">
-                <span
-                  aria-hidden
-                  className="inline-block h-2 w-2 shrink-0 rounded-full ring-1 ring-border"
-                  style={{
-                    backgroundColor: a.assignedGradeLevelColor ?? "var(--muted)",
-                  }}
-                />
-                <span className="truncate">{a.assignedGradeLevelName}</span>
-              </span>
-            ) : (
-              <span className="text-muted-foreground">—</span>
-            )}
-          </TableCell>
-        );
-      case "family":
-        return (
-          <TableCell key={key} className="text-sm">
-            <div className="flex items-center gap-1.5">
-              <span className="truncate">{a.family.name ?? "—"}</span>
-              {a.family.childrenCount > 1 && (
+      },
+    };
+
+    /**
+     * Per-column parts, kept as a plain shape rather than a `ColumnDef`:
+     * `ColumnDef` is a union, and spreading a union value below loses the
+     * `accessorFn` discriminant. The header/meta are added uniformly after.
+     */
+    type ColumnParts = {
+      accessorFn: AccessorFn<KanbanApplication>;
+      cell: ColumnDefTemplate<CellContext<KanbanApplication, unknown>>;
+      filterFn?: FilterFn<KanbanApplication>;
+    };
+
+    const byKey: Record<TableColumnKey, ColumnParts> = {
+      stage: {
+        // Sorts by the stage's board position, not its name — the pipeline
+        // order is what the user reads out of this column.
+        accessorFn: (a) => stagePosById.get(a.admissionStageId) ?? 999,
+        // The accessor is the board position, so the filter can't go through
+        // `multiSelectFilter` — it matches the stage name shown in the cell.
+        filterFn: (row, _id, value) => {
+          if (!Array.isArray(value) || value.length === 0) return true;
+          const name = stageById.get(row.original.admissionStageId)?.name ?? "";
+          return value.includes(name);
+        },
+        cell: ({ row }) => {
+          const stage = stageById.get(row.original.admissionStageId);
+          if (!stage) return null;
+          return (
+            <Badge
+              variant="outline"
+              style={
+                stage.color
+                  ? { borderColor: stage.color, color: stage.color }
+                  : undefined
+              }
+            >
+              {stage.name}
+            </Badge>
+          );
+        },
+      },
+      gradeLevel: {
+        accessorFn: (a) => a.assignedGradeLevelName ?? "",
+        filterFn: multiSelectFilter,
+        cell: ({ row }) => {
+          const a = row.original;
+          if (!a.assignedGradeLevelName) {
+            return <span className="text-muted-foreground">—</span>;
+          }
+          return (
+            <Badge variant="secondary" className="gap-1.5">
+              <i
+                aria-hidden
+                className="inline-block size-[7px] shrink-0 rounded-full"
+                style={{
+                  background: a.assignedGradeLevelColor ?? "var(--muted)",
+                }}
+              />
+              {a.assignedGradeLevelName}
+            </Badge>
+          );
+        },
+      },
+      family: {
+        accessorFn: (a) => a.family.name ?? "",
+        cell: ({ row }) => {
+          const family = row.original.family;
+          return (
+            <div className="flex items-center gap-1.5 text-sm">
+              <span className="truncate">{family.name ?? "—"}</span>
+              {family.childrenCount > 1 && (
                 <Badge variant="secondary" className="gap-0.5 text-[10px]">
                   <Users2 className="h-2.5 w-2.5" />
-                  {a.family.childrenCount}
+                  {family.childrenCount}
                 </Badge>
               )}
             </div>
-          </TableCell>
-        );
-      case "gender":
-        return (
-          <TableCell key={key} className="text-sm">
-            {a.childGender ? (
-              <span title={t("fieldGender")}>
-                {GENDER_GLYPH[a.childGender]}
-              </span>
-            ) : (
-              <span className="text-muted-foreground">—</span>
-            )}
-          </TableCell>
-        );
-      case "source":
-        return (
-          <TableCell key={key}>
-            {a.admissionSource ? (
-              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                {a.admissionSource.color && (
-                  <span
-                    aria-hidden
-                    className="inline-block h-2 w-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: a.admissionSource.color }}
-                  />
-                )}
-                {a.admissionSource.name}
-              </span>
-            ) : (
-              <span className="text-xs text-muted-foreground/50">—</span>
-            )}
-          </TableCell>
-        );
-      case "status":
-        return (
-          <TableCell key={key} className="text-sm">
-            <Badge variant={statusVariant(a.status)}>
-              {t(statusKey(a.status))}
-            </Badge>
-          </TableCell>
-        );
-      case "days": {
-        const days = daysInStageFor(a);
-        return (
-          <TableCell key={key} className="text-right">
+          );
+        },
+      },
+      gender: {
+        accessorFn: (a) => a.childGender ?? "",
+        filterFn: multiSelectFilter,
+        cell: ({ row }) => {
+          const gender = row.original.childGender;
+          if (!gender) return <span className="text-muted-foreground">—</span>;
+          return (
+            <span title={t("fieldGender")} aria-label={t("fieldGender")}>
+              {GENDER_GLYPH[gender]}
+            </span>
+          );
+        },
+      },
+      source: {
+        accessorFn: (a) => a.admissionSource?.name ?? "",
+        filterFn: multiSelectFilter,
+        cell: ({ row }) => {
+          const source = row.original.admissionSource;
+          if (!source) {
+            return <span className="text-xs text-muted-foreground/50">—</span>;
+          }
+          return (
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              {source.color && (
+                <span
+                  aria-hidden
+                  className="inline-block h-2 w-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: source.color }}
+                />
+              )}
+              {source.name}
+            </span>
+          );
+        },
+      },
+      status: {
+        accessorFn: (a) => a.status,
+        filterFn: multiSelectFilter,
+        cell: ({ row }) => (
+          <Badge variant={statusVariant(row.original.status)}>
+            {t(statusKey(row.original.status))}
+          </Badge>
+        ),
+      },
+      days: {
+        accessorFn: (a) => daysInStage(a, now),
+        cell: ({ getValue }) => {
+          const days = getValue<number>();
+          return (
             <Badge
               variant={days > 14 ? "destructive" : "outline"}
               className="text-[10px]"
             >
               {days}d
             </Badge>
-          </TableCell>
-        );
-      }
-      case "contact":
-        return (
-          <TableCell key={key} className="text-sm">
-            <span className="truncate">{a.family.contactNames[0] ?? "—"}</span>
-          </TableCell>
-        );
-      case "reminders":
-        return (
-          <TableCell key={key} className="text-right">
-            {a.openRemindersCount > 0 ? (
-              <span
-                className={cn(
-                  "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold",
-                  a.overdueRemindersCount > 0
-                    ? "bg-status-rose text-status-rose-foreground"
-                    : "bg-status-amber text-status-amber-foreground",
-                )}
-              >
-                {a.overdueRemindersCount > 0 ? (
-                  <BellRing className="h-3.5 w-3.5" />
-                ) : (
-                  <Bell className="h-3.5 w-3.5" />
-                )}
-                {a.openRemindersCount}
-              </span>
-            ) : (
-              <span className="text-muted-foreground">—</span>
-            )}
-          </TableCell>
-        );
-      default:
-        return <TableCell key={key} />;
-    }
-  };
+          );
+        },
+      },
+      contact: {
+        accessorFn: (a) => a.family.contactNames[0] ?? "",
+        cell: ({ getValue }) => (
+          <span className="truncate text-sm">{getValue<string>() || "—"}</span>
+        ),
+      },
+      reminders: {
+        accessorFn: (a) => a.openRemindersCount,
+        cell: ({ row }) => {
+          const a = row.original;
+          if (a.openRemindersCount === 0) {
+            return <span className="text-muted-foreground">—</span>;
+          }
+          return (
+            <span
+              className={cn(
+                "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold",
+                a.overdueRemindersCount > 0
+                  ? "bg-status-rose text-status-rose-foreground"
+                  : "bg-status-amber text-status-amber-foreground",
+              )}
+            >
+              {a.overdueRemindersCount > 0 ? (
+                <BellRing className="h-3.5 w-3.5" />
+              ) : (
+                <Bell className="h-3.5 w-3.5" />
+              )}
+              {a.openRemindersCount}
+            </span>
+          );
+        },
+      },
+    };
 
-  const colCount = columns.length + 1;
-
-  return (
-    <div className="rounded-md border bg-card">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <ColHead
-              label={t("listColChild")}
-              onClick={() => toggle("child")}
-              active={sortKey === "child"}
-              dir={sortDir}
-              IconC={SortIcon}
+    return [
+      childColumn,
+      ...columnKeys.map((key): ColumnDef<KanbanApplication> => {
+        const title = t(TABLE_COLUMN_LABEL[key]);
+        return {
+          id: key,
+          ...byKey[key],
+          header: ({ column }) => (
+            <DataTableColumnHeader
+              column={column}
+              title={title}
+              className={cn(NUMERIC_COLUMNS.has(key) && "justify-end")}
             />
-            {columns.map((key) => (
-              <ColHead
-                key={key}
-                label={t(TABLE_COLUMN_LABEL[key])}
-                onClick={() => toggle(key)}
-                active={sortKey === key}
-                dir={sortDir}
-                IconC={SortIcon}
-                numeric={numericCols.has(key)}
-              />
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sorted.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={colCount}
-                className="py-8 text-center text-xs italic text-muted-foreground"
-              >
-                {t("listEmpty")}
-              </TableCell>
-            </TableRow>
-          ) : (
-            sorted.map((a) => {
-              const birthYear = a.childDateOfBirth?.slice(0, 4);
-              return (
-                <TableRow
-                  key={a.id}
-                  className="cursor-pointer"
-                  onClick={() => onOpenCard(a.id)}
-                >
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      <StudentAvatar
-                        firstName={a.childFirstName}
-                        lastName={a.childLastName}
-                        className="h-7 w-7 shrink-0"
-                        fallbackClassName="text-[10px]"
-                      />
-                      <div className="min-w-0">
-                        <div className="truncate">
-                          {a.childFirstName} {a.childLastName}
-                        </div>
-                        {birthYear && (
-                          <div className="text-[10px] text-muted-foreground">
-                            Jg. {birthYear}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
-                  {columns.map((key) => renderCell(key, a))}
-                </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
+          ),
+          meta: { labelKey: TABLE_COLUMN_LABEL[key] },
+        };
+      }),
+    ];
+  }, [columnKeys, stageById, stagePosById, now, t]);
 
-function ColHead({
-  label,
-  onClick,
-  active,
-  dir,
-  IconC,
-  numeric,
-}: {
-  label: string;
-  onClick: () => void;
-  active: boolean;
-  dir: SortDir;
-  IconC: React.ComponentType<{ active: boolean; dir: SortDir }>;
-  numeric?: boolean;
-}) {
+  const { table, globalFilter, setGlobalFilter } = useDataTable({
+    data: applications,
+    columns,
+    initialSorting: [{ id: "child", desc: false }],
+  });
+
+  // Categorical filter groups, derived from the rows actually present. Only
+  // the configured columns are offered, so the dropdown mirrors the table.
+  const filterGroups = useMemo<FilterGroup[]>(() => {
+    const groups: FilterGroup[] = [];
+
+    const push = (
+      key: TableColumnKey,
+      options: { value: string; label: string; color?: string }[],
+    ) => {
+      const seen = new Map<string, { value: string; label: string; color?: string }>();
+      for (const option of options) {
+        if (option.value && !seen.has(option.value)) seen.set(option.value, option);
+      }
+      if (seen.size > 0) {
+        groups.push({
+          id: key,
+          label: t(TABLE_COLUMN_LABEL[key]),
+          options: Array.from(seen.values()).sort((a, b) =>
+            a.label.localeCompare(b.label),
+          ),
+        });
+      }
+    };
+
+    for (const key of columnKeys) {
+      if (!FILTERABLE_COLUMNS.has(key)) continue;
+
+      switch (key) {
+        case "stage":
+          push(
+            key,
+            applications.map((a) => {
+              const stage = stageById.get(a.admissionStageId);
+              return {
+                value: stage?.name ?? "",
+                label: stage?.name ?? "",
+                color: stage?.color ?? undefined,
+              };
+            }),
+          );
+          break;
+        case "gradeLevel":
+          push(
+            key,
+            applications.map((a) => ({
+              value: a.assignedGradeLevelName ?? "",
+              label: a.assignedGradeLevelName ?? "",
+              color: a.assignedGradeLevelColor ?? undefined,
+            })),
+          );
+          break;
+        case "gender":
+          push(
+            key,
+            applications.map((a) => ({
+              value: a.childGender ?? "",
+              label: a.childGender ? tCommon(a.childGender) : "",
+            })),
+          );
+          break;
+        case "source":
+          push(
+            key,
+            applications.map((a) => ({
+              value: a.admissionSource?.name ?? "",
+              label: a.admissionSource?.name ?? "",
+              color: a.admissionSource?.color ?? undefined,
+            })),
+          );
+          break;
+        case "status":
+          push(
+            key,
+            applications.map((a) => ({
+              value: a.status,
+              label: t(statusKey(a.status)),
+            })),
+          );
+          break;
+      }
+    }
+
+    return groups;
+  }, [columnKeys, applications, stageById, t, tCommon]);
+
   return (
-    <TableHead className={cn(numeric && "text-right")}>
-      <button
-        type="button"
-        onClick={onClick}
-        className={cn(
-          "inline-flex items-center hover:text-foreground",
-          active ? "text-foreground" : "text-muted-foreground",
-        )}
-      >
-        {label}
-        <IconC active={active} dir={dir} />
-      </button>
-    </TableHead>
+    <DataTable
+      table={table}
+      globalFilter={globalFilter}
+      onGlobalFilterChange={setGlobalFilter}
+      searchPlaceholder={t("listSearchPlaceholder")}
+      filterGroups={filterGroups}
+      translateColumn={(key) => t(key)}
+      emptyState={
+        <span className="text-xs italic text-muted-foreground">
+          {t("listEmpty")}
+        </span>
+      }
+      onRowClick={(row) => onOpenCard(row.original.id)}
+    />
   );
 }
 
@@ -424,4 +446,3 @@ function statusVariant(
       return "slate";
   }
 }
-

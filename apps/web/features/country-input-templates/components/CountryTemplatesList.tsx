@@ -5,14 +5,11 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ChevronRight, Plus, Check } from "lucide-react";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/components/data-table/DataTable";
+import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
+import type { FilterGroup } from "@/components/data-table/DataTableFilter";
+import { useDataTable } from "@/components/data-table/use-data-table";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -61,13 +58,12 @@ export const CountryTemplatesList = ({
       set.add(t.fieldType);
       map.set(t.countryCode, set);
     }
-    return Array.from(map.entries())
-      .map(([countryCode, set]) => ({
-        countryCode,
-        countryName: getCountryName(countryCode, locale),
-        fieldTypes: Array.from(set).sort(),
-      }))
-      .sort((a, b) => a.countryName.localeCompare(b.countryName, locale));
+    // Row order is left to the table's locale-aware sorting.
+    return Array.from(map.entries()).map(([countryCode, set]) => ({
+      countryCode,
+      countryName: getCountryName(countryCode, locale),
+      fieldTypes: Array.from(set).sort(),
+    }));
   }, [initial, locale]);
 
   const allCountries = useMemo(() => getAllCountries(locale), [locale]);
@@ -86,6 +82,84 @@ export const CountryTemplatesList = ({
     goToDetail(selected);
   };
 
+  const columns = useMemo<ColumnDef<CountryRow>[]>(
+    () => [
+      {
+        id: "countryName",
+        accessorKey: "countryName",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("country")} />
+        ),
+        meta: { labelKey: "country" },
+        cell: ({ getValue }) => (
+          <span className="font-medium">{getValue<string>()}</span>
+        ),
+      },
+      {
+        id: "countryCode",
+        accessorKey: "countryCode",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("code")} />
+        ),
+        meta: { labelKey: "code" },
+        cell: ({ getValue }) => (
+          <span className="font-mono">{getValue<string>()}</span>
+        ),
+      },
+      {
+        id: "fieldTypes",
+        accessorKey: "fieldTypes",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("configuredFields")} />
+        ),
+        meta: { labelKey: "configuredFields" },
+        filterFn: "arrIncludesSome",
+        enableSorting: false,
+        cell: ({ row }) => (
+          <div className="flex flex-wrap gap-1">
+            {row.original.fieldTypes.map((ft) => (
+              <Badge key={ft} variant="secondary">
+                {ft}
+              </Badge>
+            ))}
+          </div>
+        ),
+      },
+      {
+        id: "chevron",
+        enableHiding: false,
+        enableSorting: false,
+        header: () => null,
+        cell: () => (
+          <div className="text-right">
+            <ChevronRight className="text-muted-foreground h-4 w-4" />
+          </div>
+        ),
+      },
+    ],
+    [t],
+  );
+
+  const { table, globalFilter, setGlobalFilter } = useDataTable({
+    data: rows,
+    columns,
+    initialSorting: [{ id: "countryName", desc: false }],
+  });
+
+  const filterGroups = useMemo<FilterGroup[]>(() => {
+    const fieldTypes = Array.from(
+      new Set(rows.flatMap((r) => r.fieldTypes)),
+    ).sort();
+    if (fieldTypes.length === 0) return [];
+    return [
+      {
+        id: "fieldTypes",
+        label: t("configuredFields"),
+        options: fieldTypes.map((ft) => ({ value: ft, label: ft })),
+      },
+    ];
+  }, [rows, t]);
+
   return (
     <div>
       <div className="mb-4 flex justify-end">
@@ -94,49 +168,20 @@ export const CountryTemplatesList = ({
         </Button>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t("country")}</TableHead>
-            <TableHead>{t("code")}</TableHead>
-            <TableHead>{t("configuredFields")}</TableHead>
-            <TableHead className="w-12" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={4}
-                className="text-muted-foreground py-8 text-center"
-              >
-                {t("noCountries")}
-              </TableCell>
-            </TableRow>
-          ) : (
-            rows.map((r) => (
-              <TableRow
-                key={r.countryCode}
-                className="hover:bg-muted/40 cursor-pointer"
-                onClick={() => goToDetail(r.countryCode)}
-              >
-                <TableCell className="font-medium">{r.countryName}</TableCell>
-                <TableCell className="font-mono">{r.countryCode}</TableCell>
-                <TableCell className="flex flex-wrap gap-1">
-                  {r.fieldTypes.map((ft) => (
-                    <Badge key={ft} variant="secondary">
-                      {ft}
-                    </Badge>
-                  ))}
-                </TableCell>
-                <TableCell className="text-right">
-                  <ChevronRight className="text-muted-foreground h-4 w-4" />
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+      <DataTable
+        table={table}
+        globalFilter={globalFilter}
+        onGlobalFilterChange={setGlobalFilter}
+        searchPlaceholder={t("searchCountry")}
+        filterGroups={filterGroups}
+        translateColumn={(key) => t(key)}
+        onRowClick={(row) => goToDetail(row.original.countryCode)}
+        emptyState={
+          <span className="text-muted-foreground text-sm">
+            {t("noCountries")}
+          </span>
+        }
+      />
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent>

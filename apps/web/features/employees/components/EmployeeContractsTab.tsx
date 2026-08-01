@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
@@ -19,20 +20,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable } from "@/components/data-table/DataTable";
+import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
+import type { FilterGroup } from "@/components/data-table/DataTableFilter";
+import { useDataTable } from "@/components/data-table/use-data-table";
+import { multiSelectFilter } from "@/lib/table/locale-sorting";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
-import { TableCard } from "@/components/common/TableCard";
 import { handleAction } from "@/lib/actions/handle-action";
 
 import type { EmployeeContract } from "../actions/employee-contracts.actions";
@@ -108,6 +105,160 @@ export default function EmployeeContractsTab({
     }
   };
 
+  const columns = useMemo<ColumnDef<EmployeeContract>[]>(() => {
+    const cols: ColumnDef<EmployeeContract>[] = [
+      {
+        id: "startDate",
+        // Sorted on the timestamp, not on the formatted date string.
+        accessorFn: (c) => (c.startDate ? new Date(c.startDate).getTime() : 0),
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={tE("hr.entryDate")} />
+        ),
+        meta: { labelKey: "hr.entryDate" },
+        cell: ({ row }) => formatDate(row.original.startDate),
+      },
+      {
+        id: "endDate",
+        // Open-ended contracts sort last under ascending order.
+        accessorFn: (c) =>
+          c.endDate ? new Date(c.endDate).getTime() : Number.MAX_SAFE_INTEGER,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={tE("hr.exitDate")} />
+        ),
+        meta: { labelKey: "hr.exitDate" },
+        cell: ({ row }) => formatDate(row.original.endDate),
+      },
+      {
+        id: "contractType",
+        accessorFn: (c) =>
+          c.contractType ? tE(`contractType.${c.contractType}`) : "",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={tE("hr.contractType")} />
+        ),
+        meta: { labelKey: "hr.contractType" },
+        filterFn: multiSelectFilter,
+        cell: ({ getValue }) => {
+          const label = getValue<string>();
+          return label ? <Badge variant="secondary">{label}</Badge> : "–";
+        },
+      },
+      {
+        id: "position",
+        accessorFn: (c) => c.position ?? "",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={tE("hr.position")} />
+        ),
+        meta: { labelKey: "hr.position" },
+        cell: ({ getValue }) => getValue<string>() || "–",
+      },
+      {
+        id: "workloadPercent",
+        accessorFn: (c) => c.workloadPercent ?? -1,
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title={tE("hr.workloadPercent")}
+            className="justify-end"
+          />
+        ),
+        meta: { labelKey: "hr.workloadPercent" },
+        cell: ({ row }) => (
+          <div className="text-right">
+            {row.original.workloadPercent != null
+              ? `${row.original.workloadPercent}%`
+              : "–"}
+          </div>
+        ),
+      },
+      {
+        id: "document",
+        enableSorting: false,
+        header: () => (
+          <span className="text-center">{tE("contract.document")}</span>
+        ),
+        meta: { labelKey: "contract.document" },
+        cell: ({ row }) => (
+          <div className="text-center">
+            {row.original.documentUrl ? (
+              <a
+                href={row.original.documentUrl}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={tE("contract.docView")}
+                className="inline-flex text-primary hover:text-primary/80"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <FileText className="h-4 w-4" />
+              </a>
+            ) : (
+              <span className="text-muted-foreground">–</span>
+            )}
+          </div>
+        ),
+      },
+    ];
+
+    if (editable) {
+      cols.push({
+        id: "actions",
+        enableHiding: false,
+        header: () => <span className="sr-only">{t("actions")}</span>,
+        cell: ({ row }) => (
+          <div className="text-right">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => openEdit(row.original)}
+              aria-label={t("edit")}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleDelete(row.original.id)}
+              aria-label={t("delete")}
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        ),
+      });
+    }
+
+    return cols;
+    // `formatDate`/`openEdit`/`handleDelete` are recreated each render by design.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t, tE, editable, locale]);
+
+  const { table, globalFilter, setGlobalFilter } = useDataTable({
+    data: contracts,
+    columns,
+    // Most recent contract first — the current one is what people look for.
+    initialSorting: [{ id: "startDate", desc: true }],
+  });
+
+  const filterGroups = useMemo<FilterGroup[]>(() => {
+    const types = Array.from(
+      new Set(
+        contracts
+          .map((c) => c.contractType)
+          .filter((v): v is NonNullable<typeof v> => Boolean(v)),
+      ),
+    );
+    if (types.length < 2) return [];
+    return [
+      {
+        id: "contractType",
+        label: tE("hr.contractType"),
+        options: types.map((type) => ({
+          value: tE(`contractType.${type}`),
+          label: tE(`contractType.${type}`),
+        })),
+      },
+    ];
+  }, [contracts, tE]);
+
   return (
     <>
       <div className="flex items-center justify-between px-4 sm:px-0 mb-4">
@@ -127,91 +278,19 @@ export default function EmployeeContractsTab({
         )}
       </div>
 
-      <TableCard>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{tE("hr.entryDate")}</TableHead>
-              <TableHead>{tE("hr.exitDate")}</TableHead>
-              <TableHead>{tE("hr.contractType")}</TableHead>
-              <TableHead>{tE("hr.position")}</TableHead>
-              <TableHead className="text-right">{tE("hr.workloadPercent")}</TableHead>
-              <TableHead className="w-24 text-center">
-                {tE("contract.document")}
-              </TableHead>
-              {editable && <TableHead className="w-24"></TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {contracts.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={editable ? 7 : 6}
-                  className="text-center text-sm text-muted-foreground h-24"
-                >
-                  {tE("contract.noContracts")}
-                </TableCell>
-              </TableRow>
-            ) : (
-              contracts.map((c) => (
-                <TableRow key={c.id} className={editable ? "cursor-pointer" : undefined}>
-                  <TableCell>{formatDate(c.startDate)}</TableCell>
-                  <TableCell>{formatDate(c.endDate)}</TableCell>
-                  <TableCell>
-                    {c.contractType ? (
-                      <Badge variant="secondary">
-                        {tE(`contractType.${c.contractType}`)}
-                      </Badge>
-                    ) : (
-                      "–"
-                    )}
-                  </TableCell>
-                  <TableCell>{c.position || "–"}</TableCell>
-                  <TableCell className="text-right">
-                    {c.workloadPercent != null ? `${c.workloadPercent}%` : "–"}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {c.documentUrl ? (
-                      <a
-                        href={c.documentUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label={tE("contract.docView")}
-                        className="inline-flex text-primary hover:text-primary/80"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <FileText className="h-4 w-4" />
-                      </a>
-                    ) : (
-                      <span className="text-muted-foreground">–</span>
-                    )}
-                  </TableCell>
-                  {editable && (
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEdit(c)}
-                        aria-label={t("edit")}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(c.id)}
-                        aria-label={t("delete")}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableCard>
+      <DataTable
+        table={table}
+        globalFilter={globalFilter}
+        onGlobalFilterChange={setGlobalFilter}
+        searchPlaceholder={tE("contract.searchPlaceholder")}
+        filterGroups={filterGroups}
+        translateColumn={(key) => tE(key)}
+        emptyState={
+          <span className="text-sm text-muted-foreground">
+            {tE("contract.noContracts")}
+          </span>
+        }
+      />
 
       {editable && (
         <ContractDialog
