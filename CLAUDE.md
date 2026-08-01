@@ -76,6 +76,38 @@ cd apps/web && npm run dev             # Frontend (Port 4000) + Codegen Watch
 | Staging | staging.colibri-app.ch | Auto auf main push |
 | Production | restart.colibri-app.ch | Manuell via GitHub Actions |
 
+### Grosse Dateien — nie vollständig lesen
+
+Bei KI-gestützter Arbeit ist der wiederholt eingelesene Kontext der dominante
+Kostenfaktor: jeder Tool-Call bezahlt den gesamten bisherigen Kontext erneut.
+In diesem Repo gibt es Dateien, die eine Session im Alleingang sprengen
+(gemessen 2026-08-01):
+
+| Datei | Umfang | Hinweis |
+|---|---|---|
+| `packages/shared-types/src/graphql.ts` | 9'010 Zeilen ≈ **174k Token** | **generiert** (codegen) — nie manuell lesen/editieren |
+| `packages/shared-i18n/messages/{de,en}.json` | je 3'175 Zeilen ≈ 36k Token | pro Namespace mit `Grep` arbeiten |
+| `packages/shared-types/src/gql.ts` | 1'875 Zeilen | generiert (codegen) |
+| `pnpm-lock.yaml` | 28'473 Zeilen | nie lesen — stattdessen `pnpm why <pkg>` |
+
+Regeln:
+- **Generierte Artefakte (`graphql.ts`, `gql.ts`, Lockfile) nicht lesen und nicht
+  von Hand ändern.** Sie entstehen aus `pnpm codegen` bzw. dem Backend-Schema;
+  Änderungen gehören an die Quelle (Entity/Resolver/`.graphql`-Operation).
+  Ein einziger vollständiger Read von `graphql.ts` füllt ~87 % eines 200k-Fensters
+  und löst sofort eine Kompaktierung aus.
+- **In i18n-Dateien gezielt suchen** (`Grep` nach Namespace/Key) statt die Datei
+  zu öffnen — die Struktur ist pro Bereichs-Namespace getrennt.
+- **Grosse Feature-Komponenten** (`AdmissionsKanban.tsx`, `CurriculumLevelTree.tsx`,
+  `TeamsBoard.tsx`, je ~1'000 Zeilen) bereichsweise mit `offset`/`limit` lesen,
+  wenn die relevante Stelle bekannt ist.
+- **Breite Repo-Suche** (1'915 Dateien) an einen Subagenten delegieren, statt viele
+  Einzel-Reads im Hauptlauf zu sammeln.
+
+Die lokalen Gates sind unkritisch (`lint` ~1k, `build` ~1,5k, `test` ~4,5k Token)
+und können direkt laufen; erst bei Fehlerläufen mit langen Stacktraces lohnt
+Umleiten in eine Datei und `tail`/`grep`.
+
 ---
 
 ## Sicherheits-Richtlinien
