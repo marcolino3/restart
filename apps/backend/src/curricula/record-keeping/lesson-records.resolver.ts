@@ -6,7 +6,16 @@ import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { StudentsService } from '@/school-management/students/students.service';
 import { UseGuards } from '@nestjs/common';
-import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  ID,
+  Int,
+  Mutation,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
 import { CreateLessonRecordInput } from './dto/create-lesson-record.input';
 import { CreateLessonRecordsBulkInput } from './dto/create-lesson-records-bulk.input';
 import { LessonRecordsFilterInput } from './dto/lesson-records-filter.input';
@@ -18,8 +27,14 @@ import {
   StudentTimelineOutput,
   TimelineGranularity,
 } from './dto/timeline.output';
+import { RecentLessonRecordOutput } from './dto/recent-lesson-record.output';
+import { LessonRecordAttachment } from './entities/lesson-record-attachment.entity';
 import { LessonRecord } from './entities/lesson-record.entity';
-import { LessonRecordsService } from './lesson-records.service';
+import { LessonRecordAttachmentsService } from './lesson-record-attachments.service';
+import {
+  DEFAULT_RECENT_LIMIT,
+  LessonRecordsService,
+} from './lesson-records.service';
 import { RecordKeepingSettingsService } from './record-keeping-settings.service';
 
 @Resolver(() => LessonRecord)
@@ -29,6 +44,7 @@ export class LessonRecordsResolver {
     private readonly service: LessonRecordsService,
     private readonly studentsService: StudentsService,
     private readonly settingsService: RecordKeepingSettingsService,
+    private readonly attachmentsService: LessonRecordAttachmentsService,
   ) {}
 
   @Query(() => [StudentAttentionSummaryOutput], {
@@ -227,6 +243,43 @@ export class LessonRecordsResolver {
       orgId,
     );
     return this.service.findCurrent(studentId, lessonId, orgId);
+  }
+
+  /**
+   * The caller's own last recording acts. No student/class guard is needed:
+   * the service scopes to (organizationId, recordedById), so a user only ever
+   * sees rows they wrote themselves in their own active org.
+   */
+  @Query(() => [RecentLessonRecordOutput], { name: 'recentLessonRecords' })
+  @Permissions('RECORD_KEEPING_READ')
+  async recentLessonRecords(
+    @CurrentOrgId() orgId: string,
+    @CurrentUser() user: TokenPayload,
+    @Args('limit', {
+      type: () => Int,
+      defaultValue: DEFAULT_RECENT_LIMIT,
+      nullable: true,
+    })
+    limit: number,
+    @Args('locale', { type: () => String, defaultValue: 'de' }) locale: string,
+  ): Promise<RecentLessonRecordOutput[]> {
+    return this.service.getRecentLessonRecords(orgId, user.sub, limit, locale);
+  }
+
+  /**
+   * Attachment metadata for a record. The binary is NOT served here — the
+   * client takes the id and calls GET /lesson-record-attachments/:id, which
+   * re-checks the org. Resolved with the caller's org rather than the
+   * parent's, so even a record reached through some future unscoped path
+   * cannot surface another tenant's files.
+   */
+  @ResolveField(() => [LessonRecordAttachment], { name: 'attachments' })
+  @Permissions('RECORD_KEEPING_READ')
+  async attachments(
+    @Parent() record: LessonRecord,
+    @CurrentOrgId() orgId: string,
+  ): Promise<LessonRecordAttachment[]> {
+    return this.attachmentsService.findByRecord(record.id, orgId);
   }
 
   @Mutation(() => LessonRecord)

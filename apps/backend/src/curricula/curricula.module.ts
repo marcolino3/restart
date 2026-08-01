@@ -13,6 +13,8 @@ import { CurriculumNodesService } from './curriculum-nodes.service';
 import { CurriculaImportController } from './import/curricula-import.controller';
 import { CurriculaImportResolver } from './import/curricula-import.resolver';
 import { CurriculaImportService } from './import/curricula-import.service';
+import { LessonRecordAttachmentsController } from './record-keeping/lesson-record-attachments.controller';
+import { LessonRecordAttachmentsService } from './record-keeping/lesson-record-attachments.service';
 import { LessonRecordsResolver } from './record-keeping/lesson-records.resolver';
 import { LessonRecordsService } from './record-keeping/lesson-records.service';
 import { RecordKeepingSettingsResolver } from './record-keeping/record-keeping-settings.resolver';
@@ -26,7 +28,7 @@ import { RecordKeepingSettingsService } from './record-keeping/record-keeping-se
     StudentsModule,
     GradeLevelsModule,
   ],
-  controllers: [CurriculaImportController],
+  controllers: [CurriculaImportController, LessonRecordAttachmentsController],
   providers: [
     CurriculumLevelsResolver,
     CurriculumLevelsService,
@@ -38,6 +40,7 @@ import { RecordKeepingSettingsService } from './record-keeping/record-keeping-se
     CurriculaImportResolver,
     LessonRecordsResolver,
     LessonRecordsService,
+    LessonRecordAttachmentsService,
     RecordKeepingSettingsResolver,
     RecordKeepingSettingsService,
   ],
@@ -47,6 +50,7 @@ import { RecordKeepingSettingsService } from './record-keeping/record-keeping-se
     CurriculumNodesService,
     CurriculaImportService,
     LessonRecordsService,
+    LessonRecordAttachmentsService,
     RecordKeepingSettingsService,
   ],
 })

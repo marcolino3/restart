@@ -1,15 +1,18 @@
-import { Field, ID, InputType } from '@nestjs/graphql';
+import { Field, ID, InputType, Int } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   ArrayUnique,
   IsArray,
   IsEnum,
+  IsInt,
   IsISO8601,
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   MaxLength,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import { LessonRecordStatus } from '../../enums/lesson-record-status.enum';
@@ -45,6 +48,15 @@ export class CreateLessonRecordsBulkInput {
   @IsString()
   @MaxLength(2000)
   note?: string | null;
+
+  /** Worked-on time in minutes, seeded onto every child of the bulk.
+   *  Capped at a school day (600) — anything larger is a typo. */
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(600)
+  durationMinutes?: number | null;
 
   /**
    * Seed-Werte für die Beobachtungs-Badges. Gelten für alle Kinder im Bulk;

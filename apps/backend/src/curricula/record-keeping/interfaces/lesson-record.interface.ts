@@ -17,6 +17,7 @@ export interface ILessonRecord extends IBase {
   recordedAt: string;
   status: LessonRecordStatus;
   note?: string | null;
+  durationMinutes?: number | null;
   recordedById?: string | null;
   schoolClassEnrollmentId?: string | null;
   organizationId: string;
