@@ -69,6 +69,11 @@ patches:
         path: /spec/replicas
         value: 1
 
+# Siehe k8s/production/kustomization.yaml: der Migration-Job laeuft ausserhalb
+# von Kustomize und braucht die ConfigMap unter ihrem exakten Namen.
+generatorOptions:
+  disableNameSuffixHash: true
+
 configMapGenerator:
   - name: backend-config
     behavior: merge
