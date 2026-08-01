@@ -213,16 +213,15 @@ jobs:
           RESOLVED_TAG: ${{ needs.resolve.outputs.image_tag }}
         run: |
           export IMAGE_OWNER=$(echo "$IMAGE_OWNER" | tr '[:upper:]' '[:lower:]')
-          # Job-Suffix: Tag in Kleinbuchstaben, auf 12 Zeichen gekürzt (k8s Name-Limit).
-          JOB_SUFFIX=$(echo "$RESOLVED_TAG" | cut -c1-12 | tr '[:upper:]' '[:lower:]')
-          # migrate-job.yaml hat ${IMAGE_TAG} an zwei Stellen (Job-Name + Image-Tag).
-          # Wir brauchen für den Job-Namen das gekürzte Suffix, für das Image den
-          # vollen Tag — daher zuerst envsubst mit gekürztem Wert, dann sed.
-          export IMAGE_TAG="$JOB_SUFFIX"
-          JOB_NAME="migrate-${JOB_SUFFIX}"
-          envsubst < k8s/base/jobs/migrate-job.yaml \
-            | sed "s|restart-backend:${JOB_SUFFIX}|restart-backend:${RESOLVED_TAG}|g" \
-            | kubectl apply -n "$NAMESPACE" -f -
+          # migrate-job.yaml erwartet ZWEI Variablen mit genau diesen Namen:
+          #   ${JOB_NAME_SUFFIX} → Job-Name (12 Zeichen, k8s-Limit 63)
+          #   ${IMAGE_TAG}       → voller SHA im Image-Tag
+          # Beide muessen exportiert sein, sonst ersetzt envsubst sie durch
+          # Leerstring und der Job heisst "migrate-" (ungueltig nach RFC 1123).
+          export IMAGE_TAG="$RESOLVED_TAG"
+          export JOB_NAME_SUFFIX=$(echo "$RESOLVED_TAG" | cut -c1-12 | tr '[:upper:]' '[:lower:]')
+          JOB_NAME="migrate-${JOB_NAME_SUFFIX}"
+          envsubst < k8s/base/jobs/migrate-job.yaml | kubectl apply -n "$NAMESPACE" -f -
 
           echo "Waiting for $JOB_NAME to complete…"
           for i in $(seq 1 120); do
