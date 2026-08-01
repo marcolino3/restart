@@ -27,7 +27,7 @@ restart/
 | Environment | Domain | Namespace | Trigger |
 |---|---|---|---|
 | Staging | staging.colibri-app.ch | restart-staging | Push to `main` |
-| Production | app.colibri-app.ch | restart-production | Manual (GitHub Actions) |
+| Production | restart.colibri-app.ch | restart-production | Manual (GitHub Actions) |
 
 ### Architektur-Entscheidung: getrennte Cloud-Projekte für Staging und Production
 
@@ -178,7 +178,7 @@ Point your domains to the Kubernetes Load Balancer IP:
 
 ```
 staging.colibri-app.ch  → A record → <Load Balancer IP>
-app.colibri-app.ch      → A record → <Load Balancer IP>
+restart.colibri-app.ch      → A record → <Load Balancer IP>
 ```
 
 Get the Load Balancer IP:
@@ -344,13 +344,13 @@ nutzt `environment: production` bereits.
 GitHub → Actions → **Deploy Production** → *Run workflow*. `image_tag` leer lassen
 → promotet automatisch den aktuell auf Staging laufenden SHA (`:staging-current`).
 Ablauf: resolve/validate → migrate (frische Prod-DB → Baseline + better-auth) →
-deploy → smoke (`app.colibri-app.ch/api/health`) → Rollback-on-fail →
+deploy → smoke (`restart.colibri-app.ch/api/health`) → Rollback-on-fail →
 `:production-current`-Tag → GitHub-Deployment-Record (Audit, im Deployments-Tab).
 
 ```bash
 # Nach erfolgreichem Run prüfen:
 kubectl get pods -n restart-production
-curl -s -o /dev/null -w '%{http_code}\n' https://app.colibri-app.ch/api/health   # 200
+curl -s -o /dev/null -w '%{http_code}\n' https://restart.colibri-app.ch/api/health   # 200
 # Login + Org-Switch manuell verifizieren.
 ```
 
@@ -359,11 +359,11 @@ curl -s -o /dev/null -w '%{http_code}\n' https://app.colibri-app.ch/api/health  
 Vor / während des ersten Prod-Deploys explizit abhaken:
 
 **🔴 Sonst kommt niemand rein / Prod kaputt**
-- [ ] **OAuth-Redirect-URIs registrieren**: `https://app.colibri-app.ch/...` in der
+- [ ] **OAuth-Redirect-URIs registrieren**: `https://restart.colibri-app.ch/...` in der
       **Google Cloud Console** (Authorized redirect URIs) **und** im **Apple
       Developer Portal** eintragen — nicht nur in den Secrets. Sonst
       `redirect_uri_mismatch`, kein OAuth-Login.
-- [ ] **DNS vor TLS**: `app.colibri-app.ch` A-Record → Prod-Ingress-LoadBalancer-IP
+- [ ] **DNS vor TLS**: `restart.colibri-app.ch` A-Record → Prod-Ingress-LoadBalancer-IP
       (`kubectl get svc -n ingress-nginx`), **bevor** cert-manager das
       Let's-Encrypt-Cert ausstellt (HTTP-01-Challenge braucht erreichbares DNS).
       DNS bei Hostpoint.

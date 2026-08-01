@@ -29,7 +29,11 @@ configMapGenerator:
       # Schema nur über Migrationen; synchronize ist per app.module-Guard
       # in production zusätzlich hart gesperrt.
       - DB_SYNCHRONIZE=false
-      - ALLOWED_ORIGINS=https://app.colibri-app.ch
-      - GOOGLE_AUTH_REDIRECT_URI=https://app.colibri-app.ch/api/auth/google/callback
-      - AUTH_UI_REDIRECT=https://app.colibri-app.ch
+      - ALLOWED_ORIGINS=https://restart.colibri-app.ch
+      # NICHT der Login-Callback: der Google-Login laeuft ueber better-auth
+      # (auth.ts::socialProviders.google, ohne redirectURI-Override) und landet
+      # auf ${BETTER_AUTH_URL}/api/auth/callback/google. Dieser Wert hier wird
+      # nur von google-calendar.service.ts fuer den Kalender-OAuth gelesen.
+      - GOOGLE_AUTH_REDIRECT_URI=https://restart.colibri-app.ch/api/auth/google/callback
+      - AUTH_UI_REDIRECT=https://restart.colibri-app.ch
       - LOG_LEVEL=info

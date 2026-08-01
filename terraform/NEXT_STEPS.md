@@ -100,4 +100,4 @@ kubectl get svc -n ingress-nginx ingress-nginx-controller
 ```
 
 `EXTERNAL-IP` ist die Floating-IP für deine A-Records
-(`staging.colibri-app.ch`, `app.colibri-app.ch`).
+(`staging.colibri-app.ch`, `restart.colibri-app.ch`).
