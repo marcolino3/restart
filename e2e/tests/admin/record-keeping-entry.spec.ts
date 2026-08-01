@@ -178,8 +178,10 @@ test.describe('Progress entry — happy path and validation', () => {
       `/en/admin/record-keeping?classId=${fixture.schoolClassId}`,
       { waitUntil: 'networkidle' },
     )
+    // PageHead renders the page title as an h2, and the EN string is
+    // "Record Keeping" (RecordKeeping.title).
     await expect(
-      page.getByRole('heading', { name: /progress entry/i, level: 1 }),
+      page.getByRole('heading', { name: /record keeping/i, level: 2 }),
     ).toBeVisible({ timeout: 15000 })
 
     // --- Negative case: submit without selecting any child -----------------
@@ -190,7 +192,7 @@ test.describe('Progress entry — happy path and validation', () => {
 
     await page.getByRole('button', { name: /^record$/i }).click()
     await expect(
-      page.getByText(/select at least one (student|child)/i),
+      page.getByText(/at least one child/i),
     ).toBeVisible({ timeout: 10000 })
 
     // --- Happy path: select the seeded child, save -------------------------
