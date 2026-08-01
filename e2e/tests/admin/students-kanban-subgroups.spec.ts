@@ -103,16 +103,53 @@ test.describe('Students kanban — subgroups', () => {
     await expect(page.getByText(firstName).first()).toBeVisible()
   })
 
-  test('a plain click opens the student profile', async ({ page }) => {
+  test('a plain click selects instead of navigating away', async ({ page }) => {
     await openBoard(page)
 
     const anyCard = page.locator('[class*="cursor-grab"]').first()
     test.skip((await anyCard.count()) === 0, 'no student on the board')
 
+    const before = page.url()
     await anyCard.click()
+
+    // Selecting is the card's job now — a click that navigated made picking
+    // several children impossible.
+    await expect(page.getByText(/1 selected/i)).toBeVisible({ timeout: 10000 })
+    expect(page.url()).toBe(before)
+  })
+
+  test('the card menu opens the profile', async ({ page }) => {
+    await openBoard(page)
+
+    const trigger = page.getByRole('button', { name: /open menu/i }).first()
+    test.skip((await trigger.count()) === 0, 'no student on the board')
+
+    await trigger.click()
+    // The trigger sits outside the drag listeners; inside them dnd-kit would
+    // claim the pointer and the menu would never open.
+    await expect(page.getByRole('menuitem').first()).toBeVisible({
+      timeout: 10000,
+    })
+    // ...and clicking it must not have selected the card underneath.
+    await expect(page.getByText(/1 selected/i)).toHaveCount(0)
+
+    await page.getByRole('menuitem', { name: /show details/i }).click()
     await expect(page).toHaveURL(/\/admin\/students\/[0-9a-f-]{36}/, {
       timeout: 15000,
     })
   })
 
+  test('a subgroup lane collapses and expands', async ({ page }) => {
+    await openBoard(page)
+    test.skip(!(await hasSubgroups(page)), 'no class with subgroups in this org')
+
+    const lane = page.getByRole('button', { name: /^US\d/ }).first()
+    test.skip((await lane.count()) === 0, 'no subgroup lane on the board')
+
+    await expect(lane).toHaveAttribute('aria-expanded', 'true')
+    await lane.click()
+    await expect(lane).toHaveAttribute('aria-expanded', 'false')
+    await lane.click()
+    await expect(lane).toHaveAttribute('aria-expanded', 'true')
+  })
 })

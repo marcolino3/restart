@@ -17,10 +17,17 @@ import {
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
-import { Users } from "lucide-react";
+import { ChevronDown, ChevronRight, Eye, MoreHorizontal, Pencil, Trash2, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { DataTableFacetedFilter } from "@/components/common/DataTableFacetedFilter";
@@ -29,6 +36,8 @@ import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
 
 import { transferStudentAction } from "../actions/transfer-student.action";
+import { deleteStudentAction } from "@/features/students/actions/delete-student.action";
+import { handleAction } from "@/lib/actions/handle-action";
 import type { KanbanGradeLevel } from "../actions/get-kanban-data.action";
 import {
   UNASSIGNED_COLUMN_ID,
@@ -577,17 +586,32 @@ function DropLane({
   minHeight?: boolean;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id });
+  const [collapsed, setCollapsed] = useState(false);
+  // A collapsed lane still has to accept a drop, so it opens on hover-over
+  // rather than refusing the card.
+  const showCards = !collapsed || isOver;
+
   return (
     <div>
       {label && (
-        <div className="mb-1 flex items-center gap-1.5 px-0.5">
+        <button
+          type="button"
+          onClick={() => setCollapsed((v) => !v)}
+          className="mb-1 flex w-full items-center gap-1.5 px-0.5 text-left"
+          aria-expanded={!collapsed}
+        >
+          {collapsed ? (
+            <ChevronRight className="size-3 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="size-3 text-muted-foreground" />
+          )}
           <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
             {label}
           </span>
           <span className="rounded bg-muted px-1.5 text-[10px] text-muted-foreground">
             {count ?? students.length}
           </span>
-        </div>
+        </button>
       )}
       <div
         ref={setNodeRef}
@@ -597,15 +621,16 @@ function DropLane({
           isOver && "bg-accent/50 ring-1 ring-primary/40",
         )}
       >
-        {students.map((s) => (
-          <DraggableStudent
-            key={s.id}
-            student={s}
-            selected={selectedIds.includes(s.id)}
-            onToggleSelect={onToggleSelect}
-            onOpen={onOpen}
-          />
-        ))}
+        {showCards &&
+          students.map((s) => (
+            <DraggableStudent
+              key={s.id}
+              student={s}
+              selected={selectedIds.includes(s.id)}
+              onToggleSelect={onToggleSelect}
+              onOpen={onOpen}
+            />
+          ))}
       </div>
     </div>
   );
@@ -633,23 +658,99 @@ function DraggableStudent({
 
   return (
     <div
-      ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      {...attributes}
-      {...listeners}
-      onClick={(e) => {
-        // Modifier picks for a group move; a plain click opens the profile.
-        if (e.metaKey || e.ctrlKey || e.shiftKey) {
+      className={cn("relative", isDragging && "opacity-30")}
+    >
+      {/* The drag listeners cover the card body only. dnd-kit claims
+          pointerdown on whatever it is attached to, so a menu trigger inside
+          this element would never see the click that opens it. */}
+      <div
+        ref={setNodeRef}
+        {...attributes}
+        {...listeners}
+        onClick={(e) => {
+          // Selecting is the card's job; actions live in the ⋯ menu. A plain
+          // click that navigated away made picking several children a trap.
           e.preventDefault();
           onToggleSelect(student.id);
-          return;
-        }
-        onOpen(student.id);
-      }}
-      className={cn(isDragging && "opacity-30")}
-    >
-      <StudentCardVisual student={student} selected={selected} />
+        }}
+      >
+        <StudentCardVisual student={student} selected={selected} />
+      </div>
+      <div className="absolute top-1.5 right-1.5">
+        <StudentCardMenu student={student} onOpen={onOpen} />
+      </div>
     </div>
+  );
+}
+
+/**
+ * Per-card actions. Lives here rather than on the card body because the card
+ * itself is a drag handle — anything clickable inside has to stop the pointer
+ * from starting a drag.
+ */
+function StudentCardMenu({
+  student,
+  onOpen,
+}: {
+  student: KanbanStudent;
+  onOpen: (studentId: string) => void;
+}) {
+  const t = useTranslations("StudentsKanban");
+  const tS = useTranslations("Students");
+  const locale = useLocale();
+  const router = useRouter();
+
+  // Only stop the event from reaching the card underneath — calling
+  // preventDefault here would also swallow the click that opens the menu.
+  const stopBubbling = (e: React.SyntheticEvent) => e.stopPropagation();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="ml-auto size-6 shrink-0"
+          aria-label={t("openMenu")}
+          onPointerDown={stopBubbling}
+          onClick={stopBubbling}
+        >
+          <MoreHorizontal className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" onClick={stopBubbling}>
+        <DropdownMenuItem onSelect={() => onOpen(student.id)}>
+          <Eye className="mr-2 size-4" />
+          {t("showDetails")}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() =>
+            router.push(ROUTES.admin.studentsEdit(locale, student.id))
+          }
+        >
+          <Pencil className="mr-2 size-4" />
+          {t("editStudent")}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onSelect={async () => {
+            // deleteStudent is a soft delete — it flips isActive, which is
+            // exactly "deactivate" from the user's side.
+            await handleAction({
+              action: () => deleteStudentAction(student.id),
+              successMessage: tS("studentDeleted"),
+              errorMessage: tS("studentDeleteError"),
+              onSuccess: () => router.refresh(),
+            });
+          }}
+        >
+          <Trash2 className="mr-2 size-4" />
+          {t("deactivate")}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -686,7 +787,7 @@ function StudentCardVisual({
       )}
       <div
         className={cn(
-          "cursor-grab rounded-md border bg-card px-3 py-2 active:cursor-grabbing",
+          "cursor-grab rounded-md border bg-card py-2 pr-9 pl-3 active:cursor-grabbing",
           dragging ? "shadow-md" : "hover:bg-accent/60",
           selected && "border-primary bg-primary/5 ring-1 ring-primary",
           className,
