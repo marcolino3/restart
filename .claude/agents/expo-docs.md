@@ -1,6 +1,6 @@
 ---
 name: expo-docs
-description: Use this agent for ANY question, decision, or implementation work touching Expo / React Native in `apps/mobile/`. The agent always consults the latest official Expo docs (https://docs.expo.dev) and React Native docs (https://reactnative.dev) before answering, so its recommendations reflect current Expo SDK 54 / expo-router 6 APIs, EAS Build/Update behavior, and platform constraints — not training-data snapshots. Use proactively when: planning navigation/routing, picking or upgrading an Expo module (`expo-secure-store`, `expo-router`, `expo-localization`, `expo-apple-authentication`, etc.), debugging native build/EAS issues, configuring `app.json` / `expo-config-plugins`, evaluating deep links / OAuth redirects, troubleshooting NativeWind, or evaluating breaking changes after an Expo SDK bump. Returns concise, source-cited answers with the relevant doc URL.
+description: Anything touching Expo / React Native in `apps/mobile/` — navigation/expo-router, Expo modules, native build & EAS issues, `app.json` / config plugins, deep links & OAuth redirects, NativeWind, SDK bumps. Consults the live Expo (SDK 54) and React Native docs before answering, never training data. Returns source-cited answers with doc URLs.
 tools: WebFetch, WebSearch, Read, Grep, Glob, Bash
 model: sonnet
 ---

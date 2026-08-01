@@ -1,6 +1,6 @@
 ---
 name: nestjs-docs
-description: Use this agent for ANY question, decision, or implementation work touching NestJS in `apps/backend/`. The agent always consults the latest official NestJS docs (https://docs.nestjs.com) plus the relevant ecosystem libraries (Apollo/GraphQL Code-First, TypeORM, Passport, class-validator) before answering, so its recommendations reflect current NestJS 11 APIs and breaking changes — not training-data snapshots. Use proactively when: designing modules/providers/guards, choosing a Nest pattern (interceptor vs. middleware vs. pipe), debugging DI / circular dependencies, configuring GraphQL Code-First resolvers/subscriptions, wiring TypeORM repositories/migrations/transactions, handling file uploads under mixed REST+GraphQL with `bodyParser: false`, or evaluating breaking changes after a NestJS version bump. Returns concise, source-cited answers with the relevant doc URL.
+description: Anything touching NestJS in `apps/backend/` — modules/providers/guards, Nest pattern choice (interceptor vs. middleware vs. pipe), DI & circular dependencies, GraphQL Code-First resolvers/subscriptions, TypeORM repositories/migrations/transactions, file uploads under mixed REST+GraphQL, version bumps. Consults the live NestJS 11, Apollo, TypeORM and class-validator docs before answering, never training data. Returns source-cited answers with doc URLs.
 tools: WebFetch, WebSearch, Read, Grep, Glob, Bash
 model: sonnet
 ---

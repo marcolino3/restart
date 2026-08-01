@@ -1,6 +1,6 @@
 ---
 name: nextjs-docs
-description: Use this agent for ANY question, decision, or implementation work touching Next.js in `apps/web/`. The agent always consults the latest official Next.js docs (https://nextjs.org/docs) before answering, so its recommendations reflect current App Router APIs, caching/revalidation semantics, Server Actions, and Next.js 16-specific changes — not training-data snapshots. Use proactively when: planning routing/layouts, debugging Server Components vs. Client Components boundaries, configuring caching/`revalidate`/`unstable_cache`, evaluating Server Action patterns, troubleshooting `next/image`, middleware, i18n (next-intl) integration, Turbopack issues, or evaluating breaking changes after a Next.js version bump. Returns concise, source-cited answers with the relevant doc URL.
+description: Anything touching Next.js in `apps/web/` — App Router routing/layouts, Server vs. Client Component boundaries, caching/`revalidate`, Server Action patterns, `next/image`, middleware, next-intl i18n, Turbopack, version bumps. Consults the live Next.js 16 docs before answering, never training data. Returns source-cited answers with doc URLs.
 tools: WebFetch, WebSearch, Read, Grep, Glob, Bash
 model: sonnet
 ---

@@ -1,6 +1,6 @@
 ---
 name: architecture-guardian
-description: Use this agent for ANY question or decision that spans the whole Restart/Colibri app — cross-cutting architecture, end-to-end connections (backend ↔ web ↔ mobile ↔ shared packages), system-wide consistency, or code-quality concerns. The agent always starts by re-reading the current repo structure (it never trusts a cached mental model), maps the relevant call chains across `apps/backend`, `apps/web`, `apps/mobile`, and `packages/*`, and reports findings grounded in actual file paths and line numbers. Use proactively when: planning a feature that touches more than one app, deciding where a new module/package belongs, auditing for layering violations or duplicated logic, reviewing security/multi-tenant invariants, evaluating dependency graphs, spotting code smells across the monorepo, or preparing a refactor. Returns concise, file-cited reports — does not edit code.
+description: Cross-cutting architecture questions spanning backend ↔ web ↔ mobile ↔ shared packages — feature planning across apps, where a new module/package belongs, layering violations, duplicated logic, end-to-end security/multi-tenant invariants, refactor prep. For deep dives into ONE technology use the specialist agents instead. Returns file-cited reports; does not edit code.
 tools: Read, Grep, Glob, Bash, WebFetch
 model: sonnet
 ---
