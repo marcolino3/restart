@@ -25,10 +25,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - app.colibri-app.ch
+        - restart.colibri-app.ch
       secretName: production-tls
   rules:
-    - host: app.colibri-app.ch
+    - host: restart.colibri-app.ch
       http:
         paths:
           - path: /api

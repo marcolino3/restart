@@ -313,7 +313,7 @@ jobs:
         id: smoke
         run: |
           sleep 10
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://app.colibri-app.ch/api/health)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://restart.colibri-app.ch/api/health)
           if [ "$STATUS" != "200" ]; then
             echo "::error::Smoke test failed! HTTP status: $STATUS"
             exit 1
@@ -392,7 +392,7 @@ jobs:
               deployment_id: deployment.data.id,
               state: 'success',
               environment: 'production',
-              environment_url: 'https://app.colibri-app.ch',
+              environment_url: 'https://restart.colibri-app.ch',
               log_url: runUrl,
               description,
             });

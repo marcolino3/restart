@@ -74,7 +74,7 @@ cd apps/web && npm run dev             # Frontend (Port 4000) + Codegen Watch
 |---|---|---|
 | Lokal | localhost:4000 / :4001 | docker compose |
 | Staging | staging.colibri-app.ch | Auto auf main push |
-| Production | app.colibri-app.ch | Manuell via GitHub Actions |
+| Production | restart.colibri-app.ch | Manuell via GitHub Actions |
 
 ---
 
@@ -159,7 +159,7 @@ Bei jedem PR und vor jedem Deploy (8 Required Checks auf `main`, strict = Branch
 ### Deploy-Flow
 - **Staging** (`staging.colibri-app.ch`): automatisch bei Merge auf `main`, **nach** dem CI-Gate.
   Pipeline: CI-Gate → Build/Push → Trivy → Migrate → Deploy → Smoke-Test → `:staging-current`.
-- **Production** (`app.colibri-app.ch`): **manuell** (`workflow_dispatch`) mit Approval-Gate
+- **Production** (`restart.colibri-app.ch`): **manuell** (`workflow_dispatch`) mit Approval-Gate
   (`environment: production`). Promotet den **exakt auf Staging getesteten SHA** — kein Rebuild.
   Pipeline: resolve → validate → Migrate → Deploy → Smoke → Rollback-on-fail → `:production-current` → Audit-Log.
 - **DB-Schema** nur über TypeORM-Migrationen (`apps/backend/src/migrations/`), nie via `synchronize` in Staging/Prod.

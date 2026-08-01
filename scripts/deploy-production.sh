@@ -36,7 +36,7 @@ kubectl rollout status deployment/frontend -n "$NAMESPACE" --timeout=300s
 # Smoke test
 echo "Running smoke test..."
 sleep 10
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://app.colibri-app.ch/api/health)
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://restart.colibri-app.ch/api/health)
 if [ "$STATUS" != "200" ]; then
   echo "WARNING: Smoke test failed! HTTP status: $STATUS"
   echo "Consider rolling back with: ./scripts/rollback.sh production"
