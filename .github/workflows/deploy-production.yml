@@ -312,7 +312,31 @@ jobs:
         id: smoke
         run: |
           sleep 10
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://restart.colibri-app.ch/api/health)
+
+          # curl-Exit-Code separat auswerten: bei Transport-Fehlern (TLS, DNS,
+          # Connection refused) gibt es KEINEN HTTP-Status, %{http_code} ist
+          # dann leer und die Meldung lautete früher nur "HTTP status: ".
+          # Genau so ging der TLS-Fehler vom 2026-08-01 unter (Exit 60 =
+          # Zertifikat nicht verifizierbar).
+          set +e
+          STATUS=$(curl -sS -o /dev/null -w "%{http_code}" \
+            --max-time 30 https://restart.colibri-app.ch/api/health 2>/tmp/curl-err)
+          CURL_EXIT=$?
+          set -e
+
+          if [ "$CURL_EXIT" -ne 0 ]; then
+            echo "::error::Smoke test failed — curl transport error (exit $CURL_EXIT): $(cat /tmp/curl-err)"
+            case "$CURL_EXIT" in
+              35|51|58|59|60|77|91)
+                echo "::error::TLS-Fehler. Zertifikat prüfen: kubectl get certificate,challenge -n $NAMESPACE"
+                ;;
+              6)  echo "::error::DNS konnte restart.colibri-app.ch nicht auflösen." ;;
+              7)  echo "::error::Verbindung abgelehnt — Ingress/Service erreichbar?" ;;
+              28) echo "::error::Timeout nach 30s — Backend antwortet nicht." ;;
+            esac
+            exit 1
+          fi
+
           if [ "$STATUS" != "200" ]; then
             echo "::error::Smoke test failed! HTTP status: $STATUS"
             exit 1
