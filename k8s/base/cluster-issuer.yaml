@@ -11,4 +11,12 @@ spec:
     solvers:
       - http01:
           ingress:
-            class: nginx
+            # 'class' (legacy) macht cert-manager v1.14 die veraltete Annotation
+            # 'kubernetes.io/ingress.class' auf den temporären Solver-Ingress
+            # schreiben. nginx-ingress v1.15 wertet diese Annotation nicht mehr
+            # aus — nur noch 'spec.ingressClassName'. Der Solver-Ingress blieb
+            # dadurch für den Controller unsichtbar, der HTTP-01-Pfad landete
+            # nirgends (Timeout statt Antwort), das Zertifikat wurde nie
+            # ausgestellt (Verifikation 2026-08-01, Prod-Cluster:
+            # cm-acme-http-solver-* Ingress zeigte CLASS=<none>).
+            ingressClassName: nginx
