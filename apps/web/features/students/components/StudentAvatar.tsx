@@ -1,47 +1,32 @@
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
+import { InitialsAvatar } from "@/components/common/InitialsAvatar";
 
 interface StudentAvatarProps {
-  studentId: string;
   firstName?: string | null;
   lastName?: string | null;
+  /** Student photo, if one is on file; falls back to initials otherwise. */
+  photoUrl?: string | null;
   className?: string;
   fallbackClassName?: string;
 }
 
-function getInitials(firstName?: string | null, lastName?: string | null) {
-  return (
-    (firstName?.charAt(0)?.toUpperCase() ?? "") +
-      (lastName?.charAt(0)?.toUpperCase() ?? "") || "?"
-  );
-}
-
+/**
+ * Student avatar: shows the student's photo when available, otherwise falls
+ * back to their initials in an accent circle.
+ */
 export function StudentAvatar({
-  studentId,
   firstName,
   lastName,
+  photoUrl,
   className,
   fallbackClassName,
 }: StudentAvatarProps) {
-  const src = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(
-    studentId,
-  )}&backgroundType=gradientLinear`;
-
   return (
-    <Avatar className={className}>
-      <AvatarImage src={src} alt="" />
-      <AvatarFallback
-        className={cn(
-          "bg-primary text-primary-foreground font-semibold",
-          fallbackClassName,
-        )}
-      >
-        {getInitials(firstName, lastName)}
-      </AvatarFallback>
-    </Avatar>
+    <InitialsAvatar
+      firstName={firstName}
+      lastName={lastName}
+      imageUrl={photoUrl}
+      className={className}
+      fallbackClassName={fallbackClassName}
+    />
   );
 }

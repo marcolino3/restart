@@ -121,7 +121,6 @@ export const PerChildObservationAccordion = ({
                 className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left transition hover:bg-accent"
               >
                 <StudentAvatar
-                  studentId={s.studentId}
                   firstName={s.firstName}
                   lastName={s.lastName}
                   className="h-8 w-8 text-xs"

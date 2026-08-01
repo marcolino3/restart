@@ -123,9 +123,9 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
           <PersonCell
             avatar={
               <StudentAvatar
-                studentId={s.id}
                 firstName={s.firstName}
                 lastName={s.lastName}
+                photoUrl={s.photoUrl}
                 className="size-8"
                 fallbackClassName="text-[11px]"
               />

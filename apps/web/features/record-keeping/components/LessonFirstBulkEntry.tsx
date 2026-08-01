@@ -425,7 +425,6 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
                           )}
                         >
                           <StudentAvatar
-                            studentId={s.studentId}
                             firstName={s.firstName}
                             lastName={s.lastName}
                             className={cn(
@@ -473,7 +472,6 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
                                 )}
                               >
                                 <StudentAvatar
-                                  studentId={s.studentId}
                                   firstName={s.firstName}
                                   lastName={s.lastName}
                                   className="h-8 w-8"

@@ -185,7 +185,6 @@ export function RejectedApplicationsList({ applications }: Props) {
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <StudentAvatar
-                      studentId={a.id}
                       firstName={a.childFirstName}
                       lastName={a.childLastName}
                       className="h-7 w-7 shrink-0"
