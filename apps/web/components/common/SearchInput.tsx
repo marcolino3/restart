@@ -48,6 +48,7 @@ export function SearchInput({
         value={value}
         onChange={(event) => onValueChange(event.target.value)}
         placeholder={placeholder ?? t("searchPlaceholder")}
+        aria-label={placeholder ?? t("searchPlaceholder")}
         className={cn(
           "min-w-0 flex-1 border-none bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:appearance-none",
           className,
