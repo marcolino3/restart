@@ -2423,7 +2423,16 @@
     "selectWholeClass": "Ganze Klasse",
     "clearSelection": "Auswahl leeren",
     "childrenCount": "{count} Kinder",
-    "noStudentsFound": "Keine Kinder gefunden"
+    "noStudentsFound": "Keine Kinder gefunden",
+    "summaryTitle": "Zusammenfassung",
+    "summaryArea": "Bereich",
+    "summaryChildren": "Kinder",
+    "summaryChildrenCount": "{count} erfasst",
+    "recentTitle": "Zuletzt erfasst",
+    "recentSubtitle": "Deine letzten Einträge — zum schnellen Wiederholen.",
+    "recentEmpty": "Noch keine Einträge — deine ersten Erfassungen erscheinen hier.",
+    "attachmentsTitle": "Material & Anhänge",
+    "attachmentsHint": "Anhänge können nach dem Speichern ergänzt werden."
   },
   "RecordKeepingSettings": {
     "pageTitle": "Aufmerksamkeits-Schwellen",

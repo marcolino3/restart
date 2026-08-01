@@ -118,6 +118,43 @@ export class LessonRecordAttachmentsController {
     return { id: attachment.id, fileName: attachment.fileName };
   }
 
+  /**
+   * Attachment metadata for one record. Declared before `:id` so the literal
+   * segment is not swallowed by the param route.
+   */
+  @Get()
+  @Permissions('RECORD_KEEPING_READ')
+  async list(
+    @Query('lessonRecordId') lessonRecordId: string,
+    @CurrentUser() user: TokenPayload,
+  ): Promise<
+    Array<{
+      id: string;
+      fileName: string;
+      mimeType: string;
+      sizeBytes: number;
+      createdAt: Date;
+    }>
+  > {
+    const orgId = user.orgId;
+    if (!orgId) throw new ForbiddenException('No active organization');
+    if (!lessonRecordId) {
+      throw new BadRequestException('lessonRecordId required');
+    }
+
+    await this.attachments.assertRecordInOrg(lessonRecordId, orgId);
+
+    const rows = await this.attachments.findByRecord(lessonRecordId, orgId);
+    // storageKey stays server-side: the client addresses a file by id only.
+    return rows.map((r) => ({
+      id: r.id,
+      fileName: r.fileName,
+      mimeType: r.mimeType,
+      sizeBytes: r.sizeBytes,
+      createdAt: r.createdAt,
+    }));
+  }
+
   @Get(':id')
   @Permissions('RECORD_KEEPING_READ')
   async download(

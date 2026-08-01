@@ -2423,7 +2423,16 @@
     "selectWholeClass": "Whole class",
     "clearSelection": "Clear selection",
     "childrenCount": "{count} children",
-    "noStudentsFound": "No children found"
+    "noStudentsFound": "No children found",
+    "summaryTitle": "Summary",
+    "summaryArea": "Area",
+    "summaryChildren": "Children",
+    "summaryChildrenCount": "{count} recorded",
+    "recentTitle": "Recently recorded",
+    "recentSubtitle": "Your latest entries — for quick repeats.",
+    "recentEmpty": "No entries yet — your first records will appear here.",
+    "attachmentsTitle": "Material & attachments",
+    "attachmentsHint": "Attachments can be added after saving."
   },
   "RecordKeepingSettings": {
     "pageTitle": "Attention thresholds",

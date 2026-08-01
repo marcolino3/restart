@@ -39,31 +39,42 @@ import { ROUTES } from "@/constants/routes";
 
 import { createLessonRecordsBulkAction } from "../actions/create-lesson-records-bulk.action";
 import { getClassroomStudentsAction } from "../actions/get-classroom-students.action";
-import { updateLessonRecordAction } from "../actions/update-lesson-record.action";
 import {
   lessonRecordsBulkSchema,
   type LessonRecordsBulkFormValues,
 } from "../schemas/lesson-records-bulk.schema";
 import {
-  EMPTY_OBSERVATION,
   LESSON_RECORD_STATUSES,
   type ClassroomStudentDTO,
+  type CurriculumNodeType,
+  type LessonAncestor,
   type LessonOption,
-  type LessonRecordObservation,
   type LessonRecordStatus,
 } from "../types";
-import { ObservationBadgeRow } from "./ObservationBadgeRow";
-import { PerChildObservationAccordion } from "./PerChildObservationAccordion";
+import { STATUS_DOT_CLS } from "../lib/status-dot-cls";
 import { LessonCombobox } from "./LessonCombobox";
 import { RecordKeepingClassPicker } from "./RecordKeepingClassPicker";
+import { RecordEntrySummaryCard } from "./RecordEntrySummaryCard";
+import { RecentRecordsCard } from "./RecentRecordsCard";
+import { RecordAttachmentsBlock } from "./RecordAttachmentsBlock";
 
-const STATUS_DOT_CLS: Record<LessonRecordStatus, string> = {
-  PLANNING: "bg-slate-400",
-  INTRODUCED: "bg-sky-500",
-  PRACTICED: "bg-amber-500",
-  MASTERED: "bg-emerald-500",
-  NEEDS_MORE: "bg-rose-500",
+const pickName = (
+  translations: { locale: string; name: string }[],
+  locale: string,
+): string => {
+  const normalized = locale.toUpperCase();
+  return (
+    translations.find((t) => t.locale === normalized)?.name ??
+    translations[0]?.name ??
+    "—"
+  );
 };
+
+const findAncestor = (
+  lesson: LessonOption,
+  type: CurriculumNodeType,
+): LessonAncestor | undefined =>
+  lesson.ancestors?.find((a) => a.nodeType === type);
 
 const DURATION_OPTIONS_MIN = [5, 10, 15, 20, 30, 45, 60, 90];
 const FORM_ID = "lesson-first-bulk-entry-form";
@@ -98,6 +109,7 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
     "cards",
   );
   const [studentSearch, setStudentSearch] = useState("");
+  const [recentRefreshKey, setRecentRefreshKey] = useState(0);
 
   const form = useForm<LessonRecordsBulkFormValues>({
     resolver: zodResolver(lessonRecordsBulkSchema),
@@ -108,28 +120,28 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
       status: "INTRODUCED",
       durationMinutes: null,
       note: "",
-      observation: EMPTY_OBSERVATION,
-      perChildObservations: {},
-      perChildNotes: {},
     },
   });
 
   // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form's watch() returns non-memoizable functions by design
   const studentIds = form.watch("studentIds");
   const recordedAt = form.watch("recordedAt");
-  const observation =
-    (form.watch("observation") as LessonRecordObservation | undefined) ??
-    EMPTY_OBSERVATION;
-  const perChildObservations =
-    (form.watch("perChildObservations") as
-      | Record<string, LessonRecordObservation>
-      | undefined) ?? {};
-  const perChildNotes =
-    (form.watch("perChildNotes") as Record<string, string> | undefined) ?? {};
-  const selectedStudents = useMemo(
-    () => students.filter((s) => studentIds.includes(s.studentId)),
-    [students, studentIds],
+  const lessonId = form.watch("lessonId");
+  const status = form.watch("status") as LessonRecordStatus;
+
+  const selectedLesson = useMemo(
+    () => lessons.find((l) => l.id === lessonId) ?? null,
+    [lessons, lessonId],
   );
+  const selectedLessonName = selectedLesson
+    ? pickName(selectedLesson.translations, locale)
+    : null;
+  const selectedAreaName = selectedLesson
+    ? (() => {
+        const area = findAncestor(selectedLesson, "AREA");
+        return area ? pickName(area.translations, locale) : null;
+      })()
+    : null;
 
   const statusOptions = useMemo(
     () =>
@@ -246,18 +258,6 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
           ? values.recordedAt
           : new Date(values.recordedAt).toISOString().slice(0, 10);
 
-      const bulkObservation = values.observation as
-        | LessonRecordObservation
-        | undefined;
-      const overrides = (values.perChildObservations ?? {}) as Record<
-        string,
-        LessonRecordObservation
-      >;
-      const noteOverrides = (values.perChildNotes ?? {}) as Record<
-        string,
-        string
-      >;
-
       const res = await createLessonRecordsBulkAction(
         {
           lessonId: values.lessonId,
@@ -266,7 +266,6 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
           status: values.status as LessonRecordStatus,
           durationMinutes: values.durationMinutes ?? null,
           note: values.note?.trim() ? values.note : null,
-          observation: bulkObservation ?? null,
         },
         schoolClassId,
       );
@@ -276,54 +275,10 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
         return;
       }
 
-      // Apply per-child overrides as individual updates against the just-
-      // created records. Best-effort: report partial failures via toast,
-      // never block the success of the bulk-create itself.
-      const obsHasValues = (obs: LessonRecordObservation | undefined) =>
-        !!obs && Object.values(obs).some((v) => v != null && v !== false);
-      const overrideStudentIds = new Set<string>([
-        ...Object.entries(overrides)
-          .filter(([, obs]) => obsHasValues(obs))
-          .map(([sid]) => sid),
-        ...Object.entries(noteOverrides)
-          .filter(([, note]) => (note ?? "").trim().length > 0)
-          .map(([sid]) => sid),
-      ]);
-      if (overrideStudentIds.size > 0) {
-        const byStudent = new Map(res.data.map((r) => [r.studentId, r.id]));
-        const results = await Promise.all(
-          Array.from(overrideStudentIds).map((sid) => {
-            const recordId = byStudent.get(sid);
-            if (!recordId) return Promise.resolve({ success: false } as const);
-            const obs = overrides[sid];
-            const note = noteOverrides[sid]?.trim();
-            return updateLessonRecordAction(
-              {
-                id: recordId,
-                ...(obsHasValues(obs) ? { observation: obs } : {}),
-                ...(note ? { note } : {}),
-              },
-              schoolClassId,
-            );
-          }),
-        );
-        const failed = results.filter((r) => !r.success).length;
-        if (failed === 0) {
-          toast.success(
-            t("observationOverridesAppliedToast"),
-          );
-        } else {
-          toast.warning(t("observationOverridesPartialFailureToast"), {
-            description: `${failed}/${overrideStudentIds.size}`,
-          });
-        }
-      }
-
       toast.success(t("recordsCreated", { count: res.data.length }));
       form.setValue("studentIds", []);
       form.setValue("note", "");
-      form.setValue("perChildObservations", {});
-      form.setValue("perChildNotes", {});
+      setRecentRefreshKey((k) => k + 1);
     });
   };
 
@@ -618,41 +573,7 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
                   />
                 </div>
 
-                <div className="flex flex-col gap-3 rounded-lg border bg-card p-4">
-                  <div className="flex flex-col gap-0.5">
-                    <Label className="text-sm font-medium">
-                      {t("observationSectionTitle")}
-                    </Label>
-                    <span className="text-xs text-muted-foreground">
-                      {t("observationDefaultHelp")}
-                    </span>
-                  </div>
-                  <ObservationBadgeRow
-                    collapsibleChildren
-                    value={observation}
-                    onChange={(next) =>
-                      form.setValue("observation", next, { shouldDirty: true })
-                    }
-                  />
-                </div>
-
-                {selectedStudents.length > 0 && (
-                  <PerChildObservationAccordion
-                    selectedStudents={selectedStudents}
-                    overrides={perChildObservations}
-                    onChange={(next) =>
-                      form.setValue("perChildObservations", next, {
-                        shouldDirty: true,
-                      })
-                    }
-                    notes={perChildNotes}
-                    onNotesChange={(next) =>
-                      form.setValue("perChildNotes", next, {
-                        shouldDirty: true,
-                      })
-                    }
-                  />
-                )}
+                <RecordAttachmentsBlock />
               </CardContent>
             </Card>
 
@@ -670,8 +591,21 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
             )}
           </div>
 
-          {/* Sidebar cards ("Zusammenfassung", "Zuletzt erfasst") land in PR 3. */}
-          <div className="flex flex-col gap-4 lg:sticky lg:top-6" />
+          <div className="flex flex-col gap-4 lg:sticky lg:top-6">
+            <RecordEntrySummaryCard
+              areaName={selectedAreaName}
+              lessonName={selectedLessonName}
+              formattedDate={formattedRecordedAt}
+              studentCount={studentIds.length}
+              status={status}
+            />
+            <RecentRecordsCard
+              refreshKey={recentRefreshKey}
+              onSelect={(id) =>
+                form.setValue("lessonId", id, { shouldValidate: true })
+              }
+            />
+          </div>
         </form>
       </Form>
     </div>
