@@ -8,6 +8,8 @@ import type { KanbanApplication, KanbanStage } from "../types";
 // i18n + avatar are mocked so we assert on stable, deterministic output.
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
+  // `useDataTable` builds its locale collator from this.
+  useLocale: () => "de",
 }));
 vi.mock("@/features/students/components/StudentAvatar", () => ({
   StudentAvatar: () => null,
