@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { getClassroomAttentionAction } from "@/features/record-keeping/actions/get-classroom-attention.action";
 import { getMyTeachingSchoolClassesAction } from "@/features/school-classes/actions/get-my-teaching-school-classes.action";
 import { StudentAttentionList } from "@/features/record-keeping/components/StudentAttentionList";
+import { RecordKeepingClassPicker } from "@/features/record-keeping/components/RecordKeepingClassPicker";
 
 interface PageProps {
   searchParams: Promise<{ classId?: string }>;
@@ -37,6 +38,8 @@ const AttentionPage = async ({ searchParams }: PageProps) => {
           {t("attentionOrgSubtitle")}
         </p>
       </div>
+
+      <RecordKeepingClassPicker classes={classes} />
 
       {!selectedClassId ? (
         <p className="text-sm text-muted-foreground italic">
