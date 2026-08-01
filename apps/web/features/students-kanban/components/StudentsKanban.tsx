@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import {
   DndContext,
   DragOverlay,
@@ -16,11 +17,15 @@ import {
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
-import { GripVertical, Users } from "lucide-react";
+import { Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { DataTableFacetedFilter } from "@/components/common/DataTableFacetedFilter";
+import { StudentAvatar } from "@/features/students/components/StudentAvatar";
+import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
 
 import { transferStudentAction } from "../actions/transfer-student.action";
@@ -43,15 +48,12 @@ type ColumnState = {
   studentIds: string[];
 };
 
-const COLUMN_MIN_HEIGHT = "min-h-[200px]";
-
 /**
- * A column is a class, optionally narrowed to one of its subgroups. Encoding
- * both in the droppable id keeps dnd-kit's single-id model intact — the drop
+ * A drop target is a class, optionally narrowed to one of its subgroups.
+ * Encoding both in one id keeps dnd-kit's single-id model intact; the drop
  * handler decodes it back into the two values the API needs.
  *
- * "<classId>" for a class without subgroups, "<classId>::<gradeLevelId>" for
- * one with them.
+ * "<classId>" for the class itself, "<classId>::<gradeLevelId>" for a lane.
  */
 const columnId = (classId: string, gradeLevelId?: string | null): string =>
   gradeLevelId ? `${classId}::${gradeLevelId}` : classId;
@@ -65,10 +67,7 @@ const decodeColumnId = (
 
 /**
  * Subgroups a class splits into — the children of the stages it carries.
- *
- * A class assigned "Unterstufe" gets US1–US3. One whose stages have no
- * children (or that has no stages) gets an empty list and stays a single
- * column, which is what most schools will see.
+ * A class whose stages have no children stays one undivided column.
  */
 const subgroupsOf = (
   classroom: KanbanClassroom,
@@ -80,6 +79,67 @@ const subgroupsOf = (
     .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
 };
 
+const ageFrom = (dateOfBirth?: string | null): number | null => {
+  if (!dateOfBirth) return null;
+  const born = new Date(dateOfBirth);
+  if (Number.isNaN(born.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - born.getFullYear();
+  const beforeBirthday =
+    now.getMonth() < born.getMonth() ||
+    (now.getMonth() === born.getMonth() && now.getDate() < born.getDate());
+  if (beforeBirthday) age -= 1;
+  return age;
+};
+
+const byName = (
+  studentsById: Record<string, KanbanStudent>,
+  a: string,
+  b: string,
+): number => {
+  const sa = studentsById[a];
+  const sb = studentsById[b];
+  if (!sa || !sb) return 0;
+  return `${sa.lastName} ${sa.firstName}`.localeCompare(
+    `${sb.lastName} ${sb.firstName}`,
+  );
+};
+
+/** Splits each class's children across its subgroup lanes. */
+function buildColumns(
+  classrooms: KanbanClassroom[],
+  unassigned: KanbanStudent[],
+  gradeLevels: KanbanGradeLevel[],
+): Record<string, ColumnState> {
+  const map: Record<string, ColumnState> = {
+    [UNASSIGNED_COLUMN_ID]: {
+      id: UNASSIGNED_COLUMN_ID,
+      studentIds: unassigned.map((s) => s.id),
+    },
+  };
+  for (const c of classrooms) {
+    const subgroups = subgroupsOf(c, gradeLevels);
+    for (const sub of subgroups) {
+      const id = columnId(c.id, sub.id);
+      map[id] = {
+        id,
+        studentIds: c.studentIds.filter(
+          (sid) => c.gradeLevelByStudentId[sid] === sub.id,
+        ),
+      };
+    }
+    // The class lane itself holds whoever is not in a subgroup.
+    map[c.id] = {
+      id: c.id,
+      studentIds: c.studentIds.filter((sid) => {
+        const assigned = c.gradeLevelByStudentId[sid];
+        return !assigned || !subgroups.some((sub) => sub.id === assigned);
+      }),
+    };
+  }
+  return map;
+}
+
 export function StudentsKanban({
   initialClassrooms,
   initialUnassigned,
@@ -87,63 +147,39 @@ export function StudentsKanban({
   gradeLevels,
 }: Props) {
   const t = useTranslations("StudentsKanban");
+  const locale = useLocale();
+  const router = useRouter();
   const [, startTransition] = useTransition();
 
-  const [studentsById, setStudentsById] = useState<
-    Record<string, KanbanStudent>
-  >(initialStudentsById);
-  const [columns, setColumns] = useState<Record<string, ColumnState>>(() => {
-    const map: Record<string, ColumnState> = {
-      [UNASSIGNED_COLUMN_ID]: {
-        id: UNASSIGNED_COLUMN_ID,
-        studentIds: initialUnassigned.map((s) => s.id),
-      },
-    };
-    for (const c of initialClassrooms) {
-      const subgroups = subgroupsOf(c, gradeLevels);
-      if (subgroups.length === 0) {
-        map[c.id] = { id: c.id, studentIds: [...c.studentIds] };
-        continue;
-      }
-      // One column per subgroup, plus a lane for children not placed in one.
-      for (const sub of subgroups) {
-        const id = columnId(c.id, sub.id);
-        map[id] = {
-          id,
-          studentIds: c.studentIds.filter(
-            (sid) => c.gradeLevelByStudentId[sid] === sub.id,
-          ),
-        };
-      }
-      map[c.id] = {
-        id: c.id,
-        studentIds: c.studentIds.filter((sid) => {
-          const assigned = c.gradeLevelByStudentId[sid];
-          return !assigned || !subgroups.some((sub) => sub.id === assigned);
-        }),
-      };
-    }
-    return map;
-  });
+  const [studentsById] =
+    useState<Record<string, KanbanStudent>>(initialStudentsById);
+  const [columns, setColumns] = useState<Record<string, ColumnState>>(() =>
+    buildColumns(initialClassrooms, initialUnassigned, gradeLevels),
+  );
   const [classroomMeta] = useState<KanbanClassroom[]>(initialClassrooms);
 
-  const [selectedGradeIds, setSelectedGradeIds] = useState<string[]>([]);
+  const [classFilter, setClassFilter] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [activeStudent, setActiveStudent] = useState<KanbanStudent | null>(
     null,
   );
+  /** Multi-select: ⌘/Ctrl- or Shift-click gathers children, then drag once. */
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   );
 
+  const classFilterOptions = useMemo(
+    () => classroomMeta.map((c) => ({ label: c.name, value: c.id })),
+    [classroomMeta],
+  );
+
   const visibleClassrooms = useMemo(() => {
-    if (selectedGradeIds.length === 0) return classroomMeta;
-    const sel = new Set(selectedGradeIds);
-    return classroomMeta.filter((c) =>
-      c.gradeLevelIds.some((id) => sel.has(id)),
-    );
-  }, [classroomMeta, selectedGradeIds]);
+    if (classFilter.length === 0) return classroomMeta;
+    const sel = new Set(classFilter);
+    return classroomMeta.filter((c) => sel.has(c.id));
+  }, [classroomMeta, classFilter]);
 
   const searchLc = search.trim().toLowerCase();
   const matchesSearch = (id: string): boolean => {
@@ -163,9 +199,20 @@ export function StudentsKanban({
     return null;
   };
 
+  const toggleSelected = (studentId: string) =>
+    setSelectedIds((prev) =>
+      prev.includes(studentId)
+        ? prev.filter((id) => id !== studentId)
+        : [...prev, studentId],
+    );
+
   const onDragStart = (e: DragStartEvent) => {
     const studentId = String(e.active.id);
     setActiveStudent(studentsById[studentId] ?? null);
+    // Dragging a card outside the selection starts a fresh single move.
+    if (selectedIds.length > 0 && !selectedIds.includes(studentId)) {
+      setSelectedIds([]);
+    }
   };
 
   const onDragEnd = (e: DragEndEvent) => {
@@ -173,134 +220,144 @@ export function StudentsKanban({
     const { active, over } = e;
     if (!over) return;
 
-    const studentId = String(active.id);
+    const draggedId = String(active.id);
     let toColumnId = String(over.id);
-    // Wenn auf einer Student-Card abgelegt: deren Spalte ermitteln
     if (!columns[toColumnId]) {
       const owner = findColumnForStudent(toColumnId);
       if (!owner) return;
       toColumnId = owner;
     }
 
-    const fromColumnId = findColumnForStudent(studentId);
-    if (!fromColumnId) return;
-    if (fromColumnId === toColumnId) return; // no-op
+    // Everything selected moves together; otherwise just the dragged card.
+    const moving = selectedIds.includes(draggedId) ? selectedIds : [draggedId];
+    const origin = new Map<string, string>();
+    for (const id of moving) {
+      const from = findColumnForStudent(id);
+      if (from) origin.set(id, from);
+    }
+    const actuallyMoving = moving.filter((id) => origin.get(id) !== toColumnId);
+    if (actuallyMoving.length === 0) return;
 
-    // Capacity-Soft-Warn: zählt die ganze Klasse, nicht die einzelne
-    // Untergruppen-Spalte — die Kapazität hängt an der Klasse.
     const { classId: toClassId, gradeLevelId: toGradeLevelId } =
       decodeColumnId(toColumnId);
-    const { classId: fromClassId } = decodeColumnId(fromColumnId);
+
+    // Capacity counts the whole class, not the single lane.
     const target = classroomMeta.find((c) => c.id === toClassId);
-    if (target?.maxCapacity != null && fromClassId !== toClassId) {
-      const futureCount =
-        Object.entries(columns)
-          .filter(([id]) => decodeColumnId(id).classId === toClassId)
-          .reduce((sum, [, col]) => sum + col.studentIds.length, 0) + 1;
-      if (futureCount > target.maxCapacity) {
-        toast.warning(
-          t("capacityExceededWarn", {
-            count: futureCount,
-            max: target.maxCapacity,
-            className: target.name,
-          }),
-        );
+    if (target?.maxCapacity != null) {
+      const incoming = actuallyMoving.filter(
+        (id) => decodeColumnId(origin.get(id) ?? "").classId !== toClassId,
+      ).length;
+      if (incoming > 0) {
+        const futureCount =
+          Object.entries(columns)
+            .filter(([id]) => decodeColumnId(id).classId === toClassId)
+            .reduce((sum, [, col]) => sum + col.studentIds.length, 0) + incoming;
+        if (futureCount > target.maxCapacity) {
+          toast.warning(
+            t("capacityExceededWarn", {
+              count: futureCount,
+              max: target.maxCapacity,
+              className: target.name,
+            }),
+          );
+        }
       }
     }
 
     // Optimistic update
     setColumns((prev) => {
       const next: Record<string, ColumnState> = { ...prev };
-      next[fromColumnId] = {
-        ...prev[fromColumnId],
-        studentIds: prev[fromColumnId].studentIds.filter((id) => id !== studentId),
-      };
+      for (const id of actuallyMoving) {
+        const from = origin.get(id);
+        if (!from) continue;
+        next[from] = {
+          ...next[from],
+          studentIds: next[from].studentIds.filter((sid) => sid !== id),
+        };
+      }
       next[toColumnId] = {
-        ...prev[toColumnId],
-        studentIds: [...prev[toColumnId].studentIds, studentId].sort((a, b) => {
-          const sa = studentsById[a];
-          const sb = studentsById[b];
-          if (!sa || !sb) return 0;
-          return `${sa.lastName} ${sa.firstName}`.localeCompare(
-            `${sb.lastName} ${sb.firstName}`,
-          );
-        }),
+        ...next[toColumnId],
+        studentIds: [...next[toColumnId].studentIds, ...actuallyMoving].sort(
+          (a, b) => byName(studentsById, a, b),
+        ),
       };
       return next;
     });
+    setSelectedIds([]);
 
     startTransition(async () => {
-      const res = await transferStudentAction({
-        studentId,
-        targetSchoolClassId:
-          toColumnId === UNASSIGNED_COLUMN_ID ? null : toClassId,
-        // Explicit null clears the subgroup when dropping on the class lane.
-        gradeLevelId:
-          toColumnId === UNASSIGNED_COLUMN_ID ? null : toGradeLevelId,
-      });
-      if (!res.success) {
-        // Rollback
+      const results = await Promise.all(
+        actuallyMoving.map((id) =>
+          transferStudentAction({
+            studentId: id,
+            targetSchoolClassId:
+              toColumnId === UNASSIGNED_COLUMN_ID ? null : toClassId,
+            gradeLevelId:
+              toColumnId === UNASSIGNED_COLUMN_ID ? null : toGradeLevelId,
+          }),
+        ),
+      );
+      const failed = actuallyMoving.filter((_, i) => !results[i].success);
+
+      if (failed.length > 0) {
+        // Roll back only what did not make it.
         setColumns((prev) => {
           const next: Record<string, ColumnState> = { ...prev };
           next[toColumnId] = {
-            ...prev[toColumnId],
-            studentIds: prev[toColumnId].studentIds.filter(
-              (id) => id !== studentId,
+            ...next[toColumnId],
+            studentIds: next[toColumnId].studentIds.filter(
+              (sid) => !failed.includes(sid),
             ),
           };
-          next[fromColumnId] = {
-            ...prev[fromColumnId],
-            studentIds: [...prev[fromColumnId].studentIds, studentId],
-          };
+          for (const id of failed) {
+            const from = origin.get(id);
+            if (!from) continue;
+            next[from] = {
+              ...next[from],
+              studentIds: [...next[from].studentIds, id].sort((a, b) =>
+                byName(studentsById, a, b),
+              ),
+            };
+          }
           return next;
         });
-        toast.error(t("transferError"), { description: res.error });
+        const firstError = results.find((r) => !r.success);
+        toast.error(t("transferError"), {
+          description:
+            firstError && !firstError.success ? firstError.error : undefined,
+        });
       } else {
         toast.success(t("transferOk"));
       }
     });
   };
 
-  const toggleGrade = (id: string) =>
-    setSelectedGradeIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+  const openProfile = (studentId: string) =>
+    router.push(ROUTES.admin.studentsView(locale, studentId));
 
-  // Avoid unused-var TS warning until lookup helper is wired elsewhere
-  void setStudentsById;
+  const laneStudents = (id: string): KanbanStudent[] =>
+    (columns[id]?.studentIds ?? [])
+      .filter(matchesSearch)
+      .map((sid) => studentsById[sid])
+      .filter(Boolean);
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Filter row */}
       <div className="flex flex-wrap items-center gap-2">
         <Input
           placeholder={t("searchStudent")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs h-9"
+          className="h-9 max-w-xs"
         />
-        {gradeLevels.length > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs text-muted-foreground">{t("filterByGrade")}</span>
-            {gradeLevels.map((g) => {
-              const selected = selectedGradeIds.includes(g.id);
-              return (
-                <button
-                  key={g.id}
-                  type="button"
-                  onClick={() => toggleGrade(g.id)}
-                  className={cn(
-                    "text-xs px-2 py-1 rounded-md border transition-colors",
-                    selected
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-card hover:bg-accent",
-                  )}
-                >
-                  {g.name}
-                </button>
-              );
-            })}
-          </div>
+        {classFilterOptions.length > 0 && (
+          <DataTableFacetedFilter
+            title={t("filterClass")}
+            options={classFilterOptions}
+            selected={classFilter}
+            onChange={setClassFilter}
+            searchPlaceholder={t("filterClassSearch")}
+          />
         )}
       </div>
 
@@ -310,88 +367,44 @@ export function StudentsKanban({
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
       >
-        <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            <KanbanColumn
-              id={UNASSIGNED_COLUMN_ID}
-              title={t("unassigned")}
-              students={(columns[UNASSIGNED_COLUMN_ID]?.studentIds ?? [])
-                .filter(matchesSearch)
-                .map((id) => studentsById[id])
-                .filter(Boolean)}
-              count={columns[UNASSIGNED_COLUMN_ID]?.studentIds.length ?? 0}
-              highlight
-            />
-          </div>
+        <div className="grid grid-cols-1 items-start gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <KanbanColumn
+            id={UNASSIGNED_COLUMN_ID}
+            title={t("unassigned")}
+            count={columns[UNASSIGNED_COLUMN_ID]?.studentIds.length ?? 0}
+            students={laneStudents(UNASSIGNED_COLUMN_ID)}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelected}
+            onOpen={openProfile}
+            highlight
+          />
 
           {visibleClassrooms.map((c) => {
             const subgroups = subgroupsOf(c, gradeLevels);
-            const classTotal = Object.entries(columns)
+            const total = Object.entries(columns)
               .filter(([id]) => decodeColumnId(id).classId === c.id)
               .reduce((sum, [, col]) => sum + col.studentIds.length, 0);
 
-            const lane = (id: string, title: string, subtle = false) => {
-              const ids = columns[id]?.studentIds ?? [];
-              return (
-                <KanbanColumn
-                  key={id}
-                  id={id}
-                  title={title}
-                  color={subtle ? null : c.color}
-                  count={ids.length}
-                  highlight={subtle}
-                  students={ids
-                    .filter(matchesSearch)
-                    .map((sid) => studentsById[sid])
-                    .filter(Boolean)}
-                />
-              );
-            };
-
-            // No subgroups: the class stays a single column, as before.
-            if (subgroups.length === 0) {
-              return (
-                <div
-                  key={c.id}
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
-                >
-                  {lane(c.id, c.name)}
-                </div>
-              );
-            }
-
             return (
-              <section key={c.id} className="rounded-card border bg-card/40 p-3">
-                <header className="mb-2.5 flex items-center gap-2">
-                  {c.color && (
-                    <span
-                      className="inline-block h-3 w-3 rounded-sm border"
-                      style={{ backgroundColor: c.color }}
-                    />
-                  )}
-                  <h2 className="text-base font-semibold">{c.name}</h2>
-                  <Badge
-                    variant={
-                      c.maxCapacity != null && classTotal > c.maxCapacity
-                        ? "destructive"
-                        : "secondary"
-                    }
-                    className="text-[10px]"
-                  >
-                    <Users className="mr-1 h-3 w-3" />
-                    {c.maxCapacity != null
-                      ? `${classTotal}/${c.maxCapacity}`
-                      : classTotal}
-                  </Badge>
-                </header>
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {subgroups.map((sub) =>
-                    lane(columnId(c.id, sub.id), sub.name),
-                  )}
-                  {/* Children in the class but not in any subgroup yet. */}
-                  {lane(c.id, t("withoutSubgroup"), true)}
-                </div>
-              </section>
+              <KanbanColumn
+                key={c.id}
+                id={c.id}
+                title={c.name}
+                color={c.color}
+                count={total}
+                maxCapacity={c.maxCapacity ?? null}
+                students={laneStudents(c.id)}
+                selectedIds={selectedIds}
+                onToggleSelect={toggleSelected}
+                onOpen={openProfile}
+                unassignedLabel={t("withoutSubgroup")}
+                sections={subgroups.map((sub) => ({
+                  id: columnId(c.id, sub.id),
+                  title: sub.name,
+                  students: laneStudents(columnId(c.id, sub.id)),
+                  count: columns[columnId(c.id, sub.id)]?.studentIds.length ?? 0,
+                }))}
+              />
             );
           })}
         </div>
@@ -402,12 +415,44 @@ export function StudentsKanban({
               student={activeStudent}
               dragging
               className="rotate-1 shadow-lg"
+              // A stack reads better than a single card for a group move.
+              stackCount={
+                selectedIds.includes(activeStudent.id) ? selectedIds.length : 1
+              }
             />
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      {selectedIds.length > 0 && (
+        <div className="sticky bottom-4 flex flex-wrap items-center gap-3 rounded-card border border-primary/40 bg-primary/5 px-4 py-3">
+          <span className="text-sm font-semibold text-primary">
+            {t("selectedCount", { count: selectedIds.length })}
+          </span>
+          <span className="text-sm text-muted-foreground">
+            {t("selectionHint")}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-auto"
+            onClick={() => setSelectedIds([])}
+          >
+            {t("clearSelection")}
+          </Button>
+        </div>
+      )}
+
+      <p className="text-xs text-muted-foreground">{t("boardHint")}</p>
     </div>
   );
+}
+
+interface SectionProps {
+  id: string;
+  title: string;
+  count: number;
+  students: KanbanStudent[];
 }
 
 interface ColumnProps {
@@ -415,9 +460,16 @@ interface ColumnProps {
   title: string;
   count: number;
   students: KanbanStudent[];
+  selectedIds: string[];
+  onToggleSelect: (studentId: string) => void;
+  onOpen: (studentId: string) => void;
   color?: string | null;
   maxCapacity?: number | null;
   highlight?: boolean;
+  /** Subgroup lanes rendered inside the column, each its own drop target. */
+  sections?: SectionProps[];
+  /** Heading for the lane holding children not placed in any subgroup. */
+  unassignedLabel?: string;
 }
 
 function KanbanColumn({
@@ -425,27 +477,26 @@ function KanbanColumn({
   title,
   count,
   students,
+  selectedIds,
+  onToggleSelect,
+  onOpen,
   color,
   maxCapacity,
   highlight,
+  sections,
+  unassignedLabel,
 }: ColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({ id });
-  const overCapacity =
-    maxCapacity != null && count > maxCapacity;
+  const overCapacity = maxCapacity != null && count > maxCapacity;
+  const lanes = sections ?? [];
+
   return (
-    <Card
-      className={cn(
-        "flex flex-col gap-0",
-        highlight && "border-dashed",
-        isOver && "ring-2 ring-primary",
-      )}
-    >
+    <Card className={cn("flex flex-col gap-0", highlight && "bg-muted/40")}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-base flex items-center gap-2 truncate">
+          <CardTitle className="flex items-center gap-2 truncate text-base">
             {color && (
               <span
-                className="inline-block h-3 w-3 rounded-sm border"
+                className="inline-block h-2.5 w-2.5 rounded-full"
                 style={{ backgroundColor: color }}
               />
             )}
@@ -455,47 +506,149 @@ function KanbanColumn({
             variant={overCapacity ? "destructive" : "secondary"}
             className="text-[10px]"
           >
-            <Users className="h-3 w-3 mr-1" />
+            <Users className="mr-1 h-3 w-3" />
             {maxCapacity != null ? `${count}/${maxCapacity}` : count}
           </Badge>
         </div>
       </CardHeader>
-      <CardContent
-        ref={setNodeRef}
-        className={cn(
-          "flex flex-col gap-1.5 p-3 pt-1",
-          COLUMN_MIN_HEIGHT,
-          isOver && "bg-accent/50 rounded-md",
-        )}
-      >
-        {students.length === 0 ? (
-          <p className="text-xs text-muted-foreground italic mt-2">
-            —
-          </p>
+
+      <CardContent className="flex flex-col gap-2 p-3 pt-1">
+        {lanes.length > 0 ? (
+          <>
+            {lanes.map((section) => (
+              <DropLane
+                key={section.id}
+                id={section.id}
+                label={section.title}
+                count={section.count}
+                students={section.students}
+                selectedIds={selectedIds}
+                onToggleSelect={onToggleSelect}
+                onOpen={onOpen}
+              />
+            ))}
+            {/* The class lane still takes children directly — whoever has not
+                been placed in a subgroup yet. Labelled, or its cards read as
+                belonging to the last subgroup above it. */}
+            {students.length > 0 && (
+              <DropLane
+                id={id}
+                label={unassignedLabel}
+                count={students.length}
+                students={students}
+                selectedIds={selectedIds}
+                onToggleSelect={onToggleSelect}
+                onOpen={onOpen}
+              />
+            )}
+          </>
         ) : (
-          students.map((s) => <DraggableStudent key={s.id} student={s} />)
+          <DropLane
+            id={id}
+            students={students}
+            selectedIds={selectedIds}
+            onToggleSelect={onToggleSelect}
+            onOpen={onOpen}
+            minHeight
+          />
         )}
       </CardContent>
     </Card>
   );
 }
 
-function DraggableStudent({ student }: { student: KanbanStudent }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: student.id });
-  const style = {
-    transform: CSS.Transform.toString(transform),
+function DropLane({
+  id,
+  label,
+  count,
+  students,
+  selectedIds,
+  onToggleSelect,
+  onOpen,
+  minHeight,
+}: {
+  id: string;
+  label?: string;
+  count?: number;
+  students: KanbanStudent[];
+  selectedIds: string[];
+  onToggleSelect: (studentId: string) => void;
+  onOpen: (studentId: string) => void;
+  minHeight?: boolean;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <div>
+      {label && (
+        <div className="mb-1 flex items-center gap-1.5 px-0.5">
+          <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+            {label}
+          </span>
+          <span className="rounded bg-muted px-1.5 text-[10px] text-muted-foreground">
+            {count ?? students.length}
+          </span>
+        </div>
+      )}
+      <div
+        ref={setNodeRef}
+        className={cn(
+          "flex flex-col gap-1.5 rounded-md",
+          minHeight ? "min-h-[120px]" : "min-h-[36px]",
+          isOver && "bg-accent/50 ring-1 ring-primary/40",
+        )}
+      >
+        {students.map((s) => (
+          <DraggableStudent
+            key={s.id}
+            student={s}
+            selected={selectedIds.includes(s.id)}
+            onToggleSelect={onToggleSelect}
+            onOpen={onOpen}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DraggableStudent({
+  student,
+  selected,
+  onToggleSelect,
+  onOpen,
+}: {
+  student: KanbanStudent;
+  selected: boolean;
+  onToggleSelect: (studentId: string) => void;
+  onOpen: (studentId: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
     transition,
-  };
+    isDragging,
+  } = useSortable({ id: student.id });
+
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
       {...attributes}
       {...listeners}
+      onClick={(e) => {
+        // Modifier picks for a group move; a plain click opens the profile.
+        if (e.metaKey || e.ctrlKey || e.shiftKey) {
+          e.preventDefault();
+          onToggleSelect(student.id);
+          return;
+        }
+        onOpen(student.id);
+      }}
       className={cn(isDragging && "opacity-30")}
     >
-      <StudentCardVisual student={student} />
+      <StudentCardVisual student={student} selected={selected} />
     </div>
   );
 }
@@ -503,24 +656,71 @@ function DraggableStudent({ student }: { student: KanbanStudent }) {
 function StudentCardVisual({
   student,
   dragging,
+  selected,
   className,
+  stackCount = 1,
 }: {
   student: KanbanStudent;
   dragging?: boolean;
+  selected?: boolean;
   className?: string;
+  stackCount?: number;
 }) {
+  const t = useTranslations("StudentsKanban");
+  const locale = useLocale();
+  const age = ageFrom(student.dateOfBirth);
+  const born = student.dateOfBirth
+    ? new Date(student.dateOfBirth).toLocaleDateString(locale, {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    : null;
+
   return (
-    <div
-      className={cn(
-        "flex items-center gap-2 rounded-md border bg-card px-3 py-2 text-sm cursor-grab active:cursor-grabbing",
-        dragging ? "shadow-md" : "hover:bg-accent",
-        className,
+    <div className="relative">
+      {stackCount > 1 && (
+        <span className="absolute -top-2 -right-2 z-10 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
+          {stackCount}
+        </span>
       )}
-    >
-      <GripVertical className="h-3.5 w-3.5 text-muted-foreground/60" />
-      <span className="truncate">
-        {student.firstName} {student.lastName}
-      </span>
+      <div
+        className={cn(
+          "cursor-grab rounded-md border bg-card px-3 py-2 active:cursor-grabbing",
+          dragging ? "shadow-md" : "hover:bg-accent/60",
+          selected && "border-primary bg-primary/5 ring-1 ring-primary",
+          className,
+        )}
+      >
+        <div className="flex items-center gap-2">
+          <StudentAvatar
+            studentId={student.id}
+            firstName={student.firstName}
+            lastName={student.lastName}
+            className="size-6 shrink-0"
+            fallbackClassName="text-[10px]"
+          />
+          <span className="truncate text-sm font-medium">
+            {student.firstName} {student.lastName}
+          </span>
+        </div>
+        {(born || student.isActive === false) && (
+          <div className="mt-1 flex items-center gap-2 pl-8">
+            {born && (
+              <span className="text-[11px] text-muted-foreground">
+                {age != null
+                  ? t("bornWithAge", { date: born, age })
+                  : t("born", { date: born })}
+              </span>
+            )}
+            {student.isActive === false && (
+              <Badge variant="outline" className="h-4 px-1.5 text-[10px]">
+                {t("inactive")}
+              </Badge>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

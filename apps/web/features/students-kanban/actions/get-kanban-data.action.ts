@@ -29,6 +29,8 @@ const UnassignedDocument = gql`
       id
       firstName
       lastName
+      dateOfBirth
+      isActive
     }
   }
 `;
@@ -53,6 +55,8 @@ const ClassroomStudentsDocument = gql`
         id
         firstName
         lastName
+        dateOfBirth
+        isActive
       }
     }
   }

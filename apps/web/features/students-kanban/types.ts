@@ -2,6 +2,9 @@ export type KanbanStudent = {
   id: string;
   firstName: string;
   lastName: string;
+  /** ISO date; drives the "geb. … · 8 J." line on the card. */
+  dateOfBirth?: string | null;
+  isActive?: boolean;
 };
 
 export type KanbanClassroom = {
