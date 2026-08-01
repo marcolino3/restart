@@ -17,6 +17,19 @@ export class TransferStudentInput {
   targetSchoolClassId?: string | null;
 
   /**
+   * Subgroup within the target class, e.g. US2 inside "Unterstufe". Pass
+   * `null` to place the child in the class without a subgroup.
+   *
+   * Must be a stage the target class actually carries, or one of its
+   * children — the service rejects anything else rather than storing a
+   * mismatch.
+   */
+  @Field(() => ID, { nullable: true })
+  @IsOptional()
+  @IsUUID()
+  gradeLevelId?: string | null;
+
+  /**
    * Date of the transfer. Defaults to today. The current active enrollment's
    * `leftAt` is set to this date; the new enrollment's `enrolledAt` to the
    * same date.

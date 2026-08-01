@@ -2861,16 +2861,26 @@
     "sensitiveHint": "Religion and social security number are special categories of personal data (GDPR Art. 9) — capture only with authorisation."
   },
   "StudentsKanban": {
-    "title": "Classroom Assignment",
-    "subtitle": "Drag a child to a different classroom. The current enrollment ends today; the new one starts today.",
     "backToStudents": "Back to students",
-    "openKanban": "Classroom assignment (Kanban)",
-    "unassigned": "Unassigned",
-    "searchStudent": "Search child…",
+    "boardHint": "Drag a card to change class or stage · ⌘/Ctrl- or Shift-click selects several · Click opens the profile",
+    "born": "b. {date}",
+    "bornWithAge": "b. {date} · {age} y.",
+    "capacityExceededWarn": "{className}: now {count} of {max} – over capacity",
+    "clearSelection": "Clear selection",
     "filterByGrade": "Grade:",
-    "transferOk": "Classroom updated",
+    "filterClass": "Class",
+    "filterClassSearch": "Search class…",
+    "inactive": "Inactive",
+    "openKanban": "Classroom assignment (Kanban)",
+    "searchStudent": "Search child…",
+    "selectedCount": "{count} selected",
+    "selectionHint": "move together — drag the selection onto the target stage",
+    "subtitle": "Drag a child to a different classroom. The current enrollment ends today; the new one starts today.",
+    "title": "Classroom Assignment",
     "transferError": "Transfer failed",
-    "capacityExceededWarn": "{className}: now {count} of {max} – over capacity"
+    "transferOk": "Classroom updated",
+    "unassigned": "Unassigned",
+    "withoutSubgroup": "Without subgroup"
   },
   "Teams": {
     "teams": "Teams",

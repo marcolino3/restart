@@ -1,7 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, IsNull, Repository } from 'typeorm';
 import { SchoolClass } from '@/school-management/school-classes/entities/school-class.entity';
+import { GradeLevel } from '@/school-management/grade-levels/entities/grade-level.entity';
 import { Student } from '@/school-management/students/entities/student.entity';
 import { SchoolClassEnrollment } from './entities/school-class-enrollment.entity';
 import { CreateSchoolClassEnrollmentInput } from './dto/create-school-class-enrollment.input';
@@ -17,8 +22,53 @@ export class SchoolClassEnrollmentsService {
     private readonly studentRepo: Repository<Student>,
     @InjectRepository(SchoolClass)
     private readonly schoolClassRepo: Repository<SchoolClass>,
+    @InjectRepository(GradeLevel)
+    private readonly gradeLevelRepo: Repository<GradeLevel>,
     private readonly dataSource: DataSource,
   ) {}
+
+  /**
+   * A child may only be placed in a subgroup its class actually covers.
+   *
+   * Accepts either a stage the class carries directly, or a child of one —
+   * a class assigned "Unterstufe" takes US1–US3. Without this a caller could
+   * park a child in an unrelated stage, and the progress screen would then
+   * offer the wrong curriculum for it.
+   */
+  private async assertGradeLevelBelongsToClass(
+    gradeLevelId: string,
+    schoolClassId: string | null,
+    organizationId: string,
+  ): Promise<void> {
+    const gradeLevel = await this.gradeLevelRepo.findOne({
+      where: { id: gradeLevelId, organizationId },
+    });
+    if (!gradeLevel) {
+      throw new NotFoundException(`Grade level ${gradeLevelId} not found`);
+    }
+    if (!schoolClassId) {
+      throw new BadRequestException(
+        'A grade level can only be set together with a school class',
+      );
+    }
+
+    const schoolClass = await this.schoolClassRepo.findOne({
+      where: { id: schoolClassId, organizationId },
+      relations: { gradeLevels: true },
+    });
+    const classLevelIds = new Set(
+      (schoolClass?.gradeLevels ?? []).map((gl) => gl.id),
+    );
+
+    const allowed =
+      classLevelIds.has(gradeLevel.id) ||
+      (gradeLevel.parentId != null && classLevelIds.has(gradeLevel.parentId));
+    if (!allowed) {
+      throw new BadRequestException(
+        `Grade level ${gradeLevelId} does not belong to school class ${schoolClassId}`,
+      );
+    }
+  }
 
   async create(
     input: CreateSchoolClassEnrollmentInput,
@@ -153,6 +203,14 @@ export class SchoolClassEnrollmentsService {
       }
     }
 
+    if (input.gradeLevelId) {
+      await this.assertGradeLevelBelongsToClass(
+        input.gradeLevelId,
+        input.targetSchoolClassId ?? null,
+        organizationId,
+      );
+    }
+
     const today = input.transferDate ?? new Date().toISOString().slice(0, 10);
 
     return this.dataSource.transaction(async (m) => {
@@ -167,15 +225,26 @@ export class SchoolClassEnrollmentsService {
         },
       });
 
-      // Idempotenz: Drop auf dieselbe Klasse → no-op
+      // Gleiche Klasse: kein Wechsel, sondern höchstens eine andere
+      // Untergruppe. Eine neue Einschreibung anzulegen würde die Historie
+      // zerschneiden ("Kind hat die Klasse gewechselt"), obwohl es nur
+      // innerhalb der Klasse verschoben wurde.
       if (
         input.targetSchoolClassId &&
         active.length === 1 &&
         active[0].schoolClassId === input.targetSchoolClassId
       ) {
+        const current = active[0];
+        if (
+          input.gradeLevelId !== undefined &&
+          (current.gradeLevelId ?? null) !== (input.gradeLevelId ?? null)
+        ) {
+          current.gradeLevelId = input.gradeLevelId ?? null;
+          await repo.save(current);
+        }
         return repo.findOne({
-          where: { id: active[0].id, organizationId },
-          relations: ['schoolClass', 'student'],
+          where: { id: current.id, organizationId },
+          relations: ['schoolClass', 'student', 'gradeLevel'],
         });
       }
 
@@ -193,13 +262,14 @@ export class SchoolClassEnrollmentsService {
       const created = repo.create({
         studentId: input.studentId,
         schoolClassId: input.targetSchoolClassId,
+        gradeLevelId: input.gradeLevelId ?? null,
         enrolledAt: today,
         organizationId,
       });
       const saved = await repo.save(created);
       return repo.findOne({
         where: { id: saved.id, organizationId },
-        relations: ['schoolClass', 'student'],
+        relations: ['schoolClass', 'student', 'gradeLevel'],
       });
     });
   }

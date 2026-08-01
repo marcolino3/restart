@@ -253,9 +253,10 @@ type Documents = {
     "\n  mutation CreateStudentRecordEntry($input: CreateStudentRecordEntryInput!) {\n    createStudentRecordEntry(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateStudentRecordEntryDocument,
     "\n  mutation UpdateStudentRecordEntry($input: UpdateStudentRecordEntryInput!) {\n    updateStudentRecordEntry(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateStudentRecordEntryDocument,
     "\n  mutation DeleteStudentRecordEntry($id: ID!) {\n    deleteStudentRecordEntry(id: $id)\n  }\n": typeof types.DeleteStudentRecordEntryDocument,
-    "\n  query KanbanSchoolClasses {\n    schoolClassesByOrgId {\n      id\n      name\n      color\n      maxCapacity\n      sortOrder\n      isActive\n      gradeLevels {\n        id\n        name\n      }\n    }\n  }\n": typeof types.KanbanSchoolClassesDocument,
-    "\n  query KanbanUnassignedStudents {\n    unassignedStudents {\n      id\n      firstName\n      lastName\n    }\n  }\n": typeof types.KanbanUnassignedStudentsDocument,
-    "\n  query KanbanClassroomStudents($schoolClassId: ID!) {\n    activeEnrollmentsBySchoolClassId(schoolClassId: $schoolClassId) {\n      id\n      student {\n        id\n        firstName\n        lastName\n      }\n    }\n  }\n": typeof types.KanbanClassroomStudentsDocument,
+    "\n  query KanbanSchoolClasses {\n    schoolClassesByOrgId {\n      id\n      name\n      color\n      maxCapacity\n      sortOrder\n      isActive\n      gradeLevels {\n        id\n        name\n        parentId\n        sortOrder\n      }\n    }\n  }\n": typeof types.KanbanSchoolClassesDocument,
+    "\n  query KanbanUnassignedStudents {\n    unassignedStudents {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      isActive\n    }\n  }\n": typeof types.KanbanUnassignedStudentsDocument,
+    "\n  query KanbanGradeLevels {\n    gradeLevelsByOrgId {\n      id\n      name\n      parentId\n      sortOrder\n    }\n  }\n": typeof types.KanbanGradeLevelsDocument,
+    "\n  query KanbanClassroomStudents($schoolClassId: ID!) {\n    activeEnrollmentsBySchoolClassId(schoolClassId: $schoolClassId) {\n      id\n      gradeLevelId\n      student {\n        id\n        firstName\n        lastName\n        dateOfBirth\n        isActive\n      }\n    }\n  }\n": typeof types.KanbanClassroomStudentsDocument,
     "\n  mutation TransferStudent($input: TransferStudentInput!) {\n    transferStudentToSchoolClass(input: $input) {\n      id\n    }\n  }\n": typeof types.TransferStudentDocument,
     "\n  mutation CreateStudent($input: CreateStudentInput!) {\n    createStudent(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateStudentDocument,
     "\n  mutation DeleteStudent($id: ID!) {\n    deleteStudent(id: $id)\n  }\n": typeof types.DeleteStudentDocument,
@@ -560,9 +561,10 @@ const documents: Documents = {
     "\n  mutation CreateStudentRecordEntry($input: CreateStudentRecordEntryInput!) {\n    createStudentRecordEntry(input: $input) {\n      id\n    }\n  }\n": types.CreateStudentRecordEntryDocument,
     "\n  mutation UpdateStudentRecordEntry($input: UpdateStudentRecordEntryInput!) {\n    updateStudentRecordEntry(input: $input) {\n      id\n    }\n  }\n": types.UpdateStudentRecordEntryDocument,
     "\n  mutation DeleteStudentRecordEntry($id: ID!) {\n    deleteStudentRecordEntry(id: $id)\n  }\n": types.DeleteStudentRecordEntryDocument,
-    "\n  query KanbanSchoolClasses {\n    schoolClassesByOrgId {\n      id\n      name\n      color\n      maxCapacity\n      sortOrder\n      isActive\n      gradeLevels {\n        id\n        name\n      }\n    }\n  }\n": types.KanbanSchoolClassesDocument,
-    "\n  query KanbanUnassignedStudents {\n    unassignedStudents {\n      id\n      firstName\n      lastName\n    }\n  }\n": types.KanbanUnassignedStudentsDocument,
-    "\n  query KanbanClassroomStudents($schoolClassId: ID!) {\n    activeEnrollmentsBySchoolClassId(schoolClassId: $schoolClassId) {\n      id\n      student {\n        id\n        firstName\n        lastName\n      }\n    }\n  }\n": types.KanbanClassroomStudentsDocument,
+    "\n  query KanbanSchoolClasses {\n    schoolClassesByOrgId {\n      id\n      name\n      color\n      maxCapacity\n      sortOrder\n      isActive\n      gradeLevels {\n        id\n        name\n        parentId\n        sortOrder\n      }\n    }\n  }\n": types.KanbanSchoolClassesDocument,
+    "\n  query KanbanUnassignedStudents {\n    unassignedStudents {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      isActive\n    }\n  }\n": types.KanbanUnassignedStudentsDocument,
+    "\n  query KanbanGradeLevels {\n    gradeLevelsByOrgId {\n      id\n      name\n      parentId\n      sortOrder\n    }\n  }\n": types.KanbanGradeLevelsDocument,
+    "\n  query KanbanClassroomStudents($schoolClassId: ID!) {\n    activeEnrollmentsBySchoolClassId(schoolClassId: $schoolClassId) {\n      id\n      gradeLevelId\n      student {\n        id\n        firstName\n        lastName\n        dateOfBirth\n        isActive\n      }\n    }\n  }\n": types.KanbanClassroomStudentsDocument,
     "\n  mutation TransferStudent($input: TransferStudentInput!) {\n    transferStudentToSchoolClass(input: $input) {\n      id\n    }\n  }\n": types.TransferStudentDocument,
     "\n  mutation CreateStudent($input: CreateStudentInput!) {\n    createStudent(input: $input) {\n      id\n    }\n  }\n": types.CreateStudentDocument,
     "\n  mutation DeleteStudent($id: ID!) {\n    deleteStudent(id: $id)\n  }\n": types.DeleteStudentDocument,
@@ -1601,15 +1603,19 @@ export function graphql(source: "\n  mutation DeleteStudentRecordEntry($id: ID!)
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query KanbanSchoolClasses {\n    schoolClassesByOrgId {\n      id\n      name\n      color\n      maxCapacity\n      sortOrder\n      isActive\n      gradeLevels {\n        id\n        name\n      }\n    }\n  }\n"): (typeof documents)["\n  query KanbanSchoolClasses {\n    schoolClassesByOrgId {\n      id\n      name\n      color\n      maxCapacity\n      sortOrder\n      isActive\n      gradeLevels {\n        id\n        name\n      }\n    }\n  }\n"];
+export function graphql(source: "\n  query KanbanSchoolClasses {\n    schoolClassesByOrgId {\n      id\n      name\n      color\n      maxCapacity\n      sortOrder\n      isActive\n      gradeLevels {\n        id\n        name\n        parentId\n        sortOrder\n      }\n    }\n  }\n"): (typeof documents)["\n  query KanbanSchoolClasses {\n    schoolClassesByOrgId {\n      id\n      name\n      color\n      maxCapacity\n      sortOrder\n      isActive\n      gradeLevels {\n        id\n        name\n        parentId\n        sortOrder\n      }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query KanbanUnassignedStudents {\n    unassignedStudents {\n      id\n      firstName\n      lastName\n    }\n  }\n"): (typeof documents)["\n  query KanbanUnassignedStudents {\n    unassignedStudents {\n      id\n      firstName\n      lastName\n    }\n  }\n"];
+export function graphql(source: "\n  query KanbanUnassignedStudents {\n    unassignedStudents {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      isActive\n    }\n  }\n"): (typeof documents)["\n  query KanbanUnassignedStudents {\n    unassignedStudents {\n      id\n      firstName\n      lastName\n      dateOfBirth\n      isActive\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query KanbanClassroomStudents($schoolClassId: ID!) {\n    activeEnrollmentsBySchoolClassId(schoolClassId: $schoolClassId) {\n      id\n      student {\n        id\n        firstName\n        lastName\n      }\n    }\n  }\n"): (typeof documents)["\n  query KanbanClassroomStudents($schoolClassId: ID!) {\n    activeEnrollmentsBySchoolClassId(schoolClassId: $schoolClassId) {\n      id\n      student {\n        id\n        firstName\n        lastName\n      }\n    }\n  }\n"];
+export function graphql(source: "\n  query KanbanGradeLevels {\n    gradeLevelsByOrgId {\n      id\n      name\n      parentId\n      sortOrder\n    }\n  }\n"): (typeof documents)["\n  query KanbanGradeLevels {\n    gradeLevelsByOrgId {\n      id\n      name\n      parentId\n      sortOrder\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query KanbanClassroomStudents($schoolClassId: ID!) {\n    activeEnrollmentsBySchoolClassId(schoolClassId: $schoolClassId) {\n      id\n      gradeLevelId\n      student {\n        id\n        firstName\n        lastName\n        dateOfBirth\n        isActive\n      }\n    }\n  }\n"): (typeof documents)["\n  query KanbanClassroomStudents($schoolClassId: ID!) {\n    activeEnrollmentsBySchoolClassId(schoolClassId: $schoolClassId) {\n      id\n      gradeLevelId\n      student {\n        id\n        firstName\n        lastName\n        dateOfBirth\n        isActive\n      }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

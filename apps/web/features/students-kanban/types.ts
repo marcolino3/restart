@@ -2,6 +2,9 @@ export type KanbanStudent = {
   id: string;
   firstName: string;
   lastName: string;
+  /** ISO date; drives the "geb. … · 8 J." line on the card. */
+  dateOfBirth?: string | null;
+  isActive?: boolean;
 };
 
 export type KanbanClassroom = {
@@ -12,6 +15,11 @@ export type KanbanClassroom = {
   sortOrder: number;
   gradeLevelIds: string[];
   studentIds: string[];
+  /**
+   * Subgroup each child sits in, keyed by student id. Null when the class has
+   * no subgroups or nobody has assigned the child yet.
+   */
+  gradeLevelByStudentId: Record<string, string | null>;
 };
 
 /** Special column ID for the "unassigned" lane. */
