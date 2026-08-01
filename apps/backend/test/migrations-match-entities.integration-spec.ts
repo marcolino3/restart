@@ -20,8 +20,15 @@
  * Run with:
  *   npx jest --config ./test/jest-e2e.json --testPathPatterns=migrations-match-entities
  */
+import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
 import { join } from 'path';
+
+// This suite builds its own DataSource instead of going through test-utils,
+// which is where every other suite picks up .env.test as an import side
+// effect. Without this the connection falls back to the pg defaults and the
+// suite can only run in CI, where the DB_* variables come from the job env.
+config({ path: join(__dirname, '.env.test') });
 
 const DB_NAME = 'restart_migration_check';
 
