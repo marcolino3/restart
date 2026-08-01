@@ -235,7 +235,7 @@ test.describe('School class teachers', () => {
     await expect(page.getByRole('table')).toBeVisible()
 
     await page
-      .getByRole('textbox', { name: /search classes/i })
+      .getByRole('searchbox', { name: /search classes/i })
       .fill('zzz-definitiv-kein-treffer')
 
     await expect(page.getByText(/no classes found for/i)).toBeVisible({
