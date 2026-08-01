@@ -50,7 +50,7 @@ test.describe('School classes — CRUD', () => {
     await expect(card).toBeVisible({ timeout: 15000 })
 
     // --- Search filters the grid ------------------------------------------
-    const search = page.getByRole('textbox', { name: /search classes/i })
+    const search = page.getByRole('searchbox', { name: /search classes/i })
     await search.fill(unique)
     await expect(page.getByRole('link', { name: unique })).toBeVisible()
     await search.fill('definitiv-kein-treffer-xyz')

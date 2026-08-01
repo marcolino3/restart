@@ -3,10 +3,10 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { ArrowDown, ArrowUp, ArrowUpDown, Search } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/common/SearchInput";
 import {
   Table,
   TableBody,
@@ -115,15 +115,13 @@ export function RejectedApplicationsList({ applications }: Props) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative w-full max-w-xs">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t("rejectedSearchPlaceholder")}
-          className="pl-9"
-        />
-      </div>
+      <SearchInput
+        value={query}
+        onValueChange={setQuery}
+        placeholder={t("rejectedSearchPlaceholder")}
+        aria-label={t("rejectedSearchPlaceholder")}
+        containerClassName="w-full max-w-xs"
+      />
 
       <div className="rounded-md border bg-card">
         <Table>

@@ -25,12 +25,11 @@ import {
   GripVertical,
   Pencil,
   Plus,
-  Search,
   Trash2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/common/SearchInput";
 import {
   Table,
   TableBody,
@@ -318,16 +317,13 @@ export function GradeLevelsTable({
         }
       />
 
-      <div className="relative mb-4 w-[280px]">
-        <Search className="pointer-events-none absolute top-1/2 left-3.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t("searchPlaceholder")}
-          className="h-9 rounded-full pl-9"
-          aria-label={t("searchPlaceholder")}
-        />
-      </div>
+      <SearchInput
+        value={query}
+        onValueChange={setQuery}
+        placeholder={t("searchPlaceholder")}
+        aria-label={t("searchPlaceholder")}
+        containerClassName="mb-4"
+      />
 
       <DndContext
         sensors={sensors}

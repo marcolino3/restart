@@ -29,8 +29,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { DataTableFacetedFilter } from "@/components/common/DataTableFacetedFilter";
+import { SearchInput } from "@/components/common/SearchInput";
 import { StudentAvatar } from "@/features/students/components/StudentAvatar";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
@@ -358,11 +358,12 @@ export function StudentsKanban({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Input
-          placeholder={t("searchStudent")}
+        <SearchInput
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-9 max-w-xs"
+          onValueChange={setSearch}
+          placeholder={t("searchStudent")}
+          aria-label={t("searchStudent")}
+          containerClassName="max-w-xs"
         />
         {classFilterOptions.length > 0 && (
           <DataTableFacetedFilter

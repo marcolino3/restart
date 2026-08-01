@@ -4,7 +4,6 @@ import {
   IconDots,
   IconLayersSubtract,
   IconPlus,
-  IconSearch,
   IconTrash,
 } from "@tabler/icons-react";
 import { useLocale, useTranslations } from "next-intl";
@@ -21,7 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/common/SearchInput";
 import { TableCard } from "@/components/common/TableCard";
 import {
   Table,
@@ -131,15 +130,13 @@ export function ProtocolsList({
 
       {/* Toolbar — search · status chips · ⋯ menu */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative w-full max-w-[260px]">
-          <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={t("searchProtocolPlaceholder")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-9 rounded-full pl-9"
-          />
-        </div>
+        <SearchInput
+          value={search}
+          onValueChange={setSearch}
+          placeholder={t("searchProtocolPlaceholder")}
+          aria-label={t("searchProtocolPlaceholder")}
+          containerClassName="w-full max-w-[260px]"
+        />
         {FILTERS.map(({ key, labelKey }) => (
           <button
             key={key}
