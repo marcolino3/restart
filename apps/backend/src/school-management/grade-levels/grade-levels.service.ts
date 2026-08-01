@@ -60,20 +60,22 @@ export class GradeLevelsService {
       .innerJoin(
         'school_class_grade_levels',
         'scgl',
-        'scgl.grade_level_id = gl.id',
+        // TypeORM generated this join table, so its columns are quoted
+        // camelCase — not the snake_case the rest of the schema uses.
+        'scgl."gradeLevelsId" = gl.id',
       )
       .innerJoin(
         'school_class_enrollments',
         'sce',
-        'sce.school_class_id = scgl.school_class_id',
+        'sce.school_class_id = scgl."schoolClassesId"',
       )
       .where('sce.student_id = :studentId', { studentId })
       .andWhere('sce.organization_id = :organizationId', { organizationId })
       .andWhere('gl.organization_id = :organizationId', { organizationId })
       .andWhere('sce.left_at IS NULL')
-      .andWhere('sce.is_active = true')
+      .andWhere('sce."isActive" = true')
       .andWhere('gl.curriculum_level_id IS NOT NULL')
-      .orderBy('gl.sort_order', 'ASC')
+      .orderBy('gl."sortOrder"', 'ASC')
       .limit(1)
       .getRawOne<{ cycle_id: string }>();
 
@@ -98,12 +100,14 @@ export class GradeLevelsService {
       .innerJoin(
         'school_class_grade_levels',
         'scgl',
-        'scgl.grade_level_id = gl.id',
+        // TypeORM generated this join table, so its columns are quoted
+        // camelCase — not the snake_case the rest of the schema uses.
+        'scgl."gradeLevelsId" = gl.id',
       )
-      .where('scgl.school_class_id = :schoolClassId', { schoolClassId })
+      .where('scgl."schoolClassesId" = :schoolClassId', { schoolClassId })
       .andWhere('gl.organization_id = :organizationId', { organizationId })
       .andWhere('gl.curriculum_level_id IS NOT NULL')
-      .orderBy('gl.sort_order', 'ASC')
+      .orderBy('gl."sortOrder"', 'ASC')
       .limit(1)
       .getRawOne<{ cycle_id: string }>();
 
