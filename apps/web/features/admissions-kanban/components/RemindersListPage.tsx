@@ -212,6 +212,7 @@ export function RemindersListPage({
           value={query}
           onValueChange={setQuery}
           placeholder={t("remSearchPlaceholder")}
+          aria-label={t("remSearchPlaceholder")}
           containerClassName="w-full max-w-xs"
         />
         <Tabs

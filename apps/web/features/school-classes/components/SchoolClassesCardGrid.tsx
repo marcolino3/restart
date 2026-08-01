@@ -206,7 +206,12 @@ export function SchoolClassesCardGrid({ schoolClasses }: Props) {
       />
 
       <div className="mb-4 flex items-center gap-2">
-        <SearchInput value={query} onValueChange={setQuery} placeholder={t("searchPlaceholder")} />
+        <SearchInput
+          value={query}
+          onValueChange={setQuery}
+          placeholder={t("searchPlaceholder")}
+          aria-label={t("searchPlaceholder")}
+        />
         <div className="ml-auto">
           <ViewSwitcher
             value={view}

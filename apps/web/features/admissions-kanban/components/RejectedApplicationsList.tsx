@@ -119,6 +119,7 @@ export function RejectedApplicationsList({ applications }: Props) {
         value={query}
         onValueChange={setQuery}
         placeholder={t("rejectedSearchPlaceholder")}
+        aria-label={t("rejectedSearchPlaceholder")}
         containerClassName="w-full max-w-xs"
       />
 

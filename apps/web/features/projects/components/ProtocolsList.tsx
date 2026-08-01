@@ -134,6 +134,7 @@ export function ProtocolsList({
           value={search}
           onValueChange={setSearch}
           placeholder={t("searchProtocolPlaceholder")}
+          aria-label={t("searchProtocolPlaceholder")}
           containerClassName="w-full max-w-[260px]"
         />
         {FILTERS.map(({ key, labelKey }) => (

@@ -362,6 +362,7 @@ export function StudentsKanban({
           value={search}
           onValueChange={setSearch}
           placeholder={t("searchStudent")}
+          aria-label={t("searchStudent")}
           containerClassName="max-w-xs"
         />
         {classFilterOptions.length > 0 && (
