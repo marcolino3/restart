@@ -13,6 +13,7 @@ export type StudentDetail = {
   exitDate?: string | null;
   notes?: string | null;
   preferredName?: string | null;
+  photoUrl?: string | null;
   placeOfBirth?: string | null;
   firstLanguages?: string[] | null;
   familyLanguages?: string[] | null;
@@ -39,6 +40,7 @@ const GetStudentByIdDocument = gql`
       exitDate
       notes
       preferredName
+      photoUrl
       placeOfBirth
       firstLanguages
       familyLanguages

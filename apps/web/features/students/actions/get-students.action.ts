@@ -10,6 +10,7 @@ export type StudentListItem = {
   dateOfBirth?: string | null;
   gender?: string | null;
   exitDate?: string | null;
+  photoUrl?: string | null;
   isActive: boolean;
   currentClass?: {
     id: string;
@@ -41,6 +42,7 @@ const GetStudentsDocument = gql`
       dateOfBirth
       gender
       exitDate
+      photoUrl
       isActive
       currentClass {
         id
