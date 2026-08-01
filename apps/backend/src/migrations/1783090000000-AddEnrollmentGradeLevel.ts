@@ -18,9 +18,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * existing enrolment has no way of knowing which one would be right. The
  * column stays empty until somebody assigns it.
  */
-export class AddEnrollmentGradeLevel1783090000000
-  implements MigrationInterface
-{
+export class AddEnrollmentGradeLevel1783090000000 implements MigrationInterface {
   name = 'AddEnrollmentGradeLevel1783090000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
