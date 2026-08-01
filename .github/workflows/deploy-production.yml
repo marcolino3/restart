@@ -46,7 +46,12 @@ jobs:
       - name: Set up kubectl
         uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5.1.0
 
-      - name: Configure kubeconfig
+      # Dieser Job liest NUR aus Staging (welcher SHA läuft dort?) und braucht
+      # deshalb das Staging-kubeconfig. Der Prod-Zugang liegt bewusst in einem
+      # separaten Secret (KUBE_CONFIG_PRODUCTION), das erst die Jobs `migrate`
+      # und `deploy` verwenden — Staging und Production sind getrennte Cluster,
+      # ein Lookup-Fehler hier kann Production also nicht anfassen.
+      - name: Configure kubeconfig (staging — read-only lookup)
         run: |
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
@@ -96,9 +101,18 @@ jobs:
             echo "::notice::OK $IMG:$TAG"
           done
 
+      # Ab hier wird der PRODUCTION-Cluster gelesen — eigenes kubeconfig in eine
+      # separate Datei, damit das Staging-Config oben unangetastet bleibt.
+      - name: Configure kubeconfig (production)
+        run: |
+          echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config-production
+          chmod 600 $HOME/.kube/config-production
+
       # Aktuell auf Produktion laufende SHA für den Diff.
       - name: Read current production tag
         id: current
+        env:
+          KUBECONFIG: /home/runner/.kube/config-production
         run: |
           IMAGE=$(kubectl get deployment backend -n "$NAMESPACE" \
             -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || echo "")
@@ -158,10 +172,11 @@ jobs:
       - name: Set up kubectl
         uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5.1.0
 
-      - name: Configure kubeconfig
+      # Production-Cluster (KUBE_CONFIG zeigt auf Staging — hier falsch!).
+      - name: Configure kubeconfig (production)
         run: |
           mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+          echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
 
       # Siehe deploy-staging.yml: privater GHCR-Pull braucht ghcr-secret.
       # Bevorzugt GHCR_PULL_TOKEN (langlebiger PAT, read:packages), sonst
@@ -252,10 +267,11 @@ jobs:
       - name: Set up kubectl
         uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5.1.0
 
-      - name: Configure kubeconfig
+      # Production-Cluster (KUBE_CONFIG zeigt auf Staging — hier falsch!).
+      - name: Configure kubeconfig (production)
         run: |
           mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+          echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
 
       # GitOps-Sync wie im Staging-Deploy: ConfigMaps/Secrets/Manifeste auf den
       # Repo-Stand bringen, BEVOR das Image gepinnt wird — sonst driften
