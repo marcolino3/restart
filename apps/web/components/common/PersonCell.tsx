@@ -15,7 +15,8 @@ interface PersonCellProps {
 /**
  * Person table cell from the design handoff (`.pcell`): a leading avatar next
  * to a bold name with an optional muted subtitle. Shared by the employees and
- * students lists — keep the avatar source per feature (initials vs. DiceBear).
+ * students lists — the avatar is passed in, so each feature keeps its own
+ * (EmployeeAvatar, StudentAvatar).
  */
 export function PersonCell({
   avatar,
