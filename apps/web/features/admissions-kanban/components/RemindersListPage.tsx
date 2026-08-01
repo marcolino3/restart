@@ -11,13 +11,12 @@ import {
   BellRing,
   Check,
   Loader2,
-  Search,
 } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/common/SearchInput";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -209,15 +208,12 @@ export function RemindersListPage({
       <AdmissionsSubNav active="reminders" reminderCount={overdueCount} />
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative w-full max-w-xs">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t("remSearchPlaceholder")}
-            className="pl-9"
-          />
-        </div>
+        <SearchInput
+          value={query}
+          onValueChange={setQuery}
+          placeholder={t("remSearchPlaceholder")}
+          containerClassName="w-full max-w-xs"
+        />
         <Tabs
           value={filter}
           onValueChange={(v) => setFilter(v as AdmissionReminderListFilter)}

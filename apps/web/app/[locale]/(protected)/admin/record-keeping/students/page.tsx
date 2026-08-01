@@ -84,7 +84,6 @@ const StudentsPage = async ({ searchParams }: PageProps) => {
                       className="flex items-center gap-3 rounded-md border bg-card px-3 py-2 hover:bg-accent transition"
                     >
                       <StudentAvatar
-                        studentId={s.studentId}
                         firstName={s.firstName}
                         lastName={s.lastName}
                         className="h-9 w-9"

@@ -138,7 +138,6 @@ export default function StudentEditView({
             </Button>
             <div className="shrink-0">
               <StudentAvatar
-                studentId={student.id}
                 firstName={student.firstName}
                 lastName={student.lastName}
                 className="h-16 w-16"

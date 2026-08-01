@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { getInitials } from "@/lib/get-initials";
 import { cn } from "@/lib/utils";
 
 interface EmployeeAvatarProps {
@@ -6,13 +7,6 @@ interface EmployeeAvatarProps {
   lastName?: string | null;
   className?: string;
   fallbackClassName?: string;
-}
-
-function getInitials(firstName?: string | null, lastName?: string | null) {
-  return (
-    (firstName?.charAt(0)?.toUpperCase() ?? "") +
-      (lastName?.charAt(0)?.toUpperCase() ?? "") || "?"
-  );
 }
 
 /**

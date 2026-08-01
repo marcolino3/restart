@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Plus, Search, Users } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Plus, Users } from "lucide-react";
+import { SearchInput } from "@/components/common/SearchInput";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -67,15 +67,12 @@ export function ConversationList({
     <div className="flex h-full w-full flex-col border-r border-border">
       {/* Search + new chat */}
       <div className="flex items-center gap-2 p-3">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t("searchPlaceholder")}
-            className="pl-9"
-          />
-        </div>
+        <SearchInput
+          value={query}
+          onValueChange={setQuery}
+          placeholder={t("searchPlaceholder")}
+          containerClassName="flex-1 w-full max-w-full"
+        />
         <Button
           size="icon"
           onClick={onNewChat}

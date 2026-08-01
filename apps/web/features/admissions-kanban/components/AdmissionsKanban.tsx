@@ -35,7 +35,6 @@ import {
   Mail,
   MoreHorizontal,
   Plus,
-  Search,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -50,7 +49,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 import { moveApplicationAction } from "../actions/move-application.action";
@@ -61,6 +59,7 @@ import type {
   KanbanStage,
 } from "../types";
 import { DataTableFacetedFilter } from "@/components/common/DataTableFacetedFilter";
+import { SearchInput } from "@/components/common/SearchInput";
 import {
   buildGradeLevelOptions,
   expandGradeLevelFilter,
@@ -562,18 +561,7 @@ export function AdmissionsKanban({
 
       {/* Row 2 — search + view tabs (left) · nav chips + more menu (right). */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative w-[280px]">
-          <Search
-            size={14}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-          />
-          <Input
-            placeholder={t("searchPlaceholder")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-9 rounded-full pl-8"
-          />
-        </div>
+        <SearchInput value={search} onValueChange={setSearch} placeholder={t("searchPlaceholder")} />
 
         {gradeLevelFilterOptions.length > 0 && (
           <DataTableFacetedFilter

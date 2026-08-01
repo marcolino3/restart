@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { Check } from "lucide-react";
 
 import {
   Form,
@@ -18,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/common/SearchInput";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -31,7 +32,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { PageHead } from "@/components/common/PageHead";
 import { BackButton } from "@/components/common/BackButton";
-import { ViewSwitcher, usePersistedView } from "@/components/common/ViewSwitcher";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { StudentAvatar } from "@/features/students/components/StudentAvatar";
@@ -78,8 +78,6 @@ const findAncestor = (
 
 const DURATION_OPTIONS_MIN = [5, 10, 15, 20, 30, 45, 60, 90];
 const FORM_ID = "lesson-first-bulk-entry-form";
-const STUDENT_VIEWS = ["cards", "search"] as const;
-type StudentView = (typeof STUDENT_VIEWS)[number];
 
 interface Props {
   lessons: LessonOption[];
@@ -103,11 +101,6 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
   const [isPending, startTransition] = useTransition();
   const [students, setStudents] = useState<ClassroomStudentDTO[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
-  const [studentView, setStudentView] = usePersistedView<StudentView>(
-    "record-keeping-student-view",
-    STUDENT_VIEWS,
-    "cards",
-  );
   const [studentSearch, setStudentSearch] = useState("");
   const [recentRefreshKey, setRecentRefreshKey] = useState(0);
 
@@ -387,16 +380,6 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
                 <Badge variant="secondary">{studentIds.length}</Badge>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
-                <ViewSwitcher
-                  value={studentView}
-                  onChange={setStudentView}
-                  label={t("students")}
-                  options={[
-                    { value: "cards", label: t("viewCards") },
-                    { value: "search", label: t("viewSearch") },
-                  ]}
-                />
-
                 {!schoolClassId ? (
                   <p className="text-sm text-muted-foreground">
                     {t("selectClassroomFirst")}
@@ -407,9 +390,20 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
                   <p className="text-sm text-muted-foreground">
                     {t("noStudentsInClassroom")}
                   </p>
-                ) : studentView === "cards" ? (
-                  <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
-                    {students.map((s) => {
+                ) : (
+                  <>
+                    <SearchInput
+                      value={studentSearch}
+                      onValueChange={setStudentSearch}
+                      placeholder={t("searchStudentsPlaceholder")}
+                    />
+                    {filteredStudents.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        {t("noStudentsFound")}
+                      </p>
+                    ) : (
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                    {filteredStudents.map((s) => {
                       const checked = studentIds.includes(s.studentId);
                       return (
                         <button
@@ -418,81 +412,32 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
                           aria-pressed={checked}
                           onClick={() => toggleStudent(s.studentId)}
                           className={cn(
-                            "group flex flex-col items-center gap-2 rounded-lg border bg-card px-2 py-3 text-center transition hover:bg-accent",
+                            "group relative flex items-center gap-2 rounded-lg border bg-card py-2 pl-2 pr-7 text-left transition hover:bg-accent",
                             checked
                               ? "border-primary ring-2 ring-primary/30"
                               : "border-border",
                           )}
                         >
                           <StudentAvatar
-                            studentId={s.studentId}
                             firstName={s.firstName}
                             lastName={s.lastName}
-                            className={cn(
-                              "h-16 w-16 text-base",
-                              checked &&
-                                "ring-2 ring-primary ring-offset-2 ring-offset-card",
-                            )}
+                            className="h-8 w-8 shrink-0 text-xs"
                           />
-                          <span className="w-full text-sm font-medium leading-tight break-words">
-                            {s.firstName}
+                          <span className="min-w-0 flex-1 truncate text-sm font-medium leading-tight">
+                            {s.firstName} {s.lastName}
                           </span>
-                          <span className="w-full text-sm leading-tight text-muted-foreground break-words">
-                            {s.lastName}
-                          </span>
+                          {checked && (
+                            <Check
+                              aria-hidden
+                              className="absolute right-2 size-4 text-primary"
+                            />
+                          )}
                         </button>
                       );
                     })}
                   </div>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    <Input
-                      value={studentSearch}
-                      onChange={(e) => setStudentSearch(e.target.value)}
-                      placeholder={t("searchStudentsPlaceholder")}
-                    />
-                    {filteredStudents.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        {t("noStudentsFound")}
-                      </p>
-                    ) : (
-                      <ul className="flex flex-col gap-1">
-                        {filteredStudents.map((s) => {
-                          const checked = studentIds.includes(s.studentId);
-                          return (
-                            <li key={s.studentId}>
-                              <button
-                                type="button"
-                                aria-pressed={checked}
-                                onClick={() => toggleStudent(s.studentId)}
-                                className={cn(
-                                  "flex w-full items-center gap-3 rounded-md border bg-card px-3 py-2 text-left text-sm transition hover:bg-accent",
-                                  checked
-                                    ? "border-primary ring-2 ring-primary/30"
-                                    : "border-border",
-                                )}
-                              >
-                                <StudentAvatar
-                                  studentId={s.studentId}
-                                  firstName={s.firstName}
-                                  lastName={s.lastName}
-                                  className="h-8 w-8"
-                                />
-                                <span className="flex-1 truncate">
-                                  <span className="font-medium">
-                                    {s.firstName}
-                                  </span>{" "}
-                                  <span className="text-muted-foreground">
-                                    {s.lastName}
-                                  </span>
-                                </span>
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
                     )}
-                  </div>
+                  </>
                 )}
 
                 {form.formState.errors.studentIds && (
