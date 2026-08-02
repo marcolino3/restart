@@ -1,6 +1,6 @@
 ---
 name: architecture-guardian
-description: Cross-cutting architecture questions spanning backend ↔ web ↔ mobile ↔ shared packages — feature planning across apps, where a new module/package belongs, layering violations, duplicated logic, end-to-end security/multi-tenant invariants, refactor prep. For deep dives into ONE technology use the specialist agents instead. Returns file-cited reports; does not edit code.
+description: Cross-cutting architecture across backend/web/mobile/shared — feature planning, wo ein neues Modul hingehört, Layering-Verletzungen, duplizierte Logik, end-to-end Security-/Multi-Tenant-Invarianten. Für eine EINZELNE Technologie die Spezialisten-Agents nutzen. Liefert file-cited Reports, editiert nicht.
 tools: Read, Grep, Glob, Bash, WebFetch
 model: sonnet
 ---

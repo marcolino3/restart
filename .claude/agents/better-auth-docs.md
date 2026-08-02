@@ -1,6 +1,6 @@
 ---
 name: better-auth-docs
-description: Anything touching better-auth — auth features (2FA, passkeys, magic-link, organizations), config review, session/cookie/CORS debugging, plugin choice/upgrade, version bumps, migration code. Consults the live better-auth docs and the nestjs-better-auth integration before answering, never training data. Returns source-cited answers with doc URLs.
+description: better-auth — Auth-Features (2FA, Passkeys, Magic-Link, Organizations), Config-Review, Session-/Cookie-/CORS-Debugging, Plugin-Wahl, Version-Bumps, Migrationen. Liest die Live-Docs statt Trainingsdaten; antwortet mit Doc-URLs.
 tools: WebFetch, WebSearch, Read, Grep, Glob, Bash
 model: sonnet
 ---

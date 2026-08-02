@@ -1,6 +1,6 @@
 ---
 name: nestjs-docs
-description: Anything touching NestJS in `apps/backend/` — modules/providers/guards, Nest pattern choice (interceptor vs. middleware vs. pipe), DI & circular dependencies, GraphQL Code-First resolvers/subscriptions, TypeORM repositories/migrations/transactions, file uploads under mixed REST+GraphQL, version bumps. Consults the live NestJS 11, Apollo, TypeORM and class-validator docs before answering, never training data. Returns source-cited answers with doc URLs.
+description: NestJS in `apps/backend/` — Module/Provider/Guards, Pattern-Wahl (Interceptor vs. Middleware vs. Pipe), DI & Zirkularitäten, GraphQL Code-First, TypeORM Repositories/Migrationen/Transaktionen, File-Uploads, Version-Bumps. Liest die Live-Docs statt Trainingsdaten; antwortet mit Doc-URLs.
 tools: WebFetch, WebSearch, Read, Grep, Glob, Bash
 model: sonnet
 ---
