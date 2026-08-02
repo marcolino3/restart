@@ -134,6 +134,12 @@ type Documents = {
     "\n  mutation UpdateEmployeeAbsenceCategory(\n    $input: UpdateEmployeeAbsenceCategoryInput!\n  ) {\n    updateEmployeeAbsenceCategory(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateEmployeeAbsenceCategoryDocument,
     "\n  mutation CreateEmployeeAbsenceNotice(\n    $createEmployeeAbsenceInput: CreateEmployeeAbsenceNoticeInput!\n  ) {\n    createEmployeeAbsenceNotice(\n      createEmployeeAbsenceInput: $createEmployeeAbsenceInput\n    ) {\n      id\n    }\n  }\n": typeof types.CreateEmployeeAbsenceNoticeDocument,
     "\n  query GetEmployeeAbsenceCategoriesByOrgId {\n    employeeAbsenceCategoriesByOrgId {\n      id\n      systemCode\n    }\n  }\n": typeof types.GetEmployeeAbsenceCategoriesByOrgIdDocument,
+    "\n  mutation ArchiveEmployeeFunction($id: ID!) {\n    archiveEmployeeFunction(id: $id)\n  }\n": typeof types.ArchiveEmployeeFunctionDocument,
+    "\n  mutation CreateEmployeeFunction($input: CreateEmployeeFunctionInput!) {\n    createEmployeeFunction(input: $input) {\n      id\n      name\n      sortOrder\n      isActive\n      isArchived\n      translations {\n        locale\n        name\n      }\n    }\n  }\n": typeof types.CreateEmployeeFunctionDocument,
+    "\n  mutation DeleteEmployeeFunction($id: ID!) {\n    deleteEmployeeFunction(id: $id)\n  }\n": typeof types.DeleteEmployeeFunctionDocument,
+    "\n  query GetEmployeeFunctionsByOrgId($includeArchived: Boolean) {\n    employeeFunctionsByOrgId(includeArchived: $includeArchived) {\n      id\n      name\n      sortOrder\n      isActive\n      isArchived\n      usageCount\n      translations {\n        locale\n        name\n      }\n    }\n  }\n": typeof types.GetEmployeeFunctionsByOrgIdDocument,
+    "\n  mutation ReorderEmployeeFunctions($input: ReorderEmployeeFunctionsInput!) {\n    reorderEmployeeFunctions(input: $input) {\n      id\n      sortOrder\n    }\n  }\n": typeof types.ReorderEmployeeFunctionsDocument,
+    "\n  mutation UpdateEmployeeFunction($input: UpdateEmployeeFunctionInput!) {\n    updateEmployeeFunction(input: $input) {\n      id\n      name\n      sortOrder\n      isActive\n      isArchived\n      translations {\n        locale\n        name\n      }\n    }\n  }\n": typeof types.UpdateEmployeeFunctionDocument,
     "\n  mutation CreateEmployeeNote(\n    $createEmployeeNoteInput: CreateEmployeeNoteInput!\n  ) {\n    createEmployeeNote(createEmployeeNoteInput: $createEmployeeNoteInput) {\n      id\n    }\n  }\n": typeof types.CreateEmployeeNoteDocument,
     "\n  query GetEmployeeNotesByEmployeeId($employeeId: ID!) {\n    employeeNotesByEmployeeId(employeeId: $employeeId) {\n      id\n      category\n      title\n      content\n      isConfidential\n      date\n      createdAt\n      authorMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": typeof types.GetEmployeeNotesByEmployeeIdDocument,
     "\n  mutation CreateEmployee($createEmployeeInput: CreateEmployeeInput!) {\n    createEmployee(createEmployeeInput: $createEmployeeInput) {\n      id\n    }\n  }\n": typeof types.CreateEmployeeDocument,
@@ -445,6 +451,12 @@ const documents: Documents = {
     "\n  mutation UpdateEmployeeAbsenceCategory(\n    $input: UpdateEmployeeAbsenceCategoryInput!\n  ) {\n    updateEmployeeAbsenceCategory(input: $input) {\n      id\n    }\n  }\n": types.UpdateEmployeeAbsenceCategoryDocument,
     "\n  mutation CreateEmployeeAbsenceNotice(\n    $createEmployeeAbsenceInput: CreateEmployeeAbsenceNoticeInput!\n  ) {\n    createEmployeeAbsenceNotice(\n      createEmployeeAbsenceInput: $createEmployeeAbsenceInput\n    ) {\n      id\n    }\n  }\n": types.CreateEmployeeAbsenceNoticeDocument,
     "\n  query GetEmployeeAbsenceCategoriesByOrgId {\n    employeeAbsenceCategoriesByOrgId {\n      id\n      systemCode\n    }\n  }\n": types.GetEmployeeAbsenceCategoriesByOrgIdDocument,
+    "\n  mutation ArchiveEmployeeFunction($id: ID!) {\n    archiveEmployeeFunction(id: $id)\n  }\n": types.ArchiveEmployeeFunctionDocument,
+    "\n  mutation CreateEmployeeFunction($input: CreateEmployeeFunctionInput!) {\n    createEmployeeFunction(input: $input) {\n      id\n      name\n      sortOrder\n      isActive\n      isArchived\n      translations {\n        locale\n        name\n      }\n    }\n  }\n": types.CreateEmployeeFunctionDocument,
+    "\n  mutation DeleteEmployeeFunction($id: ID!) {\n    deleteEmployeeFunction(id: $id)\n  }\n": types.DeleteEmployeeFunctionDocument,
+    "\n  query GetEmployeeFunctionsByOrgId($includeArchived: Boolean) {\n    employeeFunctionsByOrgId(includeArchived: $includeArchived) {\n      id\n      name\n      sortOrder\n      isActive\n      isArchived\n      usageCount\n      translations {\n        locale\n        name\n      }\n    }\n  }\n": types.GetEmployeeFunctionsByOrgIdDocument,
+    "\n  mutation ReorderEmployeeFunctions($input: ReorderEmployeeFunctionsInput!) {\n    reorderEmployeeFunctions(input: $input) {\n      id\n      sortOrder\n    }\n  }\n": types.ReorderEmployeeFunctionsDocument,
+    "\n  mutation UpdateEmployeeFunction($input: UpdateEmployeeFunctionInput!) {\n    updateEmployeeFunction(input: $input) {\n      id\n      name\n      sortOrder\n      isActive\n      isArchived\n      translations {\n        locale\n        name\n      }\n    }\n  }\n": types.UpdateEmployeeFunctionDocument,
     "\n  mutation CreateEmployeeNote(\n    $createEmployeeNoteInput: CreateEmployeeNoteInput!\n  ) {\n    createEmployeeNote(createEmployeeNoteInput: $createEmployeeNoteInput) {\n      id\n    }\n  }\n": types.CreateEmployeeNoteDocument,
     "\n  query GetEmployeeNotesByEmployeeId($employeeId: ID!) {\n    employeeNotesByEmployeeId(employeeId: $employeeId) {\n      id\n      category\n      title\n      content\n      isConfidential\n      date\n      createdAt\n      authorMembership {\n        id\n        user {\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": types.GetEmployeeNotesByEmployeeIdDocument,
     "\n  mutation CreateEmployee($createEmployeeInput: CreateEmployeeInput!) {\n    createEmployee(createEmployeeInput: $createEmployeeInput) {\n      id\n    }\n  }\n": types.CreateEmployeeDocument,
@@ -1130,6 +1142,30 @@ export function graphql(source: "\n  mutation CreateEmployeeAbsenceNotice(\n    
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  query GetEmployeeAbsenceCategoriesByOrgId {\n    employeeAbsenceCategoriesByOrgId {\n      id\n      systemCode\n    }\n  }\n"): (typeof documents)["\n  query GetEmployeeAbsenceCategoriesByOrgId {\n    employeeAbsenceCategoriesByOrgId {\n      id\n      systemCode\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ArchiveEmployeeFunction($id: ID!) {\n    archiveEmployeeFunction(id: $id)\n  }\n"): (typeof documents)["\n  mutation ArchiveEmployeeFunction($id: ID!) {\n    archiveEmployeeFunction(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation CreateEmployeeFunction($input: CreateEmployeeFunctionInput!) {\n    createEmployeeFunction(input: $input) {\n      id\n      name\n      sortOrder\n      isActive\n      isArchived\n      translations {\n        locale\n        name\n      }\n    }\n  }\n"): (typeof documents)["\n  mutation CreateEmployeeFunction($input: CreateEmployeeFunctionInput!) {\n    createEmployeeFunction(input: $input) {\n      id\n      name\n      sortOrder\n      isActive\n      isArchived\n      translations {\n        locale\n        name\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation DeleteEmployeeFunction($id: ID!) {\n    deleteEmployeeFunction(id: $id)\n  }\n"): (typeof documents)["\n  mutation DeleteEmployeeFunction($id: ID!) {\n    deleteEmployeeFunction(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetEmployeeFunctionsByOrgId($includeArchived: Boolean) {\n    employeeFunctionsByOrgId(includeArchived: $includeArchived) {\n      id\n      name\n      sortOrder\n      isActive\n      isArchived\n      usageCount\n      translations {\n        locale\n        name\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetEmployeeFunctionsByOrgId($includeArchived: Boolean) {\n    employeeFunctionsByOrgId(includeArchived: $includeArchived) {\n      id\n      name\n      sortOrder\n      isActive\n      isArchived\n      usageCount\n      translations {\n        locale\n        name\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ReorderEmployeeFunctions($input: ReorderEmployeeFunctionsInput!) {\n    reorderEmployeeFunctions(input: $input) {\n      id\n      sortOrder\n    }\n  }\n"): (typeof documents)["\n  mutation ReorderEmployeeFunctions($input: ReorderEmployeeFunctionsInput!) {\n    reorderEmployeeFunctions(input: $input) {\n      id\n      sortOrder\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateEmployeeFunction($input: UpdateEmployeeFunctionInput!) {\n    updateEmployeeFunction(input: $input) {\n      id\n      name\n      sortOrder\n      isActive\n      isArchived\n      translations {\n        locale\n        name\n      }\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateEmployeeFunction($input: UpdateEmployeeFunctionInput!) {\n    updateEmployeeFunction(input: $input) {\n      id\n      name\n      sortOrder\n      isActive\n      isArchived\n      translations {\n        locale\n        name\n      }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

@@ -1060,6 +1060,11 @@ export type CreateEmployeeContractInput = {
   workloadPercent?: InputMaybe<Scalars['Float']['input']>;
 };
 
+export type CreateEmployeeFunctionInput = {
+  sortOrder?: InputMaybe<Scalars['Int']['input']>;
+  translations: Array<EmployeeFunctionTranslationInput>;
+};
+
 export type CreateEmployeeInput = {
   addressLine2?: InputMaybe<Scalars['String']['input']>;
   city?: InputMaybe<Scalars['String']['input']>;
@@ -1873,6 +1878,42 @@ export type EmployeeEmergencyProfile = {
   version: Scalars['Int']['output'];
 };
 
+export type EmployeeFunction = {
+  __typename?: 'EmployeeFunction';
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  name: Scalars['String']['output'];
+  organization?: Maybe<Organization>;
+  organizationId: Scalars['String']['output'];
+  sortOrder: Scalars['Int']['output'];
+  translations?: Maybe<Array<EmployeeFunctionTranslation>>;
+  updatedAt: Scalars['DateTime']['output'];
+  usageCount: Scalars['Int']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type EmployeeFunctionTranslation = {
+  __typename?: 'EmployeeFunctionTranslation';
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  functionId: Scalars['ID']['output'];
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  locale: Locale;
+  name: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type EmployeeFunctionTranslationInput = {
+  locale: Locale;
+  name: Scalars['String']['input'];
+};
+
 export type EmployeeHrProfile = {
   __typename?: 'EmployeeHrProfile';
   bankAccountHolder?: Maybe<Scalars['String']['output']>;
@@ -2475,6 +2516,7 @@ export type Mutation = {
   archiveCurriculumLevel: Scalars['Boolean']['output'];
   archiveCurriculumNode: Scalars['Boolean']['output'];
   archiveEmployeeAbsenceCategory: Scalars['Boolean']['output'];
+  archiveEmployeeFunction: Scalars['Boolean']['output'];
   archiveFamily: Scalars['Boolean']['output'];
   archiveProcessingActivity: Scalars['Boolean']['output'];
   archiveProject: Project;
@@ -2506,6 +2548,7 @@ export type Mutation = {
   createEmployeeAbsenceCategory: EmployeeAbsenceCategory;
   createEmployeeAbsenceNotice: EmployeeAbsence;
   createEmployeeContract: EmployeeContract;
+  createEmployeeFunction: EmployeeFunction;
   createEmployeeNote: EmployeeNote;
   createEmployeePaidOvertime: EmployeePaidOvertime;
   createEmployeeVacation: EmployeeVacation;
@@ -2547,6 +2590,7 @@ export type Mutation = {
   deleteEmailTemplate: Scalars['Boolean']['output'];
   deleteEmployeeAbsence: Scalars['Boolean']['output'];
   deleteEmployeeContract: Scalars['Boolean']['output'];
+  deleteEmployeeFunction: Scalars['Boolean']['output'];
   deleteEmployeePaidOvertime: Scalars['Boolean']['output'];
   deleteEmployeePeriodOpeningBalance: Scalars['Boolean']['output'];
   deleteEmployeeVacation: Scalars['Boolean']['output'];
@@ -2599,6 +2643,7 @@ export type Mutation = {
   reorderCurriculumLevels: Array<CurriculumLevel>;
   reorderCurriculumNodes: Array<CurriculumNode>;
   reorderEmployeeAbsenceCategories: Array<EmployeeAbsenceCategory>;
+  reorderEmployeeFunctions: Array<EmployeeFunction>;
   reorderGradeLevels: Array<GradeLevel>;
   reorderMyTasks: Scalars['Boolean']['output'];
   reorderSchoolClasses: Array<SchoolClass>;
@@ -2652,6 +2697,7 @@ export type Mutation = {
   updateEmployeeAbsence: EmployeeAbsence;
   updateEmployeeAbsenceCategory: EmployeeAbsenceCategory;
   updateEmployeeContract: EmployeeContract;
+  updateEmployeeFunction: EmployeeFunction;
   updateEmployeeNote: EmployeeNote;
   updateEmployeePaidOvertime: EmployeePaidOvertime;
   updateEmployeeVacation: EmployeeVacation;
@@ -2766,6 +2812,11 @@ export type MutationArchiveCurriculumNodeArgs = {
 
 
 export type MutationArchiveEmployeeAbsenceCategoryArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationArchiveEmployeeFunctionArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -2923,6 +2974,11 @@ export type MutationCreateEmployeeAbsenceNoticeArgs = {
 
 export type MutationCreateEmployeeContractArgs = {
   input: CreateEmployeeContractInput;
+};
+
+
+export type MutationCreateEmployeeFunctionArgs = {
+  input: CreateEmployeeFunctionInput;
 };
 
 
@@ -3122,6 +3178,11 @@ export type MutationDeleteEmployeeAbsenceArgs = {
 
 
 export type MutationDeleteEmployeeContractArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteEmployeeFunctionArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -3390,6 +3451,11 @@ export type MutationReorderEmployeeAbsenceCategoriesArgs = {
 };
 
 
+export type MutationReorderEmployeeFunctionsArgs = {
+  input: ReorderEmployeeFunctionsInput;
+};
+
+
 export type MutationReorderGradeLevelsArgs = {
   input: ReorderGradeLevelsInput;
 };
@@ -3650,6 +3716,11 @@ export type MutationUpdateEmployeeAbsenceCategoryArgs = {
 
 export type MutationUpdateEmployeeContractArgs = {
   input: UpdateEmployeeContractInput;
+};
+
+
+export type MutationUpdateEmployeeFunctionArgs = {
+  input: UpdateEmployeeFunctionInput;
 };
 
 
@@ -4420,6 +4491,8 @@ export type Query = {
   employeeContractsByEmployeeId: Array<EmployeeContract>;
   employeeContractsByOrgId: Array<EmployeeContract>;
   employeeEmergencyProfile?: Maybe<EmployeeEmergencyProfile>;
+  employeeFunctionById: EmployeeFunction;
+  employeeFunctionsByOrgId: Array<EmployeeFunction>;
   employeeHrProfile?: Maybe<EmployeeHrProfile>;
   employeeMissingRecordDays: Array<Scalars['String']['output']>;
   employeeMonthlyWorkTime: Array<MonthlyWorkTimeSummary>;
@@ -4805,6 +4878,16 @@ export type QueryEmployeeContractsByEmployeeIdArgs = {
 
 export type QueryEmployeeEmergencyProfileArgs = {
   employeeId: Scalars['ID']['input'];
+};
+
+
+export type QueryEmployeeFunctionByIdArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryEmployeeFunctionsByOrgIdArgs = {
+  includeArchived?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 
@@ -5242,6 +5325,10 @@ export type ReorderCurriculumNodesInput = {
   ids: Array<Scalars['ID']['input']>;
   levelId: Scalars['ID']['input'];
   parentId?: InputMaybe<Scalars['ID']['input']>;
+};
+
+export type ReorderEmployeeFunctionsInput = {
+  ids: Array<Scalars['ID']['input']>;
 };
 
 export type ReorderGradeLevelsInput = {
@@ -6179,6 +6266,12 @@ export type UpdateEmployeeContractInput = {
   weekdayTimeWindows?: InputMaybe<WeekdayTimeWindowsInput>;
   weeklyHours?: InputMaybe<Scalars['String']['input']>;
   workloadPercent?: InputMaybe<Scalars['Float']['input']>;
+};
+
+export type UpdateEmployeeFunctionInput = {
+  id: Scalars['ID']['input'];
+  sortOrder?: InputMaybe<Scalars['Int']['input']>;
+  translations?: InputMaybe<Array<EmployeeFunctionTranslationInput>>;
 };
 
 export type UpdateEmployeeInput = {
@@ -7542,6 +7635,48 @@ export type GetEmployeeAbsenceCategoriesByOrgIdQueryVariables = Exact<{ [key: st
 
 
 export type GetEmployeeAbsenceCategoriesByOrgIdQuery = { __typename?: 'Query', employeeAbsenceCategoriesByOrgId: Array<{ __typename?: 'EmployeeAbsenceCategory', id: string, systemCode?: SystemEmployeeAbsenceCategory | null }> };
+
+export type ArchiveEmployeeFunctionMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type ArchiveEmployeeFunctionMutation = { __typename?: 'Mutation', archiveEmployeeFunction: boolean };
+
+export type CreateEmployeeFunctionMutationVariables = Exact<{
+  input: CreateEmployeeFunctionInput;
+}>;
+
+
+export type CreateEmployeeFunctionMutation = { __typename?: 'Mutation', createEmployeeFunction: { __typename?: 'EmployeeFunction', id: string, name: string, sortOrder: number, isActive: boolean, isArchived: boolean, translations?: Array<{ __typename?: 'EmployeeFunctionTranslation', locale: Locale, name: string }> | null } };
+
+export type DeleteEmployeeFunctionMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteEmployeeFunctionMutation = { __typename?: 'Mutation', deleteEmployeeFunction: boolean };
+
+export type GetEmployeeFunctionsByOrgIdQueryVariables = Exact<{
+  includeArchived?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+
+export type GetEmployeeFunctionsByOrgIdQuery = { __typename?: 'Query', employeeFunctionsByOrgId: Array<{ __typename?: 'EmployeeFunction', id: string, name: string, sortOrder: number, isActive: boolean, isArchived: boolean, usageCount: number, translations?: Array<{ __typename?: 'EmployeeFunctionTranslation', locale: Locale, name: string }> | null }> };
+
+export type ReorderEmployeeFunctionsMutationVariables = Exact<{
+  input: ReorderEmployeeFunctionsInput;
+}>;
+
+
+export type ReorderEmployeeFunctionsMutation = { __typename?: 'Mutation', reorderEmployeeFunctions: Array<{ __typename?: 'EmployeeFunction', id: string, sortOrder: number }> };
+
+export type UpdateEmployeeFunctionMutationVariables = Exact<{
+  input: UpdateEmployeeFunctionInput;
+}>;
+
+
+export type UpdateEmployeeFunctionMutation = { __typename?: 'Mutation', updateEmployeeFunction: { __typename?: 'EmployeeFunction', id: string, name: string, sortOrder: number, isActive: boolean, isArchived: boolean, translations?: Array<{ __typename?: 'EmployeeFunctionTranslation', locale: Locale, name: string }> | null } };
 
 export type CreateEmployeeNoteMutationVariables = Exact<{
   createEmployeeNoteInput: CreateEmployeeNoteInput;
@@ -8934,6 +9069,12 @@ export const SetEmployeeAbsenceCategoryActiveDocument = {"kind":"Document","defi
 export const UpdateEmployeeAbsenceCategoryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateEmployeeAbsenceCategory"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateEmployeeAbsenceCategoryInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateEmployeeAbsenceCategory"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateEmployeeAbsenceCategoryMutation, UpdateEmployeeAbsenceCategoryMutationVariables>;
 export const CreateEmployeeAbsenceNoticeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateEmployeeAbsenceNotice"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"createEmployeeAbsenceInput"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateEmployeeAbsenceNoticeInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createEmployeeAbsenceNotice"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"createEmployeeAbsenceInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"createEmployeeAbsenceInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateEmployeeAbsenceNoticeMutation, CreateEmployeeAbsenceNoticeMutationVariables>;
 export const GetEmployeeAbsenceCategoriesByOrgIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEmployeeAbsenceCategoriesByOrgId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeAbsenceCategoriesByOrgId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"systemCode"}}]}}]}}]} as unknown as DocumentNode<GetEmployeeAbsenceCategoriesByOrgIdQuery, GetEmployeeAbsenceCategoriesByOrgIdQueryVariables>;
+export const ArchiveEmployeeFunctionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ArchiveEmployeeFunction"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"archiveEmployeeFunction"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<ArchiveEmployeeFunctionMutation, ArchiveEmployeeFunctionMutationVariables>;
+export const CreateEmployeeFunctionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateEmployeeFunction"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateEmployeeFunctionInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createEmployeeFunction"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"isArchived"}},{"kind":"Field","name":{"kind":"Name","value":"translations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<CreateEmployeeFunctionMutation, CreateEmployeeFunctionMutationVariables>;
+export const DeleteEmployeeFunctionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteEmployeeFunction"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteEmployeeFunction"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteEmployeeFunctionMutation, DeleteEmployeeFunctionMutationVariables>;
+export const GetEmployeeFunctionsByOrgIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEmployeeFunctionsByOrgId"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"includeArchived"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeFunctionsByOrgId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"includeArchived"},"value":{"kind":"Variable","name":{"kind":"Name","value":"includeArchived"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"isArchived"}},{"kind":"Field","name":{"kind":"Name","value":"usageCount"}},{"kind":"Field","name":{"kind":"Name","value":"translations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<GetEmployeeFunctionsByOrgIdQuery, GetEmployeeFunctionsByOrgIdQueryVariables>;
+export const ReorderEmployeeFunctionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ReorderEmployeeFunctions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ReorderEmployeeFunctionsInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"reorderEmployeeFunctions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}}]}}]}}]} as unknown as DocumentNode<ReorderEmployeeFunctionsMutation, ReorderEmployeeFunctionsMutationVariables>;
+export const UpdateEmployeeFunctionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateEmployeeFunction"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateEmployeeFunctionInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateEmployeeFunction"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"isArchived"}},{"kind":"Field","name":{"kind":"Name","value":"translations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<UpdateEmployeeFunctionMutation, UpdateEmployeeFunctionMutationVariables>;
 export const CreateEmployeeNoteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateEmployeeNote"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"createEmployeeNoteInput"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateEmployeeNoteInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createEmployeeNote"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"createEmployeeNoteInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"createEmployeeNoteInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateEmployeeNoteMutation, CreateEmployeeNoteMutationVariables>;
 export const GetEmployeeNotesByEmployeeIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEmployeeNotesByEmployeeId"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeNotesByEmployeeId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isConfidential"}},{"kind":"Field","name":{"kind":"Name","value":"date"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"authorMembership"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetEmployeeNotesByEmployeeIdQuery, GetEmployeeNotesByEmployeeIdQueryVariables>;
 export const CreateEmployeeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateEmployee"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"createEmployeeInput"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateEmployeeInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createEmployee"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"createEmployeeInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"createEmployeeInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateEmployeeMutation, CreateEmployeeMutationVariables>;

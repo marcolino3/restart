@@ -19,6 +19,12 @@ jest.mock(
     seedOrgEmployeeAbsenceCategories: jest.fn().mockResolvedValue(undefined),
   }),
 );
+jest.mock(
+  '@/employee-management/employee-functions/seeds/seed-org-employee-functions.seeder',
+  () => ({
+    seedOrgEmployeeFunctions: jest.fn().mockResolvedValue(undefined),
+  }),
+);
 jest.mock('@/roles/seeds/system-roles.seeder', () => ({
   seedOrgSystemRoles: jest.fn().mockResolvedValue(undefined),
 }));
