@@ -280,6 +280,7 @@ export class LessonRecordsService {
       organizationId,
     });
     for (const record of records) {
+      if (input.recordedAt !== undefined) record.recordedAt = input.recordedAt;
       if (input.status !== undefined) record.status = input.status;
       if (input.durationMinutes !== undefined) {
         record.durationMinutes = input.durationMinutes;

@@ -482,6 +482,40 @@ describe('LessonRecordsService', () => {
       expect(dataSource.transaction).not.toHaveBeenCalled();
     });
 
+    it('updates recordedAt in place when studentIds is omitted', async () => {
+      recordsRepo.findBy.mockResolvedValue([
+        {
+          id: 'rec-1',
+          studentId: 'stu-1',
+          recordedAt: '2026-05-16T09:00:00.000Z',
+          status: LessonRecordStatus.INTRODUCED,
+        },
+        {
+          id: 'rec-2',
+          studentId: 'stu-2',
+          recordedAt: '2026-05-16T09:00:00.000Z',
+          status: LessonRecordStatus.INTRODUCED,
+        },
+      ]);
+
+      await service.updateGroup(
+        { ...baseInput, recordedAt: '2026-05-16T14:30:00.000Z' },
+        'org-1',
+        'user-9',
+      );
+
+      expect(recordsRepo.save).toHaveBeenCalledWith([
+        expect.objectContaining({
+          id: 'rec-1',
+          recordedAt: '2026-05-16T14:30:00.000Z',
+        }),
+        expect.objectContaining({
+          id: 'rec-2',
+          recordedAt: '2026-05-16T14:30:00.000Z',
+        }),
+      ]);
+    });
+
     it('removes records for students dropped from studentIds', async () => {
       recordsRepo.findBy.mockResolvedValue([
         {
