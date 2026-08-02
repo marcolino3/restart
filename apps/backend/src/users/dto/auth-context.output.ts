@@ -19,6 +19,10 @@ export class AuthContextOutput {
   @Field(() => String, { nullable: true })
   orgName?: string;
 
+  /** IANA zone of the active org — every date/time the UI renders is school-local. */
+  @Field(() => String, { nullable: true })
+  orgTimezone?: string;
+
   @Field(() => Persona, { nullable: true })
   persona?: Persona;
 

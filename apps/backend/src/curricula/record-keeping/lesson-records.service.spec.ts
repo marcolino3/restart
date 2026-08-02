@@ -16,18 +16,34 @@ import { LessonRecordsService } from './lesson-records.service';
 
 describe('LessonRecordsService', () => {
   let service: LessonRecordsService;
-  let recordsRepo: { create: jest.Mock; save: jest.Mock; findOne: jest.Mock };
+  let recordsRepo: {
+    create: jest.Mock;
+    save: jest.Mock;
+    findOne: jest.Mock;
+    findBy: jest.Mock;
+    delete: jest.Mock;
+  };
   let nodesRepo: { findOne: jest.Mock };
   let studentsRepo: { exists: jest.Mock; find: jest.Mock };
   let enrollmentsRepo: { exists: jest.Mock };
-  let dataSource: { query: jest.Mock };
+  let dataSource: { query: jest.Mock; transaction: jest.Mock };
 
   beforeEach(async () => {
-    dataSource = { query: jest.fn() };
+    dataSource = {
+      query: jest.fn(),
+      // Runs the callback against the same repos the test already mocked —
+      // good enough since these tests assert on the (fake) repo's calls, not
+      // on real transactional isolation.
+      transaction: jest.fn((cb) => cb({ getRepository: () => recordsRepo })),
+    };
     recordsRepo = {
       create: jest.fn((x) => x),
-      save: jest.fn((x) => Promise.resolve({ id: 'rec-1', ...x })),
+      save: jest.fn((x) =>
+        Promise.resolve(Array.isArray(x) ? x : { id: 'rec-1', ...x }),
+      ),
       findOne: jest.fn(),
+      findBy: jest.fn(),
+      delete: jest.fn(),
     };
     nodesRepo = { findOne: jest.fn() };
     studentsRepo = { exists: jest.fn(), find: jest.fn() };
@@ -321,6 +337,10 @@ describe('LessonRecordsService', () => {
       lesson_id: 'les-1',
       recorded_at: '2026-05-16',
       student_count: 3,
+      status: LessonRecordStatus.PRACTICED,
+      duration_minutes: 20,
+      students: [{ id: 'stu-1', firstName: 'Anna', lastName: 'Muster' }],
+      record_ids: ['rec-1', 'rec-2', 'rec-3'],
       lesson_name: 'Goldenes Perlenmaterial',
       area_name: 'Mathematik',
       ...over,
@@ -400,6 +420,10 @@ describe('LessonRecordsService', () => {
           lessonId: 'les-1',
           recordedAt: '2026-05-16',
           studentCount: 3,
+          status: LessonRecordStatus.PRACTICED,
+          durationMinutes: 20,
+          students: [{ id: 'stu-1', firstName: 'Anna', lastName: 'Muster' }],
+          recordIds: ['rec-1', 'rec-2', 'rec-3'],
           lessonName: 'Goldenes Perlenmaterial',
           areaName: 'Mathematik',
         },
@@ -407,10 +431,185 @@ describe('LessonRecordsService', () => {
           lessonId: 'les-2',
           recordedAt: '2026-05-15',
           studentCount: 1,
+          status: LessonRecordStatus.PRACTICED,
+          durationMinutes: 20,
+          students: [{ id: 'stu-1', firstName: 'Anna', lastName: 'Muster' }],
+          recordIds: ['rec-1', 'rec-2', 'rec-3'],
           lessonName: 'Goldenes Perlenmaterial',
           areaName: null,
         },
       ]);
+    });
+  });
+
+  describe('updateGroup', () => {
+    const baseInput = {
+      recordIds: ['rec-1', 'rec-2'],
+      lessonId: 'les-1',
+      recordedAt: '2026-05-16',
+    };
+
+    it('updates status/duration in place when studentIds is omitted', async () => {
+      recordsRepo.findBy.mockResolvedValue([
+        {
+          id: 'rec-1',
+          studentId: 'stu-1',
+          status: LessonRecordStatus.INTRODUCED,
+        },
+        {
+          id: 'rec-2',
+          studentId: 'stu-2',
+          status: LessonRecordStatus.INTRODUCED,
+        },
+      ]);
+
+      await service.updateGroup(
+        { ...baseInput, status: LessonRecordStatus.PRACTICED },
+        'org-1',
+        'user-9',
+      );
+
+      expect(recordsRepo.save).toHaveBeenCalledWith([
+        expect.objectContaining({
+          id: 'rec-1',
+          status: LessonRecordStatus.PRACTICED,
+        }),
+        expect.objectContaining({
+          id: 'rec-2',
+          status: LessonRecordStatus.PRACTICED,
+        }),
+      ]);
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+    });
+
+    it('updates recordedAt in place when studentIds is omitted', async () => {
+      recordsRepo.findBy.mockResolvedValue([
+        {
+          id: 'rec-1',
+          studentId: 'stu-1',
+          recordedAt: '2026-05-16T09:00:00.000Z',
+          status: LessonRecordStatus.INTRODUCED,
+        },
+        {
+          id: 'rec-2',
+          studentId: 'stu-2',
+          recordedAt: '2026-05-16T09:00:00.000Z',
+          status: LessonRecordStatus.INTRODUCED,
+        },
+      ]);
+
+      await service.updateGroup(
+        { ...baseInput, recordedAt: '2026-05-16T14:30:00.000Z' },
+        'org-1',
+        'user-9',
+      );
+
+      expect(recordsRepo.save).toHaveBeenCalledWith([
+        expect.objectContaining({
+          id: 'rec-1',
+          recordedAt: '2026-05-16T14:30:00.000Z',
+        }),
+        expect.objectContaining({
+          id: 'rec-2',
+          recordedAt: '2026-05-16T14:30:00.000Z',
+        }),
+      ]);
+    });
+
+    it('removes records for students dropped from studentIds', async () => {
+      recordsRepo.findBy.mockResolvedValue([
+        {
+          id: 'rec-1',
+          studentId: 'stu-1',
+          status: LessonRecordStatus.INTRODUCED,
+        },
+        {
+          id: 'rec-2',
+          studentId: 'stu-2',
+          status: LessonRecordStatus.INTRODUCED,
+        },
+      ]);
+
+      await service.updateGroup(
+        { ...baseInput, studentIds: ['stu-1'] },
+        'org-1',
+        'user-9',
+      );
+
+      expect(recordsRepo.delete).toHaveBeenCalledWith({
+        id: expect.anything(),
+      });
+    });
+
+    it('adds records for newly-added students after validating org membership', async () => {
+      recordsRepo.findBy.mockResolvedValue([
+        {
+          id: 'rec-1',
+          studentId: 'stu-1',
+          status: LessonRecordStatus.PRACTICED,
+          note: 'note',
+          durationMinutes: 15,
+        },
+      ]);
+      studentsRepo.find.mockResolvedValue([{ id: 'stu-2' }]);
+
+      await service.updateGroup(
+        { ...baseInput, recordIds: ['rec-1'], studentIds: ['stu-1', 'stu-2'] },
+        'org-1',
+        'user-9',
+      );
+
+      expect(studentsRepo.find).toHaveBeenCalledWith({
+        where: { id: expect.anything(), organizationId: 'org-1' },
+        select: ['id'],
+      });
+      expect(recordsRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          studentId: 'stu-2',
+          lessonId: 'les-1',
+          recordedAt: '2026-05-16',
+          status: LessonRecordStatus.PRACTICED,
+          recordedById: 'user-9',
+          organizationId: 'org-1',
+        }),
+      );
+    });
+
+    it('rejects when an added student is not found in this organization', async () => {
+      recordsRepo.findBy.mockResolvedValue([
+        {
+          id: 'rec-1',
+          studentId: 'stu-1',
+          status: LessonRecordStatus.INTRODUCED,
+        },
+      ]);
+      studentsRepo.find.mockResolvedValue([]);
+
+      await expect(
+        service.updateGroup(
+          {
+            ...baseInput,
+            recordIds: ['rec-1'],
+            studentIds: ['stu-1', 'stu-2'],
+          },
+          'org-1',
+          'user-9',
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+  });
+
+  describe('deleteGroup', () => {
+    it('deletes all records matching the given ids, scoped to the org', async () => {
+      recordsRepo.delete.mockResolvedValue({ affected: 2 });
+
+      const result = await service.deleteGroup(['rec-1', 'rec-2'], 'org-1');
+
+      expect(recordsRepo.delete).toHaveBeenCalledWith({
+        id: expect.anything(),
+        organizationId: 'org-1',
+      });
+      expect(result).toBe(true);
     });
   });
 });

@@ -3,11 +3,21 @@
 import { gql } from "graphql-request";
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 
+export type RecentLessonRecordStudent = {
+  id: string;
+  firstName: string;
+  lastName: string;
+};
+
 export type RecentLessonRecordItem = {
   lessonId: string;
   lessonName: string | null;
   areaName: string | null;
   studentCount: number;
+  students: RecentLessonRecordStudent[];
+  recordIds: string[];
+  status: string;
+  durationMinutes: number | null;
   recordedAt: string;
 };
 
@@ -22,6 +32,14 @@ const Document = gql`
       lessonName
       areaName
       studentCount
+      students {
+        id
+        firstName
+        lastName
+      }
+      recordIds
+      status
+      durationMinutes
       recordedAt
     }
   }
