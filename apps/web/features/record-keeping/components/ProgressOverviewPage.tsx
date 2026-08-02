@@ -15,7 +15,6 @@ const ENTRIES_LIMIT = 50;
 interface Props {
   locale: string;
   classId?: string;
-  subtab?: string;
   view?: string;
 }
 
@@ -26,7 +25,6 @@ const VIEW_CLASSROOM = "classroom";
 export async function ProgressOverviewPage({
   locale,
   classId,
-  subtab,
   view,
 }: Props) {
   const t = await getTranslations("RecordKeeping");
@@ -91,7 +89,7 @@ export async function ProgressOverviewPage({
         </TabsContent>
 
         <TabsContent value={VIEW_CLASSROOM}>
-          <ClassroomOverviewTab locale={locale} classId={classId} subtab={subtab} />
+          <ClassroomOverviewTab locale={locale} classId={classId} />
         </TabsContent>
       </Tabs>
     </div>

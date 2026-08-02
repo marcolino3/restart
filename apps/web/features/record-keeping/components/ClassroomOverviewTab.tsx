@@ -4,23 +4,21 @@ import { getMyTeachingSchoolClassesAction } from "@/features/school-classes/acti
 import { getClassroomAttentionAction } from "../actions/get-classroom-attention.action";
 import { getClassroomHeatmapAction } from "../actions/get-classroom-heatmap.action";
 import { RecordKeepingClassPicker } from "./RecordKeepingClassPicker";
-import { ClassroomTabs } from "./ClassroomTabs";
+import { ClassroomHeatmap } from "./ClassroomHeatmap";
+import { StudentAttentionList } from "./StudentAttentionList";
 
 interface Props {
   locale: string;
   classId?: string;
-  subtab?: string;
 }
 
 /**
- * "Klassenübersicht" tab content: class picker + the existing attention/
- * heatmap/engagement tabs, reused as-is rather than rebuilt — they already
- * cover everything the design's second tab needs.
+ * "Klassenübersicht" tab content: class picker + attention list + heatmap,
+ * reused as-is from the standalone /attention and /heatmap pages.
  */
 export async function ClassroomOverviewTab({
   locale,
   classId,
-  subtab,
 }: Props) {
   const t = await getTranslations("RecordKeeping");
 
@@ -54,13 +52,14 @@ export async function ClassroomOverviewTab({
   return (
     <div className="flex flex-col gap-4">
       <RecordKeepingClassPicker classes={classes} />
-      <ClassroomTabs
-        schoolClassId={selectedClassId}
-        locale={locale}
-        initialHeatmap={heatmapRes.success ? heatmapRes.data : null}
-        initialAttention={attentionRes.success ? attentionRes.data : null}
-        initialTab={subtab ?? "attention"}
-      />
+      {attentionRes.success && attentionRes.data.length > 0 ? (
+        <StudentAttentionList summaries={attentionRes.data} />
+      ) : null}
+      {heatmapRes.success ? (
+        <ClassroomHeatmap data={heatmapRes.data} />
+      ) : (
+        <p className="text-sm text-destructive">{heatmapRes.error}</p>
+      )}
     </div>
   );
 }
