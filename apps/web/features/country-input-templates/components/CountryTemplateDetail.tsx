@@ -33,7 +33,8 @@ import {
 import { upsertCountryInputTemplateAction } from "../actions/upsert-country-input-template.action";
 
 // IBAN ist global standardisiert und hartcodiert in IbanFormField.
-const FIELD_TYPES: CountryInputFieldType[] = ["PHONE", "SSN", "POSTAL_CODE"];
+type EditableFieldType = keyof CountryTemplateFormType;
+const FIELD_TYPES: EditableFieldType[] = ["PHONE", "SSN", "POSTAL_CODE"];
 
 const FIELD_LABEL_KEYS: Record<CountryInputFieldType, string> = {
   PHONE: "phone",
@@ -202,7 +203,7 @@ const FieldSection = ({
   fieldType,
   existing,
 }: {
-  fieldType: CountryInputFieldType;
+  fieldType: EditableFieldType;
   existing: CountryInputTemplate | undefined;
 }) => {
   const t = useTranslations("CountryTemplates");
