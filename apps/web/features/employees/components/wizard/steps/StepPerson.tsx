@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useFormContext } from "react-hook-form";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
@@ -19,6 +20,8 @@ interface Props {
 
 export function StepPerson({ orgCountry, draftId }: Props) {
   const t = useTranslations("EmployeeOnboarding");
+  const form = useFormContext();
+  const currentCountry = form.watch("country") || orgCountry;
 
   return (
     <div className="flex flex-col gap-4">
@@ -55,7 +58,7 @@ export function StepPerson({ orgCountry, draftId }: Props) {
             <DatePickerFormField name="dateOfBirth" label="dateOfBirth" />
             <SocialSecurityNumberFormField
               name="socialSecurityNumber"
-              country={orgCountry}
+              country={currentCountry}
             />
           </div>
         </CardContent>
@@ -79,7 +82,7 @@ export function StepPerson({ orgCountry, draftId }: Props) {
               label="privateEmail"
               namespace="EmployeeOnboarding"
             />
-            <PhoneFormField name="contactPhone" country={orgCountry} />
+            <PhoneFormField name="contactPhone" country={currentCountry} />
             <InputFormField
               name="contactPhone2"
               type="tel"

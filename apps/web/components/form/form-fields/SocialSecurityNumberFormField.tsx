@@ -43,17 +43,17 @@ export const SocialSecurityNumberFormField = ({
   const { control } = useFormContext();
   const template = useCountryTemplate(country, "SSN");
 
-  const maskRef = useMemo(
-    () =>
-      template?.mask
-        ? withMask(template.mask, {
-            placeholder: "_",
-            showMaskOnHover: false,
-            showMaskOnFocus: true,
-          })
-        : null,
-    [template],
-  );
+  const maskRef = useMemo(() => {
+    if (!template?.mask) return null;
+    const mask = template.prefix
+      ? template.prefix + template.mask.slice(template.prefix.length)
+      : template.mask;
+    return withMask(mask, {
+      placeholder: "_",
+      showMaskOnHover: false,
+      showMaskOnFocus: true,
+    });
+  }, [template]);
 
   return (
     <FormField
