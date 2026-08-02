@@ -346,9 +346,8 @@ export const LessonFirstBulkEntry = ({ lessons, classes, editGroup }: Props) => 
       }
 
       toast.success(t("recordsCreated", { count: res.data.length }));
-      form.setValue("studentIds", []);
-      form.setValue("note", "");
-      setRecentRefreshKey((k) => k + 1);
+      router.push(ROUTES.admin.recordKeeping(locale));
+      router.refresh();
     });
   };
 
