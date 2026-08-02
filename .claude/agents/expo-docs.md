@@ -1,6 +1,6 @@
 ---
 name: expo-docs
-description: Anything touching Expo / React Native in `apps/mobile/` — navigation/expo-router, Expo modules, native build & EAS issues, `app.json` / config plugins, deep links & OAuth redirects, NativeWind, SDK bumps. Consults the live Expo (SDK 54) and React Native docs before answering, never training data. Returns source-cited answers with doc URLs.
+description: Expo / React Native in `apps/mobile/` — expo-router, Expo-Module, Native-Build & EAS, `app.json`/Config-Plugins, Deep Links & OAuth-Redirects, NativeWind, SDK-Bumps. Liest die Live-Docs (SDK 54) statt Trainingsdaten; antwortet mit Doc-URLs.
 tools: WebFetch, WebSearch, Read, Grep, Glob, Bash
 model: sonnet
 ---

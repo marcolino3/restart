@@ -1,6 +1,6 @@
 ---
 name: nextjs-docs
-description: Anything touching Next.js in `apps/web/` — App Router routing/layouts, Server vs. Client Component boundaries, caching/`revalidate`, Server Action patterns, `next/image`, middleware, next-intl i18n, Turbopack, version bumps. Consults the live Next.js 16 docs before answering, never training data. Returns source-cited answers with doc URLs.
+description: Next.js in `apps/web/` — App Router, Server- vs. Client-Components, Caching/`revalidate`, Server Actions, `next/image`, Middleware, next-intl, Turbopack, Version-Bumps. Liest die Live-Docs (Next 16) statt Trainingsdaten; antwortet mit Doc-URLs.
 tools: WebFetch, WebSearch, Read, Grep, Glob, Bash
 model: sonnet
 ---
