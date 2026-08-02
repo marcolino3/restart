@@ -2,14 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import {
-  CalendarDays,
-  ChevronDown,
-  ChevronRight,
-  ClipboardList,
-  Layers,
-  Sparkles,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, Layers } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,23 +14,6 @@ import type { StudentLessonRecordItem } from "../actions/get-student-lesson-reco
 import type { AreaOption } from "../actions/get-org-areas.action";
 import type { AreaLessonCount } from "../actions/get-area-lesson-counts.action";
 import { StudentAreaRadar } from "./StudentAreaRadar";
-import { StudentIntroductionTimelineChart } from "./StudentIntroductionTimelineChart";
-import { LessonBreadcrumb } from "./LessonBreadcrumb";
-import { LessonLifecycleCharts } from "./LessonLifecycleCharts";
-import { LessonLifecycleInsights } from "./LessonLifecycleInsights";
-import { LessonLifecycleSummaryCards } from "./LessonLifecycleSummaryCards";
-import { AttentionList } from "./AttentionList";
-import { LearningStanceTab } from "./LearningStanceTab";
-import { ChildObservationNotesTimeline } from "./ChildObservationNotesTimeline";
-import {
-  deriveLessonLifecycles,
-  deriveLifecycleAggregates,
-} from "../lib/derive-lesson-lifecycle";
-import {
-  deriveAttentionItems,
-  DEFAULT_ATTENTION_THRESHOLDS,
-  type AttentionThresholds,
-} from "../lib/derive-attention-items";
 import {
   LESSON_RECORD_STATUSES,
   type LessonOption,
@@ -45,16 +21,12 @@ import {
 } from "../types";
 
 interface Props {
-  studentId: string;
   records: StudentLessonRecordItem[];
-  nextLessons: LessonOption[];
   allAreas?: AreaOption[];
   areaLessonCounts?: AreaLessonCount[];
   /** All LESSON nodes in the curriculum — used to render untouched
    *  lessons greyed-out alongside the ones with records. */
   allLessons?: LessonOption[];
-  /** Org-tunable thresholds. Falls back to defaults when omitted. */
-  attentionThresholds?: AttentionThresholds;
 }
 
 const STATUS_CLS: Record<LessonRecordStatus, string> = {
@@ -87,13 +59,10 @@ const formatDate = (iso: string): string =>
 type CurrentByLesson = Map<string, StudentLessonRecordItem>;
 
 export function StudentProgressTab({
-  studentId,
   records,
-  nextLessons,
   allAreas = [],
   areaLessonCounts = [],
   allLessons = [],
-  attentionThresholds = DEFAULT_ATTENTION_THRESHOLDS,
 }: Props) {
   const t = useTranslations("RecordKeeping");
   const locale = useLocale();
@@ -138,37 +107,15 @@ export function StudentProgressTab({
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="overview">{t("subtabOverview")}</TabsTrigger>
-          <TabsTrigger value="timeline">{t("subtabTimeline")}</TabsTrigger>
-          <TabsTrigger value="attention">{t("subtabAttention")}</TabsTrigger>
-          <TabsTrigger value="stance">{t("subtabLearningStance")}</TabsTrigger>
           <TabsTrigger value="areas">{t("subtabAreas")}</TabsTrigger>
-          <TabsTrigger value="lifecycle">{t("subtabLifecycle")}</TabsTrigger>
-          <TabsTrigger value="activity">{t("subtabActivity")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <OverviewSection
+          <StudentAreaRadar
             records={records}
-            locale={locale}
             allAreas={allAreas}
             areaLessonCounts={areaLessonCounts}
           />
-        </TabsContent>
-
-        <TabsContent value="timeline" className="mt-6">
-          <StudentIntroductionTimelineChart studentId={studentId} />
-        </TabsContent>
-
-        <TabsContent value="attention" className="mt-6">
-          <AttentionSection
-            records={records}
-            locale={locale}
-            attentionThresholds={attentionThresholds}
-          />
-        </TabsContent>
-
-        <TabsContent value="stance" className="mt-6">
-          <LearningStanceTab records={records} />
         </TabsContent>
 
         <TabsContent value="areas" className="mt-6">
@@ -181,60 +128,7 @@ export function StudentProgressTab({
             locale={locale}
           />
         </TabsContent>
-
-        <TabsContent value="lifecycle" className="mt-6">
-          <LifecycleSection
-            records={records}
-            locale={locale}
-            areaLessonCounts={areaLessonCounts}
-          />
-        </TabsContent>
-
-        <TabsContent value="activity" className="mt-6">
-          <ActivitySection records={records} nextLessons={nextLessons} />
-        </TabsContent>
       </Tabs>
-    </div>
-  );
-}
-
-// ─── Sub-sections (mounted lazily by their parent <TabsContent>) ───────────
-
-interface OverviewSectionProps {
-  records: StudentLessonRecordItem[];
-  locale: string;
-  allAreas: AreaOption[];
-  areaLessonCounts: AreaLessonCount[];
-}
-
-function OverviewSection({
-  records,
-  locale,
-  allAreas,
-  areaLessonCounts,
-}: OverviewSectionProps) {
-  const lifecycles = useMemo(
-    () => deriveLessonLifecycles(records, locale),
-    [records, locale],
-  );
-  const lifecycleAggregates = useMemo(
-    () => deriveLifecycleAggregates(lifecycles),
-    [lifecycles],
-  );
-
-  return (
-    <div className="flex flex-col gap-6">
-      {lifecycles.length > 0 && (
-        <>
-          <LessonLifecycleSummaryCards aggregates={lifecycleAggregates} />
-          <LessonLifecycleCharts lifecycles={lifecycles} />
-        </>
-      )}
-      <StudentAreaRadar
-        records={records}
-        allAreas={allAreas}
-        areaLessonCounts={areaLessonCounts}
-      />
     </div>
   );
 }
@@ -640,191 +534,6 @@ function AreaGroupsSection({
           )}
         </CardContent>
       </Card>
-    </div>
-  );
-}
-
-// ─── Attention section ────────────────────────────────────────────────────
-
-interface AttentionSectionProps {
-  records: StudentLessonRecordItem[];
-  locale: string;
-  attentionThresholds: AttentionThresholds;
-}
-
-function AttentionSection({
-  records,
-  locale,
-  attentionThresholds,
-}: AttentionSectionProps) {
-  const t = useTranslations("RecordKeeping");
-  const lifecycles = useMemo(
-    () => deriveLessonLifecycles(records, locale),
-    [records, locale],
-  );
-  const attentionItems = useMemo(
-    () =>
-      deriveAttentionItems(
-        lifecycles,
-        attentionThresholds,
-        new Date(),
-        records,
-      ),
-    [lifecycles, attentionThresholds, records],
-  );
-
-  if (attentionItems.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground italic">
-        {t("noAttentionItems")}
-      </p>
-    );
-  }
-  return <AttentionList items={attentionItems} />;
-}
-
-// ─── Lifecycle section ────────────────────────────────────────────────────
-
-interface LifecycleSectionProps {
-  records: StudentLessonRecordItem[];
-  locale: string;
-  areaLessonCounts: AreaLessonCount[];
-}
-
-function LifecycleSection({
-  records,
-  locale,
-  areaLessonCounts,
-}: LifecycleSectionProps) {
-  const lifecycles = useMemo(
-    () => deriveLessonLifecycles(records, locale),
-    [records, locale],
-  );
-  return (
-    <LessonLifecycleInsights
-      lifecycles={lifecycles}
-      areaLessonCounts={areaLessonCounts}
-    />
-  );
-}
-
-// ─── Activity section ─────────────────────────────────────────────────────
-
-interface ActivitySectionProps {
-  records: StudentLessonRecordItem[];
-  nextLessons: LessonOption[];
-}
-
-function ActivitySection({ records, nextLessons }: ActivitySectionProps) {
-  const t = useTranslations("RecordKeeping");
-  const locale = useLocale();
-
-  const recentRecords = useMemo(
-    () =>
-      [...records]
-        .sort((a, b) => {
-          if (a.recordedAt !== b.recordedAt)
-            return b.recordedAt.localeCompare(a.recordedAt);
-          return b.id.localeCompare(a.id);
-        })
-        .slice(0, 20),
-    [records],
-  );
-
-  return (
-    <div className="flex flex-col gap-6">
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <CalendarDays className="h-4 w-4" />
-            {t("title")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {recentRecords.length === 0 ? (
-            <p className="text-sm text-muted-foreground">—</p>
-          ) : (
-            <ol className="flex flex-col gap-2">
-              {recentRecords.map((r) => (
-                <li
-                  key={r.id}
-                  className="flex items-start gap-3 rounded-md border bg-card px-3 py-2"
-                >
-                  <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
-                    {formatDate(r.recordedAt)}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium truncate">
-                        {r.lesson
-                          ? pickName(r.lesson.translations, locale)
-                          : r.lessonId}
-                      </span>
-                      <Badge
-                        variant="outline"
-                        className={`text-[10px] uppercase ${STATUS_CLS[r.status]}`}
-                      >
-                        {t(r.status)}
-                      </Badge>
-                    </div>
-                    {r.note && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {r.note}
-                      </p>
-                    )}
-                    {r.recordedBy && (
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        {r.recordedBy.firstName} {r.recordedBy.lastName}
-                      </p>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ol>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Next-Lesson-Vorschläge */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Sparkles className="h-4 w-4" />
-            {t("nextLessons")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {nextLessons.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("noNextLessons")}</p>
-          ) : (
-            <ul className="flex flex-col gap-1.5">
-              {nextLessons.map((l) => (
-                <li
-                  key={l.id}
-                  className="flex flex-col gap-1 rounded-md border bg-card px-3 py-2"
-                >
-                  <div className="flex items-center gap-2">
-                    <ClipboardList className="h-3.5 w-3.5 text-muted-foreground/70 flex-shrink-0" />
-                    <span className="text-sm flex-1 truncate">
-                      {pickName(l.translations, locale)}
-                    </span>
-                    {l.lessonType && (
-                      <Badge variant="secondary" className="text-[10px]">
-                        {l.lessonType === "THREE_PL" ? "3PL" : l.lessonType}
-                      </Badge>
-                    )}
-                  </div>
-                  <LessonBreadcrumb ancestors={l.ancestors} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-    <ChildObservationNotesTimeline records={records} />
     </div>
   );
 }

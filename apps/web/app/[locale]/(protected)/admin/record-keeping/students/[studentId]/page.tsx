@@ -9,12 +9,9 @@ import { ROUTES } from "@/constants/routes";
 import { StudentAvatar } from "@/features/students/components/StudentAvatar";
 import { getStudentByIdAction } from "@/features/students/actions/get-student-by-id.action";
 import { getStudentLessonRecordsAction } from "@/features/record-keeping/actions/get-student-lesson-records.action";
-import { getNextLessonsForStudentAction } from "@/features/record-keeping/actions/get-next-lessons-for-student.action";
 import { getOrgAreasAction } from "@/features/record-keeping/actions/get-org-areas.action";
 import { getAreaLessonCountsAction } from "@/features/record-keeping/actions/get-area-lesson-counts.action";
 import { getLessonsForOrgAction } from "@/features/record-keeping/actions/get-lessons-for-org.action";
-import { getRecordKeepingSettingsAction } from "@/features/record-keeping-settings/actions/get-record-keeping-settings.action";
-import { DEFAULT_ATTENTION_THRESHOLDS } from "@/features/record-keeping/lib/derive-attention-items";
 import { StudentProgressTab } from "@/features/record-keeping/components/StudentProgressTab";
 
 interface PageProps {
@@ -34,25 +31,18 @@ const StudentDetailPage = async ({ params }: PageProps) => {
 
   const [
     lessonRecordsResult,
-    nextLessonsResult,
     areasResult,
     areaLessonCountsResult,
     allLessonsResult,
-    settingsResult,
   ] = await Promise.all([
     getStudentLessonRecordsAction(studentId),
-    getNextLessonsForStudentAction(studentId, 10),
     getOrgAreasAction(),
     getAreaLessonCountsAction(),
     getLessonsForOrgAction(),
-    getRecordKeepingSettingsAction(),
   ]);
 
   const lessonRecords = lessonRecordsResult.success
     ? (lessonRecordsResult.data ?? [])
-    : [];
-  const nextLessons = nextLessonsResult.success
-    ? (nextLessonsResult.data ?? [])
     : [];
   const allAreas = areasResult.success ? (areasResult.data ?? []) : [];
   const areaLessonCounts = areaLessonCountsResult.success
@@ -61,9 +51,6 @@ const StudentDetailPage = async ({ params }: PageProps) => {
   const allLessons = allLessonsResult.success
     ? (allLessonsResult.data ?? [])
     : [];
-  const attentionThresholds = settingsResult.success
-    ? settingsResult.data
-    : DEFAULT_ATTENTION_THRESHOLDS;
 
   const studentName =
     `${student.firstName} ${student.lastName}`.trim() || studentId;
@@ -93,13 +80,10 @@ const StudentDetailPage = async ({ params }: PageProps) => {
       </div>
 
       <StudentProgressTab
-        studentId={studentId}
         records={lessonRecords}
-        nextLessons={nextLessons}
         allAreas={allAreas}
         areaLessonCounts={areaLessonCounts}
         allLessons={allLessons}
-        attentionThresholds={attentionThresholds}
       />
     </div>
   );
