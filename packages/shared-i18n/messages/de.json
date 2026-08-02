@@ -689,6 +689,7 @@
     "addressLine2": "Adresszusatz",
     "zip": "PLZ",
     "postalCode": "PLZ",
+    "postalCodeAndCity": "PLZ / Ort",
     "city": "Ort",
     "state": "Kanton / Bundesland",
     "country": "Land",

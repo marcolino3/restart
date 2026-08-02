@@ -90,7 +90,7 @@ export function StepPerson({ orgCountry, draftId }: Props) {
               namespace="EmployeeOnboarding"
             />
           </div>
-          <AddressSection />
+          <AddressSection orgCountry={orgCountry} />
         </CardContent>
       </Card>
     </div>
