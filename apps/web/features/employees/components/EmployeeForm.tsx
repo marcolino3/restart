@@ -99,7 +99,7 @@ export default function EmployeeForm({ employee, orgCountry }: Props) {
           </h3>
         </div>
         <div className="mt-6">
-          <AddressSection />
+          <AddressSection orgCountry={orgCountry} />
         </div>
 
         <FormActionButtons
