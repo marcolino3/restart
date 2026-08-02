@@ -1,5 +1,6 @@
 import { CurrentMembershipIdOptional } from '@/auth/decorators/current-membership-id-optional.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
+import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
@@ -18,6 +19,7 @@ import { AdmissionApplication } from './entities/admission-application.entity';
 import { AdmissionAuditLog } from './entities/admission-audit-log.entity';
 
 @Resolver(() => AdmissionApplication)
+@AdminPersonaOnly()
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
 export class AdmissionApplicationsResolver {
   constructor(

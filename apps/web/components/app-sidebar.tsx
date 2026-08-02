@@ -149,7 +149,7 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
             },
           ]
         : []),
-      ...(hasPermission("ADMISSION_APPLICATION_READ")
+      ...(canSeeOrgAdmin && hasPermission("ADMISSION_APPLICATION_READ")
         ? [
             {
               title: t("admissions"),
