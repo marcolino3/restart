@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Save, Trash2 } from "lucide-react";
 
 import {
   Card,
@@ -27,14 +26,15 @@ import {
   CountryInputValidatorKind,
 } from "../types";
 import {
-  CountryTemplateFieldFormSchema,
   CountryTemplateFieldFormType,
+  CountryTemplateFormSchema,
+  CountryTemplateFormType,
 } from "../schemas/country-template-field-form.schema";
 import { upsertCountryInputTemplateAction } from "../actions/upsert-country-input-template.action";
-import { deleteCountryInputTemplateAction } from "../actions/delete-country-input-template.action";
 
 // IBAN ist global standardisiert und hartcodiert in IbanFormField.
-const FIELD_TYPES: CountryInputFieldType[] = ["PHONE", "SSN", "POSTAL_CODE"];
+type EditableFieldType = keyof CountryTemplateFormType;
+const FIELD_TYPES: EditableFieldType[] = ["PHONE", "SSN", "POSTAL_CODE"];
 
 const FIELD_LABEL_KEYS: Record<CountryInputFieldType, string> = {
   PHONE: "phone",
@@ -50,7 +50,31 @@ const VALIDATOR_OPTIONS: { label: string; value: CountryInputValidatorKind }[] =
     { label: "REGEX", value: "REGEX" },
   ];
 
-const toDefaults = (
+const FIELD_EXAMPLE_PLACEHOLDERS: Record<
+  CountryInputFieldType,
+  { mask: string; placeholder: string; prefix?: string }
+> = {
+  PHONE: {
+    mask: "+41 99 999 99 99",
+    placeholder: "+41 79 123 45 67",
+    prefix: "+41 ",
+  },
+  SSN: {
+    mask: "999.9999.9999.99",
+    placeholder: "756.XXXX.XXXX.XX",
+    prefix: "756.",
+  },
+  POSTAL_CODE: {
+    mask: "9999",
+    placeholder: "1234",
+  },
+  IBAN: {
+    mask: "",
+    placeholder: "",
+  },
+};
+
+const toFieldDefaults = (
   t: CountryInputTemplate | undefined,
 ): CountryTemplateFieldFormType => ({
   mask: t?.mask ?? "",
@@ -60,6 +84,19 @@ const toDefaults = (
   prefix: t?.prefix ?? "",
   validatorKind: t?.validatorKind ?? "NONE",
 });
+
+const toFormDefaults = (
+  templates: CountryInputTemplate[],
+): CountryTemplateFormType => {
+  const findExisting = (ft: CountryInputFieldType) =>
+    templates.find((tpl) => tpl.fieldType === ft);
+
+  return {
+    PHONE: toFieldDefaults(findExisting("PHONE")),
+    SSN: toFieldDefaults(findExisting("SSN")),
+    POSTAL_CODE: toFieldDefaults(findExisting("POSTAL_CODE")),
+  };
+};
 
 export const CountryTemplateDetail = ({
   countryCode,
@@ -74,10 +111,51 @@ export const CountryTemplateDetail = ({
 }) => {
   const router = useRouter();
   const t = useTranslations("CountryTemplates");
-  const [templates, setTemplates] = useState<CountryInputTemplate[]>(initial);
+  const tCommon = useTranslations("Common");
+  const [pending, startTransition] = useTransition();
 
   const findExisting = (ft: CountryInputFieldType) =>
-    templates.find((tpl) => tpl.fieldType === ft);
+    initial.find((tpl) => tpl.fieldType === ft);
+
+  const form = useForm<CountryTemplateFormType>({
+    resolver: zodResolver(CountryTemplateFormSchema),
+    defaultValues: toFormDefaults(initial),
+  });
+
+  const onSubmit = (values: CountryTemplateFormType) => {
+    startTransition(async () => {
+      const toSave = FIELD_TYPES.filter((ft) => values[ft].mask.trim().length > 0);
+
+      if (toSave.length === 0) {
+        toast.error(t("maskRequired"));
+        return;
+      }
+
+      for (const fieldType of toSave) {
+        const fieldValues = values[fieldType];
+        const res = await upsertCountryInputTemplateAction({
+          countryCode,
+          fieldType,
+          mask: fieldValues.mask.trim(),
+          placeholder: fieldValues.placeholder?.trim() || null,
+          maxLength: fieldValues.maxLength?.trim()
+            ? Number(fieldValues.maxLength.trim())
+            : null,
+          regex: fieldValues.regex?.trim() || null,
+          prefix: fieldValues.prefix?.trim() || null,
+          validatorKind: fieldValues.validatorKind,
+        });
+
+        if (!res.success) {
+          toast.error(res.error);
+          return;
+        }
+      }
+
+      toast.success(t("saved"));
+      router.push(ROUTES.admin.countryTemplates(locale));
+    });
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -91,178 +169,104 @@ export const CountryTemplateDetail = ({
         </Button>
       </div>
 
-      <div className="mb-2 flex items-baseline gap-3">
-        <h1 className="text-2xl font-bold">{countryName}</h1>
-        <span className="text-muted-foreground font-mono text-sm">
-          {countryCode}
-        </span>
-      </div>
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col gap-4"
+        >
+          <div className="mb-2 flex items-center justify-between gap-4">
+            <div className="flex items-baseline gap-3">
+              <h1 className="text-2xl font-bold">{countryName}</h1>
+              <span className="text-muted-foreground font-mono text-sm">
+                {countryCode}
+              </span>
+            </div>
+            <Button type="submit" disabled={pending}>
+              {tCommon("save")}
+            </Button>
+          </div>
 
-      {FIELD_TYPES.map((ft) => (
-        <FieldSection
-          key={ft}
-          fieldType={ft}
-          countryCode={countryCode}
-          existing={findExisting(ft)}
-          onSaved={(saved) =>
-            setTemplates((prev) => {
-              const idx = prev.findIndex(
-                (x) => x.fieldType === saved.fieldType,
-              );
-              if (idx >= 0) {
-                const next = [...prev];
-                next[idx] = saved;
-                return next;
-              }
-              return [...prev, saved];
-            })
-          }
-          onDeleted={(id) =>
-            setTemplates((prev) => prev.filter((x) => x.id !== id))
-          }
-        />
-      ))}
+          {FIELD_TYPES.map((ft) => (
+            <FieldSection
+              key={ft}
+              fieldType={ft}
+              existing={findExisting(ft)}
+            />
+          ))}
+        </form>
+      </Form>
     </div>
   );
 };
 
 const FieldSection = ({
   fieldType,
-  countryCode,
   existing,
-  onSaved,
-  onDeleted,
 }: {
-  fieldType: CountryInputFieldType;
-  countryCode: string;
+  fieldType: EditableFieldType;
   existing: CountryInputTemplate | undefined;
-  onSaved: (t: CountryInputTemplate) => void;
-  onDeleted: (id: string) => void;
 }) => {
   const t = useTranslations("CountryTemplates");
-  const [pending, startTransition] = useTransition();
-
-  const form = useForm<CountryTemplateFieldFormType>({
-    resolver: zodResolver(CountryTemplateFieldFormSchema),
-    defaultValues: toDefaults(existing),
-  });
-
-  const onSubmit = (values: CountryTemplateFieldFormType) => {
-    startTransition(async () => {
-      const res = await upsertCountryInputTemplateAction({
-        countryCode,
-        fieldType,
-        mask: values.mask.trim(),
-        placeholder: values.placeholder?.trim() || null,
-        maxLength: values.maxLength?.trim()
-          ? Number(values.maxLength.trim())
-          : null,
-        regex: values.regex?.trim() || null,
-        prefix: values.prefix?.trim() || null,
-        validatorKind: values.validatorKind,
-      });
-      if (!res.success) {
-        toast.error(res.error);
-        return;
-      }
-      onSaved(res.data);
-      form.reset(toDefaults(res.data));
-      toast.success(t("saved"));
-    });
-  };
-
-  const remove = () => {
-    if (!existing) return;
-    if (!confirm(t("deleteConfirm"))) return;
-    startTransition(async () => {
-      const res = await deleteCountryInputTemplateAction(existing.id);
-      if (!res.success) {
-        toast.error(res.error);
-        return;
-      }
-      onDeleted(existing.id);
-      form.reset(toDefaults(undefined));
-      toast.success(t("deleted"));
-    });
-  };
+  const prefix = fieldType;
+  const examples = FIELD_EXAMPLE_PLACEHOLDERS[fieldType];
 
   return (
     <Card>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>{t(FIELD_LABEL_KEYS[fieldType])}</CardTitle>
-                <CardDescription>
-                  {existing ? t("configured") : t("notConfigured")}
-                </CardDescription>
-              </div>
-              <div className="flex gap-2">
-                {existing && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={remove}
-                    disabled={pending}
-                  >
-                    <Trash2 className="text-destructive mr-2 h-4 w-4" />{" "}
-                    {t("delete")}
-                  </Button>
-                )}
-                <Button type="submit" size="sm" disabled={pending}>
-                  <Save className="mr-2 h-4 w-4" /> {t("save")}
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <InputFormField
-                  name="mask"
-                  label="mask"
-                  namespace="CountryTemplates"
-                  placeholder="+41 99 999 99 99"
-                  description="maskHint"
-                />
-              </div>
-              <div className="col-span-2">
-                <InputFormField
-                  name="placeholder"
-                  label="placeholder"
-                  namespace="CountryTemplates"
-                  placeholder="+41 79 123 45 67"
-                />
-              </div>
-              <InputFormField
-                name="maxLength"
-                label="maxLength"
-                namespace="CountryTemplates"
-                type="number"
-              />
-              <SelectFormField
-                name="validatorKind"
-                label="validator"
-                namespace="CountryTemplates"
-                options={VALIDATOR_OPTIONS}
-              />
-              <InputFormField
-                name="prefix"
-                label="prefix"
-                namespace="CountryTemplates"
-                placeholder="+41 "
-              />
-              <InputFormField
-                name="regex"
-                label="regex"
-                namespace="CountryTemplates"
-              />
-            </div>
-          </CardContent>
-        </form>
-      </Form>
+      <CardHeader>
+        <CardTitle>{t(FIELD_LABEL_KEYS[fieldType])}</CardTitle>
+        <CardDescription>
+          {existing ? t("configured") : t("notConfigured")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-2">
+            <InputFormField
+              name={`${prefix}.mask`}
+              label="mask"
+              namespace="CountryTemplates"
+              placeholder={examples.mask}
+              description="maskHint"
+            />
+          </div>
+          <div className="col-span-2">
+            <InputFormField
+              name={`${prefix}.placeholder`}
+              label="placeholder"
+              namespace="CountryTemplates"
+              placeholder={examples.placeholder}
+            />
+          </div>
+          <div className="col-span-2 grid grid-cols-2 gap-4">
+            <InputFormField
+              name={`${prefix}.maxLength`}
+              label="maxLength"
+              namespace="CountryTemplates"
+              type="number"
+            />
+            <SelectFormField
+              name={`${prefix}.validatorKind`}
+              label="validator"
+              namespace="CountryTemplates"
+              options={VALIDATOR_OPTIONS}
+            />
+          </div>
+          <p className="text-muted-foreground col-span-2 text-sm">
+            {t("maxLengthHint")}
+          </p>
+          <InputFormField
+            name={`${prefix}.prefix`}
+            label="prefix"
+            namespace="CountryTemplates"
+            placeholder={examples.prefix}
+          />
+          <InputFormField
+            name={`${prefix}.regex`}
+            label="regex"
+            namespace="CountryTemplates"
+          />
+        </div>
+      </CardContent>
     </Card>
   );
 };

@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { Mail } from "lucide-react";
+import { useFormContext } from "react-hook-form";
 
 import { Badge } from "@/components/ui/badge";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
@@ -49,6 +50,7 @@ export const PersonalEmploymentSection = ({
   const tE = useTranslations("Employees");
   const locale = useLocale();
   const currentUser = useUser();
+  const form = useFormContext();
   const user = employee?.membership?.user;
   const primaryEmail = user?.userEmails?.find((e) => e.isPrimary)?.email ?? "";
 
@@ -82,7 +84,7 @@ export const PersonalEmploymentSection = ({
         <FormRow label={t("socialSecurityNumber")}>
           <SocialSecurityNumberFormField
             name="socialSecurityNumber"
-            country={orgCountry}
+            country={form.watch("country") || orgCountry}
           />
         </FormRow>
 
