@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test'
+import { expect, type Browser, type Page } from '@playwright/test'
 
 /**
  * Shared auth fixture for happy-path E2E tests.
@@ -11,6 +11,7 @@ import { expect, type Page } from '@playwright/test'
 const SUPERADMIN_EMAIL = process.env.SUPERADMIN_EMAIL ?? 'marco@marranchelli.com'
 const SUPERADMIN_PASSWORD = process.env.SUPERADMIN_PASSWORD ?? 'change-me'
 const BACKEND_URL = process.env.BACKEND_URL ?? 'http://localhost:4001'
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN ?? 'http://localhost:4000'
 
 export async function signInAsSuperAdmin(page: Page): Promise<void> {
   await page.goto('/en/sign-in', { waitUntil: 'networkidle' })
@@ -110,4 +111,118 @@ export async function ensureTeacher(page: Page): Promise<string> {
     )
   }
   return `${firstName} ${lastName}`
+}
+
+/**
+ * Sets up a second, independent user + organization for multi-tenant
+ * negative tests — a fresh browser context (own cookie jar) signed in as a
+ * user who belongs ONLY to a brand-new org, never the superadmin's.
+ *
+ * There is no single mutation that creates an org and adds a member in one
+ * step (`createOrganization` is SuperAdminOnly and does not add the caller
+ * as a member). So this: (1) as the superadmin, creates a fresh org and
+ * switches into it, (2) registers a better-auth credential account for the
+ * second user, (3) invites/creates that email as an employee of the fresh
+ * org (membership resolves by email — same mechanism as the superadmin
+ * bootstrap), (4) signs the second user in on their own browser context.
+ *
+ * Returns the second user's Page plus the org id they belong to, so a test
+ * can assert that this user cannot see/mutate data scoped to a DIFFERENT
+ * org (e.g. the one the superadmin/main test is using).
+ */
+export async function setupSecondOrgUser(
+  browser: Browser,
+  adminPage: Page,
+): Promise<{ page: Page; orgId: string; email: string }> {
+  const gql = async (query: string, variables?: Record<string, unknown>) => {
+    const res = await adminPage.request.post(`${BACKEND_URL}/graphql`, {
+      data: { query, variables },
+    })
+    return res.json() as Promise<{
+      data?: Record<string, any>
+      errors?: { message: string }[]
+    }>
+  }
+
+  const adminCookiesBefore = await adminPage.context().cookies()
+  const adminOrgId = adminCookiesBefore.find((c) => c.name === 'Active-Org')?.value
+
+  const created = await gql('mutation { createOrganization { id } }')
+  const orgId = created.data?.createOrganization?.id
+  if (!orgId) {
+    throw new Error(
+      `E2E fixture: could not create second org — ${JSON.stringify(created.errors)}`,
+    )
+  }
+
+  const switched = await adminPage.request.post(`${BACKEND_URL}/api/org/switch`, {
+    data: { orgId },
+  })
+  if (!switched.ok()) {
+    throw new Error(`E2E fixture: could not switch into second org (${switched.status()})`)
+  }
+
+  const stamp = Date.now()
+  const email = `e2e.second-org.${stamp}@example.com`
+  const password = 'change-me-too-123!'
+  const firstName = 'E2E'
+  const lastName = `SecondOrg${stamp}`
+
+  const employee = await gql(
+    `mutation Create($input: CreateEmployeeInput!) {
+       createEmployee(createEmployeeInput: $input) { id }
+     }`,
+    { input: { firstName, lastName, email, persona: 'ADMIN' } },
+  )
+  if (employee.errors?.length) {
+    throw new Error(
+      `E2E fixture: could not create second-org employee — ${employee.errors[0].message}`,
+    )
+  }
+
+  // Independent cookie jar — this session must never see the admin's
+  // Active-Org cookie or session token. Sign-up is done through THIS
+  // context's request API, not adminPage's — better-auth sets the session
+  // cookie for whichever cookie jar issues the sign-up request, and reusing
+  // adminPage.request here would silently overwrite the admin's own session.
+  const context = await browser.newContext()
+  const page = await context.newPage()
+
+  const signUp = await page.request.post(`${BACKEND_URL}/api/auth/sign-up/email`, {
+    headers: { origin: FRONTEND_ORIGIN },
+    data: { email, password, name: `${firstName} ${lastName}` },
+  })
+  if (!signUp.ok()) {
+    throw new Error(
+      `E2E fixture: could not sign up second user (${signUp.status()})`,
+    )
+  }
+  // sign-up already authenticates the new user's session in this context;
+  // clear that session cookie so the explicit sign-in below starts clean.
+  await context.clearCookies()
+
+  await page.goto('/en/sign-in', { waitUntil: 'networkidle' })
+  await page.getByRole('textbox', { name: /e-?mail/i }).fill(email)
+  await page.locator('input[name="password"]').fill(password)
+  await page.getByRole('button', { name: /sign in/i }).click()
+  await expect(page).not.toHaveURL(/sign-in/, { timeout: 20000 })
+
+  const switchedSecond = await page.request.post(`${BACKEND_URL}/api/org/switch`, {
+    data: { orgId },
+  })
+  if (!switchedSecond.ok()) {
+    throw new Error(
+      `E2E fixture: second user could not switch into their own org (${switchedSecond.status()})`,
+    )
+  }
+
+  // Restore the admin's own Active-Org — this helper must not leave a side
+  // effect on adminPage's session beyond provisioning org B.
+  if (adminOrgId) {
+    await adminPage.request.post(`${BACKEND_URL}/api/org/switch`, {
+      data: { orgId: adminOrgId },
+    })
+  }
+
+  return { page, orgId, email }
 }
