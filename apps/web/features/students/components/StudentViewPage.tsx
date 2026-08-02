@@ -25,12 +25,9 @@ import { getStudentContactPersonsAction } from "@/features/contact-persons/actio
 import { getContactPersonsAction } from "@/features/contact-persons/actions/get-contact-persons.action";
 import { getStudentNotesAction } from "@/features/student-notes/actions/get-student-notes.action";
 import { getStudentLessonRecordsAction } from "@/features/record-keeping/actions/get-student-lesson-records.action";
-import { getNextLessonsForStudentAction } from "@/features/record-keeping/actions/get-next-lessons-for-student.action";
 import { getOrgAreasAction } from "@/features/record-keeping/actions/get-org-areas.action";
 import { getAreaLessonCountsAction } from "@/features/record-keeping/actions/get-area-lesson-counts.action";
 import { getLessonsForOrgAction } from "@/features/record-keeping/actions/get-lessons-for-org.action";
-import { getRecordKeepingSettingsAction } from "@/features/record-keeping-settings/actions/get-record-keeping-settings.action";
-import { DEFAULT_ATTENTION_THRESHOLDS } from "@/features/record-keeping/lib/derive-attention-items";
 
 import type { EnrollmentItem } from "../actions/get-student-enrollments.action";
 import type { StudentContactPersonItem } from "@/features/contact-persons/actions/get-student-contact-persons.action";
@@ -91,15 +88,9 @@ type OverviewData = {
 
 type ProgressData = {
   lessonRecords: StudentLessonRecordItem[];
-  nextLessons: LessonOption[];
   allAreas: AreaOption[];
   areaLessonCounts: AreaLessonCount[];
   allLessons: LessonOption[];
-  attentionThresholds: {
-    introducedStuckDays: number;
-    practicedStuckDays: number;
-    bigGapDays: number;
-  };
 };
 
 function useLazyData<T>(fetcher: () => Promise<T>) {
@@ -303,25 +294,18 @@ export default function StudentViewPage({
   const progressTab = useLazyData<ProgressData>(async () => {
     const [
       lessonRecordsResult,
-      nextLessonsResult,
       areasResult,
       areaLessonCountsResult,
       allLessonsResult,
-      settingsResult,
     ] = await Promise.all([
       getStudentLessonRecordsAction(student.id),
-      getNextLessonsForStudentAction(student.id, 10),
       getOrgAreasAction(),
       getAreaLessonCountsAction(),
       getLessonsForOrgAction(),
-      getRecordKeepingSettingsAction(),
     ]);
     return {
       lessonRecords: lessonRecordsResult.success
         ? (lessonRecordsResult.data ?? [])
-        : [],
-      nextLessons: nextLessonsResult.success
-        ? (nextLessonsResult.data ?? [])
         : [],
       allAreas: areasResult.success ? (areasResult.data ?? []) : [],
       areaLessonCounts: areaLessonCountsResult.success
@@ -330,9 +314,6 @@ export default function StudentViewPage({
       allLessons: allLessonsResult.success
         ? (allLessonsResult.data ?? [])
         : [],
-      attentionThresholds: settingsResult.success
-        ? settingsResult.data
-        : DEFAULT_ATTENTION_THRESHOLDS,
     };
   });
 
@@ -772,13 +753,10 @@ export default function StudentViewPage({
         <TabsContent value="progress">
           {progressTab.data ? (
             <StudentProgressTab
-              studentId={student.id}
               records={progressTab.data.lessonRecords}
-              nextLessons={progressTab.data.nextLessons}
               allAreas={progressTab.data.allAreas}
               areaLessonCounts={progressTab.data.areaLessonCounts}
               allLessons={progressTab.data.allLessons}
-              attentionThresholds={progressTab.data.attentionThresholds}
             />
           ) : (
             <TabLoadingSkeleton />
