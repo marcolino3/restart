@@ -73,10 +73,10 @@ const pickName = (
 };
 
 const diffInDays = (later: string, earlier: string): number => {
-  // Both are "YYYY-MM-DD" date strings. Plain difference on the day level —
-  // we don't care about timezones or hours.
-  const a = new Date(earlier + "T00:00:00Z").getTime();
-  const b = new Date(later + "T00:00:00Z").getTime();
+  // Both may be a "YYYY-MM-DD" date or a full ISO timestamp. Plain
+  // difference on the day level — we don't care about timezones or hours.
+  const a = new Date(earlier.slice(0, 10) + "T00:00:00Z").getTime();
+  const b = new Date(later.slice(0, 10) + "T00:00:00Z").getTime();
   return Math.round((b - a) / (1000 * 60 * 60 * 24));
 };
 

@@ -389,11 +389,125 @@ describe('LessonRecordAttachments (Integration)', () => {
       expect(recent).toHaveLength(1);
       expect(recent[0]).toMatchObject({
         lessonId: lesson.id,
-        recordedAt: '2026-05-16',
+        // ISO-8601 — the client parses this with new Date().
+        recordedAt: '2026-05-16T00:00:00.000Z',
         studentCount: 3,
         lessonName: 'Goldenes Perlenmaterial',
         areaName: 'Mathematik',
       });
+    });
+
+    // Regression: a child can end up with two records inside one group (same
+    // lesson + recorded_at + status), e.g. after an edit that re-added it.
+    // json_agg without DISTINCT then emitted the child twice, which collided
+    // on its React key in the avatar row and contradicted studentCount.
+    it('lists a child once even when it holds two records in the same group', async () => {
+      const org = await seedOrg();
+      const user = await seedUser();
+      const { lesson } = await seedLesson(org.id);
+      const [anna, ben] = await Promise.all([
+        seedStudent(org.id, 'Anna'),
+        seedStudent(org.id, 'Ben'),
+      ]);
+
+      // Anna twice, Ben once — all sharing lesson + date + status.
+      await seedRecord(org.id, anna.id, lesson.id, user.id, '2026-05-16');
+      await seedRecord(org.id, anna.id, lesson.id, user.id, '2026-05-16');
+      await seedRecord(org.id, ben.id, lesson.id, user.id, '2026-05-16');
+
+      const recent = await records.getRecentLessonRecords(org.id, user.id);
+
+      expect(recent).toHaveLength(1);
+      const ids = recent[0].students.map((s) => s.id);
+      expect(ids).toHaveLength(new Set(ids).size); // no duplicate keys
+      expect(ids).toHaveLength(2);
+      expect(recent[0].studentCount).toBe(2);
+      // students and studentCount must never disagree
+      expect(recent[0].students).toHaveLength(recent[0].studentCount);
+      // still sorted by last name, then first name
+      expect(recent[0].students.map((s) => s.firstName)).toEqual([
+        'Anna',
+        'Ben',
+      ]);
+    });
+
+    // Root cause of the duplicate above: nothing stopped a child from being
+    // recorded twice. createBulk must dedupe its payload, and editing a group
+    // that already holds a doubled child must collapse it back to one row.
+    it('writes one record per child even if an id arrives twice', async () => {
+      const org = await seedOrg();
+      const user = await seedUser();
+      const { lesson } = await seedLesson(org.id);
+      const anna = await seedStudent(org.id, 'Anna');
+
+      await records.createBulk(
+        {
+          lessonId: lesson.id,
+          studentIds: [anna.id, anna.id],
+          recordedAt: '2026-05-16',
+          status: LessonRecordStatus.INTRODUCED,
+        },
+        org.id,
+        user.id,
+      );
+
+      const recent = await records.getRecentLessonRecords(org.id, user.id);
+      expect(recent).toHaveLength(1);
+      expect(recent[0].students).toHaveLength(1);
+      expect(recent[0].recordIds).toHaveLength(1);
+    });
+
+    it('collapses a child holding two records when the group is edited', async () => {
+      const org = await seedOrg();
+      const user = await seedUser();
+      const { lesson } = await seedLesson(org.id);
+      const anna = await seedStudent(org.id, 'Anna');
+
+      const a = await seedRecord(org.id, anna.id, lesson.id, user.id);
+      const b = await seedRecord(org.id, anna.id, lesson.id, user.id);
+
+      await records.updateGroup(
+        {
+          recordIds: [a.id, b.id],
+          lessonId: lesson.id,
+          recordedAt: '2026-05-16',
+          studentIds: [anna.id],
+          status: LessonRecordStatus.PRACTICED,
+        },
+        org.id,
+        user.id,
+      );
+
+      const recent = await records.getRecentLessonRecords(org.id, user.id);
+      expect(recent).toHaveLength(1);
+      expect(recent[0].students).toHaveLength(1);
+      expect(recent[0].recordIds).toHaveLength(1);
+      expect(recent[0].studentCount).toBe(1);
+      expect(recent[0].recordedAt).toBe('2026-05-16T00:00:00.000Z');
+    });
+
+    it('persists a recordedAt change for a kept student (no studentIds change)', async () => {
+      // Regression: updateGroup used to apply the new recordedAt only to
+      // newly-added students; existing (kept) records silently kept their
+      // old timestamp when editing just the time.
+      const org = await seedOrg();
+      const user = await seedUser();
+      const { lesson } = await seedLesson(org.id);
+      const anna = await seedStudent(org.id, 'Anna');
+      const record = await seedRecord(org.id, anna.id, lesson.id, user.id);
+
+      await records.updateGroup(
+        {
+          recordIds: [record.id],
+          lessonId: lesson.id,
+          recordedAt: '2026-05-16T14:30:00.000Z',
+        },
+        org.id,
+        user.id,
+      );
+
+      const recent = await records.getRecentLessonRecords(org.id, user.id);
+      expect(recent[0].recordedAt).toBe('2026-05-16T14:30:00.000Z');
     });
 
     it('keeps different dates of the same lesson as separate rows, newest first', async () => {
@@ -408,10 +522,28 @@ describe('LessonRecordAttachments (Integration)', () => {
 
       const recent = await records.getRecentLessonRecords(org.id, user.id);
       expect(recent.map((r) => r.recordedAt)).toEqual([
-        '2026-05-18',
-        '2026-05-14',
-        '2026-05-10',
+        '2026-05-18T00:00:00.000Z',
+        '2026-05-14T00:00:00.000Z',
+        '2026-05-10T00:00:00.000Z',
       ]);
+    });
+
+    it('returns recordedAt in a format the client can parse', async () => {
+      // Regression: a plain ::text cast on timestamptz yields Postgres format
+      // ("2026-05-16 00:00:00+00"). That string is truthy but unparsable in
+      // the browser, so the edit form rendered Invalid Date and date-fns threw.
+      const org = await seedOrg();
+      const user = await seedUser();
+      const student = await seedStudent(org.id);
+      const { lesson } = await seedLesson(org.id);
+
+      await seedRecord(org.id, student.id, lesson.id, user.id, '2026-05-16');
+
+      const [entry] = await records.getRecentLessonRecords(org.id, user.id);
+      expect(Number.isNaN(new Date(entry.recordedAt).getTime())).toBe(false);
+      expect(entry.recordedAt).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+      );
     });
 
     it('honours the limit', async () => {
@@ -452,6 +584,108 @@ describe('LessonRecordAttachments (Integration)', () => {
       const [row] = await records.getRecentLessonRecords(org.id, user.id);
       expect(row.areaName).toBe('Sprache');
       expect(row.lessonName).toBe('Sandpapierbuchstaben');
+    });
+  });
+
+  // --- getMyLessonRecordStats: org-local day boundaries ---
+
+  describe('getMyLessonRecordStats', () => {
+    it('counts a fresh record as "today" for the org that just created it', async () => {
+      const org = await seedOrg();
+      const user = await seedUser();
+      const student = await seedStudent(org.id);
+      const { lesson } = await seedLesson(org.id);
+      await recordRepo.save(
+        recordRepo.create({
+          organizationId: org.id,
+          studentId: student.id,
+          lessonId: lesson.id,
+          recordedById: user.id,
+          recordedAt: new Date().toISOString(),
+          status: LessonRecordStatus.INTRODUCED,
+          selfAssessmentByChild: false,
+        }),
+      );
+
+      const stats = await records.getMyLessonRecordStats(org.id, user.id);
+      expect(stats.todayCount).toBe(1);
+    });
+
+    it('resolves "today" against the org timezone, not the DB server zone', async () => {
+      // Regression: CURRENT_DATE alone uses the DB server's zone (UTC), so an
+      // entry made late in the school's local evening could already fall on
+      // "yesterday" server-side and silently drop out of today's count.
+      //
+      // Pacific/Kiritimati (UTC+14) turns its calendar page 10h before UTC
+      // midnight. Placing the record 5 minutes after that local-midnight
+      // crossing (in UTC terms) means: still "today" for a UTC-based org,
+      // but already "yesterday" relative to Kiritimati's *current* local
+      // date -- true for any real clock time this test happens to run at.
+      const dayKeyUtc = (d: Date) =>
+        new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC' }).format(d);
+      const dayKeyEast = (d: Date) =>
+        new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'Pacific/Kiritimati',
+        }).format(d);
+
+      const now = new Date();
+      const utcMidnightToday = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+      );
+      // Kiritimati's local calendar date advances at UTC 10:00 -- the moment
+      // it crosses its own local midnight. Straddle that crossing on
+      // whichever side keeps UTC's date unchanged from `now` while flipping
+      // Kiritimati's, so the anchor is valid for any real time-of-day.
+      const crossing = new Date(
+        utcMidnightToday.getTime() + 10 * 60 * 60 * 1000,
+      );
+      const recordedAt =
+        now.getTime() < crossing.getTime()
+          ? new Date(crossing.getTime() + 5 * 60 * 1000)
+          : new Date(crossing.getTime() - 5 * 60 * 1000);
+
+      // Sanity-check the anchor actually straddles the boundary we intend,
+      // independent of the SQL under test.
+      expect(dayKeyUtc(recordedAt)).toBe(dayKeyUtc(now));
+      expect(dayKeyEast(recordedAt)).not.toBe(dayKeyEast(now));
+
+      const utc = await orgRepo.save(orgRepo.create({ timezone: 'UTC' }));
+      const east = await orgRepo.save(
+        orgRepo.create({ timezone: 'Pacific/Kiritimati' }),
+      );
+      const user = await seedUser();
+      const studentUtc = await seedStudent(utc.id);
+      const studentEast = await seedStudent(east.id);
+      const { lesson: lessonUtc } = await seedLesson(utc.id);
+      const { lesson: lessonEast } = await seedLesson(east.id);
+
+      await recordRepo.save(
+        recordRepo.create({
+          organizationId: utc.id,
+          studentId: studentUtc.id,
+          lessonId: lessonUtc.id,
+          recordedById: user.id,
+          recordedAt: recordedAt.toISOString(),
+          status: LessonRecordStatus.INTRODUCED,
+          selfAssessmentByChild: false,
+        }),
+      );
+      await recordRepo.save(
+        recordRepo.create({
+          organizationId: east.id,
+          studentId: studentEast.id,
+          lessonId: lessonEast.id,
+          recordedById: user.id,
+          recordedAt: recordedAt.toISOString(),
+          status: LessonRecordStatus.INTRODUCED,
+          selfAssessmentByChild: false,
+        }),
+      );
+
+      const utcStats = await records.getMyLessonRecordStats(utc.id, user.id);
+      const eastStats = await records.getMyLessonRecordStats(east.id, user.id);
+      expect(utcStats.todayCount).toBe(1);
+      expect(eastStats.todayCount).toBe(0);
     });
   });
 });

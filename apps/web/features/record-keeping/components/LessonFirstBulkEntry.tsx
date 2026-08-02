@@ -32,12 +32,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { PageHead } from "@/components/common/PageHead";
 import { BackButton } from "@/components/common/BackButton";
-import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
+import { DateTimeCalendarFormField } from "@/components/form/form-fields/DateTimeCalendarFormField";
+import { useUser } from "@/features/users/context/current-user.context";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { StudentAvatar } from "@/features/students/components/StudentAvatar";
 import { ROUTES } from "@/constants/routes";
 
 import { createLessonRecordsBulkAction } from "../actions/create-lesson-records-bulk.action";
+import { updateLessonRecordsGroupAction } from "../actions/update-lesson-records-group.action";
 import { getClassroomStudentsAction } from "../actions/get-classroom-students.action";
 import {
   lessonRecordsBulkSchema,
@@ -79,41 +81,68 @@ const findAncestor = (
 const DURATION_OPTIONS_MIN = [5, 10, 15, 20, 30, 45, 60, 90];
 const FORM_ID = "lesson-first-bulk-entry-form";
 
+export interface EditGroupInitialData {
+  recordIds: string[];
+  lessonId: string;
+  studentIds: string[];
+  recordedAt: string;
+  status: LessonRecordStatus;
+  durationMinutes: number | null;
+  note: string | null;
+  /** Pre-selected students, shown even before a classroom is picked. */
+  students: { studentId: string; firstName: string; lastName: string }[];
+}
+
 interface Props {
   lessons: LessonOption[];
   classes: { id: string; name: string }[];
+  editGroup?: EditGroupInitialData;
 }
 
-const todayISO = () => {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-};
+const nowIso = () => new Date().toISOString();
 
-export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
+export const LessonFirstBulkEntry = ({ lessons, classes, editGroup }: Props) => {
   const t = useTranslations("RecordKeeping");
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const schoolClassId = searchParams.get("classId") ?? "";
+  const timeZone = useUser()?.orgTimezone ?? "Europe/Zurich";
   const [isPending, startTransition] = useTransition();
-  const [students, setStudents] = useState<ClassroomStudentDTO[]>([]);
+  const [students, setStudents] = useState<ClassroomStudentDTO[]>(
+    editGroup
+      ? editGroup.students.map((s) => ({
+          enrollmentId: s.studentId,
+          studentId: s.studentId,
+          firstName: s.firstName,
+          lastName: s.lastName,
+        }))
+      : [],
+  );
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [studentSearch, setStudentSearch] = useState("");
   const [recentRefreshKey, setRecentRefreshKey] = useState(0);
+  const isEditMode = !!editGroup;
 
   const form = useForm<LessonRecordsBulkFormValues>({
     resolver: zodResolver(lessonRecordsBulkSchema),
-    defaultValues: {
-      lessonId: "",
-      studentIds: [],
-      recordedAt: todayISO(),
-      status: "INTRODUCED",
-      durationMinutes: null,
-      note: "",
-    },
+    defaultValues: editGroup
+      ? {
+          lessonId: editGroup.lessonId,
+          studentIds: editGroup.studentIds,
+          recordedAt: editGroup.recordedAt,
+          status: editGroup.status,
+          durationMinutes: editGroup.durationMinutes,
+          note: editGroup.note ?? "",
+        }
+      : {
+          lessonId: "",
+          studentIds: [],
+          recordedAt: nowIso(),
+          status: "INTRODUCED",
+          durationMinutes: null,
+          note: "",
+        },
   });
 
   // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form's watch() returns non-memoizable functions by design
@@ -158,8 +187,12 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
 
   useEffect(() => {
     if (!schoolClassId) {
-      setStudents([]);
-      form.setValue("studentIds", []);
+      // Edit mode has no classroom context yet — keep the group's own
+      // students visible/selected instead of clearing the picker.
+      if (!isEditMode) {
+        setStudents([]);
+        form.setValue("studentIds", []);
+      }
       return;
     }
     let cancelled = false;
@@ -168,10 +201,29 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
       .then((res) => {
         if (cancelled) return;
         if (res.success) {
-          setStudents(res.data);
-          form.setValue("studentIds", []);
+          if (isEditMode && editGroup) {
+            // Merge: keep the pre-selected children (they may belong to a
+            // different classroom) and add the picked classroom's roster,
+            // deduped by studentId.
+            const merged = new Map(
+              editGroup.students.map((s) => [
+                s.studentId,
+                {
+                  enrollmentId: s.studentId,
+                  studentId: s.studentId,
+                  firstName: s.firstName,
+                  lastName: s.lastName,
+                },
+              ]),
+            );
+            for (const s of res.data) merged.set(s.studentId, s);
+            setStudents(Array.from(merged.values()));
+          } else {
+            setStudents(res.data);
+            form.setValue("studentIds", []);
+          }
         } else {
-          setStudents([]);
+          setStudents(isEditMode && editGroup ? students : []);
           toast.error(res.error ?? "Failed to load students");
         }
       })
@@ -216,23 +268,24 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
   const selectedClassName =
     classes.find((c) => c.id === schoolClassId)?.name ?? null;
   const formattedRecordedAt = useMemo(() => {
-    const iso =
-      typeof recordedAt === "string"
-        ? recordedAt
-        : recordedAt
-          ? new Date(recordedAt).toISOString().slice(0, 10)
-          : null;
-    if (!iso) return null;
+    const date =
+      typeof recordedAt === "string" ? new Date(recordedAt) : recordedAt;
+    if (!date) return null;
     try {
       return new Intl.DateTimeFormat(locale, {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
-      }).format(new Date(`${iso}T00:00:00`));
+        hour: "2-digit",
+        minute: "2-digit",
+        // School-local — this also renders server-side, where the runtime
+        // zone is UTC.
+        timeZone,
+      }).format(date);
     } catch {
-      return iso;
+      return typeof recordedAt === "string" ? recordedAt : null;
     }
-  }, [recordedAt, locale]);
+  }, [recordedAt, locale, timeZone]);
 
   const subtitleParts = [
     selectedClassName,
@@ -240,16 +293,40 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
     formattedRecordedAt,
   ].filter(Boolean);
 
-  const cancelHref = schoolClassId
-    ? `${ROUTES.admin.recordKeepingStudents(locale)}?classId=${schoolClassId}`
-    : ROUTES.admin.recordKeepingStudents(locale);
+  const cancelHref = isEditMode
+    ? ROUTES.admin.recordKeeping(locale)
+    : schoolClassId
+      ? `${ROUTES.admin.recordKeepingStudents(locale)}?classId=${schoolClassId}`
+      : ROUTES.admin.recordKeepingStudents(locale);
 
   const onSubmit = (values: LessonRecordsBulkFormValues) => {
     startTransition(async () => {
-      const recordedAtIso =
-        typeof values.recordedAt === "string"
-          ? values.recordedAt
-          : new Date(values.recordedAt).toISOString().slice(0, 10);
+      // Always a full ISO timestamp: a legacy date-only value would otherwise
+      // travel through untouched and come back as midnight UTC (02:00 local),
+      // discarding the time that was picked.
+      const recordedAtIso = new Date(values.recordedAt).toISOString();
+
+      if (isEditMode && editGroup) {
+        const res = await updateLessonRecordsGroupAction({
+          recordIds: editGroup.recordIds,
+          lessonId: values.lessonId,
+          recordedAt: recordedAtIso,
+          studentIds: values.studentIds,
+          status: values.status as LessonRecordStatus,
+          durationMinutes: values.durationMinutes ?? null,
+          note: values.note?.trim() ? values.note : null,
+        });
+
+        if (!res.success) {
+          toast.error(t("recordsUpdateError"), { description: res.error });
+          return;
+        }
+
+        toast.success(t("editSavedToast"));
+        router.push(cancelHref);
+        router.refresh();
+        return;
+      }
 
       const res = await createLessonRecordsBulkAction(
         {
@@ -280,7 +357,7 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
       <BackButton href={cancelHref} label={t("backToRecording")} />
 
       <PageHead
-        title={t("title")}
+        title={isEditMode ? t("editEntryTitle") : t("title")}
         subtitle={
           subtitleParts.length > 0 ? subtitleParts.join(" · ") : t("subtitle")
         }
@@ -294,7 +371,11 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
               {t("cancel")}
             </Button>
             <Button type="submit" form={FORM_ID} disabled={isPending}>
-              {isPending ? t("submitting") : t("recordAction")}
+              {isPending
+                ? t("submitting")
+                : isEditMode
+                  ? t("saveChanges")
+                  : t("recordAction")}
             </Button>
           </div>
         }
@@ -320,7 +401,7 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
                   label={t("lesson")}
                 />
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <DatePickerFormField
+                  <DateTimeCalendarFormField
                     name="recordedAt"
                     label="date"
                     namespace="RecordKeeping"
@@ -545,12 +626,14 @@ export const LessonFirstBulkEntry = ({ lessons, classes }: Props) => {
               studentCount={studentIds.length}
               status={status}
             />
-            <RecentRecordsCard
-              refreshKey={recentRefreshKey}
-              onSelect={(id) =>
-                form.setValue("lessonId", id, { shouldValidate: true })
-              }
-            />
+            {!isEditMode && (
+              <RecentRecordsCard
+                refreshKey={recentRefreshKey}
+                onSelect={(id) =>
+                  form.setValue("lessonId", id, { shouldValidate: true })
+                }
+              />
+            )}
           </div>
         </form>
       </Form>

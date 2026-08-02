@@ -20,6 +20,7 @@ import { CreateLessonRecordInput } from './dto/create-lesson-record.input';
 import { CreateLessonRecordsBulkInput } from './dto/create-lesson-records-bulk.input';
 import { LessonRecordsFilterInput } from './dto/lesson-records-filter.input';
 import { UpdateLessonRecordInput } from './dto/update-lesson-record.input';
+import { UpdateLessonRecordsGroupInput } from './dto/update-lesson-records-group.input';
 import { StudentAttentionSummaryOutput } from './dto/attention-summary.output';
 import { ClassroomHeatmapDataOutput } from './dto/classroom-heatmap.output';
 import {
@@ -28,6 +29,7 @@ import {
   TimelineGranularity,
 } from './dto/timeline.output';
 import { RecentLessonRecordOutput } from './dto/recent-lesson-record.output';
+import { MyLessonRecordStatsOutput } from './dto/my-lesson-record-stats.output';
 import { LessonRecordAttachment } from './entities/lesson-record-attachment.entity';
 import { LessonRecord } from './entities/lesson-record.entity';
 import { LessonRecordAttachmentsService } from './lesson-record-attachments.service';
@@ -206,6 +208,32 @@ export class LessonRecordsResolver {
     return this.service.find(filter ?? {}, orgId, teacherUserId);
   }
 
+  /**
+   * Fetches one recording ACT by its record ids — used by the edit view to
+   * pre-fill the bulk-entry form for a `recentLessonRecords` row. Every
+   * record's student must be visible to the caller, same guard as the
+   * single-record `lessonRecord` query.
+   */
+  @Query(() => [LessonRecord], { name: 'lessonRecordsByIds' })
+  @Permissions('RECORD_KEEPING_READ')
+  async findManyByIds(
+    @Args('ids', { type: () => [ID] }) ids: string[],
+    @CurrentOrgId() orgId: string,
+    @CurrentUser() user: TokenPayload,
+  ) {
+    const records = await this.service.findManyByIds(ids, orgId);
+    for (const record of records) {
+      await this.studentsService.assertStudentVisibleToUser(
+        record.studentId,
+        user.sub,
+        user.roles ?? [],
+        user.isSuperAdmin ?? false,
+        orgId,
+      );
+    }
+    return records;
+  }
+
   @Query(() => LessonRecord, { name: 'lessonRecord' })
   @Permissions('RECORD_KEEPING_READ')
   async findOne(
@@ -264,6 +292,20 @@ export class LessonRecordsResolver {
     @Args('locale', { type: () => String, defaultValue: 'de' }) locale: string,
   ): Promise<RecentLessonRecordOutput[]> {
     return this.service.getRecentLessonRecords(orgId, user.sub, limit, locale);
+  }
+
+  /**
+   * Stat-card summary for the "Fortschritte" overview page. Same scoping as
+   * recentLessonRecords: (organizationId, recordedById), no student/class
+   * guard needed.
+   */
+  @Query(() => MyLessonRecordStatsOutput, { name: 'myLessonRecordStats' })
+  @Permissions('RECORD_KEEPING_READ')
+  async myLessonRecordStats(
+    @CurrentOrgId() orgId: string,
+    @CurrentUser() user: TokenPayload,
+  ): Promise<MyLessonRecordStatsOutput> {
+    return this.service.getMyLessonRecordStats(orgId, user.sub);
   }
 
   /**
@@ -337,6 +379,44 @@ export class LessonRecordsResolver {
     return this.service.update(input, orgId);
   }
 
+  /**
+   * Bulk-edits status/duration for every record in one recording ACT (a
+   * `recentLessonRecords` row) — the counterpart of `updateLessonRecord` for
+   * the grouped overview table, where a "row" is many `LessonRecord`s.
+   */
+  @Mutation(() => [LessonRecord])
+  @Permissions('RECORD_KEEPING_WRITE')
+  async updateLessonRecordsGroup(
+    @Args('input') input: UpdateLessonRecordsGroupInput,
+    @CurrentOrgId() orgId: string,
+    @CurrentUser() user: TokenPayload,
+  ) {
+    const records = await this.service.findManyByIds(input.recordIds, orgId);
+    for (const record of records) {
+      await this.studentsService.assertStudentVisibleToUser(
+        record.studentId,
+        user.sub,
+        user.roles ?? [],
+        user.isSuperAdmin ?? false,
+        orgId,
+      );
+    }
+    // Students newly added to the group (not part of any existing record)
+    // need the same visibility check before they can be written.
+    const existingStudentIds = new Set(records.map((r) => r.studentId));
+    for (const sid of input.studentIds ?? []) {
+      if (existingStudentIds.has(sid)) continue;
+      await this.studentsService.assertStudentVisibleToUser(
+        sid,
+        user.sub,
+        user.roles ?? [],
+        user.isSuperAdmin ?? false,
+        orgId,
+      );
+    }
+    return this.service.updateGroup(input, orgId, user.sub);
+  }
+
   @Mutation(() => Boolean)
   @Permissions('RECORD_KEEPING_WRITE')
   async deleteLessonRecord(
@@ -353,5 +433,29 @@ export class LessonRecordsResolver {
       orgId,
     );
     return this.service.delete(id, orgId);
+  }
+
+  /**
+   * Deletes every record behind one overview-table row — the group
+   * counterpart of `deleteLessonRecord`, mirroring `updateLessonRecordsGroup`.
+   */
+  @Mutation(() => Boolean)
+  @Permissions('RECORD_KEEPING_WRITE')
+  async deleteLessonRecordsGroup(
+    @Args('recordIds', { type: () => [ID] }) recordIds: string[],
+    @CurrentOrgId() orgId: string,
+    @CurrentUser() user: TokenPayload,
+  ) {
+    const records = await this.service.findManyByIds(recordIds, orgId);
+    for (const record of records) {
+      await this.studentsService.assertStudentVisibleToUser(
+        record.studentId,
+        user.sub,
+        user.roles ?? [],
+        user.isSuperAdmin ?? false,
+        orgId,
+      );
+    }
+    return this.service.deleteGroup(recordIds, orgId);
   }
 }

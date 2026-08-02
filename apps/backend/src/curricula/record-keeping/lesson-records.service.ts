@@ -14,6 +14,7 @@ import { CreateLessonRecordsBulkInput } from './dto/create-lesson-records-bulk.i
 import { LessonRecordObservationInput } from './dto/lesson-record-observation.input';
 import { LessonRecordsFilterInput } from './dto/lesson-records-filter.input';
 import { UpdateLessonRecordInput } from './dto/update-lesson-record.input';
+import { UpdateLessonRecordsGroupInput } from './dto/update-lesson-records-group.input';
 import { RecentLessonRecordOutput } from './dto/recent-lesson-record.output';
 import {
   AttentionReason,
@@ -67,6 +68,16 @@ export class LessonRecordsService {
       throw new NotFoundException(`Lesson record ${id} not found`);
     }
     return record;
+  }
+
+  async findManyByIds(
+    ids: string[],
+    organizationId: string,
+  ): Promise<LessonRecord[]> {
+    return this.recordsRepo.find({
+      where: { id: In(ids), organizationId },
+      relations: ['student'],
+    });
   }
 
   async find(
@@ -194,11 +205,15 @@ export class LessonRecordsService {
   ): Promise<LessonRecord[]> {
     await this.assertLessonInOrg(input.lessonId, organizationId);
 
+    // One row per child, never two: a repeated id in the payload would
+    // otherwise write the same child twice into one recording act.
+    const studentIds = [...new Set(input.studentIds)];
+
     const students = await this.studentsRepo.find({
-      where: { id: In(input.studentIds), organizationId },
+      where: { id: In(studentIds), organizationId },
       select: ['id'],
     });
-    if (students.length !== input.studentIds.length) {
+    if (students.length !== studentIds.length) {
       throw new BadRequestException(
         'One or more students not found in this organization',
       );
@@ -210,7 +225,7 @@ export class LessonRecordsService {
 
     return this.dataSource.transaction(async (m) => {
       const repo = m.getRepository(LessonRecord);
-      const rows = input.studentIds.map((sid) =>
+      const rows = studentIds.map((sid) =>
         repo.create({
           studentId: sid,
           lessonId: input.lessonId,
@@ -249,6 +264,105 @@ export class LessonRecordsService {
   }
 
   /**
+   * Bulk-edits the status/duration shared by every record in one recording
+   * ACT (a `RecentLessonRecordOutput` row). Records outside `organizationId`
+   * or not present in `recordIds` are silently excluded by the WHERE clause
+   * rather than rejected — the caller only ever passes IDs it just read from
+   * its own recentLessonRecords group.
+   */
+  async updateGroup(
+    input: UpdateLessonRecordsGroupInput,
+    organizationId: string,
+    recordedById: string,
+  ): Promise<LessonRecord[]> {
+    const records = await this.recordsRepo.findBy({
+      id: In(input.recordIds),
+      organizationId,
+    });
+    for (const record of records) {
+      if (input.recordedAt !== undefined) record.recordedAt = input.recordedAt;
+      if (input.status !== undefined) record.status = input.status;
+      if (input.durationMinutes !== undefined) {
+        record.durationMinutes = input.durationMinutes;
+      }
+      if (input.note !== undefined) record.note = input.note;
+    }
+
+    if (input.studentIds === undefined) {
+      return this.recordsRepo.save(records);
+    }
+
+    // Full child-set sync: remove records for students dropped from the
+    // group, add records for newly-added ones. `records` (loaded above) is
+    // the pre-sync group; kept students are updated in place.
+    const keptStudentIds = new Set(input.studentIds);
+    // A child may already hold several records in this group (historic
+    // double-entry). Keep exactly one of them and drop the rest, so editing
+    // a group always collapses it back to one row per child.
+    const seenStudentIds = new Set<string>();
+    const toRemove = records.filter((r) => {
+      if (!keptStudentIds.has(r.studentId)) return true;
+      if (seenStudentIds.has(r.studentId)) return true;
+      seenStudentIds.add(r.studentId);
+      return false;
+    });
+    const existingStudentIds = seenStudentIds;
+    const toAddStudentIds = [...keptStudentIds].filter(
+      (sid) => !existingStudentIds.has(sid),
+    );
+
+    if (toAddStudentIds.length > 0) {
+      const students = await this.studentsRepo.find({
+        where: { id: In(toAddStudentIds), organizationId },
+        select: ['id'],
+      });
+      if (students.length !== toAddStudentIds.length) {
+        throw new BadRequestException(
+          'One or more students not found in this organization',
+        );
+      }
+    }
+
+    return this.dataSource.transaction(async (m) => {
+      const repo = m.getRepository(LessonRecord);
+      if (toRemove.length > 0) {
+        await repo.delete({ id: In(toRemove.map((r) => r.id)) });
+      }
+      const removedIds = new Set(toRemove.map((r) => r.id));
+      const kept = records.filter((r) => !removedIds.has(r.id));
+      const added = toAddStudentIds.map((sid) =>
+        repo.create({
+          studentId: sid,
+          lessonId: input.lessonId,
+          recordedAt: input.recordedAt,
+          status: input.status ?? kept[0]?.status ?? records[0]?.status,
+          note: input.note ?? kept[0]?.note ?? null,
+          durationMinutes:
+            input.durationMinutes !== undefined
+              ? input.durationMinutes
+              : (kept[0]?.durationMinutes ?? null),
+          recordedById,
+          organizationId,
+        }),
+      );
+      return repo.save([...kept, ...added]);
+    });
+  }
+
+  /**
+   * Deletes every record in one recording ACT (a `RecentLessonRecordOutput`
+   * row) — the group counterpart of `delete`. Same silent-exclusion scoping
+   * as `updateGroup`: ids outside `organizationId` are simply not deleted.
+   */
+  async deleteGroup(
+    recordIds: string[],
+    organizationId: string,
+  ): Promise<boolean> {
+    await this.recordsRepo.delete({ id: In(recordIds), organizationId });
+    return true;
+  }
+
+  /**
    * The caller's own most recent recording ACTS in the active org.
    *
    * Grouped by (lesson, recordedAt) so a bulk entry over N children collapses
@@ -282,21 +396,48 @@ export class LessonRecordsService {
         lesson_id: string;
         recorded_at: string;
         student_count: number;
+        status: string;
+        duration_minutes: number | null;
+        students: Array<{ id: string; firstName: string; lastName: string }>;
+        record_ids: string[];
         lesson_name: string | null;
         area_name: string | null;
       }>
     >(
       // RECURSIVE leads the whole WITH clause even though only `up` recurses
       // — Postgres attaches the keyword to the clause, not the individual CTE.
+      // Grouped by (lesson, recorded_at, status): a bulk entry writes one
+      // status for every child, so status is safe to fold into the group key
+      // without ever fragmenting a single recording act into multiple rows.
       `WITH RECURSIVE grouped AS (
          SELECT lr.lesson_id,
                 lr.recorded_at,
+                lr.status,
                 COUNT(DISTINCT lr.student_id)::int AS student_count,
-                MAX(lr."createdAt")                 AS last_created_at
+                MAX(lr."createdAt")                 AS last_created_at,
+                -- NULL unless every row in the group shares one duration.
+                CASE WHEN COUNT(DISTINCT lr.duration_minutes) = 1
+                     THEN MAX(lr.duration_minutes) END AS duration_minutes,
+                -- DISTINCT: a child can hold more than one record inside the
+                -- same group (same lesson + recorded_at + status). Without it
+                -- the child shows up twice in the avatar row and collides on
+                -- its React key, while student_count (COUNT DISTINCT) says one.
+                -- jsonb (not json) — DISTINCT needs an equality operator, and
+                -- json has none. Ordering happens in JS below, since an
+                -- aggregate ORDER BY may not differ from the DISTINCT term.
+                jsonb_agg(DISTINCT
+                  jsonb_build_object(
+                    'id', s.id,
+                    'firstName', s."firstName",
+                    'lastName', s."lastName"
+                  )
+                ) AS students,
+                array_agg(DISTINCT lr.id) AS record_ids
            FROM lesson_records lr
+           INNER JOIN students s ON s.id = lr.student_id
           WHERE lr.organization_id = $1
             AND lr.recorded_by_id = $2
-          GROUP BY lr.lesson_id, lr.recorded_at
+          GROUP BY lr.lesson_id, lr.recorded_at, lr.status
           ORDER BY lr.recorded_at DESC, MAX(lr."createdAt") DESC
           LIMIT $3
        ),
@@ -318,8 +459,16 @@ export class LessonRecordsService {
           WHERE node_type = 'AREA'
        )
        SELECT g.lesson_id::text                       AS lesson_id,
-              g.recorded_at::text                     AS recorded_at,
+              -- ISO-8601, not ::text: a plain cast yields Postgres format
+              -- ("2026-08-01 20:25:10+00"), which new Date() cannot parse in
+              -- the browser and renders as Invalid Date.
+              to_char(g.recorded_at AT TIME ZONE 'UTC',
+                      'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')  AS recorded_at,
               g.student_count                         AS student_count,
+              g.status::text                          AS status,
+              g.duration_minutes                      AS duration_minutes,
+              g.students                               AS students,
+              g.record_ids                             AS record_ids,
               ${this.localizedNodeNameSql('g.lesson_id', '$4')} AS lesson_name,
               ${this.localizedNodeNameSql('a.area_id', '$4')}   AS area_name
          FROM grouped g
@@ -332,9 +481,98 @@ export class LessonRecordsService {
       lessonId: r.lesson_id,
       recordedAt: r.recorded_at,
       studentCount: Number(r.student_count),
+      students: [...(r.students ?? [])].sort(
+        (a, b) =>
+          a.lastName.localeCompare(b.lastName) ||
+          a.firstName.localeCompare(b.firstName),
+      ),
+      recordIds: r.record_ids ?? [],
+      status: r.status as LessonRecordStatus,
+      durationMinutes:
+        r.duration_minutes === null ? null : Number(r.duration_minutes),
       lessonName: r.lesson_name,
       areaName: r.area_name,
     }));
+  }
+
+  /**
+   * Stat-card summary of the caller's own recording activity: today/this
+   * week counts, the week-over-week delta, distinct children and lessons
+   * reached in the last 7 days, and the timestamp of the last recording.
+   *
+   * Scoped by BOTH organization_id and recorded_by_id, same as
+   * getRecentLessonRecords — a colleague's activity never leaks in.
+   */
+  async getMyLessonRecordStats(
+    organizationId: string,
+    recordedById: string,
+  ): Promise<{
+    todayCount: number;
+    weekCount: number;
+    weekDelta: number;
+    studentsReached: number;
+    lessonsCount: number;
+    lastRecordedAt: string | null;
+  }> {
+    // "Today" / "this week" must be day boundaries in the school's own
+    // timezone, not the DB server's (UTC): CURRENT_DATE alone put an entry
+    // made at 22:30 local already on "yesterday" for the stat cards, so an
+    // edit or a fresh entry near midnight looked like it hadn't updated
+    // anything.
+    const row = await this.dataSource.query<
+      Array<{
+        today_count: string;
+        week_count: string;
+        prev_week_count: string;
+        students_reached: string;
+        lessons_count: string;
+        last_recorded_at: string | null;
+      }>
+    >(
+      `SELECT
+         COUNT(*) FILTER (
+           WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
+                 >= (now() AT TIME ZONE o.timezone)::date
+         )::int AS today_count,
+         COUNT(*) FILTER (
+           WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
+                 >= (now() AT TIME ZONE o.timezone)::date - 6
+         )::int AS week_count,
+         COUNT(*) FILTER (
+           WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
+                 >= (now() AT TIME ZONE o.timezone)::date - 13
+             AND (lr.recorded_at AT TIME ZONE o.timezone)::date
+                 <  (now() AT TIME ZONE o.timezone)::date - 6
+         )::int AS prev_week_count,
+         COUNT(DISTINCT lr.student_id) FILTER (
+           WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
+                 >= (now() AT TIME ZONE o.timezone)::date - 6
+         )::int AS students_reached,
+         COUNT(DISTINCT lr.lesson_id) FILTER (
+           WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
+                 >= (now() AT TIME ZONE o.timezone)::date - 6
+         )::int AS lessons_count,
+         to_char(MAX(lr.recorded_at) AT TIME ZONE 'UTC',
+                 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS last_recorded_at
+       FROM lesson_records lr
+       JOIN organizations o ON o.id = lr.organization_id
+      WHERE lr.organization_id = $1
+        AND lr.recorded_by_id = $2`,
+      [organizationId, recordedById],
+    );
+
+    const r = row[0];
+    const weekCount = Number(r?.week_count ?? 0);
+    const prevWeekCount = Number(r?.prev_week_count ?? 0);
+
+    return {
+      todayCount: Number(r?.today_count ?? 0),
+      weekCount,
+      weekDelta: weekCount - prevWeekCount,
+      studentsReached: Number(r?.students_reached ?? 0),
+      lessonsCount: Number(r?.lessons_count ?? 0),
+      lastRecordedAt: r?.last_recorded_at ?? null,
+    };
   }
 
   /**
@@ -455,7 +693,8 @@ export class LessonRecordsService {
         r.id AS r_id,
         r.student_id AS r_student_id,
         r.lesson_id AS r_lesson_id,
-        r.recorded_at::text AS r_recorded_at,
+        to_char(r.recorded_at AT TIME ZONE 'UTC',
+                'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS r_recorded_at,
         r.status::text AS r_status,
         s.id AS student_id,
         s."firstName" AS student_first_name,
@@ -793,14 +1032,15 @@ export class LessonRecordsService {
         count: string;
       }>
     >(
-      `SELECT date_trunc($1, r.recorded_at)::date::text AS bucket_start,
+      `SELECT date_trunc($1, r.recorded_at AT TIME ZONE 'UTC')::date::text
+                AS bucket_start,
               r.status::text AS status,
               COUNT(*)::int AS count
          FROM lesson_records r
         WHERE r.organization_id = $2
           AND r.student_id = $3
           AND r.recorded_at >= $4::date
-          AND r.recorded_at <= $5::date
+          AND r.recorded_at <  ($5::date + INTERVAL '1 day')
         GROUP BY 1, 2
         ORDER BY 1 ASC`,
       [pgUnit, organizationId, studentId, from, to],
@@ -913,14 +1153,15 @@ export class LessonRecordsService {
         count: string;
       }>
     >(
-      `SELECT date_trunc($1, r.recorded_at)::date::text AS bucket_start,
+      `SELECT date_trunc($1, r.recorded_at AT TIME ZONE 'UTC')::date::text
+                AS bucket_start,
               r.engagement::text AS engagement,
               COUNT(*)::int AS count
          FROM lesson_records r
         WHERE r.organization_id = $2
           AND r.engagement IS NOT NULL
           AND r.recorded_at >= $3::date
-          AND r.recorded_at <= $4::date
+          AND r.recorded_at <  ($4::date + INTERVAL '1 day')
           AND r.student_id IN (
             SELECT DISTINCT e.student_id
               FROM school_class_enrollments e
