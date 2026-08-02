@@ -1,0 +1,13 @@
+{
+  "skillOverrides": {
+    "dataviz": "off",
+    "artifact-design": "off",
+    "artifact-capabilities": "off",
+    "keybindings-help": "off",
+    "fewer-permission-prompts": "off",
+    "simplify": "off",
+    "init": "off",
+    "claude-in-chrome": "off",
+    "claude-code-guide": "off"
+  }
+}

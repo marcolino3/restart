@@ -101,12 +101,13 @@ const GRADE_LEVEL_COLOR_DEFAULTS: Record<string, string> = {
   Oberstufe:    '#8B5CF6',
 };
 
-const NEW_CLASSES = [
-  { name: 'Klasse KG1', color: '#fbbf24', room: 'KG-1', maxCapacity: 18, gradeLevel: 'Kindergarten' },
-  { name: 'Klasse U1',  color: '#06b6d4', room: 'U-1',  maxCapacity: 22, gradeLevel: 'Unterstufe' },
-  { name: 'Klasse M1',  color: '#f97316', room: 'M-1',  maxCapacity: 24, gradeLevel: 'Mittelstufe' },
-  { name: 'Klasse O1',  color: '#8b5cf6', room: 'O-1',  maxCapacity: 24, gradeLevel: 'Oberstufe' },
-];
+const NEW_CLASSES: Array<{
+  name: string;
+  color: string;
+  room: string;
+  maxCapacity: number;
+  gradeLevel: string;
+}> = [];
 
 // Permissions to grant to each role (the seeder shipped without school-related
 // perms). Idempotent INSERT, so safe to extend.
