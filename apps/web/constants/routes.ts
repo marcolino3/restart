@@ -84,6 +84,10 @@ export const ROUTES = {
 
     // Record Keeping
     recordKeeping: (locale: string) => `/${locale}/admin/record-keeping`,
+    recordKeepingEntry: (locale: string) =>
+      `/${locale}/admin/record-keeping/entry`,
+    recordKeepingEntryEdit: (locale: string, recordIds: string[]) =>
+      `/${locale}/admin/record-keeping/entry?recordIds=${recordIds.join(",")}`,
     recordKeepingHeatmap: (locale: string) =>
       `/${locale}/admin/record-keeping/heatmap`,
     recordKeepingAttention: (locale: string) =>

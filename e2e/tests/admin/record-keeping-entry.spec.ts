@@ -175,7 +175,7 @@ test.describe('Progress entry — happy path and validation', () => {
     const fixture = await seedRecordingFixture(page)
 
     await page.goto(
-      `/en/admin/record-keeping?classId=${fixture.schoolClassId}`,
+      `/en/admin/record-keeping/entry?classId=${fixture.schoolClassId}`,
       { waitUntil: 'networkidle' },
     )
     // PageHead renders the page title as an h2, and the EN string is
@@ -212,5 +212,41 @@ test.describe('Progress entry — happy path and validation', () => {
     await expect(
       page.getByText(fixture.lessonName).first(),
     ).toBeVisible({ timeout: 15000 })
+  })
+})
+
+test.describe('Progress overview — edit and delete', () => {
+  test('lists a recorded entry and deletes it via the row actions menu', async ({
+    page,
+  }) => {
+    await signInAsSuperAdmin(page)
+    await ensureActiveOrg(page)
+    const fixture = await seedRecordingFixture(page)
+
+    await page.goto(
+      `/en/admin/record-keeping/entry?classId=${fixture.schoolClassId}`,
+      { waitUntil: 'networkidle' },
+    )
+    await page.getByRole('combobox', { name: /lesson/i }).click()
+    await page.getByRole('option', { name: fixture.lessonName }).click()
+    await page
+      .getByRole('button', {
+        name: new RegExp(`${fixture.studentFirstName}.*${fixture.studentLastName}`, 'i'),
+      })
+      .click()
+    await page.getByRole('button', { name: /^record$/i }).click()
+    await expect(page.getByText(/saved|recorded/i).first()).toBeVisible({
+      timeout: 15000,
+    })
+
+    await page.goto('/en/admin/record-keeping', { waitUntil: 'networkidle' })
+    const row = page.getByRole('row', { name: new RegExp(fixture.lessonName) })
+    await expect(row).toBeVisible({ timeout: 15000 })
+
+    await row.getByRole('button', { name: /actions/i }).click()
+    await page.getByRole('menuitem', { name: /delete/i }).click()
+    await page.getByRole('button', { name: /delete/i }).last().click()
+
+    await expect(row).not.toBeVisible({ timeout: 15000 })
   })
 })
