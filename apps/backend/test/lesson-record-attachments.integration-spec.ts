@@ -389,11 +389,100 @@ describe('LessonRecordAttachments (Integration)', () => {
       expect(recent).toHaveLength(1);
       expect(recent[0]).toMatchObject({
         lessonId: lesson.id,
-        recordedAt: '2026-05-16',
+        // ISO-8601 — the client parses this with new Date().
+        recordedAt: '2026-05-16T00:00:00.000Z',
         studentCount: 3,
         lessonName: 'Goldenes Perlenmaterial',
         areaName: 'Mathematik',
       });
+    });
+
+    // Regression: a child can end up with two records inside one group (same
+    // lesson + recorded_at + status), e.g. after an edit that re-added it.
+    // json_agg without DISTINCT then emitted the child twice, which collided
+    // on its React key in the avatar row and contradicted studentCount.
+    it('lists a child once even when it holds two records in the same group', async () => {
+      const org = await seedOrg();
+      const user = await seedUser();
+      const { lesson } = await seedLesson(org.id);
+      const [anna, ben] = await Promise.all([
+        seedStudent(org.id, 'Anna'),
+        seedStudent(org.id, 'Ben'),
+      ]);
+
+      // Anna twice, Ben once — all sharing lesson + date + status.
+      await seedRecord(org.id, anna.id, lesson.id, user.id, '2026-05-16');
+      await seedRecord(org.id, anna.id, lesson.id, user.id, '2026-05-16');
+      await seedRecord(org.id, ben.id, lesson.id, user.id, '2026-05-16');
+
+      const recent = await records.getRecentLessonRecords(org.id, user.id);
+
+      expect(recent).toHaveLength(1);
+      const ids = recent[0].students.map((s) => s.id);
+      expect(ids).toHaveLength(new Set(ids).size); // no duplicate keys
+      expect(ids).toHaveLength(2);
+      expect(recent[0].studentCount).toBe(2);
+      // students and studentCount must never disagree
+      expect(recent[0].students).toHaveLength(recent[0].studentCount);
+      // still sorted by last name, then first name
+      expect(recent[0].students.map((s) => s.firstName)).toEqual([
+        'Anna',
+        'Ben',
+      ]);
+    });
+
+    // Root cause of the duplicate above: nothing stopped a child from being
+    // recorded twice. createBulk must dedupe its payload, and editing a group
+    // that already holds a doubled child must collapse it back to one row.
+    it('writes one record per child even if an id arrives twice', async () => {
+      const org = await seedOrg();
+      const user = await seedUser();
+      const { lesson } = await seedLesson(org.id);
+      const anna = await seedStudent(org.id, 'Anna');
+
+      await records.createBulk(
+        {
+          lessonId: lesson.id,
+          studentIds: [anna.id, anna.id],
+          recordedAt: '2026-05-16',
+          status: LessonRecordStatus.INTRODUCED,
+        },
+        org.id,
+        user.id,
+      );
+
+      const recent = await records.getRecentLessonRecords(org.id, user.id);
+      expect(recent).toHaveLength(1);
+      expect(recent[0].students).toHaveLength(1);
+      expect(recent[0].recordIds).toHaveLength(1);
+    });
+
+    it('collapses a child holding two records when the group is edited', async () => {
+      const org = await seedOrg();
+      const user = await seedUser();
+      const { lesson } = await seedLesson(org.id);
+      const anna = await seedStudent(org.id, 'Anna');
+
+      const a = await seedRecord(org.id, anna.id, lesson.id, user.id);
+      const b = await seedRecord(org.id, anna.id, lesson.id, user.id);
+
+      await records.updateGroup(
+        {
+          recordIds: [a.id, b.id],
+          lessonId: lesson.id,
+          recordedAt: '2026-05-16',
+          studentIds: [anna.id],
+          status: LessonRecordStatus.PRACTICED,
+        },
+        org.id,
+        user.id,
+      );
+
+      const recent = await records.getRecentLessonRecords(org.id, user.id);
+      expect(recent).toHaveLength(1);
+      expect(recent[0].students).toHaveLength(1);
+      expect(recent[0].recordIds).toHaveLength(1);
+      expect(recent[0].studentCount).toBe(1);
     });
 
     it('keeps different dates of the same lesson as separate rows, newest first', async () => {
@@ -408,10 +497,28 @@ describe('LessonRecordAttachments (Integration)', () => {
 
       const recent = await records.getRecentLessonRecords(org.id, user.id);
       expect(recent.map((r) => r.recordedAt)).toEqual([
-        '2026-05-18',
-        '2026-05-14',
-        '2026-05-10',
+        '2026-05-18T00:00:00.000Z',
+        '2026-05-14T00:00:00.000Z',
+        '2026-05-10T00:00:00.000Z',
       ]);
+    });
+
+    it('returns recordedAt in a format the client can parse', async () => {
+      // Regression: a plain ::text cast on timestamptz yields Postgres format
+      // ("2026-05-16 00:00:00+00"). That string is truthy but unparsable in
+      // the browser, so the edit form rendered Invalid Date and date-fns threw.
+      const org = await seedOrg();
+      const user = await seedUser();
+      const student = await seedStudent(org.id);
+      const { lesson } = await seedLesson(org.id);
+
+      await seedRecord(org.id, student.id, lesson.id, user.id, '2026-05-16');
+
+      const [entry] = await records.getRecentLessonRecords(org.id, user.id);
+      expect(Number.isNaN(new Date(entry.recordedAt).getTime())).toBe(false);
+      expect(entry.recordedAt).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+      );
     });
 
     it('honours the limit', async () => {

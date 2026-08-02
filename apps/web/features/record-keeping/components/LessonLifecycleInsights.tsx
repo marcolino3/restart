@@ -46,9 +46,11 @@ const STATUS_COLOR = {
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+// `later`/`earlier` may be a bare date or a full ISO timestamp — only the
+// calendar day matters here.
 const daysBetween = (later: string, earlier: string): number => {
-  const a = new Date(earlier + "T00:00:00Z").getTime();
-  const b = new Date(later + "T00:00:00Z").getTime();
+  const a = new Date(earlier.slice(0, 10) + "T00:00:00Z").getTime();
+  const b = new Date(later.slice(0, 10) + "T00:00:00Z").getTime();
   return Math.max(0, Math.round((b - a) / (1000 * 60 * 60 * 24)));
 };
 

@@ -165,10 +165,10 @@ export function LearningStanceTab({ records }: Props) {
 const dateLabel = (iso: string, locale: string): string => {
   if (!iso) return "";
   const intlLocale = locale.startsWith("de") ? "de-CH" : "en-US";
-  return new Date(iso + "T00:00:00Z").toLocaleDateString(intlLocale, {
-    month: "short",
-    day: "numeric",
-  });
+  return new Date(iso.slice(0, 10) + "T00:00:00Z").toLocaleDateString(
+    intlLocale,
+    { month: "short", day: "numeric" },
+  );
 };
 
 /* ─────────────────────────────────────────────────────────────────────── */

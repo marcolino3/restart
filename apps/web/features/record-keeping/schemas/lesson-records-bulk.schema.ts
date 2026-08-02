@@ -59,9 +59,9 @@ export const observationSchema = z.object({
 });
 
 /**
- * recordedAt: akzeptiert sowohl ein Date-Objekt (aus DatePickerFormField)
- * als auch einen ISO-Date-String — die Submit-Handler konvertieren dann
- * konsistent zu YYYY-MM-DD vor der Mutation.
+ * recordedAt: akzeptiert sowohl ein Date-Objekt (aus DateTimeCalendarFormField)
+ * als auch einen ISO-Datetime-String — die Submit-Handler konvertieren dann
+ * konsistent zu einem vollen ISO-Timestamp vor der Mutation.
  *
  * observation = Bulk-Default. perChildObservations = optionale Overrides
  * (Map studentId → Sub-Observation) für die Akkordeon-UI.
@@ -71,9 +71,12 @@ export const lessonRecordsBulkSchema = z.object({
   studentIds: z
     .array(z.string().uuid())
     .min(1, { message: "selectAtLeastOneStudent" }),
+  // Full timestamp only. A date-only string ("2026-05-16") would parse as
+  // midnight UTC and surface as 02:00 local time in Zurich, silently
+  // overwriting the time the teacher picked.
   recordedAt: z.union([
     z.date(),
-    z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Invalid date" }),
+    z.string().datetime({ message: "Invalid date" }),
   ]),
   status: z.enum(LESSON_RECORD_STATUSES as [string, ...string[]]),
   durationMinutes: z

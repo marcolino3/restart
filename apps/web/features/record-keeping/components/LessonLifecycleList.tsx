@@ -83,7 +83,7 @@ export function LessonLifecycleList({
   );
 
   const fmtDate = (d: string | null): string =>
-    d ? dateFmt.format(new Date(d + "T00:00:00Z")) : "—";
+    d ? dateFmt.format(new Date(d.slice(0, 10) + "T00:00:00Z")) : "—";
 
   const [areaFilter, setAreaFilter] = useState<string>("__all__");
   const [sort, setSort] = useState<SortKey>("status");
@@ -333,9 +333,11 @@ function LifecycleTimeline({
   if (!introducedAt) return null;
 
   const today = new Date().toISOString().slice(0, 10);
+  // `later`/`earlier` may be a bare date or a full ISO timestamp — only the
+  // calendar day matters for this phase-width math.
   const dayDiff = (later: string, earlier: string): number => {
-    const a = new Date(earlier + "T00:00:00Z").getTime();
-    const b = new Date(later + "T00:00:00Z").getTime();
+    const a = new Date(earlier.slice(0, 10) + "T00:00:00Z").getTime();
+    const b = new Date(later.slice(0, 10) + "T00:00:00Z").getTime();
     return Math.max(0, Math.round((b - a) / (1000 * 60 * 60 * 24)));
   };
 
@@ -399,8 +401,9 @@ function LifecycleTimeline({
   const markers: Marker[] = [];
   let introCount = 0;
   for (const h of history) {
-    if (h.recordedAt < introducedAt) continue; // shouldn't happen
-    if (h.recordedAt > endDate) continue;
+    const hDate = h.recordedAt.slice(0, 10);
+    if (hDate < introducedAt) continue; // shouldn't happen
+    if (hDate > endDate) continue;
     if (h.status === "NEEDS_MORE") {
       markers.push({
         posPct: pct(h.recordedAt),
@@ -426,7 +429,10 @@ function LifecycleTimeline({
   }
   // Practice ticks (lighter than NEEDS_MORE markers; just shows activity).
   const practiceTicks = history
-    .filter((h) => h.status === "PRACTICED" && h.recordedAt >= introducedAt)
+    .filter(
+      (h) =>
+        h.status === "PRACTICED" && h.recordedAt.slice(0, 10) >= introducedAt,
+    )
     .map((h) => pct(h.recordedAt));
 
   const introOffset = `calc(8px + ${0}% * (100% - 16px) / 100%)`;
