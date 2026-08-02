@@ -2741,6 +2741,7 @@
     "noRecentEvents": "No events recorded yet.",
     "learningState": "Learning progress",
     "recordedBy": "recorded by {name}",
+    "photo": "Photo",
     "preferredName": "Preferred name",
     "placeOfBirth": "Place of birth",
     "nationalities": "Nationality/-ies",

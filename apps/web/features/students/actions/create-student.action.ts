@@ -37,6 +37,7 @@ export const createStudentAction = async (values: StudentFormOutput) => {
     ...(parsed.notes ? { notes: parsed.notes } : {}),
     // Master data extension (Scope 1).
     ...(parsed.preferredName ? { preferredName: parsed.preferredName } : {}),
+    ...(parsed.photoUrl ? { photoUrl: parsed.photoUrl } : {}),
     ...(parsed.placeOfBirth ? { placeOfBirth: parsed.placeOfBirth } : {}),
     ...(parsed.firstLanguages.length
       ? { firstLanguages: parsed.firstLanguages }

@@ -41,6 +41,7 @@ export const updateStudentAction = async (values: StudentFormOutput) => {
     notes: parsed.notes || null,
     // Master data extension (Scope 1) — send explicitly so clearing works.
     preferredName: parsed.preferredName || null,
+    photoUrl: parsed.photoUrl || null,
     placeOfBirth: parsed.placeOfBirth || null,
     firstLanguages: parsed.firstLanguages,
     familyLanguages: parsed.familyLanguages,

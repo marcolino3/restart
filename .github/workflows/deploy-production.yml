@@ -207,11 +207,59 @@ jobs:
             --dry-run=client -o yaml | kubectl apply -n "$NAMESPACE" -f -
           echo "::notice::ghcr-secret ensured in $NAMESPACE"
 
+      # Muss VOR dem Migration-Job laufen: der Job zieht `backend-config` und
+      # `backend-secrets` per envFrom. Lag der Sync (frueher nur im deploy-Job)
+      # dahinter, existierten die Objekte beim allerersten Prod-Deploy noch
+      # nicht und der Job blieb in CreateContainerConfigError haengen — ohne
+      # Complete- oder Failed-Condition, also stumm bis in den Timeout.
+      #
+      # Nur ConfigMaps/Secrets applizieren, NICHT das ganze Overlay: dessen
+      # Deployments tragen den Base-Image-Tag, der erst im deploy-Job per
+      # `set image` auf den Promotion-SHA gepinnt wird. Ein volles `apply -k`
+      # wuerde laufende Pods kurzzeitig auf das falsche Image ziehen.
+      - name: Sync config & secrets (required by the migration job)
+        run: |
+          set -euo pipefail
+          kubectl kustomize k8s/production > /tmp/prod-rendered.yaml
+          python3 - <<'PY' > /tmp/prod-config.yaml
+          import re
+          docs = open('/tmp/prod-rendered.yaml').read().split('\n---\n')
+          keep = [d for d in docs
+                  if re.search(r'^kind:\s*(ConfigMap|Secret|SealedSecret)\s*$', d, re.M)]
+          print('\n---\n'.join(keep))
+          PY
+          kubectl apply -n "$NAMESPACE" -f /tmp/prod-config.yaml
+          echo "::notice::ConfigMaps/Secrets synced into $NAMESPACE"
+
+          # Fail fast statt spaeter im Timeout: ohne backend-config startet der
+          # Migrations-Pod garantiert nicht.
+          if ! kubectl get configmap backend-config -n "$NAMESPACE" >/dev/null 2>&1; then
+            echo "::error::configmap/backend-config missing in $NAMESPACE after sync — check k8s/production overlay"
+            exit 1
+          fi
+          # Das Overlay liefert `backend-secrets` als SealedSecret; das echte
+          # Secret entsteht erst, wenn der sealed-secrets-Controller es
+          # entschluesselt — asynchron. Direkt nach dem Apply danach zu fragen
+          # waere ein Race, gerade beim allerersten Deploy. Also kurz warten.
+          for i in $(seq 1 30); do
+            if kubectl get secret backend-secrets -n "$NAMESPACE" >/dev/null 2>&1; then
+              echo "::notice::secret/backend-secrets available"
+              break
+            fi
+            if [ "$i" = "30" ]; then
+              echo "::error::secret/backend-secrets not created within 60s — SealedSecret not decrypted? Check the sealed-secrets controller."
+              kubectl describe sealedsecret backend-secrets -n "$NAMESPACE" 2>&1 | tail -20 || true
+              exit 1
+            fi
+            sleep 2
+          done
+
       - name: Apply migration job
         env:
           IMAGE_OWNER: ${{ github.repository_owner }}
           RESOLVED_TAG: ${{ needs.resolve.outputs.image_tag }}
         run: |
+          set -euo pipefail
           export IMAGE_OWNER=$(echo "$IMAGE_OWNER" | tr '[:upper:]' '[:lower:]')
           # migrate-job.yaml erwartet ZWEI Variablen mit genau diesen Namen:
           #   ${JOB_NAME_SUFFIX} → Job-Name (12 Zeichen, k8s-Limit 63)
@@ -221,6 +269,15 @@ jobs:
           export IMAGE_TAG="$RESOLVED_TAG"
           export JOB_NAME_SUFFIX=$(echo "$RESOLVED_TAG" | cut -c1-12 | tr '[:upper:]' '[:lower:]')
           JOB_NAME="migrate-${JOB_NAME_SUFFIX}"
+
+          # Ein bereits existierender Job mit gleichem Namen (z.B. aus einem
+          # abgebrochenen Run) ist immutable — `apply` wuerde scheitern. Alten
+          # Job vorher entfernen, damit ein Re-Run nicht am Namen haengenbleibt.
+          if kubectl get job "$JOB_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
+            echo "::warning::Job $JOB_NAME already exists — deleting it before re-applying"
+            kubectl delete job "$JOB_NAME" -n "$NAMESPACE" --wait=true --timeout=60s
+          fi
+
           envsubst < k8s/base/jobs/migrate-job.yaml | kubectl apply -n "$NAMESPACE" -f -
 
           echo "Waiting for $JOB_NAME to complete…"
@@ -239,9 +296,25 @@ jobs:
               kubectl logs -n "$NAMESPACE" "job/$JOB_NAME" --tail=200 || true
               exit 1
             fi
+
+            # Der Job meldet WEDER Complete NOCH Failed, solange der Pod gar
+            # nicht erst startet (CreateContainerConfigError, ImagePullBackOff,
+            # Pending). Genau das lief frueher stumm in den Timeout — deshalb den
+            # Pod-Status direkt auswerten und mit Klartext abbrechen.
+            POD_STATE=$(kubectl get pods -n "$NAMESPACE" \
+              -l "job-name=$JOB_NAME" \
+              -o 'jsonpath={.items[*].status.containerStatuses[*].state.waiting.reason}' 2>/dev/null || echo "")
+            case "$POD_STATE" in
+              *CreateContainerConfigError*|*ImagePullBackOff*|*ErrImagePull*|*CrashLoopBackOff*|*InvalidImageName*)
+                echo "::error::Migration pod cannot start: $POD_STATE"
+                kubectl describe pods -n "$NAMESPACE" -l "job-name=$JOB_NAME" 2>&1 | tail -30
+                exit 1
+                ;;
+            esac
             sleep 5
           done
           echo "::error::Timeout waiting for production migration job"
+          kubectl describe pods -n "$NAMESPACE" -l "job-name=$JOB_NAME" 2>&1 | tail -30 || true
           kubectl logs -n "$NAMESPACE" "job/$JOB_NAME" --tail=200 || true
           exit 1
 

@@ -47,6 +47,7 @@ export default function StudentForm({ student }: Props) {
       exitDate: student?.exitDate ? new Date(student.exitDate) : null,
       notes: student?.notes ?? "",
       preferredName: student?.preferredName ?? "",
+      photoUrl: student?.photoUrl ?? "",
       placeOfBirth: student?.placeOfBirth ?? "",
       firstLanguages: student?.firstLanguages ?? [],
       familyLanguages: student?.familyLanguages ?? [],

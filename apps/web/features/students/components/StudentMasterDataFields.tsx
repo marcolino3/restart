@@ -7,7 +7,19 @@ import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { CountryComboboxFormField } from "@/components/form/form-fields/CountryComboboxFormField";
 import { TagsInputFormField } from "@/components/form/form-fields/TagsInputFormField";
 import { SocialSecurityNumberFormField } from "@/components/form/form-fields/SocialSecurityNumberFormField";
+import { UploadFormField } from "@/components/form/form-fields/UploadFormField";
 import { SensitiveDataNotice } from "@/components/common/SensitiveDataNotice";
+
+interface Props {
+  /**
+   * Persisted student id. The upload endpoint keys the photo by entity id,
+   * which doesn't exist yet on create — so the photo field only renders once
+   * a student id is available (i.e. in `StudentEditView`, not `StudentForm`
+   * before the first save). This is the one intentional gap in the
+   * create/update-parity rule for this shared block.
+   */
+  studentId?: string;
+}
 
 /**
  * Shared master-data fields (Scope 1) rendered in BOTH the create form
@@ -22,12 +34,22 @@ import { SensitiveDataNotice } from "@/components/common/SensitiveDataNotice";
  * Religion + AHV (social security number) are GDPR Art. 9 special-category
  * data — flagged in the UI via the `sensitiveHint` description.
  */
-export function StudentMasterDataFields() {
+export function StudentMasterDataFields({ studentId }: Props) {
   const { control } = useFormContext();
   const t = useTranslations("Students");
 
   return (
     <>
+      {studentId && (
+        <UploadFormField
+          name="photoUrl"
+          label="photo"
+          namespace="Students"
+          entity="students"
+          id={studentId}
+          width="w-full sm:w-1/2"
+        />
+      )}
       <div className="flex gap-4">
         <InputFormField
           name="preferredName"

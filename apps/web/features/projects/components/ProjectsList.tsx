@@ -298,6 +298,7 @@ export function ProjectsList({
           value={search}
           onValueChange={setSearch}
           placeholder={t("searchProjectsPlaceholder")}
+          aria-label={t("searchProjectsPlaceholder")}
           containerClassName="w-full max-w-[260px]"
         />
         <ViewSwitcher

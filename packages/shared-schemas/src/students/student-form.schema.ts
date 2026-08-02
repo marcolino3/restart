@@ -11,6 +11,7 @@ export const StudentFormSchema = z.object({
   notes: z.string().optional().default(""),
   // --- Master data extension (Scope 1) ---
   preferredName: z.string().optional().default(""),
+  photoUrl: z.string().optional().default(""),
   placeOfBirth: z.string().optional().default(""),
   firstLanguages: z.array(z.string()).optional().default([]),
   familyLanguages: z.array(z.string()).optional().default([]),

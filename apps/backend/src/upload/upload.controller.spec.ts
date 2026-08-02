@@ -84,7 +84,7 @@ describe('UploadController', () => {
 
     it('rejects entities without an ownership rule', async () => {
       await expect(
-        controller.upload(pngFile, 'students', ORG_ID, orgAdmin),
+        controller.upload(pngFile, 'contracts', ORG_ID, orgAdmin),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -120,6 +120,58 @@ describe('UploadController', () => {
       await expect(
         controller.upload(pngFile, 'organizations', OTHER_ORG_ID, superAdmin),
       ).resolves.toEqual({ url: `/organizations/${OTHER_ORG_ID}.webp` });
+    });
+  });
+
+  describe('upload: students', () => {
+    const STUDENT_ID = 'student-1';
+
+    it('multi-tenant isolation: rejects a student of a foreign organization', async () => {
+      // The org-scoped lookup finds nothing -> the student is not ours.
+      entityManager.findOne.mockResolvedValue(null);
+
+      await expect(
+        controller.upload(pngFile, 'students', STUDENT_ID, orgAdmin),
+      ).rejects.toThrow(ForbiddenException);
+      expect(storage.put).not.toHaveBeenCalled();
+    });
+
+    it('scopes the ownership lookup to the active organization', async () => {
+      entityManager.findOne.mockResolvedValue({ id: STUDENT_ID });
+
+      await controller.upload(pngFile, 'students', STUDENT_ID, orgAdmin);
+
+      expect(entityManager.findOne).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          where: { id: STUDENT_ID, organizationId: ORG_ID },
+        }),
+      );
+    });
+
+    it('allows an org admin to upload a photo for a student of the own org', async () => {
+      entityManager.findOne.mockResolvedValue({ id: STUDENT_ID });
+
+      await expect(
+        controller.upload(pngFile, 'students', STUDENT_ID, orgAdmin),
+      ).resolves.toEqual({ url: `/students/${STUDENT_ID}.webp` });
+    });
+
+    it('rejects a caller without an active organization', async () => {
+      const noOrg = { ...orgAdmin, orgId: undefined } as TokenPayload;
+
+      await expect(
+        controller.upload(pngFile, 'students', STUDENT_ID, noOrg),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('multi-tenant isolation: rejects deleting a foreign student photo', async () => {
+      entityManager.findOne.mockResolvedValue(null);
+
+      await expect(
+        controller.remove('students', STUDENT_ID, orgAdmin),
+      ).rejects.toThrow(ForbiddenException);
+      expect(storage.delete).not.toHaveBeenCalled();
     });
   });
 
