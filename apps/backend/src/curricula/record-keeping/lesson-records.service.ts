@@ -205,11 +205,15 @@ export class LessonRecordsService {
   ): Promise<LessonRecord[]> {
     await this.assertLessonInOrg(input.lessonId, organizationId);
 
+    // One row per child, never two: a repeated id in the payload would
+    // otherwise write the same child twice into one recording act.
+    const studentIds = [...new Set(input.studentIds)];
+
     const students = await this.studentsRepo.find({
-      where: { id: In(input.studentIds), organizationId },
+      where: { id: In(studentIds), organizationId },
       select: ['id'],
     });
-    if (students.length !== input.studentIds.length) {
+    if (students.length !== studentIds.length) {
       throw new BadRequestException(
         'One or more students not found in this organization',
       );
@@ -221,7 +225,7 @@ export class LessonRecordsService {
 
     return this.dataSource.transaction(async (m) => {
       const repo = m.getRepository(LessonRecord);
-      const rows = input.studentIds.map((sid) =>
+      const rows = studentIds.map((sid) =>
         repo.create({
           studentId: sid,
           lessonId: input.lessonId,
@@ -291,9 +295,18 @@ export class LessonRecordsService {
     // group, add records for newly-added ones. `records` (loaded above) is
     // the pre-sync group; kept students are updated in place.
     const keptStudentIds = new Set(input.studentIds);
-    const toRemove = records.filter((r) => !keptStudentIds.has(r.studentId));
-    const existingStudentIds = new Set(records.map((r) => r.studentId));
-    const toAddStudentIds = input.studentIds.filter(
+    // A child may already hold several records in this group (historic
+    // double-entry). Keep exactly one of them and drop the rest, so editing
+    // a group always collapses it back to one row per child.
+    const seenStudentIds = new Set<string>();
+    const toRemove = records.filter((r) => {
+      if (!keptStudentIds.has(r.studentId)) return true;
+      if (seenStudentIds.has(r.studentId)) return true;
+      seenStudentIds.add(r.studentId);
+      return false;
+    });
+    const existingStudentIds = seenStudentIds;
+    const toAddStudentIds = [...keptStudentIds].filter(
       (sid) => !existingStudentIds.has(sid),
     );
 
@@ -314,7 +327,8 @@ export class LessonRecordsService {
       if (toRemove.length > 0) {
         await repo.delete({ id: In(toRemove.map((r) => r.id)) });
       }
-      const kept = records.filter((r) => keptStudentIds.has(r.studentId));
+      const removedIds = new Set(toRemove.map((r) => r.id));
+      const kept = records.filter((r) => !removedIds.has(r.id));
       const added = toAddStudentIds.map((sid) =>
         repo.create({
           studentId: sid,
@@ -403,12 +417,19 @@ export class LessonRecordsService {
                 -- NULL unless every row in the group shares one duration.
                 CASE WHEN COUNT(DISTINCT lr.duration_minutes) = 1
                      THEN MAX(lr.duration_minutes) END AS duration_minutes,
-                json_agg(
-                  json_build_object(
+                -- DISTINCT: a child can hold more than one record inside the
+                -- same group (same lesson + recorded_at + status). Without it
+                -- the child shows up twice in the avatar row and collides on
+                -- its React key, while student_count (COUNT DISTINCT) says one.
+                -- jsonb (not json) — DISTINCT needs an equality operator, and
+                -- json has none. Ordering happens in JS below, since an
+                -- aggregate ORDER BY may not differ from the DISTINCT term.
+                jsonb_agg(DISTINCT
+                  jsonb_build_object(
                     'id', s.id,
                     'firstName', s."firstName",
                     'lastName', s."lastName"
-                  ) ORDER BY s."lastName", s."firstName"
+                  )
                 ) AS students,
                 array_agg(DISTINCT lr.id) AS record_ids
            FROM lesson_records lr
@@ -437,7 +458,11 @@ export class LessonRecordsService {
           WHERE node_type = 'AREA'
        )
        SELECT g.lesson_id::text                       AS lesson_id,
-              g.recorded_at::text                     AS recorded_at,
+              -- ISO-8601, not ::text: a plain cast yields Postgres format
+              -- ("2026-08-01 20:25:10+00"), which new Date() cannot parse in
+              -- the browser and renders as Invalid Date.
+              to_char(g.recorded_at AT TIME ZONE 'UTC',
+                      'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')  AS recorded_at,
               g.student_count                         AS student_count,
               g.status::text                          AS status,
               g.duration_minutes                      AS duration_minutes,
@@ -455,7 +480,11 @@ export class LessonRecordsService {
       lessonId: r.lesson_id,
       recordedAt: r.recorded_at,
       studentCount: Number(r.student_count),
-      students: r.students ?? [],
+      students: [...(r.students ?? [])].sort(
+        (a, b) =>
+          a.lastName.localeCompare(b.lastName) ||
+          a.firstName.localeCompare(b.firstName),
+      ),
       recordIds: r.record_ids ?? [],
       status: r.status as LessonRecordStatus,
       durationMinutes:
@@ -511,7 +540,8 @@ export class LessonRecordsService {
          COUNT(DISTINCT lr.lesson_id) FILTER (
            WHERE lr.recorded_at >= CURRENT_DATE - INTERVAL '6 days'
          )::int AS lessons_count,
-         MAX(lr.recorded_at)::text AS last_recorded_at
+         to_char(MAX(lr.recorded_at) AT TIME ZONE 'UTC',
+                 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS last_recorded_at
        FROM lesson_records lr
       WHERE lr.organization_id = $1
         AND lr.recorded_by_id = $2`,
@@ -650,7 +680,8 @@ export class LessonRecordsService {
         r.id AS r_id,
         r.student_id AS r_student_id,
         r.lesson_id AS r_lesson_id,
-        r.recorded_at::text AS r_recorded_at,
+        to_char(r.recorded_at AT TIME ZONE 'UTC',
+                'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS r_recorded_at,
         r.status::text AS r_status,
         s.id AS student_id,
         s."firstName" AS student_first_name,
@@ -988,14 +1019,15 @@ export class LessonRecordsService {
         count: string;
       }>
     >(
-      `SELECT date_trunc($1, r.recorded_at)::date::text AS bucket_start,
+      `SELECT date_trunc($1, r.recorded_at AT TIME ZONE 'UTC')::date::text
+                AS bucket_start,
               r.status::text AS status,
               COUNT(*)::int AS count
          FROM lesson_records r
         WHERE r.organization_id = $2
           AND r.student_id = $3
           AND r.recorded_at >= $4::date
-          AND r.recorded_at <= $5::date
+          AND r.recorded_at <  ($5::date + INTERVAL '1 day')
         GROUP BY 1, 2
         ORDER BY 1 ASC`,
       [pgUnit, organizationId, studentId, from, to],
@@ -1108,14 +1140,15 @@ export class LessonRecordsService {
         count: string;
       }>
     >(
-      `SELECT date_trunc($1, r.recorded_at)::date::text AS bucket_start,
+      `SELECT date_trunc($1, r.recorded_at AT TIME ZONE 'UTC')::date::text
+                AS bucket_start,
               r.engagement::text AS engagement,
               COUNT(*)::int AS count
          FROM lesson_records r
         WHERE r.organization_id = $2
           AND r.engagement IS NOT NULL
           AND r.recorded_at >= $3::date
-          AND r.recorded_at <= $4::date
+          AND r.recorded_at <  ($4::date + INTERVAL '1 day')
           AND r.student_id IN (
             SELECT DISTINCT e.student_id
               FROM school_class_enrollments e

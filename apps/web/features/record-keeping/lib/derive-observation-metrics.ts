@@ -158,8 +158,9 @@ export type PersistenceOverTime = {
 };
 
 const isoWeekStart = (isoDate: string): { weekStart: string; label: string } => {
-  // Montag der Woche von isoDate (UTC-basiert), label "KW NN".
-  const d = new Date(isoDate + "T00:00:00Z");
+  // Montag der Woche von isoDate (UTC-basiert), label "KW NN". isoDate may
+  // be a bare date or a full ISO timestamp — only the calendar day matters.
+  const d = new Date(isoDate.slice(0, 10) + "T00:00:00Z");
   const day = d.getUTCDay(); // 0=So .. 6=Sa
   const diff = (day === 0 ? -6 : 1) - day; // shift to Monday
   d.setUTCDate(d.getUTCDate() + diff);
@@ -436,12 +437,17 @@ export function deriveSelfAssessmentCalibration(
       if (!cur.selfAssessmentByChild || cur.selfAssessment == null) continue;
 
       // Suche Folge-Record derselben Lektion ≤ 60 Tage später mit Status-Update.
-      const curTs = new Date(cur.recordedAt + "T00:00:00Z").getTime();
+      // recordedAt may be a bare date or a full ISO timestamp — only the
+      // calendar day matters for this window.
+      const curTs = new Date(
+        cur.recordedAt.slice(0, 10) + "T00:00:00Z",
+      ).getTime();
       const followups = list
         .slice(i + 1)
         .filter(
           (n) =>
-            new Date(n.recordedAt + "T00:00:00Z").getTime() - curTs <=
+            new Date(n.recordedAt.slice(0, 10) + "T00:00:00Z").getTime() -
+              curTs <=
             SIXTY_DAYS_MS,
         );
       if (followups.length === 0) continue;

@@ -60,8 +60,13 @@ const OBS_THRESHOLDS = {
   baselineWindow: 10,
 };
 
+/**
+ * `recordedAt` may be a bare YYYY-MM-DD date or a full ISO timestamp — only
+ * the calendar day matters here, so drop any time-of-day before anchoring
+ * at UTC midnight.
+ */
 const daysBetween = (isoDate: string, today: Date): number => {
-  const a = new Date(isoDate + "T00:00:00Z").getTime();
+  const a = new Date(isoDate.slice(0, 10) + "T00:00:00Z").getTime();
   const b = Date.UTC(
     today.getUTCFullYear(),
     today.getUTCMonth(),

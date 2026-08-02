@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ROUTES } from "@/constants/routes";
+import { useUser } from "@/features/users/context/current-user.context";
 import { deleteLessonRecordsGroupAction } from "../actions/delete-lesson-records-group.action";
 import type { RecentLessonRecordItem } from "../actions/get-recent-lesson-records.action";
 
@@ -29,6 +30,9 @@ interface Props {
   data: RecentLessonRecordItem[];
   onExport?: () => void;
 }
+
+/** Only used when the active org has no timezone configured. */
+const FALLBACK_TIME_ZONE = "Europe/Zurich";
 
 const STATUS_BADGE_VARIANT: Record<string, BadgeProps["variant"]> = {
   PLANNING: "slate",
@@ -43,31 +47,39 @@ const formatDateTime = (
   locale: string,
   todayLabel: string,
   yesterdayLabel: string,
+  timeZone: string,
 ): string => {
   try {
     const date = new Date(iso);
+
+    // Always school-local, never the runtime's zone: this renders on the
+    // server (UTC) as well as in the browser, so an unpinned formatter would
+    // show 07:00 instead of 09:00 and could even put a late entry on the
+    // wrong calendar day.
+    const dayKey = (d: Date) =>
+      new Intl.DateTimeFormat("en-CA", { timeZone }).format(d);
+
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
-    const sameDay = (a: Date, b: Date) =>
-      a.getFullYear() === b.getFullYear() &&
-      a.getMonth() === b.getMonth() &&
-      a.getDate() === b.getDate();
+    const sameDay = (a: Date, b: Date) => dayKey(a) === dayKey(b);
 
     const time = new Intl.DateTimeFormat(locale, {
       hour: "2-digit",
       minute: "2-digit",
+      timeZone,
     }).format(date);
 
     if (sameDay(date, today)) return `${todayLabel}, ${time}`;
-    if (sameDay(date, yesterday)) return `${yesterdayLabel}, ${time}`;
+    if (sameDay(date, yesterday)) return yesterdayLabel;
 
     const day = new Intl.DateTimeFormat(locale, {
       weekday: "short",
       day: "numeric",
       month: "short",
+      timeZone,
     }).format(date);
-    return `${day}, ${time}`;
+    return day;
   } catch {
     return iso;
   }
@@ -80,6 +92,7 @@ const useColumns = (
   const t = useTranslations("RecordKeeping");
   const tCommon = useTranslations("Common");
   const locale = useLocale();
+  const timeZone = useUser()?.orgTimezone ?? FALLBACK_TIME_ZONE;
 
   return [
     {
@@ -140,6 +153,7 @@ const useColumns = (
             locale,
             t("todayLabel"),
             t("yesterdayLabel"),
+            timeZone,
           )}
         </span>
       ),
@@ -262,6 +276,7 @@ export const ProgressEntriesTable = ({ data, onExport }: Props) => {
             setRows((prev) =>
               prev.filter((r) => r.recordIds.join(",") !== deleting.recordIds.join(",")),
             );
+            router.refresh();
           }
           return result;
         }}

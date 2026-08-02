@@ -32,7 +32,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { PageHead } from "@/components/common/PageHead";
 import { BackButton } from "@/components/common/BackButton";
-import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
+import { DateTimeCalendarFormField } from "@/components/form/form-fields/DateTimeCalendarFormField";
+import { useUser } from "@/features/users/context/current-user.context";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { StudentAvatar } from "@/features/students/components/StudentAvatar";
 import { ROUTES } from "@/constants/routes";
@@ -98,13 +99,7 @@ interface Props {
   editGroup?: EditGroupInitialData;
 }
 
-const todayISO = () => {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-};
+const nowIso = () => new Date().toISOString();
 
 export const LessonFirstBulkEntry = ({ lessons, classes, editGroup }: Props) => {
   const t = useTranslations("RecordKeeping");
@@ -112,6 +107,7 @@ export const LessonFirstBulkEntry = ({ lessons, classes, editGroup }: Props) => 
   const router = useRouter();
   const searchParams = useSearchParams();
   const schoolClassId = searchParams.get("classId") ?? "";
+  const timeZone = useUser()?.orgTimezone ?? "Europe/Zurich";
   const [isPending, startTransition] = useTransition();
   const [students, setStudents] = useState<ClassroomStudentDTO[]>(
     editGroup
@@ -142,7 +138,7 @@ export const LessonFirstBulkEntry = ({ lessons, classes, editGroup }: Props) => 
       : {
           lessonId: "",
           studentIds: [],
-          recordedAt: todayISO(),
+          recordedAt: nowIso(),
           status: "INTRODUCED",
           durationMinutes: null,
           note: "",
@@ -272,23 +268,24 @@ export const LessonFirstBulkEntry = ({ lessons, classes, editGroup }: Props) => 
   const selectedClassName =
     classes.find((c) => c.id === schoolClassId)?.name ?? null;
   const formattedRecordedAt = useMemo(() => {
-    const iso =
-      typeof recordedAt === "string"
-        ? recordedAt
-        : recordedAt
-          ? new Date(recordedAt).toISOString().slice(0, 10)
-          : null;
-    if (!iso) return null;
+    const date =
+      typeof recordedAt === "string" ? new Date(recordedAt) : recordedAt;
+    if (!date) return null;
     try {
       return new Intl.DateTimeFormat(locale, {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
-      }).format(new Date(`${iso}T00:00:00`));
+        hour: "2-digit",
+        minute: "2-digit",
+        // School-local — this also renders server-side, where the runtime
+        // zone is UTC.
+        timeZone,
+      }).format(date);
     } catch {
-      return iso;
+      return typeof recordedAt === "string" ? recordedAt : null;
     }
-  }, [recordedAt, locale]);
+  }, [recordedAt, locale, timeZone]);
 
   const subtitleParts = [
     selectedClassName,
@@ -304,10 +301,10 @@ export const LessonFirstBulkEntry = ({ lessons, classes, editGroup }: Props) => 
 
   const onSubmit = (values: LessonRecordsBulkFormValues) => {
     startTransition(async () => {
-      const recordedAtIso =
-        typeof values.recordedAt === "string"
-          ? values.recordedAt
-          : new Date(values.recordedAt).toISOString().slice(0, 10);
+      // Always a full ISO timestamp: a legacy date-only value would otherwise
+      // travel through untouched and come back as midnight UTC (02:00 local),
+      // discarding the time that was picked.
+      const recordedAtIso = new Date(values.recordedAt).toISOString();
 
       if (isEditMode && editGroup) {
         const res = await updateLessonRecordsGroupAction({
@@ -327,6 +324,7 @@ export const LessonFirstBulkEntry = ({ lessons, classes, editGroup }: Props) => 
 
         toast.success(t("editSavedToast"));
         router.push(cancelHref);
+        router.refresh();
         return;
       }
 
@@ -403,7 +401,7 @@ export const LessonFirstBulkEntry = ({ lessons, classes, editGroup }: Props) => 
                   label={t("lesson")}
                 />
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <DatePickerFormField
+                  <DateTimeCalendarFormField
                     name="recordedAt"
                     label="date"
                     namespace="RecordKeeping"

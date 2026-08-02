@@ -75,8 +75,15 @@ const pickName = (
   );
 };
 
+/**
+ * `recordedAt` may be a bare YYYY-MM-DD date or a full ISO timestamp
+ * (`recorded_at` is `timestamptz`) — day-gap math only cares about the
+ * calendar day, so drop any time-of-day before anchoring at UTC midnight.
+ */
+const toDateOnly = (iso: string): string => iso.slice(0, 10);
+
 const daysBetween = (isoDate: string, today: Date): number => {
-  const a = new Date(isoDate + 'T00:00:00Z').getTime();
+  const a = new Date(toDateOnly(isoDate) + 'T00:00:00Z').getTime();
   const b = Date.UTC(
     today.getUTCFullYear(),
     today.getUTCMonth(),
@@ -85,10 +92,10 @@ const daysBetween = (isoDate: string, today: Date): number => {
   return Math.max(0, Math.floor((b - a) / 86_400_000));
 };
 
-/** Diff between two YYYY-MM-DD strings. Matches the frontend helper. */
+/** Diff between two dates (bare YYYY-MM-DD or full ISO timestamp). Matches the frontend helper. */
 const diffInDays = (later: string, earlier: string): number => {
-  const a = new Date(earlier + 'T00:00:00Z').getTime();
-  const b = new Date(later + 'T00:00:00Z').getTime();
+  const a = new Date(toDateOnly(earlier) + 'T00:00:00Z').getTime();
+  const b = new Date(toDateOnly(later) + 'T00:00:00Z').getTime();
   return Math.round((b - a) / 86_400_000);
 };
 

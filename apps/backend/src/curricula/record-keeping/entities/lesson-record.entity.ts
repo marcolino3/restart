@@ -65,8 +65,25 @@ export class LessonRecord
   @JoinColumn({ name: 'lesson_id' })
   lesson?: CurriculumNode;
 
+  /**
+   * Always ISO-8601. The driver hands a `timestamptz` back as a Postgres-format
+   * string ("2026-08-01 20:25:10+00"), which `new Date()` refuses to parse in
+   * the browser — the client then renders an Invalid Date. Normalising here
+   * keeps every consumer on one format.
+   */
   @Field(() => String)
-  @Column('date', { name: 'recorded_at' })
+  @Column('timestamptz', {
+    name: 'recorded_at',
+    transformer: {
+      to: (value: string | Date) => value,
+      from: (value: Date | string | null) =>
+        value == null
+          ? value
+          : value instanceof Date
+            ? value.toISOString()
+            : new Date(value).toISOString(),
+    },
+  })
   recordedAt: string;
 
   @Field(() => LessonRecordStatus)

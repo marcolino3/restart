@@ -96,9 +96,12 @@ export function DateTimeCalendarFormField<TFormValues extends FieldValues>({
       control={form.control}
       name={name}
       render={({ field }) => {
-        const value: Date | undefined = field.value
-          ? new Date(field.value)
-          : undefined;
+        // An unparsable value is still truthy, so guard on the parsed date
+        // rather than the raw field: `format()` throws on Invalid Date and
+        // would take the whole form down with it.
+        const parsed = field.value ? new Date(field.value) : undefined;
+        const value: Date | undefined =
+          parsed && !Number.isNaN(parsed.getTime()) ? parsed : undefined;
 
         const handleDaySelect = (day: Date | undefined) => {
           if (!day) return;

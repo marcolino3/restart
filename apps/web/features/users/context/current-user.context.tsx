@@ -18,6 +18,8 @@ export type CurrentUser = {
   permissions: string[];
   orgId?: string;
   orgName?: string;
+  /** IANA zone of the active org -- all timestamps render school-local. */
+  orgTimezone?: string;
   persona?: Persona;
   isSuperAdmin: boolean;
   // Eigenes Employee-Flag — steuert die Sichtbarkeit des Zeiterfassungs-Menüs.

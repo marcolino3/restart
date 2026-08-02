@@ -50,13 +50,17 @@ export class UsersResolver {
 
     // Surface the active organization's name so the frontend can show the
     // school name in the sidebar header (multi-tenant: only the active org).
+    // The timezone rides along: the UI renders every timestamp school-local,
+    // and it also renders on the server, where the runtime zone is UTC.
     let orgName: string | undefined;
+    let orgTimezone: string | undefined;
     if (user.orgId) {
       const org = await this.em.findOne(Organization, {
         where: { id: user.orgId },
-        select: { id: true, name: true },
+        select: { id: true, name: true, timezone: true },
       });
       orgName = org?.name ?? undefined;
+      orgTimezone = org?.timezone ?? undefined;
     }
     return {
       user: fullUser,
@@ -64,6 +68,7 @@ export class UsersResolver {
       permissions: user.permissions ?? [],
       orgId: user.orgId,
       orgName,
+      orgTimezone,
       persona: user.persona,
       theme,
       isSuperAdmin: user.isSuperAdmin ?? false,
