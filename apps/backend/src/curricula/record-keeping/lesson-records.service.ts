@@ -514,6 +514,11 @@ export class LessonRecordsService {
     lessonsCount: number;
     lastRecordedAt: string | null;
   }> {
+    // "Today" / "this week" must be day boundaries in the school's own
+    // timezone, not the DB server's (UTC): CURRENT_DATE alone put an entry
+    // made at 22:30 local already on "yesterday" for the stat cards, so an
+    // edit or a fresh entry near midnight looked like it hadn't updated
+    // anything.
     const row = await this.dataSource.query<
       Array<{
         today_count: string;
@@ -526,24 +531,31 @@ export class LessonRecordsService {
     >(
       `SELECT
          COUNT(*) FILTER (
-           WHERE lr.recorded_at >= CURRENT_DATE
+           WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
+                 >= (now() AT TIME ZONE o.timezone)::date
          )::int AS today_count,
          COUNT(*) FILTER (
-           WHERE lr.recorded_at >= CURRENT_DATE - INTERVAL '6 days'
+           WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
+                 >= (now() AT TIME ZONE o.timezone)::date - 6
          )::int AS week_count,
          COUNT(*) FILTER (
-           WHERE lr.recorded_at >= CURRENT_DATE - INTERVAL '13 days'
-             AND lr.recorded_at <  CURRENT_DATE - INTERVAL '6 days'
+           WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
+                 >= (now() AT TIME ZONE o.timezone)::date - 13
+             AND (lr.recorded_at AT TIME ZONE o.timezone)::date
+                 <  (now() AT TIME ZONE o.timezone)::date - 6
          )::int AS prev_week_count,
          COUNT(DISTINCT lr.student_id) FILTER (
-           WHERE lr.recorded_at >= CURRENT_DATE - INTERVAL '6 days'
+           WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
+                 >= (now() AT TIME ZONE o.timezone)::date - 6
          )::int AS students_reached,
          COUNT(DISTINCT lr.lesson_id) FILTER (
-           WHERE lr.recorded_at >= CURRENT_DATE - INTERVAL '6 days'
+           WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
+                 >= (now() AT TIME ZONE o.timezone)::date - 6
          )::int AS lessons_count,
          to_char(MAX(lr.recorded_at) AT TIME ZONE 'UTC',
                  'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS last_recorded_at
        FROM lesson_records lr
+       JOIN organizations o ON o.id = lr.organization_id
       WHERE lr.organization_id = $1
         AND lr.recorded_by_id = $2`,
       [organizationId, recordedById],

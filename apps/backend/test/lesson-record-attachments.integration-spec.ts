@@ -483,6 +483,31 @@ describe('LessonRecordAttachments (Integration)', () => {
       expect(recent[0].students).toHaveLength(1);
       expect(recent[0].recordIds).toHaveLength(1);
       expect(recent[0].studentCount).toBe(1);
+      expect(recent[0].recordedAt).toBe('2026-05-16T00:00:00.000Z');
+    });
+
+    it('persists a recordedAt change for a kept student (no studentIds change)', async () => {
+      // Regression: updateGroup used to apply the new recordedAt only to
+      // newly-added students; existing (kept) records silently kept their
+      // old timestamp when editing just the time.
+      const org = await seedOrg();
+      const user = await seedUser();
+      const { lesson } = await seedLesson(org.id);
+      const anna = await seedStudent(org.id, 'Anna');
+      const record = await seedRecord(org.id, anna.id, lesson.id, user.id);
+
+      await records.updateGroup(
+        {
+          recordIds: [record.id],
+          lessonId: lesson.id,
+          recordedAt: '2026-05-16T14:30:00.000Z',
+        },
+        org.id,
+        user.id,
+      );
+
+      const recent = await records.getRecentLessonRecords(org.id, user.id);
+      expect(recent[0].recordedAt).toBe('2026-05-16T14:30:00.000Z');
     });
 
     it('keeps different dates of the same lesson as separate rows, newest first', async () => {
@@ -559,6 +584,108 @@ describe('LessonRecordAttachments (Integration)', () => {
       const [row] = await records.getRecentLessonRecords(org.id, user.id);
       expect(row.areaName).toBe('Sprache');
       expect(row.lessonName).toBe('Sandpapierbuchstaben');
+    });
+  });
+
+  // --- getMyLessonRecordStats: org-local day boundaries ---
+
+  describe('getMyLessonRecordStats', () => {
+    it('counts a fresh record as "today" for the org that just created it', async () => {
+      const org = await seedOrg();
+      const user = await seedUser();
+      const student = await seedStudent(org.id);
+      const { lesson } = await seedLesson(org.id);
+      await recordRepo.save(
+        recordRepo.create({
+          organizationId: org.id,
+          studentId: student.id,
+          lessonId: lesson.id,
+          recordedById: user.id,
+          recordedAt: new Date().toISOString(),
+          status: LessonRecordStatus.INTRODUCED,
+          selfAssessmentByChild: false,
+        }),
+      );
+
+      const stats = await records.getMyLessonRecordStats(org.id, user.id);
+      expect(stats.todayCount).toBe(1);
+    });
+
+    it('resolves "today" against the org timezone, not the DB server zone', async () => {
+      // Regression: CURRENT_DATE alone uses the DB server's zone (UTC), so an
+      // entry made late in the school's local evening could already fall on
+      // "yesterday" server-side and silently drop out of today's count.
+      //
+      // Pacific/Kiritimati (UTC+14) turns its calendar page 10h before UTC
+      // midnight. Placing the record 5 minutes after that local-midnight
+      // crossing (in UTC terms) means: still "today" for a UTC-based org,
+      // but already "yesterday" relative to Kiritimati's *current* local
+      // date -- true for any real clock time this test happens to run at.
+      const dayKeyUtc = (d: Date) =>
+        new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC' }).format(d);
+      const dayKeyEast = (d: Date) =>
+        new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'Pacific/Kiritimati',
+        }).format(d);
+
+      const now = new Date();
+      const utcMidnightToday = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+      );
+      // Kiritimati's local calendar date advances at UTC 10:00 -- the moment
+      // it crosses its own local midnight. Straddle that crossing on
+      // whichever side keeps UTC's date unchanged from `now` while flipping
+      // Kiritimati's, so the anchor is valid for any real time-of-day.
+      const crossing = new Date(
+        utcMidnightToday.getTime() + 10 * 60 * 60 * 1000,
+      );
+      const recordedAt =
+        now.getTime() < crossing.getTime()
+          ? new Date(crossing.getTime() + 5 * 60 * 1000)
+          : new Date(crossing.getTime() - 5 * 60 * 1000);
+
+      // Sanity-check the anchor actually straddles the boundary we intend,
+      // independent of the SQL under test.
+      expect(dayKeyUtc(recordedAt)).toBe(dayKeyUtc(now));
+      expect(dayKeyEast(recordedAt)).not.toBe(dayKeyEast(now));
+
+      const utc = await orgRepo.save(orgRepo.create({ timezone: 'UTC' }));
+      const east = await orgRepo.save(
+        orgRepo.create({ timezone: 'Pacific/Kiritimati' }),
+      );
+      const user = await seedUser();
+      const studentUtc = await seedStudent(utc.id);
+      const studentEast = await seedStudent(east.id);
+      const { lesson: lessonUtc } = await seedLesson(utc.id);
+      const { lesson: lessonEast } = await seedLesson(east.id);
+
+      await recordRepo.save(
+        recordRepo.create({
+          organizationId: utc.id,
+          studentId: studentUtc.id,
+          lessonId: lessonUtc.id,
+          recordedById: user.id,
+          recordedAt: recordedAt.toISOString(),
+          status: LessonRecordStatus.INTRODUCED,
+          selfAssessmentByChild: false,
+        }),
+      );
+      await recordRepo.save(
+        recordRepo.create({
+          organizationId: east.id,
+          studentId: studentEast.id,
+          lessonId: lessonEast.id,
+          recordedById: user.id,
+          recordedAt: recordedAt.toISOString(),
+          status: LessonRecordStatus.INTRODUCED,
+          selfAssessmentByChild: false,
+        }),
+      );
+
+      const utcStats = await records.getMyLessonRecordStats(utc.id, user.id);
+      const eastStats = await records.getMyLessonRecordStats(east.id, user.id);
+      expect(utcStats.todayCount).toBe(1);
+      expect(eastStats.todayCount).toBe(0);
     });
   });
 });

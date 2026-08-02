@@ -25,6 +25,7 @@ import { ROUTES } from "@/constants/routes";
 import { useUser } from "@/features/users/context/current-user.context";
 import { deleteLessonRecordsGroupAction } from "../actions/delete-lesson-records-group.action";
 import type { RecentLessonRecordItem } from "../actions/get-recent-lesson-records.action";
+import { formatProgressEntryDate } from "../lib/format-progress-entry-date";
 
 interface Props {
   data: RecentLessonRecordItem[];
@@ -40,49 +41,6 @@ const STATUS_BADGE_VARIANT: Record<string, BadgeProps["variant"]> = {
   PRACTICED: "amber",
   MASTERED: "green",
   NEEDS_MORE: "rose",
-};
-
-const formatDateTime = (
-  iso: string,
-  locale: string,
-  todayLabel: string,
-  yesterdayLabel: string,
-  timeZone: string,
-): string => {
-  try {
-    const date = new Date(iso);
-
-    // Always school-local, never the runtime's zone: this renders on the
-    // server (UTC) as well as in the browser, so an unpinned formatter would
-    // show 07:00 instead of 09:00 and could even put a late entry on the
-    // wrong calendar day.
-    const dayKey = (d: Date) =>
-      new Intl.DateTimeFormat("en-CA", { timeZone }).format(d);
-
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-    const sameDay = (a: Date, b: Date) => dayKey(a) === dayKey(b);
-
-    const time = new Intl.DateTimeFormat(locale, {
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone,
-    }).format(date);
-
-    if (sameDay(date, today)) return `${todayLabel}, ${time}`;
-    if (sameDay(date, yesterday)) return yesterdayLabel;
-
-    const day = new Intl.DateTimeFormat(locale, {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      timeZone,
-    }).format(date);
-    return day;
-  } catch {
-    return iso;
-  }
 };
 
 const useColumns = (
@@ -148,7 +106,7 @@ const useColumns = (
       meta: { labelKey: "columnRecordedAt" },
       cell: ({ row }) => (
         <span className="font-mono text-[13px] text-foreground">
-          {formatDateTime(
+          {formatProgressEntryDate(
             row.original.recordedAt,
             locale,
             t("todayLabel"),
