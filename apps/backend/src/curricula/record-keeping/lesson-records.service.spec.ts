@@ -442,6 +442,76 @@ describe('LessonRecordsService', () => {
     });
   });
 
+  describe('getMyLessonRecordStats', () => {
+    it('scopes the query to the org AND the calling user', async () => {
+      dataSource.query.mockResolvedValue([{}]);
+      await service.getMyLessonRecordStats('org-1', 'user-7');
+
+      const [sql, params] = dataSource.query.mock.calls[0];
+      expect(params[0]).toBe('org-1');
+      expect(params[1]).toBe('user-7');
+      expect(sql).toContain('lr.organization_id = $1');
+      expect(sql).toContain('lr.recorded_by_id = $2');
+    });
+
+    // Regression: a bulk entry for N children writes N lesson_records rows,
+    // but getRecentLessonRecords folds them into a single row (grouped by
+    // lesson_id, recorded_at, status). A plain COUNT(*) here counted every
+    // child separately, so "Heute erfasst"/"Diese Woche" showed a bigger
+    // number than the entries table below them for the same bulk entries.
+    it('counts today/week/prevWeek by recording act, not by row', async () => {
+      dataSource.query.mockResolvedValue([{}]);
+      await service.getMyLessonRecordStats('org-1', 'user-7');
+
+      const sql = dataSource.query.mock.calls[0][0] as string;
+      const distinctActCount =
+        'COUNT(DISTINCT (lr.lesson_id, lr.recorded_at, lr.status))';
+      expect(sql).toContain(`${distinctActCount} FILTER (`);
+      const occurrences = sql.split(distinctActCount).length - 1;
+      expect(occurrences).toBeGreaterThanOrEqual(3);
+      expect(sql).not.toContain('COUNT(*) FILTER (');
+    });
+
+    it('maps aggregate row counts to numbers, defaulting to 0 when unset', async () => {
+      dataSource.query.mockResolvedValue([
+        {
+          today_count: '2',
+          week_count: '5',
+          prev_week_count: '3',
+          students_reached: '4',
+          lessons_count: '2',
+          last_recorded_at: '2026-05-16T09:00:00.000Z',
+        },
+      ]);
+
+      const result = await service.getMyLessonRecordStats('org-1', 'user-7');
+
+      expect(result).toEqual({
+        todayCount: 2,
+        weekCount: 5,
+        weekDelta: 2,
+        studentsReached: 4,
+        lessonsCount: 2,
+        lastRecordedAt: '2026-05-16T09:00:00.000Z',
+      });
+    });
+
+    it('defaults every count to 0 when the query returns no aggregate row data', async () => {
+      dataSource.query.mockResolvedValue([{}]);
+
+      const result = await service.getMyLessonRecordStats('org-1', 'user-7');
+
+      expect(result).toEqual({
+        todayCount: 0,
+        weekCount: 0,
+        weekDelta: 0,
+        studentsReached: 0,
+        lessonsCount: 0,
+        lastRecordedAt: null,
+      });
+    });
+  });
+
   describe('updateGroup', () => {
     const baseInput = {
       recordIds: ['rec-1', 'rec-2'],

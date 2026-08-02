@@ -529,16 +529,22 @@ export class LessonRecordsService {
         last_recorded_at: string | null;
       }>
     >(
+      // today_count/week_count/prev_week_count must count "recording acts",
+      // not raw rows: a bulk entry for N children writes N lesson_records
+      // rows but is a single item in getRecentLessonRecords (grouped by
+      // lesson_id, recorded_at, status). COUNT(*) here previously double-
+      // counted every bulk entry by its child count, so the stat cards
+      // showed a higher number than the entries table below them.
       `SELECT
-         COUNT(*) FILTER (
+         COUNT(DISTINCT (lr.lesson_id, lr.recorded_at, lr.status)) FILTER (
            WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
                  >= (now() AT TIME ZONE o.timezone)::date
          )::int AS today_count,
-         COUNT(*) FILTER (
+         COUNT(DISTINCT (lr.lesson_id, lr.recorded_at, lr.status)) FILTER (
            WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
                  >= (now() AT TIME ZONE o.timezone)::date - 6
          )::int AS week_count,
-         COUNT(*) FILTER (
+         COUNT(DISTINCT (lr.lesson_id, lr.recorded_at, lr.status)) FILTER (
            WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
                  >= (now() AT TIME ZONE o.timezone)::date - 13
              AND (lr.recorded_at AT TIME ZONE o.timezone)::date
