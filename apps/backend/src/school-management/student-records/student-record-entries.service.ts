@@ -87,6 +87,21 @@ export class StudentRecordEntriesService {
     return this.findOne(saved.id, organizationId);
   }
 
+  /** Resolves the owning studentId for visibility checks ahead of update/delete. */
+  async getStudentIdForEntry(
+    id: string,
+    organizationId: string,
+  ): Promise<string> {
+    const entry = await this.repo.findOne({
+      where: { id, organizationId },
+      select: ['id', 'studentId'],
+    });
+    if (!entry) {
+      throw new NotFoundException(`Student record entry ${id} not found`);
+    }
+    return entry.studentId;
+  }
+
   async findOne(
     id: string,
     organizationId: string,

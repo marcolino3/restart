@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { CommonModule } from '@/common/common.module';
 import { DatabaseModule } from '@/database/database.module';
+import { StudentsModule } from '@/school-management/students/students.module';
 import { StudentRecordCategoriesResolver } from './student-record-categories.resolver';
 import { StudentRecordCategoriesService } from './student-record-categories.service';
 import { StudentRecordEntriesResolver } from './student-record-entries.resolver';
@@ -10,7 +11,7 @@ import { StudentRecordDocumentsResolver } from './student-record-documents.resol
 import { StudentRecordDocumentsService } from './student-record-documents.service';
 
 @Module({
-  imports: [CommonModule, DatabaseModule],
+  imports: [CommonModule, DatabaseModule, StudentsModule],
   controllers: [StudentRecordDocumentsController],
   providers: [
     StudentRecordCategoriesResolver,

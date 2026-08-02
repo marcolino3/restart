@@ -23,6 +23,7 @@ import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { BetterAuthGuard } from '@/auth/guard/better-auth.guard';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { StorageService } from '@/storage/storage.service';
+import { StudentsService } from '@/school-management/students/students.service';
 import { StudentRecordDocumentsService } from './student-record-documents.service';
 import { StudentRecordEntry } from './entities/student-record-entry.entity';
 
@@ -54,6 +55,7 @@ export class StudentRecordDocumentsController {
     private readonly entriesRepo: Repository<StudentRecordEntry>,
     private readonly documents: StudentRecordDocumentsService,
     private readonly storage: StorageService,
+    private readonly studentsService: StudentsService,
   ) {}
 
   /** Org-scoped object key, refusing invalid org/file references. */
@@ -93,11 +95,18 @@ export class StudentRecordDocumentsController {
     // The target entry must belong to the caller's active organization.
     const entry = await this.entriesRepo.findOne({
       where: { id: entryId, organizationId: orgId },
-      select: ['id'],
+      select: ['id', 'studentId'],
     });
     if (!entry) {
       throw new ForbiddenException('Entry outside active organization');
     }
+    await this.studentsService.assertStudentVisibleToUser(
+      entry.studentId,
+      user.sub,
+      user.roles ?? [],
+      user.isSuperAdmin ?? false,
+      orgId,
+    );
 
     const fileId = randomUUID();
     await this.storage.put(
@@ -139,6 +148,14 @@ export class StudentRecordDocumentsController {
     if (!orgId) throw new ForbiddenException('No active organization');
 
     const doc = await this.documents.findOneOwned(id, orgId);
+    const studentId = await this.documents.getStudentIdForDocument(doc, orgId);
+    await this.studentsService.assertStudentVisibleToUser(
+      studentId,
+      user.sub,
+      user.roles ?? [],
+      user.isSuperAdmin ?? false,
+      orgId,
+    );
     const ext = ALLOWED[doc.mimeType] ?? 'bin';
 
     try {
@@ -164,6 +181,14 @@ export class StudentRecordDocumentsController {
     if (!orgId) throw new ForbiddenException('No active organization');
 
     const doc = await this.documents.findOneOwned(id, orgId);
+    const studentId = await this.documents.getStudentIdForDocument(doc, orgId);
+    await this.studentsService.assertStudentVisibleToUser(
+      studentId,
+      user.sub,
+      user.roles ?? [],
+      user.isSuperAdmin ?? false,
+      orgId,
+    );
     const ext = ALLOWED[doc.mimeType] ?? 'bin';
     await this.storage.delete(this.key(orgId, doc.fileId, ext));
     await this.documents.remove(id, orgId);
