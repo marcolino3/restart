@@ -11,6 +11,7 @@ import {
 import { UseGuards } from '@nestjs/common';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
+import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
@@ -66,6 +67,7 @@ export class StudentsResolver {
 
   @Mutation(() => Student)
   @Permissions('STUDENT_WRITE')
+  @AdminPersonaOnly()
   async updateStudent(
     @Args('input') input: UpdateStudentInput,
     @CurrentOrgId() orgId: string,
@@ -83,6 +85,7 @@ export class StudentsResolver {
 
   @Mutation(() => Boolean)
   @Permissions('STUDENT_DELETE')
+  @AdminPersonaOnly()
   async deleteStudent(
     @Args('id', { type: () => ID }) id: string,
     @CurrentOrgId() orgId: string,

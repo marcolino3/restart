@@ -1,5 +1,6 @@
 import { CurrentMembershipIdOptional } from '@/auth/decorators/current-membership-id-optional.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
+import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
@@ -12,6 +13,7 @@ import { EmailTemplate } from './entities/email-template.entity';
 import { EmailTemplateCategory } from './enums/email-template-category.enum';
 
 @Resolver(() => EmailTemplate)
+@AdminPersonaOnly()
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
 export class EmailTemplatesResolver {
   constructor(private readonly templates: EmailTemplatesService) {}

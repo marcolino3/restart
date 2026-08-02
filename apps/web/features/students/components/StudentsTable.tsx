@@ -37,6 +37,10 @@ import { StudentListItem } from "../actions/get-students.action";
 import { deleteStudentAction } from "../actions/delete-student.action";
 import { StudentAvatar } from "./StudentAvatar";
 import { handleAction } from "@/lib/actions/handle-action";
+import {
+  isAdminPersona,
+  useUser,
+} from "@/features/users/context/current-user.context";
 
 interface Props {
   data: StudentListItem[];
@@ -77,8 +81,10 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
   const t = useTranslations("Common");
   const tS = useTranslations("Students");
   const locale = useLocale();
+  const user = useUser();
+  const canEditOrDelete = isAdminPersona(user?.persona);
 
-  return [
+  const columns: ColumnDef<StudentListItem>[] = [
     {
       id: "select",
       header: ({ table }) => (
@@ -219,7 +225,10 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
           <Badge variant="slate">{t("inactive")}</Badge>
         ),
     },
-    {
+  ];
+
+  if (canEditOrDelete) {
+    columns.push({
       id: "actions",
       enableHiding: false,
       cell: ({ row }) => {
@@ -259,8 +268,10 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
           </DropdownMenu>
         );
       },
-    },
-  ];
+    });
+  }
+
+  return columns;
 };
 
 export const StudentsTable = ({ data }: Props) => {

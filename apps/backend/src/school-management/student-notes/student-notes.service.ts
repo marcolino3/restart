@@ -35,6 +35,21 @@ export class StudentNotesService {
     });
   }
 
+  /** Resolves the owning studentId for visibility checks ahead of update/delete. */
+  async getStudentIdForNote(
+    id: string,
+    organizationId: string,
+  ): Promise<string> {
+    const note = await this.studentNotesRepository.findOne({
+      where: { id, organizationId, isActive: true },
+      select: ['id', 'studentId'],
+    });
+    if (!note) {
+      throw new NotFoundException('Student note not found');
+    }
+    return note.studentId;
+  }
+
   async findNotesByStudentId(
     studentId: string,
     organizationId: string,
