@@ -5,6 +5,13 @@ import { EmployeeAbsenceCategoriesService } from './employee-absence-categories.
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { SuperAdminGuard } from '@/auth/guard/super-admin.guard';
+import { PERMS_KEY } from '@/auth/decorators/permissions.decorator';
+
+const methodOf = (name: keyof EmployeeAbsenceCategoriesResolver): object =>
+  Object.getOwnPropertyDescriptor(
+    EmployeeAbsenceCategoriesResolver.prototype,
+    name,
+  )?.value as object;
 import { CreateEmployeeAbsenceCategoryInput } from './dto/create-employee-absence-category.input';
 import { UpdateEmployeeAbsenceCategoryInput } from './dto/update-employee-absence-category.input';
 import { UpsertEmployeeAbsenceCategoryTranslationInput } from './dto/upsert-employee-absence-category-translation.input';
@@ -58,8 +65,31 @@ describe('EmployeeAbsenceCategoriesResolver', () => {
     );
   });
 
-  it('should be defined', () => {
-    expect(resolver).toBeDefined();
+  it('authenticates the whole resolver', () => {
+    const guards: unknown[] =
+      Reflect.getMetadata('__guards__', EmployeeAbsenceCategoriesResolver) ??
+      [];
+    expect(guards).toEqual(
+      expect.arrayContaining([GqlBetterAuthGuard, GraphQLAccessGuard]),
+    );
+  });
+
+  it.each([
+    ['findEmployeeAbsenceCategoriesByOrgId', 'EMPLOYEE_ABSENCE_CATEGORY_READ'],
+    ['findOne', 'EMPLOYEE_ABSENCE_CATEGORY_READ'],
+    ['createEmployeeAbsenceCategory', 'EMPLOYEE_ABSENCE_CATEGORY_MANAGE'],
+    ['updateEmployeeAbsenceCategory', 'EMPLOYEE_ABSENCE_CATEGORY_MANAGE'],
+    ['archiveEmployeeAbsenceCategory', 'EMPLOYEE_ABSENCE_CATEGORY_MANAGE'],
+    ['reorderEmployeeAbsenceCategories', 'EMPLOYEE_ABSENCE_CATEGORY_MANAGE'],
+    ['setEmployeeAbsenceCategoryActive', 'EMPLOYEE_ABSENCE_CATEGORY_MANAGE'],
+    [
+      'upsertEmployeeAbsenceCategoryTranslation',
+      'EMPLOYEE_ABSENCE_CATEGORY_MANAGE',
+    ],
+  ] as const)('%s requires permission %s', (method, permission) => {
+    const permissions: string[] =
+      Reflect.getMetadata(PERMS_KEY, methodOf(method)) ?? [];
+    expect(permissions).toContain(permission);
   });
 
   describe('seedSystemEmployeeAbsenceCategories', () => {

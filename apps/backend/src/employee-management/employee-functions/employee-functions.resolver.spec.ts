@@ -1,5 +1,5 @@
-import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 
 import { Locale } from '@/database/enums/locale.enum';
 import { EmployeeFunctionsResolver } from './employee-functions.resolver';
@@ -131,6 +131,11 @@ describe('EmployeeFunctionsResolver', () => {
           'org-a',
         ),
       ).rejects.toBeInstanceOf(NotFoundException);
+
+      expect(service.update).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'fn-foreign' }),
+        'org-a',
+      );
     });
 
     it('propagates NotFoundException for archive of a foreign org function', async () => {
@@ -153,11 +158,8 @@ describe('EmployeeFunctionsResolver', () => {
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
-    it('scopes update, archive, delete and reorder to the active org id', async () => {
+    it('scopes update mutations to the active org id', async () => {
       service.update.mockResolvedValue({ id: 'fn-1' });
-      service.archive.mockResolvedValue(true);
-      service.remove.mockResolvedValue(true);
-      service.reorder.mockResolvedValue([]);
 
       await resolver.updateEmployeeFunction(
         {
@@ -166,16 +168,29 @@ describe('EmployeeFunctionsResolver', () => {
         },
         'org-a',
       );
-      await resolver.archiveEmployeeFunction('fn-1', 'org-a');
-      await resolver.deleteEmployeeFunction('fn-1', 'org-a');
-      await resolver.reorderEmployeeFunctions({ ids: ['a', 'b'] }, 'org-a');
 
       expect(service.update).toHaveBeenCalledWith(
         expect.objectContaining({ id: 'fn-1' }),
         'org-a',
       );
+    });
+
+    it('scopes archive and delete to the active org id', async () => {
+      service.archive.mockResolvedValue(true);
+      service.remove.mockResolvedValue(true);
+
+      await resolver.archiveEmployeeFunction('fn-1', 'org-a');
+      await resolver.deleteEmployeeFunction('fn-1', 'org-a');
+
       expect(service.archive).toHaveBeenCalledWith('fn-1', 'org-a');
       expect(service.remove).toHaveBeenCalledWith('fn-1', 'org-a');
+    });
+
+    it('scopes reorder to the active org id', async () => {
+      service.reorder.mockResolvedValue([]);
+
+      await resolver.reorderEmployeeFunctions({ ids: ['a', 'b'] }, 'org-a');
+
       expect(service.reorder).toHaveBeenCalledWith(['a', 'b'], 'org-a');
     });
   });

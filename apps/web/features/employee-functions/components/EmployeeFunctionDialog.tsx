@@ -84,13 +84,14 @@ export function EmployeeFunctionDialog({
   }, [open, initial, form]);
 
   const onSubmit = (values: EmployeeFunctionFormValues) => {
-    const trimmed = values.translations.map((tr) => ({
-      locale: tr.locale,
-      name: tr.name.trim(),
-    }));
+    const translations = values.translations
+      .map((tr) => ({
+        locale: tr.locale,
+        name: tr.name.trim(),
+      }))
+      .filter((tr) => tr.name.length > 0);
     startTransition(async () => {
       if (mode === "create") {
-        const translations = trimmed.filter((tr) => tr.name.length > 0);
         await handleAction({
           action: () => createEmployeeFunctionAction({ translations }),
           successMessage: t("createdToast"),
@@ -101,11 +102,15 @@ export function EmployeeFunctionDialog({
           },
         });
       } else if (initial) {
+        const allTranslations = values.translations.map((tr) => ({
+          locale: tr.locale,
+          name: tr.name.trim(),
+        }));
         await handleAction({
           action: () =>
             updateEmployeeFunctionAction({
               id: initial.id,
-              translations: trimmed,
+              translations: allTranslations,
             }),
           successMessage: t("updatedToast"),
           errorMessage: t("updateError"),

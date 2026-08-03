@@ -407,15 +407,13 @@ function SortableFunctionRow({
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(isDragging && "opacity-50")}
-      {...attributes}
     >
-      <TableCell
-        className="w-8"
-        onClick={(e) => e.stopPropagation()}
-        ref={setActivatorNodeRef}
-        {...(dragEnabled ? listeners : {})}
-      >
+      <TableCell className="w-8" onClick={(e) => e.stopPropagation()}>
         <span
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...(dragEnabled ? listeners : {})}
+          className="inline-flex"
           aria-label={t("dragLabel")}
           title={dragEnabled ? t("dragLabel") : t("dragDisabledWhileSearching")}
         >
