@@ -7,6 +7,8 @@ import { useFormContext } from "react-hook-form";
 
 import { Badge } from "@/components/ui/badge";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
+import { PhoneFormField } from "@/components/form/form-fields/PhoneFormField";
+import { PostalCodeFormField } from "@/components/form/form-fields/PostalCodeFormField";
 import { SocialSecurityNumberFormField } from "@/components/form/form-fields/SocialSecurityNumberFormField";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
@@ -113,7 +115,11 @@ export const PersonalEmploymentSection = ({
         </FormRow>
 
         <FormRow label={t("phone")}>
-          <InputFormField name="contactPhone" type="tel" />
+          <PhoneFormField
+            name="contactPhone"
+            country={form.watch("country") || orgCountry}
+            label=""
+          />
         </FormRow>
 
         <FormRow label={t("persona")}>
@@ -136,8 +142,14 @@ export const PersonalEmploymentSection = ({
   );
 };
 
-export const AddressSection = () => {
+interface AddressSectionProps {
+  orgCountry?: string | null;
+}
+
+export const AddressSection = ({ orgCountry }: AddressSectionProps) => {
   const t = useTranslations("Common");
+  const form = useFormContext();
+  const currentCountry = form.watch("country") || orgCountry;
 
   return (
     <div className="border-t border-border">
@@ -163,10 +175,13 @@ export const AddressSection = () => {
           />
         </FormRow>
 
-        <FormRow label={t("postalCode")}>
+        <FormRow label={t("postalCodeAndCity")}>
           <div className="flex gap-2">
             <div className="w-32">
-              <InputFormField name="postalCode" placeholder={t("postalCode")} />
+              <PostalCodeFormField
+                name="postalCode"
+                country={currentCountry}
+              />
             </div>
             <div className="flex-1">
               <InputFormField name="city" placeholder={t("city")} />

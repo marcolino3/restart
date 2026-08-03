@@ -689,6 +689,7 @@
     "addressLine2": "Address Line 2",
     "zip": "Zip Code",
     "postalCode": "Postal Code",
+    "postalCodeAndCity": "Postal code / City",
     "city": "City",
     "state": "State / Region",
     "country": "Country",

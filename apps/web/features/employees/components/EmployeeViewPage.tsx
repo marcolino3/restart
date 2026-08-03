@@ -307,7 +307,7 @@ export default function EmployeeViewPage({
                       {user.addressLine2}
                     </KvRow>
                   )}
-                  <KvRow label={t("postalCode")}>
+                  <KvRow label={t("postalCodeAndCity")}>
                     {[user?.postalCode, user?.city]
                       .filter(Boolean)
                       .join(" ") || "–"}

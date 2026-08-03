@@ -255,7 +255,7 @@ export default function EmployeeEditView({
                     </h3>
                   </div>
                   <div className="mt-6">
-                    <AddressSection />
+                    <AddressSection orgCountry={orgCountry} />
                   </div>
                   <FormActionButtons
                     disabled={form.formState.isSubmitting}
