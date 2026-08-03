@@ -415,16 +415,19 @@ function SortableFunctionRow({
         ref={setActivatorNodeRef}
         {...(dragEnabled ? listeners : {})}
       >
-        <GripVertical
-          className={cn(
-            "h-4 w-4 text-muted-foreground",
-            dragEnabled
-              ? "cursor-grab active:cursor-grabbing"
-              : "cursor-not-allowed opacity-30",
-          )}
+        <span
           aria-label={t("dragLabel")}
           title={dragEnabled ? t("dragLabel") : t("dragDisabledWhileSearching")}
-        />
+        >
+          <GripVertical
+            className={cn(
+              "h-4 w-4 text-muted-foreground",
+              dragEnabled
+                ? "cursor-grab active:cursor-grabbing"
+                : "cursor-not-allowed opacity-30",
+            )}
+          />
+        </span>
       </TableCell>
       {children}
     </TableRow>
