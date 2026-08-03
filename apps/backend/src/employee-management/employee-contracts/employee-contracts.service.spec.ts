@@ -145,6 +145,30 @@ describe('EmployeeContractsService', () => {
         BadRequestException,
       );
     });
+
+    it('clears day shares when exact times are provided on create', async () => {
+      repo.findOne.mockResolvedValue(null);
+
+      await service.create(
+        {
+          ...baseInput,
+          weekdayTimeWindows: {
+            mon: [{ start: '08:00', end: '12:00' }],
+          },
+          weekdayWorkloads: { mon: 20, tue: 20 },
+        },
+        ORG_ID,
+      );
+
+      expect(repo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          weekdayTimeWindows: {
+            mon: [{ start: '08:00', end: '12:00' }],
+          },
+          weekdayWorkloads: null,
+        }),
+      );
+    });
   });
 
   describe('update', () => {
@@ -277,6 +301,41 @@ describe('EmployeeContractsService', () => {
             mon: [{ start: '08:00', end: '12:00' }],
           },
           weekdayWorkloads: null,
+        }),
+      );
+    });
+
+    it('does not clear workloads when windows are an empty object', async () => {
+      const previous = {
+        id: 'c-old',
+        employeeId: EMPLOYEE_ID,
+        organizationId: ORG_ID,
+        startDate: '2025-01-01',
+        endDate: null as string | null,
+        contractType: EmployeeContractType.PERMANENT,
+        grossSalary: 8000,
+        weekdayWorkloads: { mon: 20, tue: 20 },
+        weekdayTimeWindows: null,
+        isActive: true,
+      };
+      repo.findOne.mockResolvedValue(previous);
+
+      await service.update(
+        {
+          id: 'c-old',
+          startDate: '2025-01-01',
+          contractType: EmployeeContractType.PERMANENT,
+          grossSalary: 8000,
+          weekdayTimeWindows: {},
+          weekdayWorkloads: { mon: 20, tue: 20 },
+        },
+        ORG_ID,
+      );
+
+      expect(repo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          weekdayTimeWindows: null,
+          weekdayWorkloads: { mon: 20, tue: 20 },
         }),
       );
     });

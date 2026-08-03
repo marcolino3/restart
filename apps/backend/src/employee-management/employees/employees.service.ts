@@ -4,6 +4,8 @@ import {
   assertContractTypeFields,
   clearHiddenContractFields,
 } from '@/employee-management/employee-contracts/contract-type-rules';
+import { applyExclusiveScheduleFields } from '@/employee-management/employee-contracts/contract-schedule';
+import { EmployeeFunction } from '@/employee-management/employee-functions/entities/employee-function.entity';
 import { Team } from '@/employee-management/teams/entities/team.entity';
 import { TeamMember } from '@/employee-management/team-members/entities/team-member.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
@@ -684,11 +686,7 @@ export class EmployeesService {
 
     // Exact clock times take precedence in the engine. Keep the two modes
     // mutually exclusive so a leftover share cannot override a cleared plan.
-    if (patch.weekdayTimeWindows) {
-      patch.weekdayWorkloads = null;
-    } else if (patch.weekdayWorkloads) {
-      patch.weekdayTimeWindows = null;
-    }
+    applyExclusiveScheduleFields(patch);
 
     const existing = await this.findCurrentOnboardingContract(
       manager,
@@ -833,21 +831,26 @@ export class EmployeesService {
       notes: previous.notes,
     };
 
-    if (merged.weekdayTimeWindows) {
-      merged.weekdayWorkloads = null;
-    } else if (merged.weekdayWorkloads) {
-      merged.weekdayTimeWindows = null;
-    }
-
+    applyExclusiveScheduleFields(merged);
     clearHiddenContractFields(merged, merged.contractType);
 
-    // Compare against a type-cleared copy of the previous row so leftover
-    // values on hidden fields (or null/false / empty-schedule noise) do not
-    // look like a material change and block plain person-data saves.
+    // Compare against a type-cleared + schedule-normalized copy of the previous
+    // row so leftover hidden fields, dual schedule modes, or null/false /
+    // empty-schedule noise do not look like a material change.
     const previousComparable: Partial<EmployeeContract> = { ...previous };
+    applyExclusiveScheduleFields(previousComparable);
     clearHiddenContractFields(
       previousComparable,
       previousComparable.contractType ?? merged.contractType,
+    );
+
+    // Edit wizard maps legacy position labels → function IDs; treat label and
+    // matching function id as the same value so person-only saves stay quiet.
+    await this.alignPositionForCompare(
+      manager,
+      previousComparable,
+      merged,
+      organizationId,
     );
 
     if (
@@ -950,6 +953,51 @@ export class EmployeesService {
       }
     }
     return any ? out : null;
+  }
+
+  /**
+   * When previous stores a legacy function label and the form sends the
+   * matching function UUID (or vice versa), rewrite the previous side so the
+   * snapshot comparison does not treat that remapping as a contract change.
+   */
+  private async alignPositionForCompare(
+    manager: EntityManager,
+    previous: Partial<EmployeeContract>,
+    merged: Partial<EmployeeContract>,
+    organizationId: string,
+  ): Promise<void> {
+    const left =
+      typeof previous.position === 'string' ? previous.position.trim() : '';
+    const right =
+      typeof merged.position === 'string' ? merged.position.trim() : '';
+    if (!left || !right || left === right) return;
+
+    const uuidRe =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    const resolve = async (value: string) => {
+      if (uuidRe.test(value)) {
+        return manager.findOne(EmployeeFunction, {
+          where: { id: value, organizationId },
+        });
+      }
+      return manager.findOne(EmployeeFunction, {
+        where: { name: value, organizationId },
+      });
+    };
+
+    const [prevFn, nextFn] = await Promise.all([resolve(left), resolve(right)]);
+    if (prevFn && nextFn && prevFn.id === nextFn.id) {
+      previous.position = merged.position;
+      return;
+    }
+    if (prevFn && (prevFn.id === right || prevFn.name === right)) {
+      previous.position = merged.position;
+      return;
+    }
+    if (nextFn && (nextFn.id === left || nextFn.name === left)) {
+      previous.position = merged.position;
+    }
   }
 
   private dayBeforeIso(isoDate: string): string {

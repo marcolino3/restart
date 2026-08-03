@@ -84,12 +84,13 @@ export function EmployeeFunctionDialog({
   }, [open, initial, form]);
 
   const onSubmit = (values: EmployeeFunctionFormValues) => {
-    const translations = values.translations.map((tr) => ({
+    const trimmed = values.translations.map((tr) => ({
       locale: tr.locale,
       name: tr.name.trim(),
     }));
     startTransition(async () => {
       if (mode === "create") {
+        const translations = trimmed.filter((tr) => tr.name.length > 0);
         await handleAction({
           action: () => createEmployeeFunctionAction({ translations }),
           successMessage: t("createdToast"),
@@ -102,7 +103,10 @@ export function EmployeeFunctionDialog({
       } else if (initial) {
         await handleAction({
           action: () =>
-            updateEmployeeFunctionAction({ id: initial.id, translations }),
+            updateEmployeeFunctionAction({
+              id: initial.id,
+              translations: trimmed,
+            }),
           successMessage: t("updatedToast"),
           errorMessage: t("updateError"),
           onSuccess: (data) => {
@@ -155,7 +159,7 @@ export function EmployeeFunctionDialog({
                   ))}
                 </TabsList>
                 {LOCALES.map((loc, index) => (
-                  <TabsContent key={loc} value={loc} className="mt-3">
+                  <TabsContent key={loc} value={loc} className="mt-3 pb-2">
                     <InputFormField
                       name={`translations.${index}.name`}
                       label="nameLabel"

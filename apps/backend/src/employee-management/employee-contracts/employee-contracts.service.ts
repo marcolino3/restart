@@ -12,6 +12,7 @@ import {
   assertContractTypeFields,
   clearHiddenContractFields,
 } from './contract-type-rules';
+import { applyExclusiveScheduleFields } from './contract-schedule';
 
 @Injectable()
 export class EmployeeContractsService {
@@ -46,6 +47,7 @@ export class EmployeeContractsService {
         organizationId,
         previousContractId: previous?.id ?? null,
       });
+      applyExclusiveScheduleFields(contract);
       clearHiddenContractFields(contract, contract.contractType);
       return repo.save(contract);
     });
@@ -136,11 +138,8 @@ export class EmployeeContractsService {
     };
 
     // Exact clock times take precedence — keep the two schedule modes exclusive.
-    if (merged.weekdayTimeWindows) {
-      merged.weekdayWorkloads = null;
-    } else if (merged.weekdayWorkloads) {
-      merged.weekdayTimeWindows = null;
-    }
+    // Empty `{}` must not wipe workloads; only real window entries count.
+    applyExclusiveScheduleFields(merged);
 
     assertContractTypeFields(merged, merged.contractType);
     clearHiddenContractFields(merged, merged.contractType);

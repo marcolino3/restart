@@ -25,6 +25,7 @@ describe('EmployeesService onboarding orchestrator', () => {
     Organization?: unknown;
     Employee?: unknown;
     EmployeeContract?: unknown;
+    EmployeeFunction?: unknown;
     Team?: unknown;
     Role?: unknown[];
   };
@@ -37,8 +38,33 @@ describe('EmployeesService onboarding orchestrator', () => {
   beforeEach(() => {
     rows = {};
     manager = {
-      findOne: jest.fn((entity: { name: string }) =>
-        Promise.resolve((rows as Record<string, unknown>)[entity.name] ?? null),
+      findOne: jest.fn(
+        (
+          entity: { name: string },
+          opts?: { where?: Record<string, unknown> },
+        ) => {
+          if (entity.name === 'EmployeeFunction') {
+            const raw = rows.EmployeeFunction;
+            const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
+            const where = opts?.where ?? {};
+            const match = list.find((fn) => {
+              const row = fn as Record<string, unknown>;
+              if (where.id && row.id !== where.id) return false;
+              if (where.name && row.name !== where.name) return false;
+              if (
+                where.organizationId &&
+                row.organizationId !== where.organizationId
+              ) {
+                return false;
+              }
+              return true;
+            });
+            return Promise.resolve(match ?? null);
+          }
+          return Promise.resolve(
+            (rows as Record<string, unknown>)[entity.name] ?? null,
+          );
+        },
       ),
       find: jest.fn((entity: { name: string }) => {
         if (entity.name === 'Role') {
@@ -307,6 +333,118 @@ describe('EmployeesService onboarding orchestrator', () => {
           'previousContractId' in (call[1] as object),
       );
       expect(contractSaves).toHaveLength(0);
+    });
+
+    it('does not version when legacy dual schedule collapses to the active mode', async () => {
+      rows.Organization = { id: 'org-1' };
+      rows.Employee = {
+        id: 'emp-1',
+        status: 'ACTIVE',
+        membership: { organizationId: 'org-1', user: {} },
+        timeTrackingEnabled: false,
+      };
+      rows.EmployeeContract = {
+        id: 'c-old',
+        employeeId: 'emp-1',
+        organizationId: 'org-1',
+        startDate: '2025-01-01',
+        endDate: null,
+        contractType: 'PERMANENT',
+        position: 'Teacher',
+        workloadPercent: 60,
+        weeklyHours: '42',
+        grossSalary: 8000,
+        has13thSalary: false,
+        // Legacy row still has both modes populated; exclusivity prefers windows.
+        weekdayTimeWindows: {
+          mon: [{ start: '08:00', end: '12:00' }],
+        },
+        weekdayWorkloads: { mon: 20, tue: 20, wed: 20 },
+        isActive: true,
+      };
+      manager.save.mockClear();
+      manager.create.mockClear();
+
+      await service.upsertEmployeeOnboardingDraft(
+        {
+          id: 'emp-1',
+          firstName: 'A',
+          lastName: 'B',
+          contract: {
+            contractType: 'PERMANENT' as never,
+            startDate: '2025-01-01',
+            position: 'Teacher',
+            workloadPercent: 60,
+            weeklyHours: '42',
+            grossSalary: 8000,
+            has13thSalary: false,
+            weekdayTimeWindows: {
+              mon: [{ start: '08:00', end: '12:00' }],
+            },
+            weekdayWorkloads: null,
+          },
+        },
+        'org-1',
+      );
+
+      expect(manager.create).not.toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ previousContractId: 'c-old' }),
+      );
+    });
+
+    it('does not version when form sends function id for a legacy position label', async () => {
+      rows.Organization = { id: 'org-1' };
+      rows.Employee = {
+        id: 'emp-1',
+        status: 'ACTIVE',
+        membership: { organizationId: 'org-1', user: {} },
+        timeTrackingEnabled: false,
+      };
+      rows.EmployeeFunction = {
+        id: 'fn-teacher',
+        name: 'Teacher',
+        organizationId: 'org-1',
+      };
+      rows.EmployeeContract = {
+        id: 'c-old',
+        employeeId: 'emp-1',
+        organizationId: 'org-1',
+        startDate: '2025-01-01',
+        endDate: null,
+        contractType: 'PERMANENT',
+        position: 'Teacher',
+        workloadPercent: 80,
+        weeklyHours: '42',
+        grossSalary: 8000,
+        has13thSalary: false,
+        isActive: true,
+      };
+      manager.save.mockClear();
+      manager.create.mockClear();
+
+      await service.upsertEmployeeOnboardingDraft(
+        {
+          id: 'emp-1',
+          firstName: 'A',
+          lastName: 'B',
+          contract: {
+            contractType: 'PERMANENT' as never,
+            startDate: '2025-01-01',
+            position: 'fn-teacher',
+            workloadPercent: 80,
+            weeklyHours: '42',
+            grossSalary: 8000,
+            has13thSalary: false,
+          },
+        },
+        'org-1',
+      );
+
+      expect(manager.create).not.toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ previousContractId: 'c-old' }),
+      );
     });
 
     it('patches DRAFT contracts in place instead of versioning', async () => {
