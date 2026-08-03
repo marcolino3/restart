@@ -12,6 +12,8 @@ import { EmployeeEmergencyProfile } from '@/employee-management/employee-emergen
 import { EmployeeNote } from '@/employee-management/employee-notes/entities/employee-note.entity';
 import { Employee } from '@/employee-management/employees/entities/employee.entity';
 import { EmployeeContract } from '@/employee-management/employee-contracts/entities/employee-contract.entity';
+import { EmployeeFunction } from '@/employee-management/employee-functions/entities/employee-function.entity';
+import { EmployeeFunctionTranslation } from '@/employee-management/employee-functions/entities/employee-function-translation.entity';
 import { TeamMember } from '@/employee-management/team-members/entities/team-member.entity';
 import { Team } from '@/employee-management/teams/entities/team.entity';
 import { TimeTracking } from '@/employee-management/time-tracking/entities/time-tracking.entity';
@@ -105,6 +107,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       TeamMember,
       Employee,
       EmployeeContract,
+      EmployeeFunction,
+      EmployeeFunctionTranslation,
       TimeTracking,
       Holiday,
       CompanyVacation,

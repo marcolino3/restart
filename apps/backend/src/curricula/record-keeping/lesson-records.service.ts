@@ -540,7 +540,7 @@ export class LessonRecordsService {
       `SELECT
          COUNT(*) FILTER (
            WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
-                 >= (${nowExpr} AT TIME ZONE o.timezone)::date
+                 = (${nowExpr} AT TIME ZONE o.timezone)::date
          )::int AS today_count,
          COUNT(*) FILTER (
            WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
