@@ -1,0 +1,1 @@
+sh scripts/git-pre-push.sh
