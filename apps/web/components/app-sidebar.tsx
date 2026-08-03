@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   IconBuilding,
   IconBuildingCommunity,
+  IconBriefcase,
   IconCamera,
   IconChartHistogram,
   IconClock,
@@ -191,6 +192,11 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
             title: t("teams"),
             url: ROUTES.admin.teams(locale),
             icon: IconUsers,
+          },
+          {
+            title: t("employeeFunctions"),
+            url: ROUTES.admin.employeeFunctions(locale),
+            icon: IconBriefcase,
           },
           ...(hasPermission("SCHOOL_CLASS_READ")
             ? [

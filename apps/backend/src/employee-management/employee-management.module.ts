@@ -9,6 +9,7 @@ import { TeamsModule } from './teams/teams.module';
 import { TimeTrackingModule } from './time-tracking/time-tracking.module';
 import { TeamMembersModule } from './team-members/team-members.module';
 import { EmployeeAbsenceCategoriesModule } from './employee-absence-categories/employee-absence-categories.module';
+import { EmployeeFunctionsModule } from './employee-functions/employee-functions.module';
 import { EmployeeAbsencesModule } from './employee-absences/employee-absences.module';
 import { WorkTimeCalculationModule } from './work-time-calculation/work-time-calculation.module';
 import { HolidaysModule } from './holidays/holidays.module';
@@ -29,6 +30,7 @@ import { TimeTrackingPeriodsModule } from './time-tracking-periods/time-tracking
     TeamMembersModule,
     TimeTrackingModule,
     EmployeeAbsenceCategoriesModule,
+    EmployeeFunctionsModule,
     EmployeeAbsencesModule,
     WorkTimeCalculationModule,
     HolidaysModule,
