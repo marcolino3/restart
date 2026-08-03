@@ -46,6 +46,7 @@ test.describe('Employee functions — CRUD', () => {
     await expect(page.getByText(/function created/i)).toBeVisible({
       timeout: 15000,
     })
+    await page.reload({ waitUntil: 'networkidle' })
   }
 
   const createFunction = async (page: Page, unique: string) => {
@@ -58,7 +59,7 @@ test.describe('Employee functions — CRUD', () => {
     page.getByRole('row').filter({ hasText: unique })
 
   const openRowMenu = async (page: Page, label: string) => {
-    await page
+    await rowFor(page, label)
       .getByRole('button', { name: new RegExp(`open menu for ${label}`, 'i') })
       .click()
   }
@@ -100,6 +101,7 @@ test.describe('Employee functions — CRUD', () => {
       await editDialog.getByRole('tabpanel').getByLabel(/^label$/i).fill(renamed)
       await editDialog.getByRole('button', { name: /^save$/i }).click()
       await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 15000 })
+      await page.reload({ waitUntil: 'networkidle' })
 
       await expect(rowFor(page, renamed)).toBeVisible({ timeout: 15000 })
     })

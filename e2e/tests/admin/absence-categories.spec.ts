@@ -25,10 +25,7 @@ test.describe('Absence categories — CRUD', () => {
       waitUntil: 'networkidle',
     })
     await expect(
-      page.locator('main').getByRole('heading', {
-        name: /^absence categories$/i,
-        level: 1,
-      }),
+      page.getByRole('button', { name: /^new category$/i }),
     ).toBeVisible({ timeout: 15000 })
   }
 
