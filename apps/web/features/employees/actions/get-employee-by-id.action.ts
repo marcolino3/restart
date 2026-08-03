@@ -10,6 +10,8 @@ export type EmployeeDetail = {
     id: string;
     persona: string;
     contactPhone?: string | null;
+    contactPhone2?: string | null;
+    language?: string | null;
     user?: {
       id: string;
       title?: string | null;
@@ -23,6 +25,9 @@ export type EmployeeDetail = {
       postalCode?: string | null;
       city?: string | null;
       country?: string | null;
+      privateEmail?: string | null;
+      avatarUrl?: string | null;
+      language?: string | null;
       userEmails: {
         email: string;
         isPrimary: boolean;
@@ -53,6 +58,8 @@ const GetEmployeeByIdDocument = gql`
         id
         persona
         contactPhone
+        contactPhone2
+        language
         user {
           id
           title
@@ -66,6 +73,9 @@ const GetEmployeeByIdDocument = gql`
           postalCode
           city
           country
+          privateEmail
+          avatarUrl
+          language
           userEmails {
             email
             isPrimary
