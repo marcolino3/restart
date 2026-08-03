@@ -8,6 +8,7 @@ import {
   EmployeeContractFormSchema,
   EmployeeContractFormOutput,
 } from "../schemas/employee-contract-form.schema";
+import type { WeekdayTimeWindows } from "@restart/shared-schemas/employees/employee-onboarding-form.schema";
 
 export type EmployeeContractType =
   | "PERMANENT"
@@ -36,6 +37,7 @@ export type EmployeeContract = {
   notes?: string | null;
   documentUrl?: string | null;
   isActive: boolean;
+  weekdayTimeWindows?: WeekdayTimeWindows | null;
 };
 
 const ListByEmployeeDocument = gql`
@@ -59,6 +61,15 @@ const ListByEmployeeDocument = gql`
       notes
       documentUrl
       isActive
+      weekdayTimeWindows {
+        mon { start end }
+        tue { start end }
+        wed { start end }
+        thu { start end }
+        fri { start end }
+        sat { start end }
+        sun { start end }
+      }
     }
   }
 `;
