@@ -45,9 +45,20 @@ export interface CalcContract {
   startDate: string;
   /** inklusiv; null = offen */
   endDate: string | null;
-  /** Tatsächliche vertragliche Wochenstunden (bereits inkl. Pensum). */
+  /** Wochenstunden bei 100 % Pensum (Vollzeit-Referenz des Vertrags). */
   weeklyHours: number;
-  /** Optional ungleiche Verteilung; null = gleichmässig Mo–Fr. */
+  /**
+   * Pensum in Prozent der Vollzeit-Referenz. Nur relevant für die
+   * gleichmässige Default-Verteilung — {@link WeekdayWorkloadShares} und
+   * {@link WeekdayTimeWindows} tragen das Pensum bereits in sich.
+   * null/undefined = 100 %.
+   */
+  workloadPercent?: number | null;
+  /**
+   * Optional ungleiche Verteilung; die Anteile beziehen sich auf die
+   * Vollzeit-Woche und enthalten das Pensum bereits (50 % Pensum z.B. als
+   * mon 25 + tue 25). null = gleichmässig Mo–Fr gemäss `workloadPercent`.
+   */
   weekdayWorkloads?: WeekdayWorkloadShares | null;
   /**
    * Optional konkrete Zeitfenster pro Wochentag; hat Vorrang vor

@@ -1,80 +1,56 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FileText, Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Form } from "@/components/ui/form";
 import { DataTable } from "@/components/data-table/DataTable";
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
 import type { FilterGroup } from "@/components/data-table/DataTableFilter";
 import { useDataTable } from "@/components/data-table/use-data-table";
 import { multiSelectFilter } from "@/lib/table/locale-sorting";
-import { InputFormField } from "@/components/form/form-fields/InputFormField";
-import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
-import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
-import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
-import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
-import { handleAction } from "@/lib/actions/handle-action";
+import { ROUTES } from "@/constants/routes";
 
 import type { EmployeeContract } from "../actions/employee-contracts.actions";
-import {
-  saveEmployeeContractAction,
-  deleteEmployeeContractAction,
-} from "../actions/employee-contracts.actions";
-import {
-  EmployeeContractFormSchema,
-  EmployeeContractFormOutput,
-} from "../schemas/employee-contract-form.schema";
-import { FormRow } from "./EmployeeFormSections";
-import { ContractDocumentField } from "./ContractDocumentField";
+import { deleteEmployeeContractAction } from "../actions/employee-contracts.actions";
 
 interface Props {
   employeeId: string;
   contracts: EmployeeContract[];
   /** when true, show edit/delete actions */
   editable?: boolean;
+  functionOptions?: { label: string; value: string }[];
 }
-
-const contractTypeOptions = [
-  { label: "contractType.PERMANENT", value: "PERMANENT" },
-  { label: "contractType.TEMPORARY", value: "TEMPORARY" },
-  { label: "contractType.INTERNSHIP", value: "INTERNSHIP" },
-  { label: "contractType.APPRENTICESHIP", value: "APPRENTICESHIP" },
-];
-
-const paymentIntervalOptions = [
-  { label: "paymentInterval.MONTHLY_X12", value: "MONTHLY_X12" },
-  { label: "paymentInterval.MONTHLY_X13", value: "MONTHLY_X13" },
-];
 
 export default function EmployeeContractsTab({
   employeeId,
   contracts,
   editable,
+  functionOptions,
 }: Props) {
   const t = useTranslations("Common");
   const tE = useTranslations("Employees");
   const locale = useLocale();
   const router = useRouter();
 
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<EmployeeContract | null>(null);
+  const positionLabelById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const opt of functionOptions ?? []) {
+      map.set(opt.value, opt.label);
+    }
+    return map;
+  }, [functionOptions]);
+
+  const resolvePositionLabel = (position?: string | null) => {
+    if (!position) return "–";
+    return positionLabelById.get(position) ?? position;
+  };
 
   const formatDate = (s?: string | null) => {
     if (!s) return "–";
@@ -82,16 +58,6 @@ export default function EmployeeContractsTab({
       locale === "de" ? "de-CH" : "en-GB",
       { day: "2-digit", month: "short", year: "numeric" },
     );
-  };
-
-  const openCreate = () => {
-    setEditing(null);
-    setDialogOpen(true);
-  };
-
-  const openEdit = (c: EmployeeContract) => {
-    setEditing(c);
-    setDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -133,7 +99,10 @@ export default function EmployeeContractsTab({
         accessorFn: (c) =>
           c.contractType ? tE(`contractType.${c.contractType}`) : "",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={tE("hr.contractType")} />
+          <DataTableColumnHeader
+            column={column}
+            title={tE("hr.contractType")}
+          />
         ),
         meta: { labelKey: "hr.contractType" },
         filterFn: multiSelectFilter,
@@ -144,26 +113,27 @@ export default function EmployeeContractsTab({
       },
       {
         id: "position",
-        accessorFn: (c) => c.position ?? "",
+        accessorFn: (c) => resolvePositionLabel(c.position),
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title={tE("hr.position")} />
         ),
         meta: { labelKey: "hr.position" },
-        cell: ({ getValue }) => getValue<string>() || "–",
+        cell: ({ getValue }) => getValue<string>(),
       },
       {
         id: "workloadPercent",
         accessorFn: (c) => c.workloadPercent ?? -1,
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title={tE("hr.workloadPercent")}
-            className="justify-end"
-          />
+          <div className="flex justify-center">
+            <DataTableColumnHeader
+              column={column}
+              title={tE("hr.workloadPercent")}
+            />
+          </div>
         ),
         meta: { labelKey: "hr.workloadPercent" },
         cell: ({ row }) => (
-          <div className="text-right">
+          <div className="flex justify-center tabular-nums">
             {row.original.workloadPercent != null
               ? `${row.original.workloadPercent}%`
               : "–"}
@@ -174,11 +144,11 @@ export default function EmployeeContractsTab({
         id: "document",
         enableSorting: false,
         header: () => (
-          <span className="text-center">{tE("contract.document")}</span>
+          <div className="flex justify-center">{tE("contract.document")}</div>
         ),
         meta: { labelKey: "contract.document" },
         cell: ({ row }) => (
-          <div className="text-center">
+          <div className="flex justify-center">
             {row.original.documentUrl ? (
               <a
                 href={row.original.documentUrl}
@@ -205,13 +175,17 @@ export default function EmployeeContractsTab({
         header: () => <span className="sr-only">{t("actions")}</span>,
         cell: ({ row }) => (
           <div className="text-right">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => openEdit(row.original)}
-              aria-label={t("edit")}
-            >
-              <Pencil className="h-4 w-4" />
+            <Button variant="ghost" size="icon" asChild>
+              <Link
+                href={ROUTES.admin.employeesContractEdit(
+                  locale,
+                  employeeId,
+                  row.original.id,
+                )}
+                aria-label={t("edit")}
+              >
+                <Pencil className="h-4 w-4" />
+              </Link>
             </Button>
             <Button
               variant="ghost"
@@ -227,9 +201,9 @@ export default function EmployeeContractsTab({
     }
 
     return cols;
-    // `formatDate`/`openEdit`/`handleDelete` are recreated each render by design.
+    // `formatDate`/`handleDelete` are recreated each render by design.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [t, tE, editable, locale]);
+  }, [t, tE, editable, locale, employeeId, positionLabelById]);
 
   const { table, globalFilter, setGlobalFilter } = useDataTable({
     data: contracts,
@@ -271,9 +245,13 @@ export default function EmployeeContractsTab({
           </p>
         </div>
         {editable && (
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4 mr-2" />
-            {tE("contract.create")}
+          <Button asChild>
+            <Link
+              href={ROUTES.admin.employeesContractCreate(locale, employeeId)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {tE("contract.create")}
+            </Link>
           </Button>
         )}
       </div>
@@ -291,191 +269,6 @@ export default function EmployeeContractsTab({
           </span>
         }
       />
-
-      {editable && (
-        <ContractDialog
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-          employeeId={employeeId}
-          contract={editing}
-          onSaved={() => {
-            setDialogOpen(false);
-            router.refresh();
-          }}
-        />
-      )}
     </>
-  );
-}
-
-interface DialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  employeeId: string;
-  contract: EmployeeContract | null;
-  onSaved: () => void;
-}
-
-function ContractDialog({
-  open,
-  onOpenChange,
-  employeeId,
-  contract,
-  onSaved,
-}: DialogProps) {
-  const tE = useTranslations("Employees");
-
-  const form = useForm({
-    resolver: zodResolver(EmployeeContractFormSchema),
-    defaultValues: {
-      id: contract?.id,
-      employeeId,
-      startDate: contract?.startDate ? new Date(contract.startDate) : new Date(),
-      endDate: contract?.endDate ? new Date(contract.endDate) : null,
-      probationEndDate: contract?.probationEndDate
-        ? new Date(contract.probationEndDate)
-        : null,
-      contractType: contract?.contractType ?? undefined,
-      position: contract?.position ?? "",
-      supervisorMembershipId: contract?.supervisorMembershipId ?? null,
-      workloadPercent: contract?.workloadPercent ?? null,
-      weeklyHours: contract?.weeklyHours ?? "",
-      grossSalary: contract?.grossSalary ?? null,
-      paymentInterval: contract?.paymentInterval ?? undefined,
-      has13thSalary: contract?.has13thSalary ?? false,
-      annualVacationDays: contract?.annualVacationDays ?? null,
-      remainingVacationDays: contract?.remainingVacationDays ?? "",
-      notes: contract?.notes ?? "",
-      documentUrl: contract?.documentUrl ?? "",
-    },
-  });
-
-  const onValid = async (values: Record<string, unknown>) => {
-    await handleAction({
-      action: () =>
-        saveEmployeeContractAction(values as EmployeeContractFormOutput),
-      successMessage: contract ? tE("contract.updated") : tE("contract.created"),
-      errorMessage: tE("contract.saveError"),
-      onSuccess: onSaved,
-    });
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>
-            {contract ? tE("contract.edit") : tE("contract.create")}
-          </DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onValid, (errors) => {
-              console.warn("Contract validation errors:", errors);
-              toast.error(tE("validationError"));
-            })}
-          >
-            <DialogBody>
-              <div className="border-t border-border">
-                <dl className="divide-y divide-border">
-                <FormRow label={tE("hr.entryDate")}>
-                  <DatePickerFormField
-                    name="startDate"
-                    namespace="Employees"
-                    width="w-full sm:w-1/2"
-                    disabledDate={() => false}
-                  />
-                </FormRow>
-                <FormRow label={tE("hr.exitDate")}>
-                  <DatePickerFormField
-                    name="endDate"
-                    namespace="Employees"
-                    width="w-full sm:w-1/2"
-                    disabledDate={() => false}
-                  />
-                </FormRow>
-                <FormRow label={tE("hr.probationEndDate")}>
-                  <DatePickerFormField
-                    name="probationEndDate"
-                    namespace="Employees"
-                    width="w-full sm:w-1/2"
-                    disabledDate={() => false}
-                  />
-                </FormRow>
-                <FormRow label={tE("hr.contractType")}>
-                  <SelectFormField
-                    name="contractType"
-                    options={contractTypeOptions}
-                    namespace="Employees"
-                    placeholder="selectPlaceholder"
-                    width="w-full sm:w-1/2"
-                  />
-                </FormRow>
-                <FormRow label={tE("hr.position")}>
-                  <InputFormField name="position" />
-                </FormRow>
-                <FormRow label={tE("hr.workloadPercent")}>
-                  <InputFormField name="workloadPercent" type="number" placeholder="%" />
-                </FormRow>
-                <FormRow label={tE("hr.weeklyHours")}>
-                  <InputFormField name="weeklyHours" placeholder="42.00" />
-                </FormRow>
-                <FormRow label={tE("hr.grossSalaryMonthly")}>
-                  <InputFormField name="grossSalary" type="number" placeholder="CHF" />
-                </FormRow>
-                <FormRow label={tE("hr.paymentInterval")}>
-                  <SelectFormField
-                    name="paymentInterval"
-                    options={paymentIntervalOptions}
-                    namespace="Employees"
-                    placeholder="selectPlaceholder"
-                    width="w-full sm:w-1/2"
-                  />
-                </FormRow>
-                <FormRow label={tE("hr.has13thSalary")}>
-                  <SwitchFormField name="has13thSalary" namespace="Employees" />
-                </FormRow>
-                <FormRow label={tE("hr.annualVacationDays")}>
-                  <InputFormField
-                    name="annualVacationDays"
-                    type="number"
-                    width="w-32"
-                  />
-                </FormRow>
-                <FormRow label={tE("hr.remainingVacationDays")}>
-                  <InputFormField
-                    name="remainingVacationDays"
-                    placeholder="0.00"
-                    width="w-32"
-                  />
-                </FormRow>
-                <FormRow label={tE("contract.notes")}>
-                  <TextareaFormField name="notes" />
-                </FormRow>
-                <FormRow label={tE("contract.document")}>
-                  <ContractDocumentField
-                    name="documentUrl"
-                    employeeId={employeeId}
-                  />
-                </FormRow>
-              </dl>
-              </div>
-            </DialogBody>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                {tE("contract.cancel")}
-              </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {tE("contract.save")}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
   );
 }

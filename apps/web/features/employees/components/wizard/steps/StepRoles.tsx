@@ -12,9 +12,13 @@ import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 
 interface Props {
   roleOptions: RadioCardOption[];
+  showInvitationTiming?: boolean;
 }
 
-export function StepRoles({ roleOptions }: Props) {
+export function StepRoles({
+  roleOptions,
+  showInvitationTiming = true,
+}: Props) {
   const t = useTranslations("EmployeeOnboarding");
   const { watch } = useFormContext();
   const email = watch("email") as string | undefined;
@@ -67,11 +71,17 @@ export function StepRoles({ roleOptions }: Props) {
           </div>
           <div className="flex flex-col gap-2">
             <span className="text-sm font-medium">{t("invitation")}</span>
-            <RadioCardFormField
-              name="invitationTiming"
-              options={invitationOptions}
-              columns={1}
-            />
+            {showInvitationTiming ? (
+              <RadioCardFormField
+                name="invitationTiming"
+                options={invitationOptions}
+                columns={1}
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {t("invitationEditHint")}
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

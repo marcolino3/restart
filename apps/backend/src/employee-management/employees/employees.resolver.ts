@@ -21,6 +21,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, LessThanOrEqual, Repository } from 'typeorm';
 import DataLoader from 'dataloader';
 import { EmployeeContract } from '@/employee-management/employee-contracts/entities/employee-contract.entity';
+import { contractTypeRules } from '@/employee-management/employee-contracts/contract-type-rules';
 import { WorkTimeBalanceService } from '@/employee-management/work-time-calculation/work-time-balance.service';
 import { CreateEmployeeInput } from './dto/create-employee.input';
 import { EmployeeOnboardingInput } from './dto/employee-onboarding.input';
@@ -74,7 +75,7 @@ export class EmployeesResolver {
     return ctx.__employeeFieldLoaders;
   }
 
-  /** Pensum (%) des aktuell gültigen Vertrags je Mitarbeiter. */
+  /** Pensum (%) of the current contract — null for hourly-paid types. */
   private async batchWorkloadPercent(
     orgId: string,
     employeeIds: readonly string[],
@@ -97,6 +98,10 @@ export class EmployeesResolver {
     return employeeIds.map((id) => {
       const c = byEmp.get(id);
       if (!c || c.workloadPercent == null) return null;
+      // Hourly / substitute / freelance have no pensum — never surface a leftover.
+      if (contractTypeRules(c.contractType).workloadPercent === 'hidden') {
+        return null;
+      }
       return Math.round(Number(c.workloadPercent));
     });
   }

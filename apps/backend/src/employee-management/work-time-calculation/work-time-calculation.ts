@@ -51,16 +51,20 @@ export function dailyPlannedMinutes(
     return dayWindows.reduce((sum, w) => sum + timeWindowMinutes(w), 0);
   }
 
+  // `weeklyHours` ist die Vollzeit-Referenz (Stunden bei 100 % Pensum).
   const weeklyMinutes = contract.weeklyHours * 60;
-  // 2. Ungleiche Prozent-Verteilung pro Wochentag.
+  // 2. Ungleiche Prozent-Verteilung pro Wochentag. Die Anteile beziehen sich
+  //    auf die Vollzeit-Woche und enthalten das Pensum bereits.
   const shares = contract.weekdayWorkloads;
   if (shares) {
     const share = shares[WEEKDAY_KEYS[weekday - 1]];
     if (share == null) return 0;
     return Math.round((share / 100) * weeklyMinutes);
   }
-  // 3. Default: gleichmässig Mo–Fr.
-  return weekday <= 5 ? Math.round(weeklyMinutes / 5) : 0;
+  // 3. Default: Pensum gleichmässig auf Mo–Fr. Ohne Pensum gilt Vollzeit.
+  if (weekday > 5) return 0;
+  const workloadShare = (contract.workloadPercent ?? 100) / 100;
+  return Math.round((weeklyMinutes * workloadShare) / 5);
 }
 
 /** Aktiver Vertrag an einem Tag (jüngster passender), oder null. */

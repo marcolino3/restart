@@ -25,6 +25,12 @@ out/
 # Turborepo
 .turbo/
 
+# Playwright artifacts
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+
 # Environment files
 .env
 .env.*

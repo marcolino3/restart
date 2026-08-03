@@ -1,5 +1,11 @@
 import { Persona } from '@/common/enums/persona.enum';
 import { EmployeeContract } from '@/employee-management/employee-contracts/entities/employee-contract.entity';
+import {
+  assertContractTypeFields,
+  clearHiddenContractFields,
+} from '@/employee-management/employee-contracts/contract-type-rules';
+import { applyExclusiveScheduleFields } from '@/employee-management/employee-contracts/contract-schedule';
+import { EmployeeFunction } from '@/employee-management/employee-functions/entities/employee-function.entity';
 import { Team } from '@/employee-management/teams/entities/team.entity';
 import { TeamMember } from '@/employee-management/team-members/entities/team-member.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
@@ -387,6 +393,7 @@ export class EmployeesService {
           roles: true,
           userEmail: true,
         },
+        teamMembers: { team: true },
       },
     });
 
@@ -658,25 +665,57 @@ export class EmployeesService {
     if (c.position !== undefined) patch.position = c.position ?? null;
     if (c.startDate !== undefined) patch.startDate = c.startDate;
     if (c.endDate !== undefined) patch.endDate = c.endDate ?? null;
+    if (c.probationEndDate !== undefined)
+      patch.probationEndDate = c.probationEndDate ?? null;
     if (c.workloadPercent !== undefined)
       patch.workloadPercent = c.workloadPercent ?? null;
     if (c.weeklyHours !== undefined) patch.weeklyHours = c.weeklyHours ?? null;
     if (c.annualVacationDays !== undefined)
       patch.annualVacationDays = c.annualVacationDays ?? null;
+    if (c.grossSalary !== undefined) patch.grossSalary = c.grossSalary ?? null;
+    if (c.hourlyRate !== undefined) patch.hourlyRate = c.hourlyRate ?? null;
+    if (c.paymentInterval !== undefined)
+      patch.paymentInterval = c.paymentInterval ?? null;
+    if (c.has13thSalary !== undefined)
+      patch.has13thSalary = c.has13thSalary ?? null;
     if (c.weekdayTimeWindows !== undefined)
       patch.weekdayTimeWindows = c.weekdayTimeWindows ?? null;
+    if (c.weekdayWorkloads !== undefined)
+      patch.weekdayWorkloads = c.weekdayWorkloads ?? null;
     if (c.documentUrl !== undefined) patch.documentUrl = c.documentUrl ?? null;
 
-    let contract = await manager.findOne(EmployeeContract, {
-      where: { employeeId: employee.id, organizationId, isActive: true },
-      order: { createdAt: 'DESC' },
-    });
-    if (contract) {
-      Object.assign(contract, patch);
-      await manager.save(EmployeeContract, contract);
+    // Exact clock times take precedence in the engine. Keep the two modes
+    // mutually exclusive so a leftover share cannot override a cleared plan.
+    applyExclusiveScheduleFields(patch);
+
+    const existing = await this.findCurrentOnboardingContract(
+      manager,
+      employee.id,
+      organizationId,
+    );
+
+    // Drafts keep in-place upserts — the first contract is still being built.
+    // Active employees version on change so history stays intact.
+    if (existing && employee.status === EmployeeStatus.ACTIVE) {
+      await this.versionOnboardingContractIfChanged(
+        manager,
+        existing,
+        patch,
+        employee.id,
+        organizationId,
+      );
+      return;
+    }
+
+    if (existing) {
+      Object.assign(existing, patch);
+      // Switching the contract type mid-draft must not leave values behind that
+      // contradict the new type (e.g. a monthly salary on an hourly contract).
+      clearHiddenContractFields(existing, existing.contractType);
+      await manager.save(EmployeeContract, existing);
     } else if (patch.startDate) {
       // A contract row requires a start date; only create once we have one.
-      contract = manager.create(EmployeeContract, {
+      const contract = manager.create(EmployeeContract, {
         ...patch,
         employeeId: employee.id,
         organizationId,
@@ -684,8 +723,287 @@ export class EmployeesService {
         isActive: true,
         isArchived: false,
       });
+      clearHiddenContractFields(contract, contract.contractType);
       await manager.save(EmployeeContract, contract);
     }
+  }
+
+  /**
+   * Same priority as the employee overview card: valid today → last past →
+   * soonest future. Soft-deleted rows (`isActive: false`) are ignored.
+   */
+  private async findCurrentOnboardingContract(
+    manager: EntityManager,
+    employeeId: string,
+    organizationId: string,
+  ): Promise<EmployeeContract | null> {
+    const rows = await manager.find(EmployeeContract, {
+      where: { employeeId, organizationId, isActive: true },
+      order: { startDate: 'DESC' },
+    });
+    if (rows.length === 0) return null;
+
+    const today = new Date().toISOString().split('T')[0];
+    const valid = rows.find((c) => {
+      const start = c.startDate?.slice(0, 10);
+      if (!start || start > today) return false;
+      const end = c.endDate?.slice(0, 10);
+      return !end || end >= today;
+    });
+    if (valid) return valid;
+
+    const past = rows.find((c) => {
+      const start = c.startDate?.slice(0, 10);
+      return Boolean(start && start <= today);
+    });
+    if (past) return past;
+
+    return [...rows].sort((a, b) =>
+      (a.startDate ?? '') > (b.startDate ?? '') ? 1 : -1,
+    )[0];
+  }
+
+  /**
+   * For ACTIVE employees edited via onboarding: if contract terms changed,
+   * end the current row and insert a successor (same versioning model as the
+   * contracts tab). No-op when nothing material changed — person/role edits
+   * must still save without touching the contract history.
+   */
+  private async versionOnboardingContractIfChanged(
+    manager: EntityManager,
+    previous: EmployeeContract,
+    patch: Partial<EmployeeContract>,
+    employeeId: string,
+    organizationId: string,
+  ): Promise<void> {
+    const merged: Partial<EmployeeContract> = {
+      organizationId,
+      employeeId,
+      contractType: patch.contractType ?? previous.contractType,
+      position:
+        patch.position !== undefined ? patch.position : previous.position,
+      startDate: patch.startDate ?? previous.startDate,
+      endDate: patch.endDate !== undefined ? patch.endDate : previous.endDate,
+      probationEndDate:
+        patch.probationEndDate !== undefined
+          ? patch.probationEndDate
+          : previous.probationEndDate,
+      workloadPercent:
+        patch.workloadPercent !== undefined
+          ? patch.workloadPercent
+          : previous.workloadPercent,
+      weeklyHours:
+        patch.weeklyHours !== undefined
+          ? patch.weeklyHours
+          : previous.weeklyHours,
+      annualVacationDays:
+        patch.annualVacationDays !== undefined
+          ? patch.annualVacationDays
+          : previous.annualVacationDays,
+      grossSalary:
+        patch.grossSalary !== undefined
+          ? patch.grossSalary
+          : previous.grossSalary,
+      hourlyRate:
+        patch.hourlyRate !== undefined ? patch.hourlyRate : previous.hourlyRate,
+      paymentInterval:
+        patch.paymentInterval !== undefined
+          ? patch.paymentInterval
+          : previous.paymentInterval,
+      has13thSalary:
+        patch.has13thSalary !== undefined
+          ? patch.has13thSalary
+          : previous.has13thSalary,
+      weekdayTimeWindows:
+        patch.weekdayTimeWindows !== undefined
+          ? patch.weekdayTimeWindows
+          : previous.weekdayTimeWindows,
+      weekdayWorkloads:
+        patch.weekdayWorkloads !== undefined
+          ? patch.weekdayWorkloads
+          : previous.weekdayWorkloads,
+      documentUrl:
+        patch.documentUrl !== undefined
+          ? patch.documentUrl
+          : previous.documentUrl,
+      supervisorMembershipId: previous.supervisorMembershipId,
+      remainingVacationDays: previous.remainingVacationDays,
+      notes: previous.notes,
+    };
+
+    applyExclusiveScheduleFields(merged);
+    clearHiddenContractFields(merged, merged.contractType);
+
+    // Compare against a type-cleared + schedule-normalized copy of the previous
+    // row so leftover hidden fields, dual schedule modes, or null/false /
+    // empty-schedule noise do not look like a material change.
+    const previousComparable: Partial<EmployeeContract> = { ...previous };
+    applyExclusiveScheduleFields(previousComparable);
+    clearHiddenContractFields(
+      previousComparable,
+      previousComparable.contractType ?? merged.contractType,
+    );
+
+    // Edit wizard maps legacy position labels → function IDs; treat label and
+    // matching function id as the same value so person-only saves stay quiet.
+    await this.alignPositionForCompare(
+      manager,
+      previousComparable,
+      merged,
+      organizationId,
+    );
+
+    if (
+      this.onboardingContractSnapshot(previousComparable) ===
+      this.onboardingContractSnapshot(merged)
+    ) {
+      return;
+    }
+
+    let newStartDate = merged.startDate;
+    if (!newStartDate) {
+      throw new BadRequestException(
+        'startDate is required to create a new contract version',
+      );
+    }
+    // Same effective day cannot version (previous would end before it starts).
+    // When terms changed but the form kept the old start date, take today.
+    if (newStartDate <= previous.startDate) {
+      const today = new Date().toISOString().split('T')[0];
+      if (today <= previous.startDate) {
+        throw new BadRequestException(
+          'New contract startDate must be after the previous contract startDate',
+        );
+      }
+      newStartDate = today;
+      merged.startDate = today;
+    }
+
+    assertContractTypeFields(merged, merged.contractType);
+
+    previous.endDate = this.dayBeforeIso(newStartDate);
+    await manager.save(EmployeeContract, previous);
+
+    const next = manager.create(EmployeeContract, {
+      ...merged,
+      startDate: newStartDate,
+      previousContractId: previous.id,
+      isActive: true,
+      isArchived: false,
+    });
+    clearHiddenContractFields(next, next.contractType);
+    await manager.save(EmployeeContract, next);
+  }
+
+  /** Comparable snapshot of contract fields relevant to onboarding edits. */
+  private onboardingContractSnapshot(c: Partial<EmployeeContract>): string {
+    const num = (v: unknown) => (v == null || v === '' ? null : Number(v));
+    const str = (v: unknown) => {
+      if (v == null) return null;
+      if (typeof v === 'string') {
+        const s = v.trim();
+        return s === '' ? null : s;
+      }
+      if (typeof v === 'number' || typeof v === 'boolean') {
+        return String(v);
+      }
+      return null;
+    };
+    return JSON.stringify({
+      contractType: c.contractType ?? null,
+      position: str(c.position),
+      startDate: c.startDate ?? null,
+      endDate: c.endDate ?? null,
+      probationEndDate: c.probationEndDate ?? null,
+      workloadPercent: num(c.workloadPercent),
+      weeklyHours: str(c.weeklyHours),
+      annualVacationDays: num(c.annualVacationDays),
+      grossSalary: num(c.grossSalary),
+      hourlyRate: num(c.hourlyRate),
+      paymentInterval: c.paymentInterval ?? null,
+      // Form defaults null → false; treat both as "no 13th salary".
+      has13thSalary: c.has13thSalary === true,
+      weekdayTimeWindows: this.normalizeScheduleSnapshot(c.weekdayTimeWindows),
+      weekdayWorkloads: this.normalizeScheduleSnapshot(c.weekdayWorkloads),
+      documentUrl: str(c.documentUrl),
+    });
+  }
+
+  /**
+   * Strip empty weekday keys / empty objects so `{}`, `{mon:null}` and `null`
+   * compare equal, and numeric strings match numbers.
+   */
+  private normalizeScheduleSnapshot(value: unknown): unknown {
+    if (value == null || typeof value !== 'object') return null;
+    const keys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
+    const out: Record<string, unknown> = {};
+    let any = false;
+    for (const key of keys) {
+      const day = (value as Record<string, unknown>)[key];
+      if (Array.isArray(day) && day.length > 0) {
+        out[key] = day.map((window): { start: string; end: string } | null => {
+          if (!window || typeof window !== 'object') return null;
+          const w = window as { start?: string; end?: string };
+          return { start: w.start ?? '', end: w.end ?? '' };
+        });
+        any = true;
+      } else if (day != null && day !== '' && Number(day) > 0) {
+        out[key] = Number(day);
+        any = true;
+      }
+    }
+    return any ? out : null;
+  }
+
+  /**
+   * When previous stores a legacy function label and the form sends the
+   * matching function UUID (or vice versa), rewrite the previous side so the
+   * snapshot comparison does not treat that remapping as a contract change.
+   */
+  private async alignPositionForCompare(
+    manager: EntityManager,
+    previous: Partial<EmployeeContract>,
+    merged: Partial<EmployeeContract>,
+    organizationId: string,
+  ): Promise<void> {
+    const left =
+      typeof previous.position === 'string' ? previous.position.trim() : '';
+    const right =
+      typeof merged.position === 'string' ? merged.position.trim() : '';
+    if (!left || !right || left === right) return;
+
+    const uuidRe =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    const resolve = async (value: string) => {
+      if (uuidRe.test(value)) {
+        return manager.findOne(EmployeeFunction, {
+          where: { id: value, organizationId },
+        });
+      }
+      return manager.findOne(EmployeeFunction, {
+        where: { name: value, organizationId },
+      });
+    };
+
+    const [prevFn, nextFn] = await Promise.all([resolve(left), resolve(right)]);
+    if (prevFn && nextFn && prevFn.id === nextFn.id) {
+      previous.position = merged.position;
+      return;
+    }
+    if (prevFn && (prevFn.id === right || prevFn.name === right)) {
+      previous.position = merged.position;
+      return;
+    }
+    if (nextFn && (nextFn.id === left || nextFn.name === left)) {
+      previous.position = merged.position;
+    }
+  }
+
+  private dayBeforeIso(isoDate: string): string {
+    const d = new Date(`${isoDate}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - 1);
+    return d.toISOString().split('T')[0];
   }
 
   /**
@@ -715,6 +1033,9 @@ export class EmployeesService {
           'A contract with a start date is required before finalizing',
         );
       }
+      // Drafts may stay incomplete while the wizard is open; the contract type's
+      // required fields are only enforced when the employee goes live.
+      assertContractTypeFields(contract, contract.contractType);
       if (!employee.membership.roles?.length) {
         throw new BadRequestException('At least one role is required');
       }

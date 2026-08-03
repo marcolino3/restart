@@ -34,6 +34,45 @@ describe('dailyPlannedMinutes', () => {
     expect(dailyPlannedMinutes(fullTime, 7)).toBe(0); // So
   });
 
+  it('verteilt ein Teilzeit-Pensum gleichmässig auf Mo–Fr', () => {
+    const halfTime: CalcContract = { ...fullTime, workloadPercent: 50 };
+    expect(dailyPlannedMinutes(halfTime, 1)).toBe(252); // 50% von 504
+    expect(dailyPlannedMinutes(halfTime, 5)).toBe(252);
+    expect(dailyPlannedMinutes(halfTime, 6)).toBe(0);
+  });
+
+  it('rechnet mit Dezimal-Pensen', () => {
+    const c: CalcContract = { ...fullTime, workloadPercent: 53.2 };
+    // 42 h → 2520 min/Woche; 53.2 % davon auf 5 Tage.
+    expect(dailyPlannedMinutes(c, 1)).toBe(268);
+  });
+
+  it('behandelt ein fehlendes Pensum als Vollzeit', () => {
+    expect(dailyPlannedMinutes({ ...fullTime, workloadPercent: null }, 1)).toBe(
+      504,
+    );
+  });
+
+  it('ignoriert das Pensum bei ungleicher Wochentags-Verteilung', () => {
+    // Die Anteile enthalten das Pensum bereits — sonst würde doppelt gekürzt.
+    const c: CalcContract = {
+      ...fullTime,
+      weeklyHours: 40,
+      workloadPercent: 50,
+      weekdayWorkloads: { mon: 25, tue: 25 },
+    };
+    expect(dailyPlannedMinutes(c, 1)).toBe(600); // 25% von 2400, nicht 300
+  });
+
+  it('ignoriert das Pensum bei konkreten Zeitfenstern', () => {
+    const c: CalcContract = {
+      ...fullTime,
+      workloadPercent: 50,
+      weekdayTimeWindows: { mon: [{ start: '08:00', end: '12:00' }] },
+    };
+    expect(dailyPlannedMinutes(c, 1)).toBe(240); // Fensterdauer, nicht 120
+  });
+
   it('respektiert ungleiche Wochentags-Pensen', () => {
     const c: CalcContract = {
       ...fullTime,

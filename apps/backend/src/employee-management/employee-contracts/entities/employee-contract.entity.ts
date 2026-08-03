@@ -18,6 +18,8 @@ export enum EmployeeContractType {
   HOURLY = 'HOURLY',
   INTERNSHIP = 'INTERNSHIP',
   APPRENTICESHIP = 'APPRENTICESHIP',
+  SUBSTITUTE = 'SUBSTITUTE',
+  EXTERNAL = 'EXTERNAL',
 }
 
 registerEnumType(EmployeeContractType, { name: 'EmployeeContractType' });
@@ -178,6 +180,17 @@ export class EmployeeContract extends AbstractEntity<EmployeeContract> {
     nullable: true,
   })
   grossSalary?: number | null;
+
+  // Stundensatz für HOURLY / SUBSTITUTE / EXTERNAL. Schliesst sich mit
+  // grossSalary aus; siehe contract-type-rules.ts.
+  @Field(() => Float, { nullable: true })
+  @Column('numeric', {
+    name: 'hourly_rate',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
+  hourlyRate?: number | null;
 
   @Field(() => EmployeePaymentInterval, { nullable: true })
   @Column({

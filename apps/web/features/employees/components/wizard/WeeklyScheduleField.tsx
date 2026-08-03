@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useController, useFormContext } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import { Plus, X } from "lucide-react";
@@ -10,12 +10,20 @@ import type {
   TimeWindow,
   WeekdayTimeWindows,
 } from "@restart/shared-schemas/employees/employee-onboarding-form.schema";
+import {
+  dayBreakMinutes,
+  dayOuterSpan,
+  rebuildDayWithBreak,
+} from "../../lib/day-schedule-break";
+import { parseFullTimeWeeklyHours } from "../../lib/workload-from-schedule";
+import { isContractFieldVisible } from "@restart/shared-schemas/employees/contract-type-rules";
 
 const START_H = 7;
 const END_H = 18;
 const SNAP = 15;
 const SPAN = (END_H - START_H) * 60;
-const FULLTIME_WEEKLY_HOURS = 42;
+/** Suggested unpaid break when the user has not entered one yet. */
+const DEFAULT_BREAK_MINUTES = 45;
 
 const DAYS: { key: keyof WeekdayTimeWindows; label: string }[] = [
   { key: "mon", label: "Mo" },
@@ -61,6 +69,9 @@ function breaksOf(windows: TimeWindow[]): { start: number; end: number }[] {
   return out;
 }
 
+/** Day currently open in the precise From/To/Break editor. */
+type EditingDay = keyof WeekdayTimeWindows;
+
 type Drag =
   | {
       day: keyof WeekdayTimeWindows;
@@ -85,11 +96,10 @@ interface Props {
 
 /**
  * Weekly working-time grid (design handoff `.sched`). Create a window by
- * dragging on a row, move it by dragging, click it to adjust the exact times,
- * × to remove, and "+" to add a second window per day. The gap between two
- * windows is the (unpaid) break — it is not counted as work time. Persists
- * concrete time windows per weekday which the backend engine turns into daily
- * planned minutes.
+ * dragging on a row — a compact popup then asks for the unpaid break in
+ * minutes. Click an existing window to adjust From / To / Break; × removes it,
+ * "+" adds another. The break is stored as the gap between two windows, which
+ * the backend engine already ignores when summing planned minutes.
  */
 export function WeeklyScheduleField({ name = "weekdayTimeWindows" }: Props) {
   const t = useTranslations("EmployeeOnboarding");
@@ -97,15 +107,39 @@ export function WeeklyScheduleField({ name = "weekdayTimeWindows" }: Props) {
   const { field } = useController({ name, control });
   const value: WeekdayTimeWindows = field.value ?? {};
 
-  const workloadPercent = Number(watch("workloadPercent")) || 0;
-  const targetWeeklyHours = (workloadPercent / 100) * FULLTIME_WEEKLY_HOURS;
+  // `weeklyHours` on the contract is the full-time reference (hours at 100 %).
+  // Hourly-paid types have no pensum — skip the target/diff footer for them.
+  const contractType = watch("contractType") as string | undefined;
+  const showsWorkload = isContractFieldVisible(contractType, "workloadPercent");
+  const workloadPercent = showsWorkload
+    ? Number(watch("workloadPercent")) || 0
+    : 0;
+  const fullTimeWeeklyHours = parseFullTimeWeeklyHours(watch("weeklyHours"));
+  const targetWeeklyHours = (workloadPercent / 100) * fullTimeWeeklyHours;
 
   const trackRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const breakInputRef = useRef<HTMLInputElement | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
-  const [editing, setEditing] = useState<{
-    day: keyof WeekdayTimeWindows;
-    index: number;
-  } | null>(null);
+  const [editingDay, setEditingDay] = useState<EditingDay | null>(null);
+  /** Draft in the popup — empty until the user types, so the pause is deliberate. */
+  const [breakDraft, setBreakDraft] = useState("");
+  /** True when the popup opened right after drawing/adding a window. */
+  const [breakRequired, setBreakRequired] = useState(false);
+
+  const openDayEditor = (
+    key: EditingDay,
+    requireBreak: boolean,
+    windowsOverride?: TimeWindow[],
+  ) => {
+    const windows = windowsOverride ?? dayWindows(key);
+    const existing = dayBreakMinutes(windows);
+    setEditingDay(key);
+    setBreakRequired(requireBreak);
+    // After a fresh draw the break is still 0 — leave the field empty so the
+    // user has to enter a value (0 is allowed once typed). Re-opening an
+    // existing day keeps the current break.
+    setBreakDraft(requireBreak && existing === 0 ? "" : String(existing));
+  };
 
   const dayWindows = (key: keyof WeekdayTimeWindows): TimeWindow[] =>
     (value[key] as TimeWindow[] | undefined) ?? [];
@@ -135,7 +169,11 @@ export function WeeklyScheduleField({ name = "weekdayTimeWindows" }: Props) {
     key: keyof WeekdayTimeWindows,
   ) => {
     if (e.button !== 0) return;
-    setEditing(null);
+    // Don't dismiss the break prompt by starting another drag on the same day.
+    if (!(breakRequired && editingDay === key)) {
+      setEditingDay(null);
+      setBreakRequired(false);
+    }
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
     const m = xToMin(e.clientX, key);
     setDrag({ day: key, mode: "create", startMin: m, curMin: m });
@@ -190,11 +228,25 @@ export function WeeklyScheduleField({ name = "weekdayTimeWindows" }: Props) {
       const start = Math.min(drag.startMin, drag.curMin);
       const end = Math.max(drag.startMin, drag.curMin);
       if (end - start >= SNAP) {
-        writeDay(key, [...dayWindows(key), { start: fmt(start), end: fmt(end) }], true);
+        const existing = dayWindows(key);
+        const created: TimeWindow = {
+          start: fmt(start),
+          end: fmt(end),
+        };
+        if (existing.length === 0) {
+          // First block of the day = outer span; ask for the unpaid break next.
+          const next = [created];
+          writeDay(key, next, true);
+          openDayEditor(key, true, next);
+        } else {
+          const next = [...existing, created];
+          writeDay(key, next, true);
+          openDayEditor(key, false, next);
+        }
       }
     } else if (drag.curStart === drag.origStart && drag.curEnd === drag.origEnd) {
-      // No movement → treat as a click: open the precise-time editor.
-      setEditing({ day: key, index: drag.index });
+      // No movement → treat as a click: open the day editor (From / To / Break).
+      openDayEditor(key, false);
     } else {
       const windows = dayWindows(key).map((w, i) =>
         i === drag.index
@@ -207,46 +259,103 @@ export function WeeklyScheduleField({ name = "weekdayTimeWindows" }: Props) {
   };
 
   const removeWindow = (key: keyof WeekdayTimeWindows, index: number) => {
-    setEditing(null);
-    writeDay(key, dayWindows(key).filter((_, i) => i !== index), true);
+    const next = dayWindows(key).filter((_, i) => i !== index);
+    if (next.length === 0) {
+      setEditingDay(null);
+      setBreakRequired(false);
+    }
+    writeDay(key, next, true);
   };
 
-  /** Add a window: first defaults to a morning block, then an afternoon
-   *  block after a 1h break — so two-per-day (with break) is one click. */
+  /** Add a window: first defaults to a full day block, then prompts for break. */
   const addWindow = (key: keyof WeekdayTimeWindows) => {
     const existing = dayWindows(key);
-    let candidate: TimeWindow;
     if (existing.length === 0) {
-      candidate = { start: "08:00", end: "12:00" };
-    } else {
-      const lastEnd = Math.max(...existing.map((w) => toMin(w.end)));
-      const start = clampMin(Math.min(lastEnd + 60, END_H * 60 - 120));
-      candidate = { start: fmt(start), end: fmt(clampMin(start + 240)) };
+      const next: TimeWindow[] = [{ start: "08:00", end: "17:00" }];
+      writeDay(key, next, true);
+      openDayEditor(key, true, next);
+      return;
     }
-    writeDay(key, [...existing, candidate], true);
-    setEditing({ day: key, index: existing.length });
+    const lastEnd = Math.max(...existing.map((w) => toMin(w.end)));
+    const start = clampMin(Math.min(lastEnd + 60, END_H * 60 - 120));
+    const next = [
+      ...existing,
+      { start: fmt(start), end: fmt(clampMin(start + 240)) },
+    ];
+    writeDay(key, next, true);
+    openDayEditor(key, false, next);
   };
 
-  /** Live edit of the exact start/end via the time inputs (no clean yet, so
-   *  the user can type freely — cleaned when the editor closes). */
-  const editTime = (
-    key: keyof WeekdayTimeWindows,
-    index: number,
-    which: "start" | "end",
-    val: string,
+  /**
+   * Day-level edit: outer From/To plus unpaid break in minutes. Rebuilt as one
+   * or two windows so the engine keeps counting only work time.
+   */
+  const editDaySpan = (
+    key: EditingDay,
+    patch: { start?: string; end?: string; breakMinutes?: number },
   ) => {
-    if (!/^\d{2}:\d{2}$/.test(val)) return;
-    const clamped = fmt(clampMin(toMin(val)));
-    const windows = dayWindows(key).map((w, i) =>
-      i === index ? { ...w, [which]: clamped } : w,
+    const windows = dayWindows(key);
+    const span = dayOuterSpan(windows) ?? { start: "08:00", end: "17:00" };
+    const start = patch.start ?? span.start;
+    const end = patch.end ?? span.end;
+    const breakMin =
+      patch.breakMinutes !== undefined
+        ? patch.breakMinutes
+        : dayBreakMinutes(windows);
+    if (!/^\d{2}:\d{2}$/.test(start) || !/^\d{2}:\d{2}$/.test(end)) return;
+    writeDay(
+      key,
+      rebuildDayWithBreak(
+        fmt(clampMin(toMin(start))),
+        fmt(clampMin(toMin(end))),
+        breakMin,
+      ),
+      true,
     );
-    writeDay(key, windows, false);
+  };
+
+  const applyBreakDraft = (key: EditingDay) => {
+    if (breakDraft === "") return false;
+    const parsed = Number(breakDraft);
+    if (!Number.isFinite(parsed) || parsed < 0) return false;
+    editDaySpan(key, { breakMinutes: parsed });
+    return true;
+  };
+
+  const confirmBreakPopup = () => {
+    if (!editingDay) return;
+    if (breakRequired && breakDraft === "") return;
+    if (breakDraft === "") {
+      writeDay(editingDay, dayWindows(editingDay), true);
+    } else if (!applyBreakDraft(editingDay)) {
+      return;
+    }
+    setEditingDay(null);
+    setBreakRequired(false);
+    setBreakDraft("");
   };
 
   const closeEditor = () => {
-    if (editing) writeDay(editing.day, dayWindows(editing.day), true);
-    setEditing(null);
+    // Closing without a break after a fresh draw is not allowed — keep the
+    // popup open until the pause is entered (or the day is cleared).
+    if (breakRequired && breakDraft === "") {
+      breakInputRef.current?.focus();
+      return;
+    }
+    if (editingDay && breakDraft !== "") {
+      applyBreakDraft(editingDay);
+    }
+    setEditingDay(null);
+    setBreakRequired(false);
+    setBreakDraft("");
   };
+
+  useEffect(() => {
+    if (!editingDay) return;
+    // Focus the pause field once the popup is mounted.
+    const id = window.setTimeout(() => breakInputRef.current?.focus(), 0);
+    return () => window.clearTimeout(id);
+  }, [editingDay]);
 
   const totalMin = DAYS.reduce(
     (sum, d) => sum + dayWindows(d.key).reduce((s, w) => s + durationMin(w), 0),
@@ -261,11 +370,6 @@ export function WeeklyScheduleField({ name = "weekdayTimeWindows" }: Props) {
   );
 
   const hourTicks = Array.from({ length: END_H - START_H + 1 }, (_, i) => START_H + i);
-
-  const editWindow =
-    editing && dayWindows(editing.day)[editing.index]
-      ? dayWindows(editing.day)[editing.index]
-      : null;
 
   return (
     <div className="flex flex-col gap-3">
@@ -282,6 +386,8 @@ export function WeeklyScheduleField({ name = "weekdayTimeWindows" }: Props) {
         const windows = dayWindows(d.key);
         const dayMin = windows.reduce((s, w) => s + durationMin(w), 0);
         const dayBreaks = breaksOf(windows);
+        const isEditing = editingDay === d.key;
+        const editingSpan = isEditing ? dayOuterSpan(windows) : null;
         const preview =
           drag?.day === d.key && drag.mode === "create"
             ? {
@@ -290,144 +396,202 @@ export function WeeklyScheduleField({ name = "weekdayTimeWindows" }: Props) {
               }
             : null;
         return (
-          <div key={d.key} className="flex items-center gap-2">
-            <span className="w-8 shrink-0 text-xs font-medium text-muted-foreground">
-              {d.label}
-            </span>
-            <div
-              ref={(el) => {
-                trackRefs.current[d.key as string] = el;
-              }}
-              onPointerDown={(e) => onTrackPointerDown(e, d.key)}
-              onPointerMove={(e) => onPointerMove(e, d.key)}
-              onPointerUp={() => commitDrag(d.key)}
-              className="relative h-9 flex-1 cursor-crosshair touch-none rounded-md border border-border bg-muted/40"
-            >
-              {/* hour gridlines */}
-              {hourTicks.slice(1, -1).map((h) => (
-                <span
-                  key={h}
-                  className="absolute top-0 h-full w-px bg-border/60"
-                  style={{ left: `${minToPct(h * 60)}%` }}
-                />
-              ))}
-              {/* break segments (gap between two windows) */}
-              {dayBreaks.map((b, i) => (
-                <div
-                  key={`b${i}`}
-                  className="pointer-events-none absolute top-1 flex h-7 items-center justify-center rounded bg-muted-foreground/15 text-[9px] text-muted-foreground"
-                  style={{
-                    left: `${minToPct(b.start)}%`,
-                    width: `${minToPct(b.end) - minToPct(b.start)}%`,
-                  }}
-                >
-                  {b.end - b.start >= 45 ? t("breakLabel") : ""}
-                </div>
-              ))}
-              {windows.map((w, i) => {
-                const isMoving =
-                  drag?.day === d.key && drag.mode === "move" && drag.index === i;
-                const isEditing =
-                  editing?.day === d.key && editing.index === i;
-                const start = isMoving ? drag.curStart : toMin(w.start);
-                const end = isMoving ? drag.curEnd : toMin(w.end);
-                return (
+          <div key={d.key} className="relative flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="w-8 shrink-0 text-xs font-medium text-muted-foreground">
+                {d.label}
+              </span>
+              <div
+                ref={(el) => {
+                  trackRefs.current[d.key as string] = el;
+                }}
+                onPointerDown={(e) => onTrackPointerDown(e, d.key)}
+                onPointerMove={(e) => onPointerMove(e, d.key)}
+                onPointerUp={() => commitDrag(d.key)}
+                className="relative h-9 flex-1 cursor-crosshair touch-none rounded-md border border-border bg-muted/40"
+              >
+                {hourTicks.slice(1, -1).map((h) => (
+                  <span
+                    key={h}
+                    className="absolute top-0 h-full w-px bg-border/60"
+                    style={{ left: `${minToPct(h * 60)}%` }}
+                  />
+                ))}
+                {dayBreaks.map((b, i) => (
                   <div
-                    key={i}
-                    onPointerDown={(e) => onSegmentPointerDown(e, d.key, i)}
-                    className={cn(
-                      "absolute top-1 flex h-7 cursor-grab items-center justify-between gap-1 rounded bg-primary px-1.5 text-[10px] font-medium text-primary-foreground",
-                      isEditing && "ring-2 ring-ring ring-offset-1",
-                    )}
+                    key={`b${i}`}
+                    className="pointer-events-none absolute top-1 flex h-7 items-center justify-center rounded bg-muted-foreground/15 text-[9px] text-muted-foreground"
                     style={{
-                      left: `${minToPct(start)}%`,
-                      width: `${minToPct(end) - minToPct(start)}%`,
+                      left: `${minToPct(b.start)}%`,
+                      width: `${minToPct(b.end) - minToPct(b.start)}%`,
                     }}
                   >
-                    <span className="truncate">
-                      {fmt(start)}–{fmt(end)}
-                    </span>
-                    <button
-                      type="button"
-                      aria-label={t("removeWindow")}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={() => removeWindow(d.key, i)}
-                      className="rounded-full p-0.5 hover:bg-primary-foreground/20"
-                    >
-                      <X className="h-2.5 w-2.5" />
-                    </button>
+                    {b.end - b.start >= 45 ? t("breakLabel") : ""}
                   </div>
-                );
-              })}
-              {preview && preview.end > preview.start && (
-                <div
-                  className="pointer-events-none absolute top-1 h-7 rounded bg-primary/50"
-                  style={{
-                    left: `${minToPct(preview.start)}%`,
-                    width: `${minToPct(preview.end) - minToPct(preview.start)}%`,
-                  }}
-                />
-              )}
+                ))}
+                {windows.map((w, i) => {
+                  const isMoving =
+                    drag?.day === d.key &&
+                    drag.mode === "move" &&
+                    drag.index === i;
+                  const start = isMoving ? drag.curStart : toMin(w.start);
+                  const end = isMoving ? drag.curEnd : toMin(w.end);
+                  return (
+                    <div
+                      key={i}
+                      onPointerDown={(e) => onSegmentPointerDown(e, d.key, i)}
+                      className={cn(
+                        "absolute top-1 flex h-7 cursor-grab items-center justify-between gap-1 rounded bg-primary px-1.5 text-[10px] font-medium text-primary-foreground",
+                        isEditing && "ring-2 ring-ring ring-offset-1",
+                      )}
+                      style={{
+                        left: `${minToPct(start)}%`,
+                        width: `${minToPct(end) - minToPct(start)}%`,
+                      }}
+                    >
+                      <span className="truncate">
+                        {fmt(start)}–{fmt(end)}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={t("removeWindow")}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={() => removeWindow(d.key, i)}
+                        className="rounded-full p-0.5 hover:bg-primary-foreground/20"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+                {preview && preview.end > preview.start && (
+                  <div
+                    className="pointer-events-none absolute top-1 h-7 rounded bg-primary/50"
+                    style={{
+                      left: `${minToPct(preview.start)}%`,
+                      width: `${minToPct(preview.end) - minToPct(preview.start)}%`,
+                    }}
+                  />
+                )}
+              </div>
+              <button
+                type="button"
+                aria-label={t("addTime")}
+                title={t("addTime")}
+                onClick={() => addWindow(d.key)}
+                className="flex size-6 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+              <span className="w-10 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+                {dayMin > 0 ? `${(dayMin / 60).toFixed(1)} h` : "—"}
+              </span>
             </div>
-            <button
-              type="button"
-              aria-label={t("addTime")}
-              title={t("addTime")}
-              onClick={() => addWindow(d.key)}
-              className="flex size-6 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </button>
-            <span className="w-10 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
-              {dayMin > 0 ? `${(dayMin / 60).toFixed(1)} h` : "—"}
-            </span>
+
+            {/* Compact break popup — opens right after drawing the first block */}
+            {isEditing && editingSpan && (
+              <div
+                role="dialog"
+                aria-label={t("breakPromptTitle")}
+                className="z-20 ml-10 mr-14 rounded-md border border-border bg-popover p-3 text-xs shadow-md"
+              >
+                <p className="mb-2 font-medium text-foreground">
+                  {breakRequired
+                    ? t("breakPromptTitle")
+                    : `${d.label} · ${t("editTime")}`}
+                </p>
+                {breakRequired && (
+                  <p className="mb-2 text-muted-foreground">
+                    {t("breakPromptHint", {
+                      from: editingSpan.start,
+                      to: editingSpan.end,
+                    })}
+                  </p>
+                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  {!breakRequired && (
+                    <>
+                      <label className="flex items-center gap-1">
+                        {t("from")}
+                        <input
+                          type="time"
+                          step={SNAP * 60}
+                          value={editingSpan.start}
+                          onChange={(e) =>
+                            editDaySpan(d.key, { start: e.target.value })
+                          }
+                          className="h-8 rounded-ctl border border-input bg-field px-2"
+                        />
+                      </label>
+                      <span>–</span>
+                      <label className="flex items-center gap-1">
+                        {t("to")}
+                        <input
+                          type="time"
+                          step={SNAP * 60}
+                          value={editingSpan.end}
+                          onChange={(e) =>
+                            editDaySpan(d.key, { end: e.target.value })
+                          }
+                          className="h-8 rounded-ctl border border-input bg-field px-2"
+                        />
+                      </label>
+                    </>
+                  )}
+                  <label className="flex items-center gap-1 font-medium">
+                    {t("breakMinutes")}
+                    <input
+                      ref={breakInputRef}
+                      type="number"
+                      min={0}
+                      max={240}
+                      step={5}
+                      required={breakRequired}
+                      placeholder={String(DEFAULT_BREAK_MINUTES)}
+                      value={breakDraft}
+                      onChange={(e) => setBreakDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          confirmBreakPopup();
+                        }
+                        if (e.key === "Escape") {
+                          e.preventDefault();
+                          closeEditor();
+                        }
+                      }}
+                      className="h-8 w-20 rounded-ctl border border-input bg-field px-2 tabular-nums"
+                    />
+                    <span className="font-normal text-muted-foreground">
+                      {t("minutesSuffix")}
+                    </span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      writeDay(d.key, [], true);
+                      setEditingDay(null);
+                      setBreakRequired(false);
+                      setBreakDraft("");
+                    }}
+                    className="text-destructive hover:underline"
+                  >
+                    {t("clearDay")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmBreakPopup}
+                    disabled={breakRequired && breakDraft === ""}
+                    className="ml-auto rounded-md bg-primary px-3 py-1.5 font-medium text-primary-foreground disabled:opacity-50"
+                  >
+                    {t("done")}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         );
       })}
-
-      {/* Precise time editor for the selected window */}
-      {editing && editWindow && (
-        <div className="ml-10 flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs">
-          <span className="font-medium">
-            {DAYS.find((d) => d.key === editing.day)?.label} · {t("editTime")}
-          </span>
-          <label className="flex items-center gap-1">
-            {t("from")}
-            <input
-              type="time"
-              step={SNAP * 60}
-              value={editWindow.start}
-              onChange={(e) => editTime(editing.day, editing.index, "start", e.target.value)}
-              className="h-8 rounded-ctl border border-input bg-field px-2"
-            />
-          </label>
-          <span>–</span>
-          <label className="flex items-center gap-1">
-            {t("to")}
-            <input
-              type="time"
-              step={SNAP * 60}
-              value={editWindow.end}
-              onChange={(e) => editTime(editing.day, editing.index, "end", e.target.value)}
-              className="h-8 rounded-ctl border border-input bg-field px-2"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={() => removeWindow(editing.day, editing.index)}
-            className="ml-1 text-destructive hover:underline"
-          >
-            {t("removeWindow")}
-          </button>
-          <button
-            type="button"
-            onClick={closeEditor}
-            className="ml-auto rounded-md bg-primary px-3 py-1 font-medium text-primary-foreground"
-          >
-            {t("done")}
-          </button>
-        </div>
-      )}
 
       <div className="flex flex-wrap items-center gap-2 pl-10 text-xs text-muted-foreground">
         <span className="rounded-full bg-accent px-2 py-0.5 font-medium text-accent-foreground">

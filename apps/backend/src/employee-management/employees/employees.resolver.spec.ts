@@ -251,6 +251,26 @@ describe('EmployeesResolver', () => {
         ),
       ).resolves.toBeNull();
     });
+
+    it('returns null for hourly contracts even if a leftover pensum exists', async () => {
+      contractRepo.find.mockResolvedValue([
+        {
+          employeeId: 'emp-1',
+          startDate: '2024-01-01',
+          workloadPercent: 80,
+          contractType: 'HOURLY',
+        },
+      ]);
+
+      await expect(
+        resolver.workloadPercent(
+          { id: 'emp-1' } as Employee,
+          'org-1',
+          user,
+          {},
+        ),
+      ).resolves.toBeNull();
+    });
   });
 
   describe('timeBalanceMinutes (resolve field)', () => {

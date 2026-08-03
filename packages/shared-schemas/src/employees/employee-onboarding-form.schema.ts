@@ -1,36 +1,27 @@
 import { z } from "zod";
 import { Persona } from "@restart/shared-types/graphql";
-import { EmployeeContractTypeEnum } from "./employee-contract-form.schema";
+import {
+  EmployeeContractTypeEnum,
+  EmployeePaymentIntervalEnum,
+} from "./employee-contract-form.schema";
+import {
+  WeekdayTimeWindowsSchema,
+  WeekdayWorkloadsSchema,
+} from "./weekday-schedule.schema";
+import { refineEndDateNotBeforeStart } from "./contract-date-rules";
 
-const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
-
-export const TimeWindowSchema = z.object({
-  start: z.string().regex(HHMM),
-  end: z.string().regex(HHMM),
-});
-export type TimeWindow = z.infer<typeof TimeWindowSchema>;
-
-export const WEEKDAY_KEYS = [
-  "mon",
-  "tue",
-  "wed",
-  "thu",
-  "fri",
-  "sat",
-  "sun",
-] as const;
-export type WeekdayKey = (typeof WEEKDAY_KEYS)[number];
-
-export const WeekdayTimeWindowsSchema = z.object({
-  mon: z.array(TimeWindowSchema).optional(),
-  tue: z.array(TimeWindowSchema).optional(),
-  wed: z.array(TimeWindowSchema).optional(),
-  thu: z.array(TimeWindowSchema).optional(),
-  fri: z.array(TimeWindowSchema).optional(),
-  sat: z.array(TimeWindowSchema).optional(),
-  sun: z.array(TimeWindowSchema).optional(),
-});
-export type WeekdayTimeWindows = z.infer<typeof WeekdayTimeWindowsSchema>;
+// Re-export schedule primitives so existing `@restart/shared-schemas/employees/
+// employee-onboarding-form.schema` imports keep working.
+export {
+  TimeWindowSchema,
+  WEEKDAY_KEYS,
+  WeekdayTimeWindowsSchema,
+  WeekdayWorkloadsSchema,
+  type TimeWindow,
+  type WeekdayKey,
+  type WeekdayTimeWindows,
+  type WeekdayWorkloads,
+} from "./weekday-schedule.schema";
 
 export const InvitationTimingEnum = z.enum([
   "IMMEDIATE",
@@ -38,7 +29,8 @@ export const InvitationTimingEnum = z.enum([
   "MANUAL",
 ]);
 
-const intPercentOrNull = z
+/** Workload in percent — fractions are intentional (e.g. 53.2 % from a plan). */
+const percentOrNull = z
   .preprocess(
     (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
     z.number().min(0).max(100).nullable(),
@@ -49,6 +41,13 @@ const intOrNull = z
   .preprocess(
     (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
     z.number().int().min(0).nullable(),
+  )
+  .optional();
+
+const numericOrNull = z
+  .preprocess(
+    (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+    z.number().nullable(),
   )
   .optional();
 
@@ -87,12 +86,44 @@ export const EmployeeOnboardingFormSchema = z.object({
   timeTrackingEnabled: z.boolean().default(true),
   contractType: EmployeeContractTypeEnum.or(z.literal("")).optional(),
   position: z.string().optional().default(""),
-  startDate: z.date().nullable().optional(),
-  endDate: z.date().nullable().optional(),
-  workloadPercent: intPercentOrNull,
+  startDate: z.preprocess((v) => {
+    if (v === null || v === undefined || v === "") return null;
+    if (v instanceof Date) return v;
+    if (typeof v === "string" && v.trim()) {
+      const d = new Date(v);
+      return Number.isNaN(d.getTime()) ? v : d;
+    }
+    return v;
+  }, z.date().nullable()).optional(),
+  endDate: z.preprocess((v) => {
+    if (v === null || v === undefined || v === "") return null;
+    if (v instanceof Date) return v;
+    if (typeof v === "string" && v.trim()) {
+      const d = new Date(v);
+      return Number.isNaN(d.getTime()) ? v : d;
+    }
+    return v;
+  }, z.date().nullable()).optional(),
+  probationEndDate: z.preprocess((v) => {
+    if (v === null || v === undefined || v === "") return null;
+    if (v instanceof Date) return v;
+    if (typeof v === "string" && v.trim()) {
+      const d = new Date(v);
+      return Number.isNaN(d.getTime()) ? v : d;
+    }
+    return v;
+  }, z.date().nullable()).optional(),
+  workloadPercent: percentOrNull,
   weeklyHours: z.string().optional().default(""),
   annualVacationDays: intOrNull,
+  // Salary stays optional here: the wizard auto-saves drafts, so the
+  // contract-type rules are only enforced on finalize (backend).
+  grossSalary: numericOrNull,
+  hourlyRate: numericOrNull,
+  paymentInterval: EmployeePaymentIntervalEnum.or(z.literal("")).optional(),
+  has13thSalary: z.boolean().nullable().optional(),
   weekdayTimeWindows: WeekdayTimeWindowsSchema.optional(),
+  weekdayWorkloads: WeekdayWorkloadsSchema.optional(),
   documentUrl: z.string().optional().default(""),
   teamId: z.string().uuid().nullable().optional(),
 
@@ -102,6 +133,8 @@ export const EmployeeOnboardingFormSchema = z.object({
   roleId: z.string().uuid().optional(),
   language: z.string().optional().default("de"),
   invitationTiming: InvitationTimingEnum.default("IMMEDIATE"),
+}).superRefine((values, ctx) => {
+  refineEndDateNotBeforeStart(values, ctx);
 });
 
 export type EmployeeOnboardingFormType = z.input<

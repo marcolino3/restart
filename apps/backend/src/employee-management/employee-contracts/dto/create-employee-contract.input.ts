@@ -16,7 +16,10 @@ import {
   EmployeeContractType,
   EmployeePaymentInterval,
 } from '../entities/employee-contract.entity';
-import { WeekdayTimeWindowsInput } from '@/employee-management/employees/dto/employee-onboarding.input';
+import {
+  WeekdayTimeWindowsInput,
+  WeekdayWorkloadsInput,
+} from '@/employee-management/employees/dto/employee-onboarding.input';
 
 @InputType()
 export class CreateEmployeeContractInput {
@@ -71,6 +74,12 @@ export class CreateEmployeeContractInput {
   @Min(0)
   grossSalary?: number;
 
+  @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  hourlyRate?: number;
+
   @Field(() => EmployeePaymentInterval, { nullable: true })
   @IsOptional()
   @IsEnum(EmployeePaymentInterval)
@@ -107,4 +116,10 @@ export class CreateEmployeeContractInput {
   @ValidateNested()
   @Type(() => WeekdayTimeWindowsInput)
   weekdayTimeWindows?: WeekdayTimeWindowsInput | null;
+
+  @Field(() => WeekdayWorkloadsInput, { nullable: true })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => WeekdayWorkloadsInput)
+  weekdayWorkloads?: WeekdayWorkloadsInput | null;
 }

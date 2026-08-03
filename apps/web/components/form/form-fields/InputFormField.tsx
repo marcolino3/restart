@@ -19,6 +19,8 @@ interface Props {
   placeholder?: string;
   description?: string;
   type?: string;
+  /** Granularity for `type="number"`, e.g. `0.1` for one decimal place. */
+  step?: number;
   width?: string;
   className?: string;
   disabled?: boolean;
@@ -39,6 +41,7 @@ export const InputFormField = ({
   placeholder,
   description,
   type = "text",
+  step,
   width = "w-full",
   className,
   disabled = false,
@@ -60,6 +63,7 @@ export const InputFormField = ({
             <Input
               {...field}
               type={type}
+              step={step}
               placeholder={placeholder}
               disabled={disabled}
               onChange={(e) => {
@@ -72,8 +76,8 @@ export const InputFormField = ({
               }}
             />
           </FormControl>
-          <FormMessage />
           {description && <FormDescription>{t(description)}</FormDescription>}
+          <FormMessage />
         </FormItem>
       )}
     />

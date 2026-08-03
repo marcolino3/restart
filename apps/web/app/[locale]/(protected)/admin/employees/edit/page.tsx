@@ -1,4 +1,5 @@
 import { EmployeeOnboardingWizard } from "@/features/employees/components/wizard/EmployeeOnboardingWizard";
+import { getEmployeeFunctionsAction } from "@/features/employee-functions/actions/get-employee-functions.action";
 import { getActiveOrganizationAction } from "@/features/organizations/actions/get-active-organization.action";
 import { getRolesByOrgAction } from "@/features/users/actions/get-roles-by-org.action";
 import { getTeamsAction } from "@/features/teams/actions/get-teams.action";
@@ -13,9 +14,10 @@ export default async function CreateEmployeePage() {
   const org = orgRes.success ? orgRes.data : null;
   const orgCountry = org?.country ?? null;
 
-  const [rolesRes, teamsRes] = await Promise.all([
+  const [rolesRes, teamsRes, functionsRes] = await Promise.all([
     org?.id ? getRolesByOrgAction(org.id) : Promise.resolve({ success: false as const }),
     getTeamsAction(),
+    getEmployeeFunctionsAction(),
   ]);
 
   const roleOptions =
@@ -42,6 +44,7 @@ export default async function CreateEmployeePage() {
   const teamOptions = teamsRes.success
     ? teamsRes.data.map((tm) => ({ value: tm.id, label: tm.name }))
     : [];
+  const employeeFunctions = functionsRes.success ? functionsRes.data : [];
 
   return (
     <div className="space-y-6">
@@ -53,6 +56,7 @@ export default async function CreateEmployeePage() {
         orgCountry={orgCountry}
         roleOptions={roleOptions}
         teamOptions={teamOptions}
+        employeeFunctions={employeeFunctions}
       />
     </div>
   );
