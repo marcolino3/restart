@@ -10,6 +10,9 @@ on:
     # Täglich 03:00 UTC — fängt frische CVEs in Dependencies auf.
     - cron: "0 3 * * *"
 
+env:
+  HUSKY: 0
+
 permissions:
   contents: read
   pull-requests: write

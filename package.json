@@ -14,9 +14,14 @@
     "test": "turbo run test",
     "codegen": "turbo run codegen",
     "format": "turbo run format",
-    "clean": "turbo run clean && rm -rf node_modules .turbo"
+    "clean": "turbo run clean && rm -rf node_modules .turbo",
+    "check:affected": "turbo run lint typecheck test build --filter=...[origin/main]",
+    "prepush": "sh scripts/git-pre-push.sh --manual",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.3.0",
     "turbo": "^2.10.5"
   },
   "pnpm": {
