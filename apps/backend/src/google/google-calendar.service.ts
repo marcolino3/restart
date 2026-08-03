@@ -1,12 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { google, calendar_v3 } from 'googleapis';
-import { OAuth2Client } from 'google-auth-library';
 import { DateTime } from 'luxon';
+
+type GoogleOAuth2Client = InstanceType<typeof google.auth.OAuth2>;
 
 @Injectable()
 export class GoogleCalendarService {
-  private readonly oauth2Client: OAuth2Client;
+  private readonly oauth2Client: GoogleOAuth2Client;
   private readonly calendar: calendar_v3.Calendar;
   private readonly logger = new Logger(GoogleCalendarService.name);
 
