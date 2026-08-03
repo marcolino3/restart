@@ -40,7 +40,9 @@ export async function seedOrgEmployeeFunctions(
     });
     const present = new Set(existingTr.map((t) => t.locale));
 
-    const toInsert = (Object.entries(def.translations) as [Locale, { name: string }][])
+    const toInsert = (
+      Object.entries(def.translations) as [Locale, { name: string }][]
+    )
       .filter(([locale]) => !present.has(locale))
       .map(([locale, t]) =>
         trRepo.create({

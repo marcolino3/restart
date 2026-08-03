@@ -1,4 +1,8 @@
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource, In } from 'typeorm';
@@ -31,7 +35,9 @@ const createMockRepository = () => ({
   find: jest.fn().mockResolvedValue([]),
   findOne: jest.fn(),
   create: jest.fn((v) => v),
-  save: jest.fn((v) => Promise.resolve(Array.isArray(v) ? v : { id: 'fn-1', ...v })),
+  save: jest.fn((v) =>
+    Promise.resolve(Array.isArray(v) ? v : { id: 'fn-1', ...v }),
+  ),
   remove: jest.fn(),
   upsert: jest.fn(),
   createQueryBuilder: jest.fn(() => createQb(null)),
@@ -51,7 +57,7 @@ describe('EmployeeFunctionsService', () => {
     contractRepo = createMockRepository();
     contractRepo.createQueryBuilder.mockReturnValue(createContractQb(0));
     dataSource = {
-      transaction: jest.fn(async (cb) =>
+      transaction: jest.fn((cb) =>
         cb({
           getRepository: (entity: unknown) =>
             entity === EmployeeFunctionTranslation ? trRepo : fnRepo,
@@ -150,7 +156,10 @@ describe('EmployeeFunctionsService', () => {
 
     it('rejects when no translation is provided', async () => {
       await expect(
-        service.create({ translations: [{ locale: Locale.DE, name: '  ' }] }, ORG_ID),
+        service.create(
+          { translations: [{ locale: Locale.DE, name: '  ' }] },
+          ORG_ID,
+        ),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
   });
@@ -158,9 +167,9 @@ describe('EmployeeFunctionsService', () => {
   describe('reorder', () => {
     it('rejects when any id is missing from the org', async () => {
       fnRepo.find.mockResolvedValue([{ id: 'a', organizationId: ORG_ID }]);
-      await expect(
-        service.reorder(['a', 'b'], ORG_ID),
-      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.reorder(['a', 'b'], ORG_ID)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
       expect(fnRepo.find.mock.calls[0][0].where).toEqual({
         id: In(['a', 'b']),
         organizationId: ORG_ID,

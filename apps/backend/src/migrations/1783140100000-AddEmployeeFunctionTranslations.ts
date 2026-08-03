@@ -46,12 +46,27 @@ export class AddEmployeeFunctionTranslations1783140100000 implements MigrationIn
     `);
 
     const defaults: Array<[string, string, string, string]> = [
-      ['Klassenleitung', 'Direction de classe', 'Direzione di classe', 'Class teacher'],
+      [
+        'Klassenleitung',
+        'Direction de classe',
+        'Direzione di classe',
+        'Class teacher',
+      ],
       ['Lehrperson', 'Enseignant·e', 'Docente', 'Teacher'],
       ['Assistenz', 'Assistance', 'Assistenza', 'Assistant'],
-      ['Pädagog:in Kinderhaus', 'Éducateur·trice crèche', 'Educatore/trice asilo', 'Early years educator'],
+      [
+        'Pädagog:in Kinderhaus',
+        'Éducateur·trice crèche',
+        'Educatore/trice asilo',
+        'Early years educator',
+      ],
       ['Sekretariat', 'Secrétariat', 'Segreteria', 'Office staff'],
-      ['Schulleitung', 'Direction d\'école', 'Direzione scolastica', 'School leadership'],
+      [
+        'Schulleitung',
+        "Direction d'école",
+        'Direzione scolastica',
+        'School leadership',
+      ],
     ];
 
     for (const [de, fr, it, en] of defaults) {

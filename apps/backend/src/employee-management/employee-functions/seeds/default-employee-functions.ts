@@ -61,7 +61,7 @@ export const DEFAULT_EMPLOYEE_FUNCTIONS: DefaultEmployeeFunctionDef[] = [
     deName: 'Schulleitung',
     translations: {
       [Locale.DE]: { name: 'Schulleitung' },
-      [Locale.FR]: { name: 'Direction d\'école' },
+      [Locale.FR]: { name: "Direction d'école" },
       [Locale.IT]: { name: 'Direzione scolastica' },
       [Locale.EN]: { name: 'School leadership' },
     },

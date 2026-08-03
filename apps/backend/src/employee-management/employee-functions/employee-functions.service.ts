@@ -256,10 +256,10 @@ export class EmployeeFunctionsService {
         await repo.delete({ functionId, locale: t.locale });
         continue;
       }
-      await repo.upsert(
-        { functionId, locale: t.locale, name: trimmed },
-        ['functionId', 'locale'],
-      );
+      await repo.upsert({ functionId, locale: t.locale, name: trimmed }, [
+        'functionId',
+        'locale',
+      ]);
     }
   }
 

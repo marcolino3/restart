@@ -60,7 +60,8 @@ describe('EmployeeFunctionsResolver', () => {
 
   it('requires admin persona for the whole resolver', () => {
     const adminPersonaOnly =
-      Reflect.getMetadata(ADMIN_PERSONA_KEY, EmployeeFunctionsResolver) ?? false;
+      Reflect.getMetadata(ADMIN_PERSONA_KEY, EmployeeFunctionsResolver) ??
+      false;
     expect(adminPersonaOnly).toBe(true);
   });
 
