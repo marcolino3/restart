@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Locator, type Page } from '@playwright/test'
 import { ensureActiveOrg, signInAsSuperAdmin } from '../helpers/auth'
 
 const BACKEND_URL = process.env.BACKEND_URL ?? 'http://localhost:4001'
@@ -36,6 +36,27 @@ test.describe('Employee functions — CRUD', () => {
     return dialog
   }
 
+  const fillCreateLabel = async (dialog: Locator, unique: string) => {
+    await dialog.getByRole('tabpanel').getByLabel(/^label$/i).fill(unique)
+  }
+
+  const submitCreate = async (page: Page, dialog: Locator) => {
+    await dialog.getByRole('button', { name: /^new function$/i }).click()
+    await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 15000 })
+    await expect(page.getByText(/function created/i)).toBeVisible({
+      timeout: 15000,
+    })
+  }
+
+  const createFunction = async (page: Page, unique: string) => {
+    const dialog = await openCreateDialog(page)
+    await fillCreateLabel(dialog, unique)
+    await submitCreate(page, dialog)
+  }
+
+  const rowFor = (page: Page, unique: string) =>
+    page.getByRole('row').filter({ hasText: unique })
+
   const openRowMenu = async (page: Page, label: string) => {
     await page
       .getByRole('button', { name: new RegExp(`open menu for ${label}`, 'i') })
@@ -55,11 +76,9 @@ test.describe('Employee functions — CRUD', () => {
     test('creates a function with a single locale', async ({ page }) => {
       const unique = `E2E Create ${Date.now()}`
       await openPage(page)
-      const dialog = await openCreateDialog(page)
-      await dialog.getByLabel(/^label$/i).fill(unique)
-      await dialog.getByRole('button', { name: /^new function$/i }).click()
+      await createFunction(page, unique)
 
-      const row = page.getByRole('row', { name: new RegExp(unique) })
+      const row = rowFor(page, unique)
       await expect(row).toBeVisible({ timeout: 15000 })
       await expect(row.getByText('DE', { exact: true })).toBeVisible()
     })
@@ -70,13 +89,7 @@ test.describe('Employee functions — CRUD', () => {
       const unique = `E2E Update ${Date.now()}`
       const renamed = `${unique} renamed`
       await openPage(page)
-
-      const createDialog = await openCreateDialog(page)
-      await createDialog.getByLabel(/^label$/i).fill(unique)
-      await createDialog.getByRole('button', { name: /^new function$/i }).click()
-      await expect(
-        page.getByRole('row', { name: new RegExp(unique) }),
-      ).toBeVisible({ timeout: 15000 })
+      await createFunction(page, unique)
 
       await openRowMenu(page, unique)
       await page.getByRole('menuitem', { name: /^edit$/i }).click()
@@ -84,12 +97,11 @@ test.describe('Employee functions — CRUD', () => {
       await expect(
         editDialog.getByRole('heading', { name: /^edit function$/i }),
       ).toBeVisible()
-      await editDialog.getByLabel(/^label$/i).fill(renamed)
+      await editDialog.getByRole('tabpanel').getByLabel(/^label$/i).fill(renamed)
       await editDialog.getByRole('button', { name: /^save$/i }).click()
+      await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 15000 })
 
-      await expect(
-        page.getByRole('row', { name: new RegExp(renamed) }),
-      ).toBeVisible({ timeout: 15000 })
+      await expect(rowFor(page, renamed)).toBeVisible({ timeout: 15000 })
     })
   })
 
@@ -97,11 +109,8 @@ test.describe('Employee functions — CRUD', () => {
     test('removes the function from the default list', async ({ page }) => {
       const unique = `E2E Archive ${Date.now()}`
       await openPage(page)
-
-      const dialog = await openCreateDialog(page)
-      await dialog.getByLabel(/^label$/i).fill(unique)
-      await dialog.getByRole('button', { name: /^new function$/i }).click()
-      const row = page.getByRole('row', { name: new RegExp(unique) })
+      await createFunction(page, unique)
+      const row = rowFor(page, unique)
       await expect(row).toBeVisible({ timeout: 15000 })
 
       await openRowMenu(page, unique)
@@ -119,11 +128,8 @@ test.describe('Employee functions — CRUD', () => {
     test('hard-deletes an unused function', async ({ page }) => {
       const unique = `E2E Delete ${Date.now()}`
       await openPage(page)
-
-      const dialog = await openCreateDialog(page)
-      await dialog.getByLabel(/^label$/i).fill(unique)
-      await dialog.getByRole('button', { name: /^new function$/i }).click()
-      const row = page.getByRole('row', { name: new RegExp(unique) })
+      await createFunction(page, unique)
+      const row = rowFor(page, unique)
       await expect(row).toBeVisible({ timeout: 15000 })
 
       await openRowMenu(page, unique)
@@ -174,8 +180,10 @@ test.describe('Employee functions — CRUD', () => {
               firstName: 'E2E',
               lastName: `Assigned ${stamp}`,
               email: `e2e.function.${stamp}@example.com`,
-              position: functionId,
-              startDate: '2026-01-15',
+              contract: {
+                position: functionId,
+                startDate: '2026-01-15',
+              },
             },
           },
         },
@@ -190,7 +198,7 @@ test.describe('Employee functions — CRUD', () => {
       }
 
       await page.reload({ waitUntil: 'networkidle' })
-      const row = page.getByRole('row', { name: new RegExp(unique) })
+      const row = rowFor(page, unique)
       await expect(row).toBeVisible({ timeout: 15000 })
 
       await openRowMenu(page, unique)
@@ -207,16 +215,12 @@ test.describe('Employee functions — CRUD', () => {
       const a = `E2E Sort A ${Date.now()}`
       const b = `E2E Sort B ${Date.now()}`
       for (const name of [a, b]) {
-        const dialog = await openCreateDialog(page)
-        await dialog.getByLabel(/^label$/i).fill(name)
-        await dialog.getByRole('button', { name: /^new function$/i }).click()
-        await expect(page.getByRole('row', { name: new RegExp(name) })).toBeVisible(
-          { timeout: 15000 },
-        )
+        await createFunction(page, name)
+        await expect(rowFor(page, name)).toBeVisible({ timeout: 15000 })
       }
 
-      const rowA = page.getByRole('row', { name: new RegExp(a) })
-      const rowB = page.getByRole('row', { name: new RegExp(b) })
+      const rowA = rowFor(page, a)
+      const rowB = rowFor(page, b)
       const handleA = rowA.getByLabel(/change order/i)
       const handleBox = await handleA.boundingBox()
       const targetBox = await rowB.boundingBox()
