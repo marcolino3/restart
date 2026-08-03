@@ -21,11 +21,11 @@ while read -r local_ref local_sha remote_ref remote_sha; do
       exit 1
     fi
     filter="...[origin/main]"
-    echo "pre-push: new branch — lint, test, build for packages changed since origin/main"
+    echo "pre-push: new branch — lint, typecheck, test, build for packages changed since origin/main"
   else
     filter="...[$remote_sha]"
-    echo "pre-push: lint, test, build for packages changed in this push"
+    echo "pre-push: lint, typecheck, test, build for packages changed in this push"
   fi
 
-  pnpm turbo run lint test build --filter="$filter"
+  pnpm turbo run lint typecheck test build --filter="$filter"
 done

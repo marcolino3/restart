@@ -15,7 +15,7 @@
     "codegen": "turbo run codegen",
     "format": "turbo run format",
     "clean": "turbo run clean && rm -rf node_modules .turbo",
-    "check:affected": "turbo run lint test build --filter=...[origin/main]",
+    "check:affected": "turbo run lint typecheck test build --filter=...[origin/main]",
     "prepare": "husky"
   },
   "devDependencies": {
