@@ -137,7 +137,7 @@ test.describe('Absence categories — CRUD', () => {
 
       const rowA = page.getByRole('row', { name: new RegExp(a) })
       const rowB = page.getByRole('row', { name: new RegExp(b) })
-      const handleA = rowA.getByLabel(/change order/i)
+      const handleA = rowA.getByLabel(/drag to reorder/i)
       const handleBox = await handleA.boundingBox()
       const targetBox = await rowB.boundingBox()
       if (!handleBox || !targetBox) {
