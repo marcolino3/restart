@@ -12,6 +12,7 @@ on:
 
 env:
   TURBO_TELEMETRY_DISABLED: 1
+  HUSKY: 0
 
 # Least-privilege Default — kein Job braucht mehr als Checkout-Lesezugriff.
 permissions:
