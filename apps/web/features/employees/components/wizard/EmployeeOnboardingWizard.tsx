@@ -23,6 +23,8 @@ import {
   finalizeEmployeeOnboardingAction,
 } from "../../actions/employee-onboarding.actions";
 import type { RadioCardOption } from "@/components/form/form-fields/RadioCardFormField";
+import type { EmployeeFunctionItem } from "@/features/employee-functions/types";
+import { mapEmployeeFunctionsToOptions } from "@/features/employee-functions/lib/map-employee-functions-to-options";
 import { StepPerson } from "./steps/StepPerson";
 import { StepContract } from "./steps/StepContract";
 import { StepRoles } from "./steps/StepRoles";
@@ -32,6 +34,10 @@ interface Props {
   orgCountry?: string | null;
   roleOptions: RadioCardOption[];
   teamOptions: { label: string; value: string }[];
+  employeeFunctions: EmployeeFunctionItem[];
+  initialValues?: EmployeeOnboardingFormType;
+  /** ACTIVE = existing employee edit (save only); DRAFT = resume onboarding wizard. */
+  employeeStatus?: "DRAFT" | "ACTIVE";
 }
 
 type StepKey = "person" | "contract" | "roles";
@@ -41,13 +47,23 @@ export function EmployeeOnboardingWizard({
   orgCountry,
   roleOptions,
   teamOptions,
+  employeeFunctions,
+  initialValues,
+  employeeStatus,
 }: Props) {
   const t = useTranslations("EmployeeOnboarding");
   const locale = useLocale();
   const router = useRouter();
+  const isActiveEdit = employeeStatus === "ACTIVE" && Boolean(initialValues?.id);
+  const functionOptions = mapEmployeeFunctionsToOptions(
+    employeeFunctions,
+    locale,
+  );
 
   const [step, setStep] = useState(0);
-  const [draftId, setDraftId] = useState<string | undefined>(undefined);
+  const [draftId, setDraftId] = useState<string | undefined>(
+    initialValues?.id,
+  );
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(
     "idle",
   );
@@ -56,7 +72,7 @@ export function EmployeeOnboardingWizard({
 
   const form = useForm<EmployeeOnboardingFormType>({
     resolver: zodResolver(EmployeeOnboardingFormSchema),
-    defaultValues: {
+    defaultValues: initialValues ?? {
       title: "",
       firstName: "",
       lastName: "",
@@ -90,6 +106,12 @@ export function EmployeeOnboardingWizard({
       invitationTiming: "IMMEDIATE",
     },
   });
+
+  useEffect(() => {
+    if (!initialValues) return;
+    form.reset(initialValues);
+    setDraftId(initialValues.id);
+  }, [form, initialValues]);
 
   /** Persist the current form values as a draft (create or patch). */
   const saveDraft = useCallback(async (): Promise<string | undefined> => {
@@ -158,6 +180,15 @@ export function EmployeeOnboardingWizard({
       return;
     }
     setSubmitting(true);
+    if (isActiveEdit) {
+      const id = await saveDraft();
+      setSubmitting(false);
+      if (id) {
+        toast.success(t("employeeUpdated"));
+        router.push(ROUTES.admin.employeesView(locale, id));
+      }
+      return;
+    }
     const id = draftId ?? (await saveDraft());
     if (!id) {
       setSubmitting(false);
@@ -186,15 +217,20 @@ export function EmployeeOnboardingWizard({
     }
     const id = await saveDraft();
     if (id) {
-      toast.success(t("draftSaved"));
-      router.push(ROUTES.admin.employees(locale));
+      toast.success(isActiveEdit ? t("employeeUpdated") : t("draftSaved"));
+      router.push(
+        isActiveEdit
+          ? ROUTES.admin.employeesView(locale, id)
+          : ROUTES.admin.employees(locale),
+      );
     }
   };
 
-  // The finalize CTA reflects the chosen invitation timing.
+  // The finalize CTA reflects the chosen invitation timing (create/draft only).
   const invitationTiming = form.watch("invitationTiming");
-  const finalizeCtaLabel =
-    invitationTiming === "MANUAL"
+  const finalizeCtaLabel = isActiveEdit
+    ? t("saveChanges")
+    : invitationTiming === "MANUAL"
       ? t("createNoInvite")
       : invitationTiming === "ON_ENTRY_DATE"
         ? t("createAndSchedule")
@@ -212,13 +248,15 @@ export function EmployeeOnboardingWizard({
               <button
                 key={key}
                 type="button"
-                onClick={() => i < step && setStep(i)}
-                disabled={i > step}
+                onClick={() => setStep(i)}
+                aria-current={active ? "step" : undefined}
                 className={cn(
                   "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                   active && "border-primary bg-accent text-accent-foreground",
                   done && "border-primary/40 text-foreground",
                   !active && !done && "border-border text-muted-foreground",
+                  !active &&
+                    "cursor-pointer hover:border-primary/50 hover:bg-accent/40",
                 )}
               >
                 {done && <Check className="h-3.5 w-3.5 text-primary" />}
@@ -248,13 +286,23 @@ export function EmployeeOnboardingWizard({
               <StepPerson orgCountry={orgCountry} draftId={draftId} />
             )}
             {step === 1 && (
-              <StepContract teamOptions={teamOptions} draftId={draftId} />
+              <StepContract
+                teamOptions={teamOptions}
+                functionOptions={functionOptions}
+                draftId={draftId}
+              />
             )}
-            {step === 2 && <StepRoles roleOptions={roleOptions} />}
+            {step === 2 && (
+              <StepRoles
+                roleOptions={roleOptions}
+                showInvitationTiming={!isActiveEdit}
+              />
+            )}
           </div>
           <OnboardingSummaryAside
             roleOptions={roleOptions}
             teamOptions={teamOptions}
+            employeeFunctions={employeeFunctions}
           />
         </div>
 
@@ -265,7 +313,7 @@ export function EmployeeOnboardingWizard({
             onClick={saveDraftAndExit}
             disabled={submitting}
           >
-            {t("saveDraftClose")}
+            {t(isActiveEdit ? "saveAndClose" : "saveDraftClose")}
           </Button>
           <div className="flex items-center gap-2">
             <Button

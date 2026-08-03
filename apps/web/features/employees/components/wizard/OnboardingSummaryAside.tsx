@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormContext } from "react-hook-form";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmployeeAvatar } from "../EmployeeAvatar";
@@ -10,14 +10,22 @@ import {
   DescriptionRow,
 } from "@/components/common/DescriptionList";
 import type { RadioCardOption } from "@/components/form/form-fields/RadioCardFormField";
+import type { EmployeeFunctionItem } from "@/features/employee-functions/types";
+import { resolveEmployeeFunctionPosition } from "@/features/employee-functions/types";
 
 interface Props {
   roleOptions: RadioCardOption[];
   teamOptions: { label: string; value: string }[];
+  employeeFunctions: EmployeeFunctionItem[];
 }
 
-export function OnboardingSummaryAside({ roleOptions, teamOptions }: Props) {
+export function OnboardingSummaryAside({
+  roleOptions,
+  teamOptions,
+  employeeFunctions,
+}: Props) {
   const t = useTranslations("EmployeeOnboarding");
+  const locale = useLocale();
   const { watch } = useFormContext();
 
   const firstName = watch("firstName") as string;
@@ -33,6 +41,9 @@ export function OnboardingSummaryAside({ roleOptions, teamOptions }: Props) {
 
   const roleLabel = roleOptions.find((r) => r.value === roleId)?.label;
   const teamLabel = teamOptions.find((tm) => tm.value === teamId)?.label;
+  const positionLabel = position
+    ? resolveEmployeeFunctionPosition(position, employeeFunctions, locale)
+    : undefined;
   const fmtDate = (d?: Date | null) =>
     d ? new Intl.DateTimeFormat("de-CH").format(d) : undefined;
 
@@ -73,8 +84,8 @@ export function OnboardingSummaryAside({ roleOptions, teamOptions }: Props) {
           <DescriptionRow label={t("dateOfBirth")} muted={!dateOfBirth}>
             {fmtDate(dateOfBirth) ?? t("step1")}
           </DescriptionRow>
-          <DescriptionRow label={t("function")} muted={!position}>
-            {position ?? t("step2")}
+          <DescriptionRow label={t("function")} muted={!positionLabel}>
+            {positionLabel ?? t("step2")}
           </DescriptionRow>
           <DescriptionRow label={t("workloadPercent")} muted={!workloadPercent}>
             {workloadPercent ? `${workloadPercent}%` : t("step2")}

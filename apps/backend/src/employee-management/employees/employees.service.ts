@@ -387,6 +387,7 @@ export class EmployeesService {
           roles: true,
           userEmail: true,
         },
+        teamMembers: { team: true },
       },
     });
 

@@ -81,12 +81,18 @@ export const upsertEmployeeOnboardingDraftAction = async (
   values: EmployeeOnboardingFormOutput,
 ) => {
   const parsed = EmployeeOnboardingFormSchema.parse(values);
+  const locale = await getLocale();
   const client = await serverCookieGqlClient();
   try {
     const { upsertEmployeeOnboardingDraft } =
       await client.request<UpsertDraftResponse>(UpsertDraftDocument, {
         input: toOnboardingInput(parsed),
       });
+    revalidatePath(ROUTES.admin.employees(locale));
+    if (parsed.id) {
+      revalidatePath(ROUTES.admin.employeesView(locale, parsed.id));
+      revalidatePath(ROUTES.admin.employeesEdit(locale, parsed.id));
+    }
     return { success: true as const, data: upsertEmployeeOnboardingDraft };
   } catch (error) {
     // Surface the server-side reason (e.g. duplicate e-mail conflict) so the

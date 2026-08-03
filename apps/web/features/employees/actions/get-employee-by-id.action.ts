@@ -5,7 +5,14 @@ import { gql } from "graphql-request";
 
 export type EmployeeDetail = {
   id: string;
+  status: string;
   timeTrackingEnabled: boolean;
+  teamMembers?: {
+    team?: {
+      id: string;
+      name?: string | null;
+    } | null;
+  }[] | null;
   membership: {
     id: string;
     persona: string;
@@ -53,7 +60,14 @@ const GetEmployeeByIdDocument = gql`
   query GetEmployeeById($employeeId: ID!) {
     employeeById(employeeId: $employeeId) {
       id
+      status
       timeTrackingEnabled
+      teamMembers {
+        team {
+          id
+          name
+        }
+      }
       membership {
         id
         persona

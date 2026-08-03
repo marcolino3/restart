@@ -13,6 +13,7 @@ import { ContractDocumentUpload } from "../ContractDocumentUpload";
 
 interface Props {
   teamOptions: { label: string; value: string }[];
+  functionOptions: { label: string; value: string }[];
   draftId?: string;
 }
 
@@ -24,16 +25,11 @@ const CONTRACT_TYPE_OPTIONS = [
   { label: "contractApprenticeship", value: "APPRENTICESHIP" },
 ];
 
-const FUNCTION_OPTIONS = [
-  { label: "functionClassLead", value: "Klassenleitung" },
-  { label: "functionTeacher", value: "Lehrperson" },
-  { label: "functionAssistant", value: "Assistenz" },
-  { label: "functionKindergarten", value: "Pädagog:in Kinderhaus" },
-  { label: "functionOffice", value: "Sekretariat" },
-  { label: "functionPrincipal", value: "Schulleitung" },
-];
-
-export function StepContract({ teamOptions, draftId }: Props) {
+export function StepContract({
+  teamOptions,
+  functionOptions,
+  draftId,
+}: Props) {
   const t = useTranslations("EmployeeOnboarding");
 
   return (
@@ -49,7 +45,8 @@ export function StepContract({ teamOptions, draftId }: Props) {
               label="function"
               namespace="EmployeeOnboarding"
               placeholder="selectPlaceholder"
-              options={FUNCTION_OPTIONS}
+              options={functionOptions}
+              translateOptions={false}
             />
             <SelectFormField
               name="teamId"
