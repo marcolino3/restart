@@ -16,6 +16,7 @@
     "format": "turbo run format",
     "clean": "turbo run clean && rm -rf node_modules .turbo",
     "check:affected": "turbo run lint typecheck test build --filter=...[origin/main]",
+    "prepush": "sh scripts/git-pre-push.sh --manual",
     "prepare": "husky"
   },
   "devDependencies": {
