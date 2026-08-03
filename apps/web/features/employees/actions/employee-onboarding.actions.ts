@@ -9,27 +9,39 @@ import { revalidatePath } from "next/cache";
 import { ROUTES } from "@/constants/routes";
 import { getLocale } from "next-intl/server";
 import { gql } from "graphql-request";
+import { resolveContractScheduleFields } from "../lib/resolve-contract-schedule";
 
-const toIsoDate = (d: Date | null | undefined): string | undefined =>
-  d ? d.toISOString().split("T")[0] : undefined;
+const toIsoDate = (d: Date | string | null | undefined): string | undefined => {
+  if (!d) return undefined;
+  if (typeof d === "string") return d.split("T")[0] || undefined;
+  return d.toISOString().split("T")[0];
+};
 
 const emptyToUndef = (s: string | null | undefined): string | undefined =>
   s && s.trim() ? s.trim() : undefined;
 
 /** Maps the wizard form output onto the EmployeeOnboardingInput GraphQL shape. */
 function toOnboardingInput(values: EmployeeOnboardingFormOutput) {
+  const schedule = resolveContractScheduleFields(values);
+
   const contract = {
     contractType: values.contractType || undefined,
     position: emptyToUndef(values.position),
     startDate: toIsoDate(values.startDate),
     endDate: toIsoDate(values.endDate),
+    probationEndDate: toIsoDate(values.probationEndDate),
     workloadPercent: values.workloadPercent ?? undefined,
     weeklyHours: emptyToUndef(values.weeklyHours),
     annualVacationDays: values.annualVacationDays ?? undefined,
-    weekdayTimeWindows: values.weekdayTimeWindows ?? undefined,
+    grossSalary: values.grossSalary ?? undefined,
+    hourlyRate: values.hourlyRate ?? undefined,
+    paymentInterval: values.paymentInterval || undefined,
+    has13thSalary: values.has13thSalary ?? undefined,
+    weekdayTimeWindows: schedule.weekdayTimeWindows,
+    weekdayWorkloads: schedule.weekdayWorkloads,
     documentUrl: emptyToUndef(values.documentUrl),
   };
-  const hasContract = Object.values(contract).some((v) => v !== undefined);
+  const hasContract = Object.values(contract).some((v) => v !== undefined && v !== null);
 
   return {
     id: values.id,

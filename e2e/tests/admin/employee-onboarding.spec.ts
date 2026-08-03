@@ -85,4 +85,62 @@ test.describe('Employee onboarding — wizard happy path', () => {
       timeout: 15000,
     })
   })
+
+  /**
+   * The contract step only renders the fields that apply to the chosen type
+   * (matrix in `contract-type-rules.ts`, enforced again server-side). Hourly
+   * staff are paid per hour, so they get a rate instead of a monthly salary and
+   * no workload share at all.
+   */
+  test('renders only the fields that apply to the chosen contract type', async ({
+    page,
+  }) => {
+    const stamp = Date.now()
+
+    await openWizard(page)
+
+    // --- Step 1: Person, so the wizard lets us into the contract step -----
+    await page.getByLabel(/first name/i).fill('E2E')
+    await page.getByLabel(/last name/i).fill(`Contract ${stamp}`)
+    await page
+      .getByLabel(/e-?mail/i)
+      .first()
+      .fill(`e2e.contract.${stamp}@example.com`)
+    await page.getByRole('button', { name: /^next$/i }).click()
+
+    await expect(
+      page.getByText(/contract & workload|2 · contract/i).first(),
+    ).toBeVisible({ timeout: 15000 })
+
+    const contractType = page.getByLabel(/^contract type$/i)
+    const grossSalary = page.getByLabel(/gross salary/i)
+    const hourlyRate = page.getByLabel(/^hourly rate$/i)
+    const workload = page.getByLabel(/^workload$/i)
+    const thirteenthSalary = page.getByLabel(/13th salary/i)
+
+    // --- Hourly: rate only, no monthly salary and no workload ------------
+    await contractType.click()
+    await page.getByRole('option', { name: /^hourly$/i }).click()
+
+    await expect(hourlyRate).toBeVisible()
+    await expect(grossSalary).toHaveCount(0)
+    await expect(workload).toHaveCount(0)
+    await expect(thirteenthSalary).toHaveCount(0)
+
+    // --- Permanent: the inverse ------------------------------------------
+    await contractType.click()
+    await page.getByRole('option', { name: /^permanent$/i }).click()
+
+    await expect(grossSalary).toBeVisible()
+    await expect(workload).toBeVisible()
+    await expect(hourlyRate).toHaveCount(0)
+
+    // --- Temporary: end date becomes mandatory --------------------------
+    await contractType.click()
+    await page.getByRole('option', { name: /^temporary$/i }).click()
+
+    await expect(
+      page.getByRole('button', { name: /^end date$/i }),
+    ).toBeVisible()
+  })
 })

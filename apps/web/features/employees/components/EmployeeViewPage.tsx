@@ -13,7 +13,6 @@ import {
   DetailPanel,
   KvRow,
 } from "@/components/common/DetailPanel";
-import { UserEmailField } from "@/features/users/components/UserEmailField";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
 
@@ -21,10 +20,18 @@ import type { EmployeeDetail } from "../actions/get-employee-by-id.action";
 import type { EmployeeNoteItem } from "@/features/employee-notes/actions/get-employee-notes.action";
 import type { EmployeeContract } from "../actions/employee-contracts.actions";
 import type { EmployeeReportResult } from "@/features/time-tracking/actions/get-time-report.action";
+import { isContractFieldVisible } from "@restart/shared-schemas/employees/contract-type-rules";
 import EmployeeNotesFeed from "@/features/employee-notes/components/EmployeeNotesFeed";
 import EmployeeNotesTimeline from "@/features/employee-notes/components/EmployeeNotesTimeline";
 import CreateEmployeeNoteInline from "@/features/employee-notes/components/CreateEmployeeNoteInline";
 import EmployeeContractsTab from "./EmployeeContractsTab";
+import {
+  formatExactTimesPlanLines,
+  formatWorkdaysPlanLabel,
+  hasWeekdayWorkloads,
+} from "../lib/workday-schedule";
+import { scheduleWeeklyMinutes } from "../lib/workload-from-schedule";
+import { pickOverviewContract } from "../lib/pick-overview-contract";
 
 interface EmployeeViewPageProps {
   employee: EmployeeDetail;
@@ -32,6 +39,7 @@ interface EmployeeViewPageProps {
   contracts: EmployeeContract[];
   report: EmployeeReportResult;
   employeeName: string;
+  functionOptions?: { label: string; value: string }[];
 }
 
 /** Minutes → "+12:30" / "−2:15". */
@@ -88,9 +96,11 @@ export default function EmployeeViewPage({
   contracts,
   report,
   employeeName,
+  functionOptions,
 }: EmployeeViewPageProps) {
   const t = useTranslations("Common");
   const tE = useTranslations("Employees");
+  const tO = useTranslations("EmployeeOnboarding");
   const tN = useTranslations("EmployeeNotes");
   const tCountries = useTranslations("Countries");
   const locale = useLocale();
@@ -127,20 +137,38 @@ export default function EmployeeViewPage({
         )
       : null;
 
-  // Aktuell gültiger Vertrag (jüngster Beginn ≤ heute) für die Kopf-Chips.
-  const todayIso = new Date().toISOString().slice(0, 10);
-  const currentContract = [...contracts]
-    .filter((c) => c.startDate && c.startDate.slice(0, 10) <= todayIso)
-    .sort((a, b) => (a.startDate < b.startDate ? 1 : -1))[0];
+  // Overview: valid today → last past (expired) → soonest future.
+  const { contract: currentContract, expired: contractExpired } =
+    pickOverviewContract(contracts);
 
   const pensum =
-    currentContract?.workloadPercent != null
+    currentContract?.workloadPercent != null &&
+    isContractFieldVisible(currentContract.contractType, "workloadPercent")
       ? Math.round(Number(currentContract.workloadPercent))
+      : null;
+  const hourlyRate =
+    currentContract?.hourlyRate != null &&
+    isContractFieldVisible(currentContract.contractType, "hourlyRate")
+      ? Number(currentContract.hourlyRate)
       : null;
   const entry = monthYear(currentContract?.startDate);
 
+  const hasExactTimes =
+    scheduleWeeklyMinutes(currentContract?.weekdayTimeWindows) > 0;
+  const exactTimeLines = hasExactTimes
+    ? formatExactTimesPlanLines(currentContract?.weekdayTimeWindows)
+    : [];
+  const workdaysLabel =
+    !hasExactTimes && hasWeekdayWorkloads(currentContract?.weekdayWorkloads)
+      ? formatWorkdaysPlanLabel(currentContract?.weekdayWorkloads)
+      : undefined;
+  const showsSchedule =
+    isContractFieldVisible(currentContract?.contractType, "workloadPercent") &&
+    (exactTimeLines.length > 0 || Boolean(workdaysLabel));
+
   const metaChips: string[] = [t(membership?.persona ?? "EMPLOYEE")];
   if (pensum != null) metaChips.push(`${pensum}% ${t("workloadPercent")}`);
+  if (hourlyRate != null) metaChips.push(`CHF ${hourlyRate}/h`);
   if (entry) metaChips.push(tE("joinedOn", { date: entry }));
 
   return (
@@ -208,26 +236,39 @@ export default function EmployeeViewPage({
               <DetailCols>
                 <DetailPanel title={tE("contractAndWorkload")}>
                   <KvRow label={tE("hr.position")}>
-                    {currentContract?.position ||
+                    {(currentContract?.position &&
+                      (functionOptions?.find(
+                        (o) => o.value === currentContract.position,
+                      )?.label ??
+                        currentContract.position)) ||
                       t(membership?.persona ?? "EMPLOYEE")}
                   </KvRow>
-                  <KvRow label={t("workloadPercent")}>
-                    {pensum != null ? (
-                      <span className="inline-flex items-center gap-[9px]">
-                        <span className="h-2 w-20 overflow-hidden rounded-full bg-field">
-                          <span
-                            className="block h-full rounded-full bg-primary"
-                            style={{
-                              width: `${Math.min(100, Math.max(0, pensum))}%`,
-                            }}
-                          />
+                  {isContractFieldVisible(
+                    currentContract?.contractType,
+                    "workloadPercent",
+                  ) ? (
+                    <KvRow label={t("workloadPercent")}>
+                      {pensum != null ? (
+                        <span className="inline-flex items-center gap-[9px]">
+                          <span className="h-2 w-20 overflow-hidden rounded-full bg-field">
+                            <span
+                              className="block h-full rounded-full bg-primary"
+                              style={{
+                                width: `${Math.min(100, Math.max(0, pensum))}%`,
+                              }}
+                            />
+                          </span>
+                          {pensum}%
                         </span>
-                        {pensum}%
-                      </span>
-                    ) : (
-                      "–"
-                    )}
-                  </KvRow>
+                      ) : (
+                        "–"
+                      )}
+                    </KvRow>
+                  ) : (
+                    <KvRow label={tE("hr.hourlyRate")}>
+                      {hourlyRate != null ? `CHF ${hourlyRate}` : "–"}
+                    </KvRow>
+                  )}
                   <KvRow label={tE("contracts")}>
                     {currentContract
                       ? ([
@@ -235,6 +276,7 @@ export default function EmployeeViewPage({
                             ? tE(`contractType.${currentContract.contractType}`)
                             : null,
                           entry ? tE("sinceMonth", { date: entry }) : null,
+                          contractExpired ? tE("contractExpired") : null,
                         ]
                           .filter(Boolean)
                           .join(" · ") || "–")
@@ -247,6 +289,26 @@ export default function EmployeeViewPage({
                         })
                       : "–"}
                   </KvRow>
+                  {showsSchedule && (
+                    <KvRow
+                      label={
+                        exactTimeLines.length > 0
+                          ? tE("contract.summaryWorkingHours")
+                          : tO("workdays")
+                      }
+                      className="items-start"
+                    >
+                      {exactTimeLines.length > 0 ? (
+                        <ul className="space-y-0.5">
+                          {exactTimeLines.map((line) => (
+                            <li key={line}>{line}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        workdaysLabel
+                      )}
+                    </KvRow>
+                  )}
                   <KvRow label={tE("timeTrackingEnabled")}>
                     {employee.timeTrackingEnabled
                       ? t("active")
@@ -256,14 +318,7 @@ export default function EmployeeViewPage({
 
                 <DetailPanel title={tE("contactAndPerson")}>
                   <KvRow label={t("email")}>
-                    {user?.id ? (
-                      <UserEmailField
-                        userId={user.id}
-                        currentEmail={primaryEmail}
-                      />
-                    ) : (
-                      (primaryEmail ?? "–")
-                    )}
+                    {primaryEmail ?? "–"}
                   </KvRow>
                   <KvRow label={t("phone")}>
                     {membership?.contactPhone || "–"}
@@ -471,6 +526,7 @@ export default function EmployeeViewPage({
                 employeeId={employee.id}
                 contracts={contracts}
                 editable
+                functionOptions={functionOptions}
               />
             </TabsContent>
           </Tabs>

@@ -28,7 +28,12 @@ const EditEmployeePage = async ({ params }: Props) => {
       getEmployeeFunctionsAction(),
     ]);
 
-  if (!employeeResult.success || !employeeResult.data) {
+  // Distinguish "not found" from transport/auth failures — the latter used to
+  // surface as a blank 404 whenever the backend was briefly unreachable.
+  if (!employeeResult.success) {
+    throw new Error(employeeResult.error ?? "Failed to load employee");
+  }
+  if (!employeeResult.data) {
     notFound();
   }
 

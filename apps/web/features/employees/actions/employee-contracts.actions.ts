@@ -7,14 +7,13 @@ import { getLocale } from "next-intl/server";
 import {
   EmployeeContractFormSchema,
   EmployeeContractFormOutput,
+  clearHiddenContractFormFields,
 } from "../schemas/employee-contract-form.schema";
 import type { WeekdayTimeWindows } from "@restart/shared-schemas/employees/employee-onboarding-form.schema";
+import type { z } from "zod";
+import type { EmployeeContractTypeEnum } from "@restart/shared-schemas/employees/employee-contract-form.schema";
 
-export type EmployeeContractType =
-  | "PERMANENT"
-  | "TEMPORARY"
-  | "INTERNSHIP"
-  | "APPRENTICESHIP";
+export type EmployeeContractType = z.infer<typeof EmployeeContractTypeEnum>;
 
 export type EmployeePaymentInterval = "MONTHLY_X12" | "MONTHLY_X13";
 
@@ -30,6 +29,7 @@ export type EmployeeContract = {
   workloadPercent?: number | null;
   weeklyHours?: string | null;
   grossSalary?: number | null;
+  hourlyRate?: number | null;
   paymentInterval?: EmployeePaymentInterval | null;
   has13thSalary?: boolean | null;
   annualVacationDays?: number | null;
@@ -38,6 +38,9 @@ export type EmployeeContract = {
   documentUrl?: string | null;
   isActive: boolean;
   weekdayTimeWindows?: WeekdayTimeWindows | null;
+  weekdayWorkloads?: Partial<
+    Record<"mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun", number | null>
+  > | null;
 };
 
 const ListByEmployeeDocument = gql`
@@ -54,6 +57,7 @@ const ListByEmployeeDocument = gql`
       workloadPercent
       weeklyHours
       grossSalary
+      hourlyRate
       paymentInterval
       has13thSalary
       annualVacationDays
@@ -61,6 +65,15 @@ const ListByEmployeeDocument = gql`
       notes
       documentUrl
       isActive
+      weekdayWorkloads {
+        mon
+        tue
+        wed
+        thu
+        fri
+        sat
+        sun
+      }
       weekdayTimeWindows {
         mon { start end }
         tue { start end }
@@ -109,15 +122,33 @@ const DeleteDocument = gql`
   }
 `;
 
-const toIsoDate = (d: Date | null | undefined) =>
-  d ? d.toISOString().split("T")[0] : undefined;
+import { resolveContractScheduleFields } from "../lib/resolve-contract-schedule";
+
+/** Handles Date and ISO strings from server-action serialization. */
+const toIsoDate = (d: Date | string | null | undefined) => {
+  if (!d) return undefined;
+  if (typeof d === "string") return d.split("T")[0] || undefined;
+  return d.toISOString().split("T")[0];
+};
 
 export const saveEmployeeContractAction = async (
   values: EmployeeContractFormOutput,
 ) => {
   const locale = await getLocale();
-  const parsed = EmployeeContractFormSchema.parse(values);
+  let parsed: EmployeeContractFormOutput;
+  try {
+    parsed = clearHiddenContractFormFields(
+      EmployeeContractFormSchema.parse(values),
+    );
+  } catch (error) {
+    console.error("Contract form validation failed", error);
+    return {
+      success: false as const,
+      error: "Validation failed — check required contract fields",
+    };
+  }
   const client = await serverCookieGqlClient();
+  const schedule = resolveContractScheduleFields(parsed);
 
   const base = {
     employeeId: parsed.employeeId,
@@ -131,6 +162,7 @@ export const saveEmployeeContractAction = async (
       parsed.workloadPercent === null ? undefined : parsed.workloadPercent,
     weeklyHours: parsed.weeklyHours || undefined,
     grossSalary: parsed.grossSalary === null ? undefined : parsed.grossSalary,
+    hourlyRate: parsed.hourlyRate === null ? undefined : parsed.hourlyRate,
     paymentInterval: parsed.paymentInterval || undefined,
     has13thSalary:
       parsed.has13thSalary === null ? undefined : parsed.has13thSalary,
@@ -141,6 +173,8 @@ export const saveEmployeeContractAction = async (
     remainingVacationDays: parsed.remainingVacationDays || undefined,
     notes: parsed.notes || undefined,
     documentUrl: parsed.documentUrl || undefined,
+    weekdayTimeWindows: schedule.weekdayTimeWindows,
+    weekdayWorkloads: schedule.weekdayWorkloads,
   };
 
   try {
@@ -153,7 +187,9 @@ export const saveEmployeeContractAction = async (
     return { success: true as const, data: null };
   } catch (error) {
     console.error(error);
-    return { success: false as const, error: "Failed to save contract" };
+    const message =
+      error instanceof Error ? error.message : "Failed to save contract";
+    return { success: false as const, error: message };
   }
 };
 

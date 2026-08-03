@@ -95,10 +95,16 @@ export function EmployeeOnboardingWizard({
       position: "",
       startDate: null,
       endDate: null,
+      probationEndDate: null,
       workloadPercent: undefined,
       weeklyHours: "",
       annualVacationDays: undefined,
+      grossSalary: undefined,
+      hourlyRate: undefined,
+      paymentInterval: "",
+      has13thSalary: false,
       weekdayTimeWindows: {},
+      weekdayWorkloads: {},
       documentUrl: "",
       teamId: undefined,
       roleId: undefined,
@@ -131,15 +137,18 @@ export function EmployeeOnboardingWizard({
     toast.error(
       /already exists|already in use|conflict/i.test(msg)
         ? t("emailInUse")
-        : t("saveError"),
+        : /startDate must be after/i.test(msg)
+          ? t("contractVersionStartDateRequired")
+          : t("saveError"),
     );
     return undefined;
   }, [form, draftId, t]);
 
   // Debounced auto-save once a draft exists (design: "Entwurf wird
-  // automatisch gespeichert"). Subscribes to any field change.
+  // automatisch gespeichert"). Active-employee edits save only on explicit
+  // submit — auto-save would otherwise create a contract version per keystroke.
   useEffect(() => {
-    if (!draftId) return;
+    if (!draftId || isActiveEdit) return;
     // eslint-disable-next-line react-hooks/incompatible-library -- React Hook Form returns non-memoizable functions by design
     const sub = form.watch(() => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -151,7 +160,7 @@ export function EmployeeOnboardingWizard({
       sub.unsubscribe();
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [draftId, form, saveDraft]);
+  }, [draftId, form, saveDraft, isActiveEdit]);
 
   const goNext = async () => {
     // Per-step validation before advancing.

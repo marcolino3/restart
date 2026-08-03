@@ -40,9 +40,17 @@ describe('EmployeesService onboarding orchestrator', () => {
       findOne: jest.fn((entity: { name: string }) =>
         Promise.resolve((rows as Record<string, unknown>)[entity.name] ?? null),
       ),
-      find: jest.fn((entity: { name: string }) =>
-        Promise.resolve(entity.name === 'Role' ? (rows.Role ?? []) : []),
-      ),
+      find: jest.fn((entity: { name: string }) => {
+        if (entity.name === 'Role') {
+          return Promise.resolve(rows.Role ?? []);
+        }
+        if (entity.name === 'EmployeeContract') {
+          const row = rows.EmployeeContract;
+          if (!row) return Promise.resolve([]);
+          return Promise.resolve(Array.isArray(row) ? row : [row]);
+        }
+        return Promise.resolve([]);
+      }),
       save: jest.fn((_entity: unknown, value: unknown) =>
         Promise.resolve(value),
       ),
@@ -124,6 +132,433 @@ describe('EmployeesService onboarding orchestrator', () => {
           'org-1',
         ),
       ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('versions the contract when an ACTIVE employee changes terms', async () => {
+      rows.Organization = { id: 'org-1' };
+      rows.Employee = {
+        id: 'emp-1',
+        status: 'ACTIVE',
+        membership: { organizationId: 'org-1', user: {} },
+        timeTrackingEnabled: false,
+      };
+      rows.EmployeeContract = {
+        id: 'c-old',
+        employeeId: 'emp-1',
+        organizationId: 'org-1',
+        startDate: '2025-01-01',
+        endDate: null,
+        contractType: 'PERMANENT',
+        position: 'Teacher',
+        workloadPercent: 80,
+        weeklyHours: '42',
+        grossSalary: 8000,
+        has13thSalary: false,
+        isActive: true,
+      };
+
+      await service.upsertEmployeeOnboardingDraft(
+        {
+          id: 'emp-1',
+          firstName: 'A',
+          lastName: 'B',
+          contract: {
+            contractType: 'PERMANENT' as never,
+            startDate: '2026-08-01',
+            position: 'Teacher',
+            workloadPercent: 60,
+            weeklyHours: '42',
+            grossSalary: 8000,
+            has13thSalary: false,
+          },
+        },
+        'org-1',
+      );
+
+      // Previous row ended the day before the new start; successor created.
+      expect(manager.save).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          id: 'c-old',
+          endDate: '2026-07-31',
+        }),
+      );
+      expect(manager.create).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          startDate: '2026-08-01',
+          workloadPercent: 60,
+          previousContractId: 'c-old',
+        }),
+      );
+    });
+
+    it('does not version when ACTIVE contract terms are unchanged', async () => {
+      rows.Organization = { id: 'org-1' };
+      rows.Employee = {
+        id: 'emp-1',
+        status: 'ACTIVE',
+        membership: { organizationId: 'org-1', user: {} },
+        timeTrackingEnabled: false,
+      };
+      const contract = {
+        id: 'c-old',
+        employeeId: 'emp-1',
+        organizationId: 'org-1',
+        startDate: '2025-01-01',
+        endDate: null,
+        contractType: 'PERMANENT',
+        position: 'Teacher',
+        workloadPercent: 80,
+        weeklyHours: '42',
+        grossSalary: 8000,
+        has13thSalary: false,
+        isActive: true,
+      };
+      rows.EmployeeContract = contract;
+      manager.save.mockClear();
+
+      await service.upsertEmployeeOnboardingDraft(
+        {
+          id: 'emp-1',
+          firstName: 'A',
+          lastName: 'B',
+          contract: {
+            contractType: 'PERMANENT' as never,
+            startDate: '2025-01-01',
+            position: 'Teacher',
+            workloadPercent: 80,
+            weeklyHours: '42',
+            grossSalary: 8000,
+            has13thSalary: false,
+          },
+        },
+        'org-1',
+      );
+
+      // Person/membership may still save; the contract row must not be rewritten.
+      const contractSaves = manager.save.mock.calls.filter(
+        (call) =>
+          call[0]?.name === 'EmployeeContract' ||
+          (call[1] &&
+            typeof call[1] === 'object' &&
+            'workloadPercent' in (call[1] as object) &&
+            'startDate' in (call[1] as object)),
+      );
+      expect(contractSaves).toHaveLength(0);
+    });
+
+    it('does not version on null/false/empty-schedule noise for ACTIVE contracts', async () => {
+      rows.Organization = { id: 'org-1' };
+      rows.Employee = {
+        id: 'emp-1',
+        status: 'ACTIVE',
+        membership: { organizationId: 'org-1', user: {} },
+        timeTrackingEnabled: false,
+      };
+      rows.EmployeeContract = {
+        id: 'c-old',
+        employeeId: 'emp-1',
+        organizationId: 'org-1',
+        startDate: '2025-01-01',
+        endDate: null,
+        contractType: 'PERMANENT',
+        position: 'Teacher',
+        workloadPercent: '80.00',
+        weeklyHours: '42',
+        grossSalary: '8000.00',
+        has13thSalary: null,
+        weekdayTimeWindows: { mon: null, tue: null },
+        weekdayWorkloads: {},
+        documentUrl: '',
+        isActive: true,
+      };
+      manager.save.mockClear();
+      manager.create.mockClear();
+
+      await service.upsertEmployeeOnboardingDraft(
+        {
+          id: 'emp-1',
+          firstName: 'Updated',
+          lastName: 'Name',
+          contract: {
+            contractType: 'PERMANENT' as never,
+            startDate: '2025-01-01',
+            position: 'Teacher',
+            workloadPercent: 80,
+            weeklyHours: '42',
+            grossSalary: 8000,
+            has13thSalary: false,
+            weekdayTimeWindows: null,
+            weekdayWorkloads: null,
+          },
+        },
+        'org-1',
+      );
+
+      expect(manager.create).not.toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ previousContractId: 'c-old' }),
+      );
+      const contractSaves = manager.save.mock.calls.filter(
+        (call) =>
+          call[1] &&
+          typeof call[1] === 'object' &&
+          'previousContractId' in (call[1] as object),
+      );
+      expect(contractSaves).toHaveLength(0);
+    });
+
+    it('patches DRAFT contracts in place instead of versioning', async () => {
+      rows.Organization = { id: 'org-1' };
+      rows.Employee = {
+        id: 'emp-1',
+        status: 'DRAFT',
+        membership: { organizationId: 'org-1', user: {} },
+        timeTrackingEnabled: false,
+      };
+      rows.EmployeeContract = {
+        id: 'c-draft',
+        employeeId: 'emp-1',
+        organizationId: 'org-1',
+        startDate: '2026-09-01',
+        contractType: 'PERMANENT',
+        workloadPercent: 100,
+        isActive: true,
+      };
+
+      await service.upsertEmployeeOnboardingDraft(
+        {
+          id: 'emp-1',
+          firstName: 'A',
+          lastName: 'B',
+          contract: {
+            contractType: 'PERMANENT' as never,
+            startDate: '2026-09-01',
+            workloadPercent: 80,
+          },
+        },
+        'org-1',
+      );
+
+      expect(manager.save).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          id: 'c-draft',
+          workloadPercent: 80,
+        }),
+      );
+      expect(manager.create).not.toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ previousContractId: 'c-draft' }),
+      );
+    });
+
+    it('versions against the currently valid contract when several exist', async () => {
+      rows.Organization = { id: 'org-1' };
+      rows.Employee = {
+        id: 'emp-1',
+        status: 'ACTIVE',
+        membership: { organizationId: 'org-1', user: {} },
+        timeTrackingEnabled: false,
+      };
+      // find() returns startDate DESC (same order as the service query).
+      rows.EmployeeContract = [
+        {
+          id: 'c-future',
+          employeeId: 'emp-1',
+          organizationId: 'org-1',
+          startDate: '2027-01-01',
+          endDate: null,
+          contractType: 'PERMANENT',
+          position: 'Teacher',
+          workloadPercent: 100,
+          weeklyHours: '42',
+          grossSalary: 9000,
+          has13thSalary: false,
+          isActive: true,
+        },
+        {
+          id: 'c-current',
+          employeeId: 'emp-1',
+          organizationId: 'org-1',
+          startDate: '2025-01-01',
+          endDate: null,
+          contractType: 'PERMANENT',
+          position: 'Teacher',
+          workloadPercent: 80,
+          weeklyHours: '42',
+          grossSalary: 8000,
+          has13thSalary: false,
+          isActive: true,
+        },
+        {
+          id: 'c-expired',
+          employeeId: 'emp-1',
+          organizationId: 'org-1',
+          startDate: '2023-01-01',
+          endDate: '2024-12-31',
+          contractType: 'PERMANENT',
+          position: 'Teacher',
+          workloadPercent: 50,
+          weeklyHours: '42',
+          grossSalary: 7000,
+          has13thSalary: false,
+          isActive: true,
+        },
+      ];
+
+      await service.upsertEmployeeOnboardingDraft(
+        {
+          id: 'emp-1',
+          firstName: 'A',
+          lastName: 'B',
+          contract: {
+            contractType: 'PERMANENT' as never,
+            startDate: '2026-09-01',
+            position: 'Teacher',
+            workloadPercent: 60,
+            weeklyHours: '42',
+            grossSalary: 8000,
+            has13thSalary: false,
+          },
+        },
+        'org-1',
+      );
+
+      expect(manager.save).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          id: 'c-current',
+          endDate: '2026-08-31',
+        }),
+      );
+      expect(manager.create).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          previousContractId: 'c-current',
+          workloadPercent: 60,
+          startDate: '2026-09-01',
+        }),
+      );
+    });
+
+    it('uses today as the new start when terms change but the form kept the old startDate', async () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date('2026-08-03T12:00:00.000Z'));
+
+      rows.Organization = { id: 'org-1' };
+      rows.Employee = {
+        id: 'emp-1',
+        status: 'ACTIVE',
+        membership: { organizationId: 'org-1', user: {} },
+        timeTrackingEnabled: false,
+      };
+      rows.EmployeeContract = {
+        id: 'c-old',
+        employeeId: 'emp-1',
+        organizationId: 'org-1',
+        startDate: '2025-01-01',
+        endDate: null,
+        contractType: 'PERMANENT',
+        position: 'Teacher',
+        workloadPercent: 80,
+        weeklyHours: '42',
+        grossSalary: 8000,
+        has13thSalary: false,
+        isActive: true,
+      };
+
+      try {
+        await service.upsertEmployeeOnboardingDraft(
+          {
+            id: 'emp-1',
+            firstName: 'A',
+            lastName: 'B',
+            contract: {
+              contractType: 'PERMANENT' as never,
+              startDate: '2025-01-01',
+              position: 'Teacher',
+              workloadPercent: 50,
+              weeklyHours: '42',
+              grossSalary: 8000,
+              has13thSalary: false,
+            },
+          },
+          'org-1',
+        );
+
+        expect(manager.save).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({
+            id: 'c-old',
+            endDate: '2026-08-02',
+          }),
+        );
+        expect(manager.create).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({
+            previousContractId: 'c-old',
+            startDate: '2026-08-03',
+            workloadPercent: 50,
+          }),
+        );
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it('versions when only the workday schedule changes', async () => {
+      rows.Organization = { id: 'org-1' };
+      rows.Employee = {
+        id: 'emp-1',
+        status: 'ACTIVE',
+        membership: { organizationId: 'org-1', user: {} },
+        timeTrackingEnabled: false,
+      };
+      rows.EmployeeContract = {
+        id: 'c-old',
+        employeeId: 'emp-1',
+        organizationId: 'org-1',
+        startDate: '2025-01-01',
+        endDate: null,
+        contractType: 'PERMANENT',
+        position: 'Teacher',
+        workloadPercent: 60,
+        weeklyHours: '42',
+        grossSalary: 8000,
+        has13thSalary: false,
+        weekdayWorkloads: { mon: 20, tue: 20, wed: 20 },
+        weekdayTimeWindows: null,
+        isActive: true,
+      };
+
+      await service.upsertEmployeeOnboardingDraft(
+        {
+          id: 'emp-1',
+          firstName: 'A',
+          lastName: 'B',
+          contract: {
+            contractType: 'PERMANENT' as never,
+            startDate: '2026-08-01',
+            position: 'Teacher',
+            workloadPercent: 60,
+            weeklyHours: '42',
+            grossSalary: 8000,
+            has13thSalary: false,
+            weekdayWorkloads: { mon: 20, tue: 20, wed: 10, thu: 10 },
+          },
+        },
+        'org-1',
+      );
+
+      expect(manager.create).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          previousContractId: 'c-old',
+          weekdayWorkloads: { mon: 20, tue: 20, wed: 10, thu: 10 },
+        }),
+      );
     });
   });
 

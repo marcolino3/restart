@@ -1,5 +1,8 @@
 import { Persona } from '@/common/enums/persona.enum';
-import { EmployeeContractType } from '@/employee-management/employee-contracts/entities/employee-contract.entity';
+import {
+  EmployeeContractType,
+  EmployeePaymentInterval,
+} from '@/employee-management/employee-contracts/entities/employee-contract.entity';
 import { TeamMemberRole } from '@/employee-management/team-members/entities/team-member-role.enum';
 import { Field, Float, ID, InputType, Int } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
@@ -76,6 +79,58 @@ export class WeekdayTimeWindowsInput {
   sun?: TimeWindowInput[] | null;
 }
 
+@InputType()
+export class WeekdayWorkloadsInput {
+  @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  mon?: number | null;
+
+  @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  tue?: number | null;
+
+  @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  wed?: number | null;
+
+  @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  thu?: number | null;
+
+  @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  fri?: number | null;
+
+  @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  sat?: number | null;
+
+  @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  sun?: number | null;
+}
+
 /** Contract fields captured by the onboarding wizard (all optional for drafts). */
 @InputType()
 export class OnboardingContractInput {
@@ -99,6 +154,11 @@ export class OnboardingContractInput {
   @IsDateString()
   endDate?: string;
 
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsDateString()
+  probationEndDate?: string;
+
   @Field(() => Float, { nullable: true })
   @IsOptional()
   @IsNumber()
@@ -117,11 +177,39 @@ export class OnboardingContractInput {
   @Min(0)
   annualVacationDays?: number;
 
+  @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  grossSalary?: number;
+
+  @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  hourlyRate?: number;
+
+  @Field(() => EmployeePaymentInterval, { nullable: true })
+  @IsOptional()
+  @IsEnum(EmployeePaymentInterval)
+  paymentInterval?: EmployeePaymentInterval;
+
+  @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  has13thSalary?: boolean;
+
   @Field(() => WeekdayTimeWindowsInput, { nullable: true })
   @IsOptional()
   @ValidateNested()
   @Type(() => WeekdayTimeWindowsInput)
   weekdayTimeWindows?: WeekdayTimeWindowsInput | null;
+
+  @Field(() => WeekdayWorkloadsInput, { nullable: true })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => WeekdayWorkloadsInput)
+  weekdayWorkloads?: WeekdayWorkloadsInput | null;
 
   @Field(() => String, { nullable: true })
   @IsOptional()

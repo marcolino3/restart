@@ -4,6 +4,7 @@ import type { EmployeeOnboardingFormType } from "../schemas/employee-onboarding-
 import type { EmployeeDetail } from "../actions/get-employee-by-id.action";
 import type { EmployeeContract } from "../actions/employee-contracts.actions";
 import type { EmployeeFunctionItem } from "@/features/employee-functions/types";
+import { pickOverviewContract } from "./pick-overview-contract";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -22,15 +23,6 @@ function parseDate(value?: string | null): Date | null {
   if (!value) return null;
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? null : d;
-}
-
-function pickCurrentContract(
-  contracts: EmployeeContract[],
-): EmployeeContract | undefined {
-  const todayIso = new Date().toISOString().slice(0, 10);
-  return [...contracts]
-    .filter((c) => c.isActive && c.startDate && c.startDate.slice(0, 10) <= todayIso)
-    .sort((a, b) => (a.startDate < b.startDate ? 1 : -1))[0];
 }
 
 function mapWeekdayTimeWindows(
@@ -58,7 +50,9 @@ export function mapEmployeeToOnboardingForm(input: {
     input;
   const user = employee.membership?.user;
   const membership = employee.membership;
-  const contract = pickCurrentContract(contracts) ?? contracts[0];
+  // Same priority as overview / backend versioning target.
+  const contract =
+    pickOverviewContract(contracts).contract ?? contracts[0];
   const primaryEmail =
     user?.userEmails?.find((e) => e.isPrimary)?.email ??
     user?.userEmails?.[0]?.email ??
@@ -88,10 +82,16 @@ export function mapEmployeeToOnboardingForm(input: {
     position: resolvePositionForForm(contract?.position, employeeFunctions),
     startDate: parseDate(contract?.startDate),
     endDate: parseDate(contract?.endDate),
+    probationEndDate: parseDate(contract?.probationEndDate),
     workloadPercent: contract?.workloadPercent ?? undefined,
     weeklyHours: contract?.weeklyHours ?? "",
     annualVacationDays: contract?.annualVacationDays ?? undefined,
+    grossSalary: contract?.grossSalary ?? undefined,
+    hourlyRate: contract?.hourlyRate ?? undefined,
+    paymentInterval: contract?.paymentInterval ?? "",
+    has13thSalary: contract?.has13thSalary ?? false,
     weekdayTimeWindows: mapWeekdayTimeWindows(contract?.weekdayTimeWindows) ?? {},
+    weekdayWorkloads: contract?.weekdayWorkloads ?? {},
     documentUrl: contract?.documentUrl ?? "",
     teamId: teamId ?? undefined,
     roleId: membership?.roles?.[0]?.id,

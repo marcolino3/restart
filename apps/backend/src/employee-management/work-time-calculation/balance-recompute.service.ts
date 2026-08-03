@@ -169,6 +169,8 @@ export class BalanceRecomputeService {
         startDate: c.startDate,
         endDate: c.endDate ?? null,
         weeklyHours: c.weeklyHours ? Number(c.weeklyHours) : 0,
+        workloadPercent:
+          c.workloadPercent != null ? Number(c.workloadPercent) : null,
         weekdayWorkloads: c.weekdayWorkloads ?? null,
         weekdayTimeWindows: c.weekdayTimeWindows ?? null,
       })),
