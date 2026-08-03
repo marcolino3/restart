@@ -66,18 +66,21 @@ test.describe('Employee onboarding — wizard happy path', () => {
     await page.getByRole('button', { name: /^next$/i }).click()
 
     // Step 3 (Roles & access) becomes active once the entry date is set.
+    // Wait for the role picker itself — the stepper label "3 · Roles & access"
+    // is always visible, and Step 2 also has radios (exact-times toggle).
     await expect(
-      page.getByText(/roles & access|3 · roles/i).first(),
+      page.getByRole("main").getByRole("heading", { name: /^role$/i }),
     ).toBeVisible({ timeout: 15000 })
 
     // --- Step 3: Roles --------------------------------------------------
-    // Pick the first role card. Scope to <main> so we don't hit the sidebar
-    // theme-switcher radios; the role group renders before the invitation
-    // group, and the default invitation timing (IMMEDIATE) keeps the CTA as
-    // "Create & send invitation".
-    await page.getByRole('main').getByRole('radio').first().click()
+    // Pick the Employee role card explicitly (not invitation radios / toggles).
+    const employeeRole = page
+      .getByRole("main")
+      .getByRole("radio", { name: /^employee\b/i })
+    await employeeRole.click()
+    await expect(employeeRole).toHaveAttribute("aria-checked", "true")
 
-    await page.getByRole('button', { name: /create & send invitation/i }).click()
+    await page.getByRole("button", { name: /create & send invitation/i }).click()
 
     // Back on the list; the new employee (draft or active) is visible.
     await expect(page).toHaveURL(/\/admin\/employees(\?|$)/, { timeout: 20000 })
