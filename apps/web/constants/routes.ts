@@ -119,6 +119,10 @@ export const ROUTES = {
     absenceCategoriesEdit: (locale: string, id: string) =>
       `/${locale}/admin/absence-categories/edit/${id}`,
 
+    // Employee Functions (org admin)
+    employeeFunctions: (locale: string) =>
+      `/${locale}/admin/employee-functions`,
+
     // Country Input Templates
     countryTemplates: (locale: string) =>
       `/${locale}/admin/settings/country-templates`,
