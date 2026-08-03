@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 
 import { Locale } from '@/database/enums/locale.enum';
 import { EmployeeFunctionsResolver } from './employee-functions.resolver';
@@ -113,5 +114,84 @@ describe('EmployeeFunctionsResolver', () => {
     await resolver.findOne('fn-1', 'org-b');
 
     expect(service.findOne).toHaveBeenCalledWith('fn-1', 'org-b');
+  });
+
+  describe('multi-tenant isolation', () => {
+    it('propagates NotFoundException for update of a foreign org function', async () => {
+      service.update.mockRejectedValue(
+        new NotFoundException('Employee function fn-foreign not found'),
+      );
+
+      await expect(
+        resolver.updateEmployeeFunction(
+          {
+            id: 'fn-foreign',
+            translations: [{ locale: Locale.DE, name: 'Lehrperson' }],
+          },
+          'org-a',
+        ),
+      ).rejects.toBeInstanceOf(NotFoundException);
+
+      expect(service.update).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'fn-foreign' }),
+        'org-a',
+      );
+    });
+
+    it('propagates NotFoundException for archive of a foreign org function', async () => {
+      service.archive.mockRejectedValue(
+        new NotFoundException('Employee function fn-foreign not found'),
+      );
+
+      await expect(
+        resolver.archiveEmployeeFunction('fn-foreign', 'org-a'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('propagates NotFoundException for delete of a foreign org function', async () => {
+      service.remove.mockRejectedValue(
+        new NotFoundException('Employee function fn-foreign not found'),
+      );
+
+      await expect(
+        resolver.deleteEmployeeFunction('fn-foreign', 'org-a'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('scopes update mutations to the active org id', async () => {
+      service.update.mockResolvedValue({ id: 'fn-1' });
+
+      await resolver.updateEmployeeFunction(
+        {
+          id: 'fn-1',
+          translations: [{ locale: Locale.DE, name: 'Sekretariat' }],
+        },
+        'org-a',
+      );
+
+      expect(service.update).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'fn-1' }),
+        'org-a',
+      );
+    });
+
+    it('scopes archive and delete to the active org id', async () => {
+      service.archive.mockResolvedValue(true);
+      service.remove.mockResolvedValue(true);
+
+      await resolver.archiveEmployeeFunction('fn-1', 'org-a');
+      await resolver.deleteEmployeeFunction('fn-1', 'org-a');
+
+      expect(service.archive).toHaveBeenCalledWith('fn-1', 'org-a');
+      expect(service.remove).toHaveBeenCalledWith('fn-1', 'org-a');
+    });
+
+    it('scopes reorder to the active org id', async () => {
+      service.reorder.mockResolvedValue([]);
+
+      await resolver.reorderEmployeeFunctions({ ids: ['a', 'b'] }, 'org-a');
+
+      expect(service.reorder).toHaveBeenCalledWith(['a', 'b'], 'org-a');
+    });
   });
 });

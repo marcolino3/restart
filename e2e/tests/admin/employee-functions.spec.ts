@@ -1,13 +1,11 @@
 import { test, expect, type Page } from '@playwright/test'
 import { ensureActiveOrg, signInAsSuperAdmin } from '../helpers/auth'
 
+const BACKEND_URL = process.env.BACKEND_URL ?? 'http://localhost:4001'
+
 /**
  * Employee functions ("Functions") — org-specific contract roles with
- * multilingual labels, dialog-based create/edit, archive and delete.
- *
- * The authenticated suite signs in through the real UI (credential account
- * seeded by the Playwright global-setup), so it also runs against a fresh CI
- * database.
+ * multilingual labels, dialog-based create/edit, archive, delete and reorder.
  */
 test.describe('Employee functions — access control', () => {
   test('page requires authentication', async ({ page }) => {
@@ -20,9 +18,6 @@ test.describe('Employee functions — access control', () => {
 })
 
 test.describe('Employee functions — CRUD', () => {
-  const unique = `E2E Function ${Date.now()}`
-  const renamed = `${unique} renamed`
-
   const openPage = async (page: Page) => {
     await signInAsSuperAdmin(page)
     await ensureActiveOrg(page)
@@ -32,63 +27,226 @@ test.describe('Employee functions — CRUD', () => {
     ).toBeVisible({ timeout: 15000 })
   }
 
+  const openCreateDialog = async (page: Page) => {
+    await page.getByRole('button', { name: /^new function$/i }).click()
+    const dialog = page.getByRole('dialog')
+    await expect(
+      dialog.getByRole('heading', { name: /^new function$/i }),
+    ).toBeVisible()
+    return dialog
+  }
+
   const openRowMenu = async (page: Page, label: string) => {
     await page
       .getByRole('button', { name: new RegExp(`open menu for ${label}`, 'i') })
       .click()
   }
 
-  test('create with a single locale, edit, archive and delete', async ({
-    page,
-  }) => {
-    await openPage(page)
+  test.describe('create', () => {
+    test('requires at least one label', async ({ page }) => {
+      await openPage(page)
+      const dialog = await openCreateDialog(page)
+      await dialog.getByRole('button', { name: /^new function$/i }).click()
+      await expect(
+        dialog.getByText(/please enter a label in at least one language/i),
+      ).toBeVisible()
+    })
 
-    // --- Create with DE label only (optional locales stay empty) ----------
-    await page.getByRole('button', { name: /^new function$/i }).click()
-    const createDialog = page.getByRole('dialog')
-    await expect(
-      createDialog.getByRole('heading', { name: /^new function$/i }),
-    ).toBeVisible()
-    await createDialog.getByLabel(/^label$/i).fill(unique)
-    await createDialog.getByRole('button', { name: /^new function$/i }).click()
+    test('creates a function with a single locale', async ({ page }) => {
+      const unique = `E2E Create ${Date.now()}`
+      await openPage(page)
+      const dialog = await openCreateDialog(page)
+      await dialog.getByLabel(/^label$/i).fill(unique)
+      await dialog.getByRole('button', { name: /^new function$/i }).click()
 
-    const row = page.getByRole('row', { name: new RegExp(unique) })
-    await expect(row).toBeVisible({ timeout: 15000 })
-    await expect(row.getByText('DE', { exact: true })).toBeVisible()
+      const row = page.getByRole('row', { name: new RegExp(unique) })
+      await expect(row).toBeVisible({ timeout: 15000 })
+      await expect(row.getByText('DE', { exact: true })).toBeVisible()
+    })
+  })
 
-    // --- Edit through the pre-filled dialog -------------------------------
-    await openRowMenu(page, unique)
-    await page.getByRole('menuitem', { name: /^edit$/i }).click()
-    const editDialog = page.getByRole('dialog')
-    await expect(
-      editDialog.getByRole('heading', { name: /^edit function$/i }),
-    ).toBeVisible()
-    await expect(editDialog.getByLabel(/^label$/i)).toHaveValue(unique)
-    await editDialog.getByLabel(/^label$/i).fill(renamed)
-    await editDialog.getByRole('button', { name: /^save$/i }).click()
+  test.describe('update', () => {
+    test('renames a function', async ({ page }) => {
+      const unique = `E2E Update ${Date.now()}`
+      const renamed = `${unique} renamed`
+      await openPage(page)
 
-    const renamedRow = page.getByRole('row', { name: new RegExp(renamed) })
-    await expect(renamedRow).toBeVisible({ timeout: 15000 })
+      const createDialog = await openCreateDialog(page)
+      await createDialog.getByLabel(/^label$/i).fill(unique)
+      await createDialog.getByRole('button', { name: /^new function$/i }).click()
+      await expect(
+        page.getByRole('row', { name: new RegExp(unique) }),
+      ).toBeVisible({ timeout: 15000 })
 
-    // --- Archive removes the row from the default list --------------------
-    await openRowMenu(page, renamed)
-    await page.getByRole('menuitem', { name: /^archive$/i }).click()
-    const archiveConfirm = page.getByRole('alertdialog')
-    await archiveConfirm.getByRole('button', { name: /^archive$/i }).click()
-    await expect(renamedRow).toHaveCount(0, { timeout: 15000 })
+      await openRowMenu(page, unique)
+      await page.getByRole('menuitem', { name: /^edit$/i }).click()
+      const editDialog = page.getByRole('dialog')
+      await expect(
+        editDialog.getByRole('heading', { name: /^edit function$/i }),
+      ).toBeVisible()
+      await editDialog.getByLabel(/^label$/i).fill(renamed)
+      await editDialog.getByRole('button', { name: /^save$/i }).click()
 
-    // --- Create again for hard delete -------------------------------------
-    await page.getByRole('button', { name: /^new function$/i }).click()
-    const deleteDialog = page.getByRole('dialog')
-    await deleteDialog.getByLabel(/^label$/i).fill(unique)
-    await deleteDialog.getByRole('button', { name: /^new function$/i }).click()
-    const deleteRow = page.getByRole('row', { name: new RegExp(unique) })
-    await expect(deleteRow).toBeVisible({ timeout: 15000 })
+      await expect(
+        page.getByRole('row', { name: new RegExp(renamed) }),
+      ).toBeVisible({ timeout: 15000 })
+    })
+  })
 
-    await openRowMenu(page, unique)
-    await page.getByRole('menuitem', { name: /^delete$/i }).click()
-    const deleteConfirm = page.getByRole('alertdialog')
-    await deleteConfirm.getByRole('button', { name: /^delete$/i }).click()
-    await expect(deleteRow).toHaveCount(0, { timeout: 15000 })
+  test.describe('archive', () => {
+    test('removes the function from the default list', async ({ page }) => {
+      const unique = `E2E Archive ${Date.now()}`
+      await openPage(page)
+
+      const dialog = await openCreateDialog(page)
+      await dialog.getByLabel(/^label$/i).fill(unique)
+      await dialog.getByRole('button', { name: /^new function$/i }).click()
+      const row = page.getByRole('row', { name: new RegExp(unique) })
+      await expect(row).toBeVisible({ timeout: 15000 })
+
+      await openRowMenu(page, unique)
+      await page.getByRole('menuitem', { name: /^archive$/i }).click()
+      await page
+        .getByRole('alertdialog')
+        .getByRole('button', { name: /^archive$/i })
+        .click()
+
+      await expect(row).toHaveCount(0, { timeout: 15000 })
+    })
+  })
+
+  test.describe('delete', () => {
+    test('hard-deletes an unused function', async ({ page }) => {
+      const unique = `E2E Delete ${Date.now()}`
+      await openPage(page)
+
+      const dialog = await openCreateDialog(page)
+      await dialog.getByLabel(/^label$/i).fill(unique)
+      await dialog.getByRole('button', { name: /^new function$/i }).click()
+      const row = page.getByRole('row', { name: new RegExp(unique) })
+      await expect(row).toBeVisible({ timeout: 15000 })
+
+      await openRowMenu(page, unique)
+      await page.getByRole('menuitem', { name: /^delete$/i }).click()
+      await page
+        .getByRole('alertdialog')
+        .getByRole('button', { name: /^delete$/i })
+        .click()
+
+      await expect(row).toHaveCount(0, { timeout: 15000 })
+    })
+
+    test('disables delete when the function is still assigned', async ({
+      page,
+    }) => {
+      const unique = `E2E InUse ${Date.now()}`
+      await openPage(page)
+
+      const created = await page.request.post(`${BACKEND_URL}/graphql`, {
+        data: {
+          query: `mutation CreateFunction($input: CreateEmployeeFunctionInput!) {
+            createEmployeeFunction(input: $input) { id name }
+          }`,
+          variables: {
+            input: { translations: [{ locale: 'DE', name: unique }] },
+          },
+        },
+      })
+      const createdJson = (await created.json()) as {
+        data?: { createEmployeeFunction?: { id: string } }
+        errors?: { message: string }[]
+      }
+      const functionId = createdJson.data?.createEmployeeFunction?.id
+      if (!functionId) {
+        throw new Error(
+          `E2E fixture: could not create function — ${JSON.stringify(createdJson.errors)}`,
+        )
+      }
+
+      const stamp = Date.now()
+      const draft = await page.request.post(`${BACKEND_URL}/graphql`, {
+        data: {
+          query: `mutation Upsert($input: EmployeeOnboardingInput!) {
+            upsertEmployeeOnboardingDraft(input: $input) { id }
+          }`,
+          variables: {
+            input: {
+              firstName: 'E2E',
+              lastName: `Assigned ${stamp}`,
+              email: `e2e.function.${stamp}@example.com`,
+              position: functionId,
+              startDate: '2026-01-15',
+            },
+          },
+        },
+      })
+      const draftJson = (await draft.json()) as {
+        errors?: { message: string }[]
+      }
+      if (draftJson.errors?.length) {
+        throw new Error(
+          `E2E fixture: could not assign function — ${draftJson.errors[0].message}`,
+        )
+      }
+
+      await page.reload({ waitUntil: 'networkidle' })
+      const row = page.getByRole('row', { name: new RegExp(unique) })
+      await expect(row).toBeVisible({ timeout: 15000 })
+
+      await openRowMenu(page, unique)
+      await expect(
+        page.getByRole('menuitem', { name: /^delete$/i }),
+      ).toBeDisabled()
+    })
+  })
+
+  test.describe('reorder', () => {
+    test('persists a new order via drag and drop', async ({ page }) => {
+      await openPage(page)
+
+      const a = `E2E Sort A ${Date.now()}`
+      const b = `E2E Sort B ${Date.now()}`
+      for (const name of [a, b]) {
+        const dialog = await openCreateDialog(page)
+        await dialog.getByLabel(/^label$/i).fill(name)
+        await dialog.getByRole('button', { name: /^new function$/i }).click()
+        await expect(page.getByRole('row', { name: new RegExp(name) })).toBeVisible(
+          { timeout: 15000 },
+        )
+      }
+
+      const rowA = page.getByRole('row', { name: new RegExp(a) })
+      const rowB = page.getByRole('row', { name: new RegExp(b) })
+      const handleA = rowA.getByLabel(/change order/i)
+      const handleBox = await handleA.boundingBox()
+      const targetBox = await rowB.boundingBox()
+      if (!handleBox || !targetBox) {
+        throw new Error('rows not visible for drag')
+      }
+
+      await page.mouse.move(
+        handleBox.x + handleBox.width / 2,
+        handleBox.y + handleBox.height / 2,
+      )
+      await page.mouse.down()
+      await page.mouse.move(handleBox.x + 10, handleBox.y + 10, { steps: 5 })
+      await page.mouse.move(
+        targetBox.x + targetBox.width / 2,
+        targetBox.y + targetBox.height / 2 + 10,
+        { steps: 10 },
+      )
+      await page.mouse.up()
+
+      await expect(page.getByText(/order saved/i)).toBeVisible({ timeout: 15000 })
+      await page.reload({ waitUntil: 'networkidle' })
+
+      const names = await page
+        .getByRole('row')
+        .filter({ hasText: /E2E Sort/ })
+        .allTextContents()
+      const indexA = names.findIndex((n) => n.includes(a))
+      const indexB = names.findIndex((n) => n.includes(b))
+      expect(indexA).toBeGreaterThan(indexB)
+    })
   })
 })
