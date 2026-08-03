@@ -66,21 +66,21 @@ test.describe('Employee onboarding — wizard happy path', () => {
     await page.getByRole('button', { name: /^next$/i }).click()
 
     // Step 3 (Roles & access) becomes active once the entry date is set.
-    // Wait for the role picker itself — the stepper label "3 · Roles & access"
-    // is always visible, and Step 2 also has radios (exact-times toggle).
-    await expect(
-      page.getByRole("main").getByRole("heading", { name: /^role$/i }),
-    ).toBeVisible({ timeout: 15000 })
+    // Wait for the Employee role radio itself — CardTitle is a <div> (not a
+    // heading), the stepper label "3 · Roles & access" is always visible, and
+    // Step 2's exact-times ToggleGroup also exposes radios. Advancing is async
+    // (draft save), so clicking too early selects the wrong control and
+    // finalize stays on /edit without a roleId.
+    const employeeRole = page
+      .getByRole('main')
+      .getByRole('radio', { name: /^employee\b/i })
+    await expect(employeeRole).toBeVisible({ timeout: 15000 })
 
     // --- Step 3: Roles --------------------------------------------------
-    // Pick the Employee role card explicitly (not invitation radios / toggles).
-    const employeeRole = page
-      .getByRole("main")
-      .getByRole("radio", { name: /^employee\b/i })
     await employeeRole.click()
-    await expect(employeeRole).toHaveAttribute("aria-checked", "true")
+    await expect(employeeRole).toHaveAttribute('aria-checked', 'true')
 
-    await page.getByRole("button", { name: /create & send invitation/i }).click()
+    await page.getByRole('button', { name: /create & send invitation/i }).click()
 
     // Back on the list; the new employee (draft or active) is visible.
     await expect(page).toHaveURL(/\/admin\/employees(\?|$)/, { timeout: 20000 })
