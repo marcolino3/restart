@@ -506,6 +506,7 @@ export class LessonRecordsService {
   async getMyLessonRecordStats(
     organizationId: string,
     recordedById: string,
+    options?: { asOf?: Date },
   ): Promise<{
     todayCount: number;
     weekCount: number;
@@ -519,6 +520,13 @@ export class LessonRecordsService {
     // made at 22:30 local already on "yesterday" for the stat cards, so an
     // edit or a fresh entry near midnight looked like it hadn't updated
     // anything.
+    const asOf = options?.asOf;
+    const nowExpr = asOf != null ? '$3::timestamptz' : 'now()';
+    const params =
+      asOf != null
+        ? [organizationId, recordedById, asOf]
+        : [organizationId, recordedById];
+
     const row = await this.dataSource.query<
       Array<{
         today_count: string;
@@ -532,25 +540,25 @@ export class LessonRecordsService {
       `SELECT
          COUNT(*) FILTER (
            WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
-                 >= (now() AT TIME ZONE o.timezone)::date
+                 >= (${nowExpr} AT TIME ZONE o.timezone)::date
          )::int AS today_count,
          COUNT(*) FILTER (
            WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
-                 >= (now() AT TIME ZONE o.timezone)::date - 6
+                 >= (${nowExpr} AT TIME ZONE o.timezone)::date - 6
          )::int AS week_count,
          COUNT(*) FILTER (
            WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
-                 >= (now() AT TIME ZONE o.timezone)::date - 13
+                 >= (${nowExpr} AT TIME ZONE o.timezone)::date - 13
              AND (lr.recorded_at AT TIME ZONE o.timezone)::date
-                 <  (now() AT TIME ZONE o.timezone)::date - 6
+                 <  (${nowExpr} AT TIME ZONE o.timezone)::date - 6
          )::int AS prev_week_count,
          COUNT(DISTINCT lr.student_id) FILTER (
            WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
-                 >= (now() AT TIME ZONE o.timezone)::date - 6
+                 >= (${nowExpr} AT TIME ZONE o.timezone)::date - 6
          )::int AS students_reached,
          COUNT(DISTINCT lr.lesson_id) FILTER (
            WHERE (lr.recorded_at AT TIME ZONE o.timezone)::date
-                 >= (now() AT TIME ZONE o.timezone)::date - 6
+                 >= (${nowExpr} AT TIME ZONE o.timezone)::date - 6
          )::int AS lessons_count,
          to_char(MAX(lr.recorded_at) AT TIME ZONE 'UTC',
                  'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS last_recorded_at
@@ -558,7 +566,7 @@ export class LessonRecordsService {
        JOIN organizations o ON o.id = lr.organization_id
       WHERE lr.organization_id = $1
         AND lr.recorded_by_id = $2`,
-      [organizationId, recordedById],
+      params,
     );
 
     const r = row[0];
