@@ -1,10 +1,15 @@
 import { getTranslations } from "next-intl/server";
 import { PageHead } from "@/components/common/PageHead";
 import { requireAdminPersona } from "@/features/users/guards/require-admin-persona";
+import { getEmployeeAbsenceCategoriesAction } from "@/features/employee-absence-categories/actions/get-employee-absence-categories.action";
 import { getTimeTrackingSettingsAction } from "@/features/time-tracking/actions/settings.action";
 import { getTimeTrackingPeriodsAction } from "@/features/time-tracking/actions/periods.action";
 import { getEmployeesAction } from "@/features/employees/actions/get-employees.action";
-import { TimeTrackingSettings } from "@/features/time-tracking/components/TimeTrackingSettings";
+import { AbsenceCategoriesTable } from "@/features/employee-absence-categories/components/AbsenceCategoriesTable";
+import {
+  CompanyVacationsSection,
+  HolidaysSection,
+} from "@/features/time-tracking/components/TimeTrackingSettings";
 import { PeriodsSection } from "@/features/time-tracking/components/PeriodsSection";
 import { PaidOvertimeSection } from "@/features/time-tracking/components/PaidOvertimeSection";
 import { OpeningBalancesSection } from "@/features/time-tracking/components/OpeningBalancesSection";
@@ -20,12 +25,17 @@ const TimeTrackingSettingsPage = async () => {
   await requireAdminPersona();
   const t = await getTranslations("TimeTracking");
 
-  const [{ holidays, companyVacations }, periods, employeesRes] =
-    await Promise.all([
-      getTimeTrackingSettingsAction(),
-      getTimeTrackingPeriodsAction(),
-      getEmployeesAction(),
-    ]);
+  const [
+    { holidays, companyVacations },
+    periods,
+    employeesRes,
+    absenceCategoriesRes,
+  ] = await Promise.all([
+    getTimeTrackingSettingsAction(),
+    getTimeTrackingPeriodsAction(),
+    getEmployeesAction(),
+    getEmployeeAbsenceCategoriesAction(),
+  ]);
 
   const employees: EmployeeOption[] = (
     "data" in employeesRes ? (employeesRes.data ?? []) : []
@@ -40,19 +50,34 @@ const TimeTrackingSettingsPage = async () => {
   return (
     <div className="space-y-6 p-4">
       <PageHead title={t("settings")} />
-      <Tabs defaultValue="general">
+      <Tabs defaultValue="holidays">
         <TabsList>
-          <TabsTrigger value="general">{t("general")}</TabsTrigger>
+          <TabsTrigger value="holidays">{t("holidays")}</TabsTrigger>
+          <TabsTrigger value="companyVacations">
+            {t("companyVacations")}
+          </TabsTrigger>
+          <TabsTrigger value="absenceCategories">
+            {t("absenceCategories")}
+          </TabsTrigger>
           <TabsTrigger value="periods">{t("periods")}</TabsTrigger>
           <TabsTrigger value="paidOvertime">{t("paidOvertime")}</TabsTrigger>
           <TabsTrigger value="openingBalances">
             {t("openingBalances")}
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="general" className="mt-6">
-          <TimeTrackingSettings
-            holidays={holidays}
-            companyVacations={companyVacations}
+        <TabsContent value="holidays" className="mt-6">
+          <HolidaysSection holidays={holidays} />
+        </TabsContent>
+        <TabsContent value="companyVacations" className="mt-6">
+          <CompanyVacationsSection companyVacations={companyVacations} />
+        </TabsContent>
+        <TabsContent value="absenceCategories" className="mt-6">
+          <AbsenceCategoriesTable
+            initialItems={
+              absenceCategoriesRes.success
+                ? (absenceCategoriesRes.data ?? [])
+                : []
+            }
           />
         </TabsContent>
         <TabsContent value="periods" className="mt-6">

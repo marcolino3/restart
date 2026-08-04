@@ -11,7 +11,7 @@ export type Holiday = {
   date: string;
   name: string;
   paidPercentage: number;
-  canton?: string | null;
+  repeatsYearly: boolean;
 };
 
 export type CompanyVacation = {
@@ -29,7 +29,7 @@ const SettingsDocument = gql`
       date
       name
       paidPercentage
-      canton
+      repeatsYearly
     }
     companyVacations {
       id
@@ -73,6 +73,13 @@ const CreateHolidayDocument = gql`
     }
   }
 `;
+const UpdateHolidayDocument = gql`
+  mutation UpdateHoliday($input: UpdateHolidayInput!) {
+    updateHoliday(input: $input) {
+      id
+    }
+  }
+`;
 const DeleteHolidayDocument = gql`
   mutation DeleteHoliday($id: ID!) {
     deleteHoliday(id: $id)
@@ -81,6 +88,13 @@ const DeleteHolidayDocument = gql`
 const CreateCompanyVacationDocument = gql`
   mutation CreateCompanyVacation($input: CreateCompanyVacationInput!) {
     createCompanyVacation(input: $input) {
+      id
+    }
+  }
+`;
+const UpdateCompanyVacationDocument = gql`
+  mutation UpdateCompanyVacation($input: UpdateCompanyVacationInput!) {
+    updateCompanyVacation(input: $input) {
       id
     }
   }
@@ -95,11 +109,28 @@ export const createHolidayAction = async (input: {
   date: string;
   name: string;
   paidPercentage: number;
-  canton?: string | null;
+  repeatsYearly?: boolean;
 }) => {
   const client = await serverCookieGqlClient();
   try {
     await client.request(CreateHolidayDocument, { input });
+    await revalidate();
+    return { success: true as const, data: true };
+  } catch (error) {
+    return { success: false as const, error };
+  }
+};
+
+export const updateHolidayAction = async (input: {
+  id: string;
+  date: string;
+  name: string;
+  paidPercentage: number;
+  repeatsYearly?: boolean;
+}) => {
+  const client = await serverCookieGqlClient();
+  try {
+    await client.request(UpdateHolidayDocument, { input });
     await revalidate();
     return { success: true as const, data: true };
   } catch (error) {
@@ -126,6 +157,22 @@ export const createCompanyVacationAction = async (input: {
   const client = await serverCookieGqlClient();
   try {
     await client.request(CreateCompanyVacationDocument, { input });
+    await revalidate();
+    return { success: true as const, data: true };
+  } catch (error) {
+    return { success: false as const, error };
+  }
+};
+
+export const updateCompanyVacationAction = async (input: {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+}) => {
+  const client = await serverCookieGqlClient();
+  try {
+    await client.request(UpdateCompanyVacationDocument, { input });
     await revalidate();
     return { success: true as const, data: true };
   } catch (error) {

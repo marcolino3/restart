@@ -177,6 +177,7 @@ export class BalanceRecomputeService {
       holidays: holidays.map((h) => ({
         date: h.date,
         paidPercentage: h.paidPercentage,
+        repeatsYearly: h.repeatsYearly,
       })),
       absenceDays,
       vacationDays,

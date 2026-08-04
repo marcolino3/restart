@@ -71,6 +71,8 @@ export interface CalcHoliday {
   date: string;
   /** 0–100; bezahlter Anteil des freien Tages (reduziert die Sollzeit). */
   paidPercentage: number;
+  /** Gilt jedes Jahr am gleichen Monat/Tag wie `date`. */
+  repeatsYearly?: boolean;
 }
 
 /** Eine bereits auf einen einzelnen Tag aufgelöste Absenz. */

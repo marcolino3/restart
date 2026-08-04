@@ -4,22 +4,28 @@ export const HolidayFormSchema = z.object({
   date: z.date(),
   name: z.string().min(1),
   paidPercentage: z.coerce.number().int().min(0).max(100).default(100),
-  canton: z.string().optional().default(""),
+  repeatsYearly: z.boolean().default(false),
 });
 export type HolidayFormInput = z.input<typeof HolidayFormSchema>;
 export type HolidayFormOutput = z.output<typeof HolidayFormSchema>;
 
-export const CompanyVacationFormSchema = z
-  .object({
-    name: z.string().min(1),
-    startDate: z.date(),
-    endDate: z.date(),
-  })
-  .refine((v) => v.endDate >= v.startDate, {
-    message: "endBeforeStart",
-    path: ["endDate"],
-  });
-export type CompanyVacationFormInput = z.input<typeof CompanyVacationFormSchema>;
+type Translate = (key: string) => string;
+
+export const createCompanyVacationFormSchema = (t: Translate) =>
+  z
+    .object({
+      name: z.string().min(1),
+      startDate: z.date(),
+      endDate: z.date(),
+    })
+    .refine((v) => v.endDate >= v.startDate, {
+      message: t("endBeforeStart"),
+      path: ["endDate"],
+    });
+
+export type CompanyVacationFormInput = z.input<
+  ReturnType<typeof createCompanyVacationFormSchema>
+>;
 export type CompanyVacationFormOutput = z.output<
-  typeof CompanyVacationFormSchema
+  ReturnType<typeof createCompanyVacationFormSchema>
 >;

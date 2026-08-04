@@ -1,5 +1,6 @@
 import { Field, InputType, Int } from '@nestjs/graphql';
 import {
+  IsBoolean,
   IsDateString,
   IsInt,
   IsOptional,
@@ -25,8 +26,8 @@ export class CreateHolidayInput {
   @Max(100)
   paidPercentage?: number;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => Boolean, { nullable: true })
   @IsOptional()
-  @IsString()
-  canton?: string;
+  @IsBoolean()
+  repeatsYearly?: boolean;
 }
