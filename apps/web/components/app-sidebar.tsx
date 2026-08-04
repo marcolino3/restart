@@ -30,7 +30,6 @@ import {
   IconStack2,
   IconUsers,
   IconWorld,
-  IconCalendarOff,
 } from "@tabler/icons-react";
 
 import { NavDocuments } from "@/components/nav-documents";
@@ -223,11 +222,6 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
             : []),
           ...(hasPermission("EMPLOYEE_ABSENCE_CATEGORY_MANAGE")
             ? [
-                {
-                  title: t("absenceCategories"),
-                  url: ROUTES.admin.absenceCategories(locale),
-                  icon: IconCalendarOff,
-                },
                 {
                   title: t("timeTrackingSettings"),
                   url: ROUTES.admin.timeTrackingSettings(locale),

@@ -9,7 +9,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { useTranslations } from "next-intl";
 
 interface SheetProviderContextType {
   open: (options: {
@@ -31,8 +30,6 @@ export const useSheet = () => {
 };
 
 export const SheetProvider = ({ children }: { children: React.ReactNode }) => {
-  const t = useTranslations("Common");
-
   const [isOpen, setIsOpen] = React.useState(false);
   const [content, setContent] = React.useState<React.ReactNode>(null);
   const [title, setTitle] = React.useState<string | undefined>();
@@ -76,10 +73,10 @@ export const SheetProvider = ({ children }: { children: React.ReactNode }) => {
           {(title || description) && (
             <SheetHeader>
               {title && (
-                <SheetTitle className="text-2xl">{t(title)}</SheetTitle>
+                <SheetTitle className="text-2xl">{title}</SheetTitle>
               )}
               {description && (
-                <SheetDescription>{t(description)}</SheetDescription>
+                <SheetDescription>{description}</SheetDescription>
               )}
             </SheetHeader>
           )}

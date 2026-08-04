@@ -2,6 +2,7 @@ import { DateTime } from 'luxon';
 import {
   CalcAbsenceDay,
   CalcContract,
+  CalcHoliday,
   CalcInput,
   CalcTimeWindow,
   DayResult,
@@ -132,8 +133,27 @@ export function proRataEntitlementDays(
   return Math.round(entitlement * 2) / 2;
 }
 
+/** Monat-Tag-Teil eines ISO-Datums (`MM-DD`). */
+export function monthDay(isoDate: string): string {
+  return isoDate.slice(5, 10);
+}
+
+/** Feiertag für einen Kalendertag (exakt oder jährlich wiederkehrend). */
+export function findHolidayForDate(
+  holidays: CalcHoliday[],
+  date: string,
+): CalcHoliday | undefined {
+  const exact = holidays.find((h) => h.date === date);
+  if (exact) return exact;
+
+  const targetMonthDay = monthDay(date);
+  return holidays.find(
+    (h) => h.repeatsYearly && monthDay(h.date) === targetMonthDay,
+  );
+}
+
 export function calculateDays(input: CalcInput): DayResult[] {
-  const holidayByDate = new Map(input.holidays.map((h) => [h.date, h]));
+  const holidays = input.holidays;
   const vacationDates = new Set(input.vacationDays.map((v) => v.date));
 
   const absencesByDate = new Map<string, CalcAbsenceDay[]>();
@@ -186,7 +206,7 @@ export function calculateDays(input: CalcInput): DayResult[] {
 
     // Feiertag reduziert die Sollzeit (teilbezahlt möglich) und überschreibt
     // Ferien/Absenz an diesem Tag.
-    const holiday = holidayByDate.get(date);
+    const holiday = findHolidayForDate(holidays, date);
     if (holiday) {
       result.isHoliday = true;
       const unpaidFactor = Math.max(

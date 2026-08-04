@@ -5,7 +5,7 @@ import { Column, Entity, Index, JoinColumn, ManyToOne, Unique } from 'typeorm';
 
 /**
  * Org-spezifischer Feiertag des Arbeitskalenders.
- * `paidPercentage` erlaubt teilbezahlte Feiertage (CH-kantonal, z. B. 50 %).
+ * `paidPercentage` erlaubt teilbezahlte Feiertage (z. B. 50 %).
  */
 @ObjectType()
 @Entity('holidays')
@@ -33,7 +33,8 @@ export class Holiday extends AbstractEntity<Holiday> {
   @Column('int', { name: 'paid_percentage', default: 100 })
   paidPercentage!: number;
 
-  @Field(() => String, { nullable: true })
-  @Column('varchar', { length: 50, nullable: true })
-  canton!: string | null;
+  /** Gilt jedes Jahr am gleichen Monat/Tag (Ankerdatum in `date`). */
+  @Field(() => Boolean)
+  @Column('boolean', { name: 'repeats_yearly', default: false })
+  repeatsYearly!: boolean;
 }

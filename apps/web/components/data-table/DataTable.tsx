@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import { DataTableActiveFilters } from "./DataTableActiveFilters";
 import { DataTableFilter, type FilterGroup } from "./DataTableFilter";
 import { DataTablePagination } from "./DataTablePagination";
-import { DataTableViewOptions } from "./DataTableViewOptions";
+import { DataTableViewOptions, type DataTableColumnMeta } from "./DataTableViewOptions";
 
 /**
  * Columns whose cells own their click handling. With `onRowClick` set, a click
@@ -28,6 +28,12 @@ import { DataTableViewOptions } from "./DataTableViewOptions";
  * the actions menu or ticking a checkbox also navigates away.
  */
 const INTERACTIVE_COLUMN_IDS = new Set(["select", "actions"]);
+
+function columnMetaClassName(
+  meta: unknown,
+): string | undefined {
+  return (meta as DataTableColumnMeta | undefined)?.className;
+}
 
 interface DataTableProps<TData> {
   table: TanStackTable<TData>;
@@ -147,6 +153,7 @@ export function DataTable<TData>({
     return row.getVisibleCells().map((cell) => (
       <TableCell
         key={cell.id}
+        className={columnMetaClassName(cell.column.columnDef.meta)}
         // Interactive cells (row actions, selection checkboxes) must not also
         // trigger the row's navigation.
         onClick={
@@ -230,7 +237,14 @@ export function DataTable<TData>({
               <TableRow key={headerGroup.id}>
                 {leadingHeader}
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}>
+                  <TableHead
+                    key={header.id}
+                    className={columnMetaClassName(header.column.columnDef.meta)}
+                    style={{
+                      width:
+                        header.getSize() !== 150 ? header.getSize() : undefined,
+                    }}
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(

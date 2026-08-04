@@ -210,6 +210,48 @@ describe('calculateDays', () => {
     expect(days[0].plannedMinutes).toBe(252);
   });
 
+  it('jährlicher Feiertag gilt am gleichen Monat/Tag in anderen Jahren', () => {
+    const days = calculateDays(
+      baseInput({
+        rangeStart: '2027-08-01',
+        rangeEnd: '2027-08-01',
+        holidays: [
+          {
+            date: '2020-08-01',
+            paidPercentage: 100,
+            repeatsYearly: true,
+          },
+        ],
+      }),
+    );
+    expect(days[0].isHoliday).toBe(true);
+    expect(days[0].plannedMinutes).toBe(0);
+  });
+
+  it('einmaliger Feiertag gilt nicht in anderen Jahren', () => {
+    const days = calculateDays(
+      baseInput({
+        rangeStart: '2027-06-01',
+        rangeEnd: '2027-06-01',
+        holidays: [{ date: '2026-06-01', paidPercentage: 100 }],
+      }),
+    );
+    expect(days[0].isHoliday).toBe(false);
+  });
+
+  it('exakter Feiertag hat Vorrang vor jährlichem mit gleichem Monat/Tag', () => {
+    const days = calculateDays(
+      baseInput({
+        holidays: [
+          { date: '2020-06-01', paidPercentage: 50, repeatsYearly: true },
+          { date: '2026-06-01', paidPercentage: 100 },
+        ],
+      }),
+    );
+    expect(days[0].isHoliday).toBe(true);
+    expect(days[0].plannedMinutes).toBe(0);
+  });
+
   it('deckt einen Ferientag mit der Tages-Sollzeit', () => {
     const days = calculateDays(
       baseInput({ vacationDays: [{ date: '2026-06-02' }] }),

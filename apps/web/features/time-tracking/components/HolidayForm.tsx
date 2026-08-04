@@ -10,16 +10,40 @@ import { Button } from "@/components/ui/button";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { NumberFormField } from "@/components/form/form-fields/NumberFormField";
+import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
 import { useSheet } from "@/components/providers/sheet-provider";
 import {
   HolidayFormSchema,
   type HolidayFormInput,
   type HolidayFormOutput,
 } from "../schemas/settings-form.schema";
-import { createHolidayAction } from "../actions/settings.action";
+import {
+  createHolidayAction,
+  updateHolidayAction,
+  type Holiday,
+} from "../actions/settings.action";
 import { toISODate } from "../lib/to-iso-date";
 
-export const HolidayForm = () => {
+const parseDateOnly = (iso: string): Date => {
+  const [year, month, day] = iso.slice(0, 10).split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
+
+/** Same calendar day in the following year (for copy-to-next-year). */
+const nextYearDate = (iso: string): Date => {
+  const date = parseDateOnly(iso);
+  date.setFullYear(date.getFullYear() + 1);
+  return date;
+};
+
+interface Props {
+  /** Edit existing holiday. */
+  holiday?: Holiday;
+  /** Prefill create form from an existing one-off holiday (date +1 year). */
+  copyFrom?: Holiday;
+}
+
+export const HolidayForm = ({ holiday, copyFrom }: Props) => {
   const t = useTranslations("TimeTracking");
   const tc = useTranslations("Common");
   const router = useRouter();
@@ -27,16 +51,38 @@ export const HolidayForm = () => {
 
   const form = useForm<HolidayFormInput, unknown, HolidayFormOutput>({
     resolver: zodResolver(HolidayFormSchema),
-    defaultValues: { date: new Date(), name: "", paidPercentage: 100, canton: "" },
+    defaultValues: holiday
+      ? {
+          date: parseDateOnly(holiday.date),
+          name: holiday.name,
+          paidPercentage: holiday.paidPercentage,
+          repeatsYearly: holiday.repeatsYearly,
+        }
+      : copyFrom
+        ? {
+            date: nextYearDate(copyFrom.date),
+            name: copyFrom.name,
+            paidPercentage: copyFrom.paidPercentage,
+            repeatsYearly: false,
+          }
+        : {
+            date: new Date(),
+            name: "",
+            paidPercentage: 100,
+            repeatsYearly: false,
+          },
   });
 
   const onSubmit = async (values: HolidayFormOutput) => {
-    const { success } = await createHolidayAction({
+    const payload = {
       date: toISODate(values.date),
       name: values.name,
       paidPercentage: values.paidPercentage,
-      canton: values.canton || null,
-    });
+      repeatsYearly: values.repeatsYearly,
+    };
+    const { success } = holiday
+      ? await updateHolidayAction({ id: holiday.id, ...payload })
+      : await createHolidayAction(payload);
     if (success) {
       toast.success(tc("success"));
       close();
@@ -68,13 +114,14 @@ export const HolidayForm = () => {
           max={100}
           nullable={false}
         />
-        <InputFormField
-          name="canton"
-          label="canton"
+        <SwitchFormField
+          name="repeatsYearly"
+          label="repeatsYearly"
+          description="repeatsYearlyHelp"
           namespace="TimeTracking"
         />
         <Button type="submit" disabled={form.formState.isSubmitting}>
-          {t("addHoliday")}
+          {holiday ? t("editHoliday") : t("addHoliday")}
         </Button>
       </form>
     </Form>

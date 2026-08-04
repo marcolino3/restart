@@ -25,6 +25,8 @@ export interface DataTableColumnMeta {
   label?: string;
   /** Hides the column from the visibility menu. */
   hideFromViewOptions?: boolean;
+  /** Applied to both header (`th`) and body (`td`) cells. */
+  className?: string;
 }
 
 /**
