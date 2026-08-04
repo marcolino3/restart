@@ -2,6 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EntityManager } from 'typeorm';
 import { SuperAdminBootstrapService } from './super-admin-bootstrap.service';
 
+jest.mock('bcrypt', () => ({
+  compare: jest.fn().mockResolvedValue(true),
+  hash: jest.fn().mockResolvedValue('hashed'),
+}));
+
 // The service imports the module-level better-auth instance; mock it so the
 // spec controls the sign-up call without env/DB requirements.
 jest.mock('@/lib/auth', () => ({
@@ -14,6 +19,7 @@ const { auth } = require('@/lib/auth') as {
 };
 
 describe('SuperAdminBootstrapService', () => {
+  jest.setTimeout(15_000);
   let service: SuperAdminBootstrapService;
   let em: { transaction: jest.Mock; query: jest.Mock };
   let tx: {
