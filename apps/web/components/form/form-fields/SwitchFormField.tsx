@@ -19,6 +19,7 @@ interface Props {
   width?: string;
   className?: string;
   disabled?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
   /** i18n namespace for `label` + `description`. Default `"Common"`. */
   namespace?: string;
 }
@@ -30,6 +31,7 @@ export const SwitchFormField = ({
   width = "w-full",
   className,
   disabled = false,
+  onCheckedChange,
   namespace = "Common",
 }: Props) => {
   const t = useTranslations(namespace);
@@ -53,7 +55,10 @@ export const SwitchFormField = ({
               <Switch
                 id={name}
                 checked={field.value}
-                onCheckedChange={field.onChange}
+                onCheckedChange={(checked) => {
+                  field.onChange(checked);
+                  onCheckedChange?.(checked);
+                }}
                 disabled={disabled}
               />
             </FormControl>

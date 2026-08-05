@@ -21,6 +21,13 @@ export const ROUTES = {
       employeeId: string,
       contractId: string,
     ) => `/${locale}/admin/employees/${employeeId}/contracts/edit/${contractId}`,
+    employeesAbsenceCreate: (locale: string, employeeId: string) =>
+      `/${locale}/admin/employees/${employeeId}/absences/edit`,
+    employeesAbsenceEdit: (
+      locale: string,
+      employeeId: string,
+      absenceId: string,
+    ) => `/${locale}/admin/employees/${employeeId}/absences/edit/${absenceId}`,
 
     // My Time Tracking
     myTimeTracking: (locale: string) => `/${locale}/admin/my-time-tracking`,

@@ -28,6 +28,8 @@ type DatePickerFormFieldProps<TFormValues extends FieldValues> = {
   label?: string;
   description?: string;
   disabledDate?: (date: Date) => boolean;
+  /** When true, selected days are stored at 00:00 local time. */
+  startOfDay?: boolean;
   width?: string;
   /** i18n namespace for `label`. Default `"Common"`. */
   namespace?: string;
@@ -38,6 +40,7 @@ export function DatePickerFormField<TFormValues extends FieldValues>({
   label,
   description,
   disabledDate = (date) => date > new Date() || date < new Date("1900-01-01"),
+  startOfDay = false,
   width = "w-full",
   namespace = "Common",
 }: DatePickerFormFieldProps<TFormValues>) {
@@ -59,10 +62,10 @@ export function DatePickerFormField<TFormValues extends FieldValues>({
 
           const now = new Date();
           selectedDate.setHours(
-            now.getHours(),
-            now.getMinutes(),
-            now.getSeconds(),
-            now.getMilliseconds()
+            startOfDay ? 0 : now.getHours(),
+            startOfDay ? 0 : now.getMinutes(),
+            startOfDay ? 0 : now.getSeconds(),
+            startOfDay ? 0 : now.getMilliseconds(),
           );
 
           field.onChange(selectedDate);

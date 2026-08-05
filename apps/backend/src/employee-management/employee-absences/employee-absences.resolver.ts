@@ -5,8 +5,9 @@ import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { MembershipGuard } from '@/auth/guard/membership.guard';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { UseGuards } from '@nestjs/common';
-import { Args, ID, Mutation, Resolver } from '@nestjs/graphql';
+import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CreateEmployeeAbsenceNoticeInput } from './dto/create-employee-absence-notice.input';
+import { CreateEmployeeAbsenceInput } from './dto/create-employee-absence.input';
 import { UpdateEmployeeAbsenceInput } from './dto/update-employee-absence.input';
 import { EmployeeAbsencesService } from './employee-absences.service';
 import { EmployeeAbsence } from './entities/employee-absence.entity';
@@ -17,6 +18,24 @@ export class EmployeeAbsencesResolver {
   constructor(
     private readonly employeeAbsencesService: EmployeeAbsencesService,
   ) {}
+
+  @Permissions('TIMESHEET_READ')
+  @Query(() => [EmployeeAbsence], { name: 'employeeAbsencesByEmployeeId' })
+  employeeAbsencesByEmployeeId(
+    @Args('employeeId', { type: () => ID }) employeeId: string,
+    @CurrentUser() user: TokenPayload,
+  ) {
+    return this.employeeAbsencesService.findAllByEmployeeId(employeeId, user);
+  }
+
+  @Permissions('TIMESHEET_READ')
+  @Query(() => EmployeeAbsence, { name: 'employeeAbsenceById' })
+  employeeAbsenceById(
+    @Args('id', { type: () => ID }) id: string,
+    @CurrentUser() user: TokenPayload,
+  ) {
+    return this.employeeAbsencesService.findOne(id, user);
+  }
 
   // Self-service notice (always for the caller's own membership) — no
   // permission code required, but the caller must be a verified member of
@@ -32,6 +51,15 @@ export class EmployeeAbsencesResolver {
       input,
       user,
     );
+  }
+
+  @Permissions('TIMESHEET_WRITE')
+  @Mutation(() => EmployeeAbsence, { name: 'createEmployeeAbsence' })
+  createEmployeeAbsence(
+    @Args('input') input: CreateEmployeeAbsenceInput,
+    @CurrentUser() user: TokenPayload,
+  ) {
+    return this.employeeAbsencesService.createEmployeeAbsence(input, user);
   }
 
   @Permissions('TIMESHEET_WRITE')

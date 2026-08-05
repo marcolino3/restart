@@ -18,6 +18,8 @@ import { TeamAccessService } from '@/employee-management/teams/team-access.servi
  *   geleiteter Teams; sonst nur eigene. OFFICE hat — anders als im übrigen
  *   Admin-Bereich — KEINEN Zugriff auf fremde Zeitdaten.
  * - Verwalten fremder Daten (Schreiben): nur self oder ADMIN/HR.
+ * - Absenzen schreiben: zusätzlich TEAM_LEAD für Mitarbeiter geleiteter Teams
+ *   (`assertCanManageAbsence`) — bewusst weiter als generisches Manage.
  */
 const TIME_TRACKING_ADMIN_PERSONAS: ReadonlySet<Persona> = new Set<Persona>([
   Persona.ADMIN,
@@ -100,6 +102,24 @@ export class TimeTrackingAccessService {
     const callerEmployeeId = await this.resolveCallerEmployeeId(user);
     if (callerEmployeeId && callerEmployeeId === targetEmployeeId) return;
     throw new ForbiddenException('Kein Schreibzugriff auf diesen Mitarbeiter.');
+  }
+
+  /**
+   * Absenzen schreiben (CRUD + Zertifikat-Upload): Admin/HR, Self, oder
+   * TEAM_LEAD für Mitarbeiter geleiteter Teams. Enger als generisches
+   * `assertCanManageEmployee` (dort kein Teamleiter-Schreiben auf Zeiteinträge).
+   */
+  async assertCanManageAbsence(
+    user: TokenPayload,
+    targetEmployeeId: string,
+  ): Promise<void> {
+    try {
+      await this.assertCanViewEmployee(user, targetEmployeeId);
+    } catch {
+      throw new ForbiddenException(
+        'Kein Schreibzugriff auf Absenzen dieses Mitarbeiters.',
+      );
+    }
   }
 
   /**

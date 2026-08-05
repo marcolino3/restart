@@ -11,6 +11,10 @@ interface InlineEditFieldProps {
   className?: string;
   inputType?: string;
   placeholder?: string;
+  inputPlaceholder?: string;
+  editHint?: string;
+  /** Start in edit mode (e.g. after uploading a new document). */
+  initialEditing?: boolean;
 }
 
 export function InlineEditField({
@@ -19,8 +23,11 @@ export function InlineEditField({
   className,
   inputType = "text",
   placeholder = "–",
+  inputPlaceholder,
+  editHint,
+  initialEditing = false,
 }: InlineEditFieldProps) {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(initialEditing);
   const [editValue, setEditValue] = useState(value);
   const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -79,6 +86,7 @@ export function InlineEditField({
           onKeyDown={handleKeyDown}
           onBlur={handleSave}
           disabled={isSaving}
+          placeholder={inputPlaceholder ?? placeholder}
           className="h-7 text-sm px-2 py-1"
         />
         <button
@@ -103,15 +111,19 @@ export function InlineEditField({
   }
 
   return (
-    <span
-      onDoubleClick={() => setIsEditing(true)}
+    <button
+      type="button"
+      onClick={() => setIsEditing(true)}
+      title={editHint}
       className={cn(
-        "group/edit inline-flex items-center gap-1.5 cursor-pointer rounded px-1 -mx-1 py-0.5 -my-0.5 hover:bg-muted transition-colors",
+        "group/edit inline-flex min-w-0 items-center gap-1.5 rounded px-1 -mx-1 py-0.5 -my-0.5 text-left transition-colors hover:bg-muted",
         className,
       )}
     >
-      <span>{value || placeholder}</span>
-      <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover/edit:opacity-100 transition-opacity" />
-    </span>
+      <span className={cn("truncate", !value && "text-muted-foreground")}>
+        {value || placeholder}
+      </span>
+      <Pencil className="h-3 w-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/edit:opacity-100" />
+    </button>
   );
 }

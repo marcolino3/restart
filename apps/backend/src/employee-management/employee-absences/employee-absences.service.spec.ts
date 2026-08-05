@@ -3,6 +3,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { EmployeeAbsencesService } from './employee-absences.service';
 import { GoogleCalendarService } from '@/google/google-calendar.service';
+import { StorageService } from '@/storage/storage.service';
 import { BalanceRecomputeService } from '../work-time-calculation/balance-recompute.service';
 import { TimeTrackingAccessService } from '../work-time-calculation/time-tracking-access.service';
 import { TimeTrackingPeriodsService } from '../time-tracking-periods/time-tracking-periods.service';
@@ -17,19 +18,32 @@ describe('EmployeeAbsencesService', () => {
   let service: EmployeeAbsencesService;
   let entityManager: {
     findOne: jest.Mock;
+    find: jest.Mock;
+    findOneOrFail: jest.Mock;
     transaction: jest.Mock;
   };
   let periods: { assertRangeUnlocked: jest.Mock };
-  let access: { assertCanManageEmployee: jest.Mock };
+  let access: {
+    assertCanManageAbsence: jest.Mock;
+    assertCanViewEmployee: jest.Mock;
+  };
   let recompute: { recomputeRange: jest.Mock };
+  let storage: { delete: jest.Mock };
 
   beforeEach(async () => {
-    entityManager = { findOne: jest.fn(), transaction: jest.fn() };
+    entityManager = {
+      findOne: jest.fn(),
+      find: jest.fn(),
+      findOneOrFail: jest.fn(),
+      transaction: jest.fn(),
+    };
     periods = { assertRangeUnlocked: jest.fn().mockResolvedValue(undefined) };
     access = {
-      assertCanManageEmployee: jest.fn().mockResolvedValue(undefined),
+      assertCanManageAbsence: jest.fn().mockResolvedValue(undefined),
+      assertCanViewEmployee: jest.fn().mockResolvedValue(undefined),
     };
     recompute = { recomputeRange: jest.fn().mockResolvedValue(undefined) };
+    storage = { delete: jest.fn().mockResolvedValue(undefined) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -39,6 +53,7 @@ describe('EmployeeAbsencesService', () => {
         { provide: BalanceRecomputeService, useValue: recompute },
         { provide: TimeTrackingAccessService, useValue: access },
         { provide: TimeTrackingPeriodsService, useValue: periods },
+        { provide: StorageService, useValue: storage },
       ],
     }).compile();
 
@@ -47,6 +62,24 @@ describe('EmployeeAbsencesService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('findAllByEmployeeId', () => {
+    it('prüft Leserecht und filtert nach Org + Mitarbeiter', async () => {
+      entityManager.find.mockResolvedValue([]);
+      await service.findAllByEmployeeId('emp-1', user);
+      expect(access.assertCanViewEmployee).toHaveBeenCalledWith(user, 'emp-1');
+      expect(entityManager.find).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          where: expect.objectContaining({
+            organizationId: 'org-1',
+            employeeId: 'emp-1',
+            isActive: true,
+          }),
+        }),
+      );
+    });
   });
 
   describe('deleteEmployeeAbsence', () => {
@@ -94,10 +127,7 @@ describe('EmployeeAbsencesService', () => {
           }),
       );
       await service.deleteEmployeeAbsence('abs-1', user);
-      expect(access.assertCanManageEmployee).toHaveBeenCalledWith(
-        user,
-        'emp-9',
-      );
+      expect(access.assertCanManageAbsence).toHaveBeenCalledWith(user, 'emp-9');
       expect(recompute.recomputeRange).toHaveBeenCalledWith(
         'org-1',
         'emp-9',
@@ -107,7 +137,101 @@ describe('EmployeeAbsencesService', () => {
     });
   });
 
+  describe('createEmployeeAbsence', () => {
+    it('speichert Arztzeugnisse und weitere Dokumente mit Bezeichnung', async () => {
+      const employee = {
+        id: 'emp-1',
+        membership: {
+          id: 'mem-1',
+          user: { firstName: 'Anna', lastName: 'Test' },
+        },
+      };
+      entityManager.findOne.mockResolvedValueOnce(employee);
+
+      const certificates = [
+        { url: '/api/absence-certificates/a.pdf', label: 'Erstattung' },
+      ];
+      const additionalDocuments = [
+        { url: '/api/absence-certificates/b.pdf', label: 'Unfallmeldung' },
+      ];
+
+      let savedAbsence: Record<string, unknown> | undefined;
+      entityManager.transaction.mockImplementation(
+        async (fn: (m: unknown) => Promise<unknown>) =>
+          fn({
+            findOne: jest
+              .fn()
+              .mockResolvedValueOnce({ id: 'org-1' })
+              .mockResolvedValueOnce({ id: 'cat-1', systemCode: 'SICKNESS' }),
+            create: jest.fn().mockImplementation((_e, v) => v),
+            save: jest.fn().mockImplementation((v) => {
+              if (v && typeof v === 'object' && 'certificates' in v) {
+                savedAbsence = v as Record<string, unknown>;
+              }
+              return { ...v, id: 'abs-new', employeeId: 'emp-1' };
+            }),
+          }),
+      );
+
+      await service.createEmployeeAbsence(
+        {
+          employeeId: 'emp-1',
+          absenceCategoryId: 'cat-1',
+          startDate: '2026-03-01',
+          endDate: '2026-03-03',
+          note: 'Krank',
+          isTeamInformed: true,
+          certificates,
+          additionalDocuments,
+        },
+        user,
+      );
+
+      expect(access.assertCanManageAbsence).toHaveBeenCalledWith(user, 'emp-1');
+      expect(savedAbsence?.certificates).toEqual(certificates);
+      expect(savedAbsence?.additionalDocuments).toEqual(additionalDocuments);
+      expect(recompute.recomputeRange).toHaveBeenCalledWith(
+        'org-1',
+        'emp-1',
+        '2026-03-01',
+        '2026-03-03',
+      );
+    });
+  });
+
   describe('updateEmployeeAbsence', () => {
+    it('aktualisiert Dokument-Arrays', async () => {
+      const absence = {
+        id: 'abs-1',
+        employeeId: 'emp-1',
+        organizationId: 'org-1',
+        absenceCategoryId: 'cat-1',
+        startDate: new Date('2026-01-05'),
+        endDate: new Date('2026-01-06'),
+        certificates: [],
+        additionalDocuments: [],
+      };
+      entityManager.findOne.mockResolvedValue(absence);
+      entityManager.transaction.mockImplementation(
+        async (fn: (m: unknown) => Promise<unknown>) =>
+          fn({
+            save: jest.fn().mockImplementation((_e, v) => v ?? absence),
+            delete: jest.fn(),
+            create: jest.fn().mockImplementation((_e, v) => v),
+          }),
+      );
+
+      const certificates = [
+        { url: '/api/absence-certificates/c.pdf', label: 'Folgezeugnis' },
+      ];
+      const updated = await service.updateEmployeeAbsence(
+        { id: 'abs-1', certificates },
+        user,
+      );
+
+      expect(updated.certificates).toEqual(certificates);
+    });
+
     it('rechnet die Union aus altem und neuem Bereich neu', async () => {
       const absence = {
         id: 'abs-1',
@@ -135,6 +259,103 @@ describe('EmployeeAbsencesService', () => {
         'emp-1',
         '2026-01-05',
         '2026-01-08',
+      );
+    });
+
+    it('löscht entfernte Dokumente aus dem Storage', async () => {
+      const absence = {
+        id: 'abs-1',
+        employeeId: 'emp-1',
+        organizationId: 'org-1',
+        absenceCategoryId: 'cat-1',
+        startDate: new Date('2026-01-05'),
+        endDate: new Date('2026-01-06'),
+        certificates: [
+          { url: '/api/absence-certificates/old.pdf', label: 'Alt' },
+        ],
+        additionalDocuments: [],
+      };
+      entityManager.findOne.mockResolvedValue(absence);
+      entityManager.transaction.mockImplementation(
+        async (fn: (m: unknown) => Promise<unknown>) =>
+          fn({
+            save: jest.fn().mockImplementation((_e, v) => v ?? absence),
+            delete: jest.fn(),
+            create: jest.fn().mockImplementation((_e, v) => v),
+          }),
+      );
+
+      await service.updateEmployeeAbsence(
+        {
+          id: 'abs-1',
+          certificates: [
+            { url: '/api/absence-certificates/new.pdf', label: 'Neu' },
+          ],
+        },
+        user,
+      );
+
+      expect(storage.delete).toHaveBeenCalledWith(
+        'absence-certificates/org-1/old.pdf',
+      );
+    });
+
+    it('lehnt externe Dokument-URLs ab', async () => {
+      const absence = {
+        id: 'abs-1',
+        employeeId: 'emp-1',
+        organizationId: 'org-1',
+        absenceCategoryId: 'cat-1',
+        startDate: new Date('2026-01-05'),
+        endDate: new Date('2026-01-06'),
+        certificates: [],
+        additionalDocuments: [],
+      };
+      entityManager.findOne.mockResolvedValue(absence);
+
+      await expect(
+        service.updateEmployeeAbsence(
+          {
+            id: 'abs-1',
+            certificates: [{ url: 'https://evil.example/x.pdf', label: 'bad' }],
+          },
+          user,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+  });
+
+  describe('deleteEmployeeAbsence', () => {
+    it('räumt Storage-Dokumente beim Soft-Delete auf', async () => {
+      const absence = {
+        id: 'abs-1',
+        employeeId: 'emp-1',
+        organizationId: 'org-1',
+        startDate: new Date('2026-01-05'),
+        endDate: new Date('2026-01-06'),
+        certificates: [
+          { url: '/api/absence-certificates/c.pdf', label: 'Zeugnis' },
+        ],
+        additionalDocuments: [
+          { url: '/api/absence-certificates/d.pdf', label: 'Unfall' },
+        ],
+      };
+      entityManager.findOne.mockResolvedValue(absence);
+      entityManager.transaction.mockImplementation(
+        async (fn: (m: unknown) => Promise<unknown>) =>
+          fn({
+            save: jest.fn().mockResolvedValue(absence),
+            delete: jest.fn(),
+          }),
+      );
+
+      await service.deleteEmployeeAbsence('abs-1', user);
+
+      expect(storage.delete).toHaveBeenCalledWith(
+        'absence-certificates/org-1/c.pdf',
+      );
+      expect(storage.delete).toHaveBeenCalledWith(
+        'absence-certificates/org-1/d.pdf',
       );
     });
   });

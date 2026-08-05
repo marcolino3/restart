@@ -1,4 +1,8 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource, EntityManager, In } from 'typeorm';
@@ -140,6 +144,39 @@ describe('EmployeeAbsenceCategoriesService', () => {
           ORG_ID,
         ),
       ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('accepts a single non-DE translation', async () => {
+      categoriesRepo.save.mockImplementation((v) =>
+        Promise.resolve({ id: 'cat-1', ...v }),
+      );
+      categoriesRepo.findOne.mockResolvedValue({
+        id: 'cat-1',
+        organizationId: ORG_ID,
+        translations: [{ locale: Locale.EN, name: 'Sick leave' }],
+      });
+
+      await service.create(
+        {
+          translations: [{ locale: Locale.EN, name: 'Sick leave' }],
+        },
+        ORG_ID,
+      );
+
+      expect(translationsRepo.save).toHaveBeenCalledWith([
+        expect.objectContaining({ locale: Locale.EN, name: 'Sick leave' }),
+      ]);
+    });
+
+    it('rejects when no translation name is provided', async () => {
+      await expect(
+        service.create(
+          {
+            translations: [{ locale: Locale.DE, name: '  ' }],
+          },
+          ORG_ID,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('auto-assigns sortOrder when omitted', async () => {

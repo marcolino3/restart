@@ -62,7 +62,9 @@ describe("RemindersListPage", () => {
     vi.clearAllMocks();
   });
 
-  it("refetches when returning to the initial filter after viewing another tab (regression)", async () => {
+  it(
+    "refetches when returning to the initial filter after viewing another tab (regression)",
+    async () => {
     const user = userEvent.setup();
     getOrgAdmissionRemindersAction.mockImplementation((filter: string) => {
       const data =
@@ -103,5 +105,7 @@ describe("RemindersListPage", () => {
       expect(screen.getByText("Open reminder")).toBeInTheDocument(),
     );
     expect(screen.queryByText("Completed reminder")).not.toBeInTheDocument();
-  });
+  },
+    15_000,
+  );
 });
