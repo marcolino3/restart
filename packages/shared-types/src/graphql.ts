@@ -28,6 +28,17 @@ export type AbsenceCategorySummary = {
   totalDays: Scalars['Int']['output'];
 };
 
+export type AbsenceDocument = {
+  __typename?: 'AbsenceDocument';
+  label: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+};
+
+export type AbsenceDocumentInput = {
+  label: Scalars['String']['input'];
+  url: Scalars['String']['input'];
+};
+
 export type AccessReviewEntry = {
   __typename?: 'AccessReviewEntry';
   lastReviewedAt?: Maybe<Scalars['DateTime']['output']>;
@@ -1030,6 +1041,19 @@ export type CreateEmployeeAbsenceCategoryInput = {
   translations: Array<EmployeeAbsenceCategoryTranslationInput>;
 };
 
+export type CreateEmployeeAbsenceInput = {
+  absenceCategoryId: Scalars['ID']['input'];
+  additionalDocuments?: InputMaybe<Array<AbsenceDocumentInput>>;
+  certificates?: InputMaybe<Array<AbsenceDocumentInput>>;
+  employeeId: Scalars['ID']['input'];
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  isTeamInformed: Scalars['Boolean']['input'];
+  isVacationCapable?: InputMaybe<Scalars['Boolean']['input']>;
+  note: Scalars['String']['input'];
+  percentage?: InputMaybe<Scalars['Int']['input']>;
+  startDate: Scalars['String']['input'];
+};
+
 export type CreateEmployeeAbsenceNoticeInput = {
   absenceCategoryId: Scalars['ID']['input'];
   endDate?: InputMaybe<Scalars['String']['input']>;
@@ -1692,13 +1716,16 @@ export type Employee = {
 
 export type EmployeeAbsence = {
   __typename?: 'EmployeeAbsence';
+  absenceCategory: EmployeeAbsenceCategory;
   absenceCategoryId: Scalars['String']['output'];
   absenceDays?: Maybe<Array<EmployeeAbsenceDay>>;
+  additionalDocuments: Array<AbsenceDocument>;
+  certificates: Array<AbsenceDocument>;
   createdAt: Scalars['DateTime']['output'];
   deletedAt?: Maybe<Scalars['DateTime']['output']>;
   employee: Employee;
   employeeId: Scalars['String']['output'];
-  endDate?: Maybe<Scalars['String']['output']>;
+  endDate?: Maybe<Scalars['DateTime']['output']>;
   id: Scalars['ID']['output'];
   isActive: Scalars['Boolean']['output'];
   isArchived: Scalars['Boolean']['output'];
@@ -1708,7 +1735,7 @@ export type EmployeeAbsence = {
   note: Scalars['String']['output'];
   organizationId: Scalars['String']['output'];
   percentage: Scalars['Int']['output'];
-  startDate: Scalars['String']['output'];
+  startDate: Scalars['DateTime']['output'];
   updatedAt: Scalars['DateTime']['output'];
   version: Scalars['Int']['output'];
 };
@@ -2550,6 +2577,7 @@ export type Mutation = {
   createDataSubjectRequest: DataSubjectRequest;
   createEmailTemplate: EmailTemplate;
   createEmployee: Employee;
+  createEmployeeAbsence: EmployeeAbsence;
   createEmployeeAbsenceCategory: EmployeeAbsenceCategory;
   createEmployeeAbsenceNotice: EmployeeAbsence;
   createEmployeeContract: EmployeeContract;
@@ -2964,6 +2992,11 @@ export type MutationCreateEmailTemplateArgs = {
 
 export type MutationCreateEmployeeArgs = {
   createEmployeeInput: CreateEmployeeInput;
+};
+
+
+export type MutationCreateEmployeeAbsenceArgs = {
+  input: CreateEmployeeAbsenceInput;
 };
 
 
@@ -4493,9 +4526,11 @@ export type Query = {
   dataSubjectRequestById: DataSubjectRequest;
   dataSubjectRequests: Array<DataSubjectRequest>;
   emailTemplates: Array<EmailTemplate>;
+  employeeAbsenceById: EmployeeAbsence;
   employeeAbsenceCategoriesByOrgId: Array<EmployeeAbsenceCategory>;
   employeeAbsenceCategoryById: EmployeeAbsenceCategory;
   employeeAbsenceCategorySummary: Array<AbsenceCategorySummary>;
+  employeeAbsencesByEmployeeId: Array<EmployeeAbsence>;
   employeeAuditLog: Array<EmployeeAuditLog>;
   employeeById: Employee;
   employeeContractById: EmployeeContract;
@@ -4854,6 +4889,11 @@ export type QueryEmailTemplatesArgs = {
 };
 
 
+export type QueryEmployeeAbsenceByIdArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type QueryEmployeeAbsenceCategoryByIdArgs = {
   id: Scalars['ID']['input'];
 };
@@ -4864,6 +4904,11 @@ export type QueryEmployeeAbsenceCategorySummaryArgs = {
   from: Scalars['String']['input'];
   locale?: InputMaybe<Scalars['String']['input']>;
   to: Scalars['String']['input'];
+};
+
+
+export type QueryEmployeeAbsencesByEmployeeIdArgs = {
+  employeeId: Scalars['ID']['input'];
 };
 
 
@@ -6249,6 +6294,8 @@ export type UpdateEmployeeAbsenceCategoryInput = {
 
 export type UpdateEmployeeAbsenceInput = {
   absenceCategoryId?: InputMaybe<Scalars['ID']['input']>;
+  additionalDocuments?: InputMaybe<Array<AbsenceDocumentInput>>;
+  certificates?: InputMaybe<Array<AbsenceDocumentInput>>;
   endDate?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
   isTeamInformed?: InputMaybe<Scalars['Boolean']['input']>;

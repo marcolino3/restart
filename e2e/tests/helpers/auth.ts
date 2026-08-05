@@ -114,6 +114,66 @@ export async function ensureTeacher(page: Page): Promise<string> {
 }
 
 /**
+ * Ensures the active org has at least one employee and returns its id plus
+ * display name. Used by absence CRUD E2E tests.
+ */
+export async function ensureEmployee(
+  page: Page,
+  persona: 'EMPLOYEE' | 'ADMIN' | 'TEACHER' = 'EMPLOYEE',
+): Promise<{ employeeId: string; displayName: string }> {
+  const gql = async (query: string, variables?: Record<string, unknown>) => {
+    const res = await page.request.post(`${BACKEND_URL}/graphql`, {
+      data: { query, variables },
+    })
+    return res.json() as Promise<{
+      data?: Record<string, unknown>
+      errors?: { message: string }[]
+    }>
+  }
+
+  const existing = await gql(
+    '{ employeesByOrgId { id membership { user { firstName lastName } } } }',
+  )
+  const employees = (existing.data?.employeesByOrgId ?? []) as {
+    id: string
+    membership?: { user?: { firstName: string; lastName: string } | null }
+  }[]
+  const first = employees[0]
+  if (first?.id) {
+    const user = first.membership?.user
+    const displayName = user
+      ? `${user.firstName} ${user.lastName}`.trim()
+      : first.id
+    return { employeeId: first.id, displayName }
+  }
+
+  const stamp = Date.now()
+  const firstName = 'E2E'
+  const lastName = `Employee${stamp}`
+  const created = await gql(
+    `mutation Create($input: CreateEmployeeInput!) {
+       createEmployee(createEmployeeInput: $input) { id }
+     }`,
+    {
+      input: {
+        firstName,
+        lastName,
+        email: `e2e.employee.${stamp}@example.com`,
+        persona,
+      },
+    },
+  )
+  const employeeId = (created.data?.createEmployee as { id?: string } | undefined)
+    ?.id
+  if (!employeeId || created.errors?.length) {
+    throw new Error(
+      `E2E fixture: could not create an employee — ${created.errors?.[0]?.message ?? 'unknown'}`,
+    )
+  }
+  return { employeeId, displayName: `${firstName} ${lastName}` }
+}
+
+/**
  * Sets up a second, independent user + organization for multi-tenant
  * negative tests — a fresh browser context (own cookie jar) signed in as a
  * user who belongs ONLY to a brand-new org, never the superadmin's.

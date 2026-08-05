@@ -1,0 +1,34 @@
+---
+description: Absenzen-Feature Entscheidungen (Admin-Detail CRUD, Folge-Scope)
+globs: "**/employee-absence*/**","**/employee-absences/**","**/EmployeeViewPage.tsx","**/EmployeeAbsences*"
+alwaysApply: false
+---
+
+# Employee Absences (Absenzen)
+
+## v1 Scope (aktuell auf `feat/absenzen`)
+
+- Admin-CRUD unter Mitarbeiter-Detail Tab `absences`: Liste, Anlegen, Bearbeiten, Löschen
+- Multi-Datei Arztzeugnisse + weitere Dokumente mit Labels (`certificates` / `additionalDocuments`)
+- Flag Ferienfähig = bestehendes `isVacationCapable` (editierbar, Default aus Kategorie)
+- **Create/Edit als eigene Seiten** (nicht Sheet) — analog Verträge → Routen `employeesAbsenceCreate` / `employeesAbsenceEdit`
+
+## Bewusst später (nicht v1 — danach umsetzen)
+
+1. Genehmigungs-Workflow (`requiresApproval`)
+2. Self-Service-Tabelle unter „Meine Zeiterfassung“ erweitern
+3. Kalender-UI
+4. Team-Lead-UI unter Admin-Mitarbeiterdetail (API erlaubt TL bereits; Seiten noch `requireAdminPersona`)
+
+## Auth (verbindlich)
+
+- Lesen: Admin/HR, Self, TEAM_LEAD (nur Team-Mitglieder) via `assertCanViewEmployee`
+- Schreiben Absenzen + Zertifikat-Upload/Delete: `assertCanManageAbsence` (gleiche Matrix wie Lesen — TL darf Team-Absenzen pflegen)
+- Certificate-REST: `@Permissions(TIMESHEET_*)` + `employeeId` Query + Access-Service (kein reines `@Roles`)
+- Dokument-URLs nur `/api/absence-certificates/<fileId>`; Storage-Orphans bei Update/Delete aufräumen
+- Date-only Speichern als `YYYY-MM-DD` (kein Local-Midnight→UTC Day-Shift)
+
+## Architektur-Hinweise
+
+- Permissions: `TIMESHEET_READ` / `TIMESHEET_WRITE` + `TimeTrackingAccessService`
+- Vorlage Tabelle/Routen: `EmployeeContractsTab` + Document-Upload

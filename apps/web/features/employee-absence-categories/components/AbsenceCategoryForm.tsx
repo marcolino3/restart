@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { FormProvider, useForm, type FieldErrors } from "react-hook-form";
@@ -16,7 +16,6 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
@@ -28,7 +27,7 @@ import { ROUTES } from "@/constants/routes";
 
 import {
   ABSENCE_CATEGORY_FORM_DEFAULTS,
-  absenceCategoryFormSchema,
+  createAbsenceCategoryFormSchema,
   type AbsenceCategoryFormInput,
   type AbsenceCategoryFormValues,
 } from "../schemas/employee-absence-category-form.schema";
@@ -55,8 +54,16 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
 
   const isSystem = !!initial?.isSystem;
 
+  const schema = useMemo(
+    () =>
+      createAbsenceCategoryFormSchema({
+        atLeastOneNameRequired: t("atLeastOneNameRequired"),
+      }),
+    [t],
+  );
+
   const form = useForm<AbsenceCategoryFormInput, unknown, AbsenceCategoryFormValues>({
-    resolver: zodResolver(absenceCategoryFormSchema),
+    resolver: zodResolver(schema),
     defaultValues: initial
       ? mapInitialToFormValues(initial)
       : ABSENCE_CATEGORY_FORM_DEFAULTS,
@@ -162,12 +169,10 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
         {/* Translations */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              {t("translationsTitle")}
-              <Badge variant="outline">{t("germanRequired")}</Badge>
-            </CardTitle>
+            <CardTitle>{t("translationsTitle")}</CardTitle>
           </CardHeader>
           <CardContent>
+            <p className="text-muted-foreground mb-4 text-xs">{t("localeHint")}</p>
             <Tabs
               value={activeTab}
               onValueChange={(v) => setActiveTab(v as AbsenceCategoryLocale)}
@@ -176,7 +181,6 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
                 {LOCALES.map((loc, idx) => (
                   <TabsTrigger key={loc} value={loc}>
                     {loc}
-                    {loc === "DE" && <span className="ml-1 text-red-500">*</span>}
                     {translationHasContent(form.getValues(), idx) && (
                       <span
                         className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-500"

@@ -148,6 +148,46 @@ describe('TimeTrackingAccessService', () => {
     });
   });
 
+  describe('assertCanManageAbsence', () => {
+    it('erlaubt Teamleiter Absenzen für Mitarbeiter geleiteter Teams', async () => {
+      teamAccess.getEffectiveTeamRoles.mockResolvedValue([
+        { teamId: 'T1', role: TeamMemberRole.LEAD },
+      ]);
+      teamMemberRepo.find.mockResolvedValue([{ employeeId: 'OTHER' }]);
+      await expect(
+        service.assertCanManageAbsence(
+          callerUser({ roles: [SystemRole.TEAM_LEAD] }),
+          'OTHER',
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('verweigert Teamleiter Absenzen ausserhalb seiner Teams', async () => {
+      teamAccess.getEffectiveTeamRoles.mockResolvedValue([
+        { teamId: 'T1', role: TeamMemberRole.LEAD },
+      ]);
+      teamMemberRepo.find.mockResolvedValue([{ employeeId: 'SOMEONE_ELSE' }]);
+      await expect(
+        service.assertCanManageAbsence(
+          callerUser({ roles: [SystemRole.TEAM_LEAD] }),
+          'OTHER',
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('erlaubt Admin/HR und Self', async () => {
+      await expect(
+        service.assertCanManageAbsence(callerUser(), 'CALLER'),
+      ).resolves.toBeUndefined();
+      await expect(
+        service.assertCanManageAbsence(
+          callerUser({ persona: Persona.HR }),
+          'OTHER',
+        ),
+      ).resolves.toBeUndefined();
+    });
+  });
+
   describe('resolveOverviewScope', () => {
     it('Admin → null (alle), reiner Mitarbeiter → [] (keine)', async () => {
       await expect(

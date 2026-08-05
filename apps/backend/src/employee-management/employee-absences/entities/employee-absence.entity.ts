@@ -3,6 +3,7 @@ import { Employee } from '@/employee-management/employees/entities/employee.enti
 import { ObjectType, Field, Int } from '@nestjs/graphql';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { EmployeeAbsenceDay } from './employee-absence-days.entity';
+import { AbsenceDocument } from './absence-document.type';
 import { AbstractEntity } from '@/database/abstract.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
@@ -39,6 +40,7 @@ export class EmployeeAbsence extends AbstractEntity<EmployeeAbsence> {
   employeeId: string;
 
   // Absence Category
+  @Field(() => EmployeeAbsenceCategory)
   @ManyToOne(() => EmployeeAbsenceCategory)
   @JoinColumn({ name: 'absence_category_id' })
   absenceCategory: EmployeeAbsenceCategory;
@@ -57,11 +59,11 @@ export class EmployeeAbsence extends AbstractEntity<EmployeeAbsence> {
   absenceDays: EmployeeAbsenceDay[];
 
   // Data
-  @Field(() => String)
+  @Field(() => Date)
   @Column('timestamptz')
   startDate: Date;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => Date, { nullable: true })
   @Column('timestamptz', { nullable: true })
   endDate: Date;
 
@@ -84,4 +86,14 @@ export class EmployeeAbsence extends AbstractEntity<EmployeeAbsence> {
   @Field(() => Int)
   @Column('int', { default: 100 })
   percentage: number;
+
+  // Arztzeugnisse (private Storage-URLs via /api/absence-certificates/…).
+  @Field(() => [AbsenceDocument])
+  @Column('jsonb', { default: [] })
+  certificates: AbsenceDocument[];
+
+  // Weitere Dokumente (z. B. Unfallmeldung) — gleicher Storage wie Arztzeugnis.
+  @Field(() => [AbsenceDocument])
+  @Column('jsonb', { name: 'additional_documents', default: [] })
+  additionalDocuments: AbsenceDocument[];
 }

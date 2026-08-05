@@ -29,10 +29,12 @@ function prettierCheck(files) {
 
 /** @type {Config} */
 export default {
-  'apps/backend/**/*.{ts,js}': (files) => [
-    ...prettierCheck(files),
-    ...eslintFix('apps/backend', files),
-  ],
+  'apps/backend/**/*.{ts,js}': (files) => {
+    // `scripts/` is excluded from apps/backend/tsconfig.json, so type-aware
+    // ESLint cannot load those files via the project service.
+    const eslintFiles = files.filter((f) => !f.includes('/scripts/'));
+    return [...prettierCheck(files), ...eslintFix('apps/backend', eslintFiles)];
+  },
   'apps/web/**/*.{ts,tsx,js,jsx,mjs}': (files) =>
     eslintFix('apps/web', files),
   'apps/mobile/**/*.{ts,tsx,js,jsx}': (files) =>

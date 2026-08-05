@@ -19,12 +19,14 @@ import { cn } from "@/lib/utils";
 import type { EmployeeDetail } from "../actions/get-employee-by-id.action";
 import type { EmployeeNoteItem } from "@/features/employee-notes/actions/get-employee-notes.action";
 import type { EmployeeContract } from "../actions/employee-contracts.actions";
+import type { EmployeeAbsence } from "@/features/employee-absences/actions/employee-absences.actions";
 import type { EmployeeReportResult } from "@/features/time-tracking/actions/get-time-report.action";
 import { isContractFieldVisible } from "@restart/shared-schemas/employees/contract-type-rules";
 import EmployeeNotesFeed from "@/features/employee-notes/components/EmployeeNotesFeed";
 import EmployeeNotesTimeline from "@/features/employee-notes/components/EmployeeNotesTimeline";
 import CreateEmployeeNoteInline from "@/features/employee-notes/components/CreateEmployeeNoteInline";
 import EmployeeContractsTab from "./EmployeeContractsTab";
+import EmployeeAbsencesTab from "@/features/employee-absences/components/EmployeeAbsencesTab";
 import {
   formatExactTimesPlanLines,
   formatWorkdaysPlanLabel,
@@ -37,6 +39,7 @@ interface EmployeeViewPageProps {
   employee: EmployeeDetail;
   notes: EmployeeNoteItem[];
   contracts: EmployeeContract[];
+  absences: EmployeeAbsence[];
   report: EmployeeReportResult;
   employeeName: string;
   functionOptions?: { label: string; value: string }[];
@@ -94,6 +97,7 @@ export default function EmployeeViewPage({
   employee,
   notes,
   contracts,
+  absences,
   report,
   employeeName,
   functionOptions,
@@ -376,30 +380,12 @@ export default function EmployeeViewPage({
 
             {/* Absenzen */}
             <TabsContent value="absences">
-              <DetailPanel title={tE("tabAbsences")}>
-                {report.categorySummary.length ? (
-                  report.categorySummary.map((c) => (
-                    <KvRow
-                      key={c.categoryId}
-                      label={
-                        <span className="flex items-center gap-2">
-                          <span
-                            className="inline-block size-2 shrink-0 rounded-full"
-                            style={{ background: c.color ?? "var(--muted)" }}
-                          />
-                          {c.name}
-                        </span>
-                      }
-                    >
-                      {tE("daysCount", { days: c.totalDays })}
-                    </KvRow>
-                  ))
-                ) : (
-                  <p className="text-[13px] text-muted-foreground">
-                    {tE("noAbsences")}
-                  </p>
-                )}
-              </DetailPanel>
+              <EmployeeAbsencesTab
+                employeeId={employee.id}
+                absences={absences}
+                categorySummary={report.categorySummary}
+                editable
+              />
             </TabsContent>
 
             {/* Zeiterfassung */}

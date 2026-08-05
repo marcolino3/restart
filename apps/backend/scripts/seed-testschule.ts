@@ -51,54 +51,159 @@ interface TestUser {
   firstName: string;
   lastName: string;
   persona:
-    | 'ADMIN'
-    | 'HR'
+    'ADMIN' | 'HR' | 'OFFICE' | 'TEACHER' | 'PARENT' | 'STUDENT' | 'EMPLOYEE';
+  roleCode:
+    | 'ORG_OWNER'
+    | 'ORG_ADMIN'
+    | 'HR_MANAGER'
     | 'OFFICE'
-    | 'TEACHER'
-    | 'PARENT'
-    | 'STUDENT'
+    | 'TEAM_LEAD'
     | 'EMPLOYEE';
-  roleCode: 'ORG_OWNER' | 'ORG_ADMIN' | 'HR_MANAGER' | 'OFFICE' | 'TEAM_LEAD' | 'EMPLOYEE';
   isTeacher: boolean;
 }
 
 const USERS: TestUser[] = [
-  { email: 'admin@testschule.ch',          firstName: 'Anna',   lastName: 'Admin',       persona: 'ADMIN',    roleCode: 'ORG_ADMIN',  isTeacher: false },
-  { email: 'hr@testschule.ch',             firstName: 'Heidi',  lastName: 'Hofstetter',  persona: 'HR',       roleCode: 'HR_MANAGER', isTeacher: false },
-  { email: 'sekretariat@testschule.ch',    firstName: 'Silvia', lastName: 'Sutter',      persona: 'OFFICE',   roleCode: 'OFFICE',     isTeacher: false },
-  { email: 'sandra.lehrerin@testschule.ch', firstName: 'Sandra', lastName: 'Müller',     persona: 'TEACHER',  roleCode: 'EMPLOYEE',   isTeacher: true },
-  { email: 'thomas.lehrer@testschule.ch',   firstName: 'Thomas', lastName: 'Brunner',    persona: 'TEACHER',  roleCode: 'EMPLOYEE',   isTeacher: true },
-  { email: 'mira.assistentin@testschule.ch', firstName: 'Mira',  lastName: 'Aebi',       persona: 'TEACHER',  roleCode: 'EMPLOYEE',   isTeacher: true },
-  { email: 'daniel.lehrer@testschule.ch',   firstName: 'Daniel', lastName: 'Schmid',     persona: 'TEACHER',  roleCode: 'EMPLOYEE',   isTeacher: true },
-  { email: 'petra.lehrerin@testschule.ch',  firstName: 'Petra',  lastName: 'Steiner',    persona: 'TEACHER',  roleCode: 'EMPLOYEE',   isTeacher: true },
-  { email: 'lukas.hauswart@testschule.ch',  firstName: 'Lukas',  lastName: 'Bürgi',      persona: 'EMPLOYEE', roleCode: 'EMPLOYEE',   isTeacher: false },
+  {
+    email: 'admin@testschule.ch',
+    firstName: 'Anna',
+    lastName: 'Admin',
+    persona: 'ADMIN',
+    roleCode: 'ORG_ADMIN',
+    isTeacher: false,
+  },
+  {
+    email: 'hr@testschule.ch',
+    firstName: 'Heidi',
+    lastName: 'Hofstetter',
+    persona: 'HR',
+    roleCode: 'HR_MANAGER',
+    isTeacher: false,
+  },
+  {
+    email: 'sekretariat@testschule.ch',
+    firstName: 'Silvia',
+    lastName: 'Sutter',
+    persona: 'OFFICE',
+    roleCode: 'OFFICE',
+    isTeacher: false,
+  },
+  {
+    email: 'sandra.lehrerin@testschule.ch',
+    firstName: 'Sandra',
+    lastName: 'Müller',
+    persona: 'TEACHER',
+    roleCode: 'EMPLOYEE',
+    isTeacher: true,
+  },
+  {
+    email: 'thomas.lehrer@testschule.ch',
+    firstName: 'Thomas',
+    lastName: 'Brunner',
+    persona: 'TEACHER',
+    roleCode: 'EMPLOYEE',
+    isTeacher: true,
+  },
+  {
+    email: 'mira.assistentin@testschule.ch',
+    firstName: 'Mira',
+    lastName: 'Aebi',
+    persona: 'TEACHER',
+    roleCode: 'EMPLOYEE',
+    isTeacher: true,
+  },
+  {
+    email: 'daniel.lehrer@testschule.ch',
+    firstName: 'Daniel',
+    lastName: 'Schmid',
+    persona: 'TEACHER',
+    roleCode: 'EMPLOYEE',
+    isTeacher: true,
+  },
+  {
+    email: 'petra.lehrerin@testschule.ch',
+    firstName: 'Petra',
+    lastName: 'Steiner',
+    persona: 'TEACHER',
+    roleCode: 'EMPLOYEE',
+    isTeacher: true,
+  },
+  {
+    email: 'lukas.hauswart@testschule.ch',
+    firstName: 'Lukas',
+    lastName: 'Bürgi',
+    persona: 'EMPLOYEE',
+    roleCode: 'EMPLOYEE',
+    isTeacher: false,
+  },
 ];
 
 const STAGES = [
-  { name: 'Anfrage',            slug: 'anfrage',           color: '#94a3b8', position: 0, stage_type: 'INITIAL',     is_default: true },
-  { name: 'Hospitation',        slug: 'hospitation',       color: '#0ea5e9', position: 1, stage_type: 'IN_PROGRESS', is_default: false },
-  { name: 'Aufnahmegespräch',   slug: 'aufnahmegespraech', color: '#f59e0b', position: 2, stage_type: 'IN_PROGRESS', is_default: false },
-  { name: 'Vertrag',            slug: 'vertrag',           color: '#a855f7', position: 3, stage_type: 'ACCEPTED',    is_default: false },
-  { name: 'Aktiv',              slug: 'aktiv',             color: '#22c55e', position: 4, stage_type: 'ENROLLED',    is_default: false },
-  { name: 'Abgelehnt',          slug: 'abgelehnt',         color: '#ef4444', position: 5, stage_type: 'REJECTED',    is_default: false },
+  {
+    name: 'Anfrage',
+    slug: 'anfrage',
+    color: '#94a3b8',
+    position: 0,
+    stage_type: 'INITIAL',
+    is_default: true,
+  },
+  {
+    name: 'Hospitation',
+    slug: 'hospitation',
+    color: '#0ea5e9',
+    position: 1,
+    stage_type: 'IN_PROGRESS',
+    is_default: false,
+  },
+  {
+    name: 'Aufnahmegespräch',
+    slug: 'aufnahmegespraech',
+    color: '#f59e0b',
+    position: 2,
+    stage_type: 'IN_PROGRESS',
+    is_default: false,
+  },
+  {
+    name: 'Vertrag',
+    slug: 'vertrag',
+    color: '#a855f7',
+    position: 3,
+    stage_type: 'ACCEPTED',
+    is_default: false,
+  },
+  {
+    name: 'Aktiv',
+    slug: 'aktiv',
+    color: '#22c55e',
+    position: 4,
+    stage_type: 'ENROLLED',
+    is_default: false,
+  },
+  {
+    name: 'Abgelehnt',
+    slug: 'abgelehnt',
+    color: '#ef4444',
+    position: 5,
+    stage_type: 'REJECTED',
+    is_default: false,
+  },
 ];
 
 const NEW_GRADE_LEVELS = [
-  { name: 'Vorschule',   sortOrder: 0,  color: '#FBBF24' },
+  { name: 'Vorschule', sortOrder: 0, color: '#FBBF24' },
   { name: 'Primarstufe', sortOrder: 10, color: '#6366F1' },
-  { name: 'Oberstufe',   sortOrder: 30, color: '#8B5CF6' },
+  { name: 'Oberstufe', sortOrder: 30, color: '#8B5CF6' },
 ];
 
 // Colour palette used to backfill grade-levels that already exist (e.g. the
 // `Kindergarten`/`Unterstufe`/`Mittelstufe` rows the seed inherits from a
 // pre-existing org). Idempotent — only fills rows where colour is still NULL.
 const GRADE_LEVEL_COLOR_DEFAULTS: Record<string, string> = {
-  Vorschule:    '#FBBF24',
+  Vorschule: '#FBBF24',
   Kindergarten: '#F97316',
-  Unterstufe:   '#06B6D4',
-  Mittelstufe:  '#3B82F6',
-  Primarstufe:  '#6366F1',
-  Oberstufe:    '#8B5CF6',
+  Unterstufe: '#06B6D4',
+  Mittelstufe: '#3B82F6',
+  Primarstufe: '#6366F1',
+  Oberstufe: '#8B5CF6',
 };
 
 const NEW_CLASSES: Array<{
@@ -113,45 +218,77 @@ const NEW_CLASSES: Array<{
 // perms). Idempotent INSERT, so safe to extend.
 const ROLE_PERMS: Record<string, string[]> = {
   ORG_OWNER: [
-    'SCHOOL_CLASS_READ', 'SCHOOL_CLASS_WRITE', 'SCHOOL_CLASS_DELETE',
-    'CONTACT_PERSON_READ', 'CONTACT_PERSON_WRITE', 'CONTACT_PERSON_DELETE',
-    'ADMISSION_STAGE_READ', 'ADMISSION_STAGE_MANAGE',
-    'ADMISSION_APPLICATION_READ', 'ADMISSION_APPLICATION_WRITE',
-    'ADMISSION_APPLICATION_MOVE', 'ADMISSION_APPLICATION_ENROLL',
+    'SCHOOL_CLASS_READ',
+    'SCHOOL_CLASS_WRITE',
+    'SCHOOL_CLASS_DELETE',
+    'CONTACT_PERSON_READ',
+    'CONTACT_PERSON_WRITE',
+    'CONTACT_PERSON_DELETE',
+    'ADMISSION_STAGE_READ',
+    'ADMISSION_STAGE_MANAGE',
+    'ADMISSION_APPLICATION_READ',
+    'ADMISSION_APPLICATION_WRITE',
+    'ADMISSION_APPLICATION_MOVE',
+    'ADMISSION_APPLICATION_ENROLL',
     'ADMISSION_APPLICATION_DELETE',
-    'FAMILY_READ', 'FAMILY_WRITE',
-    'CURRICULUM_LEVEL_READ', 'CURRICULUM_LEVEL_MANAGE',
-    'CURRICULUM_READ', 'CURRICULUM_MANAGE',
-    'ADDRESS_READ', 'ADDRESS_WRITE', 'ADDRESS_DELETE',
+    'FAMILY_READ',
+    'FAMILY_WRITE',
+    'CURRICULUM_LEVEL_READ',
+    'CURRICULUM_LEVEL_MANAGE',
+    'CURRICULUM_READ',
+    'CURRICULUM_MANAGE',
+    'ADDRESS_READ',
+    'ADDRESS_WRITE',
+    'ADDRESS_DELETE',
   ],
   ORG_ADMIN: [
-    'SCHOOL_CLASS_READ', 'SCHOOL_CLASS_WRITE', 'SCHOOL_CLASS_DELETE',
-    'CONTACT_PERSON_READ', 'CONTACT_PERSON_WRITE', 'CONTACT_PERSON_DELETE',
-    'ADMISSION_STAGE_READ', 'ADMISSION_STAGE_MANAGE',
-    'ADMISSION_APPLICATION_READ', 'ADMISSION_APPLICATION_WRITE',
-    'ADMISSION_APPLICATION_MOVE', 'ADMISSION_APPLICATION_ENROLL',
+    'SCHOOL_CLASS_READ',
+    'SCHOOL_CLASS_WRITE',
+    'SCHOOL_CLASS_DELETE',
+    'CONTACT_PERSON_READ',
+    'CONTACT_PERSON_WRITE',
+    'CONTACT_PERSON_DELETE',
+    'ADMISSION_STAGE_READ',
+    'ADMISSION_STAGE_MANAGE',
+    'ADMISSION_APPLICATION_READ',
+    'ADMISSION_APPLICATION_WRITE',
+    'ADMISSION_APPLICATION_MOVE',
+    'ADMISSION_APPLICATION_ENROLL',
     'ADMISSION_APPLICATION_DELETE',
-    'FAMILY_READ', 'FAMILY_WRITE',
-    'CURRICULUM_LEVEL_READ', 'CURRICULUM_LEVEL_MANAGE',
-    'CURRICULUM_READ', 'CURRICULUM_MANAGE',
-    'ADDRESS_READ', 'ADDRESS_WRITE', 'ADDRESS_DELETE',
+    'FAMILY_READ',
+    'FAMILY_WRITE',
+    'CURRICULUM_LEVEL_READ',
+    'CURRICULUM_LEVEL_MANAGE',
+    'CURRICULUM_READ',
+    'CURRICULUM_MANAGE',
+    'ADDRESS_READ',
+    'ADDRESS_WRITE',
+    'ADDRESS_DELETE',
   ],
   OFFICE: [
     'SCHOOL_CLASS_READ',
-    'CONTACT_PERSON_READ', 'CONTACT_PERSON_WRITE', 'CONTACT_PERSON_DELETE',
-    'ADMISSION_STAGE_READ', 'ADMISSION_STAGE_MANAGE',
-    'ADMISSION_APPLICATION_READ', 'ADMISSION_APPLICATION_WRITE',
-    'ADMISSION_APPLICATION_MOVE', 'ADMISSION_APPLICATION_ENROLL',
+    'CONTACT_PERSON_READ',
+    'CONTACT_PERSON_WRITE',
+    'CONTACT_PERSON_DELETE',
+    'ADMISSION_STAGE_READ',
+    'ADMISSION_STAGE_MANAGE',
+    'ADMISSION_APPLICATION_READ',
+    'ADMISSION_APPLICATION_WRITE',
+    'ADMISSION_APPLICATION_MOVE',
+    'ADMISSION_APPLICATION_ENROLL',
     'ADMISSION_APPLICATION_DELETE',
-    'FAMILY_READ', 'FAMILY_WRITE',
+    'FAMILY_READ',
+    'FAMILY_WRITE',
     'CURRICULUM_READ',
-    'ADDRESS_READ', 'ADDRESS_WRITE',
+    'ADDRESS_READ',
+    'ADDRESS_WRITE',
   ],
   HR_MANAGER: ['SCHOOL_CLASS_READ', 'ADDRESS_READ'],
   EMPLOYEE: [
     'SCHOOL_CLASS_READ',
     'CONTACT_PERSON_READ',
-    'CURRICULUM_READ', 'CURRICULUM_LEVEL_READ',
+    'CURRICULUM_READ',
+    'CURRICULUM_LEVEL_READ',
   ],
   TEAM_LEAD: ['SCHOOL_CLASS_READ', 'CONTACT_PERSON_READ'],
 };
@@ -171,11 +308,7 @@ type ApplicantChild = {
   gender: 'MALE' | 'FEMALE' | 'OTHER';
   /** Stage slug from the STAGES list. */
   stage:
-    | 'anfrage'
-    | 'hospitation'
-    | 'aufnahmegespraech'
-    | 'vertrag'
-    | 'abgelehnt';
+    'anfrage' | 'hospitation' | 'aufnahmegespraech' | 'vertrag' | 'abgelehnt';
   source?: 'MANUAL' | 'PUBLIC_FORM' | 'OPEN_DAY' | 'REFERRAL' | 'OTHER';
   notes?: string;
   /** Days since the card entered the current stage — drives "X d in stage". */
@@ -210,83 +343,758 @@ type ApplicantFamily = {
 
 const APPLICANT_FAMILIES: ApplicantFamily[] = [
   // -- Single-child families --
-  { familyName: 'Familie Frei',     parents: [{ firstName: 'Carmen',    lastName: 'Frei',     email: 'carmen.frei@example.ch',     phone: '+41 79 300 11 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, occupation: 'Pflegefachfrau' }], children: [{ firstName: 'Lina',   lastName: 'Frei',     dateOfBirth: '2019-04-12', gender: 'FEMALE', stage: 'anfrage',           source: 'PUBLIC_FORM', daysInStage: 2 }] },
-  { familyName: 'Familie Wenger',   parents: [{ firstName: 'Stefanie', lastName: 'Wenger',   email: 'stefanie.wenger@example.ch', phone: '+41 79 300 12 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, occupation: 'Architektin' }, { firstName: 'Beat', lastName: 'Wenger', email: 'beat.wenger@example.ch', phone: '+41 79 300 12 02', salutation: 'MR', relationship: 'FATHER', occupation: 'IT-Consultant' }], children: [{ firstName: 'Noah',   lastName: 'Wenger',   dateOfBirth: '2018-09-05', gender: 'MALE',   stage: 'anfrage',           source: 'OPEN_DAY',    daysInStage: 5 }] },
-  { familyName: 'Familie Lüthi',    parents: [{ firstName: 'Daniela',  lastName: 'Lüthi',    email: 'daniela.luethi@example.ch',  phone: '+41 79 300 13 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, occupation: 'Lehrerin' }], children: [{ firstName: 'Mia',    lastName: 'Lüthi',    dateOfBirth: '2020-01-22', gender: 'FEMALE', stage: 'anfrage',           source: 'REFERRAL',    daysInStage: 11 }] },
-  { familyName: 'Familie Bär',      parents: [{ firstName: 'Patrick',  lastName: 'Bär',      email: 'patrick.baer@example.ch',    phone: '+41 79 300 14 01', salutation: 'MR',  relationship: 'FATHER', isPrimary: true, occupation: 'Treuhänder' }, { firstName: 'Isabelle', lastName: 'Bär', email: 'isabelle.baer@example.ch', phone: '+41 79 300 14 02', salutation: 'MRS', relationship: 'MOTHER', occupation: 'Marketing-Managerin' }], children: [{ firstName: 'Liam',   lastName: 'Bär',      dateOfBirth: '2017-07-18', gender: 'MALE',   stage: 'hospitation',       source: 'MANUAL',      daysInStage: 8 }] },
-  { familyName: 'Familie Ott',      parents: [{ firstName: 'Reto',     lastName: 'Ott',      email: 'reto.ott@example.ch',        phone: '+41 79 300 15 01', salutation: 'MR',  relationship: 'FATHER', isPrimary: true }], children: [{ firstName: 'Sofia',  lastName: 'Ott',      dateOfBirth: '2019-11-30', gender: 'FEMALE', stage: 'hospitation',       source: 'PUBLIC_FORM', daysInStage: 14 }] },
-  { familyName: 'Familie Marti',    parents: [{ firstName: 'Yvonne',   lastName: 'Marti',    email: 'yvonne.marti@example.ch',    phone: '+41 79 300 16 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, occupation: 'Sozialpädagogin' }, { firstName: 'Tobias', lastName: 'Marti', email: 'tobias.marti@example.ch', phone: '+41 79 300 16 02', salutation: 'MR', relationship: 'FATHER' }], children: [{ firstName: 'Elias',  lastName: 'Marti',    dateOfBirth: '2018-03-09', gender: 'MALE',   stage: 'aufnahmegespraech', source: 'MANUAL',      daysInStage: 4 }] },
-  { familyName: 'Familie Roth',     parents: [{ firstName: 'Corinne',  lastName: 'Roth',     email: 'corinne.roth@example.ch',    phone: '+41 79 300 17 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, occupation: 'Hebamme' }], children: [{ firstName: 'Anouk',  lastName: 'Roth',     dateOfBirth: '2017-12-02', gender: 'FEMALE', stage: 'aufnahmegespraech', source: 'REFERRAL',    daysInStage: 9 }] },
-  { familyName: 'Familie Imhof',    parents: [{ firstName: 'Michael',  lastName: 'Imhof',    email: 'michael.imhof@example.ch',   phone: '+41 79 300 18 01', salutation: 'MR',  relationship: 'FATHER', isPrimary: true, occupation: 'Ingenieur' }, { firstName: 'Franziska', lastName: 'Imhof', email: 'franziska.imhof@example.ch', phone: '+41 79 300 18 02', salutation: 'MRS', relationship: 'MOTHER' }], children: [{ firstName: 'Theo',   lastName: 'Imhof',    dateOfBirth: '2016-08-21', gender: 'MALE',   stage: 'vertrag',           source: 'OPEN_DAY',    daysInStage: 21 }] },
-  { familyName: 'Familie Walter',   parents: [{ firstName: 'Nicole',   lastName: 'Walter',   email: 'nicole.walter@example.ch',   phone: '+41 79 300 19 01', salutation: 'MRS', relationship: 'LEGAL_GUARDIAN', isPrimary: true, occupation: 'Anwältin' }], children: [{ firstName: 'Lara',   lastName: 'Walter',   dateOfBirth: '2019-06-14', gender: 'FEMALE', stage: 'vertrag',           source: 'MANUAL',      daysInStage: 16 }] },
-  { familyName: 'Familie Tanner',   parents: [{ firstName: 'Tanja',    lastName: 'Tanner',   email: 'tanja.tanner@example.ch',    phone: '+41 79 300 20 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true }], children: [{ firstName: 'Linus',  lastName: 'Tanner',   dateOfBirth: '2020-02-28', gender: 'MALE',   stage: 'anfrage',           source: 'PUBLIC_FORM', daysInStage: 1 }] },
-  { familyName: 'Familie Hofmann',  parents: [{ firstName: 'Andreas',  lastName: 'Hofmann',  email: 'andreas.hofmann@example.ch', phone: '+41 79 300 21 01', salutation: 'MR',  relationship: 'FATHER', isPrimary: true, occupation: 'Tischler' }], children: [{ firstName: 'Selma',  lastName: 'Hofmann',  dateOfBirth: '2018-05-17', gender: 'FEMALE', stage: 'anfrage',           source: 'OPEN_DAY',    daysInStage: 7 }] },
-  { familyName: 'Familie Vogel',    parents: [{ firstName: 'Manuela',  lastName: 'Vogel',    email: 'manuela.vogel@example.ch',   phone: '+41 79 300 22 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true }, { firstName: 'Philipp', lastName: 'Vogel', email: 'philipp.vogel@example.ch', phone: '+41 79 300 22 02', salutation: 'MR', relationship: 'FATHER' }], children: [{ firstName: 'Ella',   lastName: 'Vogel',    dateOfBirth: '2019-10-09', gender: 'FEMALE', stage: 'hospitation',       source: 'REFERRAL',    daysInStage: 6, notes: 'Mit Hund kommt vor Hospitation klären.' }] },
-  { familyName: 'Familie Jenni',    parents: [{ firstName: 'Christian', lastName: 'Jenni',   email: 'christian.jenni@example.ch', phone: '+41 79 300 23 01', salutation: 'MR',  relationship: 'FATHER', isPrimary: true, occupation: 'Pilot' }], children: [{ firstName: 'Matteo', lastName: 'Jenni',    dateOfBirth: '2017-04-03', gender: 'MALE',   stage: 'abgelehnt',         source: 'MANUAL',      daysInStage: 18 }] },
+  {
+    familyName: 'Familie Frei',
+    parents: [
+      {
+        firstName: 'Carmen',
+        lastName: 'Frei',
+        email: 'carmen.frei@example.ch',
+        phone: '+41 79 300 11 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+        occupation: 'Pflegefachfrau',
+      },
+    ],
+    children: [
+      {
+        firstName: 'Lina',
+        lastName: 'Frei',
+        dateOfBirth: '2019-04-12',
+        gender: 'FEMALE',
+        stage: 'anfrage',
+        source: 'PUBLIC_FORM',
+        daysInStage: 2,
+      },
+    ],
+  },
+  {
+    familyName: 'Familie Wenger',
+    parents: [
+      {
+        firstName: 'Stefanie',
+        lastName: 'Wenger',
+        email: 'stefanie.wenger@example.ch',
+        phone: '+41 79 300 12 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+        occupation: 'Architektin',
+      },
+      {
+        firstName: 'Beat',
+        lastName: 'Wenger',
+        email: 'beat.wenger@example.ch',
+        phone: '+41 79 300 12 02',
+        salutation: 'MR',
+        relationship: 'FATHER',
+        occupation: 'IT-Consultant',
+      },
+    ],
+    children: [
+      {
+        firstName: 'Noah',
+        lastName: 'Wenger',
+        dateOfBirth: '2018-09-05',
+        gender: 'MALE',
+        stage: 'anfrage',
+        source: 'OPEN_DAY',
+        daysInStage: 5,
+      },
+    ],
+  },
+  {
+    familyName: 'Familie Lüthi',
+    parents: [
+      {
+        firstName: 'Daniela',
+        lastName: 'Lüthi',
+        email: 'daniela.luethi@example.ch',
+        phone: '+41 79 300 13 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+        occupation: 'Lehrerin',
+      },
+    ],
+    children: [
+      {
+        firstName: 'Mia',
+        lastName: 'Lüthi',
+        dateOfBirth: '2020-01-22',
+        gender: 'FEMALE',
+        stage: 'anfrage',
+        source: 'REFERRAL',
+        daysInStage: 11,
+      },
+    ],
+  },
+  {
+    familyName: 'Familie Bär',
+    parents: [
+      {
+        firstName: 'Patrick',
+        lastName: 'Bär',
+        email: 'patrick.baer@example.ch',
+        phone: '+41 79 300 14 01',
+        salutation: 'MR',
+        relationship: 'FATHER',
+        isPrimary: true,
+        occupation: 'Treuhänder',
+      },
+      {
+        firstName: 'Isabelle',
+        lastName: 'Bär',
+        email: 'isabelle.baer@example.ch',
+        phone: '+41 79 300 14 02',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        occupation: 'Marketing-Managerin',
+      },
+    ],
+    children: [
+      {
+        firstName: 'Liam',
+        lastName: 'Bär',
+        dateOfBirth: '2017-07-18',
+        gender: 'MALE',
+        stage: 'hospitation',
+        source: 'MANUAL',
+        daysInStage: 8,
+      },
+    ],
+  },
+  {
+    familyName: 'Familie Ott',
+    parents: [
+      {
+        firstName: 'Reto',
+        lastName: 'Ott',
+        email: 'reto.ott@example.ch',
+        phone: '+41 79 300 15 01',
+        salutation: 'MR',
+        relationship: 'FATHER',
+        isPrimary: true,
+      },
+    ],
+    children: [
+      {
+        firstName: 'Sofia',
+        lastName: 'Ott',
+        dateOfBirth: '2019-11-30',
+        gender: 'FEMALE',
+        stage: 'hospitation',
+        source: 'PUBLIC_FORM',
+        daysInStage: 14,
+      },
+    ],
+  },
+  {
+    familyName: 'Familie Marti',
+    parents: [
+      {
+        firstName: 'Yvonne',
+        lastName: 'Marti',
+        email: 'yvonne.marti@example.ch',
+        phone: '+41 79 300 16 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+        occupation: 'Sozialpädagogin',
+      },
+      {
+        firstName: 'Tobias',
+        lastName: 'Marti',
+        email: 'tobias.marti@example.ch',
+        phone: '+41 79 300 16 02',
+        salutation: 'MR',
+        relationship: 'FATHER',
+      },
+    ],
+    children: [
+      {
+        firstName: 'Elias',
+        lastName: 'Marti',
+        dateOfBirth: '2018-03-09',
+        gender: 'MALE',
+        stage: 'aufnahmegespraech',
+        source: 'MANUAL',
+        daysInStage: 4,
+      },
+    ],
+  },
+  {
+    familyName: 'Familie Roth',
+    parents: [
+      {
+        firstName: 'Corinne',
+        lastName: 'Roth',
+        email: 'corinne.roth@example.ch',
+        phone: '+41 79 300 17 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+        occupation: 'Hebamme',
+      },
+    ],
+    children: [
+      {
+        firstName: 'Anouk',
+        lastName: 'Roth',
+        dateOfBirth: '2017-12-02',
+        gender: 'FEMALE',
+        stage: 'aufnahmegespraech',
+        source: 'REFERRAL',
+        daysInStage: 9,
+      },
+    ],
+  },
+  {
+    familyName: 'Familie Imhof',
+    parents: [
+      {
+        firstName: 'Michael',
+        lastName: 'Imhof',
+        email: 'michael.imhof@example.ch',
+        phone: '+41 79 300 18 01',
+        salutation: 'MR',
+        relationship: 'FATHER',
+        isPrimary: true,
+        occupation: 'Ingenieur',
+      },
+      {
+        firstName: 'Franziska',
+        lastName: 'Imhof',
+        email: 'franziska.imhof@example.ch',
+        phone: '+41 79 300 18 02',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+      },
+    ],
+    children: [
+      {
+        firstName: 'Theo',
+        lastName: 'Imhof',
+        dateOfBirth: '2016-08-21',
+        gender: 'MALE',
+        stage: 'vertrag',
+        source: 'OPEN_DAY',
+        daysInStage: 21,
+      },
+    ],
+  },
+  {
+    familyName: 'Familie Walter',
+    parents: [
+      {
+        firstName: 'Nicole',
+        lastName: 'Walter',
+        email: 'nicole.walter@example.ch',
+        phone: '+41 79 300 19 01',
+        salutation: 'MRS',
+        relationship: 'LEGAL_GUARDIAN',
+        isPrimary: true,
+        occupation: 'Anwältin',
+      },
+    ],
+    children: [
+      {
+        firstName: 'Lara',
+        lastName: 'Walter',
+        dateOfBirth: '2019-06-14',
+        gender: 'FEMALE',
+        stage: 'vertrag',
+        source: 'MANUAL',
+        daysInStage: 16,
+      },
+    ],
+  },
+  {
+    familyName: 'Familie Tanner',
+    parents: [
+      {
+        firstName: 'Tanja',
+        lastName: 'Tanner',
+        email: 'tanja.tanner@example.ch',
+        phone: '+41 79 300 20 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+      },
+    ],
+    children: [
+      {
+        firstName: 'Linus',
+        lastName: 'Tanner',
+        dateOfBirth: '2020-02-28',
+        gender: 'MALE',
+        stage: 'anfrage',
+        source: 'PUBLIC_FORM',
+        daysInStage: 1,
+      },
+    ],
+  },
+  {
+    familyName: 'Familie Hofmann',
+    parents: [
+      {
+        firstName: 'Andreas',
+        lastName: 'Hofmann',
+        email: 'andreas.hofmann@example.ch',
+        phone: '+41 79 300 21 01',
+        salutation: 'MR',
+        relationship: 'FATHER',
+        isPrimary: true,
+        occupation: 'Tischler',
+      },
+    ],
+    children: [
+      {
+        firstName: 'Selma',
+        lastName: 'Hofmann',
+        dateOfBirth: '2018-05-17',
+        gender: 'FEMALE',
+        stage: 'anfrage',
+        source: 'OPEN_DAY',
+        daysInStage: 7,
+      },
+    ],
+  },
+  {
+    familyName: 'Familie Vogel',
+    parents: [
+      {
+        firstName: 'Manuela',
+        lastName: 'Vogel',
+        email: 'manuela.vogel@example.ch',
+        phone: '+41 79 300 22 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+      },
+      {
+        firstName: 'Philipp',
+        lastName: 'Vogel',
+        email: 'philipp.vogel@example.ch',
+        phone: '+41 79 300 22 02',
+        salutation: 'MR',
+        relationship: 'FATHER',
+      },
+    ],
+    children: [
+      {
+        firstName: 'Ella',
+        lastName: 'Vogel',
+        dateOfBirth: '2019-10-09',
+        gender: 'FEMALE',
+        stage: 'hospitation',
+        source: 'REFERRAL',
+        daysInStage: 6,
+        notes: 'Mit Hund kommt vor Hospitation klären.',
+      },
+    ],
+  },
+  {
+    familyName: 'Familie Jenni',
+    parents: [
+      {
+        firstName: 'Christian',
+        lastName: 'Jenni',
+        email: 'christian.jenni@example.ch',
+        phone: '+41 79 300 23 01',
+        salutation: 'MR',
+        relationship: 'FATHER',
+        isPrimary: true,
+        occupation: 'Pilot',
+      },
+    ],
+    children: [
+      {
+        firstName: 'Matteo',
+        lastName: 'Jenni',
+        dateOfBirth: '2017-04-03',
+        gender: 'MALE',
+        stage: 'abgelehnt',
+        source: 'MANUAL',
+        daysInStage: 18,
+      },
+    ],
+  },
 
   // -- Two-child families (siblings share a Family + contact persons) --
   {
     familyName: 'Familie Steiner',
     parents: [
-      { firstName: 'Petra',  lastName: 'Steiner', email: 'petra.steiner@example.ch',  phone: '+41 79 301 01 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, occupation: 'Ärztin' },
-      { firstName: 'Daniel', lastName: 'Steiner', email: 'daniel.steiner@example.ch', phone: '+41 79 301 01 02', salutation: 'MR',  relationship: 'FATHER',                  occupation: 'Banker' },
+      {
+        firstName: 'Petra',
+        lastName: 'Steiner',
+        email: 'petra.steiner@example.ch',
+        phone: '+41 79 301 01 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+        occupation: 'Ärztin',
+      },
+      {
+        firstName: 'Daniel',
+        lastName: 'Steiner',
+        email: 'daniel.steiner@example.ch',
+        phone: '+41 79 301 01 02',
+        salutation: 'MR',
+        relationship: 'FATHER',
+        occupation: 'Banker',
+      },
     ],
     children: [
-      { firstName: 'Emma',   lastName: 'Steiner', dateOfBirth: '2018-02-11', gender: 'FEMALE', stage: 'aufnahmegespraech', source: 'PUBLIC_FORM', daysInStage: 12 },
-      { firstName: 'Luca',   lastName: 'Steiner', dateOfBirth: '2020-08-30', gender: 'MALE',   stage: 'aufnahmegespraech', source: 'PUBLIC_FORM', daysInStage: 12 },
+      {
+        firstName: 'Emma',
+        lastName: 'Steiner',
+        dateOfBirth: '2018-02-11',
+        gender: 'FEMALE',
+        stage: 'aufnahmegespraech',
+        source: 'PUBLIC_FORM',
+        daysInStage: 12,
+      },
+      {
+        firstName: 'Luca',
+        lastName: 'Steiner',
+        dateOfBirth: '2020-08-30',
+        gender: 'MALE',
+        stage: 'aufnahmegespraech',
+        source: 'PUBLIC_FORM',
+        daysInStage: 12,
+      },
     ],
   },
   {
     familyName: 'Familie Bachmann',
     parents: [
-      { firstName: 'Sabine',  lastName: 'Bachmann', email: 'sabine.bachmann@example.ch', phone: '+41 79 301 02 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, occupation: 'Sozialarbeiterin' },
-      { firstName: 'Marco',   lastName: 'Bachmann', email: 'marco.bachmann@example.ch',  phone: '+41 79 301 02 02', salutation: 'MR',  relationship: 'FATHER',                  occupation: 'Schreiner' },
+      {
+        firstName: 'Sabine',
+        lastName: 'Bachmann',
+        email: 'sabine.bachmann@example.ch',
+        phone: '+41 79 301 02 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+        occupation: 'Sozialarbeiterin',
+      },
+      {
+        firstName: 'Marco',
+        lastName: 'Bachmann',
+        email: 'marco.bachmann@example.ch',
+        phone: '+41 79 301 02 02',
+        salutation: 'MR',
+        relationship: 'FATHER',
+        occupation: 'Schreiner',
+      },
     ],
     children: [
-      { firstName: 'Nora',   lastName: 'Bachmann', dateOfBirth: '2017-11-20', gender: 'FEMALE', stage: 'vertrag',           source: 'REFERRAL', daysInStage: 19 },
-      { firstName: 'Jonas',  lastName: 'Bachmann', dateOfBirth: '2020-03-15', gender: 'MALE',   stage: 'hospitation',       source: 'REFERRAL', daysInStage: 3 },
+      {
+        firstName: 'Nora',
+        lastName: 'Bachmann',
+        dateOfBirth: '2017-11-20',
+        gender: 'FEMALE',
+        stage: 'vertrag',
+        source: 'REFERRAL',
+        daysInStage: 19,
+      },
+      {
+        firstName: 'Jonas',
+        lastName: 'Bachmann',
+        dateOfBirth: '2020-03-15',
+        gender: 'MALE',
+        stage: 'hospitation',
+        source: 'REFERRAL',
+        daysInStage: 3,
+      },
     ],
   },
   {
     familyName: 'Familie Suter',
     parents: [
-      { firstName: 'Andrea',  lastName: 'Suter', email: 'andrea.suter@example.ch', phone: '+41 79 301 03 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true },
+      {
+        firstName: 'Andrea',
+        lastName: 'Suter',
+        email: 'andrea.suter@example.ch',
+        phone: '+41 79 301 03 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+      },
     ],
     children: [
-      { firstName: 'Finn',   lastName: 'Suter', dateOfBirth: '2016-12-22', gender: 'MALE',   stage: 'anfrage',           source: 'OPEN_DAY',    daysInStage: 4 },
-      { firstName: 'Lia',    lastName: 'Suter', dateOfBirth: '2019-07-08', gender: 'FEMALE', stage: 'anfrage',           source: 'OPEN_DAY',    daysInStage: 4 },
+      {
+        firstName: 'Finn',
+        lastName: 'Suter',
+        dateOfBirth: '2016-12-22',
+        gender: 'MALE',
+        stage: 'anfrage',
+        source: 'OPEN_DAY',
+        daysInStage: 4,
+      },
+      {
+        firstName: 'Lia',
+        lastName: 'Suter',
+        dateOfBirth: '2019-07-08',
+        gender: 'FEMALE',
+        stage: 'anfrage',
+        source: 'OPEN_DAY',
+        daysInStage: 4,
+      },
     ],
   },
   {
     familyName: 'Familie Wyss',
     parents: [
-      { firstName: 'Karin',  lastName: 'Wyss', email: 'karin.wyss@example.ch', phone: '+41 79 301 04 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, occupation: 'Logopädin' },
-      { firstName: 'Stefan', lastName: 'Wyss', email: 'stefan.wyss@example.ch', phone: '+41 79 301 04 02', salutation: 'MR',  relationship: 'FATHER' },
+      {
+        firstName: 'Karin',
+        lastName: 'Wyss',
+        email: 'karin.wyss@example.ch',
+        phone: '+41 79 301 04 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+        occupation: 'Logopädin',
+      },
+      {
+        firstName: 'Stefan',
+        lastName: 'Wyss',
+        email: 'stefan.wyss@example.ch',
+        phone: '+41 79 301 04 02',
+        salutation: 'MR',
+        relationship: 'FATHER',
+      },
     ],
     children: [
-      { firstName: 'Anna',   lastName: 'Wyss', dateOfBirth: '2017-09-29', gender: 'FEMALE', stage: 'hospitation',       source: 'MANUAL',      daysInStage: 10 },
-      { firstName: 'Tim',    lastName: 'Wyss', dateOfBirth: '2019-12-05', gender: 'MALE',   stage: 'anfrage',           source: 'MANUAL',      daysInStage: 2 },
+      {
+        firstName: 'Anna',
+        lastName: 'Wyss',
+        dateOfBirth: '2017-09-29',
+        gender: 'FEMALE',
+        stage: 'hospitation',
+        source: 'MANUAL',
+        daysInStage: 10,
+      },
+      {
+        firstName: 'Tim',
+        lastName: 'Wyss',
+        dateOfBirth: '2019-12-05',
+        gender: 'MALE',
+        stage: 'anfrage',
+        source: 'MANUAL',
+        daysInStage: 2,
+      },
     ],
   },
 
   // -- More single-child families to reach 30+ applications --
-  { familyName: 'Familie Bauer',    parents: [{ firstName: 'Simone',  lastName: 'Bauer',    email: 'simone.bauer@example.ch',    phone: '+41 79 301 11 01', salutation: 'MRS', relationship: 'MOTHER',         isPrimary: true, occupation: 'Yoga-Lehrerin' }], children: [{ firstName: 'Levin', lastName: 'Bauer',    dateOfBirth: '2018-10-08', gender: 'MALE',   stage: 'anfrage',           source: 'PUBLIC_FORM', daysInStage: 6 }] },
-  { familyName: 'Familie Zürcher',  parents: [{ firstName: 'Roman',   lastName: 'Zürcher',  email: 'roman.zuercher@example.ch',  phone: '+41 79 301 12 01', salutation: 'MR',  relationship: 'FATHER',         isPrimary: true, occupation: 'Pflegefachmann' }, { firstName: 'Nadja', lastName: 'Zürcher', email: 'nadja.zuercher@example.ch', phone: '+41 79 301 12 02', salutation: 'MRS', relationship: 'MOTHER' }], children: [{ firstName: 'Helga', lastName: 'Zürcher', dateOfBirth: '2019-02-19', gender: 'FEMALE', stage: 'hospitation',       source: 'MANUAL',      daysInStage: 9 }] },
-  { familyName: 'Familie Maurer',   parents: [{ firstName: 'Lukas',   lastName: 'Maurer',   email: 'lukas.maurer@example.ch',    phone: '+41 79 301 13 01', salutation: 'MR',  relationship: 'FATHER',         isPrimary: true }], children: [{ firstName: 'Jana',  lastName: 'Maurer',   dateOfBirth: '2017-06-25', gender: 'FEMALE', stage: 'aufnahmegespraech', source: 'OPEN_DAY',    daysInStage: 5 }] },
-  { familyName: 'Familie Berger',   parents: [{ firstName: 'Eva',     lastName: 'Berger',   email: 'eva.berger@example.ch',      phone: '+41 79 301 14 01', salutation: 'MRS', relationship: 'MOTHER',         isPrimary: true, occupation: 'Designerin' }], children: [{ firstName: 'Liam',  lastName: 'Berger',   dateOfBirth: '2020-05-12', gender: 'MALE',   stage: 'anfrage',           source: 'REFERRAL',    daysInStage: 3 }] },
-  { familyName: 'Familie Studer',   parents: [{ firstName: 'Jonas',   lastName: 'Studer',   email: 'jonas.studer@example.ch',    phone: '+41 79 301 15 01', salutation: 'MR',  relationship: 'LEGAL_GUARDIAN', isPrimary: true }], children: [{ firstName: 'Aaron', lastName: 'Studer',   dateOfBirth: '2018-12-14', gender: 'MALE',   stage: 'vertrag',           source: 'MANUAL',      daysInStage: 17 }] },
-  { familyName: 'Familie Schenk',   parents: [{ firstName: 'Ramona',  lastName: 'Schenk',   email: 'ramona.schenk@example.ch',   phone: '+41 79 301 16 01', salutation: 'MRS', relationship: 'MOTHER',         isPrimary: true }], children: [{ firstName: 'Maja',  lastName: 'Schenk',   dateOfBirth: '2019-08-02', gender: 'FEMALE', stage: 'abgelehnt',         source: 'PUBLIC_FORM', daysInStage: 25 }] },
+  {
+    familyName: 'Familie Bauer',
+    parents: [
+      {
+        firstName: 'Simone',
+        lastName: 'Bauer',
+        email: 'simone.bauer@example.ch',
+        phone: '+41 79 301 11 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+        occupation: 'Yoga-Lehrerin',
+      },
+    ],
+    children: [
+      {
+        firstName: 'Levin',
+        lastName: 'Bauer',
+        dateOfBirth: '2018-10-08',
+        gender: 'MALE',
+        stage: 'anfrage',
+        source: 'PUBLIC_FORM',
+        daysInStage: 6,
+      },
+    ],
+  },
+  {
+    familyName: 'Familie Zürcher',
+    parents: [
+      {
+        firstName: 'Roman',
+        lastName: 'Zürcher',
+        email: 'roman.zuercher@example.ch',
+        phone: '+41 79 301 12 01',
+        salutation: 'MR',
+        relationship: 'FATHER',
+        isPrimary: true,
+        occupation: 'Pflegefachmann',
+      },
+      {
+        firstName: 'Nadja',
+        lastName: 'Zürcher',
+        email: 'nadja.zuercher@example.ch',
+        phone: '+41 79 301 12 02',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+      },
+    ],
+    children: [
+      {
+        firstName: 'Helga',
+        lastName: 'Zürcher',
+        dateOfBirth: '2019-02-19',
+        gender: 'FEMALE',
+        stage: 'hospitation',
+        source: 'MANUAL',
+        daysInStage: 9,
+      },
+    ],
+  },
+  {
+    familyName: 'Familie Maurer',
+    parents: [
+      {
+        firstName: 'Lukas',
+        lastName: 'Maurer',
+        email: 'lukas.maurer@example.ch',
+        phone: '+41 79 301 13 01',
+        salutation: 'MR',
+        relationship: 'FATHER',
+        isPrimary: true,
+      },
+    ],
+    children: [
+      {
+        firstName: 'Jana',
+        lastName: 'Maurer',
+        dateOfBirth: '2017-06-25',
+        gender: 'FEMALE',
+        stage: 'aufnahmegespraech',
+        source: 'OPEN_DAY',
+        daysInStage: 5,
+      },
+    ],
+  },
+  {
+    familyName: 'Familie Berger',
+    parents: [
+      {
+        firstName: 'Eva',
+        lastName: 'Berger',
+        email: 'eva.berger@example.ch',
+        phone: '+41 79 301 14 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+        occupation: 'Designerin',
+      },
+    ],
+    children: [
+      {
+        firstName: 'Liam',
+        lastName: 'Berger',
+        dateOfBirth: '2020-05-12',
+        gender: 'MALE',
+        stage: 'anfrage',
+        source: 'REFERRAL',
+        daysInStage: 3,
+      },
+    ],
+  },
+  {
+    familyName: 'Familie Studer',
+    parents: [
+      {
+        firstName: 'Jonas',
+        lastName: 'Studer',
+        email: 'jonas.studer@example.ch',
+        phone: '+41 79 301 15 01',
+        salutation: 'MR',
+        relationship: 'LEGAL_GUARDIAN',
+        isPrimary: true,
+      },
+    ],
+    children: [
+      {
+        firstName: 'Aaron',
+        lastName: 'Studer',
+        dateOfBirth: '2018-12-14',
+        gender: 'MALE',
+        stage: 'vertrag',
+        source: 'MANUAL',
+        daysInStage: 17,
+      },
+    ],
+  },
+  {
+    familyName: 'Familie Schenk',
+    parents: [
+      {
+        firstName: 'Ramona',
+        lastName: 'Schenk',
+        email: 'ramona.schenk@example.ch',
+        phone: '+41 79 301 16 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+      },
+    ],
+    children: [
+      {
+        firstName: 'Maja',
+        lastName: 'Schenk',
+        dateOfBirth: '2019-08-02',
+        gender: 'FEMALE',
+        stage: 'abgelehnt',
+        source: 'PUBLIC_FORM',
+        daysInStage: 25,
+      },
+    ],
+  },
 
   // -- One more two-child family --
   {
     familyName: 'Familie Eberle',
     parents: [
-      { firstName: 'Pia',    lastName: 'Eberle', email: 'pia.eberle@example.ch', phone: '+41 79 301 17 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, occupation: 'Journalistin' },
-      { firstName: 'Sven',   lastName: 'Eberle', email: 'sven.eberle@example.ch', phone: '+41 79 301 17 02', salutation: 'MR',  relationship: 'FATHER',                  occupation: 'Mediziner' },
+      {
+        firstName: 'Pia',
+        lastName: 'Eberle',
+        email: 'pia.eberle@example.ch',
+        phone: '+41 79 301 17 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+        occupation: 'Journalistin',
+      },
+      {
+        firstName: 'Sven',
+        lastName: 'Eberle',
+        email: 'sven.eberle@example.ch',
+        phone: '+41 79 301 17 02',
+        salutation: 'MR',
+        relationship: 'FATHER',
+        occupation: 'Mediziner',
+      },
     ],
     children: [
-      { firstName: 'Lena',   lastName: 'Eberle', dateOfBirth: '2017-01-30', gender: 'FEMALE', stage: 'hospitation',       source: 'MANUAL',      daysInStage: 15 },
-      { firstName: 'Samuel', lastName: 'Eberle', dateOfBirth: '2019-09-16', gender: 'MALE',   stage: 'aufnahmegespraech', source: 'MANUAL',      daysInStage: 8 },
+      {
+        firstName: 'Lena',
+        lastName: 'Eberle',
+        dateOfBirth: '2017-01-30',
+        gender: 'FEMALE',
+        stage: 'hospitation',
+        source: 'MANUAL',
+        daysInStage: 15,
+      },
+      {
+        firstName: 'Samuel',
+        lastName: 'Eberle',
+        dateOfBirth: '2019-09-16',
+        gender: 'MALE',
+        stage: 'aufnahmegespraech',
+        source: 'MANUAL',
+        daysInStage: 8,
+      },
     ],
   },
 
@@ -294,13 +1102,53 @@ const APPLICANT_FAMILIES: ApplicantFamily[] = [
   {
     familyName: 'Familie Räber',
     parents: [
-      { firstName: 'Claudia', lastName: 'Räber', email: 'claudia.raeber@example.ch', phone: '+41 79 301 05 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true },
-      { firstName: 'Thomas',  lastName: 'Räber', email: 'thomas.raeber@example.ch',  phone: '+41 79 301 05 02', salutation: 'MR',  relationship: 'FATHER',                  occupation: 'Polizist' },
+      {
+        firstName: 'Claudia',
+        lastName: 'Räber',
+        email: 'claudia.raeber@example.ch',
+        phone: '+41 79 301 05 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+      },
+      {
+        firstName: 'Thomas',
+        lastName: 'Räber',
+        email: 'thomas.raeber@example.ch',
+        phone: '+41 79 301 05 02',
+        salutation: 'MR',
+        relationship: 'FATHER',
+        occupation: 'Polizist',
+      },
     ],
     children: [
-      { firstName: 'Helena', lastName: 'Räber', dateOfBirth: '2015-06-17', gender: 'FEMALE', stage: 'vertrag',           source: 'REFERRAL', daysInStage: 22 },
-      { firstName: 'Felix',  lastName: 'Räber', dateOfBirth: '2018-01-25', gender: 'MALE',   stage: 'aufnahmegespraech', source: 'REFERRAL', daysInStage: 7 },
-      { firstName: 'Mira',   lastName: 'Räber', dateOfBirth: '2021-04-04', gender: 'FEMALE', stage: 'anfrage',           source: 'REFERRAL', daysInStage: 1 },
+      {
+        firstName: 'Helena',
+        lastName: 'Räber',
+        dateOfBirth: '2015-06-17',
+        gender: 'FEMALE',
+        stage: 'vertrag',
+        source: 'REFERRAL',
+        daysInStage: 22,
+      },
+      {
+        firstName: 'Felix',
+        lastName: 'Räber',
+        dateOfBirth: '2018-01-25',
+        gender: 'MALE',
+        stage: 'aufnahmegespraech',
+        source: 'REFERRAL',
+        daysInStage: 7,
+      },
+      {
+        firstName: 'Mira',
+        lastName: 'Räber',
+        dateOfBirth: '2021-04-04',
+        gender: 'FEMALE',
+        stage: 'anfrage',
+        source: 'REFERRAL',
+        daysInStage: 1,
+      },
     ],
   },
 ];
@@ -333,51 +1181,179 @@ const CONTACTS: {
   {
     studentLastName: 'Baumann',
     contacts: [
-      { firstName: 'Sabine',  lastName: 'Baumann', email: 'sabine.baumann@example.ch',  phone: '+41 79 200 11 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true,  livesWith: true,  emergencyPriority: 1 },
-      { firstName: 'Markus',  lastName: 'Baumann', email: 'markus.baumann@example.ch',  phone: '+41 79 200 11 02', salutation: 'MR',  relationship: 'FATHER',                  livesWith: true,  emergencyPriority: 2 },
-      { firstName: 'Heidi',   lastName: 'Baumann',                                      phone: '+41 79 200 11 03', salutation: 'MRS', relationship: 'GRANDMOTHER',                                       emergencyPriority: 3 },
+      {
+        firstName: 'Sabine',
+        lastName: 'Baumann',
+        email: 'sabine.baumann@example.ch',
+        phone: '+41 79 200 11 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+        livesWith: true,
+        emergencyPriority: 1,
+      },
+      {
+        firstName: 'Markus',
+        lastName: 'Baumann',
+        email: 'markus.baumann@example.ch',
+        phone: '+41 79 200 11 02',
+        salutation: 'MR',
+        relationship: 'FATHER',
+        livesWith: true,
+        emergencyPriority: 2,
+      },
+      {
+        firstName: 'Heidi',
+        lastName: 'Baumann',
+        phone: '+41 79 200 11 03',
+        salutation: 'MRS',
+        relationship: 'GRANDMOTHER',
+        emergencyPriority: 3,
+      },
     ],
   },
   {
     studentLastName: 'Müller',
     contacts: [
-      { firstName: 'Claudia', lastName: 'Müller',  email: 'claudia.mueller@example.ch', phone: '+41 79 200 12 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, livesWith: true, emergencyPriority: 1 },
-      { firstName: 'Peter',   lastName: 'Müller',  email: 'peter.mueller@example.ch',   phone: '+41 79 200 12 02', salutation: 'MR',  relationship: 'FATHER',                  livesWith: true, emergencyPriority: 2 },
+      {
+        firstName: 'Claudia',
+        lastName: 'Müller',
+        email: 'claudia.mueller@example.ch',
+        phone: '+41 79 200 12 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+        livesWith: true,
+        emergencyPriority: 1,
+      },
+      {
+        firstName: 'Peter',
+        lastName: 'Müller',
+        email: 'peter.mueller@example.ch',
+        phone: '+41 79 200 12 02',
+        salutation: 'MR',
+        relationship: 'FATHER',
+        livesWith: true,
+        emergencyPriority: 2,
+      },
     ],
   },
   {
     studentLastName: 'Keller',
     contacts: [
-      { firstName: 'Andrea',  lastName: 'Keller',  email: 'andrea.keller@example.ch',   phone: '+41 79 200 13 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true, livesWith: true, emergencyPriority: 1 },
-      { firstName: 'Stefan',  lastName: 'Hartmann', email: 'stefan.hartmann@example.ch', phone: '+41 79 200 13 02', salutation: 'MR', relationship: 'STEP_FATHER',             livesWith: true, emergencyPriority: 2 },
+      {
+        firstName: 'Andrea',
+        lastName: 'Keller',
+        email: 'andrea.keller@example.ch',
+        phone: '+41 79 200 13 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+        livesWith: true,
+        emergencyPriority: 1,
+      },
+      {
+        firstName: 'Stefan',
+        lastName: 'Hartmann',
+        email: 'stefan.hartmann@example.ch',
+        phone: '+41 79 200 13 02',
+        salutation: 'MR',
+        relationship: 'STEP_FATHER',
+        livesWith: true,
+        emergencyPriority: 2,
+      },
     ],
   },
   {
     studentLastName: 'Schmid',
     contacts: [
-      { firstName: 'Karin',   lastName: 'Schmid',  email: 'karin.schmid@example.ch',    phone: '+41 79 200 14 01', salutation: 'MRS', relationship: 'MOTHER', isPrimary: true,  livesWith: true,  emergencyPriority: 1 },
-      { firstName: 'Roland',  lastName: 'Schmid',  email: 'roland.schmid@example.ch',   phone: '+41 79 200 14 02', salutation: 'MR',  relationship: 'FATHER',                                       emergencyPriority: 2 },
+      {
+        firstName: 'Karin',
+        lastName: 'Schmid',
+        email: 'karin.schmid@example.ch',
+        phone: '+41 79 200 14 01',
+        salutation: 'MRS',
+        relationship: 'MOTHER',
+        isPrimary: true,
+        livesWith: true,
+        emergencyPriority: 1,
+      },
+      {
+        firstName: 'Roland',
+        lastName: 'Schmid',
+        email: 'roland.schmid@example.ch',
+        phone: '+41 79 200 14 02',
+        salutation: 'MR',
+        relationship: 'FATHER',
+        emergencyPriority: 2,
+      },
     ],
   },
   {
     studentLastName: 'Brunner',
     contacts: [
-      { firstName: 'Ursula',  lastName: 'Brunner', email: 'ursula.brunner@example.ch',  phone: '+41 79 200 15 01', salutation: 'MRS', relationship: 'LEGAL_GUARDIAN', isPrimary: true, livesWith: true, emergencyPriority: 1 },
+      {
+        firstName: 'Ursula',
+        lastName: 'Brunner',
+        email: 'ursula.brunner@example.ch',
+        phone: '+41 79 200 15 01',
+        salutation: 'MRS',
+        relationship: 'LEGAL_GUARDIAN',
+        isPrimary: true,
+        livesWith: true,
+        emergencyPriority: 1,
+      },
     ],
   },
 ];
 
 // Lesson records for Levin — varied mastery per AREA so the radar shows
 // distinct values per axis.
-const LEVIN_AREA_RECORDS: { areaName: string; lessons: number; statuses: string[] }[] = [
-  { areaName: 'Mathematik',                    lessons: 5, statuses: ['MASTERED','MASTERED','MASTERED','MASTERED','PRACTICED'] },
-  { areaName: 'Sprache',                       lessons: 5, statuses: ['MASTERED','MASTERED','PRACTICED','PRACTICED','PRACTICED'] },
-  { areaName: 'Sinnesmaterial',                lessons: 4, statuses: ['MASTERED','MASTERED','MASTERED','NEEDS_MORE'] },
-  { areaName: 'Übungen des Praktischen Lebens',lessons: 4, statuses: ['MASTERED','MASTERED','MASTERED','MASTERED'] },
-  { areaName: 'Biologie',                      lessons: 3, statuses: ['MASTERED','INTRODUCED','INTRODUCED'] },
-  { areaName: 'Geografie',                     lessons: 3, statuses: ['MASTERED','PRACTICED','PRACTICED'] },
-  { areaName: 'Geomertrie',                    lessons: 3, statuses: ['MASTERED','MASTERED','PRACTICED'] },
-  { areaName: 'Geschichte',                    lessons: 2, statuses: ['INTRODUCED','INTRODUCED'] },
+const LEVIN_AREA_RECORDS: {
+  areaName: string;
+  lessons: number;
+  statuses: string[];
+}[] = [
+  {
+    areaName: 'Mathematik',
+    lessons: 5,
+    statuses: ['MASTERED', 'MASTERED', 'MASTERED', 'MASTERED', 'PRACTICED'],
+  },
+  {
+    areaName: 'Sprache',
+    lessons: 5,
+    statuses: ['MASTERED', 'MASTERED', 'PRACTICED', 'PRACTICED', 'PRACTICED'],
+  },
+  {
+    areaName: 'Sinnesmaterial',
+    lessons: 4,
+    statuses: ['MASTERED', 'MASTERED', 'MASTERED', 'NEEDS_MORE'],
+  },
+  {
+    areaName: 'Übungen des Praktischen Lebens',
+    lessons: 4,
+    statuses: ['MASTERED', 'MASTERED', 'MASTERED', 'MASTERED'],
+  },
+  {
+    areaName: 'Biologie',
+    lessons: 3,
+    statuses: ['MASTERED', 'INTRODUCED', 'INTRODUCED'],
+  },
+  {
+    areaName: 'Geografie',
+    lessons: 3,
+    statuses: ['MASTERED', 'PRACTICED', 'PRACTICED'],
+  },
+  {
+    areaName: 'Geomertrie',
+    lessons: 3,
+    statuses: ['MASTERED', 'MASTERED', 'PRACTICED'],
+  },
+  {
+    areaName: 'Geschichte',
+    lessons: 2,
+    statuses: ['INTRODUCED', 'INTRODUCED'],
+  },
 ];
 
 async function main() {
@@ -420,7 +1396,16 @@ async function main() {
             name, slug, color, position, stage_type, is_default, organization_id)
        VALUES ($1, 1, true, false, now(), now(), $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT (organization_id, slug) DO NOTHING`,
-      [randomUUID(), s.name, s.slug, s.color, s.position, s.stage_type, s.is_default, ORG_ID],
+      [
+        randomUUID(),
+        s.name,
+        s.slug,
+        s.color,
+        s.position,
+        s.stage_type,
+        s.is_default,
+        ORG_ID,
+      ],
     );
   }
   console.log(`✓ Admission stages (${STAGES.length})`);
@@ -488,10 +1473,10 @@ async function main() {
 
   for (const u of USERS) {
     // Skip if email already exists in user_emails
-    const { rows: existingEmail } = await c.query<{ id: string; user_id: string }>(
-      `SELECT id, user_id FROM user_emails WHERE email = $1`,
-      [u.email],
-    );
+    const { rows: existingEmail } = await c.query<{
+      id: string;
+      user_id: string;
+    }>(`SELECT id, user_id FROM user_emails WHERE email = $1`, [u.email]);
 
     let appUserId: string;
     if (existingEmail[0]) {
@@ -552,7 +1537,10 @@ async function main() {
     const userEmailId = ueRows[0]?.id;
 
     // 6e. Membership + Employee
-    const { rows: existingMs } = await c.query<{ id: string; employee_id: string }>(
+    const { rows: existingMs } = await c.query<{
+      id: string;
+      employee_id: string;
+    }>(
       `SELECT id, employee_id FROM memberships WHERE organization_id = $1 AND user_id = $2`,
       [ORG_ID, appUserId],
     );
@@ -643,7 +1631,15 @@ async function main() {
         `INSERT INTO contact_persons (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
               first_name, last_name, salutation, email, phone, organization_id)
          VALUES ($1, 1, true, false, now(), now(), $2, $3, $4, $5, $6, $7)`,
-        [cpId, cp.firstName, cp.lastName, cp.salutation, cp.email ?? null, cp.phone ?? null, ORG_ID],
+        [
+          cpId,
+          cp.firstName,
+          cp.lastName,
+          cp.salutation,
+          cp.email ?? null,
+          cp.phone ?? null,
+          ORG_ID,
+        ],
       );
       await c.query(
         `INSERT INTO student_contact_persons (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
@@ -657,7 +1653,9 @@ async function main() {
           cpId,
           cp.relationship,
           cp.isPrimary ?? false,
-          cp.relationship === 'LEGAL_GUARDIAN' || cp.relationship === 'MOTHER' || cp.relationship === 'FATHER',
+          cp.relationship === 'LEGAL_GUARDIAN' ||
+            cp.relationship === 'MOTHER' ||
+            cp.relationship === 'FATHER',
           cp.emergencyPriority ?? null,
           cp.livesWith ?? false,
           ORG_ID,
@@ -753,20 +1751,104 @@ async function main() {
       needsMore: number;
       lessons: number;
     }> = [
-      { mastered: 0.65, practiced: 0.20, introduced: 0.10, needsMore: 0.05, lessons: 12 }, // very advanced
-      { mastered: 0.50, practiced: 0.30, introduced: 0.15, needsMore: 0.05, lessons: 10 }, // advanced
-      { mastered: 0.40, practiced: 0.35, introduced: 0.20, needsMore: 0.05, lessons: 10 }, // good
-      { mastered: 0.30, practiced: 0.35, introduced: 0.30, needsMore: 0.05, lessons: 9 },  // solid
-      { mastered: 0.25, practiced: 0.30, introduced: 0.40, needsMore: 0.05, lessons: 8 },  // mid
-      { mastered: 0.15, practiced: 0.30, introduced: 0.50, needsMore: 0.05, lessons: 8 },  // mid-low
-      { mastered: 0.10, practiced: 0.25, introduced: 0.55, needsMore: 0.10, lessons: 7 },  // building
-      { mastered: 0.10, practiced: 0.20, introduced: 0.60, needsMore: 0.10, lessons: 7 },  // building
-      { mastered: 0.05, practiced: 0.20, introduced: 0.70, needsMore: 0.05, lessons: 6 },  // early
-      { mastered: 0.05, practiced: 0.15, introduced: 0.75, needsMore: 0.05, lessons: 6 },  // early
-      { mastered: 0.00, practiced: 0.20, introduced: 0.75, needsMore: 0.05, lessons: 6 },  // just-started
-      { mastered: 0.00, practiced: 0.15, introduced: 0.85, needsMore: 0.00, lessons: 5 },  // just-started
-      { mastered: 0.10, practiced: 0.30, introduced: 0.55, needsMore: 0.05, lessons: 6 },  // mid
-      { mastered: 0.20, practiced: 0.30, introduced: 0.45, needsMore: 0.05, lessons: 6 },  // building
+      {
+        mastered: 0.65,
+        practiced: 0.2,
+        introduced: 0.1,
+        needsMore: 0.05,
+        lessons: 12,
+      }, // very advanced
+      {
+        mastered: 0.5,
+        practiced: 0.3,
+        introduced: 0.15,
+        needsMore: 0.05,
+        lessons: 10,
+      }, // advanced
+      {
+        mastered: 0.4,
+        practiced: 0.35,
+        introduced: 0.2,
+        needsMore: 0.05,
+        lessons: 10,
+      }, // good
+      {
+        mastered: 0.3,
+        practiced: 0.35,
+        introduced: 0.3,
+        needsMore: 0.05,
+        lessons: 9,
+      }, // solid
+      {
+        mastered: 0.25,
+        practiced: 0.3,
+        introduced: 0.4,
+        needsMore: 0.05,
+        lessons: 8,
+      }, // mid
+      {
+        mastered: 0.15,
+        practiced: 0.3,
+        introduced: 0.5,
+        needsMore: 0.05,
+        lessons: 8,
+      }, // mid-low
+      {
+        mastered: 0.1,
+        practiced: 0.25,
+        introduced: 0.55,
+        needsMore: 0.1,
+        lessons: 7,
+      }, // building
+      {
+        mastered: 0.1,
+        practiced: 0.2,
+        introduced: 0.6,
+        needsMore: 0.1,
+        lessons: 7,
+      }, // building
+      {
+        mastered: 0.05,
+        practiced: 0.2,
+        introduced: 0.7,
+        needsMore: 0.05,
+        lessons: 6,
+      }, // early
+      {
+        mastered: 0.05,
+        practiced: 0.15,
+        introduced: 0.75,
+        needsMore: 0.05,
+        lessons: 6,
+      }, // early
+      {
+        mastered: 0.0,
+        practiced: 0.2,
+        introduced: 0.75,
+        needsMore: 0.05,
+        lessons: 6,
+      }, // just-started
+      {
+        mastered: 0.0,
+        practiced: 0.15,
+        introduced: 0.85,
+        needsMore: 0.0,
+        lessons: 5,
+      }, // just-started
+      {
+        mastered: 0.1,
+        practiced: 0.3,
+        introduced: 0.55,
+        needsMore: 0.05,
+        lessons: 6,
+      }, // mid
+      {
+        mastered: 0.2,
+        practiced: 0.3,
+        introduced: 0.45,
+        needsMore: 0.05,
+        lessons: 6,
+      }, // building
     ];
 
     const { rows: rankedAreas } = await c.query<{
@@ -831,10 +1913,7 @@ async function main() {
       const mCount = Math.round(profile.mastered * lessons.length);
       const pCount = Math.round(profile.practiced * lessons.length);
       const iCount = Math.round(profile.introduced * lessons.length);
-      const nmCount = Math.max(
-        0,
-        lessons.length - mCount - pCount - iCount,
-      );
+      const nmCount = Math.max(0, lessons.length - mCount - pCount - iCount);
       for (let k = 0; k < mCount; k++) seq.push('MASTERED');
       for (let k = 0; k < pCount; k++) seq.push('PRACTICED');
       for (let k = 0; k < iCount; k++) seq.push('INTRODUCED');
@@ -966,7 +2045,9 @@ async function main() {
         backfillAdded++;
       }
     }
-    console.log(`✓ Backfilled progression records for Levin (+${backfillAdded})`);
+    console.log(
+      `✓ Backfilled progression records for Levin (+${backfillAdded})`,
+    );
 
     // -------- 9d. Multi-transition demo records --------
     // Echte Klassen-Realität: eine Lektion kann mehrmals eingeführt /
@@ -1042,23 +2123,47 @@ async function main() {
       if (!h.firstMastered) continue;
       const offsetNm = pickInRange(h.lessonId, 'nm', 10, 25);
       const offsetReM = offsetNm + pickInRange(h.lessonId, 'rem', 20, 40);
-      if (await insertIfMissing(h.lessonId, addDays(h.firstMastered, offsetNm), 'NEEDS_MORE'))
+      if (
+        await insertIfMissing(
+          h.lessonId,
+          addDays(h.firstMastered, offsetNm),
+          'NEEDS_MORE',
+        )
+      )
         multiAdded++;
-      if (await insertIfMissing(h.lessonId, addDays(h.firstMastered, offsetReM), 'MASTERED'))
+      if (
+        await insertIfMissing(
+          h.lessonId,
+          addDays(h.firstMastered, offsetReM),
+          'MASTERED',
+        )
+      )
         multiAdded++;
     }
     // Pattern B: zweiter PRACTICED-Record (Wiederholung)
     for (const h of practicedOnly.slice(0, 5)) {
       if (!h.firstPracticed) continue;
       const offset = pickInRange(h.lessonId, 'rep', 5, 15);
-      if (await insertIfMissing(h.lessonId, addDays(h.firstPracticed, offset), 'PRACTICED'))
+      if (
+        await insertIfMissing(
+          h.lessonId,
+          addDays(h.firstPracticed, offset),
+          'PRACTICED',
+        )
+      )
         multiAdded++;
     }
     // Pattern C: zweiter INTRODUCED kurz vor PRACTICED (Re-Einführung)
     for (const h of mastered.slice(7, 10)) {
       if (!h.firstPracticed) continue;
       const offset = -pickInRange(h.lessonId, 'reintro', 2, 7);
-      if (await insertIfMissing(h.lessonId, addDays(h.firstPracticed, offset), 'INTRODUCED'))
+      if (
+        await insertIfMissing(
+          h.lessonId,
+          addDays(h.firstPracticed, offset),
+          'INTRODUCED',
+        )
+      )
         multiAdded++;
     }
     console.log(`✓ Multi-transition demo records for Levin (+${multiAdded})`);
@@ -1101,8 +2206,7 @@ async function main() {
         // Gleichmässige Verteilung mit kleinem Jitter, damit nicht alle
         // Lektionen identisch gespacet aussehen.
         const baseT = (i + 1) / (count + 1); // 0..1 exklusiv der Ränder
-        const jitter =
-          lessonRand(l.lessonId, `practiceJ_${i}`) * 0.18 - 0.09;
+        const jitter = lessonRand(l.lessonId, `practiceJ_${i}`) * 0.18 - 0.09;
         const t = Math.min(0.95, Math.max(0.05, baseT + jitter));
         const offsetDays = Math.max(1, Math.round(spanDays * t));
         const d = new Date(introMs);
@@ -1128,7 +2232,9 @@ async function main() {
         practiceExtrasAdded++;
       }
     }
-    console.log(`✓ Extra practice sessions for Levin (+${practiceExtrasAdded})`);
+    console.log(
+      `✓ Extra practice sessions for Levin (+${practiceExtrasAdded})`,
+    );
 
     // -------- 9f. Fill Klasse-PA classmates with varied data --------
     // Für jeden aktiven Mitschüler in Klasse PA (ausser Levin selbst) wird
@@ -1210,10 +2316,7 @@ async function main() {
         const mCount = Math.round(profile.mastered * lessons.length);
         const pCount = Math.round(profile.practiced * lessons.length);
         const iCount = Math.round(profile.introduced * lessons.length);
-        const nmCount = Math.max(
-          0,
-          lessons.length - mCount - pCount - iCount,
-        );
+        const nmCount = Math.max(0, lessons.length - mCount - pCount - iCount);
         for (let k = 0; k < mCount; k++) seq.push('MASTERED');
         for (let k = 0; k < pCount; k++) seq.push('PRACTICED');
         for (let k = 0; k < iCount; k++) seq.push('INTRODUCED');
@@ -1358,7 +2461,14 @@ async function main() {
                   student_id, lesson_id, recorded_at, status, organization_id, note)
              VALUES ($1, 1, true, false, now(), now(),
                   $2, $3, $4::date, 'PRACTICED', $5, $6)`,
-            [randomUUID(), studentId, l.lessonId, dateStr, ORG_ID, BACKFILL_NOTE],
+            [
+              randomUUID(),
+              studentId,
+              l.lessonId,
+              dateStr,
+              ORG_ID,
+              BACKFILL_NOTE,
+            ],
           );
           classmatePracticeAdded++;
         }
@@ -1584,10 +2694,10 @@ async function main() {
         [ORG_ID, paStudentIds],
       );
       for (const row of notesUpdate.rows) {
-        await c.query(
-          `UPDATE lesson_records SET note = $1 WHERE id = $2`,
-          [`${SEED_NOTE_OBS} ${NOTES[Number(row.idx)]}`, row.id],
-        );
+        await c.query(`UPDATE lesson_records SET note = $1 WHERE id = $2`, [
+          `${SEED_NOTE_OBS} ${NOTES[Number(row.idx)]}`,
+          row.id,
+        ]);
       }
 
       // 9g.8 Frische Records der letzten 6 Wochen — pro Schüler 3..7 neue
@@ -1736,7 +2846,10 @@ async function main() {
   const rolesEnumType = await findEnum('contact_persons', 'roles');
   const appStatusEnum = await findEnum('admission_applications', 'status');
   const appSourceEnum = await findEnum('admission_applications', 'source');
-  const appGenderEnum = await findEnum('admission_applications', 'child_gender');
+  const appGenderEnum = await findEnum(
+    'admission_applications',
+    'child_gender',
+  );
   if (!appStatusEnum || !appSourceEnum || !appGenderEnum) {
     console.warn(
       '  ! admission_applications enum types not found — make sure the backend has run once with the new entities.',
@@ -1929,168 +3042,489 @@ async function main() {
     backfilled++;
   }
   if (backfilled > 0) {
-    console.log(`✓ Admission applications: grade-level backfilled (+${backfilled})`);
+    console.log(
+      `✓ Admission applications: grade-level backfilled (+${backfilled})`,
+    );
   }
 
-  // -------- N. Resync System Absence Category Translations --------
-  await resyncSystemAbsenceCategoryTranslations(c);
+  // -------- N. System Absenzkategorien (seed + Translations) --------
+  await ensureSystemAbsenceCategories(c);
 
   await c.end();
   console.log('\n✨ Done. Login with any of these (password: test1234):');
-  USERS.forEach((u) => console.log(`   ${u.email}  →  ${u.persona} / ${u.roleCode}`));
+  USERS.forEach((u) =>
+    console.log(`   ${u.email}  →  ${u.persona} / ${u.roleCode}`),
+  );
 }
 
 /**
- * One-shot resync: schreibt die aktuellen DE/FR/IT/EN-Defaults fuer alle
- * System-Absenzkategorien der Testschule. Custom-Kategorien werden nicht
- * angeruehrt. Idempotent — bei jedem Lauf werden die Translations auf den
- * Stand der Code-Defaults gebracht.
+ * Stellt die 9 System-Absenzkategorien der Testschule sicher und synct
+ * DE/FR/IT/EN-Translations auf die Code-Defaults. Entfernt zusaetzlich
+ * Custom-Kategorien aus E2E-Laeufen (Name beginnt mit "E2E "), sofern sie
+ * von keiner Absenz referenziert werden.
  *
- * Quelle der Defaults: apps/backend/src/employee-management/employee-absence-categories/
+ * Quelle: apps/backend/src/employee-management/employee-absence-categories/
  *   seeds/system-employee-absence-categories.ts
  */
-async function resyncSystemAbsenceCategoryTranslations(c: Client) {
+async function ensureSystemAbsenceCategories(c: Client) {
   type T = { name: string; description: string | null };
-  const SYS: Record<string, { DE: T; FR: T; IT: T; EN: T }> = {
-    SICKNESS: {
-      DE: {
-        name: 'Krankheit',
-        description: 'Ab dem 3. Tag ist ein Arztzeugnis erforderlich (Schweizer Standard).',
-      },
-      FR: {
-        name: 'Maladie',
-        description: 'Certificat médical requis dès le 3e jour (standard suisse).',
-      },
-      IT: {
-        name: 'Malattia',
-        description: 'Certificato medico richiesto dal 3° giorno (standard svizzero).',
-      },
-      EN: {
-        name: 'Sick leave',
-        description: 'Medical certificate required from day 3 (Swiss standard).',
-      },
-    },
-    ACCIDENT: {
-      DE: {
-        name: 'Unfall',
-        description: 'Unfallmeldung erforderlich; Lohnfortzahlung gemäss UVG.',
-      },
-      FR: {
-        name: 'Accident',
-        description: 'Déclaration d’accident requise; maintien du salaire selon la LAA.',
-      },
-      IT: {
-        name: 'Infortunio',
-        description: 'Notifica d’infortunio richiesta; salario garantito secondo la LAINF.',
-      },
-      EN: {
-        name: 'Accident',
-        description:
-          'Accident report required; salary continuation per Swiss accident insurance (UVG/LAA/LAINF).',
-      },
-    },
-    CHILDCARE_SICK: {
-      DE: {
-        name: 'Kind krank',
-        description: 'Betreuung kranker Kinder: max. 3 Tage pro Ereignis (Art. 36 ArG).',
-      },
-      FR: {
-        name: 'Enfant malade',
-        description: 'Soins à un enfant malade: max. 3 jours par évènement (art. 36 LTr).',
-      },
-      IT: {
-        name: 'Figlio malato',
-        description: 'Assistenza a un figlio malato: max. 3 giorni per evento (art. 36 LL).',
-      },
-      EN: {
-        name: 'Sick child care',
-        description: 'Care for a sick child: max. 3 days per event (Swiss Labor Act art. 36).',
-      },
-    },
-    TRAINING: {
-      DE: { name: 'Weiterbildung', description: 'Externe oder interne berufliche Weiterbildung.' },
-      FR: { name: 'Formation continue', description: 'Formation continue interne ou externe.' },
-      IT: { name: 'Formazione continua', description: 'Formazione continua interna o esterna.' },
-      EN: { name: 'Training', description: 'Internal or external professional training.' },
-    },
-    FUNERAL: {
-      DE: { name: 'Trauerfall', description: 'Todesfall in der nahen Familie; bis zu 3 Tage bezahlte Absenz.' },
-      FR: { name: 'Décès', description: 'Décès d’un proche; jusqu’à 3 jours d’absence rémunérée.' },
-      IT: { name: 'Lutto', description: 'Decesso di un familiare prossimo; fino a 3 giorni di assenza retribuita.' },
-      EN: { name: 'Bereavement', description: 'Death of a close family member; up to 3 days of paid leave.' },
-    },
-    MOVE: {
-      DE: { name: 'Umzug', description: 'Tag des Wohnungsumzugs; 1 bezahlter Tag pro Jahr.' },
-      FR: { name: 'Déménagement', description: 'Jour de déménagement; 1 jour rémunéré par an.' },
-      IT: { name: 'Trasloco', description: 'Giorno del trasloco; 1 giorno retribuito all’anno.' },
-      EN: { name: 'Moving day', description: 'Day of residential move; 1 paid day per year.' },
-    },
-    MILITARY_SERVICE: {
-      DE: {
-        name: 'Militärdienst',
-        description: 'Obligatorische Dienstpflicht; Lohnfortzahlung via Erwerbsersatzordnung (EO).',
-      },
-      FR: {
-        name: 'Service militaire',
-        description:
-          'Service militaire obligatoire; compensation via les Allocations pour perte de gain (APG).',
-      },
-      IT: {
-        name: 'Servizio militare',
-        description:
-          'Servizio militare obbligatorio; indennità tramite l’Indennità di perdita di guadagno (IPG).',
-      },
-      EN: {
-        name: 'Military service',
-        description: 'Mandatory Swiss military service; income compensation via EO/APG/IPG.',
-      },
-    },
-    CIVIL_SERVICE: {
-      DE: { name: 'Zivildienst', description: 'Ersatzdienst statt Militärdienst; Lohnfortzahlung via EO.' },
-      FR: {
-        name: 'Service civil',
-        description: 'Service civil en remplacement du service militaire; compensation via APG.',
-      },
-      IT: {
-        name: 'Servizio civile',
-        description: 'Servizio civile in sostituzione del servizio militare; indennità tramite IPG.',
-      },
-      EN: {
-        name: 'Civil service',
-        description: 'Civil service in lieu of military duty; income compensation via EO/APG/IPG.',
-      },
-    },
-    OTHER: {
-      DE: { name: 'Sonstiges', description: 'Andere bezahlte oder unbezahlte Abwesenheit; Genehmigung erforderlich.' },
-      FR: { name: 'Autre', description: 'Autre absence rémunérée ou non rémunérée; approbation requise.' },
-      IT: { name: 'Altro', description: 'Altra assenza retribuita o non retribuita; approvazione richiesta.' },
-      EN: { name: 'Other', description: 'Other paid or unpaid absence; requires approval.' },
-    },
+  type CatDef = {
+    code: string;
+    countsAsWorkTime: boolean;
+    isPaid: boolean;
+    affectsVacationBalance: boolean;
+    defaultIsVacationCapable: boolean;
+    reducesVacationEntitlementAfterDays: number | null;
+    requiresCertificate: boolean;
+    certificateRequiredFromDay: number | null;
+    maxDaysPerYear: number | null;
+    defaultPercentage: number;
+    requiresApproval: boolean;
+    color: string;
+    iconName: string;
+    sortOrder: number;
+    translations: { DE: T; FR: T; IT: T; EN: T };
   };
 
-  const cats = await c.query(
-    `SELECT id, system_code FROM employee_absence_categories
-     WHERE organization_id = $1 AND is_system = true`,
+  const CATS: CatDef[] = [
+    {
+      code: 'SICKNESS',
+      countsAsWorkTime: true,
+      isPaid: true,
+      affectsVacationBalance: false,
+      defaultIsVacationCapable: false,
+      reducesVacationEntitlementAfterDays: 30,
+      requiresCertificate: true,
+      certificateRequiredFromDay: 3,
+      maxDaysPerYear: null,
+      defaultPercentage: 100,
+      requiresApproval: false,
+      color: '#EF4444',
+      iconName: 'thermometer',
+      sortOrder: 10,
+      translations: {
+        DE: {
+          name: 'Krankheit',
+          description:
+            'Ab dem 3. Tag ist ein Arztzeugnis erforderlich (Schweizer Standard).',
+        },
+        FR: {
+          name: 'Maladie',
+          description:
+            'Certificat médical requis dès le 3e jour (standard suisse).',
+        },
+        IT: {
+          name: 'Malattia',
+          description:
+            'Certificato medico richiesto dal 3° giorno (standard svizzero).',
+        },
+        EN: {
+          name: 'Sick leave',
+          description:
+            'Medical certificate required from day 3 (Swiss standard).',
+        },
+      },
+    },
+    {
+      code: 'ACCIDENT',
+      countsAsWorkTime: true,
+      isPaid: true,
+      affectsVacationBalance: false,
+      defaultIsVacationCapable: false,
+      reducesVacationEntitlementAfterDays: 30,
+      requiresCertificate: true,
+      certificateRequiredFromDay: 1,
+      maxDaysPerYear: null,
+      defaultPercentage: 100,
+      requiresApproval: false,
+      color: '#F97316',
+      iconName: 'heart-pulse',
+      sortOrder: 20,
+      translations: {
+        DE: {
+          name: 'Unfall',
+          description:
+            'Unfallmeldung erforderlich; Lohnfortzahlung gemäss UVG.',
+        },
+        FR: {
+          name: 'Accident',
+          description:
+            'Déclaration d’accident requise; maintien du salaire selon la LAA.',
+        },
+        IT: {
+          name: 'Infortunio',
+          description:
+            'Notifica d’infortunio richiesta; salario garantito secondo la LAINF.',
+        },
+        EN: {
+          name: 'Accident',
+          description:
+            'Accident report required; salary continuation per Swiss accident insurance (UVG/LAA/LAINF).',
+        },
+      },
+    },
+    {
+      code: 'CHILDCARE_SICK',
+      countsAsWorkTime: true,
+      isPaid: true,
+      affectsVacationBalance: false,
+      defaultIsVacationCapable: false,
+      reducesVacationEntitlementAfterDays: null,
+      requiresCertificate: false,
+      certificateRequiredFromDay: null,
+      maxDaysPerYear: 3,
+      defaultPercentage: 100,
+      requiresApproval: false,
+      color: '#F59E0B',
+      iconName: 'baby',
+      sortOrder: 30,
+      translations: {
+        DE: {
+          name: 'Kind krank',
+          description:
+            'Betreuung kranker Kinder: max. 3 Tage pro Ereignis (Art. 36 ArG).',
+        },
+        FR: {
+          name: 'Enfant malade',
+          description:
+            'Soins à un enfant malade: max. 3 jours par évènement (art. 36 LTr).',
+        },
+        IT: {
+          name: 'Figlio malato',
+          description:
+            'Assistenza a un figlio malato: max. 3 giorni per evento (art. 36 LL).',
+        },
+        EN: {
+          name: 'Sick child care',
+          description:
+            'Care for a sick child: max. 3 days per event (Swiss Labor Act art. 36).',
+        },
+      },
+    },
+    {
+      code: 'TRAINING',
+      countsAsWorkTime: true,
+      isPaid: true,
+      affectsVacationBalance: false,
+      defaultIsVacationCapable: true,
+      reducesVacationEntitlementAfterDays: null,
+      requiresCertificate: false,
+      certificateRequiredFromDay: null,
+      maxDaysPerYear: null,
+      defaultPercentage: 100,
+      requiresApproval: true,
+      color: '#3B82F6',
+      iconName: 'graduation-cap',
+      sortOrder: 40,
+      translations: {
+        DE: {
+          name: 'Weiterbildung',
+          description: 'Externe oder interne berufliche Weiterbildung.',
+        },
+        FR: {
+          name: 'Formation continue',
+          description: 'Formation continue interne ou externe.',
+        },
+        IT: {
+          name: 'Formazione continua',
+          description: 'Formazione continua interna o esterna.',
+        },
+        EN: {
+          name: 'Training',
+          description: 'Internal or external professional training.',
+        },
+      },
+    },
+    {
+      code: 'FUNERAL',
+      countsAsWorkTime: true,
+      isPaid: true,
+      affectsVacationBalance: false,
+      defaultIsVacationCapable: true,
+      reducesVacationEntitlementAfterDays: null,
+      requiresCertificate: false,
+      certificateRequiredFromDay: null,
+      maxDaysPerYear: 3,
+      defaultPercentage: 100,
+      requiresApproval: false,
+      color: '#6B7280',
+      iconName: 'flower',
+      sortOrder: 50,
+      translations: {
+        DE: {
+          name: 'Trauerfall',
+          description:
+            'Todesfall in der nahen Familie; bis zu 3 Tage bezahlte Absenz.',
+        },
+        FR: {
+          name: 'Décès',
+          description:
+            'Décès d’un proche; jusqu’à 3 jours d’absence rémunérée.',
+        },
+        IT: {
+          name: 'Lutto',
+          description:
+            'Decesso di un familiare prossimo; fino a 3 giorni di assenza retribuita.',
+        },
+        EN: {
+          name: 'Bereavement',
+          description:
+            'Death of a close family member; up to 3 days of paid leave.',
+        },
+      },
+    },
+    {
+      code: 'MOVE',
+      countsAsWorkTime: true,
+      isPaid: true,
+      affectsVacationBalance: false,
+      defaultIsVacationCapable: true,
+      reducesVacationEntitlementAfterDays: null,
+      requiresCertificate: false,
+      certificateRequiredFromDay: null,
+      maxDaysPerYear: 1,
+      defaultPercentage: 100,
+      requiresApproval: false,
+      color: '#8B5CF6',
+      iconName: 'truck',
+      sortOrder: 60,
+      translations: {
+        DE: {
+          name: 'Umzug',
+          description: 'Tag des Wohnungsumzugs; 1 bezahlter Tag pro Jahr.',
+        },
+        FR: {
+          name: 'Déménagement',
+          description: 'Jour de déménagement; 1 jour rémunéré par an.',
+        },
+        IT: {
+          name: 'Trasloco',
+          description: 'Giorno del trasloco; 1 giorno retribuito all’anno.',
+        },
+        EN: {
+          name: 'Moving day',
+          description: 'Day of residential move; 1 paid day per year.',
+        },
+      },
+    },
+    {
+      code: 'MILITARY_SERVICE',
+      countsAsWorkTime: true,
+      isPaid: true,
+      affectsVacationBalance: false,
+      defaultIsVacationCapable: false,
+      reducesVacationEntitlementAfterDays: null,
+      requiresCertificate: true,
+      certificateRequiredFromDay: 1,
+      maxDaysPerYear: null,
+      defaultPercentage: 100,
+      requiresApproval: false,
+      color: '#10B981',
+      iconName: 'shield',
+      sortOrder: 70,
+      translations: {
+        DE: {
+          name: 'Militärdienst',
+          description:
+            'Obligatorische Dienstpflicht; Lohnfortzahlung via Erwerbsersatzordnung (EO).',
+        },
+        FR: {
+          name: 'Service militaire',
+          description:
+            'Service militaire obligatoire; compensation via les Allocations pour perte de gain (APG).',
+        },
+        IT: {
+          name: 'Servizio militare',
+          description:
+            'Servizio militare obbligatorio; indennità tramite l’Indennità di perdita di guadagno (IPG).',
+        },
+        EN: {
+          name: 'Military service',
+          description:
+            'Mandatory Swiss military service; income compensation via EO/APG/IPG.',
+        },
+      },
+    },
+    {
+      code: 'CIVIL_SERVICE',
+      countsAsWorkTime: true,
+      isPaid: true,
+      affectsVacationBalance: false,
+      defaultIsVacationCapable: false,
+      reducesVacationEntitlementAfterDays: null,
+      requiresCertificate: true,
+      certificateRequiredFromDay: 1,
+      maxDaysPerYear: null,
+      defaultPercentage: 100,
+      requiresApproval: false,
+      color: '#14B8A6',
+      iconName: 'shield-check',
+      sortOrder: 80,
+      translations: {
+        DE: {
+          name: 'Zivildienst',
+          description:
+            'Ersatzdienst statt Militärdienst; Lohnfortzahlung via EO.',
+        },
+        FR: {
+          name: 'Service civil',
+          description:
+            'Service civil en remplacement du service militaire; compensation via APG.',
+        },
+        IT: {
+          name: 'Servizio civile',
+          description:
+            'Servizio civile in sostituzione del servizio militare; indennità tramite IPG.',
+        },
+        EN: {
+          name: 'Civil service',
+          description:
+            'Civil service in lieu of military duty; income compensation via EO/APG/IPG.',
+        },
+      },
+    },
+    {
+      code: 'OTHER',
+      countsAsWorkTime: false,
+      isPaid: false,
+      affectsVacationBalance: false,
+      defaultIsVacationCapable: true,
+      reducesVacationEntitlementAfterDays: null,
+      requiresCertificate: false,
+      certificateRequiredFromDay: null,
+      maxDaysPerYear: null,
+      defaultPercentage: 100,
+      requiresApproval: true,
+      color: '#9CA3AF',
+      iconName: 'help-circle',
+      sortOrder: 999,
+      translations: {
+        DE: {
+          name: 'Sonstiges',
+          description:
+            'Andere bezahlte oder unbezahlte Abwesenheit; Genehmigung erforderlich.',
+        },
+        FR: {
+          name: 'Autre',
+          description:
+            'Autre absence rémunérée ou non rémunérée; approbation requise.',
+        },
+        IT: {
+          name: 'Altro',
+          description:
+            'Altra assenza retribuita o non retribuita; approvazione richiesta.',
+        },
+        EN: {
+          name: 'Other',
+          description: 'Other paid or unpaid absence; requires approval.',
+        },
+      },
+    },
+  ];
+
+  // E2E-Leftovers entfernen (nur wenn keine Absenz darauf zeigt)
+  const e2eDeleted = await c.query(
+    `WITH e2e AS (
+       SELECT c.id
+       FROM employee_absence_categories c
+       JOIN employee_absence_category_translations t
+         ON t.category_id = c.id AND t.locale = 'DE'
+       WHERE c.organization_id = $1
+         AND c.is_system = false
+         AND t.name LIKE 'E2E %'
+         AND NOT EXISTS (
+           SELECT 1 FROM employee_absences a WHERE a.absence_category_id = c.id
+         )
+         AND NOT EXISTS (
+           SELECT 1 FROM employee_absence_days d WHERE d.absence_category_id = c.id
+         )
+     ),
+     del_t AS (
+       DELETE FROM employee_absence_category_translations
+       WHERE category_id IN (SELECT id FROM e2e)
+       RETURNING 1
+     )
+     DELETE FROM employee_absence_categories
+     WHERE id IN (SELECT id FROM e2e)
+     RETURNING id`,
     [ORG_ID],
   );
-  let count = 0;
-  for (const row of cats.rows as Array<{ id: string; system_code: string }>) {
-    const defs = SYS[row.system_code];
-    if (!defs) continue;
+  if (e2eDeleted.rowCount && e2eDeleted.rowCount > 0) {
+    console.log(
+      `✓ Removed ${e2eDeleted.rowCount} leftover E2E absence categories`,
+    );
+  }
+
+  let created = 0;
+  let translations = 0;
+  for (const def of CATS) {
+    const existing = await c.query(
+      `SELECT id FROM employee_absence_categories
+       WHERE organization_id = $1 AND system_code = $2`,
+      [ORG_ID, def.code],
+    );
+    let categoryId: string;
+    if (existing.rows.length === 0) {
+      categoryId = randomUUID();
+      await c.query(
+        `INSERT INTO employee_absence_categories (
+           id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+           organization_id, system_code, is_system,
+           counts_as_work_time, is_paid, affects_vacation_balance,
+           default_is_vacation_capable, reduces_vacation_entitlement_after_days,
+           requires_certificate, certificate_required_from_day, max_days_per_year,
+           default_percentage, requires_approval, color, icon_name, sort_order
+         ) VALUES (
+           $1, 1, true, false, now(), now(),
+           $2, $3, true,
+           $4, $5, $6,
+           $7, $8,
+           $9, $10, $11,
+           $12, $13, $14, $15, $16
+         )`,
+        [
+          categoryId,
+          ORG_ID,
+          def.code,
+          def.countsAsWorkTime,
+          def.isPaid,
+          def.affectsVacationBalance,
+          def.defaultIsVacationCapable,
+          def.reducesVacationEntitlementAfterDays,
+          def.requiresCertificate,
+          def.certificateRequiredFromDay,
+          def.maxDaysPerYear,
+          def.defaultPercentage,
+          def.requiresApproval,
+          def.color,
+          def.iconName,
+          def.sortOrder,
+        ],
+      );
+      created++;
+    } else {
+      categoryId = (existing.rows[0] as { id: string }).id;
+    }
+
     for (const locale of ['DE', 'FR', 'IT', 'EN'] as const) {
-      const t = defs[locale];
+      const t = def.translations[locale];
       await c.query(
         `INSERT INTO employee_absence_category_translations
-           (category_id, locale, name, description)
-         VALUES ($1, $2, $3, $4)
+           (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+            category_id, locale, name, description)
+         VALUES ($1, 1, true, false, now(), now(), $2, $3, $4, $5)
          ON CONFLICT (category_id, locale)
-         DO UPDATE SET name = EXCLUDED.name, description = EXCLUDED.description, "updatedAt" = now()`,
-        [row.id, locale, t.name, t.description],
+         DO UPDATE SET name = EXCLUDED.name,
+                       description = EXCLUDED.description,
+                       "updatedAt" = now()`,
+        [randomUUID(), categoryId, locale, t.name, t.description],
       );
-      count++;
+      translations++;
     }
   }
-  console.log(`✓ Resynced ${count} system absence-category translations`);
+  console.log(
+    `✓ System absence categories: +${created} created, ${translations} translations synced`,
+  );
 }
 
 main().catch((err) => {

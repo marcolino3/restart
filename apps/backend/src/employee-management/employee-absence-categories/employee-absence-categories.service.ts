@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { CreateEmployeeAbsenceCategoryInput } from './dto/create-employee-absence-category.input';
+import { EmployeeAbsenceCategoryTranslationInput } from './dto/employee-absence-category-translation.input';
 import { UpdateEmployeeAbsenceCategoryInput } from './dto/update-employee-absence-category.input';
 import { UpsertEmployeeAbsenceCategoryTranslationInput } from './dto/upsert-employee-absence-category-translation.input';
 import { EmployeeAbsenceCategoryTranslation } from './entities/employee-absence-category-translation.entity';
@@ -115,6 +116,8 @@ export class EmployeeAbsenceCategoriesService {
     organizationId: string,
   ): Promise<EmployeeAbsenceCategory> {
     this.assertUniqueLocales(input.translations.map((t) => t.locale));
+    this.assertAtLeastOneTranslation(input.translations);
+    const translationsToSave = this.nonEmptyTranslations(input.translations);
 
     return this.dataSource.transaction(async (m) => {
       // Neue Kategorien landen am Ende der Liste
@@ -149,12 +152,12 @@ export class EmployeeAbsenceCategoriesService {
         .getRepository(EmployeeAbsenceCategory)
         .save(category);
 
-      const translations = input.translations.map((t) =>
+      const translations = translationsToSave.map((t) =>
         m.getRepository(EmployeeAbsenceCategoryTranslation).create({
           categoryId: saved.id,
           locale: t.locale,
-          name: t.name,
-          description: t.description ?? null,
+          name: t.name.trim(),
+          description: t.description?.trim() ? t.description.trim() : null,
         }),
       );
       await m
@@ -206,18 +209,9 @@ export class EmployeeAbsenceCategoriesService {
 
     if (input.translations && input.translations.length > 0) {
       this.assertUniqueLocales(input.translations.map((t) => t.locale));
+      this.assertAtLeastOneTranslation(input.translations);
       await this.dataSource.transaction(async (m) => {
-        for (const t of input.translations!) {
-          await m.getRepository(EmployeeAbsenceCategoryTranslation).upsert(
-            {
-              categoryId: category.id,
-              locale: t.locale,
-              name: t.name,
-              description: t.description ?? null,
-            },
-            ['categoryId', 'locale'],
-          );
-        }
+        await this.saveTranslations(m, category.id, input.translations!);
       });
     }
 
@@ -318,6 +312,45 @@ export class EmployeeAbsenceCategoriesService {
         throw new ConflictException(`Duplicate locale "${l}" in translations`);
       }
       seen.add(l);
+    }
+  }
+
+  private assertAtLeastOneTranslation(
+    translations: EmployeeAbsenceCategoryTranslationInput[],
+  ): void {
+    const hasAny = translations.some((t) => t.name?.trim());
+    if (!hasAny) {
+      throw new BadRequestException('At least one translation is required');
+    }
+  }
+
+  private nonEmptyTranslations(
+    translations: EmployeeAbsenceCategoryTranslationInput[],
+  ): EmployeeAbsenceCategoryTranslationInput[] {
+    return translations.filter((t) => t.name.trim().length > 0);
+  }
+
+  private async saveTranslations(
+    m: EntityManager,
+    categoryId: string,
+    translations: EmployeeAbsenceCategoryTranslationInput[],
+  ): Promise<void> {
+    const repo = m.getRepository(EmployeeAbsenceCategoryTranslation);
+    for (const t of translations) {
+      const trimmedName = t.name.trim();
+      if (!trimmedName) {
+        await repo.delete({ categoryId, locale: t.locale });
+        continue;
+      }
+      await repo.upsert(
+        {
+          categoryId,
+          locale: t.locale,
+          name: trimmedName,
+          description: t.description?.trim() ? t.description.trim() : null,
+        },
+        ['categoryId', 'locale'],
+      );
     }
   }
 }

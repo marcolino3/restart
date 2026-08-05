@@ -9,7 +9,11 @@
  */
 import { DataSource, Repository } from 'typeorm';
 import { Module } from '@nestjs/common';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TestingModule } from '@nestjs/testing';
 
@@ -113,6 +117,36 @@ describe('EmployeeAbsenceCategoriesService (Integration)', () => {
           orgId,
         ),
       ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('accepts a single non-DE translation', async () => {
+      const created = await service.create(
+        {
+          translations: [{ locale: Locale.EN, name: 'Sick leave' }],
+          isPaid: true,
+          countsAsWorkTime: true,
+        },
+        orgId,
+      );
+
+      expect(created.translations).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ locale: Locale.EN, name: 'Sick leave' }),
+        ]),
+      );
+    });
+
+    it('rejects when no translation name is provided', async () => {
+      await expect(
+        service.create(
+          {
+            translations: [{ locale: Locale.FR, name: '  ' }],
+            isPaid: true,
+            countsAsWorkTime: true,
+          },
+          orgId,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
   });
 

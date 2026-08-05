@@ -20,42 +20,52 @@ const requiredInt = z.preprocess(
   z.number().int(),
 );
 
-export const absenceCategoryFormSchema = z
-  .object({
-    translations: z
-      .array(translationSchema)
-      .length(4, "translations: 4 locale slots required (DE/FR/IT/EN)"),
-    countsAsWorkTime: z.boolean(),
-    isPaid: z.boolean(),
-    affectsVacationBalance: z.boolean(),
-    defaultIsVacationCapable: z.boolean(),
-    reducesVacationEntitlementAfterDays: nullableInt,
-    requiresCertificate: z.boolean(),
-    certificateRequiredFromDay: nullableInt,
-    maxDaysPerYear: nullableInt,
-    defaultPercentage: requiredInt.pipe(z.number().int().min(1).max(100)),
-    requiresApproval: z.boolean(),
-    color: z
-      .string()
-      .regex(/^#[0-9A-Fa-f]{6}$/, "Hex like #RRGGBB")
-      .nullable(),
-    iconName: z.string().trim().max(64).nullable(),
-    sortOrder: requiredInt.pipe(z.number().int().min(0)),
-  })
-  .superRefine((data, ctx) => {
-    // DE-Name ist Pflicht; alle anderen Locales optional
-    const de = data.translations.find((t) => t.locale === "DE");
-    if (!de || !de.name || de.name.length === 0) {
+export function createAbsenceCategoryFormSchema(messages: {
+  atLeastOneNameRequired: string;
+}) {
+  return z
+    .object({
+      translations: z
+        .array(translationSchema)
+        .length(4, "translations: 4 locale slots required (DE/FR/IT/EN)"),
+      countsAsWorkTime: z.boolean(),
+      isPaid: z.boolean(),
+      affectsVacationBalance: z.boolean(),
+      defaultIsVacationCapable: z.boolean(),
+      reducesVacationEntitlementAfterDays: nullableInt,
+      requiresCertificate: z.boolean(),
+      certificateRequiredFromDay: nullableInt,
+      maxDaysPerYear: nullableInt,
+      defaultPercentage: requiredInt.pipe(z.number().int().min(1).max(100)),
+      requiresApproval: z.boolean(),
+      color: z
+        .string()
+        .regex(/^#[0-9A-Fa-f]{6}$/, "Hex like #RRGGBB")
+        .nullable(),
+      iconName: z.string().trim().max(64).nullable(),
+      sortOrder: requiredInt.pipe(z.number().int().min(0)),
+    })
+    .superRefine((data, ctx) => {
+      const hasAny = data.translations.some((tr) => tr.name.trim());
+      if (hasAny) return;
+
+      const firstEmptyIndex = data.translations.findIndex(
+        (tr) => !tr.name.trim(),
+      );
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["translations", 0, "name"],
-        message: "german_name_required",
+        path: ["translations", Math.max(firstEmptyIndex, 0), "name"],
+        message: messages.atLeastOneNameRequired,
       });
-    }
-  });
+    });
+}
 
-export type AbsenceCategoryFormInput = z.input<typeof absenceCategoryFormSchema>;
-export type AbsenceCategoryFormValues = z.output<typeof absenceCategoryFormSchema>;
+export type AbsenceCategoryFormInput = z.input<
+  ReturnType<typeof createAbsenceCategoryFormSchema>
+>;
+export type AbsenceCategoryFormValues = z.output<
+  ReturnType<typeof createAbsenceCategoryFormSchema>
+>;
 
 export const ABSENCE_CATEGORY_FORM_DEFAULTS: AbsenceCategoryFormInput = {
   translations: [
