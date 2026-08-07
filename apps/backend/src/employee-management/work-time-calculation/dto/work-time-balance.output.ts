@@ -1,4 +1,11 @@
-import { Field, Float, ID, Int, ObjectType } from '@nestjs/graphql';
+import {
+  Field,
+  Float,
+  ID,
+  Int,
+  ObjectType,
+  registerEnumType,
+} from '@nestjs/graphql';
 
 /** Aggregierter Arbeitszeit-Saldo eines Mitarbeiters über einen Datumsbereich. */
 @ObjectType()
@@ -123,4 +130,80 @@ export class EmployeeWorkTimeOverviewRow {
 
   @Field(() => Int)
   vacationDaysUsed: number;
+}
+
+/** Art eines Tages in der Monats-Zeiterfassungsübersicht. */
+export enum DailyTimeTrackingKind {
+  ENTRY = 'ENTRY',
+  ABSENCE = 'ABSENCE',
+  VACATION = 'VACATION',
+  HOLIDAY = 'HOLIDAY',
+  NONE = 'NONE',
+}
+registerEnumType(DailyTimeTrackingKind, { name: 'DailyTimeTrackingKind' });
+
+/**
+ * Ein Zeiteintrag innerhalb eines Tages der Monatsübersicht. Ein Tag mit
+ * mehreren Zeiteinträgen (mehrere Stempelungen) liefert mehrere Objekte mit
+ * gleichem `date`.
+ */
+@ObjectType()
+export class DailyTimeTrackingEntry {
+  @Field(() => ID)
+  id: string;
+
+  @Field(() => Date)
+  startedAt: Date;
+
+  @Field(() => Date, { nullable: true })
+  endedAt: Date | null;
+
+  @Field(() => Int, { nullable: true })
+  breakMinutes: number | null;
+
+  @Field(() => Int, { nullable: true })
+  workMinutes: number | null;
+
+  @Field(() => String, { nullable: true })
+  notes: string | null;
+}
+
+/** Ein Tag der Monatsübersicht: entweder Zeiteinträge oder Absenz/Ferien/Feiertag. */
+@ObjectType()
+export class DailyTimeTracking {
+  @Field(() => String)
+  date: string;
+
+  @Field(() => DailyTimeTrackingKind)
+  kind: DailyTimeTrackingKind;
+
+  @Field(() => [DailyTimeTrackingEntry], { nullable: true })
+  entries: DailyTimeTrackingEntry[] | null;
+
+  /** Anzeige-Label für ABSENCE/VACATION/HOLIDAY (Kategoriename, Ferien-/Feiertagsname). */
+  @Field(() => String, { nullable: true })
+  label: string | null;
+
+  /** Kategorie-Farbe (nur ABSENCE). */
+  @Field(() => String, { nullable: true })
+  color: string | null;
+
+  @Field(() => Int)
+  workMinutes: number;
+}
+
+/** Ein Monat der Zeiterfassungs-Monatsübersicht, Tage aufsteigend sortiert. */
+@ObjectType()
+export class MonthlyTimeTrackingGroup {
+  @Field(() => Int)
+  year: number;
+
+  @Field(() => Int)
+  month: number;
+
+  @Field(() => Int)
+  workedMinutes: number;
+
+  @Field(() => [DailyTimeTracking])
+  days: DailyTimeTracking[];
 }

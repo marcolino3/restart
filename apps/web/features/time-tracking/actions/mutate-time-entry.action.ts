@@ -1,7 +1,7 @@
 "use server";
 
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
-import { gql } from "graphql-request";
+import { gql, ClientError } from "graphql-request";
 import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
 import { ROUTES } from "@/constants/routes";
@@ -9,6 +9,16 @@ import {
   minutesOfDay,
   type TimeEntryFormOutput,
 } from "../schemas/time-entry-form.schema";
+
+/** Extrahiert die GraphQL-Fehlermeldung (z.B. einen stabilen Fehlercode) VOR dem
+ * Rückgabewert-Serialisieren über die Server-Action-Grenze — ClientError verliert
+ * dabei `.response`, nur `.message` würde ankommen, wenn man den Error selbst zurückgibt. */
+function extractGqlErrorCode(error: unknown): string {
+  if (error instanceof ClientError) {
+    return error.response?.errors?.[0]?.message ?? error.message;
+  }
+  return error instanceof Error ? error.message : String(error);
+}
 
 const CreateDocument = gql`
   mutation CreateTimeTracking($input: CreateTimeTrackingInput!) {
@@ -81,7 +91,7 @@ export const createTimeEntryAction = async (
     await revalidate();
     return { success: true as const, data: createTimeTracking };
   } catch (error) {
-    return { success: false as const, error };
+    return { success: false as const, error: extractGqlErrorCode(error) };
   }
 };
 
@@ -97,7 +107,7 @@ export const updateTimeEntryAction = async (
     await revalidate();
     return { success: true as const, data: updateTimeTracking };
   } catch (error) {
-    return { success: false as const, error };
+    return { success: false as const, error: extractGqlErrorCode(error) };
   }
 };
 
@@ -108,7 +118,7 @@ export const deleteTimeEntryAction = async (id: string) => {
     await revalidate();
     return { success: true as const, data: true };
   } catch (error) {
-    return { success: false as const, error };
+    return { success: false as const, error: extractGqlErrorCode(error) };
   }
 };
 
@@ -121,7 +131,7 @@ export const startClockAction = async (employeeId: string) => {
     await revalidate();
     return { success: true as const, data: startTimeTracking };
   } catch (error) {
-    return { success: false as const, error };
+    return { success: false as const, error: extractGqlErrorCode(error) };
   }
 };
 
@@ -134,6 +144,6 @@ export const stopClockAction = async (employeeId: string) => {
     await revalidate();
     return { success: true as const, data: stopTimeTracking };
   } catch (error) {
-    return { success: false as const, error };
+    return { success: false as const, error: extractGqlErrorCode(error) };
   }
 };

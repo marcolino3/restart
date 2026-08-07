@@ -25,7 +25,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "clean": "rm -rf dist coverage",
-    "typeorm": "typeorm-ts-node-commonjs",
+    "typeorm": "node -r tsconfig-paths/register node_modules/typeorm/cli-ts-node-commonjs.js",
     "migration:generate": "pnpm typeorm migration:generate -d src/data-source.ts",
     "migration:create": "pnpm typeorm migration:create",
     "migration:run": "pnpm typeorm migration:run -d src/data-source.ts",
