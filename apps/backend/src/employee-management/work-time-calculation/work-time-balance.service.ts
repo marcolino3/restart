@@ -10,7 +10,10 @@ import { TimeTrackingAccessService } from './time-tracking-access.service';
 import { proRataEntitlementDays } from './work-time-calculation';
 import {
   AbsenceCategorySummary,
+  DailyTimeTracking,
+  DailyTimeTrackingKind,
   EmployeeWorkTimeOverviewRow,
+  MonthlyTimeTrackingGroup,
   MonthlyWorkTimeSummary,
   VacationBalance,
   WorkTimeBalance,
@@ -476,5 +479,177 @@ export class WorkTimeBalanceService {
     );
     for (const r of rows) result.set(r.employee_id, r.net);
     return result;
+  }
+
+  /**
+   * Monats-Zeiterfassungsübersicht (Tage inkl. Absenz/Ferien/Feiertag) für die
+   * Accordion-Ansicht "Meine Zeit". Klassifikation je Tag kommt aus dem
+   * materialisierten Ledger (work_day_balances); Anzeige-Labels werden separat
+   * je Tabelle nachgeladen, da das Ledger keine Namen führt.
+   */
+  async getMonthlyTimeTracking(
+    user: TokenPayload,
+    employeeId: string,
+    from: string,
+    to: string,
+  ): Promise<MonthlyTimeTrackingGroup[]> {
+    await this.access.assertCanViewEmployee(user, employeeId);
+    const orgId = user.orgId as string;
+    const effectiveTo = clampToToday(to);
+
+    const [ledgerRows, entryRows, absenceRows, vacationRows, holidayRows] =
+      await Promise.all([
+        this.dataSource.query<
+          {
+            date: string;
+            is_holiday: boolean;
+            is_vacation: boolean;
+            is_absence: boolean;
+            worked_minutes: number;
+          }[]
+        >(
+          `SELECT date::text AS date, is_holiday, is_vacation, is_absence, worked_minutes
+             FROM work_day_balances
+            WHERE organization_id = $1 AND employee_id = $2 AND date BETWEEN $3 AND $4
+            ORDER BY date`,
+          [orgId, employeeId, from, effectiveTo],
+        ),
+        this.dataSource.query<
+          {
+            id: string;
+            entry_date: string;
+            started_at: Date;
+            ended_at: Date | null;
+            break_minutes: number | null;
+            work_minutes: number | null;
+            notes: string | null;
+          }[]
+        >(
+          `SELECT id::text AS id, entry_date::text AS entry_date, started_at,
+                  ended_at, break_minutes, work_minutes, notes
+             FROM time_tracking_entries
+            WHERE organization_id = $1 AND employee_id = $2
+              AND entry_date BETWEEN $3 AND $4
+              AND "isActive" = true
+            ORDER BY started_at`,
+          [orgId, employeeId, from, effectiveTo],
+        ),
+        this.dataSource.query<
+          { date: string; name: string | null; color: string | null }[]
+        >(
+          `SELECT d.date::date::text AS date,
+                  COALESCE(t.name, c.system_code::text) AS name,
+                  c.color AS color
+             FROM employee_absence_days d
+             JOIN employee_absences a ON a.id = d.employee_absence_id
+             LEFT JOIN employee_absence_categories c ON c.id = a.absence_category_id
+             LEFT JOIN employee_absence_category_translations t
+                    ON t.category_id = c.id AND t.locale = 'DE'
+            WHERE d.organization_id = $1 AND d.employee_id = $2
+              AND d.date >= $3::date AND d.date < ($4::date + 1)
+              AND a."isActive" = true AND d."isActive" = true`,
+          [orgId, employeeId, from, effectiveTo],
+        ),
+        this.dataSource.query<{ date: string; name: string }[]>(
+          `SELECT gs::date::text AS date, v.name AS name
+             FROM company_vacations v,
+                  LATERAL generate_series(v.start_date, v.end_date, interval '1 day') gs
+            WHERE v.organization_id = $1
+              AND gs::date BETWEEN $2::date AND $3::date`,
+          [orgId, from, effectiveTo],
+        ),
+        this.dataSource.query<{ date: string; name: string }[]>(
+          `SELECT date::text AS date, name
+             FROM holidays
+            WHERE organization_id = $1 AND date BETWEEN $2 AND $3`,
+          [orgId, from, effectiveTo],
+        ),
+      ]);
+
+    const absenceByDate = new Map(
+      absenceRows.map((r) => [r.date, { label: r.name, color: r.color }]),
+    );
+    const vacationByDate = new Map(vacationRows.map((r) => [r.date, r.name]));
+    const holidayByDate = new Map(holidayRows.map((r) => [r.date, r.name]));
+    const entriesByDate = new Map<string, typeof entryRows>();
+    for (const e of entryRows) {
+      const list = entriesByDate.get(e.entry_date) ?? [];
+      list.push(e);
+      entriesByDate.set(e.entry_date, list);
+    }
+
+    const days: DailyTimeTracking[] = ledgerRows.map((row) => {
+      let kind = DailyTimeTrackingKind.NONE;
+      let label: string | null = null;
+      let color: string | null = null;
+      if (row.is_holiday) {
+        kind = DailyTimeTrackingKind.HOLIDAY;
+        label = holidayByDate.get(row.date) ?? null;
+      } else if (row.is_vacation) {
+        kind = DailyTimeTrackingKind.VACATION;
+        label = vacationByDate.get(row.date) ?? null;
+      } else if (row.is_absence) {
+        kind = DailyTimeTrackingKind.ABSENCE;
+        const absence = absenceByDate.get(row.date);
+        label = absence?.label ?? null;
+        color = absence?.color ?? null;
+      } else if (entriesByDate.has(row.date)) {
+        kind = DailyTimeTrackingKind.ENTRY;
+      }
+
+      const entries = entriesByDate.get(row.date);
+      return {
+        date: row.date,
+        kind,
+        label,
+        color,
+        workMinutes: row.worked_minutes,
+        entries: entries
+          ? entries.map((e) => ({
+              id: e.id,
+              startedAt: e.started_at,
+              endedAt: e.ended_at,
+              breakMinutes: e.break_minutes,
+              workMinutes: e.work_minutes,
+              notes: e.notes,
+            }))
+          : null,
+      };
+    });
+
+    const byMonth = new Map<string, DailyTimeTracking[]>();
+    for (const day of days) {
+      const [year, month] = day.date.split('-');
+      const key = `${year}-${month}`;
+      const list = byMonth.get(key) ?? [];
+      list.push(day);
+      byMonth.set(key, list);
+    }
+
+    return Array.from(byMonth.entries())
+      .map(([key, dayList]) => {
+        const [year, month] = key.split('-').map(Number);
+        return {
+          year,
+          month,
+          workedMinutes: dayList.reduce((sum, d) => sum + d.workMinutes, 0),
+          days: dayList,
+        };
+      })
+      .sort((a, b) => b.year - a.year || b.month - a.month);
+  }
+
+  async getMyMonthlyTimeTracking(
+    user: TokenPayload,
+    from: string,
+    to: string,
+  ): Promise<MonthlyTimeTrackingGroup[]> {
+    const employeeId = await this.access.resolveCallerEmployeeId(user);
+    if (!employeeId) {
+      throw new ForbiddenException(
+        'Kein Mitarbeiterprofil für diesen Account.',
+      );
+    }
+    return this.getMonthlyTimeTracking(user, employeeId, from, to);
   }
 }

@@ -16,6 +16,7 @@ import { FormProvider, useFieldArray, useForm, useFormContext } from "react-hook
 
 import { ComboboxFormField } from "@/components/form/form-fields/ComboboxFormField";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
+import { TimeScrollFormField } from "@/components/form/form-fields/TimeScrollFormField";
 import { fromIsoDate, toIsoDate } from "@/components/form/DatePicker";
 import { ROUTES } from "@/constants/routes";
 import { Button } from "@/components/ui/button";
@@ -351,14 +352,16 @@ export function ProtocolEditor({
                     disabledDate={(d) => d < new Date("1900-01-01")}
                   />
                 </div>
-                <div className="space-y-1">
-                  <Label>{t("timeFrom")}</Label>
-                  <Input type="time" {...form.register("startTime")} />
-                </div>
-                <div className="space-y-1">
-                  <Label>{t("timeTo")}</Label>
-                  <Input type="time" {...form.register("endTime")} />
-                </div>
+                <TimeScrollFormField
+                  name="startTime"
+                  label="timeFrom"
+                  namespace="Protocols"
+                />
+                <TimeScrollFormField
+                  name="endTime"
+                  label="timeTo"
+                  namespace="Protocols"
+                />
               </div>
               <div className="space-y-1">
                 <Label>{t("status")}</Label>

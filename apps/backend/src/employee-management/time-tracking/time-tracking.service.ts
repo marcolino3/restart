@@ -58,6 +58,11 @@ export class TimeTrackingService {
       entryDate,
       entryDate,
     );
+    await this.assertNoDuplicateForDay(
+      organizationId,
+      input.employeeId,
+      entryDate,
+    );
     const endedAt = input.endedAt ? new Date(input.endedAt) : undefined;
     const entry = this.timeTrackingRepo.create({
       ...input,
@@ -67,10 +72,31 @@ export class TimeTrackingService {
       workMinutes: computeWorkMinutes(startedAt, endedAt, input.breakMinutes),
       source: TimeTrackingSource.MANUAL,
       organizationId,
+      createdById: user.sub,
     });
     const saved = await this.timeTrackingRepo.save(entry);
     await this.recompute(saved);
     return saved;
+  }
+
+  /** Wirft, falls für employeeId/entryDate schon ein anderer aktiver Eintrag existiert. */
+  private async assertNoDuplicateForDay(
+    organizationId: string,
+    employeeId: string,
+    entryDate: string,
+    excludeId?: string,
+  ): Promise<void> {
+    const existing = await this.timeTrackingRepo.findOne({
+      where: {
+        organizationId,
+        employeeId,
+        entryDate,
+        isActive: true,
+      },
+    });
+    if (existing && existing.id !== excludeId) {
+      throw new BadRequestException('TIME_TRACKING_DUPLICATE_DAY');
+    }
   }
 
   /** Ledger für den betroffenen Tag des Eintrags neu berechnen. */
@@ -106,12 +132,14 @@ export class TimeTrackingService {
     const now = new Date();
     const today = toDateString(now);
     await this.periods.assertRangeUnlocked(organizationId, today, today);
+    await this.assertNoDuplicateForDay(organizationId, employeeId, today);
     const entry = this.timeTrackingRepo.create({
       organizationId,
       employeeId,
       startedAt: now,
       entryDate: today,
       source: TimeTrackingSource.CLOCK,
+      createdById: user.sub,
     });
     return this.timeTrackingRepo.save(entry);
   }
@@ -214,6 +242,12 @@ export class TimeTrackingService {
           organizationId,
           entry.entryDate,
           entry.entryDate,
+        );
+        await this.assertNoDuplicateForDay(
+          organizationId,
+          entry.employeeId,
+          entry.entryDate,
+          entry.id,
         );
       }
     }

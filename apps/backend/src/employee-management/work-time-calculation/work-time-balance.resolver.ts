@@ -9,6 +9,7 @@ import { WorkTimeBalanceService } from './work-time-balance.service';
 import {
   AbsenceCategorySummary,
   EmployeeWorkTimeOverviewRow,
+  MonthlyTimeTrackingGroup,
   MonthlyWorkTimeSummary,
   VacationBalance,
   WorkTimeBalance,
@@ -75,6 +76,16 @@ export class WorkTimeBalanceResolver {
     @Args('to', { type: () => String }) to: string,
   ) {
     return this.balanceService.getVacationBalance(user, employeeId, from, to);
+  }
+
+  @Query(() => [MonthlyTimeTrackingGroup], { name: 'myMonthlyTimeTracking' })
+  @Permissions('TIMESHEET_READ')
+  myMonthlyTimeTracking(
+    @CurrentUser() user: TokenPayload,
+    @Args('from', { type: () => String }) from: string,
+    @Args('to', { type: () => String }) to: string,
+  ) {
+    return this.balanceService.getMyMonthlyTimeTracking(user, from, to);
   }
 
   @Query(() => [String], { name: 'myMissingRecordDays' })

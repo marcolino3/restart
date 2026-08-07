@@ -3,6 +3,7 @@
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
 import type {
+  MonthlyTimeTrackingGroup,
   MyTimeTrackingData,
   TimeEntry,
   VacationBalance,
@@ -50,6 +51,26 @@ const MyTimeTrackingDocument = gql`
       entryDate
       source
     }
+    myMonthlyTimeTracking(from: $from, to: $to) {
+      year
+      month
+      workedMinutes
+      days {
+        date
+        kind
+        label
+        color
+        workMinutes
+        entries {
+          id
+          startedAt
+          endedAt
+          breakMinutes
+          workMinutes
+          notes
+        }
+      }
+    }
   }
 `;
 
@@ -72,6 +93,7 @@ export const getMyTimeTrackingAction =
       entries: [],
       openEntry: null,
       missingRecordDays: [],
+      monthlyGroups: [],
       fromDate,
       toDate,
     };
@@ -87,7 +109,12 @@ export const getMyTimeTrackingAction =
         myVacationBalance: VacationBalance;
         myMissingRecordDays: string[];
         timeTrackingByEmployeeId: TimeEntry[];
-      }>(MyTimeTrackingDocument, { employeeId: myEmployeeId, from: fromDate, to: toDate });
+        myMonthlyTimeTracking: MonthlyTimeTrackingGroup[];
+      }>(MyTimeTrackingDocument, {
+        employeeId: myEmployeeId,
+        from: fromDate,
+        to: toDate,
+      });
 
       const entries = data.timeTrackingByEmployeeId ?? [];
       const openEntry = entries.find((e) => !e.endedAt) ?? null;
@@ -99,6 +126,7 @@ export const getMyTimeTrackingAction =
         entries,
         openEntry,
         missingRecordDays: data.myMissingRecordDays ?? [],
+        monthlyGroups: data.myMonthlyTimeTracking ?? [],
         fromDate,
         toDate,
       };
