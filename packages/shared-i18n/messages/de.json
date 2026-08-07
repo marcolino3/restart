@@ -1800,6 +1800,17 @@
     "tabTimeTracking": "Zeiterfassung",
     "tabNotes": "Notizen",
     "tabDocuments": "Dokumente",
+    "tabCompanyVacations": "Betriebsferien",
+    "companyVacations": {
+      "appliesToAllTitle": "Gilt für alle Mitarbeitenden",
+      "appliesToAll": "Gilt für alle",
+      "noneAppliesToAll": "Keine Betriebsferien gelten für alle Mitarbeitenden.",
+      "assignableTitle": "Individuell zuweisbar",
+      "noneAssignable": "Keine individuell zuweisbaren Betriebsferien vorhanden.",
+      "assigned": "Betriebsferien zugewiesen.",
+      "unassigned": "Betriebsferien entfernt.",
+      "error": "Zuweisung konnte nicht aktualisiert werden."
+    },
     "remainingVacation": "Restferien",
     "worked": "Geleistet",
     "planned": "Soll",

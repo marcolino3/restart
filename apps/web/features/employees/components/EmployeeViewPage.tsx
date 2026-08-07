@@ -27,6 +27,8 @@ import EmployeeNotesTimeline from "@/features/employee-notes/components/Employee
 import CreateEmployeeNoteInline from "@/features/employee-notes/components/CreateEmployeeNoteInline";
 import EmployeeContractsTab from "./EmployeeContractsTab";
 import EmployeeAbsencesTab from "@/features/employee-absences/components/EmployeeAbsencesTab";
+import EmployeeCompanyVacationsTab from "@/features/time-tracking/components/EmployeeCompanyVacationsTab";
+import type { CompanyVacation } from "@/features/time-tracking/actions/settings.action";
 import {
   formatExactTimesPlanLines,
   formatWorkdaysPlanLabel,
@@ -43,6 +45,8 @@ interface EmployeeViewPageProps {
   report: EmployeeReportResult;
   employeeName: string;
   functionOptions?: { label: string; value: string }[];
+  assignedCompanyVacations: CompanyVacation[];
+  allCompanyVacations: CompanyVacation[];
 }
 
 /** Minutes → "+12:30" / "−2:15". */
@@ -101,6 +105,8 @@ export default function EmployeeViewPage({
   report,
   employeeName,
   functionOptions,
+  assignedCompanyVacations,
+  allCompanyVacations,
 }: EmployeeViewPageProps) {
   const t = useTranslations("Common");
   const tE = useTranslations("Employees");
@@ -222,6 +228,9 @@ export default function EmployeeViewPage({
                 </TabsTrigger>
                 <TabsTrigger value="absences">
                   {tE("tabAbsences")}
+                </TabsTrigger>
+                <TabsTrigger value="companyVacations">
+                  {tE("tabCompanyVacations")}
                 </TabsTrigger>
                 <TabsTrigger value="timetracking">
                   {tE("tabTimeTracking")}
@@ -384,6 +393,16 @@ export default function EmployeeViewPage({
                 employeeId={employee.id}
                 absences={absences}
                 categorySummary={report.categorySummary}
+                editable
+              />
+            </TabsContent>
+
+            {/* Betriebsferien */}
+            <TabsContent value="companyVacations">
+              <EmployeeCompanyVacationsTab
+                employeeId={employee.id}
+                assigned={assignedCompanyVacations}
+                allCompanyVacations={allCompanyVacations}
                 editable
               />
             </TabsContent>
