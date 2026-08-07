@@ -7,8 +7,8 @@ settings:
 
 overrides:
   '@types/react': 19.2.14
-  js-yaml@>=4.0.0 <4.3.0: '>=4.3.0'
-  js-yaml@<3.15.0: '>=3.15.0 <4.0.0'
+  js-yaml@>=4.0.0 <4.3.1: '>=4.3.1'
+  js-yaml@<3.15.1: '>=3.15.1 <4.0.0'
   postcss@>=8.0.0 <8.5.18: '>=8.5.18'
   uuid@7.0.3: 11.1.1
   ws@>=8.0.0 <8.21.0: '>=8.21.0'
@@ -9182,12 +9182,12 @@ packages:
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
-  js-yaml@3.15.0:
-    resolution: {integrity: sha512-ttBQIIQPDeLjpPOohtUdXuXUVoA2uIB6fEH9HyJ7234s5mBJ5wTx20njxplLZQgLaOfpmPQA7X2t5AX6tIPbog==}
+  js-yaml@3.15.1:
+    resolution: {integrity: sha512-S99WuO3HlhO3XN41EtYUNl9zzXjoJx7QvmipxsJVxtCBT0YHEFy+iOJhjSvrmV12nYhWpZaM8lPHkJm0yUMbag==}
     hasBin: true
 
-  js-yaml@4.3.0:
-    resolution: {integrity: sha512-1td788aAnnZ5qs7V2QIRl1owjtYpbKt749Y3xauqQgwIIGF/xXWz1wMTEBx5O3LK3lXLVuqXPdPxj2BoFHaW9Q==}
+  js-yaml@5.2.3:
+    resolution: {integrity: sha512-n+mUVyUX5bVv7G/G2zyIHOhdxfuU1dY2NOFzTQUWiMUbFss8b57NFlgCCaggU78wSw5KVS9cllzeLyzyR+n5nw==}
     hasBin: true
 
   jsc-safe-url@0.2.4:
@@ -14490,7 +14490,7 @@ snapshots:
       globals: 14.0.0
       ignore: 5.3.2
       import-fresh: 3.3.1
-      js-yaml: 4.3.0
+      js-yaml: 5.2.3
       minimatch: 3.1.5
       strip-json-comments: 3.1.1
     transitivePeerDependencies:
@@ -14504,7 +14504,7 @@ snapshots:
       globals: 14.0.0
       ignore: 5.3.2
       import-fresh: 3.3.1
-      js-yaml: 4.3.0
+      js-yaml: 5.2.3
       minimatch: 3.1.5
       strip-json-comments: 3.1.1
     transitivePeerDependencies:
@@ -14680,7 +14680,6 @@ snapshots:
       - supports-color
       - typescript
       - utf-8-validate
-    optional: true
 
   '@expo/code-signing-certificates@0.0.6':
     dependencies:
@@ -14782,7 +14781,6 @@ snapshots:
     optionalDependencies:
       react: 19.2.8
       react-native: 0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8)
-    optional: true
 
   '@expo/env@2.0.11':
     dependencies:
@@ -14872,7 +14870,7 @@ snapshots:
       postcss: 8.5.25
       resolve-from: 5.0.0
     optionalDependencies:
-      expo: 54.0.36(@babel/core@7.29.7)(@expo/metro-runtime@6.1.2)(expo-router@6.0.24)(graphql@16.14.0)(react-native@0.81.6(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
+      expo: 54.0.36(@babel/core@7.29.7)(@expo/metro-runtime@6.1.2)(expo-router@6.0.24)(graphql@16.14.0)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -14975,7 +14973,7 @@ snapshots:
       '@expo/json-file': 10.2.0
       '@react-native/normalize-colors': 0.81.5
       debug: 4.4.3
-      expo: 54.0.36(@babel/core@7.29.7)(@expo/metro-runtime@6.1.2)(expo-router@6.0.24)(graphql@16.14.0)(react-native@0.81.6(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
+      expo: 54.0.36(@babel/core@7.29.7)(@expo/metro-runtime@6.1.2)(expo-router@6.0.24)(graphql@16.14.0)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
       resolve-from: 5.0.0
       semver: 7.8.5
       xml2js: 0.6.0
@@ -15016,7 +15014,6 @@ snapshots:
       expo-font: 14.0.12(expo@54.0.36)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8))(react@19.2.8)
       react: 19.2.8
       react-native: 0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8)
-    optional: true
 
   '@expo/ws-tunnel@1.0.6': {}
 
@@ -15024,7 +15021,7 @@ snapshots:
     dependencies:
       '@babel/code-frame': 7.29.7
       chalk: 4.1.2
-      js-yaml: 4.3.0
+      js-yaml: 5.2.3
 
   '@fastify/busboy@3.2.0': {}
 
@@ -15825,7 +15822,7 @@ snapshots:
       camelcase: 5.3.1
       find-up: 4.1.0
       get-package-type: 0.1.0
-      js-yaml: 3.15.0
+      js-yaml: 3.15.1
       resolve-from: 5.0.0
 
   '@istanbuljs/schema@0.1.6': {}
@@ -16436,7 +16433,7 @@ snapshots:
       cm6-theme-basic-light: 0.2.0(@codemirror/language@6.12.3)(@codemirror/state@6.6.0)(@codemirror/view@6.42.1)(@lezer/highlight@1.2.3)
       codemirror: 6.0.2
       downshift: 7.6.2(react@19.2.8)
-      js-yaml: 4.3.0
+      js-yaml: 5.2.3
       lexical: 0.48.0(typescript@5.9.3)
       mdast-util-directive: 3.1.0
       mdast-util-from-markdown: 2.0.3
@@ -17881,8 +17878,7 @@ snapshots:
 
   '@react-native/assets-registry@0.81.6': {}
 
-  '@react-native/assets-registry@0.86.0':
-    optional: true
+  '@react-native/assets-registry@0.86.0': {}
 
   '@react-native/babel-plugin-codegen@0.81.5(@babel/core@7.29.7)':
     dependencies:
@@ -18019,7 +18015,6 @@ snapshots:
       nullthrows: 1.1.1
       tinyglobby: 0.2.17
       yargs: 17.7.3
-    optional: true
 
   '@react-native/community-cli-plugin@0.81.6(@react-native/metro-config@0.86.0(@babel/core@7.29.7))':
     dependencies:
@@ -18052,14 +18047,12 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
-    optional: true
 
   '@react-native/debugger-frontend@0.81.5': {}
 
   '@react-native/debugger-frontend@0.81.6': {}
 
-  '@react-native/debugger-frontend@0.86.0':
-    optional: true
+  '@react-native/debugger-frontend@0.86.0': {}
 
   '@react-native/debugger-shell@0.86.0':
     dependencies:
@@ -18068,7 +18061,6 @@ snapshots:
       fb-dotslash: 0.5.8
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   '@react-native/dev-middleware@0.81.5':
     dependencies:
@@ -18124,17 +18116,14 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
-    optional: true
 
   '@react-native/gradle-plugin@0.81.6': {}
 
-  '@react-native/gradle-plugin@0.86.0':
-    optional: true
+  '@react-native/gradle-plugin@0.86.0': {}
 
   '@react-native/js-polyfills@0.81.6': {}
 
-  '@react-native/js-polyfills@0.86.0':
-    optional: true
+  '@react-native/js-polyfills@0.86.0': {}
 
   '@react-native/metro-babel-transformer@0.86.0(@babel/core@7.29.7)':
     dependencies:
@@ -18165,8 +18154,7 @@ snapshots:
 
   '@react-native/normalize-colors@0.81.6': {}
 
-  '@react-native/normalize-colors@0.86.0':
-    optional: true
+  '@react-native/normalize-colors@0.86.0': {}
 
   '@react-native/virtualized-lists@0.81.6(@types/react@19.2.14)(react-native@0.81.6(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8))(react@19.2.8)':
     dependencies:
@@ -18185,7 +18173,6 @@ snapshots:
       react-native: 0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8)
     optionalDependencies:
       '@types/react': 19.2.14
-    optional: true
 
   '@react-navigation/bottom-tabs@7.16.1(@react-navigation/native@7.3.14(react-native@0.81.6(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8))(react@19.2.8))(react-native-safe-area-context@5.6.2(react-native@0.81.6(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8))(react@19.2.8))(react-native-screens@4.16.0(react-native@0.81.6(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8))(react@19.2.8))(react-native@0.81.6(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8))(react@19.2.8)':
     dependencies:
@@ -20116,7 +20103,6 @@ snapshots:
   babel-plugin-syntax-hermes-parser@0.36.0:
     dependencies:
       hermes-parser: 0.36.0
-    optional: true
 
   babel-plugin-transform-flow-enums@0.0.2(@babel/core@7.29.7):
     dependencies:
@@ -20170,7 +20156,7 @@ snapshots:
       resolve-from: 5.0.0
     optionalDependencies:
       '@babel/runtime': 7.29.2
-      expo: 54.0.36(@babel/core@7.29.7)(@expo/metro-runtime@6.1.2)(expo-router@6.0.24)(graphql@16.14.0)(react-native@0.81.6(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
+      expo: 54.0.36(@babel/core@7.29.7)(@expo/metro-runtime@6.1.2)(expo-router@6.0.24)(graphql@16.14.0)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
     transitivePeerDependencies:
       - '@babel/core'
       - supports-color
@@ -20566,7 +20552,6 @@ snapshots:
       mkdirp: 1.0.4
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   ci-info@2.0.0: {}
 
@@ -20812,7 +20797,7 @@ snapshots:
   cosmiconfig@8.3.6(typescript@5.9.3):
     dependencies:
       import-fresh: 3.3.1
-      js-yaml: 4.3.0
+      js-yaml: 5.2.3
       parse-json: 5.2.0
       path-type: 4.0.0
     optionalDependencies:
@@ -20822,7 +20807,7 @@ snapshots:
     dependencies:
       env-paths: 2.2.1
       import-fresh: 3.3.1
-      js-yaml: 4.3.0
+      js-yaml: 5.2.3
       parse-json: 5.2.0
     optionalDependencies:
       typescript: 5.9.3
@@ -21314,7 +21299,7 @@ snapshots:
       eslint: 9.39.4(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))
-      eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0))
+      eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.39.4(jiti@2.7.0))
       eslint-plugin-react: 7.37.5(eslint@9.39.4(jiti@2.7.0))
       eslint-plugin-react-hooks: 7.1.1(eslint@9.39.4(jiti@2.7.0))
@@ -21351,7 +21336,7 @@ snapshots:
       tinyglobby: 0.2.16
       unrs-resolver: 1.11.1
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0))
+      eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))
     transitivePeerDependencies:
       - supports-color
 
@@ -21429,7 +21414,7 @@ snapshots:
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-plugin-import@2.32.0(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0)):
+  eslint-plugin-import@2.32.0(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9
@@ -21810,7 +21795,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
       - typescript
-    optional: true
 
   expo-constants@18.0.13(expo@54.0.36)(react-native@0.81.6(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8)):
     dependencies:
@@ -21829,7 +21813,6 @@ snapshots:
       react-native: 0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8)
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   expo-document-picker@14.0.8(expo@54.0.36):
     dependencies:
@@ -21844,7 +21827,6 @@ snapshots:
     dependencies:
       expo: 54.0.36(@babel/core@7.29.7)(@expo/metro-runtime@6.1.2)(expo-router@6.0.24)(graphql@16.14.0)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
       react-native: 0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8)
-    optional: true
 
   expo-font@14.0.12(expo@54.0.36)(react-native@0.81.6(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8))(react@19.2.8):
     dependencies:
@@ -21859,7 +21841,6 @@ snapshots:
       fontfaceobserver: 2.3.0
       react: 19.2.8
       react-native: 0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8)
-    optional: true
 
   expo-image-loader@6.0.0(expo@54.0.36):
     dependencies:
@@ -21872,7 +21853,7 @@ snapshots:
 
   expo-keep-awake@15.0.8(expo@54.0.36)(react@19.2.8):
     dependencies:
-      expo: 54.0.36(@babel/core@7.29.7)(@expo/metro-runtime@6.1.2)(expo-router@6.0.24)(graphql@16.14.0)(react-native@0.81.6(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
+      expo: 54.0.36(@babel/core@7.29.7)(@expo/metro-runtime@6.1.2)(expo-router@6.0.24)(graphql@16.14.0)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
       react: 19.2.8
 
   expo-linking@8.0.12(expo@54.0.36)(react-native@0.81.6(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8))(react@19.2.8):
@@ -21921,7 +21902,6 @@ snapshots:
       invariant: 2.2.4
       react: 19.2.8
       react-native: 0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.8)
-    optional: true
 
   expo-network@55.0.14(expo@54.0.36)(react@19.2.8):
     dependencies:
@@ -22121,7 +22101,6 @@ snapshots:
       - supports-color
       - typescript
       - utf-8-validate
-    optional: true
 
   exponential-backoff@3.1.3: {}
 
@@ -22221,8 +22200,7 @@ snapshots:
     dependencies:
       format: 0.2.2
 
-  fb-dotslash@0.5.8:
-    optional: true
+  fb-dotslash@0.5.8: {}
 
   fb-watchman@2.0.2:
     dependencies:
@@ -22730,8 +22708,7 @@ snapshots:
 
   help-me@5.0.0: {}
 
-  hermes-compiler@250829098.0.14:
-    optional: true
+  hermes-compiler@250829098.0.14: {}
 
   hermes-estree@0.25.1: {}
 
@@ -22739,11 +22716,9 @@ snapshots:
 
   hermes-estree@0.32.0: {}
 
-  hermes-estree@0.35.0:
-    optional: true
+  hermes-estree@0.35.0: {}
 
-  hermes-estree@0.36.0:
-    optional: true
+  hermes-estree@0.36.0: {}
 
   hermes-parser@0.25.1:
     dependencies:
@@ -22760,12 +22735,10 @@ snapshots:
   hermes-parser@0.35.0:
     dependencies:
       hermes-estree: 0.35.0
-    optional: true
 
   hermes-parser@0.36.0:
     dependencies:
       hermes-estree: 0.36.0
-    optional: true
 
   hosted-git-info@7.0.2:
     dependencies:
@@ -23559,12 +23532,12 @@ snapshots:
 
   js-tokens@4.0.0: {}
 
-  js-yaml@3.15.0:
+  js-yaml@3.15.1:
     dependencies:
       argparse: 1.0.10
       esprima: 4.0.1
 
-  js-yaml@4.3.0:
+  js-yaml@5.2.3:
     dependencies:
       argparse: 2.0.1
 
@@ -24220,7 +24193,6 @@ snapshots:
       nullthrows: 1.1.1
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   metro-cache-key@0.83.3:
     dependencies:
@@ -24229,7 +24201,6 @@ snapshots:
   metro-cache-key@0.84.4:
     dependencies:
       flow-enums-runtime: 0.0.6
-    optional: true
 
   metro-cache@0.83.3:
     dependencies:
@@ -24248,7 +24219,6 @@ snapshots:
       metro-core: 0.84.4
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   metro-config@0.83.3:
     dependencies:
@@ -24279,7 +24249,6 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
-    optional: true
 
   metro-core@0.83.3:
     dependencies:
@@ -24292,7 +24261,6 @@ snapshots:
       flow-enums-runtime: 0.0.6
       lodash.throttle: 4.1.1
       metro-resolver: 0.84.4
-    optional: true
 
   metro-file-map@0.83.3:
     dependencies:
@@ -24321,7 +24289,6 @@ snapshots:
       walker: 1.0.8
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   metro-minify-terser@0.83.3:
     dependencies:
@@ -24332,7 +24299,6 @@ snapshots:
     dependencies:
       flow-enums-runtime: 0.0.6
       terser: 5.47.1
-    optional: true
 
   metro-resolver@0.83.3:
     dependencies:
@@ -24341,7 +24307,6 @@ snapshots:
   metro-resolver@0.84.4:
     dependencies:
       flow-enums-runtime: 0.0.6
-    optional: true
 
   metro-runtime@0.83.3:
     dependencies:
@@ -24352,7 +24317,6 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.29.2
       flow-enums-runtime: 0.0.6
-    optional: true
 
   metro-source-map@0.83.3:
     dependencies:
@@ -24382,7 +24346,6 @@ snapshots:
       vlq: 1.0.1
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   metro-symbolicate@0.83.3:
     dependencies:
@@ -24405,7 +24368,6 @@ snapshots:
       vlq: 1.0.1
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   metro-transform-plugins@0.83.3:
     dependencies:
@@ -24428,7 +24390,6 @@ snapshots:
       nullthrows: 1.1.1
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   metro-transform-worker@0.83.3:
     dependencies:
@@ -24469,7 +24430,6 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
-    optional: true
 
   metro@0.83.3:
     dependencies:
@@ -24563,7 +24523,6 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
-    optional: true
 
   micromark-core-commonmark@2.0.3:
     dependencies:
@@ -25152,7 +25111,6 @@ snapshots:
   ob1@0.84.4:
     dependencies:
       flow-enums-runtime: 0.0.6
-    optional: true
 
   object-assign@4.1.1: {}
 
@@ -26102,7 +26060,6 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
-    optional: true
 
   react-redux@9.2.0(@types/react@19.2.14)(react@19.2.8)(redux@5.0.1):
     dependencies:
