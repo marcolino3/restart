@@ -156,6 +156,11 @@ describe('EmployeeAbsencesService', () => {
       ];
 
       let savedAbsence: Record<string, unknown> | undefined;
+      const queryBuilder = {
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(null),
+      };
       entityManager.transaction.mockImplementation(
         async (fn: (m: unknown) => Promise<unknown>) =>
           fn({
@@ -163,6 +168,7 @@ describe('EmployeeAbsencesService', () => {
               .fn()
               .mockResolvedValueOnce({ id: 'org-1' })
               .mockResolvedValueOnce({ id: 'cat-1', systemCode: 'SICKNESS' }),
+            createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
             create: jest.fn().mockImplementation((_e, v) => v),
             save: jest.fn().mockImplementation((v) => {
               if (v && typeof v === 'object' && 'certificates' in v) {

@@ -33,6 +33,8 @@ type DatePickerFormFieldProps<TFormValues extends FieldValues> = {
   width?: string;
   /** i18n namespace for `label`. Default `"Common"`. */
   namespace?: string;
+  /** When true, the weekday is shown alongside the date. */
+  showWeekday?: boolean;
 };
 
 export function DatePickerFormField<TFormValues extends FieldValues>({
@@ -43,6 +45,7 @@ export function DatePickerFormField<TFormValues extends FieldValues>({
   startOfDay = false,
   width = "w-full",
   namespace = "Common",
+  showWeekday = false,
 }: DatePickerFormFieldProps<TFormValues>) {
   const t = useTranslations(namespace);
   const form = useFormContext<TFormValues>();
@@ -87,7 +90,9 @@ export function DatePickerFormField<TFormValues extends FieldValues>({
                     )}
                   >
                     {value ? (
-                      format(value, "PPP", { locale: de })
+                      format(value, showWeekday ? "EEEE, PPP" : "PPP", {
+                        locale: de,
+                      })
                     ) : (
                       <span>{t("pickADate")}</span>
                     )}

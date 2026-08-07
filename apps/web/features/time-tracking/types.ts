@@ -63,6 +63,38 @@ export type EmployeeOption = {
   name: string;
 };
 
+export type DailyTimeTrackingKind =
+  | "ENTRY"
+  | "ABSENCE"
+  | "VACATION"
+  | "HOLIDAY"
+  | "NONE";
+
+export type DailyTimeTrackingEntry = {
+  id: string;
+  startedAt: string;
+  endedAt?: string | null;
+  breakMinutes?: number | null;
+  workMinutes?: number | null;
+  notes?: string | null;
+};
+
+export type DailyTimeTracking = {
+  date: string;
+  kind: DailyTimeTrackingKind;
+  entries?: DailyTimeTrackingEntry[] | null;
+  label?: string | null;
+  color?: string | null;
+  workMinutes: number;
+};
+
+export type MonthlyTimeTrackingGroup = {
+  year: number;
+  month: number;
+  workedMinutes: number;
+  days: DailyTimeTracking[];
+};
+
 export type MyTimeTrackingData = {
   employeeId: string | null;
   balance: WorkTimeBalance | null;
@@ -70,6 +102,7 @@ export type MyTimeTrackingData = {
   entries: TimeEntry[];
   openEntry: TimeEntry | null;
   missingRecordDays: string[];
+  monthlyGroups: MonthlyTimeTrackingGroup[];
   fromDate: string;
   toDate: string;
 };

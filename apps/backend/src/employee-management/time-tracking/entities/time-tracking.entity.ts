@@ -1,6 +1,7 @@
 import { AbstractEntity } from '@/database/abstract.entity';
 import { Employee } from '@/employee-management/employees/entities/employee.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
+import { User } from '@/users/entities/user.entity';
 import { Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
@@ -68,4 +69,15 @@ export class TimeTracking extends AbstractEntity<TimeTracking> {
     default: TimeTrackingSource.MANUAL,
   })
   source: TimeTrackingSource;
+
+  // User, der Eintrag erstellt hat (kann vom Employee selbst abweichen, z. B. Admin-Erfassung).
+  // Nullable: Altbestand vor Einführung dieses Felds hat keinen bekannten Ersteller.
+  @Field(() => String, { nullable: true })
+  @Column('uuid', { name: 'created_by_id', nullable: true })
+  createdById?: string;
+
+  @Field(() => User, { nullable: true })
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'created_by_id' })
+  createdBy?: User;
 }

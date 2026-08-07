@@ -86,11 +86,6 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
   const canSeeOrgAdmin = isSuperAdmin || isAdminPersona(user?.persona);
 
   const data = {
-    user: {
-      name: "shadcn",
-      email: "m@example.com",
-      avatar: "/avatars/shadcn.jpg",
-    },
     navMain: [
       {
         title: t("dashboard"),
@@ -397,7 +392,7 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
       </SidebarContent>
       <SidebarFooter>
         <ThemePicker className="border-t border-sidebar-border pt-3 group-data-[collapsible=icon]:hidden" />
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   );

@@ -98,5 +98,90 @@ describe('TimeTrackingService', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(repo.save).not.toHaveBeenCalled();
     });
+
+    it('setzt createdById auf den erfassenden User', async () => {
+      repo.findOne.mockResolvedValue(null);
+      const withSub = { orgId: 'org-1', sub: 'creator-1' } as TokenPayload;
+      const saved = await service.create(
+        { employeeId: 'emp-1', startedAt: '2026-06-01T08:00:00Z' },
+        'org-1',
+        withSub,
+      );
+      expect(saved.createdById).toBe('creator-1');
+    });
+
+    it('blockiert Zweiteintrag am selben Tag (regression: mehrere aktive Einträge pro Tag)', async () => {
+      repo.findOne.mockResolvedValue({
+        id: 'existing-tt',
+        entryDate: '2026-06-01',
+        isActive: true,
+      });
+      await expect(
+        service.create(
+          { employeeId: 'emp-1', startedAt: '2026-06-01T08:00:00Z' },
+          'org-1',
+          user,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repo.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('start', () => {
+    it('blockiert Clock-In, wenn für heute schon ein Eintrag existiert', async () => {
+      repo.findOne
+        .mockResolvedValueOnce(null) // openEntry check
+        .mockResolvedValueOnce({
+          id: 'existing-tt',
+          entryDate: new Date().toISOString().slice(0, 10),
+          isActive: true,
+        }); // duplicate-day check
+      await expect(
+        service.start('emp-1', 'org-1', user),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repo.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('update — Zweiteintrag am Zieltag', () => {
+    const existing = () => ({
+      id: 'tt-1',
+      organizationId: 'org-1',
+      employeeId: 'emp-1',
+      startedAt: new Date('2026-06-01T08:00:00Z'),
+      endedAt: new Date('2026-06-01T17:00:00Z'),
+      breakMinutes: 30,
+      entryDate: '2026-06-01',
+      isActive: true,
+    });
+
+    it('blockiert Verschieben auf einen Tag mit bereits aktivem Eintrag', async () => {
+      repo.findOne
+        .mockResolvedValueOnce(existing()) // load entry to update
+        .mockResolvedValueOnce({
+          id: 'other-tt',
+          entryDate: '2026-06-02',
+          isActive: true,
+        }); // duplicate-day check for new date
+      await expect(
+        service.update(
+          { id: 'tt-1', startedAt: '2026-06-02T08:00:00Z' },
+          'org-1',
+          user,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repo.save).not.toHaveBeenCalled();
+    });
+
+    it('erlaubt Update ohne Tageswechsel trotz gleichem Eintrag als "Duplikat"', async () => {
+      repo.findOne.mockResolvedValueOnce(existing());
+      const saved = await service.update(
+        { id: 'tt-1', notes: 'geändert' },
+        'org-1',
+        user,
+      );
+      expect(saved.notes).toBe('geändert');
+      expect(repo.save).toHaveBeenCalled();
+    });
   });
 });

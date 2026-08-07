@@ -2,7 +2,9 @@
 
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
+import { getLocale } from "next-intl/server";
 import type {
+  MonthlyTimeTrackingGroup,
   MyTimeTrackingData,
   TimeEntry,
   VacationBalance,
@@ -16,7 +18,12 @@ const MyEmployeeIdDocument = gql`
 `;
 
 const MyTimeTrackingDocument = gql`
-  query MyTimeTracking($employeeId: ID!, $from: String!, $to: String!) {
+  query MyTimeTracking(
+    $employeeId: ID!
+    $from: String!
+    $to: String!
+    $locale: String
+  ) {
     myWorkTimeBalance(from: $from, to: $to) {
       employeeId
       fromDate
@@ -50,6 +57,26 @@ const MyTimeTrackingDocument = gql`
       entryDate
       source
     }
+    myMonthlyTimeTracking(from: $from, to: $to, locale: $locale) {
+      year
+      month
+      workedMinutes
+      days {
+        date
+        kind
+        label
+        color
+        workMinutes
+        entries {
+          id
+          startedAt
+          endedAt
+          breakMinutes
+          workMinutes
+          notes
+        }
+      }
+    }
   }
 `;
 
@@ -72,6 +99,7 @@ export const getMyTimeTrackingAction =
       entries: [],
       openEntry: null,
       missingRecordDays: [],
+      monthlyGroups: [],
       fromDate,
       toDate,
     };
@@ -87,7 +115,13 @@ export const getMyTimeTrackingAction =
         myVacationBalance: VacationBalance;
         myMissingRecordDays: string[];
         timeTrackingByEmployeeId: TimeEntry[];
-      }>(MyTimeTrackingDocument, { employeeId: myEmployeeId, from: fromDate, to: toDate });
+        myMonthlyTimeTracking: MonthlyTimeTrackingGroup[];
+      }>(MyTimeTrackingDocument, {
+        employeeId: myEmployeeId,
+        from: fromDate,
+        to: toDate,
+        locale: (await getLocale()).toUpperCase(),
+      });
 
       const entries = data.timeTrackingByEmployeeId ?? [];
       const openEntry = entries.find((e) => !e.endedAt) ?? null;
@@ -99,6 +133,7 @@ export const getMyTimeTrackingAction =
         entries,
         openEntry,
         missingRecordDays: data.myMissingRecordDays ?? [],
+        monthlyGroups: data.myMonthlyTimeTracking ?? [],
         fromDate,
         toDate,
       };

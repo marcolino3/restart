@@ -3,9 +3,11 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import * as React from "react";
+import { FormProvider, useForm } from "react-hook-form";
 
 import { ROUTES } from "@/constants/routes";
 import { DatePicker, toIsoDate } from "@/components/form/DatePicker";
+import { TimeScrollFormField } from "@/components/form/form-fields/TimeScrollFormField";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -56,10 +58,12 @@ export function CreateProtocolDialog({
   const [templateId, setTemplateId] = React.useState<string>(BLANK);
   const [title, setTitle] = React.useState("");
   const [meetingDate, setMeetingDate] = React.useState<Date | null>(null);
-  const [startTime, setStartTime] = React.useState("");
-  const [endTime, setEndTime] = React.useState("");
   const [projectId, setProjectId] = React.useState<string>(NO_PROJECT);
   const [submitting, setSubmitting] = React.useState(false);
+
+  const timeForm = useForm<{ startTime: string; endTime: string }>({
+    defaultValues: { startTime: "", endTime: "" },
+  });
 
   const [wasOpen, setWasOpen] = React.useState(false);
   if (open && !wasOpen) {
@@ -67,8 +71,7 @@ export function CreateProtocolDialog({
     setTemplateId(BLANK);
     setTitle("");
     setMeetingDate(null);
-    setStartTime("");
-    setEndTime("");
+    timeForm.reset({ startTime: "", endTime: "" });
     setProjectId(NO_PROJECT);
   } else if (!open && wasOpen) {
     setWasOpen(false);
@@ -87,6 +90,7 @@ export function CreateProtocolDialog({
   const onSubmit = async () => {
     if (!title.trim()) return;
     setSubmitting(true);
+    const { startTime, endTime } = timeForm.getValues();
     const result = await handleAction({
       action: () =>
         createProtocolAction({
@@ -179,24 +183,20 @@ export function CreateProtocolDialog({
                 placeholder={t("meetingAt")}
               />
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <Label>{t("timeFrom")}</Label>
-                <Input
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
+            <FormProvider {...timeForm}>
+              <div className="grid grid-cols-2 gap-2">
+                <TimeScrollFormField
+                  name="startTime"
+                  label="timeFrom"
+                  namespace="Protocols"
+                />
+                <TimeScrollFormField
+                  name="endTime"
+                  label="timeTo"
+                  namespace="Protocols"
                 />
               </div>
-              <div className="space-y-1">
-                <Label>{t("timeTo")}</Label>
-                <Input
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                />
-              </div>
-            </div>
+            </FormProvider>
             <div className="space-y-1">
               <Label>{t("project")}</Label>
               <Select value={projectId} onValueChange={setProjectId}>
