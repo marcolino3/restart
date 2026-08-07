@@ -71,13 +71,16 @@ const ensureSelfEmployee = async (page: Page): Promise<string> => {
 }
 
 /**
- * Unique ISO date far from today so parallel runs never collide.
- * `monthOffset` varies per run (via stamp) to avoid collisions; `day`
- * stays within 1-27 so all dates for a single test land in the same month
- * — the UI only renders one month's data at a time.
+ * Unique ISO date within the current calendar year — the "my time tracking"
+ * page only loads Jan 1–Dec 31 of the current year (see
+ * getMyTimeTrackingAction), so seeded dates must stay inside that range or
+ * the month's accordion entry never renders. `monthOffset` varies per run
+ * (via stamp, mod 12) to avoid collisions across parallel runs; `day` stays
+ * within 1-27 so all dates for a single test land in the same month — the
+ * UI only renders one month's data at a time.
  */
 const uniqueDate = (monthOffset: number, day: number) => {
-  const d = new Date('2031-01-01T12:00:00Z')
+  const d = new Date(`${new Date().getUTCFullYear()}-01-01T12:00:00Z`)
   d.setUTCMonth(d.getUTCMonth() + monthOffset)
   d.setUTCDate(day)
   return d.toISOString().slice(0, 10)
@@ -107,7 +110,7 @@ test.describe('My time tracking — absences, company vacations, holidays', () =
       category.translations?.[0]?.name
 
     const stamp = Date.now()
-    const monthOffset = stamp % 200
+    const monthOffset = stamp % 12
     const absenceDate = uniqueDate(monthOffset, 5)
     await gql(
       page,
@@ -155,7 +158,7 @@ test.describe('My time tracking — absences, company vacations, holidays', () =
 
     await page.goto('/en/admin/my-time-tracking', { waitUntil: 'networkidle' })
 
-    const monthDate = new Date('2031-01-01T12:00:00Z')
+    const monthDate = new Date(`${new Date().getUTCFullYear()}-01-01T12:00:00Z`)
     monthDate.setUTCMonth(monthDate.getUTCMonth() + monthOffset)
     const monthLabel = monthDate.toLocaleDateString('en-US', {
       month: 'long',
