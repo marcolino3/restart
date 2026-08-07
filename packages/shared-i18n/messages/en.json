@@ -1177,6 +1177,16 @@
     "admissionsActive": "{count} active",
     "admissionsHint": "Applications by stage."
   },
+  "MobileNav": {
+    "tabToday": "Today",
+    "tabChildren": "Children",
+    "tabChats": "Chats",
+    "tabMore": "More",
+    "morePageTitle": "More",
+    "moreTimeTracking": "Time tracking",
+    "moreClasses": "Classes",
+    "signOut": "Sign out"
+  },
   "DataBreaches": {
     "pickADate": "Pick a date",
     "tab": "Data breaches",
