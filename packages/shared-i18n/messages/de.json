@@ -1177,6 +1177,16 @@
     "admissionsActive": "{count} aktiv",
     "admissionsHint": "Bewerbungen nach Stage."
   },
+  "MobileNav": {
+    "tabToday": "Heute",
+    "tabChildren": "Kinder",
+    "tabChats": "Chats",
+    "tabMore": "Mehr",
+    "morePageTitle": "Mehr",
+    "moreTimeTracking": "Zeiterfassung",
+    "moreClasses": "Klassen",
+    "signOut": "Abmelden"
+  },
   "DataBreaches": {
     "pickADate": "Datum wählen",
     "tab": "Datenpannen",
