@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
-import { TimePickerFormField } from "@/components/form/form-fields/TimePickerFormField";
+import { TimeScrollFormField } from "@/components/form/form-fields/TimeScrollFormField";
 import { NumberFormField } from "@/components/form/form-fields/NumberFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
 import { useSheet } from "@/components/providers/sheet-provider";
@@ -29,10 +29,22 @@ interface Props {
   defaultDate?: Date;
 }
 
-const isoAt = (base: Date, hour: number, minute = 0): string => {
-  const d = new Date(base);
-  d.setHours(hour, minute, 0, 0);
-  return d.toISOString();
+const pad = (n: number) => String(n).padStart(2, "0");
+
+const timeOf = (iso: string): string => {
+  const d = new Date(iso);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+const MAX_PAST_DAYS = 7;
+
+const isDateDisabled = (date: Date): boolean => {
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  const earliest = new Date();
+  earliest.setDate(earliest.getDate() - MAX_PAST_DAYS);
+  earliest.setHours(0, 0, 0, 0);
+  return date > today || date < earliest;
 };
 
 export const TimeEntryForm = ({ employeeId, entry, defaultDate }: Props) => {
@@ -46,8 +58,8 @@ export const TimeEntryForm = ({ employeeId, entry, defaultDate }: Props) => {
     : (defaultDate ?? new Date());
   const defaultValues: TimeEntryFormInput = {
     date: baseDate,
-    startTime: entry?.startedAt ?? isoAt(baseDate, 8),
-    endTime: entry?.endedAt ?? isoAt(baseDate, 17),
+    startTime: entry?.startedAt ? timeOf(entry.startedAt) : "08:00",
+    endTime: entry?.endedAt ? timeOf(entry.endedAt) : "17:00",
     breakMinutes: entry?.breakMinutes ?? 30,
     notes: entry?.notes ?? "",
   };
@@ -58,29 +70,39 @@ export const TimeEntryForm = ({ employeeId, entry, defaultDate }: Props) => {
   });
 
   const onSubmit = async (values: TimeEntryFormOutput) => {
-    const { success } =
+    const result =
       isEdit && entry
         ? await updateTimeEntryAction(entry.id, values)
         : await createTimeEntryAction(employeeId, values);
-    if (success) {
+    if (result.success) {
       toast.success(tc("success"));
       close();
     } else {
-      toast.error(tc("error"));
+      toast.error(
+        result.error.includes("TIME_TRACKING_DUPLICATE_DAY")
+          ? t("errorDuplicateDay")
+          : tc("error")
+      );
     }
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="form-gap-y">
-        <DatePickerFormField name="date" label="date" namespace="TimeTracking" />
+        <DatePickerFormField
+          name="date"
+          label="date"
+          namespace="TimeTracking"
+          showWeekday
+          disabledDate={isDateDisabled}
+        />
         <div className="flex gap-4">
-          <TimePickerFormField
+          <TimeScrollFormField
             name="startTime"
             label="startTime"
             namespace="TimeTracking"
           />
-          <TimePickerFormField
+          <TimeScrollFormField
             name="endTime"
             label="endTime"
             namespace="TimeTracking"

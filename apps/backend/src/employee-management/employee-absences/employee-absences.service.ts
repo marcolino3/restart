@@ -183,6 +183,25 @@ export class EmployeeAbsencesService {
           throw new NotFoundException('Absenzcategory not found!');
         }
 
+        const overlapping = await manager
+          .createQueryBuilder(EmployeeAbsence, 'absence')
+          .where('absence.employee_id = :employeeId', {
+            employeeId: employee.id,
+          })
+          .andWhere('absence."isActive" = true')
+          .andWhere('absence."startDate" <= :endDate', {
+            endDate: new Date(endDate ?? startDate),
+          })
+          .andWhere('absence."endDate" >= :startDate', {
+            startDate: new Date(startDate),
+          })
+          .getOne();
+        if (overlapping) {
+          throw new BadRequestException(
+            'This employee already has an absence recorded for one of the selected days.',
+          );
+        }
+
         const employeeAbsence = manager.create(EmployeeAbsence, {
           organization,
           membership,
@@ -207,7 +226,7 @@ export class EmployeeAbsencesService {
           day.employee = saved.employee;
           day.organization = saved.organization;
           day.absenceCategory = saved.absenceCategory;
-          day.date = luxonDate.toJSDate();
+          day.date = luxonDate.toISODate() as unknown as Date;
           return day;
         });
         await manager.save(EmployeeAbsenceDay, absenceDays);
@@ -370,7 +389,7 @@ export class EmployeeAbsencesService {
             employeeId: saved.employeeId,
             organizationId: orgId,
             absenceCategoryId: saved.absenceCategoryId,
-            date: luxonDate.toJSDate(),
+            date: luxonDate.toISODate() as unknown as Date,
           }),
       );
       await manager.save(EmployeeAbsenceDay, days);
