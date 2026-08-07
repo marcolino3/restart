@@ -3,6 +3,8 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Tabs, useRouter } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
+import { t } from "@/lib/i18n";
+
 type TabBarProps = NonNullable<
   React.ComponentProps<typeof Tabs>["tabBar"]
 >;
@@ -14,16 +16,15 @@ type IconName = React.ComponentProps<typeof FontAwesome>["name"];
 const ACTIVE_COLOR = "#3a7d44";
 const INACTIVE_COLOR = "#837d70";
 
-const tabIcon = (name: IconName) =>
-  function TabBarIcon({ color }: { color: string }) {
-    return <FontAwesome size={22} name={name} color={color} />;
-  };
+function TabBarIcon({ name, color }: { name: IconName; color: string }) {
+  return <FontAwesome size={22} name={name} color={color} />;
+}
 
-const TAB_LABELS: Record<string, string> = {
-  index: "Heute",
-  parent: "Kinder",
-  chats: "Chats",
-  more: "Mehr",
+const TAB_LABEL_KEYS: Record<string, string> = {
+  index: "MobileNav.tabToday",
+  parent: "MobileNav.tabChildren",
+  chats: "MobileNav.tabChats",
+  more: "MobileNav.tabMore",
 };
 
 const TAB_ICONS: Record<string, IconName> = {
@@ -45,7 +46,9 @@ function FabTabBar({ state, navigation }: TabBarPropsArg) {
     const routeIndex = state.routes.findIndex((r) => r.key === route.key);
     const isFocused = state.index === routeIndex;
     const color = isFocused ? ACTIVE_COLOR : INACTIVE_COLOR;
-    const Icon = tabIcon(TAB_ICONS[route.name] ?? "circle");
+    const label = TAB_LABEL_KEYS[route.name]
+      ? t(TAB_LABEL_KEYS[route.name])
+      : route.name;
 
     return (
       <Pressable
@@ -60,9 +63,12 @@ function FabTabBar({ state, navigation }: TabBarPropsArg) {
             navigation.navigate(route.name);
           }
         }}
+        accessibilityRole="tab"
+        accessibilityState={{ selected: isFocused }}
+        accessibilityLabel={label}
         style={{ alignItems: "center", justifyContent: "center", gap: 3 }}
       >
-        <Icon color={color} />
+        <TabBarIcon name={TAB_ICONS[route.name] ?? "circle"} color={color} />
         <Text
           style={{
             color,
@@ -70,7 +76,7 @@ function FabTabBar({ state, navigation }: TabBarPropsArg) {
             fontWeight: isFocused ? "700" : "600",
           }}
         >
-          {TAB_LABELS[route.name] ?? route.name}
+          {label}
         </Text>
       </Pressable>
     );
@@ -99,7 +105,7 @@ function FabTabBar({ state, navigation }: TabBarPropsArg) {
         shadowRadius: 30,
       }}
     >
-      {routes.slice(0, 2).map((route) => (
+      {routes.slice(0, Math.ceil(routes.length / 2)).map((route) => (
         <View key={route.key} style={{ flex: 1 }}>
           {renderTab(route)}
         </View>
@@ -108,6 +114,8 @@ function FabTabBar({ state, navigation }: TabBarPropsArg) {
       <View style={{ flex: 1, alignItems: "center" }}>
         <Pressable
           onPress={() => router.push("/time-entry")}
+          accessibilityRole="button"
+          accessibilityLabel={t("MobileNav.moreTimeTracking")}
           style={{
             width: 48,
             height: 48,
@@ -127,7 +135,7 @@ function FabTabBar({ state, navigation }: TabBarPropsArg) {
         </Pressable>
       </View>
 
-      {routes.slice(2).map((route) => (
+      {routes.slice(Math.ceil(routes.length / 2)).map((route) => (
         <View key={route.key} style={{ flex: 1 }}>
           {renderTab(route)}
         </View>
@@ -142,17 +150,20 @@ export default function TabLayout() {
       tabBar={(props) => <FabTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
-      <Tabs.Screen name="index" options={{ title: "Heute" }} />
-      <Tabs.Screen name="parent" options={{ title: "Kinder" }} />
-      <Tabs.Screen name="chats" options={{ title: "Chats" }} />
-      <Tabs.Screen name="more" options={{ title: "Mehr" }} />
+      <Tabs.Screen name="index" options={{ title: t("MobileNav.tabToday") }} />
+      <Tabs.Screen
+        name="parent"
+        options={{ title: t("MobileNav.tabChildren") }}
+      />
+      <Tabs.Screen name="chats" options={{ title: t("MobileNav.tabChats") }} />
+      <Tabs.Screen name="more" options={{ title: t("MobileNav.tabMore") }} />
       <Tabs.Screen
         name="teacher"
-        options={{ title: "Classes", href: null }}
+        options={{ title: t("MobileNav.moreClasses"), href: null }}
       />
       <Tabs.Screen
         name="employee"
-        options={{ title: "Time", href: null }}
+        options={{ title: t("MobileNav.moreTimeTracking"), href: null }}
       />
     </Tabs>
   );

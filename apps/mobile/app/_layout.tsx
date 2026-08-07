@@ -1,9 +1,5 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
+import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import {
   Geist_400Regular,
   Geist_500Medium,
@@ -18,7 +14,6 @@ import { useEffect } from "react";
 import "react-native-reanimated";
 import "../global.css";
 
-import { useColorScheme } from "@/components/useColorScheme";
 import { useSession } from "@/lib/auth-client";
 
 export { ErrorBoundary } from "expo-router";
@@ -53,7 +48,6 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
   const { data: session, isPending } = useSession();
   const segments = useSegments();
   const router = useRouter();
@@ -69,7 +63,7 @@ function RootLayoutNav() {
   }, [session, isPending, segments, router]);
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
