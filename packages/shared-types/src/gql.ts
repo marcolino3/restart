@@ -286,7 +286,7 @@ type Documents = {
     "\n  mutation ReorderTeams($input: ReorderTeamsInput!) {\n    reorderTeams(input: $input) {\n      id\n      name\n      sortOrder\n      parentId\n    }\n  }\n": typeof types.ReorderTeamsDocument,
     "\n  mutation UpdateTeamMemberRole($input: UpdateTeamMemberInput!) {\n    updateTeamMember(input: $input) {\n      id\n      role\n    }\n  }\n": typeof types.UpdateTeamMemberRoleDocument,
     "\n  mutation UpdateTeam($input: UpdateTeamInput!) {\n    updateTeam(input: $input) {\n      id\n      name\n    }\n  }\n": typeof types.UpdateTeamDocument,
-    "\n  query CompanyVacationsForEmployee($employeeId: ID!) {\n    companyVacationsForEmployee(employeeId: $employeeId) {\n      id\n      name\n      startDate\n      endDate\n      appliesToAll\n    }\n  }\n": typeof types.CompanyVacationsForEmployeeDocument,
+    "\n  query CompanyVacationsForEmployee($employeeId: ID!) {\n    companyVacationsForEmployee(employeeId: $employeeId) {\n      id\n      companyVacationId\n      name\n      startDate\n      endDate\n      effectiveDays\n      holidays {\n        date\n        name\n        paidPercentage\n        isWeekend\n      }\n      periodLabel\n      periodStartDate\n      periodEndDate\n      isSplit\n    }\n  }\n": typeof types.CompanyVacationsForEmployeeDocument,
     "\n  mutation AssignCompanyVacationToEmployee(\n    $companyVacationId: ID!\n    $employeeId: ID!\n  ) {\n    assignCompanyVacationToEmployee(\n      companyVacationId: $companyVacationId\n      employeeId: $employeeId\n    ) {\n      id\n    }\n  }\n": typeof types.AssignCompanyVacationToEmployeeDocument,
     "\n  mutation UnassignCompanyVacationFromEmployee(\n    $companyVacationId: ID!\n    $employeeId: ID!\n  ) {\n    unassignCompanyVacationFromEmployee(\n      companyVacationId: $companyVacationId\n      employeeId: $employeeId\n    )\n  }\n": typeof types.UnassignCompanyVacationFromEmployeeDocument,
     "\n  query MyEmployeeId {\n    myEmployeeId\n  }\n": typeof types.MyEmployeeIdDocument,
@@ -306,9 +306,10 @@ type Documents = {
     "\n  mutation UpdateEmployeePaidOvertime($input: UpdateEmployeePaidOvertimeInput!) {\n    updateEmployeePaidOvertime(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateEmployeePaidOvertimeDocument,
     "\n  mutation DeleteEmployeePaidOvertime($id: ID!) {\n    deleteEmployeePaidOvertime(id: $id)\n  }\n": typeof types.DeleteEmployeePaidOvertimeDocument,
     "\n  query TimeTrackingPeriods {\n    timeTrackingPeriods {\n      id\n      label\n      startDate\n      endDate\n      status\n    }\n  }\n": typeof types.TimeTrackingPeriodsDocument,
-    "\n  mutation EnsureTimeTrackingPeriod($date: String!) {\n    ensureTimeTrackingPeriod(date: $date) {\n      id\n      label\n    }\n  }\n": typeof types.EnsureTimeTrackingPeriodDocument,
+    "\n  query TimeTrackingPeriodAnchor {\n    timeTrackingPeriodAnchor\n  }\n": typeof types.TimeTrackingPeriodAnchorDocument,
+    "\n  mutation SetTimeTrackingPeriodAnchor($anchor: String!) {\n    setTimeTrackingPeriodAnchor(anchor: $anchor)\n  }\n": typeof types.SetTimeTrackingPeriodAnchorDocument,
     "\n  mutation SetTimeTrackingPeriodStatus(\n    $id: ID!\n    $status: TimeTrackingPeriodStatus!\n  ) {\n    setTimeTrackingPeriodStatus(id: $id, status: $status) {\n      id\n      status\n    }\n  }\n": typeof types.SetTimeTrackingPeriodStatusDocument,
-    "\n  query TimeTrackingSettings {\n    holidays {\n      id\n      date\n      name\n      paidPercentage\n      repeatsYearly\n    }\n    companyVacations {\n      id\n      name\n      startDate\n      endDate\n      appliesToAll\n    }\n  }\n": typeof types.TimeTrackingSettingsDocument,
+    "\n  query TimeTrackingSettings {\n    holidays {\n      id\n      date\n      name\n      paidPercentage\n      repeatsYearly\n    }\n    companyVacations {\n      id\n      name\n      startDate\n      endDate\n      effectiveDays\n      holidays {\n        date\n        name\n        paidPercentage\n        isWeekend\n      }\n    }\n  }\n": typeof types.TimeTrackingSettingsDocument,
     "\n  mutation CreateHoliday($input: CreateHolidayInput!) {\n    createHoliday(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateHolidayDocument,
     "\n  mutation UpdateHoliday($input: UpdateHolidayInput!) {\n    updateHoliday(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateHolidayDocument,
     "\n  mutation DeleteHoliday($id: ID!) {\n    deleteHoliday(id: $id)\n  }\n": typeof types.DeleteHolidayDocument,
@@ -608,7 +609,7 @@ const documents: Documents = {
     "\n  mutation ReorderTeams($input: ReorderTeamsInput!) {\n    reorderTeams(input: $input) {\n      id\n      name\n      sortOrder\n      parentId\n    }\n  }\n": types.ReorderTeamsDocument,
     "\n  mutation UpdateTeamMemberRole($input: UpdateTeamMemberInput!) {\n    updateTeamMember(input: $input) {\n      id\n      role\n    }\n  }\n": types.UpdateTeamMemberRoleDocument,
     "\n  mutation UpdateTeam($input: UpdateTeamInput!) {\n    updateTeam(input: $input) {\n      id\n      name\n    }\n  }\n": types.UpdateTeamDocument,
-    "\n  query CompanyVacationsForEmployee($employeeId: ID!) {\n    companyVacationsForEmployee(employeeId: $employeeId) {\n      id\n      name\n      startDate\n      endDate\n      appliesToAll\n    }\n  }\n": types.CompanyVacationsForEmployeeDocument,
+    "\n  query CompanyVacationsForEmployee($employeeId: ID!) {\n    companyVacationsForEmployee(employeeId: $employeeId) {\n      id\n      companyVacationId\n      name\n      startDate\n      endDate\n      effectiveDays\n      holidays {\n        date\n        name\n        paidPercentage\n        isWeekend\n      }\n      periodLabel\n      periodStartDate\n      periodEndDate\n      isSplit\n    }\n  }\n": types.CompanyVacationsForEmployeeDocument,
     "\n  mutation AssignCompanyVacationToEmployee(\n    $companyVacationId: ID!\n    $employeeId: ID!\n  ) {\n    assignCompanyVacationToEmployee(\n      companyVacationId: $companyVacationId\n      employeeId: $employeeId\n    ) {\n      id\n    }\n  }\n": types.AssignCompanyVacationToEmployeeDocument,
     "\n  mutation UnassignCompanyVacationFromEmployee(\n    $companyVacationId: ID!\n    $employeeId: ID!\n  ) {\n    unassignCompanyVacationFromEmployee(\n      companyVacationId: $companyVacationId\n      employeeId: $employeeId\n    )\n  }\n": types.UnassignCompanyVacationFromEmployeeDocument,
     "\n  query MyEmployeeId {\n    myEmployeeId\n  }\n": types.MyEmployeeIdDocument,
@@ -628,9 +629,10 @@ const documents: Documents = {
     "\n  mutation UpdateEmployeePaidOvertime($input: UpdateEmployeePaidOvertimeInput!) {\n    updateEmployeePaidOvertime(input: $input) {\n      id\n    }\n  }\n": types.UpdateEmployeePaidOvertimeDocument,
     "\n  mutation DeleteEmployeePaidOvertime($id: ID!) {\n    deleteEmployeePaidOvertime(id: $id)\n  }\n": types.DeleteEmployeePaidOvertimeDocument,
     "\n  query TimeTrackingPeriods {\n    timeTrackingPeriods {\n      id\n      label\n      startDate\n      endDate\n      status\n    }\n  }\n": types.TimeTrackingPeriodsDocument,
-    "\n  mutation EnsureTimeTrackingPeriod($date: String!) {\n    ensureTimeTrackingPeriod(date: $date) {\n      id\n      label\n    }\n  }\n": types.EnsureTimeTrackingPeriodDocument,
+    "\n  query TimeTrackingPeriodAnchor {\n    timeTrackingPeriodAnchor\n  }\n": types.TimeTrackingPeriodAnchorDocument,
+    "\n  mutation SetTimeTrackingPeriodAnchor($anchor: String!) {\n    setTimeTrackingPeriodAnchor(anchor: $anchor)\n  }\n": types.SetTimeTrackingPeriodAnchorDocument,
     "\n  mutation SetTimeTrackingPeriodStatus(\n    $id: ID!\n    $status: TimeTrackingPeriodStatus!\n  ) {\n    setTimeTrackingPeriodStatus(id: $id, status: $status) {\n      id\n      status\n    }\n  }\n": types.SetTimeTrackingPeriodStatusDocument,
-    "\n  query TimeTrackingSettings {\n    holidays {\n      id\n      date\n      name\n      paidPercentage\n      repeatsYearly\n    }\n    companyVacations {\n      id\n      name\n      startDate\n      endDate\n      appliesToAll\n    }\n  }\n": types.TimeTrackingSettingsDocument,
+    "\n  query TimeTrackingSettings {\n    holidays {\n      id\n      date\n      name\n      paidPercentage\n      repeatsYearly\n    }\n    companyVacations {\n      id\n      name\n      startDate\n      endDate\n      effectiveDays\n      holidays {\n        date\n        name\n        paidPercentage\n        isWeekend\n      }\n    }\n  }\n": types.TimeTrackingSettingsDocument,
     "\n  mutation CreateHoliday($input: CreateHolidayInput!) {\n    createHoliday(input: $input) {\n      id\n    }\n  }\n": types.CreateHolidayDocument,
     "\n  mutation UpdateHoliday($input: UpdateHolidayInput!) {\n    updateHoliday(input: $input) {\n      id\n    }\n  }\n": types.UpdateHolidayDocument,
     "\n  mutation DeleteHoliday($id: ID!) {\n    deleteHoliday(id: $id)\n  }\n": types.DeleteHolidayDocument,
@@ -1763,7 +1765,7 @@ export function graphql(source: "\n  mutation UpdateTeam($input: UpdateTeamInput
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query CompanyVacationsForEmployee($employeeId: ID!) {\n    companyVacationsForEmployee(employeeId: $employeeId) {\n      id\n      name\n      startDate\n      endDate\n      appliesToAll\n    }\n  }\n"): (typeof documents)["\n  query CompanyVacationsForEmployee($employeeId: ID!) {\n    companyVacationsForEmployee(employeeId: $employeeId) {\n      id\n      name\n      startDate\n      endDate\n      appliesToAll\n    }\n  }\n"];
+export function graphql(source: "\n  query CompanyVacationsForEmployee($employeeId: ID!) {\n    companyVacationsForEmployee(employeeId: $employeeId) {\n      id\n      companyVacationId\n      name\n      startDate\n      endDate\n      effectiveDays\n      holidays {\n        date\n        name\n        paidPercentage\n        isWeekend\n      }\n      periodLabel\n      periodStartDate\n      periodEndDate\n      isSplit\n    }\n  }\n"): (typeof documents)["\n  query CompanyVacationsForEmployee($employeeId: ID!) {\n    companyVacationsForEmployee(employeeId: $employeeId) {\n      id\n      companyVacationId\n      name\n      startDate\n      endDate\n      effectiveDays\n      holidays {\n        date\n        name\n        paidPercentage\n        isWeekend\n      }\n      periodLabel\n      periodStartDate\n      periodEndDate\n      isSplit\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -1843,7 +1845,11 @@ export function graphql(source: "\n  query TimeTrackingPeriods {\n    timeTracki
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  mutation EnsureTimeTrackingPeriod($date: String!) {\n    ensureTimeTrackingPeriod(date: $date) {\n      id\n      label\n    }\n  }\n"): (typeof documents)["\n  mutation EnsureTimeTrackingPeriod($date: String!) {\n    ensureTimeTrackingPeriod(date: $date) {\n      id\n      label\n    }\n  }\n"];
+export function graphql(source: "\n  query TimeTrackingPeriodAnchor {\n    timeTrackingPeriodAnchor\n  }\n"): (typeof documents)["\n  query TimeTrackingPeriodAnchor {\n    timeTrackingPeriodAnchor\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation SetTimeTrackingPeriodAnchor($anchor: String!) {\n    setTimeTrackingPeriodAnchor(anchor: $anchor)\n  }\n"): (typeof documents)["\n  mutation SetTimeTrackingPeriodAnchor($anchor: String!) {\n    setTimeTrackingPeriodAnchor(anchor: $anchor)\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -1851,7 +1857,7 @@ export function graphql(source: "\n  mutation SetTimeTrackingPeriodStatus(\n    
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query TimeTrackingSettings {\n    holidays {\n      id\n      date\n      name\n      paidPercentage\n      repeatsYearly\n    }\n    companyVacations {\n      id\n      name\n      startDate\n      endDate\n      appliesToAll\n    }\n  }\n"): (typeof documents)["\n  query TimeTrackingSettings {\n    holidays {\n      id\n      date\n      name\n      paidPercentage\n      repeatsYearly\n    }\n    companyVacations {\n      id\n      name\n      startDate\n      endDate\n      appliesToAll\n    }\n  }\n"];
+export function graphql(source: "\n  query TimeTrackingSettings {\n    holidays {\n      id\n      date\n      name\n      paidPercentage\n      repeatsYearly\n    }\n    companyVacations {\n      id\n      name\n      startDate\n      endDate\n      effectiveDays\n      holidays {\n        date\n        name\n        paidPercentage\n        isWeekend\n      }\n    }\n  }\n"): (typeof documents)["\n  query TimeTrackingSettings {\n    holidays {\n      id\n      date\n      name\n      paidPercentage\n      repeatsYearly\n    }\n    companyVacations {\n      id\n      name\n      startDate\n      endDate\n      effectiveDays\n      holidays {\n        date\n        name\n        paidPercentage\n        isWeekend\n      }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

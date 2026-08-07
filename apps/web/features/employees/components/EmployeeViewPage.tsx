@@ -27,8 +27,9 @@ import EmployeeNotesTimeline from "@/features/employee-notes/components/Employee
 import CreateEmployeeNoteInline from "@/features/employee-notes/components/CreateEmployeeNoteInline";
 import EmployeeContractsTab from "./EmployeeContractsTab";
 import EmployeeAbsencesTab from "@/features/employee-absences/components/EmployeeAbsencesTab";
-import EmployeeCompanyVacationsTab from "@/features/time-tracking/components/EmployeeCompanyVacationsTab";
+import EmployeeCompanyVacationsPanel from "@/features/time-tracking/components/EmployeeCompanyVacationsPanel";
 import type { CompanyVacation } from "@/features/time-tracking/actions/settings.action";
+import type { EmployeeCompanyVacation } from "@/features/time-tracking/actions/company-vacation-assignments.action";
 import {
   formatExactTimesPlanLines,
   formatWorkdaysPlanLabel,
@@ -45,7 +46,7 @@ interface EmployeeViewPageProps {
   report: EmployeeReportResult;
   employeeName: string;
   functionOptions?: { label: string; value: string }[];
-  assignedCompanyVacations: CompanyVacation[];
+  assignedCompanyVacations: EmployeeCompanyVacation[];
   allCompanyVacations: CompanyVacation[];
 }
 
@@ -229,9 +230,6 @@ export default function EmployeeViewPage({
                 <TabsTrigger value="absences">
                   {tE("tabAbsences")}
                 </TabsTrigger>
-                <TabsTrigger value="companyVacations">
-                  {tE("tabCompanyVacations")}
-                </TabsTrigger>
                 <TabsTrigger value="timetracking">
                   {tE("tabTimeTracking")}
                 </TabsTrigger>
@@ -397,18 +395,8 @@ export default function EmployeeViewPage({
               />
             </TabsContent>
 
-            {/* Betriebsferien */}
-            <TabsContent value="companyVacations">
-              <EmployeeCompanyVacationsTab
-                employeeId={employee.id}
-                assigned={assignedCompanyVacations}
-                allCompanyVacations={allCompanyVacations}
-                editable
-              />
-            </TabsContent>
-
             {/* Zeiterfassung */}
-            <TabsContent value="timetracking">
+            <TabsContent value="timetracking" className="space-y-6">
               <DetailPanel title={tE("tabTimeTracking")}>
                 <div className="grid grid-cols-2 gap-[9px] md:grid-cols-4">
                   <StatBox
@@ -437,6 +425,13 @@ export default function EmployeeViewPage({
                   />
                 </div>
               </DetailPanel>
+
+              <EmployeeCompanyVacationsPanel
+                employeeId={employee.id}
+                assigned={assignedCompanyVacations}
+                allCompanyVacations={allCompanyVacations}
+                editable
+              />
             </TabsContent>
 
 

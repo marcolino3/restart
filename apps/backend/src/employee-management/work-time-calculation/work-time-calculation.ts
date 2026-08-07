@@ -152,6 +152,85 @@ export function findHolidayForDate(
   );
 }
 
+/**
+ * Effektive Ferientage im Bereich [from..to]: Werktage (Mo–Fr) minus
+ * Feiertagsanteil (anteilig nach `paidPercentage`, exakt oder jährlich
+ * wiederkehrend). Für Betriebsferien-Anzeige/Persistenz.
+ */
+export function calculateEffectiveVacationDays(
+  from: string,
+  to: string,
+  holidays: CalcHoliday[],
+): number {
+  let total = 0;
+  for (const { holiday } of eachVacationWorkday(from, to, holidays)) {
+    const paidPercentage = holiday?.paidPercentage ?? 0;
+    total += (100 - paidPercentage) / 100;
+  }
+  return Math.round(total * 10) / 10;
+}
+
+/**
+ * Alle Kalendertage in [from..to] mit dem jeweils greifenden Feiertag und der
+ * Wochenend-Kennung. Basis für Ferientage-Zählung (nur Mo–Fr) und
+ * Feiertags-Auflistung (alle Tage), damit beide nie divergieren.
+ */
+function* eachVacationDay(
+  from: string,
+  to: string,
+  holidays: CalcHoliday[],
+): Generator<{
+  date: string;
+  holiday: CalcHoliday | undefined;
+  isWeekend: boolean;
+}> {
+  let d = DateTime.fromISO(from);
+  const end = DateTime.fromISO(to);
+  while (d <= end) {
+    const date = d.toISODate() as string;
+    yield {
+      date,
+      holiday: findHolidayForDate(holidays, date),
+      isWeekend: d.weekday > 5,
+    };
+    d = d.plus({ days: 1 });
+  }
+}
+
+/** Werktage (Mo–Fr) in [from..to] mit dem jeweils greifenden Feiertag. */
+function* eachVacationWorkday(
+  from: string,
+  to: string,
+  holidays: CalcHoliday[],
+): Generator<{ date: string; holiday: CalcHoliday | undefined }> {
+  for (const day of eachVacationDay(from, to, holidays)) {
+    if (!day.isWeekend) yield { date: day.date, holiday: day.holiday };
+  }
+}
+
+/**
+ * Feiertage im Bereich [from..to] — in Kalenderreihenfolge, ein Eintrag pro
+ * betroffenem Tag, inklusive Wochenend-Feiertagen. Diese sind mit
+ * `isWeekend: true` markiert und reduzieren die effektiven Ferientage nicht.
+ * Jährlich wiederkehrende Feiertage tragen das konkrete Datum im Bereich, nicht
+ * ihr Ursprungsjahr.
+ */
+export function listVacationHolidays<T extends CalcHoliday>(
+  from: string,
+  to: string,
+  holidays: T[],
+): { date: string; holiday: T; isWeekend: boolean }[] {
+  const hits: { date: string; holiday: T; isWeekend: boolean }[] = [];
+  for (const { date, holiday, isWeekend } of eachVacationDay(
+    from,
+    to,
+    holidays,
+  )) {
+    if (holiday) hits.push({ date, holiday: holiday as T, isWeekend });
+  }
+  return hits;
+}
+
 export function calculateDays(input: CalcInput): DayResult[] {
   const holidays = input.holidays;
   const vacationDates = new Set(input.vacationDays.map((v) => v.date));

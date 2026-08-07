@@ -51,7 +51,7 @@ describe('CompanyVacationsService', () => {
   });
 
   describe('create', () => {
-    it('defaults appliesToAll and recomputes the date range', async () => {
+    it('creates the vacation and recomputes the date range', async () => {
       await service.create(
         {
           name: 'Sommerferien',
@@ -66,7 +66,6 @@ describe('CompanyVacationsService', () => {
           name: 'Sommerferien',
           startDate: '2026-07-01',
           endDate: '2026-08-15',
-          appliesToAll: true,
           organizationId: 'org-1',
         }),
       );
@@ -99,7 +98,6 @@ describe('CompanyVacationsService', () => {
         name: 'Sommerferien',
         startDate: '2026-07-01',
         endDate: '2026-08-15',
-        appliesToAll: true,
         isActive: true,
       });
 
@@ -128,7 +126,6 @@ describe('CompanyVacationsService', () => {
         name: 'Sommerferien',
         startDate: '2026-07-01',
         endDate: '2026-08-15',
-        appliesToAll: true,
         isActive: true,
       });
 

@@ -14,12 +14,24 @@ export type Holiday = {
   repeatsYearly: boolean;
 };
 
+/**
+ * Feiertag im Zeitraum einer Betriebsferien; `date` ist das aufgeloeste Datum.
+ * `isWeekend` markiert Feiertage auf Sa/So — sie sparen keinen Ferientag.
+ */
+export type CompanyVacationHoliday = {
+  date: string;
+  name: string;
+  paidPercentage: number;
+  isWeekend: boolean;
+};
+
 export type CompanyVacation = {
   id: string;
   name: string;
   startDate: string;
   endDate: string;
-  appliesToAll: boolean;
+  effectiveDays: number;
+  holidays: CompanyVacationHoliday[];
 };
 
 const SettingsDocument = gql`
@@ -36,7 +48,13 @@ const SettingsDocument = gql`
       name
       startDate
       endDate
-      appliesToAll
+      effectiveDays
+      holidays {
+        date
+        name
+        paidPercentage
+        isWeekend
+      }
     }
   }
 `;

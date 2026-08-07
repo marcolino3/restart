@@ -6,7 +6,7 @@ import { EmployeeContract } from '@/employee-management/employee-contracts/entit
 import { Holiday } from '@/employee-management/holidays/entities/holiday.entity';
 import { EmployeeAbsence } from '@/employee-management/employee-absences/entities/employee-absence.entity';
 import { EmployeeVacation } from '@/employee-management/employee-vacations/entities/employee-vacation.entity';
-import { CompanyVacation } from '@/employee-management/company-vacations/entities/company-vacation.entity';
+import { CompanyVacationAssignment } from '@/employee-management/company-vacation-assignments/entities/company-vacation-assignment.entity';
 import { TimeTracking } from '@/employee-management/time-tracking/entities/time-tracking.entity';
 import {
   CalcAbsenceDay,
@@ -52,8 +52,8 @@ export class BalanceInputLoaderService {
     private readonly absenceRepo: Repository<EmployeeAbsence>,
     @InjectRepository(EmployeeVacation)
     private readonly vacationRepo: Repository<EmployeeVacation>,
-    @InjectRepository(CompanyVacation)
-    private readonly companyVacationRepo: Repository<CompanyVacation>,
+    @InjectRepository(CompanyVacationAssignment)
+    private readonly companyVacationAssignmentRepo: Repository<CompanyVacationAssignment>,
     @InjectRepository(TimeTracking)
     private readonly timeTrackingRepo: Repository<TimeTracking>,
   ) {}
@@ -84,9 +84,14 @@ export class BalanceInputLoaderService {
       this.vacationRepo.find({
         where: { organizationId, employeeId, isActive: true },
       }),
-      this.companyVacationRepo.find({
-        where: { organizationId, isActive: true, appliesToAll: true },
-      }),
+      this.companyVacationAssignmentRepo
+        .find({
+          where: { organizationId, employeeId, isActive: true },
+          relations: { companyVacation: true },
+        })
+        .then((links) =>
+          links.map((link) => link.companyVacation).filter((v) => v.isActive),
+        ),
       this.timeTrackingRepo.find({
         where: { organizationId, employeeId, isActive: true },
       }),

@@ -11,6 +11,7 @@ import {
   TimeTrackingPeriod,
   TimeTrackingPeriodStatus,
 } from './entities/time-tracking-period.entity';
+import { periodBoundsFor, periodLabel } from './period-bounds';
 
 const PERIOD_ANCHOR_KEY = 'TIMETRACKING_PERIOD_ANCHOR';
 const DEFAULT_ANCHOR = '01-01';
@@ -30,8 +31,46 @@ export class TimeTrackingPeriodsService {
     });
   }
 
+  /** Org-Stichtag als MM-DD String (für die Anzeige/Bearbeitung im Frontend). */
+  async getAnchorValue(organizationId: string): Promise<string> {
+    const { month, day } = await this.getAnchor(organizationId);
+    return `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+
+  /**
+   * Setzt den Org-Stichtag (MM-DD). Bestehende Perioden bleiben unverändert;
+   * neu abgeleitete Perioden folgen ab sofort dem neuen Stichtag.
+   */
+  async setAnchorValue(organizationId: string, value: string): Promise<string> {
+    const match = /^(\d{2})-(\d{2})$/.exec(value.trim());
+    if (!match) {
+      throw new BadRequestException('Stichtag muss im Format MM-DD sein.');
+    }
+    const month = parseInt(match[1], 10);
+    const day = parseInt(match[2], 10);
+    const valid =
+      month >= 1 &&
+      month <= 12 &&
+      day >= 1 &&
+      day <= DateTime.fromObject({ year: 2001, month }).daysInMonth!;
+    if (!valid) {
+      throw new BadRequestException(`Ungültiger Stichtag: ${value}`);
+    }
+
+    const normalized = `${String(month).padStart(2, '0')}-${String(
+      day,
+    ).padStart(2, '0')}`;
+    await this.orgSettings.setDecryptedValue(
+      organizationId,
+      PERIOD_ANCHOR_KEY,
+      normalized,
+      'Stichtag der Zeiterfassungs-Abrechnungsperioden (MM-DD)',
+    );
+    return normalized;
+  }
+
   /** Org-Stichtag (MM-DD) aus den verschlüsselten Settings, Default 01-01. */
-  private async getAnchor(organizationId: string): Promise<{
+  async getAnchor(organizationId: string): Promise<{
     month: number;
     day: number;
   }> {
@@ -46,25 +85,8 @@ export class TimeTrackingPeriodsService {
     return { month, day };
   }
 
-  /** [start,end] der Periode, die `date` enthält, anhand des Stichtags. */
-  private periodBounds(
-    anchor: { month: number; day: number },
-    date: DateTime,
-  ): { start: DateTime; end: DateTime } {
-    let start = DateTime.fromObject({
-      year: date.year,
-      month: anchor.month,
-      day: anchor.day,
-    });
-    if (date < start) start = start.minus({ years: 1 });
-    const end = start.plus({ years: 1 }).minus({ days: 1 });
-    return { start, end };
-  }
-
   private buildLabel(start: DateTime, end: DateTime): string {
-    return start.year === end.year
-      ? `${start.year}`
-      : `${start.year}/${String(end.year).slice(2)}`;
+    return periodLabel(start.toISODate() as string, end.toISODate() as string);
   }
 
   /** Erzeugt (idempotent) die Periode, die das angegebene Datum enthält. */
@@ -73,7 +95,7 @@ export class TimeTrackingPeriodsService {
     isoDate: string,
   ): Promise<TimeTrackingPeriod> {
     const anchor = await this.getAnchor(organizationId);
-    const { start, end } = this.periodBounds(anchor, DateTime.fromISO(isoDate));
+    const { start, end } = periodBoundsFor(anchor, DateTime.fromISO(isoDate));
     const startDate = start.toISODate() as string;
     const existing = await this.repo.findOne({
       where: { organizationId, startDate, isActive: true },

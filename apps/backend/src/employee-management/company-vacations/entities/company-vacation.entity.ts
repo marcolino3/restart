@@ -1,11 +1,11 @@
 import { AbstractEntity } from '@/database/abstract.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
-import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { Field, Float, ID, ObjectType } from '@nestjs/graphql';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 /**
- * Betriebsferien / kollektive Schliessung (gilt org-weit).
- * v1: `appliesToAll`. Team-/MA-spezifisches Scoping folgt in v2.
+ * Betriebsferien / kollektive Schliessung. Wirkt nur für Mitarbeiter mit
+ * expliziter Zuweisung (`CompanyVacationAssignment`).
  */
 @ObjectType()
 @Entity('company_vacations')
@@ -31,7 +31,13 @@ export class CompanyVacation extends AbstractEntity<CompanyVacation> {
   @Column('date', { name: 'end_date' })
   endDate!: string;
 
-  @Field(() => Boolean)
-  @Column('boolean', { name: 'applies_to_all', default: true })
-  appliesToAll!: boolean;
+  /** Werktage (Mo–Fr) im Bereich minus Feiertage (anteilig nach paidPercentage); neu berechnet bei Vacation- oder Holiday-CRUD. */
+  @Field(() => Float)
+  @Column('numeric', {
+    name: 'effective_days',
+    precision: 5,
+    scale: 1,
+    default: 0,
+  })
+  effectiveDays!: number;
 }

@@ -5,7 +5,6 @@ import { gql } from "graphql-request";
 import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
 import { ROUTES } from "@/constants/routes";
-import { toISODate } from "../lib/to-iso-date";
 
 export type TimeTrackingPeriodStatus = "OPEN" | "LOCKED";
 
@@ -49,20 +48,36 @@ async function revalidate() {
   revalidatePath(ROUTES.admin.timeTrackingSettings(locale));
 }
 
-const EnsurePeriodDocument = gql`
-  mutation EnsureTimeTrackingPeriod($date: String!) {
-    ensureTimeTrackingPeriod(date: $date) {
-      id
-      label
-    }
+const PeriodAnchorDocument = gql`
+  query TimeTrackingPeriodAnchor {
+    timeTrackingPeriodAnchor
   }
 `;
 
-/** Creates (idempotently) the accounting period containing today. */
-export const ensureCurrentPeriodAction = async () => {
+/** Accounting-period anchor of the active org, as MM-DD. */
+export const getTimeTrackingPeriodAnchorAction = async (): Promise<string> => {
   const client = await serverCookieGqlClient();
   try {
-    await client.request(EnsurePeriodDocument, { date: toISODate(new Date()) });
+    const data = await client.request<{ timeTrackingPeriodAnchor: string }>(
+      PeriodAnchorDocument
+    );
+    return data.timeTrackingPeriodAnchor ?? "01-01";
+  } catch (error) {
+    console.error("getTimeTrackingPeriodAnchorAction", error);
+    return "01-01";
+  }
+};
+
+const SetPeriodAnchorDocument = gql`
+  mutation SetTimeTrackingPeriodAnchor($anchor: String!) {
+    setTimeTrackingPeriodAnchor(anchor: $anchor)
+  }
+`;
+
+export const setPeriodAnchorAction = async (anchor: string) => {
+  const client = await serverCookieGqlClient();
+  try {
+    await client.request(SetPeriodAnchorDocument, { anchor });
     await revalidate();
     return { success: true as const, data: true };
   } catch (error) {

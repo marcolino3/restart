@@ -1,5 +1,5 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { IsBoolean, IsDateString, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsString } from 'class-validator';
 
 @InputType()
 export class CreateCompanyVacationInput {
@@ -14,9 +14,4 @@ export class CreateCompanyVacationInput {
   @Field(() => String)
   @IsDateString()
   endDate: string;
-
-  @Field(() => Boolean, { nullable: true })
-  @IsOptional()
-  @IsBoolean()
-  appliesToAll?: boolean;
 }
