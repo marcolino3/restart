@@ -14,6 +14,7 @@ import { EmployeeAbsencesModule } from './employee-absences/employee-absences.mo
 import { WorkTimeCalculationModule } from './work-time-calculation/work-time-calculation.module';
 import { HolidaysModule } from './holidays/holidays.module';
 import { CompanyVacationsModule } from './company-vacations/company-vacations.module';
+import { CompanyVacationAssignmentsModule } from './company-vacation-assignments/company-vacation-assignments.module';
 import { EmployeeVacationsModule } from './employee-vacations/employee-vacations.module';
 import { EmployeePaidOvertimeModule } from './employee-paid-overtime/employee-paid-overtime.module';
 import { TimeTrackingPeriodsModule } from './time-tracking-periods/time-tracking-periods.module';
@@ -35,6 +36,7 @@ import { TimeTrackingPeriodsModule } from './time-tracking-periods/time-tracking
     WorkTimeCalculationModule,
     HolidaysModule,
     CompanyVacationsModule,
+    CompanyVacationAssignmentsModule,
     EmployeeVacationsModule,
     EmployeePaidOvertimeModule,
     TimeTrackingPeriodsModule,

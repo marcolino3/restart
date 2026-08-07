@@ -5,6 +5,8 @@ import { getEmployeeAbsencesAction } from "@/features/employee-absences/actions/
 import { getEmployeeReportAction } from "@/features/time-tracking/actions/get-time-report.action";
 import { getEmployeeFunctionsAction } from "@/features/employee-functions/actions/get-employee-functions.action";
 import { mapEmployeeFunctionsToOptions } from "@/features/employee-functions/lib/map-employee-functions-to-options";
+import { getCompanyVacationsForEmployeeAction } from "@/features/time-tracking/actions/company-vacation-assignments.action";
+import { getTimeTrackingSettingsAction } from "@/features/time-tracking/actions/settings.action";
 import { requireAdminPersona } from "@/features/users/guards/require-admin-persona";
 import EmployeeViewPage from "@/features/employees/components/EmployeeViewPage";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -27,6 +29,8 @@ const ViewEmployeePage = async ({ params }: Props) => {
     absencesResult,
     report,
     functionsResult,
+    assignedCompanyVacationsResult,
+    timeTrackingSettings,
   ] = await Promise.all([
     getEmployeeByIdAction(employeeId),
     getEmployeeNotesAction(employeeId),
@@ -34,6 +38,8 @@ const ViewEmployeePage = async ({ params }: Props) => {
     getEmployeeAbsencesAction(employeeId),
     getEmployeeReportAction(employeeId),
     getEmployeeFunctionsAction(),
+    getCompanyVacationsForEmployeeAction(employeeId),
+    getTimeTrackingSettingsAction(),
   ]);
 
   if (!employeeResult.success) {
@@ -48,6 +54,10 @@ const ViewEmployeePage = async ({ params }: Props) => {
   const contracts = contractsResult.success ? contractsResult.data : [];
   const absences = absencesResult.success ? absencesResult.data : [];
   const employeeFunctions = functionsResult.success ? functionsResult.data : [];
+  const assignedCompanyVacations = assignedCompanyVacationsResult.success
+    ? assignedCompanyVacationsResult.data
+    : [];
+  const allCompanyVacations = timeTrackingSettings.companyVacations;
   const functionOptions = mapEmployeeFunctionsToOptions(
     employeeFunctions,
     locale,
@@ -66,6 +76,8 @@ const ViewEmployeePage = async ({ params }: Props) => {
         report={report}
         employeeName={employeeName}
         functionOptions={functionOptions}
+        assignedCompanyVacations={assignedCompanyVacations}
+        allCompanyVacations={allCompanyVacations}
       />
     </div>
   );

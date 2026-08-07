@@ -1790,6 +1790,17 @@
     "tabTimeTracking": "Time tracking",
     "tabNotes": "Notes",
     "tabDocuments": "Documents",
+    "tabCompanyVacations": "Company vacations",
+    "companyVacations": {
+      "appliesToAllTitle": "Applies to all employees",
+      "appliesToAll": "Applies to all",
+      "noneAppliesToAll": "No company vacations apply to all employees.",
+      "assignableTitle": "Individually assignable",
+      "noneAssignable": "No individually assignable company vacations.",
+      "assigned": "Company vacation assigned.",
+      "unassigned": "Company vacation removed.",
+      "error": "Could not update assignment."
+    },
     "remainingVacation": "Remaining vacation",
     "worked": "Worked",
     "planned": "Target",

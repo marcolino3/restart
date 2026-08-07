@@ -19,6 +19,7 @@ import { Team } from '@/employee-management/teams/entities/team.entity';
 import { TimeTracking } from '@/employee-management/time-tracking/entities/time-tracking.entity';
 import { Holiday } from '@/employee-management/holidays/entities/holiday.entity';
 import { CompanyVacation } from '@/employee-management/company-vacations/entities/company-vacation.entity';
+import { CompanyVacationAssignment } from '@/employee-management/company-vacation-assignments/entities/company-vacation-assignment.entity';
 import { EmployeeVacation } from '@/employee-management/employee-vacations/entities/employee-vacation.entity';
 import { TimeTrackingPeriod } from '@/employee-management/time-tracking-periods/entities/time-tracking-period.entity';
 import { EmployeePeriodOpeningBalance } from '@/employee-management/time-tracking-periods/entities/employee-period-opening-balance.entity';
@@ -112,6 +113,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       TimeTracking,
       Holiday,
       CompanyVacation,
+      CompanyVacationAssignment,
       EmployeeVacation,
       TimeTrackingPeriod,
       EmployeePeriodOpeningBalance,
