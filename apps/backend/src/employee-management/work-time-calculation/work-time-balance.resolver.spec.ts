@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Reflector } from '@nestjs/core';
 import { WorkTimeBalanceResolver } from './work-time-balance.resolver';
 import { WorkTimeBalanceService } from './work-time-balance.service';
+import { WorkTimeSimulationService } from './work-time-simulation.service';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { PERMS_KEY } from '@/auth/decorators/permissions.decorator';
@@ -10,6 +11,7 @@ import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 describe('WorkTimeBalanceResolver', () => {
   let resolver: WorkTimeBalanceResolver;
   let balanceService: Record<string, jest.Mock>;
+  let simulationService: Record<string, jest.Mock>;
 
   const user: TokenPayload = { sub: 'u1', orgId: 'org-1' };
   const from = '2026-01-01';
@@ -28,11 +30,15 @@ describe('WorkTimeBalanceResolver', () => {
       getAbsenceCategorySummaries: jest.fn().mockResolvedValue([]),
       getTeamOverview: jest.fn().mockResolvedValue([]),
     };
+    simulationService = {
+      simulate: jest.fn().mockResolvedValue({ id: 'simulated' }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WorkTimeBalanceResolver,
         { provide: WorkTimeBalanceService, useValue: balanceService },
+        { provide: WorkTimeSimulationService, useValue: simulationService },
       ],
     })
       .overrideGuard(GqlBetterAuthGuard)
@@ -54,6 +60,7 @@ describe('WorkTimeBalanceResolver', () => {
       'myWorkTimeBalance',
       'myVacationBalance',
       'employeeWorkTimeBalance',
+      'simulateEmployeeWorkTimeBalance',
       'employeeMonthlyWorkTime',
       'employeeVacationBalance',
       'myMonthlyTimeTracking',
@@ -78,6 +85,7 @@ describe('WorkTimeBalanceResolver', () => {
       user,
       from,
       to,
+      'DE',
     );
   });
 
@@ -88,6 +96,23 @@ describe('WorkTimeBalanceResolver', () => {
       'emp-1',
       from,
       to,
+    );
+  });
+
+  it('simulateEmployeeWorkTimeBalance delegates to the simulation service with overrides', async () => {
+    await resolver.simulateEmployeeWorkTimeBalance(
+      user,
+      'emp-1',
+      from,
+      to,
+      '2026-01-15',
+    );
+    expect(simulationService.simulate).toHaveBeenCalledWith(
+      user,
+      'emp-1',
+      from,
+      to,
+      { contractEndDateOverride: '2026-01-15' },
     );
   });
 

@@ -6,6 +6,7 @@ import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { WorkTimeBalanceService } from './work-time-balance.service';
+import { WorkTimeSimulationService } from './work-time-simulation.service';
 import {
   AbsenceCategorySummary,
   EmployeeWorkTimeOverviewRow,
@@ -23,7 +24,10 @@ import {
 @Resolver()
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
 export class WorkTimeBalanceResolver {
-  constructor(private readonly balanceService: WorkTimeBalanceService) {}
+  constructor(
+    private readonly balanceService: WorkTimeBalanceService,
+    private readonly simulationService: WorkTimeSimulationService,
+  ) {}
 
   @Query(() => WorkTimeBalance, { name: 'myWorkTimeBalance' })
   @Permissions('TIMESHEET_READ')
@@ -56,6 +60,28 @@ export class WorkTimeBalanceResolver {
     return this.balanceService.getEmployeeBalance(user, employeeId, from, to);
   }
 
+  /**
+   * Transiente Saldo-Vorschau für einen frei wählbaren Zeitraum, ohne das
+   * Ledger zu schreiben (z. B. "was wäre bei früherem Austritt").
+   */
+  @Query(() => WorkTimeBalance, { name: 'simulateEmployeeWorkTimeBalance' })
+  @Permissions('TIMESHEET_READ')
+  simulateEmployeeWorkTimeBalance(
+    @CurrentUser() user: TokenPayload,
+    @Args('employeeId', { type: () => ID }) employeeId: string,
+    @Args('from', { type: () => String }) from: string,
+    @Args('to', { type: () => String }) to: string,
+    @Args('contractEndDateOverride', {
+      type: () => String,
+      nullable: true,
+    })
+    contractEndDateOverride?: string,
+  ) {
+    return this.simulationService.simulate(user, employeeId, from, to, {
+      contractEndDateOverride,
+    });
+  }
+
   @Query(() => [MonthlyWorkTimeSummary], { name: 'employeeMonthlyWorkTime' })
   @Permissions('TIMESHEET_READ')
   employeeMonthlyWorkTime(
@@ -84,8 +110,14 @@ export class WorkTimeBalanceResolver {
     @CurrentUser() user: TokenPayload,
     @Args('from', { type: () => String }) from: string,
     @Args('to', { type: () => String }) to: string,
+    @Args('locale', { type: () => String, nullable: true }) locale?: string,
   ) {
-    return this.balanceService.getMyMonthlyTimeTracking(user, from, to);
+    return this.balanceService.getMyMonthlyTimeTracking(
+      user,
+      from,
+      to,
+      locale ?? 'DE',
+    );
   }
 
   @Query(() => [String], { name: 'myMissingRecordDays' })

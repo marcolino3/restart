@@ -492,6 +492,7 @@ export class WorkTimeBalanceService {
     employeeId: string,
     from: string,
     to: string,
+    locale = 'DE',
   ): Promise<MonthlyTimeTrackingGroup[]> {
     await this.access.assertCanViewEmployee(user, employeeId);
     const orgId = user.orgId as string;
@@ -544,11 +545,11 @@ export class WorkTimeBalanceService {
              JOIN employee_absences a ON a.id = d.employee_absence_id
              LEFT JOIN employee_absence_categories c ON c.id = a.absence_category_id
              LEFT JOIN employee_absence_category_translations t
-                    ON t.category_id = c.id AND t.locale = 'DE'
+                    ON t.category_id = c.id AND t.locale = $5
             WHERE d.organization_id = $1 AND d.employee_id = $2
               AND d.date >= $3::date AND d.date < ($4::date + 1)
               AND a."isActive" = true AND d."isActive" = true`,
-          [orgId, employeeId, from, effectiveTo],
+          [orgId, employeeId, from, effectiveTo, locale],
         ),
         this.dataSource.query<{ date: string; name: string }[]>(
           `SELECT gs::date::text AS date, v.name AS name
@@ -643,6 +644,7 @@ export class WorkTimeBalanceService {
     user: TokenPayload,
     from: string,
     to: string,
+    locale = 'DE',
   ): Promise<MonthlyTimeTrackingGroup[]> {
     const employeeId = await this.access.resolveCallerEmployeeId(user);
     if (!employeeId) {
@@ -650,6 +652,6 @@ export class WorkTimeBalanceService {
         'Kein Mitarbeiterprofil für diesen Account.',
       );
     }
-    return this.getMonthlyTimeTracking(user, employeeId, from, to);
+    return this.getMonthlyTimeTracking(user, employeeId, from, to, locale);
   }
 }

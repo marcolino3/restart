@@ -2,6 +2,7 @@
 
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
+import { getLocale } from "next-intl/server";
 import type {
   MonthlyTimeTrackingGroup,
   MyTimeTrackingData,
@@ -17,7 +18,12 @@ const MyEmployeeIdDocument = gql`
 `;
 
 const MyTimeTrackingDocument = gql`
-  query MyTimeTracking($employeeId: ID!, $from: String!, $to: String!) {
+  query MyTimeTracking(
+    $employeeId: ID!
+    $from: String!
+    $to: String!
+    $locale: String
+  ) {
     myWorkTimeBalance(from: $from, to: $to) {
       employeeId
       fromDate
@@ -51,7 +57,7 @@ const MyTimeTrackingDocument = gql`
       entryDate
       source
     }
-    myMonthlyTimeTracking(from: $from, to: $to) {
+    myMonthlyTimeTracking(from: $from, to: $to, locale: $locale) {
       year
       month
       workedMinutes
@@ -114,6 +120,7 @@ export const getMyTimeTrackingAction =
         employeeId: myEmployeeId,
         from: fromDate,
         to: toDate,
+        locale: (await getLocale()).toUpperCase(),
       });
 
       const entries = data.timeTrackingByEmployeeId ?? [];

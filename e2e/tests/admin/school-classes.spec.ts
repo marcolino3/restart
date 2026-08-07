@@ -102,19 +102,27 @@ test.describe('School classes — CRUD', () => {
     const targetBox = await rowB.boundingBox()
     if (!handleBox || !targetBox) throw new Error('rows not visible for drag')
 
-    await page.mouse.move(
-      handleBox.x + handleBox.width / 2,
-      handleBox.y + handleBox.height / 2,
-    )
+    const startX = handleBox.x + handleBox.width / 2
+    const startY = handleBox.y + handleBox.height / 2
+    const endX = targetBox.x + targetBox.width / 2
+    const endY = targetBox.y + targetBox.height / 2 + 10
+
+    await page.mouse.move(startX, startY)
     await page.mouse.down()
-    await page.mouse.move(handleBox.x + 10, handleBox.y + 10, { steps: 5 })
-    await page.waitForTimeout(100)
-    await page.mouse.move(
-      targetBox.x + targetBox.width / 2,
-      targetBox.y + targetBox.height / 2 + 10,
-      { steps: 10 },
-    )
-    await page.waitForTimeout(100)
+    // dnd-kit's PointerSensor needs >4px movement to arm, then repeated
+    // pointermove events (not one big jump) for collision detection to
+    // register the hover target — step through in small increments with
+    // pauses so each intermediate position is dispatched and processed.
+    const steps = 8
+    for (let i = 1; i <= steps; i++) {
+      await page.mouse.move(
+        startX + ((endX - startX) * i) / steps,
+        startY + ((endY - startY) * i) / steps,
+        { steps: 5 },
+      )
+      await page.waitForTimeout(50)
+    }
+    await page.waitForTimeout(150)
     await page.mouse.up()
 
     await expect(

@@ -6,6 +6,10 @@ vi.mock("@/lib/graphql/server-cookie-graphql-client", () => ({
   serverCookieGqlClient: vi.fn(async () => ({ request })),
 }));
 
+vi.mock("next-intl/server", () => ({
+  getLocale: vi.fn(async () => "de"),
+}));
+
 import { getMyTimeTrackingAction } from "./get-my-time-tracking.action";
 
 describe("getMyTimeTrackingAction", () => {
