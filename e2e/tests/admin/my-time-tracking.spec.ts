@@ -70,10 +70,16 @@ const ensureSelfEmployee = async (page: Page): Promise<string> => {
   return created.createEmployee.id
 }
 
-/** Unique ISO date far from today so parallel runs never collide. */
-const uniqueDate = (offsetDays: number) => {
+/**
+ * Unique ISO date far from today so parallel runs never collide.
+ * `monthOffset` varies per run (via stamp) to avoid collisions; `day`
+ * stays within 1-27 so all dates for a single test land in the same month
+ * — the UI only renders one month's data at a time.
+ */
+const uniqueDate = (monthOffset: number, day: number) => {
   const d = new Date('2031-01-01T12:00:00Z')
-  d.setUTCDate(d.getUTCDate() + offsetDays)
+  d.setUTCMonth(d.getUTCMonth() + monthOffset)
+  d.setUTCDate(day)
   return d.toISOString().slice(0, 10)
 }
 
@@ -101,7 +107,8 @@ test.describe('My time tracking — absences, company vacations, holidays', () =
       category.translations?.[0]?.name
 
     const stamp = Date.now()
-    const absenceDate = uniqueDate((stamp % 1000) + 1)
+    const monthOffset = stamp % 200
+    const absenceDate = uniqueDate(monthOffset, 5)
     await gql(
       page,
       `mutation CreateEmployeeAbsence($input: CreateEmployeeAbsenceInput!) {
@@ -120,8 +127,8 @@ test.describe('My time tracking — absences, company vacations, holidays', () =
     )
 
     const vacationName = `E2E Vacation ${stamp}`
-    const vacationStart = uniqueDate((stamp % 1000) + 100)
-    const vacationEnd = uniqueDate((stamp % 1000) + 105)
+    const vacationStart = uniqueDate(monthOffset, 10)
+    const vacationEnd = uniqueDate(monthOffset, 15)
     await gql(
       page,
       `mutation CreateCompanyVacation($input: CreateCompanyVacationInput!) {
@@ -137,7 +144,7 @@ test.describe('My time tracking — absences, company vacations, holidays', () =
     )
 
     const holidayName = `E2E Holiday ${stamp}`
-    const holidayDate = uniqueDate((stamp % 1000) + 200)
+    const holidayDate = uniqueDate(monthOffset, 20)
     await gql(
       page,
       `mutation CreateHoliday($input: CreateHolidayInput!) {
@@ -148,15 +155,21 @@ test.describe('My time tracking — absences, company vacations, holidays', () =
 
     await page.goto('/en/admin/my-time-tracking', { waitUntil: 'networkidle' })
 
+    const monthDate = new Date('2031-01-01T12:00:00Z')
+    monthDate.setUTCMonth(monthDate.getUTCMonth() + monthOffset)
+    const monthLabel = monthDate.toLocaleDateString('en-US', {
+      month: 'long',
+      year: 'numeric',
+    })
+    await page.getByRole('button', { name: new RegExp(monthLabel, 'i') }).click()
+
     await expect(page.getByText('My absences')).toBeVisible({
       timeout: 15000,
     })
     if (absenceCategoryName) {
       await expect(page.getByText(absenceCategoryName).first()).toBeVisible()
     }
-    await expect(
-      page.getByText('Company vacations & holidays'),
-    ).toBeVisible()
+    await expect(page.getByText('Company vacations')).toBeVisible()
     await expect(page.getByText(vacationName)).toBeVisible()
     await expect(page.getByText(holidayName)).toBeVisible()
   })

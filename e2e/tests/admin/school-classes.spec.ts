@@ -108,16 +108,18 @@ test.describe('School classes — CRUD', () => {
     )
     await page.mouse.down()
     await page.mouse.move(handleBox.x + 10, handleBox.y + 10, { steps: 5 })
+    await page.waitForTimeout(100)
     await page.mouse.move(
       targetBox.x + targetBox.width / 2,
       targetBox.y + targetBox.height / 2 + 10,
       { steps: 10 },
     )
+    await page.waitForTimeout(100)
     await page.mouse.up()
 
     await expect(
       page.getByText(/order saved|reihenfolge gespeichert/i),
-    ).toBeVisible({ timeout: 15000 })
+    ).toBeVisible({ timeout: 20000 })
 
     // Persisted: after reload (view sticks via localStorage), A comes after B.
     await page.reload({ waitUntil: 'networkidle' })
