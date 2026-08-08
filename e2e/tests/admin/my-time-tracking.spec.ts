@@ -199,7 +199,9 @@ test.describe('My time tracking — absences, company vacations, holidays', () =
     // today (clampToToday), so a future date never shows up.
     const vacationStart = dayInCurrentMonth(3)
     const vacationEnd = dayInCurrentMonth(4)
-    await gql(
+    const { createCompanyVacation } = await gql<{
+      createCompanyVacation: { id: string }
+    }>(
       page,
       `mutation CreateCompanyVacation($input: CreateCompanyVacationInput!) {
         createCompanyVacation(input: $input) { id }
@@ -211,6 +213,16 @@ test.describe('My time tracking — absences, company vacations, holidays', () =
           endDate: vacationEnd,
         },
       },
+    )
+    // Company vacations only count towards an employee's balance ledger
+    // (is_vacation) once explicitly assigned — creating the org-wide
+    // vacation alone isn't enough to make it show up here.
+    await gql(
+      page,
+      `mutation AssignCompanyVacation($companyVacationId: ID!, $employeeId: ID!) {
+        assignCompanyVacationToEmployee(companyVacationId: $companyVacationId, employeeId: $employeeId) { id }
+      }`,
+      { companyVacationId: createCompanyVacation.id, employeeId },
     )
 
     const holidayName = `E2E Holiday ${stamp}`
