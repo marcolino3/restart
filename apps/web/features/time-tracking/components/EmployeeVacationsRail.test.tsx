@@ -12,6 +12,9 @@ vi.mock("next-intl", () => ({
     values ? `${key}:${JSON.stringify(values)}` : key,
   useLocale: () => "de",
 }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
 
 const assignCompanyVacationAction = vi.fn();
 const unassignCompanyVacationAction = vi.fn();

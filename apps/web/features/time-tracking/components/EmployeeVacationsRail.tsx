@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { format, eachDayOfInterval, isWeekend } from "date-fns";
@@ -102,6 +103,7 @@ export default function EmployeeVacationsRail({
   const tE = useTranslations("Employees");
   const tCommon = useTranslations("Common");
   const locale = useLocale();
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [assignOpen, setAssignOpen] = useState(false);
   const [individualFormOpen, setIndividualFormOpen] = useState(false);
@@ -171,6 +173,7 @@ export default function EmployeeVacationsRail({
       );
       if (results.every((r) => r.success)) {
         toast.success(tE("vacations.assigned"));
+        router.refresh();
       } else {
         toast.error(tE("vacations.error"));
       }
@@ -181,11 +184,13 @@ export default function EmployeeVacationsRail({
 
   const handleUnassign = async (vacationId: string) => {
     const res = await unassignCompanyVacationAction(vacationId, employeeId);
+    if (res.success) router.refresh();
     return { success: res.success };
   };
 
   const handleDeleteIndividual = async (id: string) => {
     const res = await deleteEmployeeVacationAction(id, employeeId);
+    if (res.success) router.refresh();
     return { success: res.success };
   };
 
@@ -216,6 +221,7 @@ export default function EmployeeVacationsRail({
         toast.success(tE("vacations.individualSaved"));
         form.reset(defaultFormValues);
         setIndividualFormOpen(false);
+        router.refresh();
       } else {
         toast.error(tE("vacations.error"));
       }
