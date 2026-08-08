@@ -122,9 +122,13 @@ test.describe('Employee company vacation assignments — happy path', () => {
       await page.getByRole('option', { name: new RegExp(name) }).click()
       await page.getByRole('button', { name: /^assign$/i }).click()
 
-      const row = page.getByRole('row').filter({
-        has: page.getByRole('cell', { name, exact: true }),
-      })
+      // The vacation list renders each entry as a plain div/span layout
+      // (not a <table>), so ARIA row/cell roles don't apply — locate the
+      // row container (EmployeeVacationsRail's `.group` wrapper) by its
+      // bold name label.
+      const row = page
+        .locator('div.group')
+        .filter({ has: page.getByText(name, { exact: true }) })
       await expect(row).toBeVisible({ timeout: 15000 })
       await expect(row).toContainText(
         String(created.createCompanyVacation.effectiveDays),
