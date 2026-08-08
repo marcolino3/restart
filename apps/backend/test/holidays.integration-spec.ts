@@ -15,6 +15,8 @@ import { HolidaysService } from '@/employee-management/holidays/holidays.service
 import { Holiday } from '@/employee-management/holidays/entities/holiday.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { BalanceRecomputeService } from '@/employee-management/work-time-calculation/balance-recompute.service';
+import { CompanyVacationsService } from '@/employee-management/company-vacations/company-vacations.service';
+import { TimeTrackingPeriodsService } from '@/employee-management/time-tracking-periods/time-tracking-periods.service';
 import { createTestingApp, cleanDatabase } from './test-utils';
 
 @Module({
@@ -24,6 +26,18 @@ import { createTestingApp, cleanDatabase } from './test-utils';
     {
       provide: BalanceRecomputeService,
       useValue: { recomputeOrgRange: jest.fn().mockResolvedValue(undefined) },
+    },
+    {
+      provide: CompanyVacationsService,
+      useValue: {
+        recomputeEffectiveDaysForOrg: jest.fn().mockResolvedValue(undefined),
+      },
+    },
+    {
+      provide: TimeTrackingPeriodsService,
+      useValue: {
+        getAnchor: jest.fn().mockResolvedValue({ month: 1, day: 1 }),
+      },
     },
   ],
 })

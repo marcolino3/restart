@@ -13,17 +13,25 @@ import { TestingModule } from '@nestjs/testing';
 
 import { CompanyVacationsService } from '@/employee-management/company-vacations/company-vacations.service';
 import { CompanyVacation } from '@/employee-management/company-vacations/entities/company-vacation.entity';
+import { Holiday } from '@/employee-management/holidays/entities/holiday.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { BalanceRecomputeService } from '@/employee-management/work-time-calculation/balance-recompute.service';
+import { TimeTrackingPeriodsService } from '@/employee-management/time-tracking-periods/time-tracking-periods.service';
 import { createTestingApp, cleanDatabase } from './test-utils';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([CompanyVacation, Organization])],
+  imports: [TypeOrmModule.forFeature([CompanyVacation, Holiday, Organization])],
   providers: [
     CompanyVacationsService,
     {
       provide: BalanceRecomputeService,
       useValue: { recomputeOrgRange: jest.fn().mockResolvedValue(undefined) },
+    },
+    {
+      provide: TimeTrackingPeriodsService,
+      useValue: {
+        getAnchor: jest.fn().mockResolvedValue({ month: 1, day: 1 }),
+      },
     },
   ],
 })
@@ -85,7 +93,6 @@ describe('CompanyVacationsService (Integration)', () => {
       );
 
       expect(created.organizationId).toBe(orgId);
-      expect(created.appliesToAll).toBe(true);
       expect(created.isActive).toBe(true);
       expect(recompute.recomputeOrgRange).toHaveBeenCalledWith(
         orgId,
