@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Pencil, Paperclip } from "lucide-react";
+import { Pencil, Paperclip, Download, Plus } from "lucide-react";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +15,7 @@ import {
   KvRow,
 } from "@/components/common/DetailPanel";
 import { ROUTES } from "@/constants/routes";
-import { cn } from "@/lib/utils";
+import { useSheet } from "@/components/providers/sheet-provider";
 
 import type { EmployeeDetail } from "../actions/get-employee-by-id.action";
 import type { EmployeeNoteItem } from "@/features/employee-notes/actions/get-employee-notes.action";
@@ -27,9 +28,16 @@ import EmployeeNotesTimeline from "@/features/employee-notes/components/Employee
 import CreateEmployeeNoteInline from "@/features/employee-notes/components/CreateEmployeeNoteInline";
 import EmployeeContractsTab from "./EmployeeContractsTab";
 import EmployeeAbsencesTab from "@/features/employee-absences/components/EmployeeAbsencesTab";
-import EmployeeCompanyVacationsPanel from "@/features/time-tracking/components/EmployeeCompanyVacationsPanel";
-import type { CompanyVacation } from "@/features/time-tracking/actions/settings.action";
+import EmployeeTimeTrackingTab, {
+  EmployeeTimeTrackingStats,
+  type TimeTrackingCursor,
+} from "@/features/time-tracking/components/EmployeeTimeTrackingTab";
+import EmployeeVacationsRail from "@/features/time-tracking/components/EmployeeVacationsRail";
+import { TimeEntryForm } from "@/features/time-tracking/components/TimeEntryForm";
+import type { CompanyVacation, Holiday } from "@/features/time-tracking/actions/settings.action";
 import type { EmployeeCompanyVacation } from "@/features/time-tracking/actions/company-vacation-assignments.action";
+import type { EmployeeVacationSegment } from "@/features/time-tracking/actions/employee-vacations.action";
+import type { MonthlyTimeTrackingGroup } from "@/features/time-tracking/types";
 import {
   formatExactTimesPlanLines,
   formatWorkdaysPlanLabel,
@@ -48,47 +56,9 @@ interface EmployeeViewPageProps {
   functionOptions?: { label: string; value: string }[];
   assignedCompanyVacations: EmployeeCompanyVacation[];
   allCompanyVacations: CompanyVacation[];
-}
-
-/** Minutes → "+12:30" / "−2:15". */
-const fmtBalance = (min?: number | null): string => {
-  if (min == null) return "–";
-  const sign = min < 0 ? "−" : "+";
-  const a = Math.abs(min);
-  return `${sign}${Math.floor(a / 60)}:${String(a % 60).padStart(2, "0")}`;
-};
-const fmtHours = (min?: number | null): string =>
-  min == null ? "–" : `${(min / 60).toFixed(1)} h`;
-
-const STAT_TONE: Record<string, string> = {
-  green: "bg-status-green text-status-green-foreground",
-  sky: "bg-status-sky text-status-sky-foreground",
-  amber: "bg-status-amber text-status-amber-foreground",
-  rose: "bg-status-rose text-status-rose-foreground",
-  slate: "bg-status-slate text-status-slate-foreground",
-};
-
-/** Stat box from the design handoff (`.lsb`). */
-function StatBox({
-  label,
-  value,
-  tone = "slate",
-}: {
-  label: string;
-  value: React.ReactNode;
-  tone?: keyof typeof STAT_TONE | string;
-}) {
-  return (
-    <div
-      className={cn(
-        "flex flex-col gap-0.5 rounded-ctl px-[15px] py-3",
-        STAT_TONE[tone] ?? STAT_TONE.slate,
-      )}
-    >
-      <span className="text-[11px] font-semibold opacity-70">{label}</span>
-      <span className="text-[20px] font-bold tabular-nums">{value}</span>
-    </div>
-  );
+  individualVacations: EmployeeVacationSegment[];
+  holidays: Holiday[];
+  monthlyGroups: MonthlyTimeTrackingGroup[];
 }
 
 function getInitials(firstName?: string, lastName?: string): string {
@@ -108,6 +78,9 @@ export default function EmployeeViewPage({
   functionOptions,
   assignedCompanyVacations,
   allCompanyVacations,
+  individualVacations,
+  holidays,
+  monthlyGroups,
 }: EmployeeViewPageProps) {
   const t = useTranslations("Common");
   const tE = useTranslations("Employees");
@@ -119,6 +92,26 @@ export default function EmployeeViewPage({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const activeTab = searchParams.get("tab") ?? "overview";
+  const sheet = useSheet();
+
+  const now = new Date();
+  const [monthRange, setMonthRange] = useState({
+    from: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`,
+    to: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()).padStart(2, "0")}`,
+  });
+  const [timeTrackingCursor, setTimeTrackingCursor] = useState<TimeTrackingCursor>({
+    year: now.getFullYear(),
+    month: now.getMonth() + 1,
+  });
+
+  const openTimeEntryForm = () => {
+    sheet.open({
+      title: tE("mz.recordEntry"),
+      content: <TimeEntryForm employeeId={employee.id} />,
+    });
+  };
+
+  const exportMonthHref = `/api/time-tracking/report?employeeId=${employee.id}&from=${monthRange.from}&to=${monthRange.to}&locale=${locale}`;
 
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -210,6 +203,24 @@ export default function EmployeeViewPage({
                   </div>
                 </div>
                 <div className="ml-auto flex shrink-0 gap-[9px]">
+                  {activeTab === "timetracking" && (
+                    <>
+                      <Button asChild variant="outline" className="h-9">
+                        <a href={exportMonthHref}>
+                          <Download className="mr-2 h-4 w-4" />
+                          {tE("mz.exportMonth")}
+                        </a>
+                      </Button>
+                      <Button
+                        type="button"
+                        className="h-9"
+                        onClick={openTimeEntryForm}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        {tE("mz.recordEntry")}
+                      </Button>
+                    </>
+                  )}
                   <Button asChild className="h-9">
                     <Link
                       href={`${ROUTES.admin.employeesEdit(locale, employee.id)}?tab=${activeTab}`}
@@ -396,42 +407,44 @@ export default function EmployeeViewPage({
             </TabsContent>
 
             {/* Zeiterfassung */}
-            <TabsContent value="timetracking" className="space-y-6">
-              <DetailPanel title={tE("tabTimeTracking")}>
-                <div className="grid grid-cols-2 gap-[9px] md:grid-cols-4">
-                  <StatBox
-                    tone="green"
-                    label={t("timeBalanceMinutes")}
-                    value={fmtBalance(report.balance?.netBalanceMinutes)}
-                  />
-                  <StatBox
-                    tone="sky"
-                    label={tE("remainingVacation")}
-                    value={
-                      report.vacation?.remainingDays != null
-                        ? `${report.vacation.remainingDays} d`
-                        : "–"
-                    }
-                  />
-                  <StatBox
-                    tone="slate"
-                    label={tE("worked")}
-                    value={fmtHours(report.balance?.workedMinutes)}
-                  />
-                  <StatBox
-                    tone="slate"
-                    label={tE("planned")}
-                    value={fmtHours(report.balance?.plannedMinutes)}
-                  />
+            <TabsContent value="timetracking">
+              <div className="space-y-4">
+                <EmployeeTimeTrackingStats
+                  cursor={timeTrackingCursor}
+                  group={monthlyGroups.find(
+                    (g) =>
+                      g.year === timeTrackingCursor.year &&
+                      g.month === timeTrackingCursor.month,
+                  )}
+                  netBalanceMinutes={report.balance?.netBalanceMinutes}
+                  missingRecordDaysCount={report.missingRecordDays.length}
+                />
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-start">
+                  <div className="lg:col-span-2">
+                    <EmployeeTimeTrackingTab
+                      monthlyGroups={monthlyGroups}
+                      missingRecordDays={report.missingRecordDays}
+                      workloadPercent={pensum}
+                      cursor={timeTrackingCursor}
+                      onCursorChange={setTimeTrackingCursor}
+                      onMonthChange={({ from, to }) =>
+                        setMonthRange({ from, to })
+                      }
+                    />
+                  </div>
+                  <div className="lg:col-span-1">
+                    <EmployeeVacationsRail
+                      employeeId={employee.id}
+                      assigned={assignedCompanyVacations}
+                      allCompanyVacations={allCompanyVacations}
+                      individualVacations={individualVacations}
+                      holidays={holidays}
+                      remainingVacationDays={report.vacation?.remainingDays}
+                      editable
+                    />
+                  </div>
                 </div>
-              </DetailPanel>
-
-              <EmployeeCompanyVacationsPanel
-                employeeId={employee.id}
-                assigned={assignedCompanyVacations}
-                allCompanyVacations={allCompanyVacations}
-                editable
-              />
+              </div>
             </TabsContent>
 
 

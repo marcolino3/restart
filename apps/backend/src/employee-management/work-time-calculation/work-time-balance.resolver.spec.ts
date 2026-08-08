@@ -25,6 +25,7 @@ describe('WorkTimeBalanceResolver', () => {
       getMonthlySummaries: jest.fn().mockResolvedValue([]),
       getVacationBalance: jest.fn().mockResolvedValue({ id: 'vacation' }),
       getMyMonthlyTimeTracking: jest.fn().mockResolvedValue([]),
+      getMonthlyTimeTracking: jest.fn().mockResolvedValue([]),
       getMyMissingRecordDays: jest.fn().mockResolvedValue([]),
       getMissingRecordDays: jest.fn().mockResolvedValue([]),
       getAbsenceCategorySummaries: jest.fn().mockResolvedValue([]),
@@ -64,6 +65,7 @@ describe('WorkTimeBalanceResolver', () => {
       'employeeMonthlyWorkTime',
       'employeeVacationBalance',
       'myMonthlyTimeTracking',
+      'employeeMonthlyTimeTracking',
       'myMissingRecordDays',
       'employeeMissingRecordDays',
       'employeeAbsenceCategorySummary',
@@ -87,6 +89,26 @@ describe('WorkTimeBalanceResolver', () => {
       to,
       'DE',
     );
+  });
+
+  it('employeeMonthlyTimeTracking delegates cross-employee reads to the access-scoped service method (multi-tenant guard lives in the service)', async () => {
+    await resolver.employeeMonthlyTimeTracking(user, 'emp-1', from, to);
+    expect(balanceService.getMonthlyTimeTracking).toHaveBeenCalledWith(
+      user,
+      'emp-1',
+      from,
+      to,
+      'DE',
+    );
+  });
+
+  it('employeeMonthlyTimeTracking propagates access-guard rejections for foreign-org employees', async () => {
+    balanceService.getMonthlyTimeTracking.mockRejectedValueOnce(
+      new Error('Forbidden: employee not in caller org'),
+    );
+    await expect(
+      resolver.employeeMonthlyTimeTracking(user, 'emp-foreign-org', from, to),
+    ).rejects.toThrow('Forbidden');
   });
 
   it('employeeWorkTimeBalance delegates cross-employee reads to the access-scoped service method', async () => {

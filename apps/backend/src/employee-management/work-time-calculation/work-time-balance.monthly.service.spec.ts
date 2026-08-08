@@ -63,6 +63,7 @@ describe('WorkTimeBalanceService.getMonthlyTimeTracking', () => {
           is_vacation: false,
           is_absence: false,
           worked_minutes: 480,
+          planned_minutes: 480,
         },
         {
           date: '2026-01-16',
@@ -70,6 +71,7 @@ describe('WorkTimeBalanceService.getMonthlyTimeTracking', () => {
           is_vacation: false,
           is_absence: true,
           worked_minutes: 0,
+          planned_minutes: 420,
         },
         {
           date: '2026-02-01',
@@ -77,6 +79,7 @@ describe('WorkTimeBalanceService.getMonthlyTimeTracking', () => {
           is_vacation: false,
           is_absence: false,
           worked_minutes: 0,
+          planned_minutes: 0,
         },
       ])
       .mockResolvedValueOnce([
@@ -113,13 +116,16 @@ describe('WorkTimeBalanceService.getMonthlyTimeTracking', () => {
     const january = result[1];
     expect(january.month).toBe(1);
     expect(january.workedMinutes).toBe(480);
+    expect(january.plannedMinutes).toBe(900);
     const entryDay = january.days.find((d) => d.date === '2026-01-15');
     expect(entryDay?.kind).toBe(DailyTimeTrackingKind.ENTRY);
     expect(entryDay?.entries?.[0].id).toBe('entry-1');
+    expect(entryDay?.plannedMinutes).toBe(480);
     const absenceDay = january.days.find((d) => d.date === '2026-01-16');
     expect(absenceDay?.kind).toBe(DailyTimeTrackingKind.ABSENCE);
     expect(absenceDay?.label).toBe('Ferien');
     expect(absenceDay?.color).toBe('#ff0000');
+    expect(absenceDay?.plannedMinutes).toBe(420);
   });
 
   it('excludes soft-deleted entries from the entries query (regression: deleted entries stayed visible and triggered "TimeTracking entry not found" on delete)', async () => {

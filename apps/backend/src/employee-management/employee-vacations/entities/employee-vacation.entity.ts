@@ -4,6 +4,7 @@ import { Membership } from '@/memberships/entities/membership.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { Field, ID, ObjectType } from '@nestjs/graphql';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { EmployeeVacationAccrualType } from './employee-vacation-accrual-type.enum';
 
 /**
  * Persönliche Ferien (Ferienkontingent-Bezug). Bewusst getrennt von
@@ -50,4 +51,17 @@ export class EmployeeVacation extends AbstractEntity<EmployeeVacation> {
   @Field(() => String)
   @Column('date', { name: 'end_date' })
   endDate!: string;
+
+  @Field(() => EmployeeVacationAccrualType)
+  @Column({
+    type: 'enum',
+    enum: EmployeeVacationAccrualType,
+    name: 'accrual_type',
+    default: EmployeeVacationAccrualType.CHARGED,
+  })
+  accrualType!: EmployeeVacationAccrualType;
+
+  @Field(() => String, { nullable: true })
+  @Column('text', { nullable: true })
+  remark!: string | null;
 }

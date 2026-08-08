@@ -86,12 +86,14 @@ export type DailyTimeTracking = {
   label?: string | null;
   color?: string | null;
   workMinutes: number;
+  plannedMinutes: number;
 };
 
 export type MonthlyTimeTrackingGroup = {
   year: number;
   month: number;
   workedMinutes: number;
+  plannedMinutes: number;
   days: DailyTimeTracking[];
 };
 
