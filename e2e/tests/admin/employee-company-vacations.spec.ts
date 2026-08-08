@@ -118,18 +118,17 @@ test.describe('Employee company vacation assignments — happy path', () => {
       ).toBeVisible({ timeout: 15000 })
 
       // --- Assign via the panel's combobox -----------------------------
-      // Note: this trigger's accessible name isn't picked up by
-      // getByRole(..., { name }) — the combobox carries both
-      // aria-expanded and aria-haspopup="dialog", which Chromium's
-      // accessibility tree does not resolve into the usual name via
-      // getByRole role+name matching. getByText is reliable here.
-      await page.getByText('Assign company vacation…').click()
+      await page.getByTitle('Assign company vacations').click()
       await page.getByRole('option', { name: new RegExp(name) }).click()
       await page.getByRole('button', { name: /^assign$/i }).click()
 
-      const row = page.getByRole('row').filter({
-        has: page.getByRole('cell', { name, exact: true }),
-      })
+      // The vacation list renders each entry as a plain div/span layout
+      // (not a <table>), so ARIA row/cell roles don't apply — locate the
+      // row container (EmployeeVacationsRail's `.group` wrapper) by its
+      // bold name label.
+      const row = page
+        .locator('div.group')
+        .filter({ has: page.getByText(name, { exact: true }) })
       await expect(row).toBeVisible({ timeout: 15000 })
       await expect(row).toContainText(
         String(created.createCompanyVacation.effectiveDays),

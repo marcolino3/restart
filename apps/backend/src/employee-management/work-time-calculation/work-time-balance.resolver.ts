@@ -120,6 +120,26 @@ export class WorkTimeBalanceResolver {
     );
   }
 
+  @Query(() => [MonthlyTimeTrackingGroup], {
+    name: 'employeeMonthlyTimeTracking',
+  })
+  @Permissions('TIMESHEET_READ')
+  employeeMonthlyTimeTracking(
+    @CurrentUser() user: TokenPayload,
+    @Args('employeeId', { type: () => ID }) employeeId: string,
+    @Args('from', { type: () => String }) from: string,
+    @Args('to', { type: () => String }) to: string,
+    @Args('locale', { type: () => String, nullable: true }) locale?: string,
+  ) {
+    return this.balanceService.getMonthlyTimeTracking(
+      user,
+      employeeId,
+      from,
+      to,
+      locale ?? 'DE',
+    );
+  }
+
   @Query(() => [String], { name: 'myMissingRecordDays' })
   @Permissions('TIMESHEET_READ')
   myMissingRecordDays(

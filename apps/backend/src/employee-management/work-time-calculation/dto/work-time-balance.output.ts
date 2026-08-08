@@ -190,6 +190,9 @@ export class DailyTimeTracking {
 
   @Field(() => Int)
   workMinutes: number;
+
+  @Field(() => Int)
+  plannedMinutes: number;
 }
 
 /** Ein Monat der Zeiterfassungs-Monatsübersicht, Tage aufsteigend sortiert. */
@@ -203,6 +206,9 @@ export class MonthlyTimeTrackingGroup {
 
   @Field(() => Int)
   workedMinutes: number;
+
+  @Field(() => Int)
+  plannedMinutes: number;
 
   @Field(() => [DailyTimeTracking])
   days: DailyTimeTracking[];

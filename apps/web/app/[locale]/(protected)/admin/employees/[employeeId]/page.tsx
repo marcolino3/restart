@@ -6,7 +6,9 @@ import { getEmployeeReportAction } from "@/features/time-tracking/actions/get-ti
 import { getEmployeeFunctionsAction } from "@/features/employee-functions/actions/get-employee-functions.action";
 import { mapEmployeeFunctionsToOptions } from "@/features/employee-functions/lib/map-employee-functions-to-options";
 import { getCompanyVacationsForEmployeeAction } from "@/features/time-tracking/actions/company-vacation-assignments.action";
+import { getEmployeeVacationSegmentsAction } from "@/features/time-tracking/actions/employee-vacations.action";
 import { getTimeTrackingSettingsAction } from "@/features/time-tracking/actions/settings.action";
+import { getEmployeeMonthlyTimeTrackingAction } from "@/features/time-tracking/actions/get-employee-monthly-time-tracking.action";
 import { requireAdminPersona } from "@/features/users/guards/require-admin-persona";
 import EmployeeViewPage from "@/features/employees/components/EmployeeViewPage";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -31,6 +33,8 @@ const ViewEmployeePage = async ({ params }: Props) => {
     functionsResult,
     assignedCompanyVacationsResult,
     timeTrackingSettings,
+    individualVacationsResult,
+    monthlyTimeTracking,
   ] = await Promise.all([
     getEmployeeByIdAction(employeeId),
     getEmployeeNotesAction(employeeId),
@@ -40,6 +44,8 @@ const ViewEmployeePage = async ({ params }: Props) => {
     getEmployeeFunctionsAction(),
     getCompanyVacationsForEmployeeAction(employeeId),
     getTimeTrackingSettingsAction(),
+    getEmployeeVacationSegmentsAction(employeeId),
+    getEmployeeMonthlyTimeTrackingAction(employeeId),
   ]);
 
   if (!employeeResult.success) {
@@ -58,6 +64,11 @@ const ViewEmployeePage = async ({ params }: Props) => {
     ? assignedCompanyVacationsResult.data
     : [];
   const allCompanyVacations = timeTrackingSettings.companyVacations;
+  const individualVacations = individualVacationsResult.success
+    ? individualVacationsResult.data
+    : [];
+  const holidays = timeTrackingSettings.holidays;
+  const monthlyGroups = monthlyTimeTracking.monthlyGroups;
   const functionOptions = mapEmployeeFunctionsToOptions(
     employeeFunctions,
     locale,
@@ -78,6 +89,9 @@ const ViewEmployeePage = async ({ params }: Props) => {
         functionOptions={functionOptions}
         assignedCompanyVacations={assignedCompanyVacations}
         allCompanyVacations={allCompanyVacations}
+        individualVacations={individualVacations}
+        holidays={holidays}
+        monthlyGroups={monthlyGroups}
       />
     </div>
   );

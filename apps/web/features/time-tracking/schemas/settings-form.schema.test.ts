@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   HolidayFormSchema,
   createCompanyVacationFormSchema,
+  createEmployeeVacationFormSchema,
 } from "./settings-form.schema";
 
 describe("HolidayFormSchema", () => {
@@ -107,5 +108,42 @@ describe("createCompanyVacationFormSchema", () => {
     });
 
     expect(result.success).toBe(false);
+  });
+});
+
+describe("createEmployeeVacationFormSchema", () => {
+  const t = (key: string) => key;
+  const schema = createEmployeeVacationFormSchema(t);
+
+  it("accepts a valid date range without a name", () => {
+    const result = schema.safeParse({
+      startDate: new Date(2026, 6, 1),
+      endDate: new Date(2026, 6, 10),
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts a name when provided", () => {
+    const result = schema.safeParse({
+      name: "Arztbesuch",
+      startDate: new Date(2026, 6, 1),
+      endDate: new Date(2026, 6, 1),
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects endDate before startDate", () => {
+    const result = schema.safeParse({
+      startDate: new Date(2026, 7, 1),
+      endDate: new Date(2026, 6, 1),
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe("endBeforeStart");
+      expect(result.error.issues[0]?.path).toEqual(["endDate"]);
+    }
   });
 });

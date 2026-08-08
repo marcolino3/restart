@@ -507,9 +507,10 @@ export class WorkTimeBalanceService {
             is_vacation: boolean;
             is_absence: boolean;
             worked_minutes: number;
+            planned_minutes: number;
           }[]
         >(
-          `SELECT date::text AS date, is_holiday, is_vacation, is_absence, worked_minutes
+          `SELECT date::text AS date, is_holiday, is_vacation, is_absence, worked_minutes, planned_minutes
              FROM work_day_balances
             WHERE organization_id = $1 AND employee_id = $2 AND date BETWEEN $3 AND $4
             ORDER BY date`,
@@ -605,6 +606,7 @@ export class WorkTimeBalanceService {
         label,
         color,
         workMinutes: row.worked_minutes,
+        plannedMinutes: row.planned_minutes,
         entries: entries
           ? entries.map((e) => ({
               id: e.id,
@@ -634,6 +636,7 @@ export class WorkTimeBalanceService {
           year,
           month,
           workedMinutes: dayList.reduce((sum, d) => sum + d.workMinutes, 0),
+          plannedMinutes: dayList.reduce((sum, d) => sum + d.plannedMinutes, 0),
           days: dayList,
         };
       })

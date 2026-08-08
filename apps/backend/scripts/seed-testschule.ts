@@ -1596,8 +1596,8 @@ async function main() {
     for (const empId of [a, b]) {
       if (!empId) continue;
       await c.query(
-        `INSERT INTO school_class_teachers (school_class_id, employee_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-        [cls.id, empId],
+        `INSERT INTO school_class_teachers (school_class_id, employee_id, organization_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+        [cls.id, empId, ORG_ID],
       );
     }
   }

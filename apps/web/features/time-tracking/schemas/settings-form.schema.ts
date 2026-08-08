@@ -29,3 +29,32 @@ export type CompanyVacationFormInput = z.input<
 export type CompanyVacationFormOutput = z.output<
   ReturnType<typeof createCompanyVacationFormSchema>
 >;
+
+export const EmployeeVacationAccrualTypeValues = [
+  "CHARGED",
+  "PAID_NO_CHARGE",
+  "UNPAID",
+] as const;
+
+export const createEmployeeVacationFormSchema = (t: Translate) =>
+  z
+    .object({
+      name: z.string().optional(),
+      startDate: z.date(),
+      endDate: z.date(),
+      accrualType: z
+        .enum(EmployeeVacationAccrualTypeValues)
+        .default("CHARGED"),
+      remark: z.string().optional(),
+    })
+    .refine((v) => v.endDate >= v.startDate, {
+      message: t("endBeforeStart"),
+      path: ["endDate"],
+    });
+
+export type EmployeeVacationFormInput = z.input<
+  ReturnType<typeof createEmployeeVacationFormSchema>
+>;
+export type EmployeeVacationFormOutput = z.output<
+  ReturnType<typeof createEmployeeVacationFormSchema>
+>;

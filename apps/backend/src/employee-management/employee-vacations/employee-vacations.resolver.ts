@@ -7,6 +7,7 @@ import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { EmployeeVacationsService } from './employee-vacations.service';
 import { EmployeeVacation } from './entities/employee-vacation.entity';
+import { EmployeeVacationSegment } from './entities/employee-vacation-segment.entity';
 import { CreateEmployeeVacationInput } from './dto/create-employee-vacation.input';
 import { UpdateEmployeeVacationInput } from './dto/update-employee-vacation.input';
 
@@ -22,6 +23,15 @@ export class EmployeeVacationsResolver {
     @Args('employeeId', { type: () => ID }) employeeId: string,
   ) {
     return this.service.findByEmployee(user, employeeId);
+  }
+
+  @Query(() => [EmployeeVacationSegment], { name: 'employeeVacationSegments' })
+  @Permissions('TIMESHEET_READ')
+  employeeVacationSegments(
+    @CurrentUser() user: TokenPayload,
+    @Args('employeeId', { type: () => ID }) employeeId: string,
+  ) {
+    return this.service.findSegmentsForEmployee(user, employeeId);
   }
 
   @Mutation(() => EmployeeVacation)

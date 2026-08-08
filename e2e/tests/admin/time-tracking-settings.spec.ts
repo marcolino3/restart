@@ -258,4 +258,108 @@ test.describe('Time tracking settings — company vacations CRUD', () => {
       .click()
     await expect(rowFor(page, renamed)).toHaveCount(0, { timeout: 15000 })
   })
+
+  test('shows effective day count and holiday count with hover details', async ({
+    page,
+  }) => {
+    const stamp = Date.now()
+    const vacationName = `E2E Vacation Holidays ${stamp}`
+    const holidayName = `E2E Holiday In Range ${stamp}`
+
+    // Werktag weit in der Zukunft (Montag), damit Wochenend-Kollisionen und
+    // Kollisionen mit bestehenden Feiertagen ausgeschlossen sind.
+    const base = new Date('2032-03-01T12:00:00Z')
+    base.setUTCDate(base.getUTCDate() + (stamp % 300))
+    while (base.getUTCDay() !== 1) base.setUTCDate(base.getUTCDate() + 1)
+    const holidayDate = base.toISOString().slice(0, 10)
+    const startDate = holidayDate
+    const end = new Date(base)
+    end.setUTCDate(end.getUTCDate() + 4)
+    const endDate = end.toISOString().slice(0, 10)
+
+    const gql = async <T>(
+      query: string,
+      variables?: Record<string, unknown>,
+    ): Promise<T> => {
+      const res = await page.request.post(`${BACKEND_URL}/graphql`, {
+        data: { query, variables },
+      })
+      const json = (await res.json()) as {
+        data?: T
+        errors?: { message: string }[]
+      }
+      if (json.errors?.length) {
+        throw new Error(`GraphQL: ${json.errors[0].message}`)
+      }
+      if (!json.data) throw new Error('GraphQL: empty data')
+      return json.data
+    }
+
+    await signInAsSuperAdmin(page)
+    await ensureActiveOrg(page)
+
+    const createdHoliday = await gql<{
+      createHoliday: { id: string }
+    }>(
+      `mutation CreateHoliday($input: CreateHolidayInput!) {
+        createHoliday(input: $input) { id }
+      }`,
+      {
+        input: {
+          date: holidayDate,
+          name: holidayName,
+          paidPercentage: 100,
+          repeatsYearly: false,
+        },
+      },
+    )
+
+    const createdVacation = await gql<{
+      createCompanyVacation: { id: string; effectiveDays: number }
+    }>(
+      `mutation CreateCompanyVacation($input: CreateCompanyVacationInput!) {
+        createCompanyVacation(input: $input) { id effectiveDays }
+      }`,
+      { input: { name: vacationName, startDate, endDate } },
+    )
+
+    try {
+      await page.goto('/en/admin/time-tracking-settings', {
+        waitUntil: 'networkidle',
+      })
+      await expect(
+        page.getByRole('heading', { name: /^settings$/i, level: 2 }),
+      ).toBeVisible({ timeout: 15000 })
+      await page.getByRole('tab', { name: /^company vacations$/i }).click()
+      await expect(
+        page.getByRole('button', { name: /^add company vacation$/i }),
+      ).toBeVisible()
+
+      const row = rowFor(page, vacationName)
+      await expect(row).toBeVisible({ timeout: 15000 })
+      await expect(row).toContainText(
+        String(createdVacation.createCompanyVacation.effectiveDays),
+      )
+
+      // holidayCount cell renders as a link-styled button; its accessible
+      // name is the "Public holidays in period" aria-label, not the count.
+      await row
+        .getByRole('button', { name: /^public holidays in period$/i })
+        .click()
+      await expect(page.getByText(holidayName)).toBeVisible({ timeout: 5000 })
+    } finally {
+      await gql(
+        `mutation DeleteCompanyVacation($id: ID!) {
+          deleteCompanyVacation(id: $id)
+        }`,
+        { id: createdVacation.createCompanyVacation.id },
+      )
+      await gql(
+        `mutation DeleteHoliday($id: ID!) {
+          deleteHoliday(id: $id)
+        }`,
+        { id: createdHoliday.createHoliday.id },
+      )
+    }
+  })
 })
