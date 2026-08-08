@@ -50,6 +50,37 @@ describe('company vacation holidays', () => {
       const holidays = [holiday('2020-08-05', 'Yearly', 100, true)];
       expect(calculateEffectiveVacationDays(from, to, holidays)).toBe(9);
     });
+
+    it('does not subtract anything for an unpaid (0%) holiday', () => {
+      const holidays = [holiday('2026-08-05', 'Unpaid', 0)];
+      expect(calculateEffectiveVacationDays(from, to, holidays)).toBe(10);
+    });
+
+    it('subtracts nothing for a fully paid (100%) holiday beyond the fraction', () => {
+      const holidays = [holiday('2026-08-05', 'Full', 100)];
+      expect(calculateEffectiveVacationDays(from, to, holidays)).toBe(9);
+    });
+
+    it('returns 0 for an empty range (from === to) that is a weekend day', () => {
+      // 2026-08-08 is a Saturday.
+      expect(
+        calculateEffectiveVacationDays('2026-08-08', '2026-08-08', []),
+      ).toBe(0);
+    });
+
+    it('returns 1 for a single weekday range (from === to)', () => {
+      // 2026-08-03 is a Monday.
+      expect(
+        calculateEffectiveVacationDays('2026-08-03', '2026-08-03', []),
+      ).toBe(1);
+    });
+
+    it('returns 0 for a single weekday range fully covered by a holiday', () => {
+      const holidays = [holiday('2026-08-03', 'Full')];
+      expect(
+        calculateEffectiveVacationDays('2026-08-03', '2026-08-03', holidays),
+      ).toBe(0);
+    });
   });
 
   describe('listVacationHolidays', () => {
@@ -116,6 +147,29 @@ describe('company vacation holidays', () => {
       expect(listed).toHaveLength(3);
       const reducing = listed.filter((h) => !h.isWeekend);
       expect(effective).toBe(10 - reducing.length);
+    });
+
+    it('resolves a yearly holiday landing on a weekend to the concrete date', () => {
+      // 2020-08-08 is a Saturday; 2026-08-08 is also a Saturday.
+      const holidays = [holiday('2020-08-08', 'Yearly Weekend', 100, true)];
+      const hits = listVacationHolidays(from, to, holidays);
+      expect(hits).toHaveLength(1);
+      expect(hits[0].date).toBe('2026-08-08');
+      expect(hits[0].isWeekend).toBe(true);
+    });
+
+    it('returns an empty list for an empty range with no matching holiday', () => {
+      expect(listVacationHolidays('2026-08-08', '2026-08-08', [])).toEqual([]);
+    });
+
+    it('returns a single entry for an empty range that matches a holiday', () => {
+      const holidays = [holiday('2026-08-03', 'Single Day')];
+      const hits = listVacationHolidays('2026-08-03', '2026-08-03', holidays);
+      expect(hits).toHaveLength(1);
+      expect(hits[0]).toMatchObject({
+        date: '2026-08-03',
+        isWeekend: false,
+      });
     });
   });
 });

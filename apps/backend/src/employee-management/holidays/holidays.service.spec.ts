@@ -5,6 +5,8 @@ import { DateTime } from 'luxon';
 import { HolidaysService } from './holidays.service';
 import { Holiday } from './entities/holiday.entity';
 import { BalanceRecomputeService } from '../work-time-calculation/balance-recompute.service';
+import { CompanyVacationsService } from '../company-vacations/company-vacations.service';
+import { TimeTrackingPeriodsService } from '../time-tracking-periods/time-tracking-periods.service';
 
 describe('HolidaysService', () => {
   let service: HolidaysService;
@@ -15,6 +17,8 @@ describe('HolidaysService', () => {
     save: jest.Mock;
   };
   let recompute: { recomputeOrgRange: jest.Mock };
+  let companyVacations: { recomputeEffectiveDaysForOrg: jest.Mock };
+  let periods: { getAnchor: jest.Mock };
 
   beforeEach(async () => {
     repo = {
@@ -28,12 +32,20 @@ describe('HolidaysService', () => {
         ),
     };
     recompute = { recomputeOrgRange: jest.fn().mockResolvedValue(undefined) };
+    companyVacations = {
+      recomputeEffectiveDaysForOrg: jest.fn().mockResolvedValue(undefined),
+    };
+    periods = {
+      getAnchor: jest.fn().mockResolvedValue({ month: 1, day: 1 }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         HolidaysService,
         { provide: getRepositoryToken(Holiday), useValue: repo },
         { provide: BalanceRecomputeService, useValue: recompute },
+        { provide: CompanyVacationsService, useValue: companyVacations },
+        { provide: TimeTrackingPeriodsService, useValue: periods },
       ],
     }).compile();
 
@@ -52,6 +64,21 @@ describe('HolidaysService', () => {
         where: { organizationId: 'org-1', isActive: true },
         order: { date: 'ASC' },
       });
+    });
+
+    it('sorts holidays starting from the org period anchor, not calendar order', async () => {
+      periods.getAnchor.mockResolvedValue({ month: 8, day: 1 });
+      repo.find.mockResolvedValue([
+        { id: 'h-jan', date: '2026-01-15' },
+        { id: 'h-dec', date: '2026-12-25' },
+        { id: 'h-aug', date: '2026-08-01' },
+      ]);
+
+      const result = await service.findAll('org-1');
+
+      expect(periods.getAnchor).toHaveBeenCalledWith('org-1');
+      // Anchor 08-01: August/December come before the following January.
+      expect(result.map((h) => h.id)).toEqual(['h-aug', 'h-dec', 'h-jan']);
     });
   });
 
@@ -77,6 +104,9 @@ describe('HolidaysService', () => {
         '2026-08-01',
         '2026-08-01',
       );
+      expect(
+        companyVacations.recomputeEffectiveDaysForOrg,
+      ).toHaveBeenCalledWith('org-1');
     });
 
     it('recomputes the full year range for yearly holidays', async () => {
@@ -161,6 +191,9 @@ describe('HolidaysService', () => {
         '2026-06-01',
         '2026-08-01',
       );
+      expect(
+        companyVacations.recomputeEffectiveDaysForOrg,
+      ).toHaveBeenCalledWith('org-1');
     });
 
     it('expands to year range when toggling to yearly', async () => {
@@ -187,6 +220,9 @@ describe('HolidaysService', () => {
         '2026-01-01',
         '2027-12-31',
       );
+      expect(
+        companyVacations.recomputeEffectiveDaysForOrg,
+      ).toHaveBeenCalledWith('org-1');
     });
   });
 
@@ -212,6 +248,9 @@ describe('HolidaysService', () => {
         '2026-08-01',
         '2026-08-01',
       );
+      expect(
+        companyVacations.recomputeEffectiveDaysForOrg,
+      ).toHaveBeenCalledWith('org-1');
     });
 
     it('throws NotFoundException for a foreign-org holiday', async () => {
@@ -221,6 +260,9 @@ describe('HolidaysService', () => {
         NotFoundException,
       );
       expect(recompute.recomputeOrgRange).not.toHaveBeenCalled();
+      expect(
+        companyVacations.recomputeEffectiveDaysForOrg,
+      ).not.toHaveBeenCalled();
     });
   });
 });

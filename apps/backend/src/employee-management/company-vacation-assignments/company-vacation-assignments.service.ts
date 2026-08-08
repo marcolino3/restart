@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CompanyVacationAssignment } from './entities/company-vacation-assignment.entity';
 import { CompanyVacation } from '@/employee-management/company-vacations/entities/company-vacation.entity';
+import { Employee } from '@/employee-management/employees/entities/employee.entity';
 import { BalanceRecomputeService } from '@/employee-management/work-time-calculation/balance-recompute.service';
 import { TimeTrackingPeriodsService } from '@/employee-management/time-tracking-periods/time-tracking-periods.service';
 import {
@@ -27,15 +28,30 @@ export class CompanyVacationAssignmentsService {
     private readonly companyVacationRepo: Repository<CompanyVacation>,
     @InjectRepository(Holiday)
     private readonly holidayRepo: Repository<Holiday>,
+    @InjectRepository(Employee)
+    private readonly employeeRepo: Repository<Employee>,
     private readonly balanceRecompute: BalanceRecomputeService,
     private readonly periodsService: TimeTrackingPeriodsService,
   ) {}
+
+  private async assertEmployeeInOrg(
+    employeeId: string,
+    organizationId: string,
+  ): Promise<void> {
+    const employee = await this.employeeRepo.findOne({
+      where: { id: employeeId, membership: { organizationId } },
+    });
+    if (!employee) {
+      throw new NotFoundException(`Employee ${employeeId} not found`);
+    }
+  }
 
   async assign(
     companyVacationId: string,
     employeeId: string,
     organizationId: string,
   ): Promise<CompanyVacationAssignment> {
+    await this.assertEmployeeInOrg(employeeId, organizationId);
     const vacation = await this.companyVacationRepo.findOne({
       where: { id: companyVacationId, organizationId },
     });
@@ -70,6 +86,7 @@ export class CompanyVacationAssignmentsService {
     employeeId: string,
     organizationId: string,
   ): Promise<boolean> {
+    await this.assertEmployeeInOrg(employeeId, organizationId);
     const vacation = await this.companyVacationRepo.findOne({
       where: { id: companyVacationId, organizationId },
     });
@@ -102,6 +119,7 @@ export class CompanyVacationAssignmentsService {
     employeeId: string,
     organizationId: string,
   ): Promise<EmployeeCompanyVacation[]> {
+    await this.assertEmployeeInOrg(employeeId, organizationId);
     const [assigned, anchor] = await Promise.all([
       this.assignmentRepo.find({
         where: { organizationId, employeeId },

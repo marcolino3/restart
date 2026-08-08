@@ -4,7 +4,10 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { CompanyVacationAssignmentsService } from './company-vacation-assignments.service';
 import { CompanyVacationAssignment } from './entities/company-vacation-assignment.entity';
 import { CompanyVacation } from '@/employee-management/company-vacations/entities/company-vacation.entity';
+import { Holiday } from '@/employee-management/holidays/entities/holiday.entity';
+import { Employee } from '@/employee-management/employees/entities/employee.entity';
 import { BalanceRecomputeService } from '@/employee-management/work-time-calculation/balance-recompute.service';
+import { TimeTrackingPeriodsService } from '@/employee-management/time-tracking-periods/time-tracking-periods.service';
 
 describe('CompanyVacationAssignmentsService', () => {
   let service: CompanyVacationAssignmentsService;
@@ -16,7 +19,10 @@ describe('CompanyVacationAssignmentsService', () => {
     delete: jest.Mock;
   };
   let companyVacationRepo: { findOne: jest.Mock };
+  let holidayRepo: { find: jest.Mock };
+  let employeeRepo: { findOne: jest.Mock };
   let recompute: { recomputeRange: jest.Mock };
+  let periodsService: { getAnchor: jest.Mock };
 
   const vacation = {
     id: 'cv-1',
@@ -25,6 +31,8 @@ describe('CompanyVacationAssignmentsService', () => {
     startDate: '2026-07-01',
     endDate: '2026-08-15',
   };
+
+  const employee = { id: 'emp-1', organizationId: 'org-a' };
 
   beforeEach(async () => {
     assignmentRepo = {
@@ -37,7 +45,12 @@ describe('CompanyVacationAssignmentsService', () => {
       delete: jest.fn(),
     };
     companyVacationRepo = { findOne: jest.fn() };
+    holidayRepo = { find: jest.fn().mockResolvedValue([]) };
+    employeeRepo = { findOne: jest.fn().mockResolvedValue(employee) };
     recompute = { recomputeRange: jest.fn().mockResolvedValue(undefined) };
+    periodsService = {
+      getAnchor: jest.fn().mockResolvedValue({ month: 1, day: 1 }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -50,7 +63,10 @@ describe('CompanyVacationAssignmentsService', () => {
           provide: getRepositoryToken(CompanyVacation),
           useValue: companyVacationRepo,
         },
+        { provide: getRepositoryToken(Holiday), useValue: holidayRepo },
+        { provide: getRepositoryToken(Employee), useValue: employeeRepo },
         { provide: BalanceRecomputeService, useValue: recompute },
+        { provide: TimeTrackingPeriodsService, useValue: periodsService },
       ],
     }).compile();
 
@@ -58,6 +74,19 @@ describe('CompanyVacationAssignmentsService', () => {
   });
 
   describe('assign', () => {
+    it('throws NotFoundException for a foreign-org employee', async () => {
+      employeeRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.assign('cv-1', 'emp-foreign', 'org-a'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(employeeRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'emp-foreign', membership: { organizationId: 'org-a' } },
+      });
+      expect(companyVacationRepo.findOne).not.toHaveBeenCalled();
+      expect(recompute.recomputeRange).not.toHaveBeenCalled();
+    });
+
     it('throws NotFoundException for a foreign-org vacation', async () => {
       companyVacationRepo.findOne.mockResolvedValue(null);
 
@@ -104,6 +133,17 @@ describe('CompanyVacationAssignmentsService', () => {
   });
 
   describe('unassign', () => {
+    it('throws NotFoundException for a foreign-org employee', async () => {
+      employeeRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.unassign('cv-1', 'emp-foreign', 'org-a'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(companyVacationRepo.findOne).not.toHaveBeenCalled();
+      expect(assignmentRepo.delete).not.toHaveBeenCalled();
+      expect(recompute.recomputeRange).not.toHaveBeenCalled();
+    });
+
     it('deletes the assignment and recomputes the employee range', async () => {
       companyVacationRepo.findOne.mockResolvedValue(vacation);
       assignmentRepo.delete.mockResolvedValue({ affected: 1 });
@@ -147,7 +187,13 @@ describe('CompanyVacationAssignmentsService', () => {
         where: { organizationId: 'org-a', employeeId: 'emp-1' },
         relations: { companyVacation: true },
       });
-      expect(result).toEqual([vacation]);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        companyVacationId: 'cv-1',
+        name: 'Sommerferien',
+        startDate: '2026-07-01',
+        endDate: '2026-08-15',
+      });
     });
 
     it('scopes to the active org id (multi-tenant isolation)', async () => {
