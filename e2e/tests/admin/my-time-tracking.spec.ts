@@ -263,8 +263,13 @@ test.describe('My time tracking — absences, company vacations, holidays', () =
         )
       }
       await expect(page.getByText(holidayName)).toBeVisible({ timeout: 2000 })
+      // "Company vacations" is a per-row badge label (rendered once per
+      // VACATION-kind day), not a static section heading — wait for it
+      // inside the same poll as the other ledger-derived rows.
+      await expect(page.getByText('Company vacations').first()).toBeVisible({
+        timeout: 2000,
+      })
     }).toPass({ timeout: 30000, intervals: [1000, 2000, 3000] })
-    await expect(page.getByText('Company vacations').first()).toBeVisible()
     await expect(page.getByText(vacationName).first()).toBeVisible()
     await expect(page.getByText(holidayName).first()).toBeVisible()
   })
