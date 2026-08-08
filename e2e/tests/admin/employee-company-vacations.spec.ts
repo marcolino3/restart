@@ -118,12 +118,7 @@ test.describe('Employee company vacation assignments — happy path', () => {
       ).toBeVisible({ timeout: 15000 })
 
       // --- Assign via the panel's combobox -----------------------------
-      // Note: this trigger's accessible name isn't picked up by
-      // getByRole(..., { name }) — the combobox carries both
-      // aria-expanded and aria-haspopup="dialog", which Chromium's
-      // accessibility tree does not resolve into the usual name via
-      // getByRole role+name matching. getByText is reliable here.
-      await page.getByText('Assign company vacation…').click()
+      await page.getByTitle('Assign company vacations').click()
       await page.getByRole('option', { name: new RegExp(name) }).click()
       await page.getByRole('button', { name: /^assign$/i }).click()
 

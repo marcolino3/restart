@@ -63,6 +63,7 @@ export function DateRangePickerFormField<TFormValues extends FieldValues>({
   namespace = "Common",
 }: DateRangePickerFormFieldProps<TFormValues>) {
   const t = useTranslations(namespace);
+  const tCommon = useTranslations("Common");
   const form = useFormContext<TFormValues>();
   const startValue = form.watch(startName);
   const endValue = form.watch(endName);
@@ -124,7 +125,7 @@ export function DateRangePickerFormField<TFormValues extends FieldValues>({
                   {displayLabel ? (
                     displayLabel
                   ) : (
-                    <span>{t("pickADateRange")}</span>
+                    <span>{tCommon("pickADateRange")}</span>
                   )}
                   <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                 </Button>

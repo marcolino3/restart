@@ -6,18 +6,9 @@ import { CompanyVacation } from '@/employee-management/company-vacations/entitie
 import { Employee } from '@/employee-management/employees/entities/employee.entity';
 import { BalanceRecomputeService } from '@/employee-management/work-time-calculation/balance-recompute.service';
 import { TimeTrackingPeriodsService } from '@/employee-management/time-tracking-periods/time-tracking-periods.service';
-import {
-  periodBoundsFor,
-  periodLabel,
-} from '@/employee-management/time-tracking-periods/period-bounds';
-import { DateTime } from 'luxon';
 import { Holiday } from '@/employee-management/holidays/entities/holiday.entity';
-import {
-  calculateEffectiveVacationDays,
-  listVacationHolidays,
-} from '@/employee-management/work-time-calculation/work-time-calculation';
+import { toCurrentPeriodSegments } from '@/employee-management/work-time-calculation/to-period-segments';
 import { EmployeeCompanyVacation } from './entities/employee-company-vacation.entity';
-import { splitByPeriodAnchor } from './split-by-period';
 
 @Injectable()
 export class CompanyVacationAssignmentsService {
@@ -135,48 +126,29 @@ export class CompanyVacationAssignmentsService {
       where: { organizationId, isActive: true },
     });
 
-    // Laufende Periode: nur Segmente, die in dieses Fenster fallen.
-    const current = periodBoundsFor(anchor, DateTime.now());
-    const currentStart = current.start.toISODate() as string;
+    const segments = toCurrentPeriodSegments(
+      vacations.map((vacation) => ({
+        id: vacation.id,
+        name: vacation.name,
+        startDate: vacation.startDate,
+        endDate: vacation.endDate,
+      })),
+      anchor,
+      holidays,
+    );
 
-    const segments = vacations.flatMap((vacation) => {
-      const parts = splitByPeriodAnchor(
-        vacation.startDate,
-        vacation.endDate,
-        anchor,
-      );
-      const isSplit = parts.length > 1;
-      return parts
-        .filter((part) => part.periodStartDate === currentStart)
-        .map((part) => ({
-          id: `${vacation.id}:${part.periodStartDate}`,
-          companyVacationId: vacation.id,
-          name: vacation.name,
-          startDate: part.startDate,
-          endDate: part.endDate,
-          effectiveDays: calculateEffectiveVacationDays(
-            part.startDate,
-            part.endDate,
-            holidays,
-          ),
-          holidays: listVacationHolidays(
-            part.startDate,
-            part.endDate,
-            holidays,
-          ).map(({ date, holiday, isWeekend }) => ({
-            date,
-            name: holiday.name,
-            paidPercentage: holiday.paidPercentage,
-            isWeekend,
-          })),
-          periodLabel: periodLabel(part.periodStartDate, part.periodEndDate),
-          periodStartDate: part.periodStartDate,
-          periodEndDate: part.periodEndDate,
-          isSplit,
-        }));
-    });
-
-    // Innerhalb der Periode chronologisch nach Beginn des Segments.
-    return segments.sort((a, b) => a.startDate.localeCompare(b.startDate));
+    return segments.map((segment) => ({
+      id: segment.id,
+      companyVacationId: segment.sourceId,
+      name: segment.name as string,
+      startDate: segment.startDate,
+      endDate: segment.endDate,
+      effectiveDays: segment.effectiveDays,
+      holidays: segment.holidays,
+      periodLabel: segment.periodLabel,
+      periodStartDate: segment.periodStartDate,
+      periodEndDate: segment.periodEndDate,
+      isSplit: segment.isSplit,
+    }));
   }
 }

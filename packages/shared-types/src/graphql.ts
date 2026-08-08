@@ -1150,9 +1150,11 @@ export type CreateEmployeePaidOvertimeInput = {
 };
 
 export type CreateEmployeeVacationInput = {
+  accrualType?: InputMaybe<EmployeeVacationAccrualType>;
   employeeId: Scalars['ID']['input'];
   endDate: Scalars['String']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
+  remark?: InputMaybe<Scalars['String']['input']>;
   startDate: Scalars['String']['input'];
 };
 
@@ -1588,6 +1590,7 @@ export type DailyTimeTracking = {
   entries?: Maybe<Array<DailyTimeTrackingEntry>>;
   kind: DailyTimeTrackingKind;
   label?: Maybe<Scalars['String']['output']>;
+  plannedMinutes: Scalars['Int']['output'];
   workMinutes: Scalars['Int']['output'];
 };
 
@@ -2176,6 +2179,7 @@ export enum EmployeeStatus {
 
 export type EmployeeVacation = {
   __typename?: 'EmployeeVacation';
+  accrualType: EmployeeVacationAccrualType;
   createdAt: Scalars['DateTime']['output'];
   deletedAt?: Maybe<Scalars['DateTime']['output']>;
   employeeId: Scalars['ID']['output'];
@@ -2186,9 +2190,32 @@ export type EmployeeVacation = {
   membershipId: Scalars['ID']['output'];
   name?: Maybe<Scalars['String']['output']>;
   organizationId: Scalars['ID']['output'];
+  remark?: Maybe<Scalars['String']['output']>;
   startDate: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
   version: Scalars['Int']['output'];
+};
+
+/** How an individual vacation is accounted against the vacation budget */
+export enum EmployeeVacationAccrualType {
+  Charged = 'CHARGED',
+  PaidNoCharge = 'PAID_NO_CHARGE',
+  Unpaid = 'UNPAID'
+}
+
+export type EmployeeVacationSegment = {
+  __typename?: 'EmployeeVacationSegment';
+  effectiveDays: Scalars['Float']['output'];
+  employeeVacationId: Scalars['ID']['output'];
+  endDate: Scalars['String']['output'];
+  holidays: Array<CompanyVacationHoliday>;
+  id: Scalars['ID']['output'];
+  isSplit: Scalars['Boolean']['output'];
+  name?: Maybe<Scalars['String']['output']>;
+  periodEndDate: Scalars['String']['output'];
+  periodLabel: Scalars['String']['output'];
+  periodStartDate: Scalars['String']['output'];
+  startDate: Scalars['String']['output'];
 };
 
 export type EmployeeWorkTimeOverviewRow = {
@@ -2582,6 +2609,7 @@ export type MonthlyTimeTrackingGroup = {
   __typename?: 'MonthlyTimeTrackingGroup';
   days: Array<DailyTimeTracking>;
   month: Scalars['Int']['output'];
+  plannedMinutes: Scalars['Int']['output'];
   workedMinutes: Scalars['Int']['output'];
   year: Scalars['Int']['output'];
 };
@@ -4631,11 +4659,13 @@ export type Query = {
   employeeFunctionsByOrgId: Array<EmployeeFunction>;
   employeeHrProfile?: Maybe<EmployeeHrProfile>;
   employeeMissingRecordDays: Array<Scalars['String']['output']>;
+  employeeMonthlyTimeTracking: Array<MonthlyTimeTrackingGroup>;
   employeeMonthlyWorkTime: Array<MonthlyWorkTimeSummary>;
   employeeNotesByEmployeeId: Array<EmployeeNote>;
   employeePaidOvertime: Array<EmployeePaidOvertime>;
   employeePeriodOpeningBalances: Array<EmployeePeriodOpeningBalance>;
   employeeVacationBalance: VacationBalance;
+  employeeVacationSegments: Array<EmployeeVacationSegment>;
   employeeVacations: Array<EmployeeVacation>;
   employeeWorkTimeBalance: WorkTimeBalance;
   employeesByOrgId: Array<Employee>;
@@ -5057,6 +5087,14 @@ export type QueryEmployeeMissingRecordDaysArgs = {
 };
 
 
+export type QueryEmployeeMonthlyTimeTrackingArgs = {
+  employeeId: Scalars['ID']['input'];
+  from: Scalars['String']['input'];
+  locale?: InputMaybe<Scalars['String']['input']>;
+  to: Scalars['String']['input'];
+};
+
+
 export type QueryEmployeeMonthlyWorkTimeArgs = {
   employeeId: Scalars['ID']['input'];
   from: Scalars['String']['input'];
@@ -5083,6 +5121,11 @@ export type QueryEmployeeVacationBalanceArgs = {
   employeeId: Scalars['ID']['input'];
   from: Scalars['String']['input'];
   to: Scalars['String']['input'];
+};
+
+
+export type QueryEmployeeVacationSegmentsArgs = {
+  employeeId: Scalars['ID']['input'];
 };
 
 
@@ -6486,10 +6529,12 @@ export type UpdateEmployeePaidOvertimeInput = {
 };
 
 export type UpdateEmployeeVacationInput = {
+  accrualType?: InputMaybe<EmployeeVacationAccrualType>;
   employeeId?: InputMaybe<Scalars['ID']['input']>;
   endDate?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
+  remark?: InputMaybe<Scalars['String']['input']>;
   startDate?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -8860,6 +8905,44 @@ export type UnassignCompanyVacationFromEmployeeMutationVariables = Exact<{
 
 export type UnassignCompanyVacationFromEmployeeMutation = { __typename?: 'Mutation', unassignCompanyVacationFromEmployee: boolean };
 
+export type EmployeeVacationSegmentsQueryVariables = Exact<{
+  employeeId: Scalars['ID']['input'];
+}>;
+
+
+export type EmployeeVacationSegmentsQuery = { __typename?: 'Query', employeeVacationSegments: Array<{ __typename?: 'EmployeeVacationSegment', id: string, employeeVacationId: string, name?: string | null, startDate: string, endDate: string, effectiveDays: number, periodLabel: string, periodStartDate: string, periodEndDate: string, isSplit: boolean, holidays: Array<{ __typename?: 'CompanyVacationHoliday', date: string, name: string, paidPercentage: number, isWeekend: boolean }> }> };
+
+export type CreateEmployeeVacationMutationVariables = Exact<{
+  input: CreateEmployeeVacationInput;
+}>;
+
+
+export type CreateEmployeeVacationMutation = { __typename?: 'Mutation', createEmployeeVacation: { __typename?: 'EmployeeVacation', id: string, accrualType: EmployeeVacationAccrualType, remark?: string | null } };
+
+export type UpdateEmployeeVacationMutationVariables = Exact<{
+  input: UpdateEmployeeVacationInput;
+}>;
+
+
+export type UpdateEmployeeVacationMutation = { __typename?: 'Mutation', updateEmployeeVacation: { __typename?: 'EmployeeVacation', id: string } };
+
+export type DeleteEmployeeVacationMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteEmployeeVacationMutation = { __typename?: 'Mutation', deleteEmployeeVacation: boolean };
+
+export type EmployeeMonthlyTimeTrackingQueryVariables = Exact<{
+  employeeId: Scalars['ID']['input'];
+  from: Scalars['String']['input'];
+  to: Scalars['String']['input'];
+  locale?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type EmployeeMonthlyTimeTrackingQuery = { __typename?: 'Query', employeeMonthlyTimeTracking: Array<{ __typename?: 'MonthlyTimeTrackingGroup', year: number, month: number, workedMinutes: number, plannedMinutes: number, days: Array<{ __typename?: 'DailyTimeTracking', date: string, kind: DailyTimeTrackingKind, label?: string | null, color?: string | null, workMinutes: number, plannedMinutes: number, entries?: Array<{ __typename?: 'DailyTimeTrackingEntry', id: string, startedAt: any, endedAt?: any | null, breakMinutes?: number | null, workMinutes?: number | null, notes?: string | null }> | null }> }> };
+
 export type MyEmployeeIdQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -9451,6 +9534,11 @@ export const UpdateTeamDocument = {"kind":"Document","definitions":[{"kind":"Ope
 export const CompanyVacationsForEmployeeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"CompanyVacationsForEmployee"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"companyVacationsForEmployee"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"companyVacationId"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"startDate"}},{"kind":"Field","name":{"kind":"Name","value":"endDate"}},{"kind":"Field","name":{"kind":"Name","value":"effectiveDays"}},{"kind":"Field","name":{"kind":"Name","value":"holidays"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"date"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"paidPercentage"}},{"kind":"Field","name":{"kind":"Name","value":"isWeekend"}}]}},{"kind":"Field","name":{"kind":"Name","value":"periodLabel"}},{"kind":"Field","name":{"kind":"Name","value":"periodStartDate"}},{"kind":"Field","name":{"kind":"Name","value":"periodEndDate"}},{"kind":"Field","name":{"kind":"Name","value":"isSplit"}}]}}]}}]} as unknown as DocumentNode<CompanyVacationsForEmployeeQuery, CompanyVacationsForEmployeeQueryVariables>;
 export const AssignCompanyVacationToEmployeeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AssignCompanyVacationToEmployee"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"companyVacationId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"assignCompanyVacationToEmployee"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"companyVacationId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"companyVacationId"}}},{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<AssignCompanyVacationToEmployeeMutation, AssignCompanyVacationToEmployeeMutationVariables>;
 export const UnassignCompanyVacationFromEmployeeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UnassignCompanyVacationFromEmployee"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"companyVacationId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"unassignCompanyVacationFromEmployee"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"companyVacationId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"companyVacationId"}}},{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}}]}]}}]} as unknown as DocumentNode<UnassignCompanyVacationFromEmployeeMutation, UnassignCompanyVacationFromEmployeeMutationVariables>;
+export const EmployeeVacationSegmentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"EmployeeVacationSegments"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeVacationSegments"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"employeeVacationId"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"startDate"}},{"kind":"Field","name":{"kind":"Name","value":"endDate"}},{"kind":"Field","name":{"kind":"Name","value":"effectiveDays"}},{"kind":"Field","name":{"kind":"Name","value":"holidays"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"date"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"paidPercentage"}},{"kind":"Field","name":{"kind":"Name","value":"isWeekend"}}]}},{"kind":"Field","name":{"kind":"Name","value":"periodLabel"}},{"kind":"Field","name":{"kind":"Name","value":"periodStartDate"}},{"kind":"Field","name":{"kind":"Name","value":"periodEndDate"}},{"kind":"Field","name":{"kind":"Name","value":"isSplit"}}]}}]}}]} as unknown as DocumentNode<EmployeeVacationSegmentsQuery, EmployeeVacationSegmentsQueryVariables>;
+export const CreateEmployeeVacationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateEmployeeVacation"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateEmployeeVacationInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createEmployeeVacation"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"accrualType"}},{"kind":"Field","name":{"kind":"Name","value":"remark"}}]}}]}}]} as unknown as DocumentNode<CreateEmployeeVacationMutation, CreateEmployeeVacationMutationVariables>;
+export const UpdateEmployeeVacationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateEmployeeVacation"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateEmployeeVacationInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateEmployeeVacation"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateEmployeeVacationMutation, UpdateEmployeeVacationMutationVariables>;
+export const DeleteEmployeeVacationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteEmployeeVacation"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteEmployeeVacation"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteEmployeeVacationMutation, DeleteEmployeeVacationMutationVariables>;
+export const EmployeeMonthlyTimeTrackingDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"EmployeeMonthlyTimeTracking"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"from"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"to"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"locale"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeMonthlyTimeTracking"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}},{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"from"}}},{"kind":"Argument","name":{"kind":"Name","value":"to"},"value":{"kind":"Variable","name":{"kind":"Name","value":"to"}}},{"kind":"Argument","name":{"kind":"Name","value":"locale"},"value":{"kind":"Variable","name":{"kind":"Name","value":"locale"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"year"}},{"kind":"Field","name":{"kind":"Name","value":"month"}},{"kind":"Field","name":{"kind":"Name","value":"workedMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"plannedMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"days"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"date"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"workMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"plannedMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"entries"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"startedAt"}},{"kind":"Field","name":{"kind":"Name","value":"endedAt"}},{"kind":"Field","name":{"kind":"Name","value":"breakMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"workMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}}]}}]}}]}}]}}]} as unknown as DocumentNode<EmployeeMonthlyTimeTrackingQuery, EmployeeMonthlyTimeTrackingQueryVariables>;
 export const MyEmployeeIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"MyEmployeeId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"myEmployeeId"}}]}}]} as unknown as DocumentNode<MyEmployeeIdQuery, MyEmployeeIdQueryVariables>;
 export const MyTimeTrackingDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"MyTimeTracking"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"from"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"to"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"locale"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"myWorkTimeBalance"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"from"}}},{"kind":"Argument","name":{"kind":"Name","value":"to"},"value":{"kind":"Variable","name":{"kind":"Name","value":"to"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeId"}},{"kind":"Field","name":{"kind":"Name","value":"fromDate"}},{"kind":"Field","name":{"kind":"Name","value":"toDate"}},{"kind":"Field","name":{"kind":"Name","value":"plannedMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"workedMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"vacationMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"absenceMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"actualMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"differenceMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"openingWorkMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"paidOvertimeMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"netBalanceMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"vacationDaysUsed"}},{"kind":"Field","name":{"kind":"Name","value":"absenceDaysCount"}}]}},{"kind":"Field","name":{"kind":"Name","value":"myVacationBalance"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"from"}}},{"kind":"Argument","name":{"kind":"Name","value":"to"},"value":{"kind":"Variable","name":{"kind":"Name","value":"to"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entitlementDays"}},{"kind":"Field","name":{"kind":"Name","value":"openingDays"}},{"kind":"Field","name":{"kind":"Name","value":"usedDays"}},{"kind":"Field","name":{"kind":"Name","value":"remainingDays"}}]}},{"kind":"Field","name":{"kind":"Name","value":"myMissingRecordDays"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"from"}}},{"kind":"Argument","name":{"kind":"Name","value":"to"},"value":{"kind":"Variable","name":{"kind":"Name","value":"to"}}}]},{"kind":"Field","name":{"kind":"Name","value":"timeTrackingByEmployeeId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}},{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"from"}}},{"kind":"Argument","name":{"kind":"Name","value":"to"},"value":{"kind":"Variable","name":{"kind":"Name","value":"to"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"startedAt"}},{"kind":"Field","name":{"kind":"Name","value":"endedAt"}},{"kind":"Field","name":{"kind":"Name","value":"breakMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"workMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"entryDate"}},{"kind":"Field","name":{"kind":"Name","value":"source"}}]}},{"kind":"Field","name":{"kind":"Name","value":"myMonthlyTimeTracking"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"from"}}},{"kind":"Argument","name":{"kind":"Name","value":"to"},"value":{"kind":"Variable","name":{"kind":"Name","value":"to"}}},{"kind":"Argument","name":{"kind":"Name","value":"locale"},"value":{"kind":"Variable","name":{"kind":"Name","value":"locale"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"year"}},{"kind":"Field","name":{"kind":"Name","value":"month"}},{"kind":"Field","name":{"kind":"Name","value":"workedMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"days"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"date"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"workMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"entries"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"startedAt"}},{"kind":"Field","name":{"kind":"Name","value":"endedAt"}},{"kind":"Field","name":{"kind":"Name","value":"breakMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"workMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}}]}}]}}]}}]}}]} as unknown as DocumentNode<MyTimeTrackingQuery, MyTimeTrackingQueryVariables>;
 export const TeamOverviewDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TeamOverview"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"from"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"to"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"teamWorkTimeOverview"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"from"}}},{"kind":"Argument","name":{"kind":"Name","value":"to"},"value":{"kind":"Variable","name":{"kind":"Name","value":"to"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeId"}},{"kind":"Field","name":{"kind":"Name","value":"employeeName"}},{"kind":"Field","name":{"kind":"Name","value":"netBalanceMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"vacationDaysUsed"}}]}}]}}]} as unknown as DocumentNode<TeamOverviewQuery, TeamOverviewQueryVariables>;

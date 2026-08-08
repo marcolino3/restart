@@ -27,6 +27,7 @@ const group = (
   year: 2026,
   month: 1,
   workedMinutes: 480,
+  plannedMinutes: 480,
   days: [
     {
       date: "2026-01-15",
@@ -34,6 +35,7 @@ const group = (
       label: null,
       color: null,
       workMinutes: 480,
+      plannedMinutes: 480,
       entries: [
         {
           id: "entry-1",
@@ -71,6 +73,7 @@ describe("MonthlyTimeEntriesAccordion", () => {
                 label: "Ferien",
                 color: "#ff0000",
                 workMinutes: 0,
+                plannedMinutes: 0,
                 entries: null,
               },
             ],
