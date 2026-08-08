@@ -218,8 +218,9 @@ test.describe('My time tracking — absences, company vacations, holidays', () =
     // absence/vacation days (2-4) used above. Holidays are also soft-deleted
     // (uq_holidays_org_date stays enforced against inactive rows too, and the
     // `holidays` query only returns active ones), so a fixed day can collide
-    // with an invisible leftover from a prior run — retry a few candidates.
-    const holidayDayCandidates = [5, 6]
+    // with an invisible leftover from a prior run — retry across a wider
+    // pool of candidate days.
+    const holidayDayCandidates = [5, 6, 7, 8, 9, 10, 11, 12]
     let holidayDate = ''
     for (let attempt = 0; attempt < holidayDayCandidates.length; attempt++) {
       const candidate = dayInCurrentMonth(holidayDayCandidates[attempt])
