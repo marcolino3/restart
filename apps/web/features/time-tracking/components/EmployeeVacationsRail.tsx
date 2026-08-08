@@ -148,15 +148,10 @@ export default function EmployeeVacationsRail({
   ].sort((a, b) => a.startDate.localeCompare(b.startDate));
 
   const assignedIds = new Set(assigned.map((v) => v.companyVacationId));
-  const period = rows[0];
 
-  const assignableOptions = allCompanyVacations.filter((v) => {
-    if (assignedIds.has(v.id)) return false;
-    if (!period) return true;
-    return (
-      v.startDate <= period.periodEndDate && v.endDate >= period.periodStartDate
-    );
-  });
+  const assignableOptions = allCompanyVacations.filter(
+    (v) => !assignedIds.has(v.id),
+  );
 
   const toggleSelected = (vacationId: string) => {
     setSelectedIds((prev) => {
