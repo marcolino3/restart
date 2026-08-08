@@ -5,27 +5,58 @@ import { gql } from "graphql-request";
 import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
 import { ROUTES } from "@/constants/routes";
-import type { CompanyVacation } from "./settings.action";
+import type { CompanyVacationHoliday } from "./settings.action";
+
+/**
+ * Eine zugewiesene Betriebsferien, zugeschnitten auf eine Abrechnungsperiode
+ * (Stichtag bis Vortag des naechsten Stichtags). Betriebsferien ueber den
+ * Stichtag hinweg erscheinen als mehrere Segmente mit `isSplit: true`;
+ * `effectiveDays` und `holidays` zaehlen jeweils nur das Segment.
+ */
+export type EmployeeCompanyVacation = {
+  id: string;
+  companyVacationId: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  effectiveDays: number;
+  holidays: CompanyVacationHoliday[];
+  periodLabel: string;
+  periodStartDate: string;
+  periodEndDate: string;
+  isSplit: boolean;
+};
 
 const CompanyVacationsForEmployeeDocument = gql`
   query CompanyVacationsForEmployee($employeeId: ID!) {
     companyVacationsForEmployee(employeeId: $employeeId) {
       id
+      companyVacationId
       name
       startDate
       endDate
-      appliesToAll
+      effectiveDays
+      holidays {
+        date
+        name
+        paidPercentage
+        isWeekend
+      }
+      periodLabel
+      periodStartDate
+      periodEndDate
+      isSplit
     }
   }
 `;
 
 export const getCompanyVacationsForEmployeeAction = async (
   employeeId: string,
-): Promise<{ success: true; data: CompanyVacation[] } | { success: false; error: string }> => {
+): Promise<{ success: true; data: EmployeeCompanyVacation[] } | { success: false; error: string }> => {
   try {
     const client = await serverCookieGqlClient();
     const data = await client.request<{
-      companyVacationsForEmployee: CompanyVacation[];
+      companyVacationsForEmployee: EmployeeCompanyVacation[];
     }>(CompanyVacationsForEmployeeDocument, { employeeId });
     return { success: true, data: data.companyVacationsForEmployee ?? [] };
   } catch (error) {

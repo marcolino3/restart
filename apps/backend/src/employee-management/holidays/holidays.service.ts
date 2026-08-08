@@ -6,6 +6,9 @@ import { Holiday } from './entities/holiday.entity';
 import { CreateHolidayInput } from './dto/create-holiday.input';
 import { UpdateHolidayInput } from './dto/update-holiday.input';
 import { BalanceRecomputeService } from '../work-time-calculation/balance-recompute.service';
+import { CompanyVacationsService } from '../company-vacations/company-vacations.service';
+import { TimeTrackingPeriodsService } from '../time-tracking-periods/time-tracking-periods.service';
+import { sortByPeriodAnchor } from '../time-tracking-periods/sort-by-anchor';
 
 interface HolidayRecomputeSnapshot {
   date: string;
@@ -18,13 +21,20 @@ export class HolidaysService {
     @InjectRepository(Holiday)
     private readonly holidayRepo: Repository<Holiday>,
     private readonly balanceRecompute: BalanceRecomputeService,
+    private readonly companyVacationsService: CompanyVacationsService,
+    private readonly periodsService: TimeTrackingPeriodsService,
   ) {}
 
-  findAll(organizationId: string): Promise<Holiday[]> {
-    return this.holidayRepo.find({
-      where: { organizationId, isActive: true },
-      order: { date: 'ASC' },
-    });
+  /** Sortiert ab dem Org-Stichtag, nicht kalendarisch ab Januar. */
+  async findAll(organizationId: string): Promise<Holiday[]> {
+    const [holidays, anchor] = await Promise.all([
+      this.holidayRepo.find({
+        where: { organizationId, isActive: true },
+        order: { date: 'ASC' },
+      }),
+      this.periodsService.getAnchor(organizationId),
+    ]);
+    return sortByPeriodAnchor(holidays, anchor, (h) => h.date);
   }
 
   async create(
@@ -40,6 +50,9 @@ export class HolidaysService {
     const saved = await this.holidayRepo.save(holiday);
     const { from, to } = this.recomputeRangeForHoliday(saved);
     await this.balanceRecompute.recomputeOrgRange(organizationId, from, to);
+    await this.companyVacationsService.recomputeEffectiveDaysForOrg(
+      organizationId,
+    );
     return saved;
   }
 
@@ -54,6 +67,9 @@ export class HolidaysService {
     const saved = await this.holidayRepo.save(holiday);
     const { from, to } = this.recomputeRangeForHoliday(saved, previous);
     await this.balanceRecompute.recomputeOrgRange(organizationId, from, to);
+    await this.companyVacationsService.recomputeEffectiveDaysForOrg(
+      organizationId,
+    );
     return saved;
   }
 
@@ -64,6 +80,9 @@ export class HolidaysService {
     await this.holidayRepo.save(holiday);
     const { from, to } = this.recomputeRangeForHoliday(snapshot);
     await this.balanceRecompute.recomputeOrgRange(organizationId, from, to);
+    await this.companyVacationsService.recomputeEffectiveDaysForOrg(
+      organizationId,
+    );
     return true;
   }
 

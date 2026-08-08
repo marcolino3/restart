@@ -4,6 +4,8 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { CompanyVacationsService } from './company-vacations.service';
 import { CompanyVacation } from './entities/company-vacation.entity';
 import { BalanceRecomputeService } from '../work-time-calculation/balance-recompute.service';
+import { Holiday } from '../holidays/entities/holiday.entity';
+import { TimeTrackingPeriodsService } from '../time-tracking-periods/time-tracking-periods.service';
 
 describe('CompanyVacationsService', () => {
   let service: CompanyVacationsService;
@@ -13,7 +15,9 @@ describe('CompanyVacationsService', () => {
     create: jest.Mock;
     save: jest.Mock;
   };
+  let holidayRepo: { find: jest.Mock };
   let recompute: { recomputeOrgRange: jest.Mock };
+  let periodsService: { getAnchor: jest.Mock };
 
   beforeEach(async () => {
     repo = {
@@ -26,13 +30,19 @@ describe('CompanyVacationsService', () => {
           Promise.resolve({ id: 'cv-1', isActive: true, ...e }),
         ),
     };
+    holidayRepo = { find: jest.fn().mockResolvedValue([]) };
     recompute = { recomputeOrgRange: jest.fn().mockResolvedValue(undefined) };
+    periodsService = {
+      getAnchor: jest.fn().mockResolvedValue({ month: 1, day: 1 }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CompanyVacationsService,
         { provide: getRepositoryToken(CompanyVacation), useValue: repo },
+        { provide: getRepositoryToken(Holiday), useValue: holidayRepo },
         { provide: BalanceRecomputeService, useValue: recompute },
+        { provide: TimeTrackingPeriodsService, useValue: periodsService },
       ],
     }).compile();
 
@@ -51,7 +61,7 @@ describe('CompanyVacationsService', () => {
   });
 
   describe('create', () => {
-    it('defaults appliesToAll and recomputes the date range', async () => {
+    it('creates the vacation and recomputes the date range', async () => {
       await service.create(
         {
           name: 'Sommerferien',
@@ -66,7 +76,6 @@ describe('CompanyVacationsService', () => {
           name: 'Sommerferien',
           startDate: '2026-07-01',
           endDate: '2026-08-15',
-          appliesToAll: true,
           organizationId: 'org-1',
         }),
       );
@@ -99,7 +108,6 @@ describe('CompanyVacationsService', () => {
         name: 'Sommerferien',
         startDate: '2026-07-01',
         endDate: '2026-08-15',
-        appliesToAll: true,
         isActive: true,
       });
 
@@ -128,7 +136,6 @@ describe('CompanyVacationsService', () => {
         name: 'Sommerferien',
         startDate: '2026-07-01',
         endDate: '2026-08-15',
-        appliesToAll: true,
         isActive: true,
       });
 

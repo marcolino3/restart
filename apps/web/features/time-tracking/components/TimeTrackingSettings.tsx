@@ -15,6 +15,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { DataTable } from "@/components/data-table/DataTable";
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
@@ -25,6 +30,7 @@ import {
   type DateRangeValue,
 } from "@/components/form/DateRangePicker";
 import { normalizeForSearch } from "@/lib/table/locale-sorting";
+import { cn } from "@/lib/utils";
 import { useSheet } from "@/components/providers/sheet-provider";
 import { HolidayForm } from "./HolidayForm";
 import { CompanyVacationForm } from "./CompanyVacationForm";
@@ -40,6 +46,64 @@ const fmtYearly = (d: string) => format(new Date(d), "dd.MM.", { locale: de });
 const fmtWithWeekday = (d: string) =>
   format(new Date(d), "EEE, dd.MM.yyyy", { locale: de });
 const toIsoDate = (d: Date) => format(d, "yyyy-MM-dd");
+
+/**
+ * Anzahl der wirksamen Feiertage im Betriebsferien-Zeitraum; Hover listet alle
+ * auf, Wochenend-Feiertage ausgegraut. Ohne Feiertage nur "0" ohne Trigger.
+ */
+const CompanyVacationHolidaysCell = ({
+  vacation,
+}: {
+  vacation: CompanyVacation;
+}) => {
+  const t = useTranslations("TimeTracking");
+  const holidays = vacation.holidays ?? [];
+  // Nur Werktags-Feiertage sparen einen Ferientag; Wochenend-Feiertage werden
+  // in der Hover-Karte trotzdem gelistet, damit die Auflistung vollstaendig ist.
+  const effectiveCount = holidays.filter((h) => !h.isWeekend).length;
+
+  if (!holidays.length) {
+    return <span className="tabular-nums text-muted-foreground">0</span>;
+  }
+
+  return (
+    <HoverCard openDelay={100} closeDelay={100}>
+      <HoverCardTrigger asChild>
+        <Button
+          type="button"
+          variant="link"
+          className="h-auto p-0 tabular-nums no-underline hover:no-underline"
+          aria-label={t("holidaysInRange")}
+        >
+          {effectiveCount}
+        </Button>
+      </HoverCardTrigger>
+      <HoverCardContent align="start" className="w-72 p-0">
+        <p className="border-b border-border px-3 py-2 text-xs font-medium text-muted-foreground">
+          {t("holidaysInRange")}
+        </p>
+        <ul className="max-h-64 divide-y divide-border overflow-y-auto">
+          {holidays.map((h) => (
+            <li
+              key={`${h.date}-${h.name}`}
+              className={cn(
+                "flex items-baseline justify-between gap-3 px-3 py-2 text-sm",
+                h.isWeekend && "text-muted-foreground",
+              )}
+              title={h.isWeekend ? t("holidayOnWeekend") : undefined}
+            >
+              <span>{h.name}</span>
+              <span className="shrink-0 tabular-nums text-xs text-muted-foreground">
+                {fmtWithWeekday(h.date)}
+                {h.paidPercentage !== 100 && ` · ${h.paidPercentage}%`}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </HoverCardContent>
+    </HoverCard>
+  );
+};
 
 const fmtHolidayDate = (
   holiday: Holiday,
@@ -151,7 +215,8 @@ export const HolidaysSection = ({ holidays }: { holidays: Holiday[] }) => {
     data: holidays,
     columns,
     getRowId: (row) => row.id,
-    initialSorting: [{ id: "date", desc: false }],
+    // Kein initialSorting: die Reihenfolge kommt ab dem Org-Stichtag aus dem
+    // Backend (sortByPeriodAnchor). Spaltenklick sortiert weiterhin kalendarisch.
     initialVisibility: { repeatsYearly: false },
     globalFilterFn: (row, _columnId, filterValue) => {
       const needle = normalizeForSearch(filterValue);
@@ -254,6 +319,27 @@ export const CompanyVacationsSection = ({
         cell: ({ row }) => fmtWithWeekday(row.original.endDate),
       },
       {
+        id: "dayCount",
+        accessorFn: (v) => v.effectiveDays,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("dayCount")} />
+        ),
+        meta: { labelKey: "dayCount" },
+      },
+      {
+        id: "holidayCount",
+        // Sortiert nach den wirksamen Feiertagen, passend zur angezeigten Zahl.
+        accessorFn: (v) =>
+          v.holidays?.filter((h) => !h.isWeekend).length ?? 0,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("holidayCount")} />
+        ),
+        meta: { labelKey: "holidayCount" },
+        cell: ({ row }) => (
+          <CompanyVacationHolidaysCell vacation={row.original} />
+        ),
+      },
+      {
         id: "actions",
         enableHiding: false,
         enableSorting: false,
@@ -276,7 +362,8 @@ export const CompanyVacationsSection = ({
     data: filteredVacations,
     columns,
     getRowId: (row) => row.id,
-    initialSorting: [{ id: "startDate", desc: false }],
+    // Kein initialSorting: die Reihenfolge kommt ab dem Org-Stichtag aus dem
+    // Backend (sortByPeriodAnchor). Spaltenklick sortiert weiterhin kalendarisch.
     globalFilterFn: (row, _columnId, filterValue) => {
       const needle = normalizeForSearch(filterValue);
       if (!needle) return true;

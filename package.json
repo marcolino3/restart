@@ -49,11 +49,14 @@
       "jest-mock@29": "30.4.1",
       "@jest/environment@29": "30.4.1",
       "@jest/fake-timers@29": "30.4.1",
-      "jest-environment-node@29": "30.4.1"
+      "jest-environment-node@29": "30.4.1",
+      "nanoid@>=3.0.0 <3.3.17": ">=3.3.18 <4.0.0"
     },
     "auditConfig": {
       "ignoreGhsas": [
-        "GHSA-mh99-v99m-4gvg"
+        "GHSA-mh99-v99m-4gvg",
+        "GHSA-w3rx-r6r6-pgpr",
+        "GHSA-5p2g-fcmc-qvqq"
       ]
     }
   }

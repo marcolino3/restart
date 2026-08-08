@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { Loader2, Lock, LockOpen, Plus } from "lucide-react";
+import { Loader2, Lock, LockOpen } from "lucide-react";
 import { toast } from "sonner";
 import {
   Table,
@@ -29,7 +29,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCard } from "@/components/common/TableCard";
 import {
-  ensureCurrentPeriodAction,
   setPeriodStatusAction,
   type TimeTrackingPeriodItem,
 } from "../actions/periods.action";
@@ -49,17 +48,6 @@ export const PeriodsSection = ({ periods }: Props) => {
     null
   );
 
-  const createCurrentPeriod = () =>
-    startTransition(async () => {
-      const r = await ensureCurrentPeriodAction();
-      if (r.success) {
-        toast.success(tc("success"));
-        router.refresh();
-      } else {
-        toast.error(tc("error"));
-      }
-    });
-
   const setStatus = (id: string, status: "OPEN" | "LOCKED") =>
     startTransition(async () => {
       const r = await setPeriodStatusAction(id, status);
@@ -74,17 +62,7 @@ export const PeriodsSection = ({ periods }: Props) => {
 
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">{t("periods")}</h2>
-        <Button size="sm" onClick={createCurrentPeriod} disabled={isPending}>
-          {isPending ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Plus className="size-4" />
-          )}{" "}
-          {t("createCurrentPeriod")}
-        </Button>
-      </div>
+      <h2 className="text-lg font-semibold">{t("periods")}</h2>
       <TableCard>
         <Table>
           <TableHeader>

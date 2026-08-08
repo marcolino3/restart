@@ -192,6 +192,44 @@ export class OrganizationSettingsService {
   }
 
   /**
+   * Upsert an encrypted value for internal use (e.g., other services). The
+   * caller is responsible for authorizing the organization access.
+   */
+  async setDecryptedValue(
+    organizationId: string,
+    key: string,
+    value: string,
+    description?: string,
+  ): Promise<void> {
+    const normalizedKey = key.trim().toUpperCase();
+    const encrypted = this.encryptionService.encrypt(value);
+    const existing = await this.settingRepo.findOne({
+      where: { organizationId, key: normalizedKey },
+    });
+
+    if (existing) {
+      existing.encryptedValue = encrypted.encryptedValue;
+      existing.iv = encrypted.iv;
+      existing.authTag = encrypted.authTag;
+      existing.isActive = true;
+      if (description) existing.description = description;
+      await this.settingRepo.save(existing);
+      return;
+    }
+
+    await this.settingRepo.save(
+      this.settingRepo.create({
+        organizationId,
+        key: normalizedKey,
+        encryptedValue: encrypted.encryptedValue,
+        iv: encrypted.iv,
+        authTag: encrypted.authTag,
+        description,
+      }),
+    );
+  }
+
+  /**
    * Check if user has access to organization settings
    */
   private async checkOrgAccess(

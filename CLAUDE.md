@@ -58,7 +58,7 @@ Production-Ready-Projekt, kein Prototyp — gilt auch bei kleinen Änderungen.
 
 **Branch/PR:** Kein direkter Push auf `main` (protected). Feature-Branch → Commit → PR → CI grün → Squash-Merge. PR-Template ausfüllen. Präfixe `feat/ fix/ chore/ refactor/ ci/`. CODEOWNERS-Review bei security-/infra-kritischen Pfaden.
 
-**Tests (kein Feature ohne):** Business-Logik → Unit (Jest BE / Vitest FE). Neue oder role-geschützte Resolver & Guards → Permission- **und** Multi-Tenant-Isolationstest (Fremd-Org muss fehlschlagen). Kritische Flows → Playwright `e2e/` (Happy-Path + Negativ-/Auth-Fall). Bugfix → erst Regressions-Test. Lokal grün vor PR: `pnpm turbo run lint test build`, E2E `pnpm --filter @restart/e2e test:e2e`.
+**Tests (kein Feature ohne):** Business-Logik → Unit (Jest BE / Vitest FE). Neue oder role-geschützte Resolver & Guards → Permission- **und** Multi-Tenant-Isolationstest (Fremd-Org muss fehlschlagen). Kritische Flows → Playwright `e2e/` (Happy-Path + Negativ-/Auth-Fall), erzeugte Testeinträge nach Lauf wieder löschen (Teardown), DB nicht mit Testdaten vermüllen. Bugfix → erst Regressions-Test. Lokal grün vor PR: `pnpm turbo run lint test build`, E2E `pnpm --filter @restart/e2e test:e2e`.
 
 **CI-Gates (8 Required Checks auf `main`, strict):**
 - `CI`: lint (check-only) · typecheck (BE/Web via `build`, Mobile via `typecheck`-Task) · unit · build · Playwright E2E · Codegen-Drift-Check

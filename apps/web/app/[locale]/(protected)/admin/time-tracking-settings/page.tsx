@@ -3,7 +3,10 @@ import { PageHead } from "@/components/common/PageHead";
 import { requireAdminPersona } from "@/features/users/guards/require-admin-persona";
 import { getEmployeeAbsenceCategoriesAction } from "@/features/employee-absence-categories/actions/get-employee-absence-categories.action";
 import { getTimeTrackingSettingsAction } from "@/features/time-tracking/actions/settings.action";
-import { getTimeTrackingPeriodsAction } from "@/features/time-tracking/actions/periods.action";
+import {
+  getTimeTrackingPeriodAnchorAction,
+  getTimeTrackingPeriodsAction,
+} from "@/features/time-tracking/actions/periods.action";
 import { getEmployeesAction } from "@/features/employees/actions/get-employees.action";
 import { AbsenceCategoriesTable } from "@/features/employee-absence-categories/components/AbsenceCategoriesTable";
 import {
@@ -11,6 +14,7 @@ import {
   HolidaysSection,
 } from "@/features/time-tracking/components/TimeTrackingSettings";
 import { PeriodsSection } from "@/features/time-tracking/components/PeriodsSection";
+import { PeriodAnchorSection } from "@/features/time-tracking/components/PeriodAnchorSection";
 import { PaidOvertimeSection } from "@/features/time-tracking/components/PaidOvertimeSection";
 import { OpeningBalancesSection } from "@/features/time-tracking/components/OpeningBalancesSection";
 import {
@@ -28,11 +32,13 @@ const TimeTrackingSettingsPage = async () => {
   const [
     { holidays, companyVacations },
     periods,
+    periodAnchor,
     employeesRes,
     absenceCategoriesRes,
   ] = await Promise.all([
     getTimeTrackingSettingsAction(),
     getTimeTrackingPeriodsAction(),
+    getTimeTrackingPeriodAnchorAction(),
     getEmployeesAction(),
     getEmployeeAbsenceCategoriesAction(),
   ]);
@@ -80,7 +86,8 @@ const TimeTrackingSettingsPage = async () => {
             }
           />
         </TabsContent>
-        <TabsContent value="periods" className="mt-6">
+        <TabsContent value="periods" className="mt-6 space-y-8">
+          <PeriodAnchorSection anchor={periodAnchor} />
           <PeriodsSection periods={periods} />
         </TabsContent>
         <TabsContent value="paidOvertime" className="mt-6">

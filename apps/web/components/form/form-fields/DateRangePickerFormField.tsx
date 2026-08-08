@@ -137,6 +137,8 @@ export function DateRangePickerFormField<TFormValues extends FieldValues>({
                 onSelect={handleRangeChange}
                 disabled={disabledDate}
                 captionLayout="dropdown"
+                startMonth={new Date(1900, 0)}
+                endMonth={new Date(new Date().getFullYear() + 10, 11)}
                 locale={de}
               />
             </PopoverContent>

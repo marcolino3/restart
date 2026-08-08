@@ -22,14 +22,21 @@ export class TimeTrackingPeriodsResolver {
     return this.service.findAll(orgId);
   }
 
-  @Mutation(() => TimeTrackingPeriod)
+  /** Current accounting-period anchor of the org, as MM-DD. */
+  @Query(() => String, { name: 'timeTrackingPeriodAnchor' })
+  @Permissions('TIMESHEET_READ')
+  anchor(@CurrentOrgId() orgId: string) {
+    return this.service.getAnchorValue(orgId);
+  }
+
+  @Mutation(() => String)
   @AdminPersonaOnly()
   @Permissions('EMPLOYEE_WRITE')
-  ensureTimeTrackingPeriod(
+  setTimeTrackingPeriodAnchor(
     @CurrentOrgId() orgId: string,
-    @Args('date', { type: () => String }) date: string,
+    @Args('anchor', { type: () => String }) anchor: string,
   ) {
-    return this.service.ensurePeriodForDate(orgId, date);
+    return this.service.setAnchorValue(orgId, anchor);
   }
 
   @Mutation(() => TimeTrackingPeriod)
