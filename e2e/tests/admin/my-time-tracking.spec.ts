@@ -199,7 +199,9 @@ test.describe('My time tracking — absences, company vacations, holidays', () =
     // today (clampToToday), so a future date never shows up.
     const vacationStart = dayInCurrentMonth(3)
     const vacationEnd = dayInCurrentMonth(4)
-    await gql(
+    const { createCompanyVacation } = await gql<{
+      createCompanyVacation: { id: string }
+    }>(
       page,
       `mutation CreateCompanyVacation($input: CreateCompanyVacationInput!) {
         createCompanyVacation(input: $input) { id }
@@ -212,14 +214,25 @@ test.describe('My time tracking — absences, company vacations, holidays', () =
         },
       },
     )
+    // Company vacations only count towards an employee's balance ledger
+    // (is_vacation) once explicitly assigned — creating the org-wide
+    // vacation alone isn't enough to make it show up here.
+    await gql(
+      page,
+      `mutation AssignCompanyVacation($companyVacationId: ID!, $employeeId: ID!) {
+        assignCompanyVacationToEmployee(companyVacationId: $companyVacationId, employeeId: $employeeId) { id }
+      }`,
+      { companyVacationId: createCompanyVacation.id, employeeId },
+    )
 
     const holidayName = `E2E Holiday ${stamp}`
     // Must stay in the past (see vacation comment above) and clear of the
     // absence/vacation days (2-4) used above. Holidays are also soft-deleted
     // (uq_holidays_org_date stays enforced against inactive rows too, and the
     // `holidays` query only returns active ones), so a fixed day can collide
-    // with an invisible leftover from a prior run — retry a few candidates.
-    const holidayDayCandidates = [5, 6]
+    // with an invisible leftover from a prior run — retry across a wider
+    // pool of candidate days.
+    const holidayDayCandidates = [5, 6, 7, 8, 9, 10, 11, 12]
     let holidayDate = ''
     for (let attempt = 0; attempt < holidayDayCandidates.length; attempt++) {
       const candidate = dayInCurrentMonth(holidayDayCandidates[attempt])
@@ -262,8 +275,13 @@ test.describe('My time tracking — absences, company vacations, holidays', () =
         )
       }
       await expect(page.getByText(holidayName)).toBeVisible({ timeout: 2000 })
+      // "Company vacations" is a per-row badge label (rendered once per
+      // VACATION-kind day), not a static section heading — wait for it
+      // inside the same poll as the other ledger-derived rows.
+      await expect(page.getByText('Company vacations').first()).toBeVisible({
+        timeout: 2000,
+      })
     }).toPass({ timeout: 30000, intervals: [1000, 2000, 3000] })
-    await expect(page.getByText('Company vacations').first()).toBeVisible()
     await expect(page.getByText(vacationName).first()).toBeVisible()
     await expect(page.getByText(holidayName).first()).toBeVisible()
   })

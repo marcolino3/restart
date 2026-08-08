@@ -13,14 +13,14 @@ import { TestingModule } from '@nestjs/testing';
 
 import { CompanyVacationsService } from '@/employee-management/company-vacations/company-vacations.service';
 import { CompanyVacation } from '@/employee-management/company-vacations/entities/company-vacation.entity';
+import { Holiday } from '@/employee-management/holidays/entities/holiday.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { BalanceRecomputeService } from '@/employee-management/work-time-calculation/balance-recompute.service';
 import { TimeTrackingPeriodsService } from '@/employee-management/time-tracking-periods/time-tracking-periods.service';
-import { Holiday } from '@/employee-management/holidays/entities/holiday.entity';
 import { createTestingApp, cleanDatabase } from './test-utils';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([CompanyVacation, Organization, Holiday])],
+  imports: [TypeOrmModule.forFeature([CompanyVacation, Holiday, Organization])],
   providers: [
     CompanyVacationsService,
     {
