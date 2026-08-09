@@ -6,7 +6,6 @@ import { CompanyVacationsService } from './company-vacations.service';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { PERMS_KEY } from '@/auth/decorators/permissions.decorator';
-import { ADMIN_PERSONA_KEY } from '@/auth/decorators/admin-persona-only.decorator';
 
 const methodOf = (name: keyof CompanyVacationsResolver): object =>
   Object.getOwnPropertyDescriptor(CompanyVacationsResolver.prototype, name)
@@ -61,16 +60,6 @@ describe('CompanyVacationsResolver', () => {
     const permissions: string[] =
       Reflect.getMetadata(PERMS_KEY, methodOf(method)) ?? [];
     expect(permissions).toContain(permission);
-  });
-
-  it.each([
-    'createCompanyVacation',
-    'updateCompanyVacation',
-    'deleteCompanyVacation',
-  ] as const)('%s requires admin persona', (method) => {
-    const adminPersonaOnly =
-      Reflect.getMetadata(ADMIN_PERSONA_KEY, methodOf(method)) ?? false;
-    expect(adminPersonaOnly).toBe(true);
   });
 
   it('passes the active org id to findAll (multi-tenant isolation)', async () => {

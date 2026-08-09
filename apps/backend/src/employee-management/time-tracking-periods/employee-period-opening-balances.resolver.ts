@@ -3,7 +3,6 @@ import { UseGuards } from '@nestjs/common';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
-import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { EmployeePeriodOpeningBalancesService } from './employee-period-opening-balances.service';
 import { EmployeePeriodOpeningBalance } from './entities/employee-period-opening-balance.entity';
@@ -12,7 +11,6 @@ import { UpsertEmployeePeriodOpeningBalanceInput } from './dto/upsert-employee-p
 /** Opening balances (carry-over) — HR/Admin-only (payroll-sensitive). */
 @Resolver(() => EmployeePeriodOpeningBalance)
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
-@AdminPersonaOnly()
 export class EmployeePeriodOpeningBalancesResolver {
   constructor(private readonly service: EmployeePeriodOpeningBalancesService) {}
 

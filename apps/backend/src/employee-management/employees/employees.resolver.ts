@@ -1,4 +1,3 @@
-import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
@@ -144,7 +143,6 @@ export class EmployeesResolver {
 
   @Mutation(() => Employee, { name: 'createEmployee' })
   @Permissions('EMPLOYEE_WRITE')
-  @AdminPersonaOnly()
   createEmployee(
     @Args('createEmployeeInput') createEmployeeInput: CreateEmployeeInput,
     @CurrentOrgId() orgId: string,
@@ -157,7 +155,6 @@ export class EmployeesResolver {
 
   @Mutation(() => Employee, { name: 'updateEmployee' })
   @Permissions('EMPLOYEE_WRITE')
-  @AdminPersonaOnly()
   updateEmployee(
     @Args('updateEmployeeInput') updateEmployeeInput: UpdateEmployeeInput,
     @CurrentOrgId() orgId: string,
@@ -172,7 +169,6 @@ export class EmployeesResolver {
 
   @Mutation(() => Employee, { name: 'upsertEmployeeOnboardingDraft' })
   @Permissions('EMPLOYEE_WRITE')
-  @AdminPersonaOnly()
   upsertEmployeeOnboardingDraft(
     @Args('input') input: EmployeeOnboardingInput,
     @CurrentOrgId() orgId: string,
@@ -182,7 +178,6 @@ export class EmployeesResolver {
 
   @Mutation(() => Employee, { name: 'finalizeEmployeeOnboarding' })
   @Permissions('EMPLOYEE_WRITE')
-  @AdminPersonaOnly()
   finalizeEmployeeOnboarding(
     @Args('input') input: FinalizeEmployeeOnboardingInput,
     @CurrentOrgId() orgId: string,
@@ -192,7 +187,6 @@ export class EmployeesResolver {
 
   @Mutation(() => Employee, { name: 'sendEmployeeInvitation' })
   @Permissions('EMPLOYEE_WRITE')
-  @AdminPersonaOnly()
   sendEmployeeInvitation(
     @Args('employeeId', { type: () => ID }) employeeId: string,
     @CurrentOrgId() orgId: string,
@@ -214,7 +208,6 @@ export class EmployeesResolver {
 
   @Query(() => Employee, { name: 'employeeById' })
   @Permissions('EMPLOYEE_READ')
-  @AdminPersonaOnly()
   async findEmployeeById(
     @Args('employeeId', { type: () => ID }) employeeId: string,
     @CurrentOrgId() organizationId: string,

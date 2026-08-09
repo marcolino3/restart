@@ -2,7 +2,8 @@ import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
-import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
+import { FieldWriteGuard } from '@/auth/guard/field-write.guard';
+import { FieldWriteResource } from '@/auth/decorators/field-write-resource.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { UseGuards } from '@nestjs/common';
@@ -14,12 +15,13 @@ import { UpdateEmployeeNoteInput } from './dto/update-employee-note.input';
 
 @Resolver(() => EmployeeNote)
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
-@AdminPersonaOnly()
 export class EmployeeNotesResolver {
   constructor(private readonly employeeNotesService: EmployeeNotesService) {}
 
   @Mutation(() => EmployeeNote, { name: 'createEmployeeNote' })
   @Permissions('EMPLOYEE_WRITE')
+  @UseGuards(FieldWriteGuard)
+  @FieldWriteResource('employeeNote', 'create')
   createEmployeeNote(
     @Args('createEmployeeNoteInput') input: CreateEmployeeNoteInput,
     @CurrentUser() user: TokenPayload,
@@ -43,6 +45,8 @@ export class EmployeeNotesResolver {
 
   @Mutation(() => EmployeeNote, { name: 'updateEmployeeNote' })
   @Permissions('EMPLOYEE_WRITE')
+  @UseGuards(FieldWriteGuard)
+  @FieldWriteResource('employeeNote', 'update')
   updateEmployeeNote(
     @Args('updateEmployeeNoteInput') input: UpdateEmployeeNoteInput,
     @CurrentOrgId() orgId: string,

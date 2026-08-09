@@ -7,14 +7,14 @@ import { getEmployeeByIdAction } from "@/features/employees/actions/get-employee
 import { getEmployeeAbsenceCategoriesAction } from "@/features/employee-absence-categories/actions/get-employee-absence-categories.action";
 import { getEmployeeAbsenceByIdAction } from "@/features/employee-absences/actions/employee-absences.actions";
 import { EmployeeAbsenceForm } from "@/features/employee-absences/components/EmployeeAbsenceForm";
-import { requireAdminPersona } from "@/features/users/guards/require-admin-persona";
+import { requireAdminRole } from "@/features/users/guards/require-admin-role";
 
 interface Props {
   params: Promise<{ employeeId: string; absenceId: string }>;
 }
 
 const EditEmployeeAbsencePage = async ({ params }: Props) => {
-  await requireAdminPersona();
+  await requireAdminRole();
   const { employeeId, absenceId } = await params;
   const t = await getTranslations("Employees");
   const locale = await getLocale();

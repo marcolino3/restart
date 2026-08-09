@@ -7,7 +7,6 @@ import { EmployeeFunctionsService } from './employee-functions.service';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { PERMS_KEY } from '@/auth/decorators/permissions.decorator';
-import { ADMIN_PERSONA_KEY } from '@/auth/decorators/admin-persona-only.decorator';
 
 const methodOf = (name: keyof EmployeeFunctionsResolver): object =>
   Object.getOwnPropertyDescriptor(EmployeeFunctionsResolver.prototype, name)
@@ -57,13 +56,6 @@ describe('EmployeeFunctionsResolver', () => {
     expect(guards).toEqual(
       expect.arrayContaining([GqlBetterAuthGuard, GraphQLAccessGuard]),
     );
-  });
-
-  it('requires admin persona for the whole resolver', () => {
-    const adminPersonaOnly =
-      Reflect.getMetadata(ADMIN_PERSONA_KEY, EmployeeFunctionsResolver) ??
-      false;
-    expect(adminPersonaOnly).toBe(true);
   });
 
   it.each([

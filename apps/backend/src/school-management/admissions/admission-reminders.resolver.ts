@@ -1,6 +1,5 @@
 import { CurrentMembershipIdOptional } from '@/auth/decorators/current-membership-id-optional.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
-import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
@@ -13,7 +12,6 @@ import { AdmissionReminder } from './entities/admission-reminder.entity';
 import { AdmissionReminderFilter } from './enums/admission-reminder-filter.enum';
 
 @Resolver(() => AdmissionReminder)
-@AdminPersonaOnly()
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
 export class AdmissionRemindersResolver {
   constructor(private readonly reminders: AdmissionRemindersService) {}

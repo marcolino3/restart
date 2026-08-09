@@ -1,5 +1,3 @@
-import type { Persona } from "@/features/users/lib/admin-persona";
-
 /**
  * Zentrale Sichtbarkeitsregeln für die Sidebar-Navigation. Reine Funktionen,
  * damit Server-Pages (z.B. Zeitauswertung) und die Client-Sidebar dieselbe
@@ -9,7 +7,6 @@ import type { Persona } from "@/features/users/lib/admin-persona";
 export type NavVisibilityUser =
   | {
       isSuperAdmin?: boolean;
-      persona?: Persona | null;
       roles?: string[];
       permissions?: string[];
       timeTrackingEnabled?: boolean;
@@ -23,18 +20,19 @@ export function canSeeTimeTracking(user: NavVisibilityUser): boolean {
   return user?.timeTrackingEnabled === true;
 }
 
-// Zeitauswertung: ADMIN/HR + Teamleiter (+ SuperAdmin). OFFICE ist — anders als
-// im übrigen Admin-Bereich — bewusst ausgeschlossen (Spiegel der Backend-Logik
-// in TimeTrackingAccessService).
-const TIME_REPORT_PERSONAS: ReadonlySet<Persona> = new Set<Persona>([
-  "ADMIN",
-  "HR",
+// Zeitauswertung: ORG_ADMIN/HR_MANAGER + Teamleiter (+ SuperAdmin). OFFICE ist
+// — anders als im übrigen Admin-Bereich — bewusst ausgeschlossen (Spiegel der
+// Backend-Logik in TimeTrackingAccessService).
+const TIME_REPORT_ROLES: ReadonlySet<string> = new Set([
+  "ORG_OWNER",
+  "ORG_ADMIN",
+  "HR_MANAGER",
 ]);
 
 export function canSeeTimeReport(user: NavVisibilityUser): boolean {
   if (!user) return false;
   if (user.isSuperAdmin) return true;
-  if (user.persona && TIME_REPORT_PERSONAS.has(user.persona)) return true;
+  if (user.roles?.some((role) => TIME_REPORT_ROLES.has(role))) return true;
   return user.roles?.includes("TEAM_LEAD") ?? false;
 }
 

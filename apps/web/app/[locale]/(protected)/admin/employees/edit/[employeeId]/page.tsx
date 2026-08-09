@@ -6,7 +6,7 @@ import { mapEmployeeToOnboardingForm } from "@/features/employees/lib/map-employ
 import { getActiveOrganizationAction } from "@/features/organizations/actions/get-active-organization.action";
 import { getRolesByOrgAction } from "@/features/users/actions/get-roles-by-org.action";
 import { getTeamsAction } from "@/features/teams/actions/get-teams.action";
-import { requireAdminPersona } from "@/features/users/guards/require-admin-persona";
+import { requireAdminRole } from "@/features/users/guards/require-admin-role";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
@@ -15,7 +15,7 @@ interface Props {
 }
 
 const EditEmployeePage = async ({ params }: Props) => {
-  await requireAdminPersona();
+  await requireAdminRole();
   const { employeeId } = await params;
   const locale = await getLocale();
   const t = await getTranslations("EmployeeOnboarding");

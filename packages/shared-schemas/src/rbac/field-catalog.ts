@@ -12,9 +12,6 @@ const CRUD: FieldAction[] = ["create", "read", "update", "delete"];
 const RU: FieldAction[] = ["read", "update"];
 
 export const PROTECTED_FIELD_CATALOG: ProtectedField[] = [
-  // --- employee (base salary/bank fields live on the contract/HR profile, not here) ---
-  { resource: "employee", field: "dateOfBirth", actions: RU, sensitivity: "medium" },
-
   // --- employeeHrProfile ---
   { resource: "employeeHrProfile", field: "iban", actions: RU, sensitivity: "high" },
   { resource: "employeeHrProfile", field: "bankAccountHolder", actions: RU, sensitivity: "high" },
@@ -39,20 +36,21 @@ export const PROTECTED_FIELD_CATALOG: ProtectedField[] = [
   { resource: "employeeNote", field: "content", actions: CRUD, sensitivity: "high" },
   { resource: "employeeNote", field: "isConfidential", actions: RU, sensitivity: "high" },
 
-  // --- employeeEmergencyContact ---
-  { resource: "employeeEmergencyContact", field: "bloodType", actions: RU, sensitivity: "high" },
-  { resource: "employeeEmergencyContact", field: "allergies", actions: RU, sensitivity: "high" },
-  { resource: "employeeEmergencyContact", field: "chronicConditions", actions: RU, sensitivity: "high" },
-  { resource: "employeeEmergencyContact", field: "emergencyMedications", actions: RU, sensitivity: "high" },
-  { resource: "employeeEmergencyContact", field: "primaryDoctorName", actions: RU, sensitivity: "medium" },
-  { resource: "employeeEmergencyContact", field: "primaryDoctorPhone", actions: RU, sensitivity: "medium" },
-  { resource: "employeeEmergencyContact", field: "pharmacyName", actions: RU, sensitivity: "medium" },
+  // --- employeeEmergencyProfile ---
+  { resource: "employeeEmergencyProfile", field: "bloodType", actions: RU, sensitivity: "high" },
+  { resource: "employeeEmergencyProfile", field: "allergies", actions: RU, sensitivity: "high" },
+  { resource: "employeeEmergencyProfile", field: "chronicConditions", actions: RU, sensitivity: "high" },
+  { resource: "employeeEmergencyProfile", field: "emergencyMedications", actions: RU, sensitivity: "high" },
+  { resource: "employeeEmergencyProfile", field: "primaryDoctorName", actions: RU, sensitivity: "medium" },
+  { resource: "employeeEmergencyProfile", field: "primaryDoctorPhone", actions: RU, sensitivity: "medium" },
+  { resource: "employeeEmergencyProfile", field: "pharmacyName", actions: RU, sensitivity: "medium" },
 
   // --- employeeAuditLog ---
-  { resource: "employeeAuditLog", field: "changes", actions: ["read"], sensitivity: "high" },
+  { resource: "employeeAuditLog", field: "oldValue", actions: ["read"], sensitivity: "high" },
+  { resource: "employeeAuditLog", field: "newValue", actions: ["read"], sensitivity: "high" },
 
   // --- employeePaidOvertime ---
-  { resource: "employeePaidOvertime", field: "amount", actions: RU, sensitivity: "medium" },
+  { resource: "employeePaidOvertime", field: "minutes", actions: RU, sensitivity: "medium" },
 
   // --- student ---
   { resource: "student", field: "socialSecurityNumber", actions: RU, sensitivity: "high" },
@@ -62,8 +60,8 @@ export const PROTECTED_FIELD_CATALOG: ProtectedField[] = [
   { resource: "student", field: "firstLanguages", actions: RU, sensitivity: "medium" },
   { resource: "student", field: "familyLanguages", actions: RU, sensitivity: "medium" },
 
-  // --- studentRecord (Foerderprofil / Beobachtungen) ---
-  { resource: "studentRecord", field: "content", actions: CRUD, sensitivity: "high" },
+  // --- studentRecordEntry (Foerderprofil / Beobachtungen) ---
+  { resource: "studentRecordEntry", field: "content", actions: CRUD, sensitivity: "high" },
 
   // --- admissionApplication ---
   { resource: "admissionApplication", field: "childNotes", actions: RU, sensitivity: "medium" },

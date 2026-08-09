@@ -2,13 +2,6 @@
 
 import { createContext, useCallback, useContext, useMemo } from "react";
 
-export {
-  ADMIN_PERSONAS,
-  isAdminPersona,
-  type Persona,
-} from "@/features/users/lib/admin-persona";
-import type { Persona } from "@/features/users/lib/admin-persona";
-
 export type CurrentUser = {
   id: string;
   firstName: string;
@@ -20,7 +13,6 @@ export type CurrentUser = {
   orgName?: string;
   /** IANA zone of the active org -- all timestamps render school-local. */
   orgTimezone?: string;
-  persona?: Persona;
   isSuperAdmin: boolean;
   // Eigenes Employee-Flag — steuert die Sichtbarkeit des Zeiterfassungs-Menüs.
   timeTrackingEnabled: boolean;

@@ -19,7 +19,7 @@ import {
 /**
  * Saldo-/Auswertungs-Read-API. Alle Reads aggregieren aus dem Ledger.
  * Self-Endpoints: jeder Mitarbeiter (TIMESHEET_READ). Cross-Employee:
- * service-seitiges Scoping (Admin-Persona → alle; TEAM_LEAD → eigenes Team).
+ * service-seitiges Scoping (ORG_ADMIN/HR_MANAGER → alle; TEAM_LEAD → eigenes Team).
  */
 @Resolver()
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)

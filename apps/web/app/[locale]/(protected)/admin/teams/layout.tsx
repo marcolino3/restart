@@ -1,9 +1,9 @@
 import React from "react";
 
-import { requireAdminPersona } from "@/features/users/guards/require-admin-persona";
+import { requireAdminRole } from "@/features/users/guards/require-admin-role";
 
 const TeamsLayout = async ({ children }: { children: React.ReactNode }) => {
-  await requireAdminPersona();
+  await requireAdminRole();
   return <>{children}</>;
 };
 

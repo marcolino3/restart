@@ -2,8 +2,9 @@ import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
+import { FieldWriteGuard } from '@/auth/guard/field-write.guard';
+import { FieldWriteResource } from '@/auth/decorators/field-write-resource.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
-import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
@@ -15,7 +16,6 @@ import { UpdateEmployeePaidOvertimeInput } from './dto/update-employee-paid-over
 /** Ausbezahlte Überzeit — HR/Admin-only (payroll-sensitiv). */
 @Resolver(() => EmployeePaidOvertime)
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
-@AdminPersonaOnly()
 export class EmployeePaidOvertimeResolver {
   constructor(private readonly service: EmployeePaidOvertimeService) {}
 
@@ -30,6 +30,8 @@ export class EmployeePaidOvertimeResolver {
 
   @Mutation(() => EmployeePaidOvertime)
   @Permissions('EMPLOYEE_WRITE')
+  @UseGuards(FieldWriteGuard)
+  @FieldWriteResource('employeePaidOvertime', 'create')
   createEmployeePaidOvertime(
     @Args('input') input: CreateEmployeePaidOvertimeInput,
     @CurrentOrgId() orgId: string,
@@ -40,6 +42,8 @@ export class EmployeePaidOvertimeResolver {
 
   @Mutation(() => EmployeePaidOvertime)
   @Permissions('EMPLOYEE_WRITE')
+  @UseGuards(FieldWriteGuard)
+  @FieldWriteResource('employeePaidOvertime', 'update')
   updateEmployeePaidOvertime(
     @Args('input') input: UpdateEmployeePaidOvertimeInput,
     @CurrentOrgId() orgId: string,

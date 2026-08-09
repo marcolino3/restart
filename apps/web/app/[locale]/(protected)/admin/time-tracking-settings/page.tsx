@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { PageHead } from "@/components/common/PageHead";
-import { requireAdminPersona } from "@/features/users/guards/require-admin-persona";
+import { requireAdminRole } from "@/features/users/guards/require-admin-role";
 import { getEmployeeAbsenceCategoriesAction } from "@/features/employee-absence-categories/actions/get-employee-absence-categories.action";
 import { getTimeTrackingSettingsAction } from "@/features/time-tracking/actions/settings.action";
 import {
@@ -26,7 +26,7 @@ import {
 import type { EmployeeOption } from "@/features/time-tracking/types";
 
 const TimeTrackingSettingsPage = async () => {
-  await requireAdminPersona();
+  await requireAdminRole();
   const t = await getTranslations("TimeTracking");
 
   const [

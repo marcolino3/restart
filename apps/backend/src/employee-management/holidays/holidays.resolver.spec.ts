@@ -6,7 +6,6 @@ import { HolidaysService } from './holidays.service';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { PERMS_KEY } from '@/auth/decorators/permissions.decorator';
-import { ADMIN_PERSONA_KEY } from '@/auth/decorators/admin-persona-only.decorator';
 
 const methodOf = (name: keyof HolidaysResolver): object =>
   Object.getOwnPropertyDescriptor(HolidaysResolver.prototype, name)
@@ -62,15 +61,6 @@ describe('HolidaysResolver', () => {
       Reflect.getMetadata(PERMS_KEY, methodOf(method)) ?? [];
     expect(permissions).toContain(permission);
   });
-
-  it.each(['createHoliday', 'updateHoliday', 'deleteHoliday'] as const)(
-    '%s requires admin persona',
-    (method) => {
-      const adminPersonaOnly =
-        Reflect.getMetadata(ADMIN_PERSONA_KEY, methodOf(method)) ?? false;
-      expect(adminPersonaOnly).toBe(true);
-    },
-  );
 
   it('passes the active org id to findAll (multi-tenant isolation)', async () => {
     service.findAll.mockResolvedValue([]);

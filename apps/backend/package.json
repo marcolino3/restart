@@ -13,8 +13,8 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
-    "dev": "nest start --watch",
-    "start:dev": "nest start --watch",
+    "dev": "pnpm --filter @restart/shared-schemas build && nest start --watch",
+    "start:dev": "pnpm --filter @restart/shared-schemas build && nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@apollo/server": "^5.4.0",
+    "@restart/shared-schemas": "workspace:*",
     "@as-integrations/express5": "^1.1.2",
     "@aws-sdk/client-s3": "^3.1100.0",
     "@aws-sdk/s3-request-presigner": "^3.1100.0",

@@ -3,7 +3,6 @@ import { UseGuards } from '@nestjs/common';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
-import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { TimeTrackingPeriodsService } from './time-tracking-periods.service';
 import {
@@ -30,7 +29,6 @@ export class TimeTrackingPeriodsResolver {
   }
 
   @Mutation(() => String)
-  @AdminPersonaOnly()
   @Permissions('EMPLOYEE_WRITE')
   setTimeTrackingPeriodAnchor(
     @CurrentOrgId() orgId: string,
@@ -40,7 +38,6 @@ export class TimeTrackingPeriodsResolver {
   }
 
   @Mutation(() => TimeTrackingPeriod)
-  @AdminPersonaOnly()
   @Permissions('EMPLOYEE_WRITE')
   setTimeTrackingPeriodStatus(
     @Args('id', { type: () => ID }) id: string,

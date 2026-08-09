@@ -5,7 +5,6 @@ import { CompanyVacationAssignmentsService } from './company-vacation-assignment
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { PERMS_KEY } from '@/auth/decorators/permissions.decorator';
-import { ADMIN_PERSONA_KEY } from '@/auth/decorators/admin-persona-only.decorator';
 
 const methodOf = (name: keyof CompanyVacationAssignmentsResolver): object =>
   Object.getOwnPropertyDescriptor(
@@ -60,15 +59,6 @@ describe('CompanyVacationAssignmentsResolver', () => {
     const permissions: string[] =
       Reflect.getMetadata(PERMS_KEY, methodOf(method)) ?? [];
     expect(permissions).toContain(permission);
-  });
-
-  it.each([
-    'assignCompanyVacationToEmployee',
-    'unassignCompanyVacationFromEmployee',
-  ] as const)('%s requires admin persona', (method) => {
-    const adminPersonaOnly =
-      Reflect.getMetadata(ADMIN_PERSONA_KEY, methodOf(method)) ?? false;
-    expect(adminPersonaOnly).toBe(true);
   });
 
   it('scopes companyVacationsForEmployee to the active org id (multi-tenant isolation)', async () => {

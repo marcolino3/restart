@@ -37,10 +37,8 @@ import { StudentListItem } from "../actions/get-students.action";
 import { deleteStudentAction } from "../actions/delete-student.action";
 import { StudentAvatar } from "./StudentAvatar";
 import { handleAction } from "@/lib/actions/handle-action";
-import {
-  isAdminPersona,
-  useUser,
-} from "@/features/users/context/current-user.context";
+import { useUser } from "@/features/users/context/current-user.context";
+import { hasAdminRole } from "@/features/users/lib/admin-roles";
 
 interface Props {
   data: StudentListItem[];
@@ -82,7 +80,8 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
   const tS = useTranslations("Students");
   const locale = useLocale();
   const user = useUser();
-  const canEditOrDelete = isAdminPersona(user?.persona);
+  const canEditOrDelete =
+    (user?.isSuperAdmin ?? false) || hasAdminRole(user?.roles);
 
   const columns: ColumnDef<StudentListItem>[] = [
     {

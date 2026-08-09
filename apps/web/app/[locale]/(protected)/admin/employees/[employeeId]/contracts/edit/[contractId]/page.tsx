@@ -8,14 +8,14 @@ import { getEmployeeContractsAction } from "@/features/employees/actions/employe
 import { EmployeeContractForm } from "@/features/employees/components/EmployeeContractForm";
 import { getEmployeeFunctionsAction } from "@/features/employee-functions/actions/get-employee-functions.action";
 import { mapEmployeeFunctionsToOptions } from "@/features/employee-functions/lib/map-employee-functions-to-options";
-import { requireAdminPersona } from "@/features/users/guards/require-admin-persona";
+import { requireAdminRole } from "@/features/users/guards/require-admin-role";
 
 interface Props {
   params: Promise<{ employeeId: string; contractId: string }>;
 }
 
 const EditEmployeeContractPage = async ({ params }: Props) => {
-  await requireAdminPersona();
+  await requireAdminRole();
   const { employeeId, contractId } = await params;
   const t = await getTranslations("Employees");
   const locale = await getLocale();

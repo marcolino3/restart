@@ -3,7 +3,6 @@ import { UseGuards } from '@nestjs/common';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
-import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { HolidaysService } from './holidays.service';
 import { Holiday } from './entities/holiday.entity';
@@ -22,7 +21,6 @@ export class HolidaysResolver {
   }
 
   @Mutation(() => Holiday)
-  @AdminPersonaOnly()
   @Permissions('EMPLOYEE_WRITE')
   createHoliday(
     @Args('input') input: CreateHolidayInput,
@@ -32,7 +30,6 @@ export class HolidaysResolver {
   }
 
   @Mutation(() => Holiday)
-  @AdminPersonaOnly()
   @Permissions('EMPLOYEE_WRITE')
   updateHoliday(
     @Args('input') input: UpdateHolidayInput,
@@ -42,7 +39,6 @@ export class HolidaysResolver {
   }
 
   @Mutation(() => Boolean)
-  @AdminPersonaOnly()
   @Permissions('EMPLOYEE_WRITE')
   deleteHoliday(
     @Args('id', { type: () => ID }) id: string,

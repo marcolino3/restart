@@ -1,6 +1,5 @@
 import { CurrentMembershipIdOptional } from '@/auth/decorators/current-membership-id-optional.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
-import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
@@ -12,7 +11,6 @@ import { SendAdmissionEmailInput } from './dto/send-admission-email.input';
 import { AdmissionEmail } from './entities/admission-email.entity';
 
 @Resolver(() => AdmissionEmail)
-@AdminPersonaOnly()
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
 export class AdmissionEmailsResolver {
   constructor(private readonly emails: AdmissionEmailsService) {}

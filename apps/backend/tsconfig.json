@@ -13,7 +13,10 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@restart/shared-schemas/rbac/*": [
+        "../../packages/shared-schemas/dist/rbac/*"
+      ]
     },
     "incremental": true,
     "skipLibCheck": true,

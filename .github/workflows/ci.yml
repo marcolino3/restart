@@ -84,6 +84,13 @@ jobs:
       - name: Install Playwright Browsers
         run: pnpm --filter @restart/e2e exec playwright install --with-deps chromium
 
+      # Backend consumes @restart/shared-schemas/rbac/* via its dist output
+      # (see apps/backend/tsconfig.json paths). Every step below that loads
+      # backend code — auth:migrate, integration tests, nest start — needs
+      # this built first.
+      - name: Build shared-schemas
+        run: pnpm --filter @restart/shared-schemas build
+
       # better-auth verwaltet seine Tabellen (user/session/account/verification)
       # ausserhalb von TypeORM – synchronize erzeugt sie nicht. Ohne diesen Schritt
       # schlägt die Sign-in-Seite mit `relation "session" does not exist` fehl.
@@ -253,8 +260,9 @@ jobs:
 
       - name: Build & start backend
         run: |
-          pnpm --filter @restart/backend run build
-          nohup node apps/backend/dist/src/main.js > backend.log 2>&1 &
+          pnpm turbo run build --filter=@restart/backend
+          BACKEND_MAIN=$(find apps/backend/dist -type f -name main.js | head -1)
+          nohup node "$BACKEND_MAIN" > backend.log 2>&1 &
           echo "Waiting for backend on :4001…"
           for i in $(seq 1 60); do
             if curl -sf http://localhost:4001/api/health > /dev/null; then

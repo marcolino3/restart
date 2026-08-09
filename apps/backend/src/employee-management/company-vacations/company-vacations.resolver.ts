@@ -11,7 +11,6 @@ import { UseGuards } from '@nestjs/common';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
-import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { CompanyVacationsService } from './company-vacations.service';
 import { CompanyVacation } from './entities/company-vacation.entity';
@@ -44,7 +43,6 @@ export class CompanyVacationsResolver {
   }
 
   @Mutation(() => CompanyVacation)
-  @AdminPersonaOnly()
   @Permissions('EMPLOYEE_WRITE')
   createCompanyVacation(
     @Args('input') input: CreateCompanyVacationInput,
@@ -54,7 +52,6 @@ export class CompanyVacationsResolver {
   }
 
   @Mutation(() => CompanyVacation)
-  @AdminPersonaOnly()
   @Permissions('EMPLOYEE_WRITE')
   updateCompanyVacation(
     @Args('input') input: UpdateCompanyVacationInput,
@@ -64,7 +61,6 @@ export class CompanyVacationsResolver {
   }
 
   @Mutation(() => Boolean)
-  @AdminPersonaOnly()
   @Permissions('EMPLOYEE_WRITE')
   deleteCompanyVacation(
     @Args('id', { type: () => ID }) id: string,
