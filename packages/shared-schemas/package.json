@@ -3,20 +3,32 @@
   "version": "0.0.1",
   "private": true,
   "description": "Zod schemas and validation helpers shared by web and mobile apps",
-  "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./rbac/*": {
+      "types": "./dist/rbac/*.d.ts",
+      "require": "./dist/rbac/*.js",
+      "default": "./src/rbac/*.ts"
+    },
     "./*": "./src/*.ts"
   },
   "files": [
-    "src"
+    "src",
+    "dist"
   ],
   "dependencies": {
     "@restart/shared-types": "workspace:*"
   },
   "peerDependencies": {
     "zod": "^4.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }

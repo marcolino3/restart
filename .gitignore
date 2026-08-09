@@ -44,3 +44,4 @@ secrets-plain.yaml
 sealed-secrets-backup/
 sealed-secrets-keys-*.yaml
 sealed-secrets-keys-*.yaml.age
+*.tsbuildinfo

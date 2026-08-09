@@ -15,7 +15,7 @@
     "paths": {
       "@/*": ["src/*"],
       "@restart/shared-schemas/rbac/*": [
-        "../../packages/shared-schemas/src/rbac/*"
+        "../../packages/shared-schemas/dist/rbac/*"
       ]
     },
     "incremental": true,

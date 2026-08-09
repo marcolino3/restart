@@ -2064,7 +2064,7 @@ export type EmployeeNote = {
   authorMembership?: Maybe<Membership>;
   authorMembershipId?: Maybe<Scalars['ID']['output']>;
   category: EmployeeNoteCategory;
-  content: Scalars['String']['output'];
+  content?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   date: Scalars['String']['output'];
   deletedAt?: Maybe<Scalars['DateTime']['output']>;
@@ -2073,9 +2073,9 @@ export type EmployeeNote = {
   id: Scalars['ID']['output'];
   isActive: Scalars['Boolean']['output'];
   isArchived: Scalars['Boolean']['output'];
-  isConfidential: Scalars['Boolean']['output'];
+  isConfidential?: Maybe<Scalars['Boolean']['output']>;
   organizationId: Scalars['ID']['output'];
-  title: Scalars['String']['output'];
+  title?: Maybe<Scalars['String']['output']>;
   updatedAt: Scalars['DateTime']['output'];
   version: Scalars['Int']['output'];
 };
@@ -7919,7 +7919,7 @@ export type GetEmployeeNotesByEmployeeIdQueryVariables = Exact<{
 }>;
 
 
-export type GetEmployeeNotesByEmployeeIdQuery = { __typename?: 'Query', employeeNotesByEmployeeId: Array<{ __typename?: 'EmployeeNote', id: string, category: EmployeeNoteCategory, title: string, content: string, isConfidential: boolean, date: string, createdAt: any, authorMembership?: { __typename?: 'Membership', id: string, user?: { __typename?: 'User', firstName: string, lastName: string } | null } | null }> };
+export type GetEmployeeNotesByEmployeeIdQuery = { __typename?: 'Query', employeeNotesByEmployeeId: Array<{ __typename?: 'EmployeeNote', id: string, category: EmployeeNoteCategory, title?: string | null, content?: string | null, isConfidential?: boolean | null, date: string, createdAt: any, authorMembership?: { __typename?: 'Membership', id: string, user?: { __typename?: 'User', firstName: string, lastName: string } | null } | null }> };
 
 export type CreateEmployeeMutationVariables = Exact<{
   createEmployeeInput: CreateEmployeeInput;
