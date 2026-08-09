@@ -5,7 +5,7 @@ import {
   CATEGORY_ORDER,
   groupCatalog,
   type CategoryKey,
-} from "./permission-catalog";
+} from "@restart/shared-schemas/rbac/permission-catalog";
 import deMessages from "@restart/shared-i18n/messages/de";
 import enMessages from "@restart/shared-i18n/messages/en";
 
