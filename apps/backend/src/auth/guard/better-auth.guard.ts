@@ -115,7 +115,7 @@ export class BetterAuthGuard implements CanActivate {
       (Array.isArray(payload.permissions) &&
         permsReq.every((p) => payload.permissions!.includes(p)));
 
-    if (!roleOk && !permOk) {
+    if (!roleOk || !permOk) {
       throw new ForbiddenException('Access denied (roles/permissions)');
     }
 

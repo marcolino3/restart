@@ -80,7 +80,7 @@ export class GraphQLAccessGuard implements CanActivate {
       (Array.isArray(user.permissions) &&
         permsReq.every((p) => user.permissions!.includes(p)));
 
-    if (!roleOk && !permOk) {
+    if (!roleOk || !permOk) {
       throw new ForbiddenException('Access denied (roles/permissions)');
     }
 
