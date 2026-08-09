@@ -84,6 +84,13 @@ jobs:
       - name: Install Playwright Browsers
         run: pnpm --filter @restart/e2e exec playwright install --with-deps chromium
 
+      # Backend consumes @restart/shared-schemas/rbac/* via its dist output
+      # (see apps/backend/tsconfig.json paths). Every step below that loads
+      # backend code — auth:migrate, integration tests, nest start — needs
+      # this built first.
+      - name: Build shared-schemas
+        run: pnpm --filter @restart/shared-schemas build
+
       # better-auth verwaltet seine Tabellen (user/session/account/verification)
       # ausserhalb von TypeORM – synchronize erzeugt sie nicht. Ohne diesen Schritt
       # schlägt die Sign-in-Seite mit `relation "session" does not exist` fehl.
