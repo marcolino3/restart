@@ -87,6 +87,7 @@ import { ConversationParticipant } from '@/chats/entities/conversation-participa
 import { Message } from '@/chats/entities/message.entity';
 import { MessageAttachment } from '@/chats/entities/message-attachment.entity';
 import { Role } from '@/roles/entities/role.entity';
+import { RoleFieldPermission } from '@/roles/entities/role-field-permission.entity';
 import { UserEmail } from '@/user-emails/entities/user-email.entity';
 import { User } from '@/users/entities/user.entity';
 import { Module } from '@nestjs/common';
@@ -99,6 +100,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       UserEmail,
       Organization,
       Role,
+      RoleFieldPermission,
       Membership,
       Permission,
       Address,
