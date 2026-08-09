@@ -67,6 +67,7 @@ export class GqlBetterAuthGuard implements CanActivate {
               .map((r) => r.name)
               .filter((n): n is string => Boolean(n)),
             permissions: ctx.permissions,
+            fieldPermissions: ctx.fieldPermissions,
           }
         : {
             sub: gqlCtx.userId,
@@ -127,6 +128,7 @@ export class GqlBetterAuthGuard implements CanActivate {
             .map((r) => r.name)
             .filter((n): n is string => Boolean(n)),
           permissions: ctx.permissions,
+          fieldPermissions: ctx.fieldPermissions,
           isSuperAdmin: dbUser.isSuperAdmin,
         }
       : {

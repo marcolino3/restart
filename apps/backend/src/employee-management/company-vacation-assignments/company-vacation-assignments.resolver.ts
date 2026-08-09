@@ -3,7 +3,6 @@ import { UseGuards } from '@nestjs/common';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
-import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { CompanyVacationAssignmentsService } from './company-vacation-assignments.service';
 import { CompanyVacationAssignment } from './entities/company-vacation-assignment.entity';
@@ -26,7 +25,6 @@ export class CompanyVacationAssignmentsResolver {
   }
 
   @Mutation(() => CompanyVacationAssignment)
-  @AdminPersonaOnly()
   @Permissions('EMPLOYEE_WRITE')
   assignCompanyVacationToEmployee(
     @Args('companyVacationId', { type: () => ID }) companyVacationId: string,
@@ -37,7 +35,6 @@ export class CompanyVacationAssignmentsResolver {
   }
 
   @Mutation(() => Boolean)
-  @AdminPersonaOnly()
   @Permissions('EMPLOYEE_WRITE')
   unassignCompanyVacationFromEmployee(
     @Args('companyVacationId', { type: () => ID }) companyVacationId: string,

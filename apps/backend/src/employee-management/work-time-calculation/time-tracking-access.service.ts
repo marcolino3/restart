@@ -2,7 +2,6 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
-import { Persona } from '@/common/enums/persona.enum';
 import { SystemRole } from '@/roles/entities/system-role.enum';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { TeamMember } from '@/employee-management/team-members/entities/team-member.entity';
@@ -10,24 +9,23 @@ import { TeamMemberRole } from '@/employee-management/team-members/entities/team
 import { TeamAccessService } from '@/employee-management/teams/team-access.service';
 
 /**
- * Zentrale Zugriffslogik der Arbeitszeiterfassung. Service-seitig, weil
- * `@AdminPersonaOnly()` Teamleiter (Persona EMPLOYEE + Rolle TEAM_LEAD)
+ * Zentrale Zugriffslogik der Arbeitszeiterfassung. Service-seitig, weil ein
+ * reiner Guard Teamleiter (Rolle TEAM_LEAD ohne ORG_ADMIN/HR_MANAGER)
  * aussperren würde.
  *
- * - Lesen fremder Daten: ADMIN/HR → alle; TEAM_LEAD → nur Mitarbeiter
- *   geleiteter Teams; sonst nur eigene. OFFICE hat — anders als im übrigen
- *   Admin-Bereich — KEINEN Zugriff auf fremde Zeitdaten.
- * - Verwalten fremder Daten (Schreiben): nur self oder ADMIN/HR.
+ * - Lesen fremder Daten: ORG_ADMIN/HR_MANAGER → alle; TEAM_LEAD → nur
+ *   Mitarbeiter geleiteter Teams; sonst nur eigene.
+ * - Verwalten fremder Daten (Schreiben): nur self oder ORG_ADMIN/HR_MANAGER.
  * - Absenzen schreiben: zusätzlich TEAM_LEAD für Mitarbeiter geleiteter Teams
  *   (`assertCanManageAbsence`) — bewusst weiter als generisches Manage.
  */
-const TIME_TRACKING_ADMIN_PERSONAS: ReadonlySet<Persona> = new Set<Persona>([
-  Persona.ADMIN,
-  Persona.HR,
+const TIME_TRACKING_ADMIN_ROLES: ReadonlySet<SystemRole> = new Set([
+  SystemRole.ORG_ADMIN,
+  SystemRole.HR_MANAGER,
 ]);
 
-function isTimeTrackingAdmin(persona: Persona | undefined | null): boolean {
-  return !!persona && TIME_TRACKING_ADMIN_PERSONAS.has(persona);
+function isTimeTrackingAdmin(roles: string[] | undefined | null): boolean {
+  return !!roles?.some((r) => TIME_TRACKING_ADMIN_ROLES.has(r as SystemRole));
 }
 
 @Injectable()
@@ -78,7 +76,7 @@ export class TimeTrackingAccessService {
     const orgId = user.orgId as string;
     const callerEmployeeId = await this.resolveCallerEmployeeId(user);
     if (callerEmployeeId && callerEmployeeId === targetEmployeeId) return;
-    if (isTimeTrackingAdmin(user.persona)) return;
+    if (isTimeTrackingAdmin(user.roles)) return;
     if (
       user.roles?.includes(SystemRole.TEAM_LEAD) &&
       callerEmployeeId &&
@@ -98,7 +96,7 @@ export class TimeTrackingAccessService {
     user: TokenPayload,
     targetEmployeeId: string,
   ): Promise<void> {
-    if (user.isSuperAdmin || isTimeTrackingAdmin(user.persona)) return;
+    if (user.isSuperAdmin || isTimeTrackingAdmin(user.roles)) return;
     const callerEmployeeId = await this.resolveCallerEmployeeId(user);
     if (callerEmployeeId && callerEmployeeId === targetEmployeeId) return;
     throw new ForbiddenException('Kein Schreibzugriff auf diesen Mitarbeiter.');
@@ -123,14 +121,15 @@ export class TimeTrackingAccessService {
   }
 
   /**
-   * Scope für Auswertungs-Listen: null = alle Org-Mitarbeiter (Admin-Persona);
-   * sonst erlaubte IDs. Reine Mitarbeiter ohne Lead-Rolle → leere Liste.
+   * Scope für Auswertungs-Listen: null = alle Org-Mitarbeiter
+   * (ORG_ADMIN/HR_MANAGER); sonst erlaubte IDs. Reine Mitarbeiter ohne
+   * Lead-Rolle → leere Liste.
    */
   async resolveOverviewScope(
     user: TokenPayload,
     orgId: string,
   ): Promise<string[] | null> {
-    if (user.isSuperAdmin || isTimeTrackingAdmin(user.persona)) return null;
+    if (user.isSuperAdmin || isTimeTrackingAdmin(user.roles)) return null;
     if (!user.roles?.includes(SystemRole.TEAM_LEAD)) return [];
     const callerEmployeeId = await this.resolveCallerEmployeeId(user);
     if (!callerEmployeeId) return [];

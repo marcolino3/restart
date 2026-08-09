@@ -55,10 +55,10 @@ import {
   canSeeTimeTracking,
 } from "@/lib/navigation/nav-visibility";
 import {
-  isAdminPersona,
   usePermissions,
   useUser,
 } from "@/features/users/context/current-user.context";
+import { hasAdminRole } from "@/features/users/lib/admin-roles";
 import { useLocale, useTranslations } from "next-intl";
 import { useChatUnread } from "@/features/chats/lib/chat-unread-context";
 
@@ -80,10 +80,9 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
   const chatUnread = useChatUnread();
 
   const isSuperAdmin = user?.isSuperAdmin ?? false;
-  // SuperAdmin always sees the org-admin block; otherwise persona must be
-  // one of ADMIN/HR/OFFICE. Teacher/Student/Parent/Employee personas are
-  // hard-blocked from the navOrg sidebar group regardless of permissions.
-  const canSeeOrgAdmin = isSuperAdmin || isAdminPersona(user?.persona);
+  // SuperAdmin always sees the org-admin block; otherwise the user needs an
+  // admin-capable role (ORG_OWNER/ORG_ADMIN/HR_MANAGER/OFFICE).
+  const canSeeOrgAdmin = isSuperAdmin || hasAdminRole(user?.roles);
 
   const data = {
     navMain: [

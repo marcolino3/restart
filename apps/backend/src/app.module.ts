@@ -13,6 +13,7 @@ import { DataSource } from 'typeorm';
 import { loggerConfig } from './logger.config';
 import { resolveSynchronize } from './database/resolve-synchronize';
 import { createMaxDepthRule } from './common/graphql/max-depth.validation-rule';
+import { fieldPermissionMiddleware } from './auth/middleware/field-permission.middleware';
 import { AddressesModule } from './addresses/addresses.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -142,6 +143,9 @@ const MAX_QUERY_DEPTH = 12;
           .map((origin) => origin.trim());
         return {
           autoSchemaFile: true,
+          buildSchemaOptions: {
+            fieldMiddleware: [fieldPermissionMiddleware],
+          },
           // Introspection and the Apollo sandbox landing page leak the full
           // schema and an interactive query console — dev-only.
           introspection: !isProd,

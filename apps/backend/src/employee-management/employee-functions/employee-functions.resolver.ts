@@ -1,7 +1,6 @@
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
-import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
@@ -13,7 +12,6 @@ import { ReorderEmployeeFunctionsInput } from './dto/reorder-employee-functions.
 
 @Resolver(() => EmployeeFunction)
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
-@AdminPersonaOnly()
 export class EmployeeFunctionsResolver {
   constructor(private readonly service: EmployeeFunctionsService) {}
 

@@ -1,13 +1,13 @@
 import { getTranslations } from "next-intl/server";
 
 import { PageHead } from "@/components/common/PageHead";
-import { requireAdminPersona } from "@/features/users/guards/require-admin-persona";
+import { requireAdminRole } from "@/features/users/guards/require-admin-role";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 import { getEmployeeFunctionsAction } from "@/features/employee-functions/actions/get-employee-functions.action";
 import { EmployeeFunctionsTable } from "@/features/employee-functions/components/EmployeeFunctionsTable";
 
 const EmployeeFunctionsPage = async () => {
-  await requireAdminPersona();
+  await requireAdminRole();
   const t = await getTranslations("EmployeeFunctions");
   const userRes = await getCurrentUserAction();
 

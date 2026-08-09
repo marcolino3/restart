@@ -9,6 +9,11 @@ import { Role } from '@/roles/entities/role.entity';
 import { Permission } from '@/permissions/entities/permission.entity';
 import { Employee } from '@/employee-management/employees/entities/employee.entity';
 import { Persona } from '@/common/enums/persona.enum';
+import { RoleFieldPermission } from '@/roles/entities/role-field-permission.entity';
+import {
+  protectedFieldKey,
+  type FieldAction,
+} from '@restart/shared-schemas/rbac/field-catalog';
 
 export type AuthContext = {
   user: User;
@@ -17,6 +22,7 @@ export type AuthContext = {
   persona: Persona | null;
   roles: Role[];
   permissions: string[]; // Permission.code
+  fieldPermissions: Map<string, Set<FieldAction>>; // key: "resource.field"
   // teams: Team[];
   employee: Employee | null;
 };
@@ -73,6 +79,26 @@ export async function getAuthContext(
     });
   }
 
+  // 6) Feld-Permissions ueber alle Rollen (distinct resource.field -> actions)
+  const fieldPermissions = new Map<string, Set<FieldAction>>();
+  if (roles.length) {
+    const fieldRows = await em
+      .createQueryBuilder(RoleFieldPermission, 'rfp')
+      .where('rfp.roleId IN (:...roleIds)', {
+        roleIds: roles.map((r) => r.id),
+      })
+      .getMany();
+
+    for (const row of fieldRows) {
+      const key = protectedFieldKey(row.resource, row.field);
+      const existing = fieldPermissions.get(key) ?? new Set<FieldAction>();
+      for (const action of row.actions) {
+        existing.add(action);
+      }
+      fieldPermissions.set(key, existing);
+    }
+  }
+
   return {
     user,
     org,
@@ -80,6 +106,7 @@ export async function getAuthContext(
     persona: membership?.persona ?? null,
     roles,
     permissions,
+    fieldPermissions,
     employee: employee ?? null,
   };
 }

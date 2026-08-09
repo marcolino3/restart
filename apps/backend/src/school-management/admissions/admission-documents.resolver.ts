@@ -1,5 +1,4 @@
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
-import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
@@ -9,7 +8,6 @@ import { AdmissionDocumentsService } from './admission-documents.service';
 import { AdmissionDocument } from './entities/admission-document.entity';
 
 @Resolver(() => AdmissionDocument)
-@AdminPersonaOnly()
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
 export class AdmissionDocumentsResolver {
   constructor(private readonly documents: AdmissionDocumentsService) {}

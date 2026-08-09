@@ -2,7 +2,8 @@ import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
-import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
+import { FieldWriteGuard } from '@/auth/guard/field-write.guard';
+import { FieldWriteResource } from '@/auth/decorators/field-write-resource.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { EmployeeContractsService } from './employee-contracts.service';
@@ -12,7 +13,6 @@ import { UpdateEmployeeContractInput } from './dto/update-employee-contract.inpu
 
 @Resolver(() => EmployeeContract)
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
-@AdminPersonaOnly()
 export class EmployeeContractsResolver {
   constructor(
     private readonly employeeContractsService: EmployeeContractsService,
@@ -44,6 +44,8 @@ export class EmployeeContractsResolver {
 
   @Mutation(() => EmployeeContract)
   @Permissions('EMPLOYEE_WRITE')
+  @UseGuards(FieldWriteGuard)
+  @FieldWriteResource('employeeContract', 'create')
   createEmployeeContract(
     @Args('input') input: CreateEmployeeContractInput,
     @CurrentOrgId() orgId: string,
@@ -53,6 +55,8 @@ export class EmployeeContractsResolver {
 
   @Mutation(() => EmployeeContract)
   @Permissions('EMPLOYEE_WRITE')
+  @UseGuards(FieldWriteGuard)
+  @FieldWriteResource('employeeContract', 'update')
   updateEmployeeContract(
     @Args('input') input: UpdateEmployeeContractInput,
     @CurrentOrgId() orgId: string,

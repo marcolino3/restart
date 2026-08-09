@@ -6,14 +6,14 @@ import { ROUTES } from "@/constants/routes";
 import { getEmployeeByIdAction } from "@/features/employees/actions/get-employee-by-id.action";
 import { getEmployeeAbsenceCategoriesAction } from "@/features/employee-absence-categories/actions/get-employee-absence-categories.action";
 import { EmployeeAbsenceForm } from "@/features/employee-absences/components/EmployeeAbsenceForm";
-import { requireAdminPersona } from "@/features/users/guards/require-admin-persona";
+import { requireAdminRole } from "@/features/users/guards/require-admin-role";
 
 interface Props {
   params: Promise<{ employeeId: string }>;
 }
 
 const CreateEmployeeAbsencePage = async ({ params }: Props) => {
-  await requireAdminPersona();
+  await requireAdminRole();
   const { employeeId } = await params;
   const t = await getTranslations("Employees");
   const locale = await getLocale();

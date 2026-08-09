@@ -2,13 +2,7 @@ import { Field, ID, ObjectType } from '@nestjs/graphql';
 import { Column, Entity, Index, JoinColumn, ManyToOne, Unique } from 'typeorm';
 import { AbstractEntity } from '@/database/abstract.entity';
 import { Role } from './role.entity';
-
-// Mirrors FieldAction in packages/shared-schemas/src/rbac/field-catalog.ts.
-// Kept local (not cross-package imported) because apps/backend's tsconfig
-// uses classic "node" module resolution, which does not honor package.json
-// "exports" subpaths — see Phase 3 for the fieldMiddleware that reads the
-// full catalog and will need to resolve this properly.
-type FieldAction = 'create' | 'read' | 'update' | 'delete';
+import type { FieldAction } from '@restart/shared-schemas/rbac/field-catalog';
 
 @ObjectType()
 @Entity('role_field_permissions')

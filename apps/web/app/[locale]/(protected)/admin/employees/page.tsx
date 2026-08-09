@@ -1,6 +1,6 @@
 import { getEmployeesAction } from "@/features/employees/actions/get-employees.action";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
-import { isAdminPersona } from "@/features/users/lib/admin-persona";
+import { hasAdminRole } from "@/features/users/lib/admin-roles";
 import { EmployeesTable } from "@/features/employees/components/EmployeesTable";
 import { EmployeesCardGrid } from "@/features/employees/components/EmployeesCardGrid";
 import { EmployeesActionsMenu } from "@/features/employees/components/EmployeesActionsMenu";
@@ -26,7 +26,7 @@ const EmployeesPage = async () => {
   }
 
   const canSeeDetails =
-    userRes.data.isSuperAdmin || isAdminPersona(userRes.data.persona);
+    userRes.data.isSuperAdmin || hasAdminRole(userRes.data.roles);
   const { success, data } = await getEmployeesAction();
 
   const activeCount = (data ?? []).filter(

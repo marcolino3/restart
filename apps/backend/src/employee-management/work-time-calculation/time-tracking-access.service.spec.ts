@@ -2,7 +2,6 @@ import { ForbiddenException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { TimeTrackingAccessService } from './time-tracking-access.service';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
-import { Persona } from '@/common/enums/persona.enum';
 import { SystemRole } from '@/roles/entities/system-role.enum';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { TeamMember } from '@/employee-management/team-members/entities/team-member.entity';
@@ -22,7 +21,6 @@ describe('TimeTrackingAccessService', () => {
     sub: 'user-1',
     orgId: 'org-1',
     membershipId: 'm-1',
-    persona: Persona.EMPLOYEE,
     roles: [SystemRole.EMPLOYEE],
     ...overrides,
   });
@@ -47,10 +45,10 @@ describe('TimeTrackingAccessService', () => {
       ).resolves.toBeUndefined();
     });
 
-    it('erlaubt Admin-Persona Zugriff auf fremde Daten', async () => {
+    it('erlaubt HR_MANAGER Zugriff auf fremde Daten', async () => {
       await expect(
         service.assertCanViewEmployee(
-          callerUser({ persona: Persona.HR }),
+          callerUser({ roles: [SystemRole.HR_MANAGER] }),
           'OTHER',
         ),
       ).resolves.toBeUndefined();
@@ -97,10 +95,10 @@ describe('TimeTrackingAccessService', () => {
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
-    it('verweigert OFFICE-Persona Zugriff auf fremde Daten (nur ADMIN/HR)', async () => {
+    it('verweigert Rolle ohne Admin-Anspruch Zugriff auf fremde Daten (nur ORG_ADMIN/HR_MANAGER)', async () => {
       await expect(
         service.assertCanViewEmployee(
-          callerUser({ persona: Persona.OFFICE }),
+          callerUser({ roles: [SystemRole.EMPLOYEE] }),
           'OTHER',
         ),
       ).rejects.toBeInstanceOf(ForbiddenException);
@@ -126,7 +124,7 @@ describe('TimeTrackingAccessService', () => {
       ).resolves.toBeUndefined();
       await expect(
         service.assertCanManageEmployee(
-          callerUser({ persona: Persona.ADMIN }),
+          callerUser({ roles: [SystemRole.ORG_ADMIN] }),
           'OTHER',
         ),
       ).resolves.toBeUndefined();
@@ -138,10 +136,10 @@ describe('TimeTrackingAccessService', () => {
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
-    it('verweigert OFFICE-Persona das Verwalten fremder Daten', async () => {
+    it('verweigert Rolle ohne Admin-Anspruch das Verwalten fremder Daten', async () => {
       await expect(
         service.assertCanManageEmployee(
-          callerUser({ persona: Persona.OFFICE }),
+          callerUser({ roles: [SystemRole.EMPLOYEE] }),
           'OTHER',
         ),
       ).rejects.toBeInstanceOf(ForbiddenException);
@@ -175,13 +173,13 @@ describe('TimeTrackingAccessService', () => {
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
-    it('erlaubt Admin/HR und Self', async () => {
+    it('erlaubt ORG_ADMIN/HR_MANAGER und Self', async () => {
       await expect(
         service.assertCanManageAbsence(callerUser(), 'CALLER'),
       ).resolves.toBeUndefined();
       await expect(
         service.assertCanManageAbsence(
-          callerUser({ persona: Persona.HR }),
+          callerUser({ roles: [SystemRole.HR_MANAGER] }),
           'OTHER',
         ),
       ).resolves.toBeUndefined();
@@ -189,10 +187,10 @@ describe('TimeTrackingAccessService', () => {
   });
 
   describe('resolveOverviewScope', () => {
-    it('Admin → null (alle), reiner Mitarbeiter → [] (keine)', async () => {
+    it('ORG_ADMIN → null (alle), reiner Mitarbeiter → [] (keine)', async () => {
       await expect(
         service.resolveOverviewScope(
-          callerUser({ persona: Persona.ADMIN }),
+          callerUser({ roles: [SystemRole.ORG_ADMIN] }),
           'org-1',
         ),
       ).resolves.toBeNull();
@@ -201,10 +199,10 @@ describe('TimeTrackingAccessService', () => {
       ).resolves.toEqual([]);
     });
 
-    it('OFFICE ohne Lead-Rolle → [] (kein Zugriff auf die Auswertung)', async () => {
+    it('Rolle ohne Lead → [] (kein Zugriff auf die Auswertung)', async () => {
       await expect(
         service.resolveOverviewScope(
-          callerUser({ persona: Persona.OFFICE }),
+          callerUser({ roles: [SystemRole.EMPLOYEE] }),
           'org-1',
         ),
       ).resolves.toEqual([]);

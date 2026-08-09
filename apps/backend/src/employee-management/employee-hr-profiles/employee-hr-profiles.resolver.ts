@@ -1,8 +1,9 @@
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
+import { FieldWriteResource } from '@/auth/decorators/field-write-resource.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
-import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
+import { FieldWriteGuard } from '@/auth/guard/field-write.guard';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { UseGuards } from '@nestjs/common';
@@ -14,7 +15,6 @@ import { UpsertEmployeeHrProfileInput } from './dto/upsert-employee-hr-profile.i
 
 @Resolver(() => EmployeeHrProfile)
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
-@AdminPersonaOnly()
 export class EmployeeHrProfilesResolver {
   constructor(private readonly service: EmployeeHrProfilesService) {}
 
@@ -32,6 +32,8 @@ export class EmployeeHrProfilesResolver {
 
   @Mutation(() => EmployeeHrProfile, { name: 'upsertEmployeeHrProfile' })
   @Permissions('EMPLOYEE_WRITE')
+  @UseGuards(FieldWriteGuard)
+  @FieldWriteResource('employeeHrProfile', 'update')
   upsert(
     @Args('input') input: UpsertEmployeeHrProfileInput,
     @CurrentOrgId() organizationId: string,

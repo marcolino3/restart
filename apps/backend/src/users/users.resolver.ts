@@ -1,6 +1,5 @@
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
-import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { SuperAdminOnly } from '@/auth/decorators/super-admin.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
@@ -157,7 +156,6 @@ export class UsersResolver {
    * UND better-auth `user.email` (Login). Admin/HR only.
    */
   @Mutation(() => User)
-  @AdminPersonaOnly()
   @Permissions('EMPLOYEE_WRITE')
   changeUserEmail(@Args('input') input: ChangeUserEmailInput) {
     return this.usersService.changeUserEmail(input.userId, input.newEmail);

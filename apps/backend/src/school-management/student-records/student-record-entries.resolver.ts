@@ -2,6 +2,8 @@ import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
+import { FieldWriteGuard } from '@/auth/guard/field-write.guard';
+import { FieldWriteResource } from '@/auth/decorators/field-write-resource.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
@@ -40,6 +42,8 @@ export class StudentRecordEntriesResolver {
 
   @Mutation(() => StudentRecordEntry)
   @Permissions('STUDENT_RECORD_WRITE')
+  @UseGuards(FieldWriteGuard)
+  @FieldWriteResource('studentRecordEntry', 'create')
   async createStudentRecordEntry(
     @Args('input') input: CreateStudentRecordEntryInput,
     @CurrentOrgId() orgId: string,
@@ -58,6 +62,8 @@ export class StudentRecordEntriesResolver {
 
   @Mutation(() => StudentRecordEntry)
   @Permissions('STUDENT_RECORD_WRITE')
+  @UseGuards(FieldWriteGuard)
+  @FieldWriteResource('studentRecordEntry', 'update')
   async updateStudentRecordEntry(
     @Args('input') input: UpdateStudentRecordEntryInput,
     @CurrentOrgId() orgId: string,

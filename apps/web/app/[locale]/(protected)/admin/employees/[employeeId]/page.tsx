@@ -9,7 +9,7 @@ import { getCompanyVacationsForEmployeeAction } from "@/features/time-tracking/a
 import { getEmployeeVacationSegmentsAction } from "@/features/time-tracking/actions/employee-vacations.action";
 import { getTimeTrackingSettingsAction } from "@/features/time-tracking/actions/settings.action";
 import { getEmployeeMonthlyTimeTrackingAction } from "@/features/time-tracking/actions/get-employee-monthly-time-tracking.action";
-import { requireAdminPersona } from "@/features/users/guards/require-admin-persona";
+import { requireAdminRole } from "@/features/users/guards/require-admin-role";
 import EmployeeViewPage from "@/features/employees/components/EmployeeViewPage";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -19,7 +19,7 @@ interface Props {
 }
 
 const ViewEmployeePage = async ({ params }: Props) => {
-  await requireAdminPersona();
+  await requireAdminRole();
   const { employeeId } = await params;
   const t = await getTranslations("Employees");
   const locale = await getLocale();

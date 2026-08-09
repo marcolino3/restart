@@ -10,7 +10,6 @@ const employee = (
   overrides: Partial<NonNullable<NavVisibilityUser>> = {}
 ): NavVisibilityUser => ({
   isSuperAdmin: false,
-  persona: "EMPLOYEE",
   roles: ["EMPLOYEE"],
   permissions: [],
   timeTrackingEnabled: false,
@@ -27,7 +26,9 @@ describe("canSeeTimeTracking", () => {
   });
 
   it("versteckt Zeiterfassung auch für Admins ohne Flag", () => {
-    expect(canSeeTimeTracking(employee({ persona: "ADMIN" }))).toBe(false);
+    expect(canSeeTimeTracking(employee({ roles: ["ORG_ADMIN"] }))).toBe(
+      false
+    );
     expect(canSeeTimeTracking(employee({ isSuperAdmin: true }))).toBe(false);
   });
 
@@ -38,14 +39,14 @@ describe("canSeeTimeTracking", () => {
 });
 
 describe("canSeeTimeReport", () => {
-  it("erlaubt ADMIN, HR und SuperAdmin", () => {
-    expect(canSeeTimeReport(employee({ persona: "ADMIN" }))).toBe(true);
-    expect(canSeeTimeReport(employee({ persona: "HR" }))).toBe(true);
+  it("erlaubt ORG_ADMIN, HR_MANAGER und SuperAdmin", () => {
+    expect(canSeeTimeReport(employee({ roles: ["ORG_ADMIN"] }))).toBe(true);
+    expect(canSeeTimeReport(employee({ roles: ["HR_MANAGER"] }))).toBe(true);
     expect(canSeeTimeReport(employee({ isSuperAdmin: true }))).toBe(true);
   });
 
   it("schliesst OFFICE aus", () => {
-    expect(canSeeTimeReport(employee({ persona: "OFFICE" }))).toBe(false);
+    expect(canSeeTimeReport(employee({ roles: ["OFFICE"] }))).toBe(false);
   });
 
   it("erlaubt Teamleiter über die TEAM_LEAD-Rolle", () => {

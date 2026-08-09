@@ -49,17 +49,17 @@ export class EmployeeNote extends AbstractEntity<EmployeeNote> {
   category: EmployeeNoteCategory;
 
   // Title
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   @Column({ name: 'title', type: 'varchar', length: 200 })
   title: string;
 
   // Content
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   @Column({ name: 'content', type: 'text' })
   content: string;
 
   // Confidential flag
-  @Field(() => Boolean)
+  @Field(() => Boolean, { nullable: true })
   @Column({ name: 'is_confidential', type: 'boolean', default: false })
   isConfidential: boolean;
 

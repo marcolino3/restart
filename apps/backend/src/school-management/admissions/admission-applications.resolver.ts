@@ -1,9 +1,10 @@
 import { CurrentMembershipIdOptional } from '@/auth/decorators/current-membership-id-optional.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
-import { AdminPersonaOnly } from '@/auth/decorators/admin-persona-only.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
+import { FieldWriteGuard } from '@/auth/guard/field-write.guard';
+import { FieldWriteResource } from '@/auth/decorators/field-write-resource.decorator';
 import { UseGuards } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { AdmissionApplicationsService } from './admission-applications.service';
@@ -19,7 +20,6 @@ import { AdmissionApplication } from './entities/admission-application.entity';
 import { AdmissionAuditLog } from './entities/admission-audit-log.entity';
 
 @Resolver(() => AdmissionApplication)
-@AdminPersonaOnly()
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
 export class AdmissionApplicationsResolver {
   constructor(
@@ -68,6 +68,8 @@ export class AdmissionApplicationsResolver {
 
   @Mutation(() => AdmissionApplication)
   @Permissions('ADMISSION_APPLICATION_WRITE')
+  @UseGuards(FieldWriteGuard)
+  @FieldWriteResource('admissionApplication', 'create')
   createAdmissionApplication(
     @Args('input') input: CreateAdmissionApplicationInput,
     @CurrentOrgId() orgId: string,
@@ -78,6 +80,8 @@ export class AdmissionApplicationsResolver {
 
   @Mutation(() => AdmissionApplication)
   @Permissions('ADMISSION_APPLICATION_WRITE')
+  @UseGuards(FieldWriteGuard)
+  @FieldWriteResource('admissionApplication', 'update')
   updateAdmissionApplication(
     @Args('input') input: UpdateAdmissionApplicationInput,
     @CurrentOrgId() orgId: string,
@@ -136,6 +140,8 @@ export class AdmissionApplicationsResolver {
 
   @Mutation(() => AdmissionApplication)
   @Permissions('ADMISSION_APPLICATION_DELETE')
+  @UseGuards(FieldWriteGuard)
+  @FieldWriteResource('admissionApplication', 'update')
   rejectAdmissionApplication(
     @Args('input') input: RejectAdmissionApplicationInput,
     @CurrentOrgId() orgId: string,

@@ -53,9 +53,9 @@ interface LedgerSumRow {
  * Reads laufen ausschliesslich als SUM/GROUP BY über das Ledger — die Engine
  * wird NIE beim Lesen ausgeführt (Performance-Kern, vgl. PR-B).
  *
- * Zugriffs-Scoping (service-seitig, weil @AdminPersonaOnly TEAM_LEAD aussperren
- * würde): eigene Daten immer; fremde nur für Admin-Persona (alle) oder TEAM_LEAD
- * (nur Mitarbeiter geleiteter Teams).
+ * Zugriffs-Scoping (service-seitig, weil ein reiner Guard TEAM_LEAD aussperren
+ * würde): eigene Daten immer; fremde nur für ORG_ADMIN/HR_MANAGER (alle) oder
+ * TEAM_LEAD (nur Mitarbeiter geleiteter Teams).
  */
 @Injectable()
 export class WorkTimeBalanceService {

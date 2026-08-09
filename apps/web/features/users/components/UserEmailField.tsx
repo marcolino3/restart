@@ -8,7 +8,7 @@ import { Check, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useUser, usePermissions } from "@/features/users/context/current-user.context";
-import { isAdminPersona } from "@/features/users/lib/admin-persona";
+import { hasAdminRole } from "@/features/users/lib/admin-roles";
 import { changeUserEmailAction } from "../actions/change-user-email.action";
 
 interface Props {
@@ -31,7 +31,7 @@ export const UserEmailField = ({ userId, currentEmail }: Props) => {
 
   const canEdit =
     (user?.isSuperAdmin ?? false) ||
-    (isAdminPersona(user?.persona) && hasPermission("EMPLOYEE_WRITE"));
+    (hasAdminRole(user?.roles) && hasPermission("EMPLOYEE_WRITE"));
 
   const original = (currentEmail ?? "").trim();
   const [email, setEmail] = useState(original);
