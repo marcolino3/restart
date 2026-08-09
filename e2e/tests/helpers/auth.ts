@@ -262,7 +262,7 @@ export async function setupSecondOrgUser(
     `mutation AssignRole($input: EmployeeOnboardingInput!) {
        upsertEmployeeOnboardingDraft(input: $input) { id }
      }`,
-    { input: { id: employeeId, roleIds: [orgOwnerRoleId] } },
+    { input: { id: employeeId, firstName, lastName, roleIds: [orgOwnerRoleId] } },
   )
   if (roleAssign.errors?.length) {
     throw new Error(
