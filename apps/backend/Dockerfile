@@ -50,4 +50,4 @@ USER nestjs
 
 EXPOSE 3001
 
-CMD ["node", "dist/src/main"]
+CMD ["sh", "-c", "exec node \"$(find dist -type f -name main.js | head -1)\""]
