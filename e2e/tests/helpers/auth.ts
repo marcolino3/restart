@@ -239,6 +239,36 @@ export async function setupSecondOrgUser(
       `E2E fixture: could not create second-org employee — ${employee.errors[0].message}`,
     )
   }
+  const employeeId = employee.data?.createEmployee?.id
+
+  // createEmployee (the "minimal" path) leaves the membership without any
+  // role — the second-org user would otherwise have no permissions at all
+  // and every guarded query/mutation used in tests would fail at the guard
+  // instead of exercising the org-scoping logic under test. Assign the
+  // org's seeded ORG_OWNER system role via the onboarding-draft mutation
+  // (the only mutation that accepts roleIds).
+  const roles = await gql(
+    `query { rolesByOrgId { id name } }`,
+  )
+  const orgOwnerRoleId = roles.data?.rolesByOrgId?.find(
+    (r: { name: string }) => r.name === 'ORG_OWNER',
+  )?.id
+  if (!orgOwnerRoleId) {
+    throw new Error(
+      `E2E fixture: could not find seeded ORG_OWNER role for second org — ${JSON.stringify(roles.errors)}`,
+    )
+  }
+  const roleAssign = await gql(
+    `mutation AssignRole($input: EmployeeOnboardingInput!) {
+       upsertEmployeeOnboardingDraft(input: $input) { id }
+     }`,
+    { input: { id: employeeId, firstName, lastName, roleIds: [orgOwnerRoleId] } },
+  )
+  if (roleAssign.errors?.length) {
+    throw new Error(
+      `E2E fixture: could not assign role to second-org employee — ${roleAssign.errors[0].message}`,
+    )
+  }
 
   // Independent cookie jar — this session must never see the admin's
   // Active-Org cookie or session token. Sign-up is done through THIS
