@@ -401,7 +401,7 @@ test.describe('Field-level RBAC — grossSalary read gate', () => {
     expect(switched.ok()).toBe(true)
 
     await restrictedPage.goto(
-      `/en/admin/employees/${employeeId}/contracts/edit`,
+      `/en/admin/employees/${restrictedEmployeeId}/contracts/edit`,
       { waitUntil: 'networkidle' },
     )
 
