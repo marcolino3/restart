@@ -12,6 +12,7 @@ const sample: EmployeeFunctionItem = {
   sortOrder: 0,
   isActive: true,
   isArchived: false,
+  usageCount: 0,
   translations: [
     { locale: "DE", name: "Lehrperson" },
     { locale: "FR", name: "Enseignant·e" },
