@@ -10,6 +10,9 @@ import {
 import { UseGuards } from '@nestjs/common';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
+import { OrgFeatureGuard } from '@/auth/guard/org-feature.guard';
+import { OrgFeatureRequired } from '@/auth/decorators/org-feature-required.decorator';
+import { OrgFeatureKey } from '@restart/shared-schemas/org-features/feature-catalog';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
@@ -42,7 +45,8 @@ interface WsContext {
 }
 
 @Resolver(() => Conversation)
-@UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
+@UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard, OrgFeatureGuard)
+@OrgFeatureRequired(OrgFeatureKey.CHATS)
 export class ChatsResolver {
   constructor(
     private readonly chatsService: ChatsService,

@@ -50,7 +50,10 @@ import {
 } from "@/components/ui/sidebar";
 import { ROUTES } from "@/constants/routes";
 import {
+  canSeeChats,
+  canSeeMyTasks,
   canSeeProjects,
+  canSeeProtocols,
   canSeeTimeReport,
   canSeeTimeTracking,
 } from "@/lib/navigation/nav-visibility";
@@ -162,22 +165,34 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
             },
           ]
         : []),
-      {
-        title: t("myTasks"),
-        url: ROUTES.admin.myTasks(locale),
-        icon: IconListCheck,
-      },
-      {
-        title: t("chats"),
-        url: ROUTES.admin.chats(locale),
-        icon: IconMessage,
-        badge: chatUnread || undefined,
-      },
-      {
-        title: t("protocols"),
-        url: ROUTES.admin.protocols(locale),
-        icon: IconFileText,
-      },
+      ...(canSeeMyTasks(user)
+        ? [
+            {
+              title: t("myTasks"),
+              url: ROUTES.admin.myTasks(locale),
+              icon: IconListCheck,
+            },
+          ]
+        : []),
+      ...(canSeeChats(user)
+        ? [
+            {
+              title: t("chats"),
+              url: ROUTES.admin.chats(locale),
+              icon: IconMessage,
+              badge: chatUnread || undefined,
+            },
+          ]
+        : []),
+      ...(canSeeProtocols(user)
+        ? [
+            {
+              title: t("protocols"),
+              url: ROUTES.admin.protocols(locale),
+              icon: IconFileText,
+            },
+          ]
+        : []),
     ],
     navOrg: canSeeOrgAdmin
       ? [

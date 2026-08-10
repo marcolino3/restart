@@ -36,6 +36,7 @@ type AuthContextResponse = {
     isSuperAdmin: boolean;
     timeTrackingEnabled: boolean;
     isProjectMember: boolean;
+    enabledFeatures: string[];
   };
 };
 
@@ -68,6 +69,7 @@ const GetAuthContextDocument = gql`
       isSuperAdmin
       timeTrackingEnabled
       isProjectMember
+      enabledFeatures
     }
   }
 `;
@@ -99,6 +101,7 @@ export const getCurrentUserAction = async () => {
         isSuperAdmin: data.authContext.isSuperAdmin,
         timeTrackingEnabled: data.authContext.timeTrackingEnabled,
         isProjectMember: data.authContext.isProjectMember,
+        enabledFeatures: data.authContext.enabledFeatures,
       },
     };
   } catch (error) {
