@@ -6,6 +6,8 @@ type Props = {
   permission?: string;
   anyPermission?: string[];
   role?: string;
+  readField?: { resource: string; field: string };
+  writeField?: { resource: string; field: string };
   fallback?: React.ReactNode;
   children: React.ReactNode;
 };
@@ -14,10 +16,13 @@ export function PermissionGate({
   permission,
   anyPermission,
   role,
+  readField,
+  writeField,
   fallback = null,
   children,
 }: Props) {
-  const { hasPermission, hasAnyPermission, hasRole } = usePermissions();
+  const { hasPermission, hasAnyPermission, hasRole, canReadField, canWriteField } =
+    usePermissions();
 
   let allowed = true;
 
@@ -27,6 +32,10 @@ export function PermissionGate({
     allowed = hasAnyPermission(...anyPermission);
   } else if (role) {
     allowed = hasRole(role);
+  } else if (readField) {
+    allowed = canReadField(readField.resource, readField.field);
+  } else if (writeField) {
+    allowed = canWriteField(writeField.resource, writeField.field);
   }
 
   if (!allowed) return <>{fallback}</>;

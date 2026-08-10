@@ -17,9 +17,13 @@ config({ path: join(__dirname, '.env.test') });
  */
 export async function createTestingApp(
   imports: any[] = [],
-  options: { loadAllEntities?: boolean } = {},
+  options: {
+    loadAllEntities?: boolean;
+    extraProviders?: any[];
+  } = {},
 ) {
   const module: TestingModule = await Test.createTestingModule({
+    providers: options.extraProviders ?? [],
     imports: [
       ConfigModule.forRoot({
         isGlobal: true,

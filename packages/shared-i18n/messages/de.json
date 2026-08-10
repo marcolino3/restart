@@ -2666,7 +2666,92 @@
       "retention": "Aufbewahrungsfristen",
       "dataBreach": "Datenpannen",
       "vvt": "Verarbeitungsverzeichnis"
-    }
+    },
+    "roleCreated": "Rolle erstellt.",
+    "createRole": "Rolle erstellen",
+    "createRoleTitle": "Neue Rolle erstellen",
+    "createRoleDescription": "Erstelle eine neue Rolle mit eigenen Berechtigungen.",
+    "duplicateRoleTitle": "Rolle duplizieren",
+    "duplicateRoleDescription": "Neue Rolle basierend auf \"{roleName}\" erstellen.",
+    "roleName": "Rollenname",
+    "loadingFields": "Feldberechtigungen werden geladen...",
+    "fieldPermissionsTitle": "Feldberechtigungen",
+    "fieldPermissionsDescription": "Steuere den Zugriff auf einzelne, sensible Felder.",
+    "fieldResource": {
+      "employeeHrProfile": "Personaldaten",
+      "employeeContract": "Vertrag",
+      "employeeNote": "Notizen",
+      "employeeEmergencyProfile": "Notfallprofil",
+      "employeeAuditLog": "Aenderungsprotokoll",
+      "employeePaidOvertime": "Bezahlte Ueberzeit",
+      "student": "Schueler/in",
+      "studentRecordEntry": "Foerderprofil-Eintrag",
+      "admissionApplication": "Anmeldung"
+    },
+    "fieldName": {
+      "employeeHrProfile": {
+        "iban": "IBAN",
+        "bankAccountHolder": "Kontoinhaber",
+        "bankName": "Bankname",
+        "bvgInsuranceNumber": "BVG-Versicherungsnummer",
+        "withholdingTaxCode": "Quellensteuer-Code",
+        "nationality": "Nationalitaet",
+        "residencePermitType": "Aufenthaltsbewilligung Typ",
+        "residencePermitValidUntil": "Aufenthaltsbewilligung gueltig bis",
+        "maritalStatus": "Zivilstand",
+        "denomination": "Konfession",
+        "numberOfChildren": "Anzahl Kinder"
+      },
+      "employeeContract": {
+        "grossSalary": "Bruttolohn",
+        "hourlyRate": "Stundenlohn",
+        "paymentInterval": "Zahlungsintervall",
+        "has13thSalary": "13. Monatslohn"
+      },
+      "employeeNote": {
+        "title": "Titel",
+        "content": "Inhalt",
+        "isConfidential": "Vertraulich"
+      },
+      "employeeEmergencyProfile": {
+        "bloodType": "Blutgruppe",
+        "allergies": "Allergien",
+        "chronicConditions": "Chronische Erkrankungen",
+        "emergencyMedications": "Notfallmedikamente",
+        "primaryDoctorName": "Hausarzt Name",
+        "primaryDoctorPhone": "Hausarzt Telefon",
+        "pharmacyName": "Apotheke"
+      },
+      "employeeAuditLog": {
+        "oldValue": "Alter Wert",
+        "newValue": "Neuer Wert"
+      },
+      "employeePaidOvertime": {
+        "minutes": "Minuten"
+      },
+      "student": {
+        "socialSecurityNumber": "AHV-Nummer",
+        "dateOfBirth": "Geburtsdatum",
+        "placeOfBirth": "Geburtsort",
+        "nationalities": "Nationalitaeten",
+        "firstLanguages": "Erstsprachen",
+        "familyLanguages": "Familiensprachen"
+      },
+      "studentRecordEntry": {
+        "content": "Inhalt"
+      },
+      "admissionApplication": {
+        "childNotes": "Notizen zum Kind",
+        "rejectionReason": "Ablehnungsgrund"
+      }
+    },
+    "fieldAction": {
+      "create": "Erstellen",
+      "read": "Lesen",
+      "update": "Bearbeiten",
+      "delete": "Loeschen"
+    },
+    "loadError": "Fehler beim Laden der Rollen und Berechtigungen."
   },
   "SchoolClasses": {
     "actions": "Aktionen",

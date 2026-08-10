@@ -1,6 +1,7 @@
 import { ObjectType, Field } from '@nestjs/graphql';
 import { Persona } from '@/common/enums/persona.enum';
 import { User } from '../entities/user.entity';
+import { EffectiveFieldPermissionOutput } from './effective-field-permission.output';
 
 @ObjectType()
 export class AuthContextOutput {
@@ -12,6 +13,9 @@ export class AuthContextOutput {
 
   @Field(() => [String])
   permissions: string[];
+
+  @Field(() => [EffectiveFieldPermissionOutput])
+  fieldPermissions: EffectiveFieldPermissionOutput[];
 
   @Field(() => String, { nullable: true })
   orgId?: string;

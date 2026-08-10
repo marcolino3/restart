@@ -27,7 +27,6 @@ const PERSONA_VARIANT: Record<string, BadgeProps["variant"]> = {
   ADMIN: "amber",
   HR: "amber",
   OFFICE: "sky",
-  ASSISTANT: "sky",
   PARENT: "slate",
   STUDENT: "slate",
   EMPLOYEE: "green",
@@ -206,7 +205,7 @@ const PERSONA_GROUPS = [
   {
     key: "CARE",
     labelKey: "chipCare",
-    personas: ["ASSISTANT", "EMPLOYEE"],
+    personas: ["EMPLOYEE"],
   },
 ] as const;
 
@@ -214,9 +213,7 @@ const PERSONA_GROUPS = [
  * Personas whose `Common` message key differs from the enum value. Everything
  * else resolves as `Common.<PERSONA>`.
  */
-const PERSONA_LABEL_KEYS: Record<string, string> = {
-  ASSISTANT: "wordAssistant",
-};
+const PERSONA_LABEL_KEYS: Record<string, string> = {};
 
 export const EmployeesTable = ({ data }: Props) => {
   const t = useTranslations("Common");

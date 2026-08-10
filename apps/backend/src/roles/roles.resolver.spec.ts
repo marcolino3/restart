@@ -14,6 +14,9 @@ describe('RolesResolver', () => {
   };
 
   const orgId = 'org-1';
+  const user = {
+    permissions: ['ROLE_ASSIGN'],
+  } as import('@/auth/interfaces/token-payload.interface').TokenPayload;
 
   beforeEach(async () => {
     rolesService = {
@@ -65,12 +68,13 @@ describe('RolesResolver', () => {
       };
 
       await expect(
-        resolver.updateRolePermissions(input, orgId),
+        resolver.updateRolePermissions(input, orgId, user),
       ).resolves.toEqual({ id: 'role-1' });
       expect(rolesService.updateRolePermissions).toHaveBeenCalledWith(
         'role-1',
         ['ADDRESS_READ', 'ADDRESS_WRITE'],
         orgId,
+        user.permissions,
       );
     });
 
@@ -84,12 +88,13 @@ describe('RolesResolver', () => {
       };
 
       await expect(
-        resolver.updateRolePermissions(input, orgId),
+        resolver.updateRolePermissions(input, orgId, user),
       ).rejects.toBeInstanceOf(NotFoundException);
       expect(rolesService.updateRolePermissions).toHaveBeenCalledWith(
         'role-foreign',
         [],
         orgId,
+        user.permissions,
       );
     });
   });

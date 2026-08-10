@@ -56,7 +56,7 @@ export default function CreateUserPageForm({
       password: "",
       title: "",
       organizationId: "",
-      persona: "",
+      persona: undefined,
       roleIds: [],
     },
   });
