@@ -75,3 +75,24 @@ export function protectedFieldKey(resource: string, field: string): string {
 export const PROTECTED_FIELD_KEYS: ReadonlySet<string> = new Set(
   PROTECTED_FIELD_CATALOG.map((f) => protectedFieldKey(f.resource, f.field)),
 );
+
+export type GroupedFieldResource = {
+  resource: string;
+  fields: ProtectedField[];
+};
+
+export function groupFieldCatalog(): GroupedFieldResource[] {
+  const byResource = new Map<string, ProtectedField[]>();
+  for (const entry of PROTECTED_FIELD_CATALOG) {
+    let fields = byResource.get(entry.resource);
+    if (!fields) {
+      fields = [];
+      byResource.set(entry.resource, fields);
+    }
+    fields.push(entry);
+  }
+  return Array.from(byResource.entries()).map(([resource, fields]) => ({
+    resource,
+    fields,
+  }));
+}

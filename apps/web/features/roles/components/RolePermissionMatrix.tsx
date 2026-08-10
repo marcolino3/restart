@@ -1,9 +1,10 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { ChevronRightIcon } from "lucide-react";
+import { ChevronRightIcon, CopyIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,37 +35,17 @@ import {
   type FeatureKey,
   type GroupedCategory,
   groupCatalog,
-  isAdminOnlyCategory,
 } from "../permission-catalog";
-
-// System roles tied to admin personas (ADMIN, HR, OFFICE). These are the
-// only system roles for which the org/userManagement/teams categories are
-// offered by default. TEAM_LEAD/EMPLOYEE and all custom roles are filtered
-// out unless they already hold a permission from such a category — keeps
-// TEAM_LEAD's TEAM_MANAGE editable without exposing TEAM_CREATE/_DELETE.
-const ADMIN_ROLE_SYSTEM_CODES: ReadonlySet<string> = new Set([
-  "ORG_OWNER",
-  "ORG_ADMIN",
-  "HR_MANAGER",
-  "OFFICE",
-]);
-
-function isAdminRole(role: RoleWithPermissions): boolean {
-  return !!role.systemCode && ADMIN_ROLE_SYSTEM_CODES.has(role.systemCode);
-}
-
-function categoriesForRole(
-  role: RoleWithPermissions,
-  allGrouped: GroupedCategory[],
-): GroupedCategory[] {
-  const adminRole = isAdminRole(role);
-  if (adminRole) return allGrouped;
-  const roleCodes = new Set(role.permissions?.map((p) => p.code) ?? []);
-  return allGrouped.filter((g) => {
-    if (!isAdminOnlyCategory(g.category)) return true;
-    return g.codes.some((c) => roleCodes.has(c));
-  });
-}
+import {
+  type FieldAction,
+  type GroupedFieldResource,
+  groupFieldCatalog,
+} from "../field-catalog";
+import { CreateRoleDialog } from "./CreateRoleDialog";
+import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
+import { deleteRoleAction } from "../actions/delete-role.action";
+import { getRoleFieldPermissionsAction } from "../actions/get-role-field-permissions.action";
+import { updateRoleFieldPermissionsAction } from "../actions/update-role-field-permissions.action";
 
 type Props = {
   roles: RoleWithPermissions[];
@@ -76,9 +57,12 @@ export function RolePermissionMatrix({
   permissions,
 }: Props) {
   const t = useTranslations("Roles");
+  const router = useRouter();
   const [roles, setRoles] = useState(initialRoles);
   const [openRoleIds, setOpenRoleIds] = useState<Set<string>>(new Set());
   const [pendingCodes, setPendingCodes] = useState<Set<string>>(new Set());
+
+  const groupedFields = useMemo(() => groupFieldCatalog(), []);
 
   const availableCodes = useMemo(
     () => new Set(permissions.map((p) => p.code)),
@@ -170,6 +154,7 @@ export function RolePermissionMatrix({
       <PageHead
         title={t("title")}
         subtitle={t("rolesCount", { count: roles.length })}
+        action={<CreateRoleDialog onCreated={() => router.refresh()} />}
       />
       <Card>
         <CardHeader>
@@ -187,14 +172,14 @@ export function RolePermissionMatrix({
                 <TableHead className="w-32 text-right">
                   {t("columnPermissions")}
                 </TableHead>
+                <TableHead className="w-24" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {roles.map((role) => {
                 const isOpen = openRoleIds.has(role.id);
-                const roleCategories = categoriesForRole(role, groupedCategories);
                 const roleVisibleCodes = new Set(
-                  roleCategories.flatMap((g) => g.codes),
+                  groupedCategories.flatMap((g) => g.codes),
                 );
                 const totalPermissions = roleVisibleCodes.size;
                 const count =
@@ -235,13 +220,46 @@ export function RolePermissionMatrix({
                           {count} / {totalPermissions}
                         </Badge>
                       </TableCell>
+                      <TableCell
+                        className="text-right"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex justify-end gap-1">
+                          <CreateRoleDialog
+                            duplicateFromRoleId={role.id}
+                            duplicateFromRoleName={role.name ?? undefined}
+                            onCreated={() => router.refresh()}
+                            trigger={
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                title={t("duplicateRoleTitle")}
+                              >
+                                <CopyIcon className="size-4" />
+                              </Button>
+                            }
+                          />
+                          {!role.isSystem ? (
+                            <DeleteConfirmationDialog
+                              itemName={role.name ?? ""}
+                              onConfirm={async () => {
+                                const result = await deleteRoleAction(role.id);
+                                return { success: result.success };
+                              }}
+                              onSuccess={() => router.refresh()}
+                            />
+                          ) : null}
+                        </div>
+                      </TableCell>
                     </TableRow>
                     {isOpen ? (
                       <TableRow className="hover:bg-transparent">
-                        <TableCell colSpan={3} className="bg-muted/30 p-4">
+                        <TableCell colSpan={4} className="bg-muted/30 p-4">
                           <RolePermissionEditor
                             role={role}
-                            groupedCategories={roleCategories}
+                            groupedCategories={groupedCategories}
+                            groupedFields={groupedFields}
                             pendingCodes={pendingCodes}
                             onTogglePermission={(code) =>
                               togglePermission(role, code)
@@ -268,6 +286,7 @@ export function RolePermissionMatrix({
 type EditorProps = {
   role: RoleWithPermissions;
   groupedCategories: GroupedCategory[];
+  groupedFields: GroupedFieldResource[];
   pendingCodes: Set<string>;
   onTogglePermission: (code: string) => void;
   onToggleCategory: (codes: string[], allChecked: boolean) => void;
@@ -276,6 +295,7 @@ type EditorProps = {
 function RolePermissionEditor({
   role,
   groupedCategories,
+  groupedFields,
   pendingCodes,
   onTogglePermission,
   onToggleCategory,
@@ -287,6 +307,7 @@ function RolePermissionEditor({
   );
 
   return (
+    <div className="space-y-4">
     <div className="grid gap-4 md:grid-cols-2">
       {groupedCategories.map((group) => {
         const checkedCount = group.codes.filter((c) =>
@@ -346,6 +367,8 @@ function RolePermissionEditor({
         );
       })}
     </div>
+    <RoleFieldPermissionSection role={role} groupedFields={groupedFields} />
+    </div>
   );
 }
 
@@ -391,6 +414,154 @@ function FeatureRow({
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+const FIELD_ACTIONS: FieldAction[] = ["create", "read", "update", "delete"];
+
+type FieldSectionProps = {
+  role: RoleWithPermissions;
+  groupedFields: GroupedFieldResource[];
+};
+
+function RoleFieldPermissionSection({ role, groupedFields }: FieldSectionProps) {
+  const t = useTranslations("Roles");
+  const [entries, setEntries] = useState<
+    { resource: string; field: string; actions: FieldAction[] }[] | null
+  >(null);
+  const [pendingKeys, setPendingKeys] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    let cancelled = false;
+    getRoleFieldPermissionsAction(role.id).then((result) => {
+      if (cancelled) return;
+      if (result.success) {
+        setEntries(
+          result.data.map((e) => ({
+            resource: e.resource,
+            field: e.field,
+            actions: e.actions as FieldAction[],
+          }))
+        );
+      } else {
+        setEntries([]);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [role.id]);
+
+  if (entries === null) {
+    return (
+      <p className="text-muted-foreground text-xs">{t("loadingFields")}</p>
+    );
+  }
+
+  function entryFor(resource: string, field: string) {
+    return entries!.find((e) => e.resource === resource && e.field === field);
+  }
+
+  async function toggleFieldAction(
+    resource: string,
+    field: string,
+    action: FieldAction
+  ) {
+    const key = `${resource}.${field}.${action}`;
+    const current = entryFor(resource, field);
+    const currentActions = current?.actions ?? [];
+    const nextActions = currentActions.includes(action)
+      ? currentActions.filter((a) => a !== action)
+      : [...currentActions, action];
+
+    const nextEntries = entries!.filter(
+      (e) => !(e.resource === resource && e.field === field)
+    );
+    if (nextActions.length > 0) {
+      nextEntries.push({ resource, field, actions: nextActions });
+    }
+
+    const previous = entries!;
+    setEntries(nextEntries);
+    setPendingKeys((p) => new Set(p).add(key));
+    try {
+      const result = await updateRoleFieldPermissionsAction(
+        role.id,
+        nextEntries
+      );
+      if (!result.success) {
+        setEntries(previous);
+        toast.error(t("saveError"));
+      }
+    } finally {
+      setPendingKeys((p) => {
+        const next = new Set(p);
+        next.delete(key);
+        return next;
+      });
+    }
+  }
+
+  if (groupedFields.length === 0) return null;
+
+  return (
+    <div className="bg-card rounded-lg border">
+      <header className="border-b px-4 py-3">
+        <h4 className="text-sm font-semibold">{t("fieldPermissionsTitle")}</h4>
+        <p className="text-muted-foreground text-xs">
+          {t("fieldPermissionsDescription")}
+        </p>
+      </header>
+      <div className="divide-y">
+        {groupedFields.map((group) => (
+          <div key={group.resource} className="p-4">
+            <div className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wide">
+              {t(`fieldResource.${group.resource}` as const)}
+            </div>
+            <div className="flex flex-col gap-2">
+              {group.fields.map((f) => {
+                const entry = entryFor(f.resource, f.field);
+                const entryActions = entry?.actions ?? [];
+                return (
+                  <div
+                    key={`${f.resource}.${f.field}`}
+                    className="flex flex-wrap items-center justify-between gap-2"
+                  >
+                    <span className="text-sm">
+                      {t(`fieldName.${f.resource}.${f.field}` as const)}
+                    </span>
+                    <div className="flex gap-1">
+                      {FIELD_ACTIONS.filter((a) => f.actions.includes(a)).map(
+                        (action) => {
+                          const key = `${f.resource}.${f.field}.${action}`;
+                          const checked = entryActions.includes(action);
+                          return (
+                            <Badge
+                              key={action}
+                              variant={checked ? "default" : "outline"}
+                              className={cn(
+                                "cursor-pointer text-[10px] uppercase select-none",
+                                pendingKeys.has(key) && "opacity-50"
+                              )}
+                              onClick={() =>
+                                !pendingKeys.has(key) &&
+                                toggleFieldAction(f.resource, f.field, action)
+                              }
+                            >
+                              {t(`fieldAction.${action}` as const)}
+                            </Badge>
+                          );
+                        }
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

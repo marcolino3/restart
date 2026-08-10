@@ -20,6 +20,7 @@ type AuthContextResponse = {
     };
     roles: string[];
     permissions: string[];
+    fieldPermissions: { resource: string; field: string; actions: string[] }[];
     orgId?: string;
     orgName?: string;
     orgTimezone?: string;
@@ -54,6 +55,11 @@ const GetAuthContextDocument = gql`
       }
       roles
       permissions
+      fieldPermissions {
+        resource
+        field
+        actions
+      }
       orgId
       orgName
       orgTimezone
@@ -84,6 +90,7 @@ export const getCurrentUserAction = async () => {
         email: primaryEmail?.email ?? data.authContext.user.userEmails[0]?.email,
         roles: data.authContext.roles,
         permissions: data.authContext.permissions,
+        fieldPermissions: data.authContext.fieldPermissions,
         orgId: data.authContext.orgId,
         orgName: data.authContext.orgName,
         orgTimezone: data.authContext.orgTimezone,

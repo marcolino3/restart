@@ -88,10 +88,14 @@ const BACKEND_CODES = [
   "VVT_MANAGE",
 ] as const;
 
-const rolesDe = (deMessages as { Roles: Record<string, Record<string, string>> })
-  .Roles;
-const rolesEn = (enMessages as { Roles: Record<string, Record<string, string>> })
-  .Roles;
+type RolesMessageShape = {
+  category: Record<string, string>;
+  feature: Record<string, string>;
+  action: Record<string, string>;
+};
+
+const rolesDe = (deMessages as unknown as { Roles: RolesMessageShape }).Roles;
+const rolesEn = (enMessages as unknown as { Roles: RolesMessageShape }).Roles;
 
 describe("permission catalog ↔ backend enum parity", () => {
   it("lists every backend permission code exactly once", () => {

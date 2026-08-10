@@ -61,10 +61,18 @@ export class UsersResolver {
       orgName = org?.name ?? undefined;
       orgTimezone = org?.timezone ?? undefined;
     }
+    const fieldPermissions = Array.from(user.fieldPermissions ?? []).map(
+      ([key, actions]) => {
+        const [resource, field] = key.split('.');
+        return { resource, field, actions: Array.from(actions) };
+      },
+    );
+
     return {
       user: fullUser,
       roles: user.roles ?? [],
       permissions: user.permissions ?? [],
+      fieldPermissions,
       orgId: user.orgId,
       orgName,
       orgTimezone,

@@ -1271,6 +1271,13 @@ export type CreateProtocolTemplateInput = {
   title: Scalars['String']['input'];
 };
 
+export type CreateRoleInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  duplicateFromRoleId?: InputMaybe<Scalars['ID']['input']>;
+  name: Scalars['String']['input'];
+  permissionCodes?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
 export type CreateSchoolClassEnrollmentInput = {
   enrolledAt: Scalars['String']['input'];
   leftAt?: InputMaybe<Scalars['String']['input']>;
@@ -1710,6 +1717,11 @@ export enum DataSubjectType {
   Other = 'OTHER',
   Student = 'STUDENT'
 }
+
+export type DuplicateRoleInput = {
+  name: Scalars['String']['input'];
+  sourceRoleId: Scalars['ID']['input'];
+};
 
 export type EmailTemplate = {
   __typename?: 'EmailTemplate';
@@ -2704,6 +2716,7 @@ export type Mutation = {
   createProjectTemplate: ProjectTemplate;
   createProtocol: Protocol;
   createProtocolTemplate: ProtocolTemplate;
+  createRole: Role;
   createSchoolClass: SchoolClass;
   createStudent: Student;
   createStudentNote: StudentNote;
@@ -2743,6 +2756,7 @@ export type Mutation = {
   deleteProtocol: Scalars['Boolean']['output'];
   deleteProtocolTemplate: Scalars['Boolean']['output'];
   deleteRetentionPolicy: Scalars['Boolean']['output'];
+  deleteRole: Scalars['Boolean']['output'];
   deleteSchoolClass: Scalars['Boolean']['output'];
   deleteStudent: Scalars['Boolean']['output'];
   deleteStudentRecordEntry: Scalars['Boolean']['output'];
@@ -2750,6 +2764,7 @@ export type Mutation = {
   deleteTeam: Scalars['Boolean']['output'];
   deleteTeamMember: Scalars['Boolean']['output'];
   deleteTimeTracking: Scalars['Boolean']['output'];
+  duplicateRole: Role;
   editMessage: Message;
   executePurgeCandidate: Scalars['Boolean']['output'];
   finalizeAdmissionEnrollment: FinalizeEnrollmentOutput;
@@ -2856,6 +2871,8 @@ export type Mutation = {
   updateProtocol: Protocol;
   updateProtocolTemplate: ProtocolTemplate;
   updateRecordKeepingSettings: RecordKeepingSettings;
+  updateRole: Role;
+  updateRoleFieldPermissions: Role;
   updateRolePermissions: Role;
   updateSchoolClass: SchoolClass;
   updateStudent: Student;
@@ -3216,6 +3233,11 @@ export type MutationCreateProtocolTemplateArgs = {
 };
 
 
+export type MutationCreateRoleArgs = {
+  input: CreateRoleInput;
+};
+
+
 export type MutationCreateSchoolClassArgs = {
   input: CreateSchoolClassInput;
 };
@@ -3412,6 +3434,11 @@ export type MutationDeleteRetentionPolicyArgs = {
 };
 
 
+export type MutationDeleteRoleArgs = {
+  roleId: Scalars['ID']['input'];
+};
+
+
 export type MutationDeleteSchoolClassArgs = {
   id: Scalars['ID']['input'];
 };
@@ -3444,6 +3471,11 @@ export type MutationDeleteTeamMemberArgs = {
 
 export type MutationDeleteTimeTrackingArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationDuplicateRoleArgs = {
+  input: DuplicateRoleInput;
 };
 
 
@@ -3976,6 +4008,16 @@ export type MutationUpdateProtocolTemplateArgs = {
 
 export type MutationUpdateRecordKeepingSettingsArgs = {
   input: UpdateRecordKeepingSettingsInput;
+};
+
+
+export type MutationUpdateRoleArgs = {
+  input: UpdateRoleInput;
+};
+
+
+export type MutationUpdateRoleFieldPermissionsArgs = {
+  input: UpdateRoleFieldPermissionsInput;
 };
 
 
@@ -4717,6 +4759,7 @@ export type Query = {
   recordKeepingSettings: RecordKeepingSettings;
   relatedAddressesForContactPerson: Array<AddressSuggestion>;
   retentionPolicies: Array<RetentionPolicy>;
+  roleFieldPermissions: Array<RoleFieldPermission>;
   rolesByOrgId: Array<Role>;
   rolesByOrganizationId: Array<Role>;
   schoolClassById: SchoolClass;
@@ -5299,6 +5342,11 @@ export type QueryRelatedAddressesForContactPersonArgs = {
 };
 
 
+export type QueryRoleFieldPermissionsArgs = {
+  roleId: Scalars['ID']['input'];
+};
+
+
 export type QueryRolesByOrganizationIdArgs = {
   organizationId: Scalars['ID']['input'];
 };
@@ -5612,6 +5660,27 @@ export type Role = {
   systemCode?: Maybe<SystemRole>;
   updatedAt: Scalars['DateTime']['output'];
   version: Scalars['Int']['output'];
+};
+
+export type RoleFieldPermission = {
+  __typename?: 'RoleFieldPermission';
+  actions: Array<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  field: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  resource: Scalars['String']['output'];
+  roleId: Scalars['ID']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type RoleFieldPermissionEntryInput = {
+  actions: Array<Scalars['String']['input']>;
+  field: Scalars['String']['input'];
+  resource: Scalars['String']['input'];
 };
 
 /** Stimmung im Raum: CALM / FOCUSED / RESTLESS / DIFFICULT. */
@@ -6691,6 +6760,18 @@ export type UpdateRecordKeepingSettingsInput = {
   bigGapDays: Scalars['Int']['input'];
   introducedStuckDays: Scalars['Int']['input'];
   practicedStuckDays: Scalars['Int']['input'];
+};
+
+export type UpdateRoleFieldPermissionsInput = {
+  fieldPermissions: Array<RoleFieldPermissionEntryInput>;
+  roleId: Scalars['ID']['input'];
+};
+
+export type UpdateRoleInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
+  permissionCodes?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 export type UpdateRolePermissionsInput = {
@@ -8598,15 +8679,50 @@ export type UpsertRetentionPolicyMutationVariables = Exact<{
 
 export type UpsertRetentionPolicyMutation = { __typename?: 'Mutation', upsertRetentionPolicy: { __typename?: 'RetentionPolicy', id: string } };
 
+export type CreateRoleMutationVariables = Exact<{
+  input: CreateRoleInput;
+}>;
+
+
+export type CreateRoleMutation = { __typename?: 'Mutation', createRole: { __typename?: 'Role', id: string } };
+
+export type DeleteRoleMutationVariables = Exact<{
+  roleId: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteRoleMutation = { __typename?: 'Mutation', deleteRole: boolean };
+
+export type DuplicateRoleMutationVariables = Exact<{
+  input: DuplicateRoleInput;
+}>;
+
+
+export type DuplicateRoleMutation = { __typename?: 'Mutation', duplicateRole: { __typename?: 'Role', id: string } };
+
 export type GetPermissionsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type GetPermissionsQuery = { __typename?: 'Query', permissions: Array<{ __typename?: 'Permission', id: string, code: PermissionCode, name: string, description?: string | null }> };
 
+export type GetRoleFieldPermissionsQueryVariables = Exact<{
+  roleId: Scalars['ID']['input'];
+}>;
+
+
+export type GetRoleFieldPermissionsQuery = { __typename?: 'Query', roleFieldPermissions: Array<{ __typename?: 'RoleFieldPermission', resource: string, field: string, actions: Array<string> }> };
+
 export type GetRolesByOrgIdQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type GetRolesByOrgIdQuery = { __typename?: 'Query', rolesByOrgId: Array<{ __typename?: 'Role', id: string, name?: string | null, systemCode?: SystemRole | null, isSystem: boolean, permissions?: Array<{ __typename?: 'Permission', id: string, code: PermissionCode, name: string }> | null }> };
+
+export type UpdateRoleFieldPermissionsMutationVariables = Exact<{
+  input: UpdateRoleFieldPermissionsInput;
+}>;
+
+
+export type UpdateRoleFieldPermissionsMutation = { __typename?: 'Mutation', updateRoleFieldPermissions: { __typename?: 'Role', id: string } };
 
 export type UpdateRolePermissionsMutationVariables = Exact<{
   input: UpdateRolePermissionsInput;
@@ -8614,6 +8730,13 @@ export type UpdateRolePermissionsMutationVariables = Exact<{
 
 
 export type UpdateRolePermissionsMutation = { __typename?: 'Mutation', updateRolePermissions: { __typename?: 'Role', id: string, permissions?: Array<{ __typename?: 'Permission', id: string, code: PermissionCode }> | null } };
+
+export type UpdateRoleMutationVariables = Exact<{
+  input: UpdateRoleInput;
+}>;
+
+
+export type UpdateRoleMutation = { __typename?: 'Mutation', updateRole: { __typename?: 'Role', id: string } };
 
 export type CreateSchoolClassMutationVariables = Exact<{
   input: CreateSchoolClassInput;
@@ -9487,9 +9610,15 @@ export const RetentionPoliciesDocument = {"kind":"Document","definitions":[{"kin
 export const ReviewPurgeCandidateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ReviewPurgeCandidate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"approve"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"reviewPurgeCandidate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"approve"},"value":{"kind":"Variable","name":{"kind":"Name","value":"approve"}}}]}]}}]} as unknown as DocumentNode<ReviewPurgeCandidateMutation, ReviewPurgeCandidateMutationVariables>;
 export const ScanRetentionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ScanRetention"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"scanRetention"}}]}}]} as unknown as DocumentNode<ScanRetentionMutation, ScanRetentionMutationVariables>;
 export const UpsertRetentionPolicyDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpsertRetentionPolicy"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpsertRetentionPolicyInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"upsertRetentionPolicy"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpsertRetentionPolicyMutation, UpsertRetentionPolicyMutationVariables>;
+export const CreateRoleDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateRole"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateRoleInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createRole"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateRoleMutation, CreateRoleMutationVariables>;
+export const DeleteRoleDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteRole"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"roleId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteRole"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"roleId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"roleId"}}}]}]}}]} as unknown as DocumentNode<DeleteRoleMutation, DeleteRoleMutationVariables>;
+export const DuplicateRoleDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DuplicateRole"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"DuplicateRoleInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"duplicateRole"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<DuplicateRoleMutation, DuplicateRoleMutationVariables>;
 export const GetPermissionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetPermissions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"permissions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]} as unknown as DocumentNode<GetPermissionsQuery, GetPermissionsQueryVariables>;
+export const GetRoleFieldPermissionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetRoleFieldPermissions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"roleId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"roleFieldPermissions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"roleId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"roleId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"resource"}},{"kind":"Field","name":{"kind":"Name","value":"field"}},{"kind":"Field","name":{"kind":"Name","value":"actions"}}]}}]}}]} as unknown as DocumentNode<GetRoleFieldPermissionsQuery, GetRoleFieldPermissionsQueryVariables>;
 export const GetRolesByOrgIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetRolesByOrgId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"rolesByOrgId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"systemCode"}},{"kind":"Field","name":{"kind":"Name","value":"isSystem"}},{"kind":"Field","name":{"kind":"Name","value":"permissions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<GetRolesByOrgIdQuery, GetRolesByOrgIdQueryVariables>;
+export const UpdateRoleFieldPermissionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateRoleFieldPermissions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateRoleFieldPermissionsInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateRoleFieldPermissions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateRoleFieldPermissionsMutation, UpdateRoleFieldPermissionsMutationVariables>;
 export const UpdateRolePermissionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateRolePermissions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateRolePermissionsInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateRolePermissions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"permissions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]}}]}}]} as unknown as DocumentNode<UpdateRolePermissionsMutation, UpdateRolePermissionsMutationVariables>;
+export const UpdateRoleDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateRole"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateRoleInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateRole"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateRoleMutation, UpdateRoleMutationVariables>;
 export const CreateSchoolClassDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateSchoolClass"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateSchoolClassInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createSchoolClass"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateSchoolClassMutation, CreateSchoolClassMutationVariables>;
 export const DeleteSchoolClassDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteSchoolClass"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteSchoolClass"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteSchoolClassMutation, DeleteSchoolClassMutationVariables>;
 export const GetMyTeachingSchoolClassesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMyTeachingSchoolClasses"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"myTeachingSchoolClasses"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"gradeLevels"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"teachers"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"membership"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"maxCapacity"}},{"kind":"Field","name":{"kind":"Name","value":"room"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}}]}}]}}]} as unknown as DocumentNode<GetMyTeachingSchoolClassesQuery, GetMyTeachingSchoolClassesQueryVariables>;
