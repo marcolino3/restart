@@ -2,6 +2,14 @@
 
 import { createContext, useCallback, useContext, useMemo } from "react";
 
+export type FieldAction = "create" | "read" | "update" | "delete";
+
+export type EffectiveFieldPermission = {
+  resource: string;
+  field: string;
+  actions: string[];
+};
+
 export type CurrentUser = {
   id: string;
   firstName: string;
@@ -9,6 +17,7 @@ export type CurrentUser = {
   email: string;
   roles: string[];
   permissions: string[];
+  fieldPermissions: EffectiveFieldPermission[];
   orgId?: string;
   orgName?: string;
   /** IANA zone of the active org -- all timestamps render school-local. */
@@ -53,9 +62,37 @@ export function usePermissions() {
     [user?.permissions, user?.isSuperAdmin]
   );
 
+  const hasFieldAction = useCallback(
+    (resource: string, field: string, action: FieldAction) => {
+      if (user?.isSuperAdmin) return true;
+      const entry = user?.fieldPermissions?.find(
+        (e) => e.resource === resource && e.field === field
+      );
+      return entry?.actions?.includes(action) ?? false;
+    },
+    [user?.fieldPermissions, user?.isSuperAdmin]
+  );
+
+  const canReadField = useCallback(
+    (resource: string, field: string) => hasFieldAction(resource, field, "read"),
+    [hasFieldAction]
+  );
+
+  const canWriteField = useCallback(
+    (resource: string, field: string) => hasFieldAction(resource, field, "update"),
+    [hasFieldAction]
+  );
+
   return useMemo(
-    () => ({ hasPermission, hasRole, hasAnyPermission }),
-    [hasPermission, hasRole, hasAnyPermission]
+    () => ({
+      hasPermission,
+      hasRole,
+      hasAnyPermission,
+      hasFieldAction,
+      canReadField,
+      canWriteField,
+    }),
+    [hasPermission, hasRole, hasAnyPermission, hasFieldAction, canReadField, canWriteField]
   );
 }
 

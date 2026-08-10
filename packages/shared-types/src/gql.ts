@@ -242,9 +242,15 @@ type Documents = {
     "\n  mutation ReviewPurgeCandidate($id: ID!, $approve: Boolean!) {\n    reviewPurgeCandidate(id: $id, approve: $approve)\n  }\n": typeof types.ReviewPurgeCandidateDocument,
     "\n  mutation ScanRetention {\n    scanRetention\n  }\n": typeof types.ScanRetentionDocument,
     "\n  mutation UpsertRetentionPolicy($input: UpsertRetentionPolicyInput!) {\n    upsertRetentionPolicy(input: $input) {\n      id\n    }\n  }\n": typeof types.UpsertRetentionPolicyDocument,
+    "\n  mutation CreateRole($input: CreateRoleInput!) {\n    createRole(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateRoleDocument,
+    "\n  mutation DeleteRole($roleId: ID!) {\n    deleteRole(roleId: $roleId)\n  }\n": typeof types.DeleteRoleDocument,
+    "\n  mutation DuplicateRole($input: DuplicateRoleInput!) {\n    duplicateRole(input: $input) {\n      id\n    }\n  }\n": typeof types.DuplicateRoleDocument,
     "\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n": typeof types.GetPermissionsDocument,
+    "\n  query GetRoleFieldPermissions($roleId: ID!) {\n    roleFieldPermissions(roleId: $roleId) {\n      resource\n      field\n      actions\n    }\n  }\n": typeof types.GetRoleFieldPermissionsDocument,
     "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n": typeof types.GetRolesByOrgIdDocument,
+    "\n  mutation UpdateRoleFieldPermissions($input: UpdateRoleFieldPermissionsInput!) {\n    updateRoleFieldPermissions(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateRoleFieldPermissionsDocument,
     "\n  mutation UpdateRolePermissions($input: UpdateRolePermissionsInput!) {\n    updateRolePermissions(input: $input) {\n      id\n      permissions {\n        id\n        code\n      }\n    }\n  }\n": typeof types.UpdateRolePermissionsDocument,
+    "\n  mutation UpdateRole($input: UpdateRoleInput!) {\n    updateRole(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateRoleDocument,
     "\n  mutation CreateSchoolClass($input: CreateSchoolClassInput!) {\n    createSchoolClass(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateSchoolClassDocument,
     "\n  mutation DeleteSchoolClass($id: ID!) {\n    deleteSchoolClass(id: $id)\n  }\n": typeof types.DeleteSchoolClassDocument,
     "\n  query GetMyTeachingSchoolClasses {\n    myTeachingSchoolClasses {\n      id\n      name\n      gradeLevels {\n        id\n        name\n      }\n      teachers {\n        id\n        membership {\n          user {\n            firstName\n            lastName\n          }\n        }\n      }\n      color\n      description\n      sortOrder\n      maxCapacity\n      room\n      isActive\n    }\n  }\n": typeof types.GetMyTeachingSchoolClassesDocument,
@@ -324,7 +330,7 @@ type Documents = {
     "\n  mutation AddUserEmail($userId: ID!, $email: String!) {\n    addUserEmail(userId: $userId, email: $email) {\n      id\n      email\n      isPrimary\n      isVerified\n    }\n  }\n": typeof types.AddUserEmailDocument,
     "\n  mutation ChangeUserEmail($input: ChangeUserEmailInput!) {\n    changeUserEmail(input: $input) {\n      id\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n      }\n    }\n  }\n": typeof types.ChangeUserEmailDocument,
     "\n  mutation CreateUser($createUserInput: CreateUserInput!) {\n    createUser(createUserInput: $createUserInput) {\n      id\n    }\n  }\n": typeof types.CreateUserDocument,
-    "\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        userEmails {\n          id\n          email\n          isPrimary\n          isVerified\n        }\n      }\n      roles\n      permissions\n      orgId\n      orgName\n      orgTimezone\n      persona\n      theme\n      isSuperAdmin\n      timeTrackingEnabled\n      isProjectMember\n    }\n  }\n": typeof types.GetAuthContextDocument,
+    "\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        userEmails {\n          id\n          email\n          isPrimary\n          isVerified\n        }\n      }\n      roles\n      permissions\n      fieldPermissions {\n        resource\n        field\n        actions\n      }\n      orgId\n      orgName\n      orgTimezone\n      persona\n      theme\n      isSuperAdmin\n      timeTrackingEnabled\n      isProjectMember\n    }\n  }\n": typeof types.GetAuthContextDocument,
     "\n  query RolesByOrganizationId($organizationId: ID!) {\n    rolesByOrganizationId(organizationId: $organizationId) {\n      id\n      name\n      systemCode\n      isSystem\n    }\n  }\n": typeof types.RolesByOrganizationIdDocument,
     "\n  query GetUserById($id: ID!) {\n    user(id: $id) {\n      id\n      title\n      firstName\n      lastName\n      username\n      dateOfBirth\n      isSuperAdmin\n      isActive\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n      }\n      memberships {\n        id\n        persona\n        contactPhone\n        userEmailId\n        organization {\n          id\n          name\n        }\n      }\n    }\n  }\n": typeof types.GetUserByIdDocument,
     "\n  query GetUsers {\n    users {\n      id\n      title\n      firstName\n      lastName\n      isSuperAdmin\n      isActive\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n        authAccounts {\n          id\n          provider\n        }\n      }\n      memberships {\n        id\n        persona\n        organization {\n          id\n          name\n        }\n      }\n    }\n  }\n": typeof types.GetUsersDocument,
@@ -570,9 +576,15 @@ const documents: Documents = {
     "\n  mutation ReviewPurgeCandidate($id: ID!, $approve: Boolean!) {\n    reviewPurgeCandidate(id: $id, approve: $approve)\n  }\n": types.ReviewPurgeCandidateDocument,
     "\n  mutation ScanRetention {\n    scanRetention\n  }\n": types.ScanRetentionDocument,
     "\n  mutation UpsertRetentionPolicy($input: UpsertRetentionPolicyInput!) {\n    upsertRetentionPolicy(input: $input) {\n      id\n    }\n  }\n": types.UpsertRetentionPolicyDocument,
+    "\n  mutation CreateRole($input: CreateRoleInput!) {\n    createRole(input: $input) {\n      id\n    }\n  }\n": types.CreateRoleDocument,
+    "\n  mutation DeleteRole($roleId: ID!) {\n    deleteRole(roleId: $roleId)\n  }\n": types.DeleteRoleDocument,
+    "\n  mutation DuplicateRole($input: DuplicateRoleInput!) {\n    duplicateRole(input: $input) {\n      id\n    }\n  }\n": types.DuplicateRoleDocument,
     "\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n": types.GetPermissionsDocument,
+    "\n  query GetRoleFieldPermissions($roleId: ID!) {\n    roleFieldPermissions(roleId: $roleId) {\n      resource\n      field\n      actions\n    }\n  }\n": types.GetRoleFieldPermissionsDocument,
     "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n": types.GetRolesByOrgIdDocument,
+    "\n  mutation UpdateRoleFieldPermissions($input: UpdateRoleFieldPermissionsInput!) {\n    updateRoleFieldPermissions(input: $input) {\n      id\n    }\n  }\n": types.UpdateRoleFieldPermissionsDocument,
     "\n  mutation UpdateRolePermissions($input: UpdateRolePermissionsInput!) {\n    updateRolePermissions(input: $input) {\n      id\n      permissions {\n        id\n        code\n      }\n    }\n  }\n": types.UpdateRolePermissionsDocument,
+    "\n  mutation UpdateRole($input: UpdateRoleInput!) {\n    updateRole(input: $input) {\n      id\n    }\n  }\n": types.UpdateRoleDocument,
     "\n  mutation CreateSchoolClass($input: CreateSchoolClassInput!) {\n    createSchoolClass(input: $input) {\n      id\n    }\n  }\n": types.CreateSchoolClassDocument,
     "\n  mutation DeleteSchoolClass($id: ID!) {\n    deleteSchoolClass(id: $id)\n  }\n": types.DeleteSchoolClassDocument,
     "\n  query GetMyTeachingSchoolClasses {\n    myTeachingSchoolClasses {\n      id\n      name\n      gradeLevels {\n        id\n        name\n      }\n      teachers {\n        id\n        membership {\n          user {\n            firstName\n            lastName\n          }\n        }\n      }\n      color\n      description\n      sortOrder\n      maxCapacity\n      room\n      isActive\n    }\n  }\n": types.GetMyTeachingSchoolClassesDocument,
@@ -652,7 +664,7 @@ const documents: Documents = {
     "\n  mutation AddUserEmail($userId: ID!, $email: String!) {\n    addUserEmail(userId: $userId, email: $email) {\n      id\n      email\n      isPrimary\n      isVerified\n    }\n  }\n": types.AddUserEmailDocument,
     "\n  mutation ChangeUserEmail($input: ChangeUserEmailInput!) {\n    changeUserEmail(input: $input) {\n      id\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n      }\n    }\n  }\n": types.ChangeUserEmailDocument,
     "\n  mutation CreateUser($createUserInput: CreateUserInput!) {\n    createUser(createUserInput: $createUserInput) {\n      id\n    }\n  }\n": types.CreateUserDocument,
-    "\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        userEmails {\n          id\n          email\n          isPrimary\n          isVerified\n        }\n      }\n      roles\n      permissions\n      orgId\n      orgName\n      orgTimezone\n      persona\n      theme\n      isSuperAdmin\n      timeTrackingEnabled\n      isProjectMember\n    }\n  }\n": types.GetAuthContextDocument,
+    "\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        userEmails {\n          id\n          email\n          isPrimary\n          isVerified\n        }\n      }\n      roles\n      permissions\n      fieldPermissions {\n        resource\n        field\n        actions\n      }\n      orgId\n      orgName\n      orgTimezone\n      persona\n      theme\n      isSuperAdmin\n      timeTrackingEnabled\n      isProjectMember\n    }\n  }\n": types.GetAuthContextDocument,
     "\n  query RolesByOrganizationId($organizationId: ID!) {\n    rolesByOrganizationId(organizationId: $organizationId) {\n      id\n      name\n      systemCode\n      isSystem\n    }\n  }\n": types.RolesByOrganizationIdDocument,
     "\n  query GetUserById($id: ID!) {\n    user(id: $id) {\n      id\n      title\n      firstName\n      lastName\n      username\n      dateOfBirth\n      isSuperAdmin\n      isActive\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n      }\n      memberships {\n        id\n        persona\n        contactPhone\n        userEmailId\n        organization {\n          id\n          name\n        }\n      }\n    }\n  }\n": types.GetUserByIdDocument,
     "\n  query GetUsers {\n    users {\n      id\n      title\n      firstName\n      lastName\n      isSuperAdmin\n      isActive\n      userEmails {\n        id\n        email\n        isPrimary\n        isVerified\n        authAccounts {\n          id\n          provider\n        }\n      }\n      memberships {\n        id\n        persona\n        organization {\n          id\n          name\n        }\n      }\n    }\n  }\n": types.GetUsersDocument,
@@ -1599,7 +1611,23 @@ export function graphql(source: "\n  mutation UpsertRetentionPolicy($input: Upse
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n  mutation CreateRole($input: CreateRoleInput!) {\n    createRole(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateRole($input: CreateRoleInput!) {\n    createRole(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation DeleteRole($roleId: ID!) {\n    deleteRole(roleId: $roleId)\n  }\n"): (typeof documents)["\n  mutation DeleteRole($roleId: ID!) {\n    deleteRole(roleId: $roleId)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation DuplicateRole($input: DuplicateRoleInput!) {\n    duplicateRole(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation DuplicateRole($input: DuplicateRoleInput!) {\n    duplicateRole(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n"): (typeof documents)["\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetRoleFieldPermissions($roleId: ID!) {\n    roleFieldPermissions(roleId: $roleId) {\n      resource\n      field\n      actions\n    }\n  }\n"): (typeof documents)["\n  query GetRoleFieldPermissions($roleId: ID!) {\n    roleFieldPermissions(roleId: $roleId) {\n      resource\n      field\n      actions\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -1607,7 +1635,15 @@ export function graphql(source: "\n  query GetRolesByOrgId {\n    rolesByOrgId {
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n  mutation UpdateRoleFieldPermissions($input: UpdateRoleFieldPermissionsInput!) {\n    updateRoleFieldPermissions(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateRoleFieldPermissions($input: UpdateRoleFieldPermissionsInput!) {\n    updateRoleFieldPermissions(input: $input) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n  mutation UpdateRolePermissions($input: UpdateRolePermissionsInput!) {\n    updateRolePermissions(input: $input) {\n      id\n      permissions {\n        id\n        code\n      }\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateRolePermissions($input: UpdateRolePermissionsInput!) {\n    updateRolePermissions(input: $input) {\n      id\n      permissions {\n        id\n        code\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateRole($input: UpdateRoleInput!) {\n    updateRole(input: $input) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateRole($input: UpdateRoleInput!) {\n    updateRole(input: $input) {\n      id\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -1927,7 +1963,7 @@ export function graphql(source: "\n  mutation CreateUser($createUserInput: Creat
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        userEmails {\n          id\n          email\n          isPrimary\n          isVerified\n        }\n      }\n      roles\n      permissions\n      orgId\n      orgName\n      orgTimezone\n      persona\n      theme\n      isSuperAdmin\n      timeTrackingEnabled\n      isProjectMember\n    }\n  }\n"): (typeof documents)["\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        userEmails {\n          id\n          email\n          isPrimary\n          isVerified\n        }\n      }\n      roles\n      permissions\n      orgId\n      orgName\n      orgTimezone\n      persona\n      theme\n      isSuperAdmin\n      timeTrackingEnabled\n      isProjectMember\n    }\n  }\n"];
+export function graphql(source: "\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        userEmails {\n          id\n          email\n          isPrimary\n          isVerified\n        }\n      }\n      roles\n      permissions\n      fieldPermissions {\n        resource\n        field\n        actions\n      }\n      orgId\n      orgName\n      orgTimezone\n      persona\n      theme\n      isSuperAdmin\n      timeTrackingEnabled\n      isProjectMember\n    }\n  }\n"): (typeof documents)["\n  query GetAuthContext {\n    authContext {\n      user {\n        id\n        firstName\n        lastName\n        userEmails {\n          id\n          email\n          isPrimary\n          isVerified\n        }\n      }\n      roles\n      permissions\n      fieldPermissions {\n        resource\n        field\n        actions\n      }\n      orgId\n      orgName\n      orgTimezone\n      persona\n      theme\n      isSuperAdmin\n      timeTrackingEnabled\n      isProjectMember\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

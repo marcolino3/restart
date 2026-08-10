@@ -14,6 +14,8 @@ import { Membership } from '@/memberships/entities/membership.entity';
 import { Persona } from '@/common/enums/persona.enum';
 import { Role } from '@/roles/entities/role.entity';
 import { RoleFieldPermission } from '@/roles/entities/role-field-permission.entity';
+import { Permission } from '@/permissions/entities/permission.entity';
+import { PermissionCode } from '@/permissions/entities/permission-code.enum';
 import { getAuthContext } from '@/auth/utils/get-auth-context.util';
 import { createTestingApp, cleanDatabase } from './test-utils';
 
@@ -42,6 +44,7 @@ describe('getAuthContext (Integration) — field permission isolation', () => {
     const membershipRepo = dataSource.getRepository(Membership);
     const roleRepo = dataSource.getRepository(Role);
     const fieldPermRepo = dataSource.getRepository(RoleFieldPermission);
+    const permissionRepo = dataSource.getRepository(Permission);
 
     const orgA = await orgRepo.save(orgRepo.create({ isActive: true }));
     const orgB = await orgRepo.save(orgRepo.create({ isActive: true }));
@@ -84,6 +87,21 @@ describe('getAuthContext (Integration) — field permission isolation', () => {
       }),
     );
 
+    // Same cross-org check for the org-scoped permission cache
+    // (role-permission-cache.ts): orgA's role gets a permission orgB's
+    // role does not have — must never surface in orgB's context.
+    const permission = await permissionRepo.save(
+      permissionRepo.create({
+        name: 'Transfer Ownership',
+        code: PermissionCode.ORG_TRANSFER_OWNERSHIP,
+      }),
+    );
+    await dataSource
+      .createQueryBuilder()
+      .relation(Role, 'permissions')
+      .of(roleA)
+      .add(permission);
+
     const membershipA = await membershipRepo.save(
       membershipRepo.create({
         userId: user.id,
@@ -116,5 +134,8 @@ describe('getAuthContext (Integration) — field permission isolation', () => {
     expect(ctx.fieldPermissions.get(key)?.has('read')).toBe(true);
     expect(ctx.fieldPermissions.get(key)?.has('update')).toBe(false);
     expect(ctx.roles.map((r) => r.id)).toEqual([roleB.id]);
+    expect(ctx.permissions).not.toContain(
+      PermissionCode.ORG_TRANSFER_OWNERSHIP,
+    );
   });
 });

@@ -2666,7 +2666,92 @@
       "retention": "Retention periods",
       "dataBreach": "Data breaches",
       "vvt": "Records of processing"
-    }
+    },
+    "roleCreated": "Role created.",
+    "createRole": "Create role",
+    "createRoleTitle": "Create new role",
+    "createRoleDescription": "Create a new role with custom permissions.",
+    "duplicateRoleTitle": "Duplicate role",
+    "duplicateRoleDescription": "Create a new role based on \"{roleName}\".",
+    "roleName": "Role name",
+    "loadingFields": "Loading field permissions...",
+    "fieldPermissionsTitle": "Field permissions",
+    "fieldPermissionsDescription": "Control access to individual sensitive fields.",
+    "fieldResource": {
+      "employeeHrProfile": "HR profile",
+      "employeeContract": "Contract",
+      "employeeNote": "Notes",
+      "employeeEmergencyProfile": "Emergency profile",
+      "employeeAuditLog": "Audit log",
+      "employeePaidOvertime": "Paid overtime",
+      "student": "Student",
+      "studentRecordEntry": "Record entry",
+      "admissionApplication": "Admission application"
+    },
+    "fieldName": {
+      "employeeHrProfile": {
+        "iban": "IBAN",
+        "bankAccountHolder": "Account holder",
+        "bankName": "Bank name",
+        "bvgInsuranceNumber": "Pension insurance number",
+        "withholdingTaxCode": "Withholding tax code",
+        "nationality": "Nationality",
+        "residencePermitType": "Residence permit type",
+        "residencePermitValidUntil": "Residence permit valid until",
+        "maritalStatus": "Marital status",
+        "denomination": "Denomination",
+        "numberOfChildren": "Number of children"
+      },
+      "employeeContract": {
+        "grossSalary": "Gross salary",
+        "hourlyRate": "Hourly rate",
+        "paymentInterval": "Payment interval",
+        "has13thSalary": "13th month salary"
+      },
+      "employeeNote": {
+        "title": "Title",
+        "content": "Content",
+        "isConfidential": "Confidential"
+      },
+      "employeeEmergencyProfile": {
+        "bloodType": "Blood type",
+        "allergies": "Allergies",
+        "chronicConditions": "Chronic conditions",
+        "emergencyMedications": "Emergency medications",
+        "primaryDoctorName": "Primary doctor name",
+        "primaryDoctorPhone": "Primary doctor phone",
+        "pharmacyName": "Pharmacy"
+      },
+      "employeeAuditLog": {
+        "oldValue": "Old value",
+        "newValue": "New value"
+      },
+      "employeePaidOvertime": {
+        "minutes": "Minutes"
+      },
+      "student": {
+        "socialSecurityNumber": "Social security number",
+        "dateOfBirth": "Date of birth",
+        "placeOfBirth": "Place of birth",
+        "nationalities": "Nationalities",
+        "firstLanguages": "First languages",
+        "familyLanguages": "Family languages"
+      },
+      "studentRecordEntry": {
+        "content": "Content"
+      },
+      "admissionApplication": {
+        "childNotes": "Notes about child",
+        "rejectionReason": "Rejection reason"
+      }
+    },
+    "fieldAction": {
+      "create": "Create",
+      "read": "Read",
+      "update": "Update",
+      "delete": "Delete"
+    },
+    "loadError": "Failed to load roles and permissions."
   },
   "SchoolClasses": {
     "actions": "Actions",

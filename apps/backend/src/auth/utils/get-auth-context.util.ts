@@ -6,14 +6,14 @@ import { User } from '@/users/entities/user.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { Role } from '@/roles/entities/role.entity';
-import { Permission } from '@/permissions/entities/permission.entity';
 import { Employee } from '@/employee-management/employees/entities/employee.entity';
 import { Persona } from '@/common/enums/persona.enum';
-import { RoleFieldPermission } from '@/roles/entities/role-field-permission.entity';
+import type { FieldAction } from '@restart/shared-schemas/rbac/field-catalog';
 import {
-  protectedFieldKey,
-  type FieldAction,
-} from '@restart/shared-schemas/rbac/field-catalog';
+  getOrgRoleCacheEntry,
+  resolveFieldPermissionsForRoles,
+  resolvePermissionsForRoles,
+} from '@/auth/utils/role-permission-cache';
 
 export type AuthContext = {
   user: User;
@@ -58,16 +58,15 @@ export async function getAuthContext(
       .getMany();
   }
 
-  // 4) Permissions ueber alle Rollen (distinct Codes)
+  // 4) Permissions + Feld-Permissions ueber alle Rollen, org-gecacht
+  // (versioniert per MAX(roles.updated_at) — siehe role-permission-cache.ts)
   let permissions: string[] = [];
+  let fieldPermissions = new Map<string, Set<FieldAction>>();
   if (roles.length) {
-    const permRows = await em
-      .createQueryBuilder(Permission, 'p')
-      .innerJoin('role_permissions', 'rp', 'rp.permission_id = p.id')
-      .where('rp.role_id IN (:...roleIds)', { roleIds: roles.map((r) => r.id) })
-      .select('p.code', 'code')
-      .getRawMany<{ code: string }>();
-    permissions = Array.from(new Set(permRows.map((r) => r.code)));
+    const roleIds = roles.map((r) => r.id);
+    const cacheEntry = await getOrgRoleCacheEntry(em, orgId);
+    permissions = resolvePermissionsForRoles(cacheEntry, roleIds);
+    fieldPermissions = resolveFieldPermissionsForRoles(cacheEntry, roleIds);
   }
 
   // 5) Optional: Employee (1:1 zu Membership)
@@ -77,26 +76,6 @@ export async function getAuthContext(
     employee = await em.findOneByOrFail(Employee, {
       id: membership.employeeId,
     });
-  }
-
-  // 6) Feld-Permissions ueber alle Rollen (distinct resource.field -> actions)
-  const fieldPermissions = new Map<string, Set<FieldAction>>();
-  if (roles.length) {
-    const fieldRows = await em
-      .createQueryBuilder(RoleFieldPermission, 'rfp')
-      .where('rfp.roleId IN (:...roleIds)', {
-        roleIds: roles.map((r) => r.id),
-      })
-      .getMany();
-
-    for (const row of fieldRows) {
-      const key = protectedFieldKey(row.resource, row.field);
-      const existing = fieldPermissions.get(key) ?? new Set<FieldAction>();
-      for (const action of row.actions) {
-        existing.add(action);
-      }
-      fieldPermissions.set(key, existing);
-    }
   }
 
   return {
