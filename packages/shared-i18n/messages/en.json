@@ -2004,7 +2004,17 @@
     "uvgContactPhone": "UVG Contact Phone",
     "dailySickness": "Daily Sickness Allowance",
     "dailySicknessProvider": "Sickness Allowance Provider",
-    "dailySicknessContactPhone": "Sickness Allowance Contact Phone"
+    "dailySicknessContactPhone": "Sickness Allowance Contact Phone",
+    "featuresTitle": "Features",
+    "featureToggleUpdateSuccess": "Feature was updated",
+    "featureToggleUpdateError": "Failed to update feature",
+    "feature": {
+      "TIME_TRACKING": "Time Tracking",
+      "PROJECTS": "Projects",
+      "MY_TASKS": "My Tasks",
+      "CHATS": "Chats",
+      "PROTOCOLS": "Protocols"
+    }
   },
   "OrganizationSettings": {
     "key": "Key",

@@ -3,6 +3,9 @@ import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
+import { OrgFeatureGuard } from '@/auth/guard/org-feature.guard';
+import { OrgFeatureRequired } from '@/auth/decorators/org-feature-required.decorator';
+import { OrgFeatureKey } from '@restart/shared-schemas/org-features/feature-catalog';
 import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { UseGuards } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
@@ -18,7 +21,8 @@ import { Task } from './entities/task.entity';
 import { TasksService } from './tasks.service';
 
 @Resolver(() => Task)
-@UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
+@UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard, OrgFeatureGuard)
+@OrgFeatureRequired(OrgFeatureKey.PROJECTS)
 export class TasksResolver {
   constructor(private readonly tasksService: TasksService) {}
 
@@ -65,6 +69,7 @@ export class TasksResolver {
   // The caller's personal cross-project to-do list: every task assigned to them.
   @Query(() => [Task], { name: 'myTasks' })
   @Permissions('PROJECT_READ')
+  @OrgFeatureRequired(OrgFeatureKey.MY_TASKS)
   myTasks(
     @CurrentOrgId() orgId: string,
     @CurrentUser() user: TokenPayload,
@@ -74,6 +79,7 @@ export class TasksResolver {
 
   @Mutation(() => Boolean)
   @Permissions('PROJECT_READ')
+  @OrgFeatureRequired(OrgFeatureKey.MY_TASKS)
   reorderMyTasks(
     @Args('orderedTaskIds', { type: () => [ID] }) orderedTaskIds: string[],
     @CurrentOrgId() orgId: string,
