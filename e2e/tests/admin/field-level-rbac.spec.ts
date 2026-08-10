@@ -336,6 +336,21 @@ test.describe('Field-level RBAC — grossSalary read gate', () => {
     expect(restrictedEmployee.errors ?? []).toEqual([])
     const restrictedEmployeeId = restrictedEmployee.data?.createEmployee?.id
 
+    // requireAdminRole() (server guard on /admin/* pages) checks for one of
+    // the hardcoded system roles (ORG_OWNER/ORG_ADMIN/HR_MANAGER/OFFICE), not
+    // permission codes — a custom role alone never passes it, regardless of
+    // its granted permissions. Add OFFICE alongside the restricted role so
+    // the browser session can actually reach the contract form page; the
+    // field-permission grants under test still come only from restrictedRoleId.
+    const orgRoles = await gql(
+      owner.page,
+      `query { rolesByOrgId { id name } }`,
+    )
+    const officeRoleId = orgRoles.data?.rolesByOrgId?.find(
+      (r: { name: string }) => r.name === 'OFFICE',
+    )?.id
+    expect(officeRoleId).toBeTruthy()
+
     const roleAssign = await gql(
       owner.page,
       `mutation AssignRole($input: EmployeeOnboardingInput!) {
@@ -346,7 +361,7 @@ test.describe('Field-level RBAC — grossSalary read gate', () => {
           id: restrictedEmployeeId,
           firstName: 'E2E',
           lastName: `RestrictedForm${stamp}`,
-          roleIds: [restrictedRoleId],
+          roleIds: [restrictedRoleId, officeRoleId],
         },
       },
     )
