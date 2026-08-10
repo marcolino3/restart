@@ -105,6 +105,7 @@ export class RolesResolver {
       input.roleId,
       input.fieldPermissions,
       user.fieldPermissions ?? new Map(),
+      user.isSuperAdmin ?? false,
     );
   }
 

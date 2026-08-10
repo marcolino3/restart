@@ -163,10 +163,13 @@ export class RolesService {
     roleId: string,
     entries: RoleFieldPermissionEntryInput[],
     actorFieldPermissions: Map<string, Set<string>>,
+    actorIsSuperAdmin = false,
   ): Promise<Role> {
     const role = await this.findOne(roleId, orgId);
     this.assertSystemRoleUnchanged(role);
-    this.assertNoFieldEscalation(actorFieldPermissions, entries);
+    if (!actorIsSuperAdmin) {
+      this.assertNoFieldEscalation(actorFieldPermissions, entries);
+    }
 
     await this.replaceFieldPermissions(roleId, entries);
     return this.findOne(roleId, orgId);
