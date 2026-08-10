@@ -2,7 +2,9 @@ import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
+import { OrgFeatureGuard } from '@/auth/guard/org-feature.guard';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
+import { OrgFeatureRequired } from '@/auth/decorators/org-feature-required.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
@@ -11,9 +13,11 @@ import { TimeTrackingAccessService } from '../work-time-calculation/time-trackin
 import { TimeTracking } from './entities/time-tracking.entity';
 import { CreateTimeTrackingInput } from './dto/create-time-tracking.input';
 import { UpdateTimeTrackingInput } from './dto/update-time-tracking.input';
+import { OrgFeatureKey } from '@restart/shared-schemas/org-features/feature-catalog';
 
 @Resolver(() => TimeTracking)
-@UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
+@UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard, OrgFeatureGuard)
+@OrgFeatureRequired(OrgFeatureKey.TIME_TRACKING)
 export class TimeTrackingResolver {
   constructor(
     private readonly timeTrackingService: TimeTrackingService,

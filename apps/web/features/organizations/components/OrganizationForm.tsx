@@ -8,6 +8,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { Form } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { FormActionButtons } from "@/components/form/form-fields/FormActionButtons";
@@ -29,14 +30,24 @@ import {
 import { updateOrganizationAction } from "../actions/update-organization.action";
 import { checkSubdomainAvailableAction } from "../actions/check-subdomain-available.action";
 import { checkDomainAvailableAction } from "../actions/check-domain-available.action";
+import { OrganizationFeaturesTab } from "./OrganizationFeaturesTab";
 
 type AvailabilityStatus = "idle" | "checking" | "available" | "taken";
 
-interface OrganizationFormProps {
-  organization: OrganizationQuery["organization"];
+interface FeatureToggle {
+  featureKey: string;
+  enabled: boolean;
 }
 
-export const OrganizationForm = ({ organization }: OrganizationFormProps) => {
+interface OrganizationFormProps {
+  organization: OrganizationQuery["organization"];
+  featureToggles: FeatureToggle[];
+}
+
+export const OrganizationForm = ({
+  organization,
+  featureToggles,
+}: OrganizationFormProps) => {
   const t = useTranslations("Common");
   const tO = useTranslations("Organizations");
   const locale = useLocale();
@@ -134,146 +145,108 @@ export const OrganizationForm = ({ organization }: OrganizationFormProps) => {
             <TabsTrigger value="general">{tO("general")}</TabsTrigger>
             <TabsTrigger value="address">{t("address")}</TabsTrigger>
             <TabsTrigger value="contact">{t("contact")}</TabsTrigger>
-            <TabsTrigger value="insurances">{tO("insurances")}</TabsTrigger>
-            <TabsTrigger value="settings">{t("settings")}</TabsTrigger>
+            <TabsTrigger value="features">{tO("featuresTitle")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="space-y-6">
-            <section className="space-y-4">
-              <h3 className="text-lg font-semibold">{t("basicData")}</h3>
-              <InputFormField name="name" label="name" />
-              <div>
-                <InputFormField
-                  name="subdomain"
-                  label="subdomain"
-                  onChange={() => {
-                    subdomainTouchedRef.current = true;
-                  }}
-                  onBlur={() =>
-                    checkSubdomain(form.getValues("subdomain") as string)
-                  }
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("basicData")}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <InputFormField name="name" label="name" />
+                <div>
+                  <InputFormField
+                    name="subdomain"
+                    label="subdomain"
+                    onChange={() => {
+                      subdomainTouchedRef.current = true;
+                    }}
+                    onBlur={() =>
+                      checkSubdomain(form.getValues("subdomain") as string)
+                    }
+                  />
+                  {renderStatus(subdomainStatus, "subdomain")}
+                </div>
+                <div>
+                  <InputFormField
+                    name="domain"
+                    label="domain"
+                    placeholder="z.B. rietberg-montessori.ch"
+                    onBlur={() => checkDomain(form.getValues("domain") as string)}
+                  />
+                  {renderStatus(domainStatus, "domain")}
+                </div>
+                <SwitchFormField name="isActive" label="isActive" />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("settings")}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <TimezoneComboboxFormField name="timezone" />
+                <Separator />
+                <UploadFormField
+                  name="logo"
+                  label="logo"
+                  entity="organizations"
+                  id={organization.id}
                 />
-                {renderStatus(subdomainStatus, "subdomain")}
-              </div>
-              <div>
-                <InputFormField
-                  name="domain"
-                  label="domain"
-                  placeholder="z.B. rietberg-montessori.ch"
-                  onBlur={() => checkDomain(form.getValues("domain") as string)}
-                />
-                {renderStatus(domainStatus, "domain")}
-              </div>
-              <SwitchFormField name="isActive" label="isActive" />
-            </section>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="address" className="space-y-6">
-            <section className="space-y-4">
-              <h3 className="text-lg font-semibold">{t("address")}</h3>
-              <InputFormField name="street" label="street" />
-              <div className="flex gap-4">
-                <InputFormField name="zip" label="zip" width="w-1/3" />
-                <InputFormField name="city" label="city" width="w-2/3" />
-              </div>
-              <CountryComboboxFormField name="country" />
-            </section>
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("address")}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <InputFormField name="street" label="street" />
+                <div className="flex gap-4">
+                  <InputFormField name="zip" label="zip" width="w-1/3" />
+                  <InputFormField name="city" label="city" width="w-2/3" />
+                </div>
+                <CountryComboboxFormField name="country" />
+              </CardContent>
+            </Card>
 
             {organization.latitude != null && organization.longitude != null && (
-              <>
-                <Separator />
-                <section className="space-y-4">
-                  <h3 className="text-lg font-semibold">{t("location")}</h3>
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("location")}</CardTitle>
+                </CardHeader>
+                <CardContent>
                   <GoogleMapDisplay
                     latitude={organization.latitude}
                     longitude={organization.longitude}
                     className="h-[300px] w-full rounded-md"
                   />
-                </section>
-              </>
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
 
           <TabsContent value="contact" className="space-y-6">
-            <section className="space-y-4">
-              <h3 className="text-lg font-semibold">{t("contact")}</h3>
-              <InputFormField name="phone" label="phone" />
-              <InputFormField name="email" label="email" type="email" />
-              <InputFormField name="website" label="website" />
-            </section>
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("contact")}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <InputFormField name="phone" label="phone" />
+                <InputFormField name="email" label="email" type="email" />
+                <InputFormField name="website" label="website" />
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="insurances" className="space-y-6">
-            <section className="space-y-4">
-              <h3 className="text-lg font-semibold">{tO("bvg")}</h3>
-              <InputFormField
-                name="bvgProvider"
-                label="bvgProvider"
-                namespace="Organizations"
-              />
-              <InputFormField
-                name="bvgContactPhone"
-                label="bvgContactPhone"
-                namespace="Organizations"
-                type="tel"
-                placeholder="+41 00 000 00 00"
-              />
-            </section>
-
-            <Separator />
-
-            <section className="space-y-4">
-              <h3 className="text-lg font-semibold">{tO("uvg")}</h3>
-              <InputFormField
-                name="uvgProvider"
-                label="uvgProvider"
-                namespace="Organizations"
-              />
-              <InputFormField
-                name="uvgContactPhone"
-                label="uvgContactPhone"
-                namespace="Organizations"
-                type="tel"
-                placeholder="+41 00 000 00 00"
-              />
-            </section>
-
-            <Separator />
-
-            <section className="space-y-4">
-              <h3 className="text-lg font-semibold">{tO("dailySickness")}</h3>
-              <InputFormField
-                name="dailySicknessProvider"
-                label="dailySicknessProvider"
-                namespace="Organizations"
-              />
-              <InputFormField
-                name="dailySicknessContactPhone"
-                label="dailySicknessContactPhone"
-                namespace="Organizations"
-                type="tel"
-                placeholder="+41 00 000 00 00"
-              />
-            </section>
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-6">
-            <section className="space-y-4">
-              <h3 className="text-lg font-semibold">{t("settings")}</h3>
-              <TimezoneComboboxFormField name="timezone" />
-            </section>
-
-            <Separator />
-
-            <section className="space-y-4">
-              <h3 className="text-lg font-semibold">{t("logo")}</h3>
-              <UploadFormField
-                name="logo"
-                label="logo"
-                entity="organizations"
-                id={organization.id}
-              />
-            </section>
+          <TabsContent value="features" className="space-y-6">
+            <OrganizationFeaturesTab
+              organizationId={organization.id}
+              toggles={featureToggles}
+            />
           </TabsContent>
         </Tabs>
 

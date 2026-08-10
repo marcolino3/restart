@@ -5,6 +5,7 @@ import { getProjectsAction } from "@/features/projects/actions/get-projects.acti
 import { getProtocolTemplatesAction } from "@/features/projects/actions/get-protocol-templates.action";
 import { getProtocolsAction } from "@/features/projects/actions/get-protocols.action";
 import { ProtocolsList } from "@/features/projects/components/ProtocolsList";
+import { canSeeProtocols } from "@/lib/navigation/nav-visibility";
 
 const has = (permissions: string[], code: string, isSuperAdmin: boolean) =>
   isSuperAdmin || permissions.includes(code);
@@ -20,6 +21,12 @@ const ProtocolsPage = async () => {
     ]);
 
   if (!user?.success || !protocolsResult.success) {
+    return <div className="p-4 text-sm text-destructive">{t("loadError")}</div>;
+  }
+
+  // Spiegel der Nav-Sichtbarkeit: ohne aktiviertes Org-Feature auch kein
+  // Direktzugriff per URL.
+  if (!canSeeProtocols(user.data)) {
     return <div className="p-4 text-sm text-destructive">{t("loadError")}</div>;
   }
 

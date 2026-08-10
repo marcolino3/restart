@@ -21,6 +21,7 @@ import { seedOrgEmployeeAbsenceCategories } from '@/employee-management/employee
 import { seedOrgEmployeeFunctions } from '@/employee-management/employee-functions/seeds/seed-org-employee-functions.seeder';
 import { seedOrgAdmissionStages } from '@/school-management/admission-stages/seeds/default-admission-stages';
 import { seedOrgAdmissionSources } from '@/school-management/admission-sources/seeds/default-admission-sources';
+import { seedOrgFeatureToggles } from '@/organizations/seeds/seed-org-feature-toggles.seeder';
 
 @Injectable()
 export class OrganizationsService {
@@ -49,6 +50,7 @@ export class OrganizationsService {
       await assignPermissionsToOrgSystemRoles(manager, org.id);
       await seedOrgAdmissionStages(manager, org.id);
       await seedOrgAdmissionSources(manager, org.id);
+      await seedOrgFeatureToggles(manager, org.id);
 
       return org;
     });
