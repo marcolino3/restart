@@ -9,5 +9,5 @@
     "strict": true,
     "skipLibCheck": true
   },
-  "include": ["src/rbac"]
+  "include": ["src/rbac", "src/org-features"]
 }

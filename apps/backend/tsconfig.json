@@ -16,6 +16,9 @@
       "@/*": ["src/*"],
       "@restart/shared-schemas/rbac/*": [
         "../../packages/shared-schemas/dist/rbac/*"
+      ],
+      "@restart/shared-schemas/org-features/*": [
+        "../../packages/shared-schemas/dist/org-features/*"
       ]
     },
     "incremental": true,

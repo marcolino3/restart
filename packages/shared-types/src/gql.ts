@@ -173,8 +173,10 @@ type Documents = {
     "\n  query IsOrganizationSubdomainAvailable($subdomain: String!) {\n    isOrganizationSubdomainAvailable(subdomain: $subdomain)\n  }\n": typeof types.IsOrganizationSubdomainAvailableDocument,
     "\n  mutation CreateOrganization {\n    createOrganization {\n      id\n    }\n  }\n": typeof types.CreateOrganizationDocument,
     "\n  query Organization($id: String!) {\n    organization(id: $id) {\n      id\n      name\n      subdomain\n      domain\n      street\n      zip\n      city\n      country\n      phone\n      email\n      website\n      timezone\n      latitude\n      longitude\n      isActive\n      bvgProvider\n      bvgContactPhone\n      uvgProvider\n      uvgContactPhone\n      dailySicknessProvider\n      dailySicknessContactPhone\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.OrganizationDocument,
+    "\n  query OrganizationFeatureToggles($organizationId: ID!) {\n    organizationFeatureToggles(organizationId: $organizationId) {\n      featureKey\n      enabled\n    }\n  }\n": typeof types.OrganizationFeatureTogglesDocument,
     "\n  query GetOrganizations {\n    organizations {\n      id\n      name\n      subdomain\n      domain\n      isActive\n    }\n  }\n": typeof types.GetOrganizationsDocument,
     "\n  mutation RemoveOrganization($id: String!) {\n    removeOrganization(id: $id) {\n      id\n    }\n  }\n": typeof types.RemoveOrganizationDocument,
+    "\n  mutation UpdateOrganizationFeatureToggle(\n    $input: UpdateOrganizationFeatureToggleInput!\n  ) {\n    updateOrganizationFeatureToggle(input: $input) {\n      featureKey\n      enabled\n    }\n  }\n": typeof types.UpdateOrganizationFeatureToggleDocument,
     "\n  mutation UpdateOrganization(\n    $updateOrganizationInput: UpdateOrganizationInput!\n  ) {\n    updateOrganization(updateOrganizationInput: $updateOrganizationInput) {\n      id\n      name\n      subdomain\n    }\n  }\n": typeof types.UpdateOrganizationDocument,
     "\n  mutation AddTaskNote($input: AddTaskNoteInput!) {\n    addTaskNote(input: $input) {\n      id\n      notes {\n        id\n        text\n        authorName\n        createdAt\n      }\n    }\n  }\n": typeof types.AddTaskNoteDocument,
     "\n  mutation ArchiveProject($id: ID!, $archived: Boolean!) {\n    archiveProject(id: $id, archived: $archived) {\n      id\n      isArchived\n    }\n  }\n": typeof types.ArchiveProjectDocument,
@@ -507,8 +509,10 @@ const documents: Documents = {
     "\n  query IsOrganizationSubdomainAvailable($subdomain: String!) {\n    isOrganizationSubdomainAvailable(subdomain: $subdomain)\n  }\n": types.IsOrganizationSubdomainAvailableDocument,
     "\n  mutation CreateOrganization {\n    createOrganization {\n      id\n    }\n  }\n": types.CreateOrganizationDocument,
     "\n  query Organization($id: String!) {\n    organization(id: $id) {\n      id\n      name\n      subdomain\n      domain\n      street\n      zip\n      city\n      country\n      phone\n      email\n      website\n      timezone\n      latitude\n      longitude\n      isActive\n      bvgProvider\n      bvgContactPhone\n      uvgProvider\n      uvgContactPhone\n      dailySicknessProvider\n      dailySicknessContactPhone\n      createdAt\n      updatedAt\n    }\n  }\n": types.OrganizationDocument,
+    "\n  query OrganizationFeatureToggles($organizationId: ID!) {\n    organizationFeatureToggles(organizationId: $organizationId) {\n      featureKey\n      enabled\n    }\n  }\n": types.OrganizationFeatureTogglesDocument,
     "\n  query GetOrganizations {\n    organizations {\n      id\n      name\n      subdomain\n      domain\n      isActive\n    }\n  }\n": types.GetOrganizationsDocument,
     "\n  mutation RemoveOrganization($id: String!) {\n    removeOrganization(id: $id) {\n      id\n    }\n  }\n": types.RemoveOrganizationDocument,
+    "\n  mutation UpdateOrganizationFeatureToggle(\n    $input: UpdateOrganizationFeatureToggleInput!\n  ) {\n    updateOrganizationFeatureToggle(input: $input) {\n      featureKey\n      enabled\n    }\n  }\n": types.UpdateOrganizationFeatureToggleDocument,
     "\n  mutation UpdateOrganization(\n    $updateOrganizationInput: UpdateOrganizationInput!\n  ) {\n    updateOrganization(updateOrganizationInput: $updateOrganizationInput) {\n      id\n      name\n      subdomain\n    }\n  }\n": types.UpdateOrganizationDocument,
     "\n  mutation AddTaskNote($input: AddTaskNoteInput!) {\n    addTaskNote(input: $input) {\n      id\n      notes {\n        id\n        text\n        authorName\n        createdAt\n      }\n    }\n  }\n": types.AddTaskNoteDocument,
     "\n  mutation ArchiveProject($id: ID!, $archived: Boolean!) {\n    archiveProject(id: $id, archived: $archived) {\n      id\n      isArchived\n    }\n  }\n": types.ArchiveProjectDocument,
@@ -1335,11 +1339,19 @@ export function graphql(source: "\n  query Organization($id: String!) {\n    org
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n  query OrganizationFeatureToggles($organizationId: ID!) {\n    organizationFeatureToggles(organizationId: $organizationId) {\n      featureKey\n      enabled\n    }\n  }\n"): (typeof documents)["\n  query OrganizationFeatureToggles($organizationId: ID!) {\n    organizationFeatureToggles(organizationId: $organizationId) {\n      featureKey\n      enabled\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n  query GetOrganizations {\n    organizations {\n      id\n      name\n      subdomain\n      domain\n      isActive\n    }\n  }\n"): (typeof documents)["\n  query GetOrganizations {\n    organizations {\n      id\n      name\n      subdomain\n      domain\n      isActive\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation RemoveOrganization($id: String!) {\n    removeOrganization(id: $id) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation RemoveOrganization($id: String!) {\n    removeOrganization(id: $id) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpdateOrganizationFeatureToggle(\n    $input: UpdateOrganizationFeatureToggleInput!\n  ) {\n    updateOrganizationFeatureToggle(input: $input) {\n      featureKey\n      enabled\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateOrganizationFeatureToggle(\n    $input: UpdateOrganizationFeatureToggleInput!\n  ) {\n    updateOrganizationFeatureToggle(input: $input) {\n      featureKey\n      enabled\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

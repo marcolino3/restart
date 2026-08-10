@@ -1,9 +1,19 @@
 import { getTranslations } from "next-intl/server";
 import { getConversationsAction } from "@/features/chats/actions/get-conversations.action";
 import { ChatsClient } from "@/features/chats/components/ChatsClient";
+import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
+import { canSeeChats } from "@/lib/navigation/nav-visibility";
 
 const ChatsPage = async () => {
   const t = await getTranslations("Chats");
+
+  // Spiegel der Nav-Sichtbarkeit: ohne aktiviertes Org-Feature auch kein
+  // Direktzugriff per URL.
+  const userRes = await getCurrentUserAction();
+  if (!canSeeChats(userRes?.data)) {
+    return <div className="p-6 text-sm text-destructive">{t("loadError")}</div>;
+  }
+
   const res = await getConversationsAction();
 
   if (!res.success) {

@@ -12,6 +12,11 @@
       "require": "./dist/rbac/*.js",
       "default": "./src/rbac/*.ts"
     },
+    "./org-features/*": {
+      "types": "./dist/org-features/*.d.ts",
+      "require": "./dist/org-features/*.js",
+      "default": "./src/org-features/*.ts"
+    },
     "./*": "./src/*.ts"
   },
   "files": [
