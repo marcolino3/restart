@@ -62,6 +62,7 @@ import { LessonRecordAttachment } from '@/curricula/record-keeping/entities/less
 import { RecordKeepingSettings } from '@/curricula/record-keeping/entities/record-keeping-settings.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
+import { OrganizationFeatureToggle } from '@/organizations/entities/organization-feature-toggle.entity';
 import { Project } from '@/project-management/projects/entities/project.entity';
 import { ProjectMember } from '@/project-management/project-members/entities/project-member.entity';
 import { Task } from '@/project-management/tasks/entities/task.entity';
@@ -99,6 +100,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       User,
       UserEmail,
       Organization,
+      OrganizationFeatureToggle,
       Role,
       RoleFieldPermission,
       Membership,

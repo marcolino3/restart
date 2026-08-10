@@ -15,6 +15,8 @@ import { AuthContextOutput } from './dto/auth-context.output';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 import { Organization } from '@/organizations/entities/organization.entity';
+import { getOrgFeatureCacheEntry } from '@/organizations/utils/org-feature-cache';
+import { ORG_FEATURE_KEYS } from '@restart/shared-schemas/org-features/feature-catalog';
 
 @Resolver(() => User)
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
@@ -68,6 +70,18 @@ export class UsersResolver {
       },
     );
 
+    // SuperAdmin bypasses org feature toggles entirely (mirrors OrgFeatureGuard),
+    // so the nav should show the full catalog rather than an empty/org-scoped list.
+    let enabledFeatures: string[];
+    if (user.isSuperAdmin) {
+      enabledFeatures = ORG_FEATURE_KEYS;
+    } else if (user.orgId) {
+      const cacheEntry = await getOrgFeatureCacheEntry(this.em, user.orgId);
+      enabledFeatures = Array.from(cacheEntry.enabledFeatures);
+    } else {
+      enabledFeatures = [];
+    }
+
     return {
       user: fullUser,
       roles: user.roles ?? [],
@@ -81,6 +95,7 @@ export class UsersResolver {
       isSuperAdmin: user.isSuperAdmin ?? false,
       timeTrackingEnabled,
       isProjectMember,
+      enabledFeatures,
     };
   }
 

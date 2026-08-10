@@ -12,7 +12,12 @@ import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 describe('UsersResolver', () => {
   let resolver: UsersResolver;
   let usersService: Record<string, jest.Mock>;
-  let em: { query: jest.Mock; findOne: jest.Mock };
+  let em: {
+    query: jest.Mock;
+    findOne: jest.Mock;
+    find: jest.Mock;
+    createQueryBuilder: jest.Mock;
+  };
 
   const tokenPayload: TokenPayload = {
     sub: 'user-1',
@@ -33,7 +38,17 @@ describe('UsersResolver', () => {
       update: jest.fn(),
       remove: jest.fn(),
     };
-    em = { query: jest.fn(), findOne: jest.fn().mockResolvedValue(null) };
+    const queryBuilder = {
+      where: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      getRawOne: jest.fn().mockResolvedValue({ maxUpdatedAt: null }),
+    };
+    em = {
+      query: jest.fn(),
+      findOne: jest.fn().mockResolvedValue(null),
+      find: jest.fn().mockResolvedValue([]),
+      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [

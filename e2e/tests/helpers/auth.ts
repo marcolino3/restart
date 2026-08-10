@@ -296,6 +296,10 @@ export async function setupSecondOrgUser(
   await page.locator('input[name="password"]').fill(password)
   await page.getByRole('button', { name: /sign in/i }).click()
   await expect(page).not.toHaveURL(/sign-in/, { timeout: 20000 })
+  // Sign-in triggers the app's own client-side redirect navigation; without
+  // waiting for it to settle, a goto() issued right after this helper returns
+  // races that in-flight navigation and aborts with net::ERR_ABORTED.
+  await page.waitForLoadState('networkidle')
 
   const switchedSecond = await page.request.post(`${BACKEND_URL}/api/org/switch`, {
     data: { orgId },

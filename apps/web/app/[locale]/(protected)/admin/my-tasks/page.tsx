@@ -4,10 +4,20 @@ import { getTranslations } from "next-intl/server";
 import { PageHead } from "@/components/common/PageHead";
 import { getMyTasksAction } from "@/features/projects/actions/get-my-tasks.action";
 import { getProjectsAction } from "@/features/projects/actions/get-projects.action";
+import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 import { MyTasksTable } from "@/features/projects/components/MyTasksTable";
+import { canSeeMyTasks } from "@/lib/navigation/nav-visibility";
 
 const MyTasksPage = async () => {
   const t = await getTranslations("Projects");
+
+  // Spiegel der Nav-Sichtbarkeit: ohne aktiviertes Org-Feature auch kein
+  // Direktzugriff per URL.
+  const userRes = await getCurrentUserAction();
+  if (!canSeeMyTasks(userRes?.data)) {
+    return <div className="p-4 text-sm text-destructive">{t("loadError")}</div>;
+  }
+
   const [result, projectsResult] = await Promise.all([
     getMyTasksAction(),
     getProjectsAction(),
