@@ -2005,7 +2005,17 @@
     "uvgContactPhone": "UVG-Kontakt Telefon",
     "dailySickness": "Krankentaggeld-Versicherung",
     "dailySicknessProvider": "Krankentaggeld-Anbieter",
-    "dailySicknessContactPhone": "Krankentaggeld-Kontakt Telefon"
+    "dailySicknessContactPhone": "Krankentaggeld-Kontakt Telefon",
+    "featuresTitle": "Features",
+    "featureToggleUpdateSuccess": "Feature wurde aktualisiert",
+    "featureToggleUpdateError": "Fehler beim Aktualisieren des Features",
+    "feature": {
+      "TIME_TRACKING": "Zeiterfassung",
+      "PROJECTS": "Projekte",
+      "MY_TASKS": "Meine Aufgaben",
+      "CHATS": "Chats",
+      "PROTOCOLS": "Protokolle"
+    }
   },
   "OrganizationSettings": {
     "key": "Key",

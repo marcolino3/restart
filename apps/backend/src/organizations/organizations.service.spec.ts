@@ -112,6 +112,10 @@ const txManager = {
       Promise.resolve({ id: 'new-org', ...data }),
     ),
   create: jest.fn((_: unknown, data: Record<string, unknown>) => data),
+  getRepository: jest.fn().mockReturnValue({
+    create: jest.fn((data: Record<string, unknown>) => data),
+    insert: jest.fn().mockResolvedValue({ identifiers: [] }),
+  }),
 };
 
 describe('OrganizationsService', () => {

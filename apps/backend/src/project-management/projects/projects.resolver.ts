@@ -3,6 +3,9 @@ import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
+import { OrgFeatureGuard } from '@/auth/guard/org-feature.guard';
+import { OrgFeatureRequired } from '@/auth/decorators/org-feature-required.decorator';
+import { OrgFeatureKey } from '@restart/shared-schemas/org-features/feature-catalog';
 import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { UseGuards } from '@nestjs/common';
 import {
@@ -27,7 +30,8 @@ import { ProjectTaskStatsLoaders } from './loaders/project-task-stats.loaders';
 import { ProjectsService } from './projects.service';
 
 @Resolver(() => Project)
-@UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
+@UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard, OrgFeatureGuard)
+@OrgFeatureRequired(OrgFeatureKey.PROJECTS)
 export class ProjectsResolver {
   constructor(private readonly projectsService: ProjectsService) {}
 
