@@ -13,7 +13,7 @@ import { FieldResourceProvider } from "@/components/form/field-resource-context"
 import { handleAction } from "@/lib/actions/handle-action";
 import { ROUTES } from "@/constants/routes";
 import { usePermissions } from "@/features/users/context/current-user.context";
-import type { ContractTypeDependentField } from "@restart/shared-schemas/employees/contract-type-rules";
+import { CONTRACT_TYPE_DEPENDENT_FIELDS } from "@restart/shared-schemas/employees/contract-type-rules";
 
 import type { EmployeeContract } from "../actions/employee-contracts.actions";
 import { saveEmployeeContractAction } from "../actions/employee-contracts.actions";
@@ -22,18 +22,6 @@ import {
   type EmployeeContractFormOutput,
   type EmployeeContractFormType,
 } from "../schemas/employee-contract-form.schema";
-
-const CONTRACT_TYPE_DEPENDENT_FIELDS: ContractTypeDependentField[] = [
-  "endDate",
-  "probationEndDate",
-  "grossSalary",
-  "hourlyRate",
-  "paymentInterval",
-  "has13thSalary",
-  "annualVacationDays",
-  "workloadPercent",
-  "weeklyHours",
-];
 import { ContractDocumentField } from "./ContractDocumentField";
 import { ContractFormFields } from "./ContractFormFields";
 import { ContractSummaryAside } from "./ContractSummaryAside";
