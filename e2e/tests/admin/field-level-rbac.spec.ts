@@ -299,7 +299,13 @@ test.describe('Field-level RBAC — grossSalary read gate', () => {
             {
               resource: 'employeeContract',
               field: 'hourlyRate',
-              actions: ['read', 'update'],
+              // The contract page under test is the create form
+              // (contracts/edit with no contractId — see
+              // EmployeeContractForm.tsx, mode={contract ? "update" :
+              // "create"}), so canWriteField checks the `create` action,
+              // not `update`. Grant both so the field is editable
+              // regardless of which form this ends up exercising.
+              actions: ['read', 'create', 'update'],
             },
           ],
         },
