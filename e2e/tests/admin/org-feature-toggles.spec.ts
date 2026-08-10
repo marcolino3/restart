@@ -34,7 +34,7 @@ test.describe('Org feature toggles', () => {
     const orgId = owner.orgId
 
     // Sanity check: Protocols visible before disabling the feature.
-    await owner.page.goto('/en/admin/protocols')
+    await owner.page.goto('/en/admin/protocols', { waitUntil: 'networkidle' })
     await expect(owner.page.getByRole('link', { name: /protocols/i })).toBeVisible()
 
     const disabled = await gql(
