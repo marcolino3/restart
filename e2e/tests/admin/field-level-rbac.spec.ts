@@ -279,6 +279,43 @@ test.describe('Field-level RBAC — grossSalary read gate', () => {
     const restrictedRoleId = created.data?.createRole?.id
     expect(restrictedRoleId).toBeTruthy()
 
+    // The seeded ORG_OWNER role itself starts with no field-permission
+    // grants (opt-in model). assertNoEscalation compares a delegation
+    // against the actor's OWN grants, so owner must hold hourlyRate
+    // read+update before it can hand that grant to the restricted role.
+    // Only superadmin can assign it here (bypasses the escalation guard).
+    const orgOwnerRoles = await gql(
+      owner.page,
+      `query { rolesByOrgId { id name } }`,
+    )
+    const orgOwnerRoleId = orgOwnerRoles.data?.rolesByOrgId?.find(
+      (r: { name: string }) => r.name === 'ORG_OWNER',
+    )?.id
+    expect(orgOwnerRoleId).toBeTruthy()
+
+    await page.request.post(`${BACKEND_URL}/api/org/switch`, {
+      data: { orgId },
+    })
+    const ownerGrant = await gql(
+      page,
+      `mutation Strip($input: UpdateRoleFieldPermissionsInput!) {
+         updateRoleFieldPermissions(input: $input) { id }
+       }`,
+      {
+        input: {
+          roleId: orgOwnerRoleId,
+          fieldPermissions: [
+            {
+              resource: 'employeeContract',
+              field: 'hourlyRate',
+              actions: ['read', 'update'],
+            },
+          ],
+        },
+      },
+    )
+    expect(ownerGrant.errors ?? []).toEqual([])
+
     // Grant every other contract-type-dependent field read+write, strip only
     // grossSalary, so the form is otherwise fully usable — isolates the check
     // to the one field, and PERMANENT contracts require grossSalary to be
