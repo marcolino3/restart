@@ -5,6 +5,7 @@ import { getOrgMembershipsAction } from "@/features/projects/actions/get-org-mem
 import { getProjectsAction } from "@/features/projects/actions/get-projects.action";
 import { getTemplatesAction } from "@/features/projects/actions/get-templates.action";
 import { ProjectsList } from "@/features/projects/components/ProjectsList";
+import { canSeeProjects } from "@/lib/navigation/nav-visibility";
 
 const has = (permissions: string[], code: string, isSuperAdmin: boolean) =>
   isSuperAdmin || permissions.includes(code);
@@ -14,6 +15,12 @@ const ProjectsPage = async () => {
   const user = await getCurrentUserAction();
 
   if (!user?.success) {
+    return <div className="p-4 text-sm text-destructive">{t("loadError")}</div>;
+  }
+
+  // Spiegel der Nav-Sichtbarkeit: ohne aktiviertes Org-Feature auch kein
+  // Direktzugriff per URL.
+  if (!canSeeProjects(user.data)) {
     return <div className="p-4 text-sm text-destructive">{t("loadError")}</div>;
   }
 

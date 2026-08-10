@@ -14,6 +14,7 @@ const employee = (
   permissions: [],
   timeTrackingEnabled: false,
   isProjectMember: false,
+  enabledFeatures: ["TIME_TRACKING", "PROJECTS", "MY_TASKS", "CHATS", "PROTOCOLS"],
   ...overrides,
 });
 

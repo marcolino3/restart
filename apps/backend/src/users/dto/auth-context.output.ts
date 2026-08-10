@@ -47,4 +47,10 @@ export class AuthContextOutput {
   // drives visibility of the "Projekte" nav item (members-only navigation).
   @Field(() => Boolean)
   isProjectMember: boolean;
+
+  // Feature keys enabled for the active org (empty for SuperAdmin without an
+  // active org) — drives feature-gated nav items and route rechecks.
+  // SuperAdmin sees the full catalog regardless of toggle state.
+  @Field(() => [String])
+  enabledFeatures: string[];
 }
