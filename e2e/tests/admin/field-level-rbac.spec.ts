@@ -393,6 +393,11 @@ test.describe('Field-level RBAC — grossSalary read gate', () => {
       .fill(restrictedPassword)
     await restrictedPage.getByRole('button', { name: /sign in/i }).click()
     await expect(restrictedPage).not.toHaveURL(/sign-in/, { timeout: 20000 })
+    // Sign-in triggers the app's own client-side redirect navigation; without
+    // waiting for it to settle, the goto() below races that in-flight
+    // navigation and aborts with net::ERR_ABORTED (see setupSecondOrgUser in
+    // e2e/tests/helpers/auth.ts, which needed the same fix).
+    await restrictedPage.waitForLoadState('networkidle')
 
     const switched = await restrictedPage.request.post(
       `${BACKEND_URL}/api/org/switch`,
