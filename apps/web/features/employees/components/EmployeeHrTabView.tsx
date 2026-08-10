@@ -1,6 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { FieldResourceProvider } from "@/components/form/field-resource-context";
+import { Row } from "@/components/common/Row";
 import type { EmployeeHrProfile } from "../actions/get-employee-hr-profile.action";
 
 interface Props {
@@ -29,15 +31,20 @@ export default function EmployeeHrTabView({ profile }: Props) {
     : "–";
 
   return (
-    <>
+    <FieldResourceProvider resource="employeeHrProfile" mode="update">
       {/* Bankverbindung */}
       <Section title={tE("hr.bankAccount")}>
-        <Row label={tE("hr.iban")} value={profile?.iban || "–"} />
+        <Row label={tE("hr.iban")} value={profile?.iban || "–"} field="iban" />
         <Row
           label={tE("hr.bankAccountHolder")}
           value={profile?.bankAccountHolder || "–"}
+          field="bankAccountHolder"
         />
-        <Row label={tE("hr.bankName")} value={profile?.bankName || "–"} />
+        <Row
+          label={tE("hr.bankName")}
+          value={profile?.bankName || "–"}
+          field="bankName"
+        />
       </Section>
 
       {/* Persönliche Versicherungs-/Steuer-Daten */}
@@ -45,19 +52,26 @@ export default function EmployeeHrTabView({ profile }: Props) {
         <Row
           label={tE("hr.bvgInsuranceNumber")}
           value={profile?.bvgInsuranceNumber || "–"}
+          field="bvgInsuranceNumber"
         />
         <Row
           label={tE("hr.withholdingTaxCode")}
           value={profile?.withholdingTaxCode || "–"}
+          field="withholdingTaxCode"
         />
       </Section>
 
       {/* Stammdaten */}
       <Section title={tE("hr.personalData")} mt>
-        <Row label={tE("hr.nationality")} value={nationalityLabel} />
+        <Row
+          label={tE("hr.nationality")}
+          value={nationalityLabel}
+          field="nationality"
+        />
         <Row
           label={tE("hr.residencePermitType")}
           value={enumLabel("residencePermitType", profile?.residencePermitType)}
+          field="residencePermitType"
         />
         <Row
           label={tE("hr.residencePermitValidUntil")}
@@ -69,15 +83,22 @@ export default function EmployeeHrTabView({ profile }: Props) {
                 )
               : "–"
           }
+          field="residencePermitValidUntil"
         />
         <Row
           label={tE("hr.maritalStatus")}
           value={enumLabel("maritalStatus", profile?.maritalStatus)}
+          field="maritalStatus"
         />
-        <Row label={tE("hr.denomination")} value={profile?.denomination || "–"} />
+        <Row
+          label={tE("hr.denomination")}
+          value={profile?.denomination || "–"}
+          field="denomination"
+        />
         <Row
           label={tE("hr.numberOfChildren")}
           value={profile?.numberOfChildren ?? "–"}
+          field="numberOfChildren"
         />
       </Section>
 
@@ -93,7 +114,7 @@ export default function EmployeeHrTabView({ profile }: Props) {
           value={yesNo(profile?.criminalRecordSubmitted)}
         />
       </Section>
-    </>
+    </FieldResourceProvider>
   );
 }
 
@@ -111,17 +132,4 @@ const Section = ({ title, mt, children }: SectionProps) => (
       <dl className="divide-y divide-border">{children}</dl>
     </div>
   </>
-);
-
-interface RowProps {
-  label: string;
-  value: React.ReactNode;
-}
-const Row = ({ label, value }: RowProps) => (
-  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-    <dt className="text-sm/6 font-medium text-foreground">{label}</dt>
-    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0">
-      {value}
-    </dd>
-  </div>
 );

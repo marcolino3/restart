@@ -2,6 +2,8 @@
 
 import { useTranslations } from "next-intl";
 import { AlertTriangle, Phone, Mail, HeartPulse } from "lucide-react";
+import { FieldResourceProvider } from "@/components/form/field-resource-context";
+import { Row } from "@/components/common/Row";
 import type { EmployeeEmergencyProfile } from "../actions/get-employee-emergency-profile.action";
 
 interface Props {
@@ -88,48 +90,56 @@ export default function EmployeeEmergencyTabView({ profile }: Props) {
         </h3>
       </div>
       <div className="mt-6 border-t border-border">
-        <dl className="divide-y divide-border">
-          <Row
-            label={tE("emergency.bloodType")}
-            value={
-              profile?.bloodType
-                ? (BLOOD_TYPE_DISPLAY[profile.bloodType] ?? profile.bloodType)
-                : "–"
-            }
-          />
-          <Row
-            label={tE("emergency.allergies")}
-            value={profile?.allergies || "–"}
-          />
-          <Row
-            label={tE("emergency.chronicConditions")}
-            value={profile?.chronicConditions || "–"}
-          />
-          <Row
-            label={tE("emergency.medications")}
-            value={profile?.emergencyMedications || "–"}
-          />
-          <Row
-            label={tE("emergency.primaryDoctor")}
-            value={
-              profile?.primaryDoctorName || profile?.primaryDoctorPhone ? (
-                <span>
-                  {profile?.primaryDoctorName}
-                  {profile?.primaryDoctorName && profile?.primaryDoctorPhone
-                    ? " · "
-                    : ""}
-                  {profile?.primaryDoctorPhone}
-                </span>
-              ) : (
-                "–"
-              )
-            }
-          />
-          <Row
-            label={tE("emergency.pharmacy")}
-            value={profile?.pharmacyName || "–"}
-          />
-        </dl>
+        <FieldResourceProvider resource="employeeEmergencyProfile" mode="update">
+          <dl className="divide-y divide-border">
+            <Row
+              icon={<HeartPulse className="h-4 w-4 text-muted-foreground" />}
+              label={tE("emergency.bloodType")}
+              value={
+                profile?.bloodType
+                  ? (BLOOD_TYPE_DISPLAY[profile.bloodType] ?? profile.bloodType)
+                  : "–"
+              }
+              field="bloodType"
+            />
+            <Row
+              icon={<HeartPulse className="h-4 w-4 text-muted-foreground" />}
+              label={tE("emergency.allergies")}
+              value={profile?.allergies || "–"}
+              field="allergies"
+            />
+            <Row
+              icon={<HeartPulse className="h-4 w-4 text-muted-foreground" />}
+              label={tE("emergency.chronicConditions")}
+              value={profile?.chronicConditions || "–"}
+              field="chronicConditions"
+            />
+            <Row
+              icon={<HeartPulse className="h-4 w-4 text-muted-foreground" />}
+              label={tE("emergency.medications")}
+              value={profile?.emergencyMedications || "–"}
+              field="emergencyMedications"
+            />
+            <Row
+              icon={<HeartPulse className="h-4 w-4 text-muted-foreground" />}
+              label={tE("emergency.primaryDoctorName")}
+              value={profile?.primaryDoctorName || "–"}
+              field="primaryDoctorName"
+            />
+            <Row
+              icon={<HeartPulse className="h-4 w-4 text-muted-foreground" />}
+              label={tE("emergency.primaryDoctorPhone")}
+              value={profile?.primaryDoctorPhone || "–"}
+              field="primaryDoctorPhone"
+            />
+            <Row
+              icon={<HeartPulse className="h-4 w-4 text-muted-foreground" />}
+              label={tE("emergency.pharmacy")}
+              value={profile?.pharmacyName || "–"}
+              field="pharmacyName"
+            />
+          </dl>
+        </FieldResourceProvider>
       </div>
     </>
   );
@@ -181,21 +191,5 @@ const ContactCard = ({
         )}
       </div>
     )}
-  </div>
-);
-
-interface RowProps {
-  label: string;
-  value: React.ReactNode;
-}
-const Row = ({ label, value }: RowProps) => (
-  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-    <dt className="text-sm/6 font-medium text-foreground flex items-center gap-2">
-      <HeartPulse className="h-4 w-4 text-muted-foreground" />
-      {label}
-    </dt>
-    <dd className="mt-1 text-sm/6 text-muted-foreground sm:col-span-2 sm:mt-0 whitespace-pre-line">
-      {value}
-    </dd>
   </div>
 );

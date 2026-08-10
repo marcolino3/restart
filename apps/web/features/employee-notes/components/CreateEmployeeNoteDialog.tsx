@@ -19,6 +19,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
+import { FieldResourceProvider } from "@/components/form/field-resource-context";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
@@ -40,7 +41,7 @@ const CreateNoteSchema = z.object({
   title: z.string().min(1).max(200),
   category: z.string().min(1),
   content: z.string().min(1),
-  isConfidential: z.boolean(),
+  isConfidential: z.boolean().optional(),
   date: z.date().nullable(),
 });
 
@@ -112,30 +113,32 @@ export default function CreateEmployeeNoteDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <InputFormField name="title" label="noteTitle" />
-            <div className="flex gap-4">
-              <SelectFormField
-                name="category"
-                label="category"
-                options={categoryOptions}
-                width="w-1/2"
-              />
-              <div className="w-1/2">
-                <DatePickerFormField
-                  name="date"
-                  label="date"
-                  disabledDate={(date) =>
-                    date > new Date(new Date().setFullYear(new Date().getFullYear() + 1))
-                  }
+            <FieldResourceProvider resource="employeeNote" mode="create">
+              <InputFormField name="title" label="noteTitle" />
+              <div className="flex gap-4">
+                <SelectFormField
+                  name="category"
+                  label="category"
+                  options={categoryOptions}
+                  width="w-1/2"
                 />
+                <div className="w-1/2">
+                  <DatePickerFormField
+                    name="date"
+                    label="date"
+                    disabledDate={(date) =>
+                      date > new Date(new Date().setFullYear(new Date().getFullYear() + 1))
+                    }
+                  />
+                </div>
               </div>
-            </div>
-            <TextareaFormField name="content" label="noteContent" />
-            <SwitchFormField
-              name="isConfidential"
-              label="confidential"
-              description="confidentialDescription"
-            />
+              <TextareaFormField name="content" label="noteContent" />
+              <SwitchFormField
+                name="isConfidential"
+                label="confidential"
+                description="confidentialDescription"
+              />
+            </FieldResourceProvider>
             <DialogFooter>
               <Button
                 type="button"

@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import { FieldResourceProvider } from "@/components/form/field-resource-context";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
@@ -27,7 +28,7 @@ const Schema = z.object({
   title: z.string().optional(),
   content: z.string().optional(),
   occurredAt: z.date(),
-  isConfidential: z.boolean(),
+  isConfidential: z.boolean().optional(),
 });
 
 type FormValues = z.infer<typeof Schema>;
@@ -81,7 +82,7 @@ export function RecordComposer({
       title: values.title?.trim() || null,
       content: values.content?.trim() || null,
       occurredAt: values.occurredAt.toISOString(),
-      isConfidential: values.isConfidential,
+      isConfidential: values.isConfidential ?? true,
     };
 
     const res =
@@ -105,39 +106,41 @@ export function RecordComposer({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="flex gap-4">
-          <SelectFormField
-            name="categoryId"
-            label="category"
-            namespace="StudentRecords"
-            options={categoryOptions}
-            translateOptions={false}
-            width="w-1/2"
-          />
-          <DateTimeCalendarFormField
-            name="occurredAt"
-            label="occurredAt"
-            namespace="StudentRecords"
-          />
-        </div>
+        <FieldResourceProvider resource="studentRecordEntry" mode={isEdit ? "update" : "create"}>
+          <div className="flex gap-4">
+            <SelectFormField
+              name="categoryId"
+              label="category"
+              namespace="StudentRecords"
+              options={categoryOptions}
+              translateOptions={false}
+              width="w-1/2"
+            />
+            <DateTimeCalendarFormField
+              name="occurredAt"
+              label="occurredAt"
+              namespace="StudentRecords"
+            />
+          </div>
 
-        <InputFormField
-          name="title"
-          label="entryTitle"
-          namespace="StudentRecords"
-        />
-        <TextareaFormField
-          name="content"
-          label="entryContent"
-          namespace="StudentRecords"
-        />
+          <InputFormField
+            name="title"
+            label="entryTitle"
+            namespace="StudentRecords"
+          />
+          <TextareaFormField
+            name="content"
+            label="entryContent"
+            namespace="StudentRecords"
+          />
 
-        <SwitchFormField
-          name="isConfidential"
-          label="isConfidential"
-          description="isConfidentialHint"
-          namespace="StudentRecords"
-        />
+          <SwitchFormField
+            name="isConfidential"
+            label="isConfidential"
+            description="isConfidentialHint"
+            namespace="StudentRecords"
+          />
+        </FieldResourceProvider>
 
         <div className="flex justify-end gap-2">
           {onCancel && (

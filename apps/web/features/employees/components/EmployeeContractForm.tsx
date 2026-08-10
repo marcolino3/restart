@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
@@ -8,16 +9,31 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import { FieldResourceProvider } from "@/components/form/field-resource-context";
 import { handleAction } from "@/lib/actions/handle-action";
 import { ROUTES } from "@/constants/routes";
+import { usePermissions } from "@/features/users/context/current-user.context";
+import type { ContractTypeDependentField } from "@restart/shared-schemas/employees/contract-type-rules";
 
 import type { EmployeeContract } from "../actions/employee-contracts.actions";
 import { saveEmployeeContractAction } from "../actions/employee-contracts.actions";
 import {
-  EmployeeContractFormSchema,
+  buildEmployeeContractFormSchema,
   type EmployeeContractFormOutput,
   type EmployeeContractFormType,
 } from "../schemas/employee-contract-form.schema";
+
+const CONTRACT_TYPE_DEPENDENT_FIELDS: ContractTypeDependentField[] = [
+  "endDate",
+  "probationEndDate",
+  "grossSalary",
+  "hourlyRate",
+  "paymentInterval",
+  "has13thSalary",
+  "annualVacationDays",
+  "workloadPercent",
+  "weeklyHours",
+];
 import { ContractDocumentField } from "./ContractDocumentField";
 import { ContractFormFields } from "./ContractFormFields";
 import { ContractSummaryAside } from "./ContractSummaryAside";
@@ -94,8 +110,19 @@ export function EmployeeContractForm({
     returnHref ??
     `${ROUTES.admin.employeesView(locale, employeeId)}?tab=contracts`;
 
+  const { canReadField } = usePermissions();
+  const schema = useMemo(() => {
+    const hiddenByPermission = new Set(
+      CONTRACT_TYPE_DEPENDENT_FIELDS.filter(
+        (field) => !canReadField("employeeContract", field),
+      ),
+    );
+    return buildEmployeeContractFormSchema(hiddenByPermission);
+     
+  }, [canReadField]);
+
   const form = useForm({
-    resolver: zodResolver(EmployeeContractFormSchema),
+    resolver: zodResolver(schema),
     defaultValues: buildContractFormDefaults(employeeId, contract),
   });
 
@@ -151,21 +178,23 @@ export function EmployeeContractForm({
         </div>
 
         <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr] lg:items-start">
-          <ContractFormFields
-            functionOptions={functionOptions}
-            showContractExtras
-            documentSlot={
-              <ContractDocumentField
-                name="documentUrl"
-                employeeId={employeeId}
-              />
-            }
-          />
-          <ContractSummaryAside
-            firstName={firstName}
-            lastName={lastName}
-            functionOptions={functionOptions}
-          />
+          <FieldResourceProvider resource="employeeContract" mode={contract ? "update" : "create"}>
+            <ContractFormFields
+              functionOptions={functionOptions}
+              showContractExtras
+              documentSlot={
+                <ContractDocumentField
+                  name="documentUrl"
+                  employeeId={employeeId}
+                />
+              }
+            />
+            <ContractSummaryAside
+              firstName={firstName}
+              lastName={lastName}
+              functionOptions={functionOptions}
+            />
+          </FieldResourceProvider>
         </div>
       </form>
     </Form>

@@ -234,4 +234,193 @@ test.describe('Field-level RBAC — grossSalary read gate', () => {
     await restrictedPage.close()
     await owner.page.close()
   })
+
+  test('contract form hides grossSalary and still submits when the field is permission-hidden', async ({
+    page,
+    browser,
+  }) => {
+    await signInAsSuperAdmin(page)
+    await ensureActiveOrg(page)
+
+    const owner = await setupSecondOrgUser(browser, page)
+    const orgId = owner.orgId
+
+    const employee = await gql(
+      owner.page,
+      `mutation Create($input: CreateEmployeeInput!) {
+         createEmployee(createEmployeeInput: $input) { id }
+       }`,
+      {
+        input: {
+          firstName: 'E2E',
+          lastName: `Form${Date.now()}`,
+          email: `e2e.form.${Date.now()}@example.com`,
+          persona: 'EMPLOYEE',
+        },
+      },
+    )
+    const employeeId = employee.data?.createEmployee?.id
+    expect(employee.errors ?? []).toEqual([])
+    expect(employeeId).toBeTruthy()
+
+    const created = await gql(
+      owner.page,
+      `mutation Create($input: CreateRoleInput!) {
+         createRole(input: $input) { id name }
+       }`,
+      {
+        input: {
+          name: `NoSalaryForm${Date.now()}`,
+          permissionCodes: ['EMPLOYEE_READ', 'EMPLOYEE_WRITE'],
+        },
+      },
+    )
+    expect(created.errors ?? []).toEqual([])
+    const restrictedRoleId = created.data?.createRole?.id
+    expect(restrictedRoleId).toBeTruthy()
+
+    // Grant every other contract-type-dependent field read+write, strip only
+    // grossSalary, so the form is otherwise fully usable — isolates the check
+    // to the one field, and PERMANENT contracts require grossSalary to be
+    // filled (contract-type-rules.ts), which is exactly the case the
+    // permission-hidden superRefine fix (buildEmployeeContractFormSchema)
+    // must cover.
+    const stripped = await gql(
+      owner.page,
+      `mutation Strip($input: UpdateRoleFieldPermissionsInput!) {
+         updateRoleFieldPermissions(input: $input) { id }
+       }`,
+      {
+        input: {
+          roleId: restrictedRoleId,
+          fieldPermissions: [
+            { resource: 'employeeContract', field: 'grossSalary', actions: [] },
+            {
+              resource: 'employeeContract',
+              field: 'hourlyRate',
+              actions: ['read', 'update'],
+            },
+          ],
+        },
+      },
+    )
+    expect(stripped.errors ?? []).toEqual([])
+
+    const stamp = Date.now()
+    const restrictedEmail = `e2e.restrictedform.${stamp}@example.com`
+    const restrictedPassword = 'change-me-too-123!'
+
+    const restrictedEmployee = await gql(
+      owner.page,
+      `mutation Create($input: CreateEmployeeInput!) {
+         createEmployee(createEmployeeInput: $input) { id }
+       }`,
+      {
+        input: {
+          firstName: 'E2E',
+          lastName: `RestrictedForm${stamp}`,
+          email: restrictedEmail,
+          persona: 'ADMIN',
+        },
+      },
+    )
+    expect(restrictedEmployee.errors ?? []).toEqual([])
+    const restrictedEmployeeId = restrictedEmployee.data?.createEmployee?.id
+
+    const roleAssign = await gql(
+      owner.page,
+      `mutation AssignRole($input: EmployeeOnboardingInput!) {
+         upsertEmployeeOnboardingDraft(input: $input) { id }
+       }`,
+      {
+        input: {
+          id: restrictedEmployeeId,
+          firstName: 'E2E',
+          lastName: `RestrictedForm${stamp}`,
+          roleIds: [restrictedRoleId],
+        },
+      },
+    )
+    expect(roleAssign.errors ?? []).toEqual([])
+
+    const context = await browser.newContext()
+    const restrictedPage = await context.newPage()
+
+    const signUp = await restrictedPage.request.post(
+      `${BACKEND_URL}/api/auth/sign-up/email`,
+      {
+        headers: { origin: FRONTEND_ORIGIN },
+        data: {
+          email: restrictedEmail,
+          password: restrictedPassword,
+          name: `E2E RestrictedForm${stamp}`,
+        },
+      },
+    )
+    expect(signUp.ok()).toBe(true)
+    await context.clearCookies()
+
+    await restrictedPage.goto('/en/sign-in', { waitUntil: 'networkidle' })
+    await restrictedPage
+      .getByRole('textbox', { name: /e-?mail/i })
+      .fill(restrictedEmail)
+    await restrictedPage
+      .locator('input[name="password"]')
+      .fill(restrictedPassword)
+    await restrictedPage.getByRole('button', { name: /sign in/i }).click()
+    await expect(restrictedPage).not.toHaveURL(/sign-in/, { timeout: 20000 })
+
+    const switched = await restrictedPage.request.post(
+      `${BACKEND_URL}/api/org/switch`,
+      { data: { orgId } },
+    )
+    expect(switched.ok()).toBe(true)
+
+    await restrictedPage.goto(
+      `/en/admin/employees/${employeeId}/contracts/edit`,
+      { waitUntil: 'networkidle' },
+    )
+
+    // grossSalary must be entirely absent from the DOM (no field, no label).
+    await expect(
+      restrictedPage.locator('input[name="grossSalary"]'),
+    ).toHaveCount(0)
+
+    // hourlyRate stays visible + editable (full grant kept for it).
+    await expect(
+      restrictedPage.locator('input[name="hourlyRate"]'),
+    ).toBeVisible()
+    await expect(
+      restrictedPage.locator('input[name="hourlyRate"]'),
+    ).toBeEnabled()
+
+    await restrictedPage
+      .getByRole('combobox', { name: /contract type/i })
+      .click()
+    await restrictedPage.getByRole('option', { name: /permanent/i }).click()
+
+    await restrictedPage
+      .locator('input[name="position"]')
+      .fill('E2E Test Position')
+
+    // PERMANENT normally requires grossSalary — the fix under test
+    // (buildEmployeeContractFormSchema) must exempt it here since it's
+    // permission-hidden, so submission must succeed without that field.
+    await restrictedPage.getByRole('button', { name: /save/i }).click()
+    await expect(restrictedPage).toHaveURL(/contracts/, { timeout: 20000 })
+    await expect(restrictedPage.getByText(/error/i)).toHaveCount(0)
+
+    // Teardown: remove the whole fixture org (cascades employees, contracts,
+    // roles, memberships) so the run leaves no test data behind.
+    await gql(
+      page,
+      `mutation Remove($id: String!) {
+         removeOrganization(id: $id) { id }
+       }`,
+      { id: orgId },
+    )
+
+    await restrictedPage.close()
+    await owner.page.close()
+  })
 })

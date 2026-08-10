@@ -2,6 +2,7 @@
 
 import { ContractDocumentUpload } from "../ContractDocumentUpload";
 import { ContractFormFields } from "../../ContractFormFields";
+import { FieldResourceProvider } from "@/components/form/field-resource-context";
 
 interface Props {
   teamOptions: { label: string; value: string }[];
@@ -16,12 +17,14 @@ export function StepContract({
   draftId,
 }: Props) {
   return (
-    <ContractFormFields
-      functionOptions={functionOptions}
-      teamOptions={teamOptions}
-      showTeam
-      showTimeTracking
-      documentSlot={<ContractDocumentUpload draftId={draftId} />}
-    />
+    <FieldResourceProvider resource="employeeContract" mode="create">
+      <ContractFormFields
+        functionOptions={functionOptions}
+        teamOptions={teamOptions}
+        showTeam
+        showTimeTracking
+        documentSlot={<ContractDocumentUpload draftId={draftId} />}
+      />
+    </FieldResourceProvider>
   );
 }

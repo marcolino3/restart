@@ -169,6 +169,7 @@ export function ContractSummaryAside({
             <DescriptionRow
               label={t("hr.hourlyRate")}
               muted={hourlyRate == null}
+              field="hourlyRate"
             >
               {fmtMoney(hourlyRate) ?? t("contract.summaryPending")}
             </DescriptionRow>
@@ -185,6 +186,7 @@ export function ContractSummaryAside({
             <DescriptionRow
               label={t("hr.grossSalaryMonthly")}
               muted={grossSalary == null}
+              field="grossSalary"
             >
               {fmtMoney(grossSalary) ?? t("contract.summaryPending")}
             </DescriptionRow>

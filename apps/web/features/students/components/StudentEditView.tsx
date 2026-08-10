@@ -11,6 +11,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import { FieldResourceProvider } from "@/components/form/field-resource-context";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
@@ -195,6 +196,7 @@ export default function StudentEditView({
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onValid, onInvalid)}>
+              <FieldResourceProvider resource="student" mode="update">
                 <TabsContent value="overview">
                   <div className="px-4 sm:px-0">
                     <h3 className="text-base/7 font-semibold text-foreground">
@@ -281,6 +283,7 @@ export default function StudentEditView({
                     }
                   />
                 </TabsContent>
+              </FieldResourceProvider>
               </form>
             </Form>
 

@@ -11,6 +11,7 @@ import {
 } from "@restart/shared-schemas/employees/contract-type-rules";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useFieldAccess } from "@/components/form/field-resource-context";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
@@ -89,8 +90,32 @@ export function ContractFormFields({
   const selectedType = useWatch({ control, name: "contractType" }) as
     | string
     | undefined;
+
+  const endDateAccess = useFieldAccess("endDate");
+  const probationEndDateAccess = useFieldAccess("probationEndDate");
+  const grossSalaryAccess = useFieldAccess("grossSalary");
+  const hourlyRateAccess = useFieldAccess("hourlyRate");
+  const paymentIntervalAccess = useFieldAccess("paymentInterval");
+  const has13thSalaryAccess = useFieldAccess("has13thSalary");
+  const annualVacationDaysAccess = useFieldAccess("annualVacationDays");
+  const workloadPercentAccess = useFieldAccess("workloadPercent");
+  const weeklyHoursAccess = useFieldAccess("weeklyHours");
+
+  const FIELD_ACCESS: Record<ContractTypeDependentField, { visible: boolean }> = {
+    endDate: endDateAccess,
+    probationEndDate: probationEndDateAccess,
+    grossSalary: grossSalaryAccess,
+    hourlyRate: hourlyRateAccess,
+    paymentInterval: paymentIntervalAccess,
+    has13thSalary: has13thSalaryAccess,
+    annualVacationDays: annualVacationDaysAccess,
+    workloadPercent: workloadPercentAccess,
+    weeklyHours: weeklyHoursAccess,
+  };
+
+  // Field renders only when both contract-type rules and permission grant show it.
   const shows = (field: ContractTypeDependentField) =>
-    isContractFieldVisible(selectedType, field);
+    isContractFieldVisible(selectedType, field) && FIELD_ACCESS[field].visible;
 
   const startDate = useWatch({ control, name: "startDate" }) as
     | Date
@@ -137,6 +162,33 @@ export function ContractFormFields({
       setValue("weekdayTimeWindows", {}, { shouldDirty: true });
     }
   }, [selectedType, setValue]);
+
+  // Same clearing as above, but keyed off permission grants instead of
+  // contract type — a field hidden by either must not stay in the payload
+  // as a stale value the form can no longer edit or validate against.
+  useEffect(() => {
+    for (const field of Object.keys(FIELD_ACCESS) as ContractTypeDependentField[]) {
+      if (!FIELD_ACCESS[field].visible) {
+        setValue(field, HIDDEN_FIELD_CLEAR[field], { shouldDirty: true });
+      }
+    }
+    if (!workloadPercentAccess.visible) {
+      setValue("weekdayWorkloads", {}, { shouldDirty: true });
+      setValue("weekdayTimeWindows", {}, { shouldDirty: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    endDateAccess.visible,
+    probationEndDateAccess.visible,
+    grossSalaryAccess.visible,
+    hourlyRateAccess.visible,
+    paymentIntervalAccess.visible,
+    has13thSalaryAccess.visible,
+    annualVacationDaysAccess.visible,
+    workloadPercentAccess.visible,
+    weeklyHoursAccess.visible,
+    setValue,
+  ]);
 
   const previousHas13th = useRef(has13thSalary);
   useEffect(() => {

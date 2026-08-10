@@ -1,8 +1,13 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo } from "react";
+import { createContext, useContext, useMemo, useCallback } from "react";
 
-export type FieldAction = "create" | "read" | "update" | "delete";
+import {
+  protectedFieldKey,
+  type FieldAction,
+} from "@restart/shared-schemas/rbac/field-catalog";
+
+export type { FieldAction };
 
 export type EffectiveFieldPermission = {
   resource: string;
@@ -62,15 +67,27 @@ export function usePermissions() {
     [user?.permissions, user?.isSuperAdmin]
   );
 
+  // Mirrors the Map<"resource.field", Set<FieldAction>> the backend builds
+  // in get-auth-context.util.ts — O(1) lookup instead of a per-render
+  // linear .find() over the whole fieldPermissions array.
+  const fieldPermissionMap = useMemo(() => {
+    const map = new Map<string, Set<FieldAction>>();
+    for (const entry of user?.fieldPermissions ?? []) {
+      map.set(
+        protectedFieldKey(entry.resource, entry.field),
+        new Set(entry.actions as FieldAction[])
+      );
+    }
+    return map;
+  }, [user?.fieldPermissions]);
+
   const hasFieldAction = useCallback(
     (resource: string, field: string, action: FieldAction) => {
       if (user?.isSuperAdmin) return true;
-      const entry = user?.fieldPermissions?.find(
-        (e) => e.resource === resource && e.field === field
-      );
-      return entry?.actions?.includes(action) ?? false;
+      const actions = fieldPermissionMap.get(protectedFieldKey(resource, field));
+      return actions?.has(action) ?? false;
     },
-    [user?.fieldPermissions, user?.isSuperAdmin]
+    [fieldPermissionMap, user?.isSuperAdmin]
   );
 
   const canReadField = useCallback(
@@ -78,8 +95,12 @@ export function usePermissions() {
     [hasFieldAction]
   );
 
+  // `mode` picks the write action: create-forms need a `create` grant,
+  // edit-forms/upsert-tabs need `update`. Defaults to "update" since most
+  // call sites are edit contexts.
   const canWriteField = useCallback(
-    (resource: string, field: string) => hasFieldAction(resource, field, "update"),
+    (resource: string, field: string, mode: "create" | "update" = "update") =>
+      hasFieldAction(resource, field, mode),
     [hasFieldAction]
   );
 

@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { PermissionGate } from "@/components/permission-gate";
 import { useTranslations } from "next-intl";
 import type { EmployeeNoteItem } from "../actions/get-employee-notes.action";
 import { Lock, User } from "lucide-react";
@@ -48,10 +49,17 @@ export default function EmployeeNotesList({ notes }: EmployeeNotesListProps) {
                       {t(`category.${note.category}`)}
                     </Badge>
                     {note.isConfidential && (
-                      <Badge variant="destructive" className="text-xs gap-1">
-                        <Lock className="h-3 w-3" />
-                        {t("confidential")}
-                      </Badge>
+                      <PermissionGate
+                        readField={{
+                          resource: "employeeNote",
+                          field: "isConfidential",
+                        }}
+                      >
+                        <Badge variant="destructive" className="text-xs gap-1">
+                          <Lock className="h-3 w-3" />
+                          {t("confidential")}
+                        </Badge>
+                      </PermissionGate>
                     )}
                     <span className="text-xs text-muted-foreground">
                       {new Date(note.date).toLocaleDateString("de-CH")}

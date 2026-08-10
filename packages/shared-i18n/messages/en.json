@@ -632,6 +632,7 @@
     "deleteConfirm": "Delete this message?"
   },
   "Common": {
+    "fieldPermissionDenied": "You don't have permission to edit this field",
     "childrenCount": "{count, plural, one {# child} other {# children}}",
     "pickDateTime": "Pick date & time",
     "pickADateRange": "Pick a date range",

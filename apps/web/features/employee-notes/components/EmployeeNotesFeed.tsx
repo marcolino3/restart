@@ -1,6 +1,7 @@
 "use client";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { PermissionGate } from "@/components/permission-gate";
 import { useTranslations } from "next-intl";
 import type { EmployeeNoteItem } from "../actions/get-employee-notes.action";
 import { MessageSquareText } from "lucide-react";
@@ -112,12 +113,17 @@ export default function EmployeeNotesFeed({ notes }: EmployeeNotesFeedProps) {
                     {tC(note.category)}
                   </span>
                   {note.isConfidential && (
-                    <>
+                    <PermissionGate
+                      readField={{
+                        resource: "employeeNote",
+                        field: "isConfidential",
+                      }}
+                    >
                       <span className="text-muted-foreground">&middot;</span>
                       <span className="text-destructive text-xs font-medium">
                         {t("confidential")}
                       </span>
-                    </>
+                    </PermissionGate>
                   )}
                 </div>
               </div>
