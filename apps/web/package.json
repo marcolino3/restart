@@ -52,7 +52,7 @@
     "@restart/shared-schemas": "workspace:*",
     "@restart/shared-types": "workspace:*",
     "@tabler/icons-react": "^3.45.0",
-    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-table": "^9.1.0",
     "@tiptap/extension-link": "^2.27.2",
     "@tiptap/pm": "^2.27.2",
     "@tiptap/react": "^2.27.2",
