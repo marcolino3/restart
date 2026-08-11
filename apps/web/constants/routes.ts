@@ -145,6 +145,8 @@ export const ROUTES = {
 
     // Roles
     roles: (locale: string) => `/${locale}/admin/roles`,
+    roleDetail: (locale: string, roleId: string) =>
+      `/${locale}/admin/roles/${roleId}`,
 
     // Data protection center (DSGVO / revDSG)
     dataProtection: (locale: string) => `/${locale}/admin/data-protection`,

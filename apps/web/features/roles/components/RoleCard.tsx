@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
 import { InitialsAvatar } from "@/components/common/InitialsAvatar";
+import { ROUTES } from "@/constants/routes";
 import type { RoleWithPermissions } from "../actions/get-roles.action";
 import { CATEGORY_ORDER, detectLevel, groupCatalog } from "../permission-catalog";
 import { levelBadgeVariant } from "../lib/level-meta";
@@ -16,6 +17,7 @@ type RoleCardProps = {
 
 export function RoleCard({ role, availableCodes }: RoleCardProps) {
   const t = useTranslations("Roles");
+  const locale = useLocale();
   const grantedCodes = new Set((role.permissions ?? []).map((p) => p.code));
   const categories = CATEGORY_ORDER.filter((category) =>
     groupCatalog(availableCodes).some((c) => c.category === category),
@@ -33,7 +35,7 @@ export function RoleCard({ role, availableCodes }: RoleCardProps) {
 
   return (
     <Link
-      href={`/admin/roles/${role.id}`}
+      href={ROUTES.admin.roleDetail(locale, role.id)}
       className="flex flex-col gap-4 rounded-lg border bg-card p-4 transition-colors hover:border-primary/50"
     >
       <div className="flex items-start justify-between gap-2">

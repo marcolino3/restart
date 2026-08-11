@@ -2948,6 +2948,24 @@
     "comparison": {
       "category": "Area",
       "permissionCount": "{count, plural, one {# permission} other {# permissions}}"
+    },
+    "fieldPermissionsCount": "{granted} of {total} fields granted",
+    "fieldPermissionsSpecialOnly": "Special category only ({count})",
+    "fieldGroup": {
+      "categoryLocked": "Area locked",
+      "fieldCount": "{count, plural, one {# field} other {# fields}} · {category}",
+      "specialCategory": "Special category"
+    },
+    "detail": {
+      "overview": "Overview",
+      "grantedOfTotal": "{granted} of {total} permissions",
+      "navPreviewTitle": "What this role sees",
+      "navHidden": "hidden",
+      "assignedPeople": "Assigned people",
+      "noPeople": "No one assigned",
+      "dangerZone": "Danger zone",
+      "tabDomains": "Areas",
+      "tabFields": "Sensitive fields"
     }
   },
   "SchoolClasses": {

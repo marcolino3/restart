@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
+import { ROUTES } from "@/constants/routes";
 import type { RoleWithPermissions } from "../actions/get-roles.action";
 import { CATEGORY_ORDER, detectLevel, groupCatalog } from "../permission-catalog";
 import { levelBadgeVariant } from "../lib/level-meta";
@@ -15,6 +16,7 @@ type RoleComparisonMatrixProps = {
 
 export function RoleComparisonMatrix({ roles, availableCodes }: RoleComparisonMatrixProps) {
   const t = useTranslations("Roles");
+  const locale = useLocale();
   const grouped = groupCatalog(availableCodes);
   const categories = CATEGORY_ORDER.filter((category) =>
     grouped.some((c) => c.category === category),
@@ -40,12 +42,7 @@ export function RoleComparisonMatrix({ roles, availableCodes }: RoleComparisonMa
             return (
               <tr key={category} className="border-b last:border-0">
                 <td className="p-3">
-                  <Link
-                    href={`/admin/roles?domain=${category}`}
-                    className="font-medium hover:underline"
-                  >
-                    {t(`category.${category}` as const)}
-                  </Link>
+                  <div className="font-medium">{t(`category.${category}` as const)}</div>
                   <div className="text-xs text-muted-foreground">
                     {t("comparison.permissionCount", { count: codeCount })}
                   </div>
@@ -57,9 +54,11 @@ export function RoleComparisonMatrix({ roles, availableCodes }: RoleComparisonMa
                   const level = detectLevel(category, grantedCodes, availableCodes);
                   return (
                     <td key={role.id} className="p-3">
-                      <Badge variant={levelBadgeVariant(level)}>
-                        {level === null ? t("level.individual") : t(`level.${level}` as const)}
-                      </Badge>
+                      <Link href={`${ROUTES.admin.roleDetail(locale, role.id)}?domain=${category}`}>
+                        <Badge variant={levelBadgeVariant(level)} className="cursor-pointer">
+                          {level === null ? t("level.individual") : t(`level.${level}` as const)}
+                        </Badge>
+                      </Link>
                     </td>
                   );
                 })}

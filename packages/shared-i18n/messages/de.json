@@ -2948,6 +2948,24 @@
     "comparison": {
       "category": "Bereich",
       "permissionCount": "{count, plural, one {# Einzelrecht} other {# Einzelrechte}}"
+    },
+    "fieldPermissionsCount": "{granted} von {total} Feldern freigegeben",
+    "fieldPermissionsSpecialOnly": "Nur besonders schützenswerte ({count})",
+    "fieldGroup": {
+      "categoryLocked": "Bereich gesperrt",
+      "fieldCount": "{count, plural, one {# Feld} other {# Felder}} · {category}",
+      "specialCategory": "Besonders schützenswert"
+    },
+    "detail": {
+      "overview": "Überblick",
+      "grantedOfTotal": "{granted} von {total} Rechten",
+      "navPreviewTitle": "Was diese Rolle sieht",
+      "navHidden": "verborgen",
+      "assignedPeople": "Zugewiesene Personen",
+      "noPeople": "Niemand zugewiesen",
+      "dangerZone": "Gefahrenzone",
+      "tabDomains": "Bereiche",
+      "tabFields": "Sensible Felder"
     }
   },
   "SchoolClasses": {
