@@ -114,7 +114,7 @@ describe('HolidaysService', () => {
         zone: 'Europe/Zurich',
       });
       if (!fixedNow.isValid) throw new Error('invalid DateTime fixture');
-      jest.spyOn(DateTime, 'now').mockReturnValue(fixedNow as DateTime<true>);
+      jest.spyOn(DateTime, 'now').mockReturnValue(fixedNow);
 
       await service.create(
         {
@@ -137,7 +137,7 @@ describe('HolidaysService', () => {
         zone: 'Europe/Zurich',
       });
       if (!fixedNow.isValid) throw new Error('invalid DateTime fixture');
-      jest.spyOn(DateTime, 'now').mockReturnValue(fixedNow as DateTime<true>);
+      jest.spyOn(DateTime, 'now').mockReturnValue(fixedNow);
 
       await service.create(
         {
@@ -201,7 +201,7 @@ describe('HolidaysService', () => {
         zone: 'Europe/Zurich',
       });
       if (!fixedNow.isValid) throw new Error('invalid DateTime fixture');
-      jest.spyOn(DateTime, 'now').mockReturnValue(fixedNow as DateTime<true>);
+      jest.spyOn(DateTime, 'now').mockReturnValue(fixedNow);
 
       repo.findOne.mockResolvedValue({
         id: 'h-1',
