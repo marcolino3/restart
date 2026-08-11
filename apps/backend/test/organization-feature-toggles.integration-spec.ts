@@ -16,7 +16,10 @@ import { Organization } from '@/organizations/entities/organization.entity';
 import { OrganizationFeatureToggle } from '@/organizations/entities/organization-feature-toggle.entity';
 import { User } from '@/users/entities/user.entity';
 import { OrgFeatureGuard } from '@/auth/guard/org-feature.guard';
-import { OrgFeatureKey } from '@restart/shared-schemas/org-features/feature-catalog';
+import {
+  ORG_FEATURE_KEYS,
+  OrgFeatureKey,
+} from '@restart/shared-schemas/org-features/feature-catalog';
 import { __clearOrgFeatureCacheForTests } from '@/organizations/utils/org-feature-cache';
 import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { Reflector } from '@nestjs/core';
@@ -159,13 +162,7 @@ describe('OrganizationFeatureToggles (Integration)', () => {
     const org = await createOrg();
     const toggles = await service.findAllForOrg(org.id);
     expect(toggles.map((t) => t.featureKey).sort()).toEqual(
-      [
-        OrgFeatureKey.CHATS,
-        OrgFeatureKey.MY_TASKS,
-        OrgFeatureKey.PROJECTS,
-        OrgFeatureKey.PROTOCOLS,
-        OrgFeatureKey.TIME_TRACKING,
-      ].sort(),
+      [...ORG_FEATURE_KEYS].sort(),
     );
   });
 
