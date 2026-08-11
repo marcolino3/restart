@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
+import { useFieldAccess } from "@/components/form/field-resource-context";
 
 interface DetailPanelProps {
   title?: ReactNode;
@@ -46,13 +47,18 @@ interface KvRowProps {
   label: ReactNode;
   children: ReactNode;
   className?: string;
+  /** Catalog field name for `FieldResourceProvider`-gated rows — hides the whole row when unreadable. */
+  field?: string;
 }
 
 /**
  * Key/value row from the design handoff (`.kv`): muted label left, bold value
  * right, hairline divider between rows.
  */
-export function KvRow({ label, children, className }: KvRowProps) {
+export function KvRow({ label, children, className, field }: KvRowProps) {
+  const access = useFieldAccess(field ?? "");
+  if (field && !access.visible) return null;
+
   return (
     <div
       className={cn(

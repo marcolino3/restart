@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import { FieldResourceProvider } from "@/components/form/field-resource-context";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
@@ -72,31 +73,33 @@ export default function CreateEmployeeNoteInline({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-        <InputFormField
-          name="title"
-          label="noteTitle"
-          namespace="EmployeeNotes"
-          placeholder={t("titlePlaceholder")}
-        />
-        <TextareaFormField
-          name="content"
-          label="noteContent"
-          namespace="EmployeeNotes"
-          placeholder={t("contentPlaceholder")}
-        />
-        <div className="flex items-end gap-3">
-          <div className="flex-1">
-            <SelectFormField
-              name="category"
-              label="categoryLabel"
-              namespace="EmployeeNotes"
-              options={categoryOptions}
-            />
+        <FieldResourceProvider resource="employeeNote" mode="create">
+          <InputFormField
+            name="title"
+            label="noteTitle"
+            namespace="EmployeeNotes"
+            placeholder={t("titlePlaceholder")}
+          />
+          <TextareaFormField
+            name="content"
+            label="noteContent"
+            namespace="EmployeeNotes"
+            placeholder={t("contentPlaceholder")}
+          />
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <SelectFormField
+                name="category"
+                label="categoryLabel"
+                namespace="EmployeeNotes"
+                options={categoryOptions}
+              />
+            </div>
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+              {t("post")}
+            </Button>
           </div>
-          <Button type="submit" disabled={form.formState.isSubmitting}>
-            {t("post")}
-          </Button>
-        </div>
+        </FieldResourceProvider>
       </form>
     </Form>
   );

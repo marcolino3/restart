@@ -32,6 +32,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTableFacetedFilter } from "@/components/common/DataTableFacetedFilter";
 import { SearchInput } from "@/components/common/SearchInput";
 import { StudentAvatar } from "@/features/students/components/StudentAvatar";
+import { usePermissions } from "@/features/users/context/current-user.context";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
 
@@ -849,9 +850,12 @@ function StudentCardVisual({
 }) {
   const t = useTranslations("StudentsKanban");
   const locale = useLocale();
-  const age = ageFrom(student.dateOfBirth);
-  const born = student.dateOfBirth
-    ? new Date(student.dateOfBirth).toLocaleDateString(locale, {
+  const { canReadField } = usePermissions();
+  const dobVisible = canReadField("student", "dateOfBirth");
+  const dob = dobVisible ? student.dateOfBirth : undefined;
+  const age = ageFrom(dob);
+  const born = dob
+    ? new Date(dob).toLocaleDateString(locale, {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",

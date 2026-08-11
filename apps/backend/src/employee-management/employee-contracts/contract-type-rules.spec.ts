@@ -114,6 +114,26 @@ describe('contract-type-rules', () => {
         ),
       ).not.toThrow();
     });
+
+    it('does not count a permission-hidden field as missing', () => {
+      expect(() =>
+        assertContractTypeFields(
+          {},
+          EmployeeContractType.PERMANENT,
+          new Set(['grossSalary']),
+        ),
+      ).not.toThrow();
+    });
+
+    it('still throws for fields not covered by the exemption', () => {
+      expect(() =>
+        assertContractTypeFields(
+          {},
+          EmployeeContractType.SUBSTITUTE,
+          new Set(['hourlyRate']),
+        ),
+      ).toThrow(/endDate/);
+    });
   });
 
   describe('workload percentage', () => {

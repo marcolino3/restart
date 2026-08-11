@@ -153,22 +153,34 @@ const isBlank = (value: unknown): boolean =>
 export function missingRequiredContractFields(
   values: ContractFieldValues,
   type?: EmployeeContractType | null,
+  hiddenByPermission?: ReadonlySet<ContractTypeDependentField>,
 ): ContractTypeDependentField[] {
   const rules = contractTypeRules(type);
   return (Object.keys(rules) as ContractTypeDependentField[]).filter(
-    (field) => rules[field] === 'required' && isBlank(values?.[field]),
+    (field) =>
+      rules[field] === 'required' &&
+      isBlank(values?.[field]) &&
+      !hiddenByPermission?.has(field),
   );
 }
 
 /**
  * Rejects a contract whose type-specific required fields are not filled in
- * (e.g. a fixed-term contract without an end date).
+ * (e.g. a fixed-term contract without an end date). A field the caller lacks
+ * read access to (field-level RBAC) never counts as missing — it can never
+ * appear in the input, so requiring it would make the contract unsubmittable
+ * for that caller.
  */
 export function assertContractTypeFields(
   values: ContractFieldValues,
   type?: EmployeeContractType | null,
+  hiddenByPermission?: ReadonlySet<ContractTypeDependentField>,
 ): void {
-  const missing = missingRequiredContractFields(values, type);
+  const missing = missingRequiredContractFields(
+    values,
+    type,
+    hiddenByPermission,
+  );
   if (missing.length > 0) {
     throw new BadRequestException(
       `Contract type ${type} requires: ${missing.join(', ')}`,

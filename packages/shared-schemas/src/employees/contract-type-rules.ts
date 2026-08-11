@@ -133,6 +133,14 @@ export const CONTRACT_TYPE_RULES: Record<
 };
 
 /**
+ * All contract-type-dependent fields as a runtime list. Derived from the
+ * rules object so it can never drift from the type union — a new field added
+ * to CONTRACT_TYPE_RULES automatically shows up here.
+ */
+export const CONTRACT_TYPE_DEPENDENT_FIELDS: readonly ContractTypeDependentField[] =
+  Object.keys(CONTRACT_TYPE_RULES.PERMANENT) as ContractTypeDependentField[];
+
+/**
  * Fallback while no contract type is chosen yet (onboarding drafts, legacy rows
  * created before the type became mandatory): everything stays editable.
  */
@@ -182,7 +190,7 @@ export function missingRequiredContractFields(
   type?: string | null,
 ): ContractTypeDependentField[] {
   const rules = contractTypeRules(type);
-  return (Object.keys(rules) as ContractTypeDependentField[]).filter(
+  return CONTRACT_TYPE_DEPENDENT_FIELDS.filter(
     (field) => rules[field] === "required" && isBlank(values[field]),
   );
 }

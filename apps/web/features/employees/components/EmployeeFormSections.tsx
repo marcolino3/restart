@@ -17,6 +17,7 @@ import { CountryComboboxFormField } from "@/components/form/form-fields/CountryC
 import { ROUTES } from "@/constants/routes";
 import { Persona } from "@restart/shared-types/graphql";
 import { useUser } from "@/features/users/context/current-user.context";
+import { useFieldAccess } from "@/components/form/field-resource-context";
 
 import type { EmployeeDetail } from "../actions/get-employee-by-id.action";
 
@@ -28,14 +29,21 @@ const personaOptions = mapEnumToOptions(Persona);
 interface FormRowProps {
   label: string;
   children: React.ReactNode;
+  /** Catalog field name for `FieldResourceProvider`-gated rows — hides the whole row (label included) when unreadable. */
+  name?: string;
 }
 
-export const FormRow = ({ label, children }: FormRowProps) => (
-  <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-    <div className="text-sm/6 font-medium text-foreground sm:pt-2">{label}</div>
-    <div className="mt-1 sm:col-span-2 sm:mt-0">{children}</div>
-  </div>
-);
+export const FormRow = ({ label, children, name }: FormRowProps) => {
+  const access = useFieldAccess(name ?? "");
+  if (name && !access.visible) return null;
+
+  return (
+    <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+      <div className="text-sm/6 font-medium text-foreground sm:pt-2">{label}</div>
+      <div className="mt-1 sm:col-span-2 sm:mt-0">{children}</div>
+    </div>
+  );
+};
 
 interface PersonalSectionProps {
   employee?: EmployeeDetail;

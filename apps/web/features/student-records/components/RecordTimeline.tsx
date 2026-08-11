@@ -7,6 +7,7 @@ import { MoreHorizontal, Paperclip } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PermissionGate } from "@/components/permission-gate";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -126,7 +127,14 @@ export function RecordTimeline({
                         <Badge variant="outline">{entry.categoryName}</Badge>
                       )}
                       {entry.isConfidential && (
-                        <Badge variant="secondary">{t("confidential")}</Badge>
+                        <PermissionGate
+                          readField={{
+                            resource: "studentRecordEntry",
+                            field: "isConfidential",
+                          }}
+                        >
+                          <Badge variant="secondary">{t("confidential")}</Badge>
+                        </PermissionGate>
                       )}
                       <span className="font-mono text-[11px] uppercase tabular-nums text-muted-foreground">
                         {formatTimestamp(entry.occurredAt, locale, t)}
@@ -138,9 +146,16 @@ export function RecordTimeline({
                       </p>
                     )}
                     {entry.content && (
-                      <p className="mt-0.5 whitespace-pre-wrap text-[13px] text-muted-foreground">
-                        {entry.content}
-                      </p>
+                      <PermissionGate
+                        readField={{
+                          resource: "studentRecordEntry",
+                          field: "content",
+                        }}
+                      >
+                        <p className="mt-0.5 whitespace-pre-wrap text-[13px] text-muted-foreground">
+                          {entry.content}
+                        </p>
+                      </PermissionGate>
                     )}
                     <div className="mt-1.5 flex items-center gap-3 text-[11px] text-muted-foreground">
                       {entry.authorName && (

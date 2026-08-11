@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 
 import { Form } from "@/components/ui/form";
+import { FieldResourceProvider } from "@/components/form/field-resource-context";
 import { Separator } from "@/components/ui/separator";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
@@ -77,6 +78,7 @@ export default function StudentForm({ student }: Props) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <FieldResourceProvider resource="student" mode={isEdit ? "update" : "create"}>
         <section className="space-y-4">
           <h3 className="text-lg font-semibold">{tS("personalData")}</h3>
           <div className="flex gap-4">
@@ -130,6 +132,7 @@ export default function StudentForm({ student }: Props) {
           </div>
           <InputFormField name="notes" label="notes" />
         </section>
+      </FieldResourceProvider>
 
         <FormActionButtons
           disabled={form.formState.isSubmitting}

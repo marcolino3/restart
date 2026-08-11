@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Form } from "@/components/ui/form";
+import { FieldResourceProvider } from "@/components/form/field-resource-context";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
@@ -110,17 +111,18 @@ export default function EmployeeHrTabEdit({
 
   return (
     <Form {...form}>
+      <FieldResourceProvider resource="employeeHrProfile" mode="update">
       <form onSubmit={form.handleSubmit(onValid, onInvalid)}>
         {/* Bankverbindung */}
         <SectionHeader title={tE("hr.bankAccount")} />
         <SectionBody>
-          <FormRow label={tE("hr.iban")}>
+          <FormRow label={tE("hr.iban")} name="iban">
             <InputFormField name="iban" placeholder="CH00 0000 0000 0000 0000 0" />
           </FormRow>
-          <FormRow label={tE("hr.bankAccountHolder")}>
+          <FormRow label={tE("hr.bankAccountHolder")} name="bankAccountHolder">
             <InputFormField name="bankAccountHolder" />
           </FormRow>
-          <FormRow label={tE("hr.bankName")}>
+          <FormRow label={tE("hr.bankName")} name="bankName">
             <InputFormField name="bankName" />
           </FormRow>
         </SectionBody>
@@ -128,10 +130,10 @@ export default function EmployeeHrTabEdit({
         {/* Persönliche Versicherungs-/Steuer-Daten */}
         <SectionHeader title={tE("hr.insurances")} mt />
         <SectionBody>
-          <FormRow label={tE("hr.bvgInsuranceNumber")}>
+          <FormRow label={tE("hr.bvgInsuranceNumber")} name="bvgInsuranceNumber">
             <InputFormField name="bvgInsuranceNumber" />
           </FormRow>
-          <FormRow label={tE("hr.withholdingTaxCode")}>
+          <FormRow label={tE("hr.withholdingTaxCode")} name="withholdingTaxCode">
             <InputFormField
               name="withholdingTaxCode"
               placeholder="A0N"
@@ -143,14 +145,14 @@ export default function EmployeeHrTabEdit({
         {/* Stammdaten */}
         <SectionHeader title={tE("hr.personalData")} mt />
         <SectionBody>
-          <FormRow label={tE("hr.nationality")}>
+          <FormRow label={tE("hr.nationality")} name="nationality">
             <CountryComboboxFormField
               name="nationality"
               label=""
               width="w-full sm:w-1/2"
             />
           </FormRow>
-          <FormRow label={tE("hr.residencePermitType")}>
+          <FormRow label={tE("hr.residencePermitType")} name="residencePermitType">
             <SelectFormField
               name="residencePermitType"
               options={residencePermitOptions}
@@ -159,7 +161,7 @@ export default function EmployeeHrTabEdit({
               width="w-full sm:w-1/2"
             />
           </FormRow>
-          <FormRow label={tE("hr.residencePermitValidUntil")}>
+          <FormRow label={tE("hr.residencePermitValidUntil")} name="residencePermitValidUntil">
             <DatePickerFormField
               name="residencePermitValidUntil"
               namespace="Employees"
@@ -167,7 +169,7 @@ export default function EmployeeHrTabEdit({
               disabledDate={() => false}
             />
           </FormRow>
-          <FormRow label={tE("hr.maritalStatus")}>
+          <FormRow label={tE("hr.maritalStatus")} name="maritalStatus">
             <SelectFormField
               name="maritalStatus"
               options={maritalStatusOptions}
@@ -176,10 +178,10 @@ export default function EmployeeHrTabEdit({
               width="w-full sm:w-1/2"
             />
           </FormRow>
-          <FormRow label={tE("hr.denomination")}>
+          <FormRow label={tE("hr.denomination")} name="denomination">
             <InputFormField name="denomination" />
           </FormRow>
-          <FormRow label={tE("hr.numberOfChildren")}>
+          <FormRow label={tE("hr.numberOfChildren")} name="numberOfChildren">
             <InputFormField
               name="numberOfChildren"
               type="number"
@@ -218,6 +220,7 @@ export default function EmployeeHrTabEdit({
           }
         />
       </form>
+      </FieldResourceProvider>
     </Form>
   );
 }

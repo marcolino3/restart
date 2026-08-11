@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
+import { FieldResourceProvider } from "@/components/form/field-resource-context";
 import { Input } from "@/components/ui/input";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
@@ -269,6 +270,7 @@ export function CreateApplicationDialog({
             className="flex min-h-0 flex-1 flex-col"
           >
             <DialogBody>
+            <FieldResourceProvider resource="admissionApplication" mode="create">
               {/* Two columns on wide screens: left = child + application +
                   family, right = contact persons. Stacks on narrow screens. */}
               <div className="grid gap-x-6 gap-y-3.5 lg:grid-cols-2">
@@ -415,6 +417,7 @@ export function CreateApplicationDialog({
                   <ContactPersonsFieldArray roleOptions={roleOptions} />
                 </div>
               </div>
+            </FieldResourceProvider>
             </DialogBody>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>

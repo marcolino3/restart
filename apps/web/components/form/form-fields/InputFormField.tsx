@@ -62,6 +62,7 @@ export const InputFormField = ({
           <FormControl>
             <Input
               {...field}
+              value={field.value ?? ""}
               type={type}
               step={step}
               placeholder={placeholder}

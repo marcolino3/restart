@@ -12,6 +12,10 @@ import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { NumberFormField } from "@/components/form/form-fields/NumberFormField";
 import { useSheet } from "@/components/providers/sheet-provider";
 import {
+  FieldResourceProvider,
+  useFieldAccess,
+} from "@/components/form/field-resource-context";
+import {
   createPaidOvertimeFormSchema,
   type PaidOvertimeFormInput,
   type PaidOvertimeFormOutput,
@@ -70,30 +74,19 @@ export const PaidOvertimeForm = ({ employeeId, entry, onSaved }: Props) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="form-gap-y">
-        <DatePickerFormField
-          name="date"
-          label="date"
-          namespace="TimeTracking"
-          disabledDate={() => false}
-        />
-        <div className="flex gap-4">
-          <NumberFormField
-            name="hours"
-            label="hours"
+        <FieldResourceProvider
+          resource="employeePaidOvertime"
+          mode={entry ? "update" : "create"}
+        >
+          <DatePickerFormField
+            name="date"
+            label="date"
             namespace="TimeTracking"
-            min={0}
-            nullable={false}
+            disabledDate={() => false}
           />
-          <NumberFormField
-            name="minutes"
-            label="minutes"
-            namespace="TimeTracking"
-            min={0}
-            max={59}
-            nullable={false}
-          />
-        </div>
-        <InputFormField name="note" label="note" namespace="TimeTracking" />
+          <HoursMinutesFields />
+          <InputFormField name="note" label="note" namespace="TimeTracking" />
+        </FieldResourceProvider>
         <Button type="submit" disabled={form.formState.isSubmitting}>
           {entry ? t("editPaidOvertime") : t("addPaidOvertime")}
         </Button>
@@ -101,3 +94,30 @@ export const PaidOvertimeForm = ({ employeeId, entry, onSaved }: Props) => {
     </Form>
   );
 };
+
+// `minutes` is the catalog field; `hours` has no catalog entry of its own
+// but composes the same stored value, so it must be gated the same way.
+function HoursMinutesFields() {
+  const { visible } = useFieldAccess("minutes");
+  if (!visible) return null;
+
+  return (
+    <div className="flex gap-4">
+      <NumberFormField
+        name="hours"
+        label="hours"
+        namespace="TimeTracking"
+        min={0}
+        nullable={false}
+      />
+      <NumberFormField
+        name="minutes"
+        label="minutes"
+        namespace="TimeTracking"
+        min={0}
+        max={59}
+        nullable={false}
+      />
+    </div>
+  );
+}

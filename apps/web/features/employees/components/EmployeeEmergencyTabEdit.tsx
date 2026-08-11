@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Form } from "@/components/ui/form";
+import { FieldResourceProvider } from "@/components/form/field-resource-context";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
@@ -128,9 +129,10 @@ export default function EmployeeEmergencyTabEdit({ employeeId, profile }: Props)
         {renderContact("1", tE("emergency.contactPrimary"))}
         {renderContact("2", tE("emergency.contactSecondary"))}
 
+        <FieldResourceProvider resource="employeeEmergencyProfile" mode="update">
         <SectionHeader title={tE("emergency.healthInfo")} mt />
         <SectionBody>
-          <FormRow label={tE("emergency.bloodType")}>
+          <FormRow label={tE("emergency.bloodType")} name="bloodType">
             <SelectFormField
               name="bloodType"
               options={bloodTypeOptions}
@@ -139,35 +141,36 @@ export default function EmployeeEmergencyTabEdit({ employeeId, profile }: Props)
               width="w-full sm:w-1/3"
             />
           </FormRow>
-          <FormRow label={tE("emergency.allergies")}>
+          <FormRow label={tE("emergency.allergies")} name="allergies">
             <TextareaFormField
               name="allergies"
               placeholder={tE("emergency.allergiesPlaceholder")}
             />
           </FormRow>
-          <FormRow label={tE("emergency.chronicConditions")}>
+          <FormRow label={tE("emergency.chronicConditions")} name="chronicConditions">
             <TextareaFormField name="chronicConditions" />
           </FormRow>
-          <FormRow label={tE("emergency.medications")}>
+          <FormRow label={tE("emergency.medications")} name="emergencyMedications">
             <TextareaFormField
               name="emergencyMedications"
               placeholder={tE("emergency.medicationsPlaceholder")}
             />
           </FormRow>
-          <FormRow label={tE("emergency.primaryDoctorName")}>
+          <FormRow label={tE("emergency.primaryDoctorName")} name="primaryDoctorName">
             <InputFormField name="primaryDoctorName" />
           </FormRow>
-          <FormRow label={tE("emergency.primaryDoctorPhone")}>
+          <FormRow label={tE("emergency.primaryDoctorPhone")} name="primaryDoctorPhone">
             <InputFormField
               name="primaryDoctorPhone"
               type="tel"
               placeholder="+41 00 000 00 00"
             />
           </FormRow>
-          <FormRow label={tE("emergency.pharmacy")}>
+          <FormRow label={tE("emergency.pharmacy")} name="pharmacyName">
             <InputFormField name="pharmacyName" />
           </FormRow>
         </SectionBody>
+        </FieldResourceProvider>
 
         <FormActionButtons
           disabled={form.formState.isSubmitting}

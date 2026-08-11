@@ -14,6 +14,9 @@ import {
 
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import { useFieldAccess } from '@/components/form/field-resource-context'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { useTranslations } from 'next-intl'
 
 const Form = FormProvider
 
@@ -50,6 +53,7 @@ const FormField = <
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext)
   const itemContext = React.useContext(FormItemContext)
+  const access = useFieldAccess(fieldContext.name)
 
   if (!fieldContext) {
     throw new Error('useFormField should be used within <FormField>')
@@ -66,6 +70,8 @@ const useFormField = () => {
     error: fieldContext.fieldState?.error,
     isTouched: fieldContext.fieldState?.isTouched,
     isDirty: fieldContext.fieldState?.isDirty,
+    fieldVisible: access.visible,
+    fieldEditable: access.editable,
   }
 }
 
@@ -79,14 +85,18 @@ const FormItemContext = React.createContext<FormItemContextValue>(
 
 function FormItem({ className, ...props }: React.ComponentProps<'div'>) {
   const id = React.useId()
+  const fieldContext = React.useContext(FormFieldContext)
+  const access = useFieldAccess(fieldContext.name)
 
   return (
     <FormItemContext.Provider value={{ id }}>
-      <div
-        data-slot="form-item"
-        className={cn('relative grid gap-2', className)}
-        {...props}
-      />
+      {access.visible ? (
+        <div
+          data-slot="form-item"
+          className={cn('relative grid gap-2', className)}
+          {...props}
+        />
+      ) : null}
     </FormItemContext.Provider>
   )
 }
@@ -110,10 +120,11 @@ function FormLabel({
   )
 }
 
-function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
-  const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
+function FormControl({ children, ...props }: React.ComponentProps<typeof Slot>) {
+  const { error, formItemId, formDescriptionId, formMessageId, fieldEditable } = useFormField()
+  const t = useTranslations('Common')
 
-  return (
+  const slot = (
     <Slot
       data-slot="form-control"
       id={formItemId}
@@ -124,7 +135,29 @@ function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
       }
       aria-invalid={!!error}
       {...props}
-    />
+    >
+      {/* cloneElement's own props win over the child's, unlike Slot's merge —
+          this is the only way to force-disable a control that already sets
+          its own `disabled` prop (every form-field component does). */}
+      {!fieldEditable && React.isValidElement(children)
+        ? React.cloneElement(children as React.ReactElement<{ disabled?: boolean }>, {
+            disabled: true,
+          })
+        : children}
+    </Slot>
+  )
+
+  if (fieldEditable) return slot
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-block w-full" tabIndex={0}>
+          {slot}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>{t('fieldPermissionDenied')}</TooltipContent>
+    </Tooltip>
   )
 }
 

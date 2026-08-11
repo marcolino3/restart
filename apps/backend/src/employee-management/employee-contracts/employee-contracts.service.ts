@@ -11,6 +11,7 @@ import { UpdateEmployeeContractInput } from './dto/update-employee-contract.inpu
 import {
   assertContractTypeFields,
   clearHiddenContractFields,
+  type ContractTypeDependentField,
 } from './contract-type-rules';
 import { applyExclusiveScheduleFields } from './contract-schedule';
 
@@ -29,8 +30,9 @@ export class EmployeeContractsService {
   async create(
     input: CreateEmployeeContractInput,
     organizationId: string,
+    hiddenByPermission?: ReadonlySet<ContractTypeDependentField>,
   ): Promise<EmployeeContract> {
-    assertContractTypeFields(input, input.contractType);
+    assertContractTypeFields(input, input.contractType, hiddenByPermission);
 
     return this.dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(EmployeeContract);
@@ -85,6 +87,7 @@ export class EmployeeContractsService {
   async update(
     input: UpdateEmployeeContractInput,
     organizationId: string,
+    hiddenByPermission?: ReadonlySet<ContractTypeDependentField>,
   ): Promise<EmployeeContract> {
     const previous = await this.findOne(input.id, organizationId);
 
@@ -141,7 +144,7 @@ export class EmployeeContractsService {
     // Empty `{}` must not wipe workloads; only real window entries count.
     applyExclusiveScheduleFields(merged);
 
-    assertContractTypeFields(merged, merged.contractType);
+    assertContractTypeFields(merged, merged.contractType, hiddenByPermission);
     clearHiddenContractFields(merged, merged.contractType);
 
     // Same effective date → correct the current row in place. A later start

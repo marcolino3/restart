@@ -7,11 +7,16 @@ import { getLocale } from "next-intl/server";
 import {
   EmployeeContractFormSchema,
   EmployeeContractFormOutput,
+  buildEmployeeContractFormSchema,
   clearHiddenContractFormFields,
 } from "../schemas/employee-contract-form.schema";
 import type { WeekdayTimeWindows } from "@restart/shared-schemas/employees/employee-onboarding-form.schema";
 import type { z } from "zod";
 import type { EmployeeContractTypeEnum } from "@restart/shared-schemas/employees/employee-contract-form.schema";
+import {
+  CONTRACT_TYPE_DEPENDENT_FIELDS,
+  type ContractTypeDependentField,
+} from "@restart/shared-schemas/employees/contract-type-rules";
 
 export type EmployeeContractType = z.infer<typeof EmployeeContractTypeEnum>;
 
@@ -133,13 +138,28 @@ const toIsoDate = (d: Date | string | null | undefined) => {
 
 export const saveEmployeeContractAction = async (
   values: EmployeeContractFormOutput,
+  hiddenByPermission: ContractTypeDependentField[] = [],
 ) => {
   const locale = await getLocale();
+  const schema =
+    hiddenByPermission.length === 0
+      ? EmployeeContractFormSchema
+      : buildEmployeeContractFormSchema(new Set(hiddenByPermission));
   let parsed: EmployeeContractFormOutput;
   try {
-    parsed = clearHiddenContractFormFields(
-      EmployeeContractFormSchema.parse(values),
-    );
+    parsed = clearHiddenContractFormFields(schema.parse(values));
+    // Fields the caller cannot write must never reach the mutation, even
+    // with a falsy default value (e.g. has13thSalary: false) — the backend
+    // FieldWriteGuard rejects the request outright if the key is present.
+    // hiddenByPermission is client-supplied, so only ever index using the
+    // fixed field list — never the caller's array values directly.
+    const hiddenSet = new Set<ContractTypeDependentField>(hiddenByPermission);
+    const writable = parsed as Record<ContractTypeDependentField, unknown>;
+    for (const field of CONTRACT_TYPE_DEPENDENT_FIELDS) {
+      if (hiddenSet.has(field)) {
+        writable[field] = null;
+      }
+    }
   } catch (error) {
     console.error("Contract form validation failed", error);
     return {

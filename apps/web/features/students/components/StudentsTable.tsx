@@ -40,7 +40,10 @@ import { StudentListItem } from "../actions/get-students.action";
 import { deleteStudentAction } from "../actions/delete-student.action";
 import { StudentAvatar } from "./StudentAvatar";
 import { handleAction } from "@/lib/actions/handle-action";
-import { useUser } from "@/features/users/context/current-user.context";
+import {
+  useUser,
+  usePermissions,
+} from "@/features/users/context/current-user.context";
 import { hasAdminRole } from "@/features/users/lib/admin-roles";
 
 interface Props {
@@ -100,6 +103,8 @@ const useColumns = (): ColumnDef<AppTableFeatures, StudentListItem, unknown>[] =
   const user = useUser();
   const canEditOrDelete =
     (user?.isSuperAdmin ?? false) || hasAdminRole(user?.roles);
+  const { canReadField } = usePermissions();
+  const dobVisible = canReadField("student", "dateOfBirth");
 
   const columns: ColumnDef<AppTableFeatures, StudentListItem, unknown>[] = [
     {
@@ -135,7 +140,7 @@ const useColumns = (): ColumnDef<AppTableFeatures, StudentListItem, unknown>[] =
       meta: { labelKey: "name" },
       cell: ({ row }) => {
         const s = row.original;
-        const dob = s.dateOfBirth;
+        const dob = dobVisible ? s.dateOfBirth : undefined;
         const subtitle = dob
           ? tS("birthInfo", {
               date: new Date(dob).toLocaleDateString("de-CH"),

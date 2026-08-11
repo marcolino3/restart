@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   EMPLOYEE_CONTRACT_TYPES,
+  CONTRACT_TYPE_DEPENDENT_FIELDS,
   contractTypeRules,
   missingRequiredContractFields,
   type ContractTypeDependentField,
@@ -104,6 +105,32 @@ export const EmployeeContractFormSchema =
   });
 
 /**
+ * Same schema, but a field the caller cannot write (field-level RBAC hid it
+ * in the UI) never counts as "missing" — the form must stay submittable even
+ * though the contract type would otherwise require it.
+ */
+export function buildEmployeeContractFormSchema(
+  hiddenByPermission: ReadonlySet<ContractTypeDependentField>,
+) {
+  if (hiddenByPermission.size === 0) return EmployeeContractFormSchema;
+
+  return BaseEmployeeContractFormSchema.superRefine((values, ctx) => {
+    refineEndDateNotBeforeStart(values, ctx);
+    for (const field of missingRequiredContractFields(
+      values,
+      values.contractType,
+    )) {
+      if (hiddenByPermission.has(field)) continue;
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [field],
+        message: "Dieses Feld ist für die gewählte Vertragsart erforderlich",
+      });
+    }
+  });
+}
+
+/**
  * Clears every field that does not apply to the chosen contract type, so a type
  * switch cannot leave contradicting leftovers (e.g. an hourly rate on a
  * permanent contract).
@@ -114,9 +141,9 @@ export function clearHiddenContractFormFields<
   },
 >(values: T): T {
   const rules = contractTypeRules(values.contractType);
-  for (const field of Object.keys(rules) as ContractTypeDependentField[]) {
+  for (const field of CONTRACT_TYPE_DEPENDENT_FIELDS) {
     if (rules[field] === "hidden") {
-      (values as Record<string, unknown>)[field] = null;
+      values[field] = null;
     }
   }
   return values;

@@ -233,7 +233,6 @@ test.describe('My time tracking — absences, company vacations, holidays', () =
     // with an invisible leftover from a prior run — retry across a wider
     // pool of candidate days.
     const holidayDayCandidates = [5, 6, 7, 8, 9, 10, 11, 12]
-    let holidayDate = ''
     for (let attempt = 0; attempt < holidayDayCandidates.length; attempt++) {
       const candidate = dayInCurrentMonth(holidayDayCandidates[attempt])
       try {
@@ -246,7 +245,6 @@ test.describe('My time tracking — absences, company vacations, holidays', () =
             input: { date: candidate, name: holidayName, paidPercentage: 100 },
           },
         )
-        holidayDate = candidate
         break
       } catch (err) {
         const isLastAttempt = attempt === holidayDayCandidates.length - 1
