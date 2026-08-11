@@ -99,15 +99,17 @@ export function EmployeeContractForm({
     `${ROUTES.admin.employeesView(locale, employeeId)}?tab=contracts`;
 
   const { canReadField } = usePermissions();
-  const schema = useMemo(() => {
-    const hiddenByPermission = new Set(
+  const hiddenByPermission = useMemo(
+    () =>
       CONTRACT_TYPE_DEPENDENT_FIELDS.filter(
         (field) => !canReadField("employeeContract", field),
       ),
-    );
-    return buildEmployeeContractFormSchema(hiddenByPermission);
-     
-  }, [canReadField]);
+    [canReadField],
+  );
+  const schema = useMemo(
+    () => buildEmployeeContractFormSchema(new Set(hiddenByPermission)),
+    [hiddenByPermission],
+  );
 
   const form = useForm({
     resolver: zodResolver(schema),
@@ -120,7 +122,7 @@ export function EmployeeContractForm({
 
   const onValid = async (values: EmployeeContractFormOutput) => {
     await handleAction({
-      action: () => saveEmployeeContractAction(values),
+      action: () => saveEmployeeContractAction(values, hiddenByPermission),
       successMessage: contract ? tE("contract.updated") : tE("contract.created"),
       errorMessage: tE("contract.saveError"),
       onSuccess: goBack,
