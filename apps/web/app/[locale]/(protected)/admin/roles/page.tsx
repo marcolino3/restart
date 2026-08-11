@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 
 import { getRolesAction } from "@/features/roles/actions/get-roles.action";
 import { getPermissionsAction } from "@/features/roles/actions/get-permissions.action";
-import { RolePermissionMatrix } from "@/features/roles/components/RolePermissionMatrix";
+import { RolesOverview } from "@/features/roles/components/RolesOverview";
 
 const RolesPage = async () => {
   const [rolesResult, permissionsResult, t] = await Promise.all([
@@ -16,10 +16,7 @@ const RolesPage = async () => {
   }
 
   return (
-    <RolePermissionMatrix
-      roles={rolesResult.data}
-      permissions={permissionsResult.data}
-    />
+    <RolesOverview roles={rolesResult.data} permissions={permissionsResult.data} />
   );
 };
 

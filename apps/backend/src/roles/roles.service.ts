@@ -32,7 +32,7 @@ export class RolesService {
   async findAllByOrgId(orgId: string): Promise<Role[]> {
     return this.roleRepo.find({
       where: { organizationId: orgId },
-      relations: ['permissions'],
+      relations: ['permissions', 'memberships', 'memberships.user'],
       order: { isSystem: 'DESC', name: 'ASC' },
     });
   }
