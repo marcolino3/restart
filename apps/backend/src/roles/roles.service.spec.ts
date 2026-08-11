@@ -210,6 +210,43 @@ describe('RolesService', () => {
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
+
+    it('accepts the newly-catalogued admissionAuditLog fields as a valid grant', async () => {
+      roleRepo.findOne.mockResolvedValue({
+        id: 'role-1',
+        organizationId: orgId,
+        isSystem: false,
+        permissions: [],
+      });
+
+      const actorFieldPermissions = new Map<string, Set<string>>([
+        ['admissionAuditLog.oldValue', new Set(['read'])],
+        ['admissionAuditLog.newValue', new Set(['read'])],
+      ]);
+
+      await expect(
+        service.updateRoleFieldPermissions(
+          orgId,
+          'role-1',
+          [
+            {
+              resource: 'admissionAuditLog',
+              field: 'oldValue',
+              actions: ['read'],
+            },
+            {
+              resource: 'admissionAuditLog',
+              field: 'newValue',
+              actions: ['read'],
+            },
+          ],
+          actorFieldPermissions,
+        ),
+      ).resolves.toBeDefined();
+      expect(roleFieldPermissionRepo.delete).toHaveBeenCalledWith({
+        roleId: 'role-1',
+      });
+    });
   });
 
   describe('system role immutability', () => {
