@@ -180,7 +180,7 @@ export const OrganizationsTable = ({ data }: Props) => {
     [t],
   );
 
-  const handleRowClick = (row: Row<OrganizationRow>) => {
+  const handleRowClick = (row: Row<AppTableFeatures, OrganizationRow>) => {
     router.push(
       ROUTES.admin.organizationsEdit(locale, row.original.organization.id),
     );
