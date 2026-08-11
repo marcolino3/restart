@@ -190,7 +190,7 @@ export function missingRequiredContractFields(
   type?: string | null,
 ): ContractTypeDependentField[] {
   const rules = contractTypeRules(type);
-  return (Object.keys(rules) as ContractTypeDependentField[]).filter(
+  return CONTRACT_TYPE_DEPENDENT_FIELDS.filter(
     (field) => rules[field] === "required" && isBlank(values[field]),
   );
 }

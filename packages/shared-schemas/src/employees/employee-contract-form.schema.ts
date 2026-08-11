@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   EMPLOYEE_CONTRACT_TYPES,
+  CONTRACT_TYPE_DEPENDENT_FIELDS,
   contractTypeRules,
   missingRequiredContractFields,
   type ContractTypeDependentField,
@@ -140,9 +141,9 @@ export function clearHiddenContractFormFields<
   },
 >(values: T): T {
   const rules = contractTypeRules(values.contractType);
-  for (const field of Object.keys(rules) as ContractTypeDependentField[]) {
+  for (const field of CONTRACT_TYPE_DEPENDENT_FIELDS) {
     if (rules[field] === "hidden") {
-      (values as Record<string, unknown>)[field] = null;
+      values[field] = null;
     }
   }
   return values;
