@@ -4,6 +4,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { RolesService } from './roles.service';
 import { Role } from './entities/role.entity';
@@ -277,6 +278,30 @@ describe('RolesService', () => {
         service.deleteRole(orgId, 'role-sys'),
       ).rejects.toBeInstanceOf(ForbiddenException);
       expect(roleRepo.remove).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('multi-tenant isolation - field permissions', () => {
+    it('rejects updateRoleFieldPermissions for a role belonging to another org', async () => {
+      // findOne queries WHERE id AND organizationId - a foreign-org role never
+      // matches and TypeORM resolves null, exactly like a missing role.
+      roleRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.updateRoleFieldPermissions(
+          orgId,
+          'role-foreign',
+          [
+            {
+              resource: 'admissionAuditLog',
+              field: 'oldValue',
+              actions: ['read'],
+            },
+          ],
+          new Map(),
+        ),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(roleFieldPermissionRepo.save).not.toHaveBeenCalled();
     });
   });
 
