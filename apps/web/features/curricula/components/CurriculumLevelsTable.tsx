@@ -6,12 +6,17 @@ import {
   type ColumnDef,
   type ExpandedState,
   type SortingState,
+  columnFilteringFeature,
+  columnVisibilityFeature,
+  createExpandedRowModel,
+  createFilteredRowModel,
+  createSortedRowModel,
   flexRender,
-  getCoreRowModel,
-  getExpandedRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
-  useReactTable,
+  globalFilteringFeature,
+  rowExpandingFeature,
+  rowSortingFeature,
+  tableFeatures,
+  useTable,
 } from "@tanstack/react-table";
 import {
   ChevronDown,
@@ -48,7 +53,24 @@ interface Props {
   allLessons?: import("@/features/record-keeping/types").LessonOption[];
 }
 
-type LevelRow = CurriculumLevelDTO & { name: string };
+type LevelRow = Record<string, unknown> & CurriculumLevelDTO & { name: string };
+
+/**
+ * This table renders its own markup (not the shared `DataTable`), so it
+ * registers only the features it actually uses instead of `appTableFeatures`.
+ */
+const levelsTableFeatures = tableFeatures({
+  rowSortingFeature,
+  rowExpandingFeature,
+  columnFilteringFeature,
+  columnVisibilityFeature,
+  globalFilteringFeature,
+  filteredRowModel: createFilteredRowModel(),
+  sortedRowModel: createSortedRowModel(),
+  expandedRowModel: createExpandedRowModel(),
+});
+
+type LevelsTableFeatures = typeof levelsTableFeatures;
 
 function nodeListsStructurallyEqual(
   a: CurriculumNodeDTO[],
@@ -193,7 +215,9 @@ export function CurriculumLevelsTable({
     });
   }, [filterLc, nodeMatchesByLevel]);
 
-  const columns = useMemo<ColumnDef<LevelRow>[]>(
+  const columns = useMemo<
+    ColumnDef<LevelsTableFeatures, LevelRow, unknown>[]
+  >(
     () => [
       {
         id: "expander",
@@ -249,8 +273,9 @@ export function CurriculumLevelsTable({
     [t, tCommon, nodesByLevel, loading],
   );
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions by design
-  const table = useReactTable({
+   
+  const table = useTable<LevelsTableFeatures, LevelRow>({
+    features: levelsTableFeatures,
     data,
     columns,
     getRowId: (row) => row.id,
@@ -258,10 +283,6 @@ export function CurriculumLevelsTable({
     onExpandedChange: setExpanded,
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
     globalFilterFn: (row, _columnId, filterValue) => {
       const filter = String(filterValue).toLowerCase().trim();
       if (!filter) return true;

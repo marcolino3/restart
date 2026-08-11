@@ -9,7 +9,7 @@ export type RecentLessonRecordStudent = {
   lastName: string;
 };
 
-export type RecentLessonRecordItem = {
+export type RecentLessonRecordItem = Record<string, unknown> & {
   lessonId: string;
   lessonName: string | null;
   areaName: string | null;

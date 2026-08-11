@@ -18,7 +18,7 @@ const GetOrganizationSettingsDocument = graphql(`
   }
 `);
 
-export interface OrganizationSetting {
+export interface OrganizationSetting extends Record<string, unknown> {
   id: string;
   organizationId: string;
   key: string;

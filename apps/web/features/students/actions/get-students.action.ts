@@ -3,7 +3,7 @@
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
 
-export type StudentListItem = {
+export type StudentListItem = Record<string, unknown> & {
   id: string;
   firstName: string;
   lastName: string;

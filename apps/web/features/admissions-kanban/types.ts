@@ -33,7 +33,7 @@ export type Gender = "MALE" | "FEMALE" | "OTHER";
 export type AdmissionRejectedBy = "SCHOOL" | "PARENTS" | "OTHER";
 
 /** A rejected application row for the rejections list page. */
-export type RejectedApplication = {
+export type RejectedApplication = Record<string, unknown> & {
   id: string;
   childFirstName: string;
   childLastName: string;
@@ -89,7 +89,7 @@ export type KanbanFamilySnippet = {
   childrenCount: number;
 };
 
-export type KanbanApplication = {
+export type KanbanApplication = Record<string, unknown> & {
   id: string;
   admissionStageId: string;
   position: number;

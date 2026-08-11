@@ -42,7 +42,10 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { SearchInput } from "@/components/common/SearchInput";
 import { DataTable } from "@/components/data-table/DataTable";
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
-import { useDataTable } from "@/components/data-table/use-data-table";
+import {
+  type AppTableFeatures,
+  useDataTable,
+} from "@/components/data-table/use-data-table";
 import { cn } from "@/lib/utils";
 
 import { membershipInitials } from "../lib/membership-name";
@@ -155,7 +158,7 @@ export function ProjectsList({
     );
   });
 
-  const columns = React.useMemo<ColumnDef<ProjectListItem>[]>(
+  const columns = React.useMemo<ColumnDef<AppTableFeatures, ProjectListItem, unknown>[]>(
     () => [
       {
         id: "title",

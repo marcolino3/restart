@@ -12,7 +12,10 @@ import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmation
 import { DataTable } from "@/components/data-table/DataTable";
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
 import type { FilterGroup } from "@/components/data-table/DataTableFilter";
-import { useDataTable } from "@/components/data-table/use-data-table";
+import {
+  type AppTableFeatures,
+  useDataTable,
+} from "@/components/data-table/use-data-table";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,7 +49,7 @@ const STATUS_BADGE_VARIANT: Record<string, BadgeProps["variant"]> = {
 const useColumns = (
   onEdit: (entry: RecentLessonRecordItem) => void,
   onDeleteRequest: (entry: RecentLessonRecordItem) => void,
-): ColumnDef<RecentLessonRecordItem>[] => {
+): ColumnDef<AppTableFeatures, RecentLessonRecordItem, unknown>[] => {
   const t = useTranslations("RecordKeeping");
   const tCommon = useTranslations("Common");
   const locale = useLocale();

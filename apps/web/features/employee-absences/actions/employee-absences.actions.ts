@@ -12,7 +12,7 @@ import { toAbsenceIsoDateTime } from "@restart/shared-schemas/employee-absences/
 import type { AbsenceDocument } from "@restart/shared-schemas/employee-absences/absence-document";
 import type { AbsenceCategoryTranslation } from "@/features/employee-absence-categories/types";
 
-export type EmployeeAbsence = {
+export type EmployeeAbsence = Record<string, unknown> & {
   id: string;
   employeeId: string;
   absenceCategoryId: string;

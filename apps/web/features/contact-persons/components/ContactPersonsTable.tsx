@@ -13,7 +13,10 @@ import { PersonCell } from "@/components/common/PersonCell";
 import { DataTable } from "@/components/data-table/DataTable";
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
 import type { FilterGroup } from "@/components/data-table/DataTableFilter";
-import { useDataTable } from "@/components/data-table/use-data-table";
+import {
+  type AppTableFeatures,
+  useDataTable,
+} from "@/components/data-table/use-data-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,7 +42,11 @@ const initials = (row: ContactPersonListItem) =>
   "?";
 
 /** Search across name + email for the merged person column. */
-const personFilter: FilterFn<ContactPersonListItem> = (row, _columnId, value) => {
+const personFilter: FilterFn<AppTableFeatures, ContactPersonListItem> = (
+  row,
+  _columnId,
+  value,
+) => {
   const needle = String(value ?? "")
     .trim()
     .toLowerCase();
@@ -50,7 +57,11 @@ const personFilter: FilterFn<ContactPersonListItem> = (row, _columnId, value) =>
   return hay.includes(needle);
 };
 
-const useColumns = (): ColumnDef<ContactPersonListItem>[] => {
+const useColumns = (): ColumnDef<
+  AppTableFeatures,
+  ContactPersonListItem,
+  unknown
+>[] => {
   const t = useTranslations("Common");
   const tC = useTranslations("ContactPersons");
   const locale = useLocale();

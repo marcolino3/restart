@@ -13,7 +13,10 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/data-table/DataTable";
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
 import type { FilterGroup } from "@/components/data-table/DataTableFilter";
-import { useDataTable } from "@/components/data-table/use-data-table";
+import {
+  type AppTableFeatures,
+  useDataTable,
+} from "@/components/data-table/use-data-table";
 import { multiSelectFilter } from "@/lib/table/locale-sorting";
 import { ROUTES } from "@/constants/routes";
 import { DetailPanel, KvRow } from "@/components/common/DetailPanel";
@@ -88,8 +91,8 @@ export default function EmployeeAbsencesTab({
     }
   };
 
-  const columns = useMemo<ColumnDef<EmployeeAbsence>[]>(() => {
-    const cols: ColumnDef<EmployeeAbsence>[] = [
+  const columns = useMemo<ColumnDef<AppTableFeatures, EmployeeAbsence, unknown>[]>(() => {
+    const cols: ColumnDef<AppTableFeatures, EmployeeAbsence, unknown>[] = [
       {
         id: "category",
         accessorFn: (a) => categoryLabel(a),

@@ -25,7 +25,10 @@ import {
 import { handleAction } from "@/lib/actions/handle-action";
 import { DataTable } from "@/components/data-table/DataTable";
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
-import { useDataTable } from "@/components/data-table/use-data-table";
+import {
+  type AppTableFeatures,
+  useDataTable,
+} from "@/components/data-table/use-data-table";
 import { ROUTES } from "@/constants/routes";
 import { useUser } from "@/features/users/context/current-user.context";
 import { archiveCurriculumAction } from "../actions/archive-curriculum.action";
@@ -44,7 +47,7 @@ interface Props {
   headerActions?: React.ReactNode;
 }
 
-type CurriculumRow = CurriculumDTO & { name: string };
+type CurriculumRow = Record<string, unknown> & CurriculumDTO & { name: string };
 
 export function CurriculaTable({ data, headerActions }: Props) {
   const t = useTranslations("Curricula");
@@ -75,7 +78,7 @@ export function CurriculaTable({ data, headerActions }: Props) {
     [data, localeUpper],
   );
 
-  const columns = useMemo<ColumnDef<CurriculumRow>[]>(
+  const columns = useMemo<ColumnDef<AppTableFeatures, CurriculumRow, unknown>[]>(
     () => [
       {
         accessorKey: "name",

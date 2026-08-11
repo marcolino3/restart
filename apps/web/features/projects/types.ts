@@ -37,7 +37,7 @@ export type ProjectTaskStats = {
   done: number;
 };
 
-export type ProjectListItem = {
+export type ProjectListItem = Record<string, unknown> & {
   id: string;
   title: string;
   description?: string | null;
@@ -136,7 +136,7 @@ export type ProtocolParticipantRef = {
   membership?: MembershipRef | null;
 };
 
-export type ProtocolListItem = {
+export type ProtocolListItem = Record<string, unknown> & {
   id: string;
   title: string;
   meetingDate?: string | null;
@@ -177,7 +177,7 @@ export type TaskNote = {
   createdAt: string;
 };
 
-export type Task = {
+export type Task = Record<string, unknown> & {
   id: string;
   title: string;
   description?: string | null;

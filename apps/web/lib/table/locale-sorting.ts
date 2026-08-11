@@ -1,12 +1,9 @@
-import type { Row, SortingFn } from "@tanstack/react-table";
+import type { FilterFn, Row, TableFeatures } from "@tanstack/react-table";
 
-// NB: deliberately no `declare module "@tanstack/react-table"` augmentation
-// here. Registering named sorting/filter fns makes them part of every
-// `TableOptions` in the project, so all remaining hand-rolled
-// `useReactTable()` calls would fail to typecheck until they are migrated.
-// Columns pass `createLocaleSortingFn(locale)` / `localeIncludesFilter` by
-// reference instead — see `useDataTable`, which applies the locale sorter to
-// every text column by default.
+// `sortFns` must be registered once, statically, in `tableFeatures()` (see
+// `AppTableFeatures` in `components/data-table/use-data-table.ts`) — it can't
+// take a per-render closure. `localeSortFn` stays a stable reference and
+// reads the active locale from `activeSortLocale` instead.
 
 /**
  * Locale-aware table sorting and filtering.
@@ -47,26 +44,40 @@ function toComparableString(value: unknown): string {
 }
 
 /**
- * Builds a locale-aware `sortingFn` for text columns.
+ * Current locale for {@link localeSortFn}. `sortFns` must be registered once
+ * in the static `tableFeatures()` call (see `AppTableFeatures`), so the fn
+ * reference itself must stay stable — it reads the active locale from this
+ * ref instead of closing over one. `useDataTable` updates it on every render.
+ */
+export const activeSortLocale = { current: "de-CH" };
+
+function compareLocaleStrings(a: string, b: string): number {
+  return getCollator(activeSortLocale.current).compare(a, b);
+}
+
+/**
+ * Locale-aware `sortFn` for text columns, registered once as `auto` in
+ * `AppTableFeatures`.
  *
  * Empty values always sort last regardless of direction, so rows with missing
  * data do not push real content off the first page.
  */
-export function createLocaleSortingFn<TData>(
-  locale: string,
-): SortingFn<TData> {
-  const collator = getCollator(locale);
+export function localeSortFn<
+  TFeatures extends TableFeatures,
+  TData extends Record<string, unknown>,
+>(
+  rowA: Row<TFeatures, TData>,
+  rowB: Row<TFeatures, TData>,
+  columnId: string,
+): number {
+  const a = toComparableString(rowA.getValue(columnId)).trim();
+  const b = toComparableString(rowB.getValue(columnId)).trim();
 
-  return (rowA: Row<TData>, rowB: Row<TData>, columnId: string) => {
-    const a = toComparableString(rowA.getValue(columnId)).trim();
-    const b = toComparableString(rowB.getValue(columnId)).trim();
+  if (!a && !b) return 0;
+  if (!a) return 1;
+  if (!b) return -1;
 
-    if (!a && !b) return 0;
-    if (!a) return 1;
-    if (!b) return -1;
-
-    return collator.compare(a, b);
-  };
+  return compareLocaleStrings(a, b);
 }
 
 /**
@@ -84,9 +95,17 @@ export function normalizeForSearch(value: unknown): string {
 /**
  * Diacritic-insensitive substring filter, usable as a column or global
  * `filterFn`.
+ *
+ * A plain function generic over `TFeatures`/`TData` (not a `FilterFn`-typed
+ * const), because `FilterFn`'s type parameters are invariant — a const fixed
+ * to `TableFeatures`/`Record<string, unknown>` would not be assignable to a
+ * `ColumnDef`'s `filterFn` for any concrete app row type.
  */
-export function localeIncludesFilter<TData>(
-  row: Row<TData>,
+export function localeIncludesFilter<
+  TFeatures extends TableFeatures,
+  TData extends Record<string, unknown>,
+>(
+  row: Parameters<FilterFn<TFeatures, TData>>[0],
   columnId: string,
   filterValue: unknown,
 ): boolean {
@@ -100,8 +119,11 @@ export function localeIncludesFilter<TData>(
  * Multi-select filter for scalar columns (faceted filters hand over an array
  * of accepted values). An empty selection means "no filter".
  */
-export function multiSelectFilter<TData>(
-  row: Row<TData>,
+export function multiSelectFilter<
+  TFeatures extends TableFeatures,
+  TData extends Record<string, unknown>,
+>(
+  row: Parameters<FilterFn<TFeatures, TData>>[0],
   columnId: string,
   filterValue: unknown,
 ): boolean {
