@@ -1,14 +1,17 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageHead } from "@/components/common/PageHead";
+import { InitialsAvatar } from "@/components/common/InitialsAvatar";
 import type { RoleWithPermissions } from "../actions/get-roles.action";
 import type { PermissionItem } from "../actions/get-permissions.action";
 import { RoleCard } from "./RoleCard";
 import { RoleComparisonMatrix } from "./RoleComparisonMatrix";
 import { RoleLevelLegend } from "./RoleLevelLegend";
-import { InitialsAvatar } from "@/components/common/InitialsAvatar";
+import { CreateRoleDialog } from "./CreateRoleDialog";
 
 type RolesOverviewProps = {
   roles: RoleWithPermissions[];
@@ -17,6 +20,7 @@ type RolesOverviewProps = {
 
 export function RolesOverview({ roles, permissions }: RolesOverviewProps) {
   const t = useTranslations("Roles");
+  const router = useRouter();
   const availableCodes = new Set(permissions.map((p) => p.code));
 
   const people = roles.flatMap((role) =>
@@ -28,6 +32,16 @@ export function RolesOverview({ roles, permissions }: RolesOverviewProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      <PageHead
+        title={t("title")}
+        subtitle={t("rolesCount", { count: roles.length })}
+        action={
+          <CreateRoleDialog
+            availableSourceRoles={roles}
+            onCreated={() => router.refresh()}
+          />
+        }
+      />
       <RoleLevelLegend />
 
       <Tabs defaultValue="roles">
