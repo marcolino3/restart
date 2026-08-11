@@ -17,7 +17,7 @@ export type EmployeeContractType = z.infer<typeof EmployeeContractTypeEnum>;
 
 export type EmployeePaymentInterval = "MONTHLY_X12" | "MONTHLY_X13";
 
-export type EmployeeContract = {
+export type EmployeeContract = Record<string, unknown> & {
   id: string;
   employeeId: string;
   startDate: string;

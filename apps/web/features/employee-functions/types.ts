@@ -12,7 +12,7 @@ export type EmployeeFunctionTranslation = {
   name: string;
 };
 
-export type EmployeeFunctionItem = {
+export type EmployeeFunctionItem = Record<string, unknown> & {
   id: string;
   name: string;
   sortOrder: number;

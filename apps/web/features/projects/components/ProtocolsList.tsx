@@ -23,7 +23,10 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table/DataTable";
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
-import { useDataTable } from "@/components/data-table/use-data-table";
+import {
+  type AppTableFeatures,
+  useDataTable,
+} from "@/components/data-table/use-data-table";
 import { cn } from "@/lib/utils";
 
 import { deleteProtocolAction } from "../actions/manage-protocols.action";
@@ -101,8 +104,8 @@ export function ProtocolsList({
     [protocols, statusFilter],
   );
 
-  const columns = React.useMemo<ColumnDef<ProtocolListRow>[]>(() => {
-    const cols: ColumnDef<ProtocolListRow>[] = [
+  const columns = React.useMemo<ColumnDef<AppTableFeatures, ProtocolListRow, unknown>[]>(() => {
+    const cols: ColumnDef<AppTableFeatures, ProtocolListRow, unknown>[] = [
       {
         id: "title",
         accessorFn: (p) => p.title,

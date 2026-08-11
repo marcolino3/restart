@@ -14,6 +14,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { type AppTableFeatures } from "./use-data-table";
+
 /**
  * Column metadata a `ColumnDef` can carry so the shared table chrome knows how
  * to label a column outside of its header cell.
@@ -35,8 +37,8 @@ export interface DataTableColumnMeta {
  * Without this, the visibility menu falls back to `column.id` and shows raw
  * field names like "firstName" — untranslated, in every language.
  */
-export function resolveColumnLabel<TData>(
-  column: Column<TData, unknown>,
+export function resolveColumnLabel<TData extends Record<string, unknown>>(
+  column: Column<AppTableFeatures, TData, unknown>,
   translate: (key: string) => string,
 ): string {
   const meta = column.columnDef.meta as DataTableColumnMeta | undefined;
@@ -47,13 +49,13 @@ export function resolveColumnLabel<TData>(
   return column.id;
 }
 
-interface DataTableViewOptionsProps<TData> {
-  table: Table<TData>;
+interface DataTableViewOptionsProps<TData extends Record<string, unknown>> {
+  table: Table<AppTableFeatures, TData>;
   /** Resolves a column's `labelKey` in the calling feature's namespace. */
   translateColumn?: (key: string) => string;
 }
 
-export function DataTableViewOptions<TData>({
+export function DataTableViewOptions<TData extends Record<string, unknown>>({
   table,
   translateColumn,
 }: DataTableViewOptionsProps<TData>) {

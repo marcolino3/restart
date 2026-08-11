@@ -15,7 +15,10 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/data-table/DataTable";
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
 import type { FilterGroup } from "@/components/data-table/DataTableFilter";
-import { useDataTable } from "@/components/data-table/use-data-table";
+import {
+  type AppTableFeatures,
+  useDataTable,
+} from "@/components/data-table/use-data-table";
 import { multiSelectFilter } from "@/lib/table/locale-sorting";
 import { StudentAvatar } from "@/features/students/components/StudentAvatar";
 import { PersonCell } from "@/components/common/PersonCell";
@@ -87,9 +90,11 @@ export function AdmissionsList({
   // eslint-disable-next-line react-hooks/purity -- client-only render, stable for this render pass
   const now = Date.now();
 
-  const columns = useMemo<ColumnDef<KanbanApplication>[]>(() => {
+  const columns = useMemo<
+    ColumnDef<AppTableFeatures, KanbanApplication, unknown>[]
+  >(() => {
     /** The fixed leading column: avatar + child name + birth year. */
-    const childColumn: ColumnDef<KanbanApplication> = {
+    const childColumn: ColumnDef<AppTableFeatures, KanbanApplication, unknown> = {
       id: "child",
       accessorFn: (a) => `${a.childLastName} ${a.childFirstName}`,
       header: ({ column }) => (
@@ -122,9 +127,11 @@ export function AdmissionsList({
      * `accessorFn` discriminant. The header/meta are added uniformly after.
      */
     type ColumnParts = {
-      accessorFn: AccessorFn<KanbanApplication>;
-      cell: ColumnDefTemplate<CellContext<KanbanApplication, unknown>>;
-      filterFn?: FilterFn<KanbanApplication>;
+      accessorFn: AccessorFn<KanbanApplication, unknown>;
+      cell: ColumnDefTemplate<
+        CellContext<AppTableFeatures, KanbanApplication, unknown>
+      >;
+      filterFn?: FilterFn<AppTableFeatures, KanbanApplication>;
     };
 
     const byKey: Record<TableColumnKey, ColumnParts> = {
@@ -289,21 +296,23 @@ export function AdmissionsList({
 
     return [
       childColumn,
-      ...columnKeys.map((key): ColumnDef<KanbanApplication> => {
-        const title = t(TABLE_COLUMN_LABEL[key]);
-        return {
-          id: key,
-          ...byKey[key],
-          header: ({ column }) => (
-            <DataTableColumnHeader
-              column={column}
-              title={title}
-              className={cn(NUMERIC_COLUMNS.has(key) && "justify-end")}
-            />
-          ),
-          meta: { labelKey: TABLE_COLUMN_LABEL[key] },
-        };
-      }),
+      ...columnKeys.map(
+        (key): ColumnDef<AppTableFeatures, KanbanApplication, unknown> => {
+          const title = t(TABLE_COLUMN_LABEL[key]);
+          return {
+            id: key,
+            ...byKey[key],
+            header: ({ column }) => (
+              <DataTableColumnHeader
+                column={column}
+                title={title}
+                className={cn(NUMERIC_COLUMNS.has(key) && "justify-end")}
+              />
+            ),
+            meta: { labelKey: TABLE_COLUMN_LABEL[key] },
+          };
+        },
+      ),
     ];
   }, [columnKeys, stageById, stagePosById, now, t]);
 

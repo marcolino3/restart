@@ -31,7 +31,10 @@ import { PersonCell } from "@/components/common/PersonCell";
 import { DataTable } from "@/components/data-table/DataTable";
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
 import type { FilterGroup } from "@/components/data-table/DataTableFilter";
-import { useDataTable } from "@/components/data-table/use-data-table";
+import {
+  type AppTableFeatures,
+  useDataTable,
+} from "@/components/data-table/use-data-table";
 import { ROUTES } from "@/constants/routes";
 import { StudentListItem } from "../actions/get-students.action";
 import { deleteStudentAction } from "../actions/delete-student.action";
@@ -67,7 +70,11 @@ const ageFromDob = (dob: string): number => {
 };
 
 /** Search across first + last name for the merged name column. */
-const nameFilter: FilterFn<StudentListItem> = (row, _columnId, value) => {
+const nameFilter: FilterFn<AppTableFeatures, StudentListItem> = (
+  row,
+  _columnId,
+  value,
+) => {
   const needle = String(value ?? "")
     .trim()
     .toLowerCase();
@@ -75,7 +82,18 @@ const nameFilter: FilterFn<StudentListItem> = (row, _columnId, value) => {
   return fullName(row.original).toLowerCase().includes(needle);
 };
 
-const useColumns = (): ColumnDef<StudentListItem>[] => {
+/** True if the row's gradeLevels array shares at least one value with filterValue. */
+const arrIncludesSomeFilter: FilterFn<AppTableFeatures, StudentListItem> = (
+  row,
+  columnId,
+  filterValue,
+) => {
+  if (!Array.isArray(filterValue) || filterValue.length === 0) return true;
+  const rowValues = row.getValue<string[]>(columnId);
+  return filterValue.some((v) => rowValues.includes(v));
+};
+
+const useColumns = (): ColumnDef<AppTableFeatures, StudentListItem, unknown>[] => {
   const t = useTranslations("Common");
   const tS = useTranslations("Students");
   const locale = useLocale();
@@ -83,7 +101,7 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
   const canEditOrDelete =
     (user?.isSuperAdmin ?? false) || hasAdminRole(user?.roles);
 
-  const columns: ColumnDef<StudentListItem>[] = [
+  const columns: ColumnDef<AppTableFeatures, StudentListItem, unknown>[] = [
     {
       id: "select",
       header: ({ table }) => (
@@ -211,7 +229,7 @@ const useColumns = (): ColumnDef<StudentListItem>[] => {
           <span className="text-muted-foreground">–</span>
         );
       },
-      filterFn: "arrIncludesSome",
+      filterFn: arrIncludesSomeFilter,
     },
     {
       id: "status",

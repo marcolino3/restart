@@ -1,6 +1,6 @@
 "use client";
 
-import type { Table } from "@tanstack/react-table";
+import type { ReactTable } from "@tanstack/react-table";
 import {
   ChevronLeft,
   ChevronRight,
@@ -18,21 +18,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { type AppTableFeatures } from "./use-data-table";
+
 /**
  * Sentinel page size for "show all rows". Large enough that TanStack renders
  * a single page, without the `Infinity` that breaks its page-count maths.
  */
 const ALL_ROWS = Number.MAX_SAFE_INTEGER;
 
-interface DataTablePaginationProps<TData> {
-  table: Table<TData>;
+interface DataTablePaginationProps<TData extends Record<string, unknown>> {
+  table: ReactTable<AppTableFeatures, TData>;
   pageSizeOptions?: number[];
   /** Offers an "all rows" entry in the page-size select. */
   allowAll?: boolean;
 }
 
 /** Row count, page-size select and page controls — rendered BELOW the table. */
-export function DataTablePagination<TData>({
+export function DataTablePagination<TData extends Record<string, unknown>>({
   table,
   pageSizeOptions = [10, 25, 50, 100],
   allowAll = true,
@@ -40,7 +42,7 @@ export function DataTablePagination<TData>({
   const t = useTranslations("DataTable");
 
   const pageCount = table.getPageCount();
-  const { pageIndex, pageSize } = table.getState().pagination;
+  const { pageIndex, pageSize } = table.state.pagination;
   const selectedCount = table.getFilteredSelectedRowModel().rows.length;
   const totalCount = table.getFilteredRowModel().rows.length;
 

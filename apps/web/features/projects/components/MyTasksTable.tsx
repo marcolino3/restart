@@ -17,12 +17,9 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   type ColumnDef,
-  type SortingFn,
+  type SortFn,
   type SortingState,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
+  useTable,
 } from "@tanstack/react-table";
 import {
   addWeeks,
@@ -56,6 +53,7 @@ import {
   usePersistedView,
 } from "@/components/common/ViewSwitcher";
 import { DataTable } from "@/components/data-table/DataTable";
+import { type AppTableFeatures, appTableFeatures } from "@/components/data-table/use-data-table";
 import {
   Select,
   SelectContent,
@@ -114,9 +112,9 @@ const STATUS_RANK: Record<TaskStatus, number> = {
   DONE: 3,
 };
 
-const prioritySort: SortingFn<Task> = (a, b) =>
+const prioritySort: SortFn<AppTableFeatures, Task> = (a, b) =>
   PRIORITY_RANK[a.original.priority] - PRIORITY_RANK[b.original.priority];
-const statusSort: SortingFn<Task> = (a, b) =>
+const statusSort: SortFn<AppTableFeatures, Task> = (a, b) =>
   STATUS_RANK[a.original.status] - STATUS_RANK[b.original.status];
 
 const sortHeader = (
@@ -387,7 +385,9 @@ export function MyTasksTable({
       />
     ) : null;
 
-  const columns = React.useMemo<ColumnDef<Task>[]>(
+  const columns = React.useMemo<
+    ColumnDef<AppTableFeatures, Task, unknown>[]
+  >(
     () => [
       {
         id: "title",
@@ -476,17 +476,15 @@ export function MyTasksTable({
     [t],
   );
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions by design
-  const table = useReactTable({
+   
+  const table = useTable<AppTableFeatures, Task>({
+    features: appTableFeatures,
     data: openTasks,
     columns,
     onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getRowId: (row) => row.id,
     state: { sorting },
-    initialState: { pagination: { pageSize: 20 } },
+    initialState: { pagination: { pageIndex: 0, pageSize: 20 } },
   });
 
   const rows = table.getRowModel().rows;

@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ChevronRight, Plus, Check } from "lucide-react";
 
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, FilterFn } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table/DataTable";
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
 import type { FilterGroup } from "@/components/data-table/DataTableFilter";
-import { useDataTable } from "@/components/data-table/use-data-table";
+import {
+  type AppTableFeatures,
+  useDataTable,
+} from "@/components/data-table/use-data-table";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,10 +36,21 @@ import { ROUTES } from "@/constants/routes";
 import { CountryInputTemplate } from "../types";
 import { getAllCountries, getCountryName } from "../lib/countries";
 
-type CountryRow = {
+type CountryRow = Record<string, unknown> & {
   countryCode: string;
   countryName: string;
   fieldTypes: string[];
+};
+
+/** True if the row's fieldTypes array shares at least one value with filterValue. */
+const arrIncludesSomeFilter: FilterFn<AppTableFeatures, CountryRow> = (
+  row,
+  columnId,
+  filterValue,
+) => {
+  if (!Array.isArray(filterValue) || filterValue.length === 0) return true;
+  const rowValues = row.getValue<string[]>(columnId);
+  return filterValue.some((v) => rowValues.includes(v));
 };
 
 export const CountryTemplatesList = ({
@@ -82,7 +96,7 @@ export const CountryTemplatesList = ({
     goToDetail(selected);
   };
 
-  const columns = useMemo<ColumnDef<CountryRow>[]>(
+  const columns = useMemo<ColumnDef<AppTableFeatures, CountryRow, unknown>[]>(
     () => [
       {
         id: "countryName",
@@ -113,7 +127,7 @@ export const CountryTemplatesList = ({
           <DataTableColumnHeader column={column} title={t("configuredFields")} />
         ),
         meta: { labelKey: "configuredFields" },
-        filterFn: "arrIncludesSome",
+        filterFn: arrIncludesSomeFilter,
         enableSorting: false,
         cell: ({ row }) => (
           <div className="flex flex-wrap gap-1">

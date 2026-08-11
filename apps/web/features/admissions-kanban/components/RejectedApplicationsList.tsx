@@ -10,7 +10,10 @@ import { PersonCell } from "@/components/common/PersonCell";
 import { DataTable } from "@/components/data-table/DataTable";
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
 import type { FilterGroup } from "@/components/data-table/DataTableFilter";
-import { useDataTable } from "@/components/data-table/use-data-table";
+import {
+  type AppTableFeatures,
+  useDataTable,
+} from "@/components/data-table/use-data-table";
 import { multiSelectFilter } from "@/lib/table/locale-sorting";
 import { StudentAvatar } from "@/features/students/components/StudentAvatar";
 
@@ -40,7 +43,9 @@ export function RejectedApplicationsList({ applications }: Props) {
   const t = useTranslations("Admissions");
   const router = useRouter();
 
-  const columns = useMemo<ColumnDef<RejectedApplication>[]>(
+  const columns = useMemo<
+    ColumnDef<AppTableFeatures, RejectedApplication, unknown>[]
+  >(
     () => [
       {
         id: "child",

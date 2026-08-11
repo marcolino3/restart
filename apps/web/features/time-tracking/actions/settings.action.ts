@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
 import { ROUTES } from "@/constants/routes";
 
-export type Holiday = {
+export type Holiday = Record<string, unknown> & {
   id: string;
   date: string;
   name: string;
@@ -25,7 +25,7 @@ export type CompanyVacationHoliday = {
   isWeekend: boolean;
 };
 
-export type CompanyVacation = {
+export type CompanyVacation = Record<string, unknown> & {
   id: string;
   name: string;
   startDate: string;

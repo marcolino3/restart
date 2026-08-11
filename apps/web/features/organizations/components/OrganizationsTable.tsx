@@ -19,8 +19,12 @@ import {
 import { DataTable } from "@/components/data-table/DataTable";
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
 import type { FilterGroup } from "@/components/data-table/DataTableFilter";
-import { useDataTable } from "@/components/data-table/use-data-table";
+import {
+  type AppTableFeatures,
+  useDataTable,
+} from "@/components/data-table/use-data-table";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
+import { localeIncludesFilter } from "@/lib/table/locale-sorting";
 import { ROUTES } from "@/constants/routes";
 import { GetOrganizationsQuery } from "@restart/shared-types/graphql";
 import { removeOrganizationAction } from "../actions/remove-organization.action";
@@ -29,9 +33,14 @@ interface Props {
   data: GetOrganizationsQuery["organizations"];
 }
 
-type OrganizationRow = GetOrganizationsQuery["organizations"][number];
+type OrganizationRow = Record<string, unknown> &
+  GetOrganizationsQuery["organizations"][number];
 
-const useColumns = (): ColumnDef<OrganizationRow>[] => {
+const useColumns = (): ColumnDef<
+  AppTableFeatures,
+  OrganizationRow,
+  unknown
+>[] => {
   const t = useTranslations("Common");
   const locale = useLocale();
 
@@ -74,7 +83,7 @@ const useColumns = (): ColumnDef<OrganizationRow>[] => {
           )}
         </div>
       ),
-      filterFn: "includesString",
+      filterFn: localeIncludesFilter,
     },
     {
       id: "subdomain",
