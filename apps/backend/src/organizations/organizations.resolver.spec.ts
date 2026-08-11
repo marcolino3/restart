@@ -58,6 +58,7 @@ describe('OrganizationsResolver', () => {
     changeOrganizationPlan: jest.Mock;
     getOrganizationAuditLog: jest.Mock;
     exportOrganizationData: jest.Mock;
+    getOrganizationOwner: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -76,6 +77,7 @@ describe('OrganizationsResolver', () => {
       changeOrganizationPlan: jest.fn(),
       getOrganizationAuditLog: jest.fn(),
       exportOrganizationData: jest.fn(),
+      getOrganizationOwner: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -278,6 +280,7 @@ describe('OrganizationsResolver', () => {
       ['changeOrganizationPlan', methodOf('changeOrganizationPlan')],
       ['organizationAuditLog', methodOf('organizationAuditLog')],
       ['exportOrganizationData', methodOf('exportOrganizationData')],
+      ['organizationOwner', methodOf('organizationOwner')],
     ])('%s requires SuperAdminGuard', (_name, handler) => {
       const guards: unknown[] =
         Reflect.getMetadata('__guards__', handler) ?? [];
@@ -303,6 +306,22 @@ describe('OrganizationsResolver', () => {
 
       await expect(resolver.organizationUsage('org-1')).resolves.toBe(usage);
       expect(service.getOrganizationUsage).toHaveBeenCalledWith('org-1');
+    });
+  });
+
+  describe('organizationOwner', () => {
+    it('delegates to the service with the given org id', async () => {
+      const owner = { id: 'user-1', email: 'owner@acme.test' };
+      service.getOrganizationOwner.mockResolvedValue(owner);
+
+      await expect(resolver.organizationOwner('org-1')).resolves.toBe(owner);
+      expect(service.getOrganizationOwner).toHaveBeenCalledWith('org-1');
+    });
+
+    it('returns null when the organization has no owner', async () => {
+      service.getOrganizationOwner.mockResolvedValue(null);
+
+      await expect(resolver.organizationOwner('org-1')).resolves.toBeNull();
     });
   });
 

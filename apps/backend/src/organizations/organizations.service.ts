@@ -521,4 +521,41 @@ export class OrganizationsService {
 
     return { jobId, status: 'QUEUED' };
   }
+
+  /**
+   * Liefert den ORG_OWNER-Membership-User einer Organisation — das einzige
+   * Impersonation-Ziel für Support-Impersonation (kein Picker, siehe
+   * Phase-6-Plan). Null, falls kein Owner mit ORG_OWNER-Rolle existiert.
+   */
+  async getOrganizationOwner(organizationId: string): Promise<{
+    userId: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  } | null> {
+    const rows: Array<{
+      user_id: string;
+      first_name: string;
+      last_name: string;
+      email: string;
+    }> = await this.entityManager.query(
+      `SELECT u.id AS user_id, u.first_name, u.last_name, ue.email AS email
+         FROM memberships m
+         INNER JOIN membership_roles mr ON mr.membership_id = m.id
+         INNER JOIN roles r ON r.id = mr.role_id
+         INNER JOIN users u ON u.id = m.user_id
+         INNER JOIN user_emails ue ON ue.user_id = u.id AND ue.is_primary = true
+         WHERE m.organization_id = $1 AND r.system_code = $2
+         LIMIT 1`,
+      [organizationId, SystemRole.ORG_OWNER],
+    );
+    const row = rows[0];
+    if (!row) return null;
+    return {
+      userId: row.user_id,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      email: row.email,
+    };
+  }
 }

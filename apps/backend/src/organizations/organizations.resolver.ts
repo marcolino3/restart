@@ -9,6 +9,7 @@ import { SuspendOrganizationInput } from './dto/suspend-organization.input';
 import { OrganizationsOverview } from './dto/organizations-overview.output';
 import { OrganizationUsage } from './dto/organization-usage.output';
 import { OrganizationAuditLogPage } from './dto/organization-audit-log-page.output';
+import { OrganizationOwner } from './dto/organization-owner.output';
 import { ExportOrganizationDataResult } from './dto/export-organization-data.output';
 import { Organization } from './entities/organization.entity';
 import { OrganizationsService } from './organizations.service';
@@ -153,6 +154,17 @@ export class OrganizationsResolver {
     @CurrentUser() user: TokenPayload,
   ) {
     return this.organizationsService.changeOrganizationPlan(input, user.sub);
+  }
+
+  @Query(() => OrganizationOwner, {
+    name: 'organizationOwner',
+    nullable: true,
+  })
+  @UseGuards(GqlBetterAuthGuard, SuperAdminGuard)
+  organizationOwner(
+    @Args('organizationId', { type: () => String }) organizationId: string,
+  ) {
+    return this.organizationsService.getOrganizationOwner(organizationId);
   }
 
   @Query(() => OrganizationAuditLogPage, { name: 'organizationAuditLog' })

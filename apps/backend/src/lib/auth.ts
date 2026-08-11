@@ -91,6 +91,18 @@ const buildAppleSocialConfig = () => {
 
 const appleSocial = buildAppleSocialConfig();
 
+// Bridges the before-hook and after-hook of a single /admin/stop-impersonating
+// request: by the time the after-hook runs, the handler has already deleted
+// the impersonation session and the context reflects the restored admin
+// session, so the ending session's id must be captured beforehand. Keyed by
+// the request object's identity, which is stable across both hooks within
+// one dispatch cycle; entries are removed by the after-hook and otherwise
+// garbage-collected with the request if the handler throws.
+const endingImpersonationSessions = new WeakMap<
+  object,
+  { sessionId: string; impersonatedBy: string }
+>();
+
 // better-auth doesn't publicly export a named type for the hook callback's
 // `ctx` parameter (it's `better-call`'s internal `MiddlewareContext`, not a
 // direct dependency of this package) — derive it structurally instead.
@@ -208,6 +220,14 @@ export const auth = betterAuth({
     // the Restart `users` table where `is_super_admin` lives), so the
     // session.user shape doesn't carry that flag — we look it up directly
     // in our domain DB by email.
+    //
+    // Org-Admin "support impersonation" (start from the org-admin sidebar)
+    // reuses this same endpoint but sends an extra `organizationId` in the
+    // body. When present we additionally verify the target user is the
+    // ORG_OWNER of that exact organization (before-hook) and shorten the
+    // resulting session to 30 minutes + write an audit-log entry (after-hook).
+    // Requests without `organizationId` (regular Teacher-Impersonation) keep
+    // the plugin's default 1h duration and are not audit-logged here.
 
     before: createAuthMiddleware(async (ctx: AuthHookContext) => {
       if (
@@ -237,6 +257,14 @@ export const auth = betterAuth({
         if (!impersonatedBy) {
           throw new APIError('FORBIDDEN', { message: 'Not impersonating' });
         }
+        // The stop-impersonating handler deletes this session row and its
+        // response only carries the restored admin session — capture the
+        // ending session's id now so the after-hook can look up whether it
+        // was an org-support session to audit-log.
+        endingImpersonationSessions.set(ctx.request ?? ctx, {
+          sessionId: session.session.id,
+          impersonatedBy,
+        });
         return;
       }
 
@@ -254,6 +282,138 @@ export const auth = betterAuth({
       if (!isSuperAdmin) {
         throw new APIError('FORBIDDEN', { message: 'SuperAdmin only' });
       }
+
+      // Org-Support-Impersonation: Ziel-User muss der ORG_OWNER exakt dieser
+      // Organisation sein. `organizationId` kommt roh (unvalidiert) aus dem
+      // Request-Body — wird hier NICHT als Autorisierung vertraut, sondern
+      // nur als Filterkriterium für die DB-Prüfung genutzt.
+      const body = ctx.body as
+        { userId?: string; organizationId?: string } | undefined;
+      const organizationId = body?.organizationId;
+      if (organizationId) {
+        const targetUserId = body?.userId;
+        const ownerCheck = await pool.query<{ exists: boolean }>(
+          `SELECT EXISTS (
+               SELECT 1
+               FROM users u
+               INNER JOIN "user" bau ON bau.id = $1
+               INNER JOIN user_emails ue ON ue.user_id = u.id AND ue.email = bau.email
+               INNER JOIN memberships m ON m.user_id = u.id
+               INNER JOIN membership_roles mr ON mr.membership_id = m.id
+               INNER JOIN roles r ON r.id = mr.role_id
+               WHERE m.organization_id = $2
+                 AND r.system_code = 'ORG_OWNER'
+             ) AS exists`,
+          [targetUserId, organizationId],
+        );
+        if (ownerCheck.rows[0]?.exists !== true) {
+          throw new APIError('FORBIDDEN', {
+            message: 'Target user is not the owner of this organization',
+          });
+        }
+      }
+    }),
+
+    after: createAuthMiddleware(async (ctx: AuthHookContext) => {
+      if (
+        ctx.path !== '/admin/impersonate-user' &&
+        ctx.path !== '/admin/stop-impersonating'
+      ) {
+        return;
+      }
+
+      // Translates a better-auth user id (text) to the Restart `users.id`
+      // (uuid) for the audit-log FK — same join as `authUserIdByUserId`
+      // (users.resolver.ts) in reverse.
+      const resolveDomainUserId = async (
+        authUserId: string | undefined,
+      ): Promise<string | null> => {
+        if (!authUserId) return null;
+        const row = await pool.query<{ user_id: string }>(
+          `SELECT ue.user_id
+               FROM "user" au
+               INNER JOIN user_emails ue ON LOWER(ue.email) = LOWER(au.email)
+               WHERE au.id = $1
+               LIMIT 1`,
+          [authUserId],
+        );
+        return row.rows[0]?.user_id ?? null;
+      };
+
+      if (ctx.path === '/admin/impersonate-user') {
+        const body = ctx.body as
+          { userId?: string; organizationId?: string } | undefined;
+        const organizationId = body?.organizationId;
+        if (!organizationId) return;
+
+        const returned = ctx.context.returned as
+          { session?: { id?: string; impersonatedBy?: string } } | undefined;
+        const sessionId = returned?.session?.id;
+        if (!sessionId) return;
+
+        const actorUserId = await resolveDomainUserId(
+          returned?.session?.impersonatedBy,
+        );
+
+        await pool.query(
+          `UPDATE session SET "expiresAt" = now() + interval '30 minutes' WHERE id = $1`,
+          [sessionId],
+        );
+
+        await pool.query(
+          `INSERT INTO organization_audit_logs
+               (id, "createdAt", "updatedAt", version, "isActive", "isArchived", organization_id, actor_user_id, action, payload)
+             VALUES (uuid_generate_v4(), now(), now(), 1, true, false, $1, $2, 'IMPERSONATION_STARTED', $3)`,
+          [
+            organizationId,
+            actorUserId,
+            JSON.stringify({ targetUserId: body?.userId, sessionId }),
+          ],
+        );
+        return;
+      }
+
+      // Stop-Impersonating: only log if the ended session was itself an
+      // org-support session (i.e. its start produced an IMPERSONATION_STARTED
+      // audit entry carrying its session id in the payload). The handler
+      // already deleted the session row and the response/context now reflect
+      // the restored admin session, so this must come from what the
+      // before-hook captured.
+      const requestKey = ctx.request ?? ctx;
+      const ending = endingImpersonationSessions.get(requestKey);
+      endingImpersonationSessions.delete(requestKey);
+      if (!ending) return;
+
+      const startEntry = await pool.query<{
+        organization_id: string;
+        payload: { targetUserId?: string };
+      }>(
+        `SELECT organization_id, payload
+             FROM organization_audit_logs
+             WHERE action = 'IMPERSONATION_STARTED'
+               AND payload->>'sessionId' = $1
+             ORDER BY "createdAt" DESC
+             LIMIT 1`,
+        [ending.sessionId],
+      );
+      const startRow = startEntry.rows[0];
+      if (!startRow) return;
+
+      const actorUserId = await resolveDomainUserId(ending.impersonatedBy);
+
+      await pool.query(
+        `INSERT INTO organization_audit_logs
+             (id, "createdAt", "updatedAt", version, "isActive", "isArchived", organization_id, actor_user_id, action, payload)
+           VALUES (uuid_generate_v4(), now(), now(), 1, true, false, $1, $2, 'IMPERSONATION_STOPPED', $3)`,
+        [
+          startRow.organization_id,
+          actorUserId,
+          JSON.stringify({
+            targetUserId: startRow.payload?.targetUserId,
+            sessionId: ending.sessionId,
+          }),
+        ],
+      );
     }),
   },
 });

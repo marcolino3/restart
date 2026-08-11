@@ -3,13 +3,10 @@
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { FileBarChart, FileText, Loader2, Users } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import { OrganizationQuery } from "@restart/shared-types/graphql";
 import { OrgLifecycleStatus } from "@restart/shared-schemas/organizations/organization-enums";
 import { getOrganizationUsageAction } from "../actions/get-organization-usage.action";
@@ -18,6 +15,7 @@ import { reactivateOrganizationAction } from "../actions/reactivate-organization
 import { ChangePlanDialog } from "./ChangePlanDialog";
 import { SuspendOrganizationDialog } from "./SuspendOrganizationDialog";
 import { AuditLogSheet } from "./AuditLogSheet";
+import { StartSupportLoginDialog } from "./StartSupportLoginDialog";
 
 interface OrganizationUsage {
   userCount: number;
@@ -43,6 +41,7 @@ export const OrganizationSidebar = ({
   const [changePlanOpen, setChangePlanOpen] = useState(false);
   const [suspendOpen, setSuspendOpen] = useState(false);
   const [auditLogOpen, setAuditLogOpen] = useState(false);
+  const [supportLoginOpen, setSupportLoginOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
   const [lifecycleStatus, setLifecycleStatus] = useState(
@@ -97,28 +96,35 @@ export const OrganizationSidebar = ({
   return (
     <div className="space-y-6 lg:sticky lg:top-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle>{tO("sidebarSubscription")}</CardTitle>
-          <Badge variant="secondary">
-            {tO(
-              `plan_${organization.plan}` as `plan_${NonNullable<
-                typeof organization.plan
-              >}`
-            )}
-          </Badge>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">
+        <CardContent className="pt-0">
+          <div className="flex items-center justify-between gap-3 border-b py-[10px] text-[13.5px] last:border-b-0">
+            <span className="text-[12.5px] font-medium text-muted-foreground">
+              {tO("sidebarPlan")}
+            </span>
+            <span className="font-semibold">
+              {tO(
+                `plan_${organization.plan}` as `plan_${NonNullable<
+                  typeof organization.plan
+                >}`
+              )}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-3 border-b py-[10px] text-[13.5px] last:border-b-0">
+            <span className="text-[12.5px] font-medium text-muted-foreground">
               {tO("sidebarUserLicenses")}
             </span>
-            <span>{organization.userLicenseLimit ?? "–"}</span>
+            <span className="font-semibold">
+              {organization.userLicenseLimit ?? "–"}
+            </span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">
+          <div className="flex items-center justify-between gap-3 border-b py-[10px] text-[13.5px] last:border-b-0">
+            <span className="text-[12.5px] font-medium text-muted-foreground">
               {tO("sidebarContractEndsAt")}
             </span>
-            <span>
+            <span className="font-semibold">
               {organization.contractEndsAt
                 ? new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
                     new Date(organization.contractEndsAt)
@@ -126,9 +132,11 @@ export const OrganizationSidebar = ({
                 : "–"}
             </span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">{tO("sidebarBilling")}</span>
-            <span>
+          <div className="flex items-center justify-between gap-3 border-b py-[10px] text-[13.5px] last:border-b-0">
+            <span className="text-[12.5px] font-medium text-muted-foreground">
+              {tO("sidebarBilling")}
+            </span>
+            <span className="font-semibold">
               {organization.billingAmountChf != null
                 ? `CHF ${organization.billingAmountChf}`
                 : "–"}
@@ -137,8 +145,7 @@ export const OrganizationSidebar = ({
           <Button
             type="button"
             variant="outline"
-            size="sm"
-            className="mt-2 w-full"
+            className="mt-3 w-full justify-center"
             onClick={() => setChangePlanOpen(true)}
           >
             {tO("sidebarChangePlan")}
@@ -150,51 +157,79 @@ export const OrganizationSidebar = ({
         <CardHeader>
           <CardTitle>{tO("sidebarUsage")}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 text-sm">
-          <div className="space-y-1">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">{tO("usageUsers")}</span>
-              <span>
-                {usage?.userCount ?? "–"} / {organization.userLicenseLimit ?? "–"}
+        <CardContent className="pt-0">
+          <div className="mt-[14px] flex flex-col gap-2">
+            <span className="flex items-center gap-[10px] text-[12.5px] text-muted-foreground">
+              <span className="min-w-[78px]">{tO("usageUsers")}</span>
+              <span className="h-[7px] min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
+                <span
+                  className="block h-full rounded-full bg-primary"
+                  style={{ width: `${userPct}%` }}
+                />
               </span>
-            </div>
-            <Progress value={userPct} />
-          </div>
-          <div className="space-y-1">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">{tO("usageChildren")}</span>
-              <span>{usage?.childCount ?? "–"}</span>
-            </div>
-            <Progress value={usage?.childCount ? 100 : 0} />
-          </div>
-          <div className="space-y-1">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">{tO("usageStorage")}</span>
-              <span>
-                {usage?.storageUsedGb ?? "–"} / {organization.storageLimitGb ?? "–"} GB
+              <span className="min-w-[18px] text-right font-mono text-[12px] text-foreground">
+                {usage?.userCount ?? "–"}
               </span>
-            </div>
-            <Progress value={storagePct} />
-          </div>
-          <div className="space-y-1">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">
-                {tO("usageActiveUsers30Days")}
+            </span>
+            <span className="flex items-center gap-[10px] text-[12.5px] text-muted-foreground">
+              <span className="min-w-[78px]">{tO("usageChildren")}</span>
+              <span className="h-[7px] min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
+                <span
+                  className="block h-full rounded-full bg-primary"
+                  style={{ width: usage?.childCount ? "100%" : "0%" }}
+                />
               </span>
-              <span>{usage?.activeUsersLast30Days ?? "–"}</span>
-            </div>
-            <Progress
-              value={
-                usage && organization.userLicenseLimit
-                  ? Math.min(
-                      100,
-                      (usage.activeUsersLast30Days / organization.userLicenseLimit) *
-                        100
-                    )
-                  : 0
-              }
-            />
+              <span className="min-w-[18px] text-right font-mono text-[12px] text-foreground">
+                {usage?.childCount ?? "–"}
+              </span>
+            </span>
+            <span className="flex items-center gap-[10px] text-[12.5px] text-muted-foreground">
+              <span className="min-w-[78px]">{tO("usageStorage")}</span>
+              <span className="h-[7px] min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
+                <span
+                  className="block h-full rounded-full bg-primary"
+                  style={{ width: `${storagePct}%` }}
+                />
+              </span>
+              <span className="min-w-[18px] text-right font-mono text-[12px] text-foreground">
+                {usage?.storageUsedGb ?? "–"} GB
+              </span>
+            </span>
+            <span className="flex items-center gap-[10px] text-[12.5px] text-muted-foreground">
+              <span className="min-w-[78px]">{tO("usageActiveUsers30Days")}</span>
+              <span className="h-[7px] min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
+                <span
+                  className="block h-full rounded-full bg-primary"
+                  style={{
+                    width: `${
+                      usage && organization.userLicenseLimit
+                        ? Math.min(
+                            100,
+                            (usage.activeUsersLast30Days /
+                              organization.userLicenseLimit) *
+                              100
+                          )
+                        : 0
+                    }%`,
+                  }}
+                />
+              </span>
+              <span className="min-w-[18px] text-right font-mono text-[12px] text-foreground">
+                {usage?.activeUsersLast30Days ?? "–"}
+              </span>
+            </span>
           </div>
+          <p className="mt-[10px] border-t pt-[10px] text-[11.5px] text-muted-foreground">
+            {tO("usageLastLogin", {
+              date: usage?.lastLoginAt
+                ? new Intl.DateTimeFormat(locale, {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  }).format(new Date(usage.lastLoginAt))
+                : "–",
+              avg: usage?.avgLoginsPerDay ?? 0,
+            })}
+          </p>
         </CardContent>
       </Card>
 
@@ -202,25 +237,41 @@ export const OrganizationSidebar = ({
         <CardHeader>
           <CardTitle>{tO("sidebarSupportActions")}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full justify-start"
-            onClick={() => setAuditLogOpen(true)}
-          >
-            {tO("sidebarOpenAuditLog")}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full justify-start"
-            disabled={isExporting}
-            onClick={handleExport}
-          >
-            {isExporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {tO("sidebarExportData")}
-          </Button>
+        <CardContent className="pt-0">
+          <div className="mt-[6px] flex flex-col">
+            <button
+              type="button"
+              className="flex cursor-pointer items-center gap-[9px] rounded-md py-[5px] text-[13px] font-medium hover:text-foreground"
+              onClick={() => setSupportLoginOpen(true)}
+            >
+              <Users className="h-4 w-4 text-muted-foreground" />
+              {tO("sidebarStartSupportLogin")}
+              <em className="ml-auto text-[11px] not-italic text-muted-foreground">
+                {tO("sidebarLogged")}
+              </em>
+            </button>
+            <button
+              type="button"
+              className="flex cursor-pointer items-center gap-[9px] rounded-md py-[5px] text-[13px] font-medium hover:text-foreground"
+              onClick={() => setAuditLogOpen(true)}
+            >
+              <FileBarChart className="h-4 w-4 text-muted-foreground" />
+              {tO("sidebarOpenAuditLog")}
+            </button>
+            <button
+              type="button"
+              className="flex cursor-pointer items-center gap-[9px] rounded-md py-[5px] text-[13px] font-medium hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+              disabled={isExporting}
+              onClick={handleExport}
+            >
+              {isExporting ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : (
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              )}
+              {tO("sidebarExportData")}
+            </button>
+          </div>
         </CardContent>
       </Card>
 
@@ -228,20 +279,19 @@ export const OrganizationSidebar = ({
         <CardHeader>
           <CardTitle>{tO("sidebarStatus")}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
+        <CardContent className="pt-0">
+          <p className="mb-[14px] text-[12.5px] text-muted-foreground">
             {isSuspended
               ? tO("sidebarStatusHintSuspended", {
                   reason: organization.suspendedReason ?? "",
                 })
               : tO("sidebarStatusHintActive")}
           </p>
-          <Separator />
           {isSuspended ? (
             <Button
               type="button"
               variant="outline"
-              className="w-full"
+              className="w-full justify-center"
               disabled={isReactivating}
               onClick={handleReactivate}
             >
@@ -253,8 +303,8 @@ export const OrganizationSidebar = ({
           ) : (
             <Button
               type="button"
-              variant="destructive"
-              className="w-full"
+              variant="outline"
+              className="w-full justify-center text-destructive hover:text-destructive"
               onClick={() => setSuspendOpen(true)}
             >
               {tO("sidebarSuspend")}
@@ -284,6 +334,11 @@ export const OrganizationSidebar = ({
         organizationId={organization.id}
         open={auditLogOpen}
         onOpenChange={setAuditLogOpen}
+      />
+      <StartSupportLoginDialog
+        organizationId={organization.id}
+        open={supportLoginOpen}
+        onOpenChange={setSupportLoginOpen}
       />
     </div>
   );

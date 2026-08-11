@@ -6,29 +6,36 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
+import Link from "next/link";
+import { Loader2, MapPin } from "lucide-react";
 
-import { Form } from "@/components/ui/form";
+import { Form, FormField, FormControl, FormItem } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { PageHead } from "@/components/common/PageHead";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { FormActionButtons } from "@/components/form/form-fields/FormActionButtons";
 import { CountryComboboxFormField } from "@/components/form/form-fields/CountryComboboxFormField";
 import { TimezoneComboboxFormField } from "@/components/form/form-fields/TimezoneComboboxFormField";
 import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
-import { UploadFormField } from "@/components/form/form-fields/UploadFormField";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
-import { CheckboxGroupFormField } from "@/components/form/form-fields/CheckboxGroupFormField";
 import { GoogleMapDisplay } from "@/components/google-maps/GoogleMapDisplay";
 import { ROUTES } from "@/constants/routes";
 import { handleAction } from "@/lib/actions/handle-action";
 import { toSlug } from "@/lib/utils/to-slug";
 import { sanitizeFormData } from "@/lib/forms/sanitize-form-data";
+import { cn } from "@/lib/utils";
 import { OrganizationQuery } from "@restart/shared-types/graphql";
-import { SchoolType } from "@restart/shared-schemas/organizations/organization-enums";
+import {
+  SchoolType,
+  OrgLifecycleStatus,
+} from "@restart/shared-schemas/organizations/organization-enums";
 
 import {
   OrganizationFormSchema,
@@ -68,8 +75,6 @@ interface OrganizationFormProps {
   /** Create-mode: shows owner fields, hides the sidebar (no org exists yet), submits via createOrganizationAction. */
   isCreate?: boolean;
 }
-
-const SCHOOL_LEVELS = ["NIDO", "CASA", "PRIMARIA", "SEKUNDARIA"] as const;
 
 export const OrganizationForm = ({
   organization,
@@ -204,40 +209,126 @@ export const OrganizationForm = ({
     return null;
   };
 
-  const enabledFeatureCount = featureToggles.filter((f) => f.enabled).length;
+  const lifecycleStatus = organization.lifecycleStatus ?? OrgLifecycleStatus.ACTIVE;
+  const isSubmitDisabled = form.formState.isSubmitting || isCreating;
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div
-          className={
-            isCreate
-              ? "w-full"
-              : "grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]"
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {!isCreate && (
+          <Link
+            href={ROUTES.admin.organizations(locale)}
+            className="mb-[3px] inline-block text-[12.5px] font-[550] text-muted-foreground hover:text-accent-foreground"
+          >
+            &lsaquo; {tO("backToOrganizations")}
+          </Link>
+        )}
+
+        <PageHead
+          title={organization.name}
+          stacked
+          subtitle={
+            !isCreate && (
+              <span className="flex items-center gap-2">
+                {organization.shortCode}
+                {" · "}
+                {tO(
+                  `plan_${organization.plan}` as `plan_${NonNullable<
+                    typeof organization.plan
+                  >}`
+                )}
+                <Badge
+                  variant={
+                    lifecycleStatus === OrgLifecycleStatus.SUSPENDED
+                      ? "rose"
+                      : lifecycleStatus === OrgLifecycleStatus.TRIAL
+                        ? "amber"
+                        : "green"
+                  }
+                >
+                  {tO(`lifecycle_${lifecycleStatus}`)}
+                </Badge>
+              </span>
+            )
           }
-        >
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+          action={
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push(ROUTES.admin.organizations(locale))}
+                disabled={isSubmitDisabled}
+              >
+                {t("cancel")}
+              </Button>
+              <Button type="submit" disabled={isSubmitDisabled}>
+                {isSubmitDisabled && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                {t("save")}
+              </Button>
+            </div>
+          }
+        />
+
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="mb-6">
             <TabsTrigger value="general">{tO("general")}</TabsTrigger>
             <TabsTrigger value="address">{t("address")}</TabsTrigger>
             <TabsTrigger value="contact">{t("contact")}</TabsTrigger>
             {!isCreate && (
-              <TabsTrigger value="features" className="gap-2">
-                {tO("featuresTitle")}
-                <Badge variant="secondary">
-                  {enabledFeatureCount} / {featureToggles.length}
-                </Badge>
-              </TabsTrigger>
+              <TabsTrigger value="features">{tO("featuresTitle")}</TabsTrigger>
             )}
           </TabsList>
 
-          <TabsContent value="general" className="space-y-6">
+          <div
+            className={
+              isCreate
+                ? "w-full"
+                : "grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]"
+            }
+          >
+          <div className="min-w-0">
+          <TabsContent value="general" className="mt-0 space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>{t("basicData")}</CardTitle>
+                <CardDescription>{tO("basicDataDescription")}</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <InputFormField name="name" label="name" />
+              <CardContent className="space-y-[18px]">
+                <div className="grid grid-cols-2 gap-4">
+                  <InputFormField name="name" label="name" />
+                  <InputFormField
+                    name="shortCode"
+                    label="shortCode"
+                    namespace="Organizations"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <SelectFormField
+                    name="schoolType"
+                    label="schoolType"
+                    namespace="Organizations"
+                    options={Object.values(SchoolType).map((value) => ({
+                      value,
+                      label: `schoolType_${value}`,
+                    }))}
+                  />
+                  <InputFormField
+                    name="legalEntity"
+                    label="legalEntity"
+                    namespace="Organizations"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <InputFormField
+                    name="language"
+                    label="language"
+                    namespace="Organizations"
+                  />
+                  <TimezoneComboboxFormField name="timezone" />
+                </div>
+                <Separator />
                 <div>
                   <InputFormField
                     name="subdomain"
@@ -260,29 +351,6 @@ export const OrganizationForm = ({
                   />
                   {renderStatus(domainStatus, "domain")}
                 </div>
-                <div className="flex gap-4">
-                  <InputFormField
-                    name="shortCode"
-                    label="shortCode"
-                    namespace="Organizations"
-                    width="w-1/3"
-                  />
-                  <SelectFormField
-                    name="schoolType"
-                    label="schoolType"
-                    namespace="Organizations"
-                    width="w-2/3"
-                    options={Object.values(SchoolType).map((value) => ({
-                      value,
-                      label: `schoolType_${value}`,
-                    }))}
-                  />
-                </div>
-                <InputFormField
-                  name="legalEntity"
-                  label="legalEntity"
-                  namespace="Organizations"
-                />
                 <SwitchFormField name="isActive" label="isActive" />
               </CardContent>
             </Card>
@@ -292,7 +360,7 @@ export const OrganizationForm = ({
                 <CardHeader>
                   <CardTitle>{tO("createOwnerPanel")}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-[18px]">
                   <div className="flex gap-4">
                     <div className="w-1/2 space-y-2">
                       <Label htmlFor="ownerFirstName">{tO("ownerFirstName")}</Label>
@@ -324,57 +392,14 @@ export const OrganizationForm = ({
               </Card>
             )}
 
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("settings")}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <TimezoneComboboxFormField name="timezone" />
-                <InputFormField
-                  name="language"
-                  label="language"
-                  namespace="Organizations"
-                />
-                <Separator />
-                <UploadFormField
-                  name="logoUrl"
-                  label="logo"
-                  namespace="Organizations"
-                  entity="organizations"
-                  id={organization.id}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>{tO("schoolYearPanel")}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <InputFormField
-                  name="currentSchoolYear"
-                  label="currentSchoolYear"
-                  namespace="Organizations"
-                />
-                <CheckboxGroupFormField
-                  name="activeLevels"
-                  label="activeLevels"
-                  namespace="Organizations"
-                  options={SCHOOL_LEVELS.map((level) => ({
-                    value: level,
-                    label: `level_${level}`,
-                  }))}
-                />
-              </CardContent>
-            </Card>
           </TabsContent>
 
-          <TabsContent value="address" className="space-y-6">
+          <TabsContent value="address" className="mt-0 space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>{t("address")}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-[18px]">
                 <InputFormField name="street" label="street" />
                 <div className="flex gap-4">
                   <InputFormField name="zip" label="zip" width="w-1/3" />
@@ -401,19 +426,50 @@ export const OrganizationForm = ({
               <CardHeader>
                 <CardTitle>{tO("billingAddressPanel")}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <SwitchFormField
-                  name="billingAddressSameAsLocation"
-                  label="billingAddressSameAsLocation"
+              <CardContent className="space-y-[14px]">
+                <div
+                  className={cn(
+                    "flex items-center gap-[10px] rounded-lg border px-[14px] py-[13px]",
+                    billingAddressSameAsLocation &&
+                      "border-[color-mix(in_oklab,var(--acc)_32%,var(--line))] bg-[color-mix(in_oklab,var(--acc)_4%,var(--panel))]"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[9px] bg-muted text-muted-foreground",
+                      billingAddressSameAsLocation && "bg-accent text-accent-foreground"
+                    )}
+                  >
+                    <MapPin className="h-[15px] w-[15px]" />
+                  </span>
+                  <div className="flex-1">
+                    <p className="text-[13.5px] font-semibold">
+                      {tO("billingAddressSameAsLocation")}
+                    </p>
+                    <p className="text-[11.5px] font-normal text-muted-foreground">
+                      {tO("billingAddressSameAsLocationHint")}
+                    </p>
+                  </div>
+                  <FormField
+                    name="billingAddressSameAsLocation"
+                    render={({ field }) => (
+                      <FormItem className="m-0">
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            aria-label={tO("billingAddressSameAsLocation")}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <InputFormField
+                  name="billingAddressExtra"
+                  label="billingAddressExtra"
                   namespace="Organizations"
                 />
-                {!billingAddressSameAsLocation && (
-                  <InputFormField
-                    name="billingAddressExtra"
-                    label="billingAddressExtra"
-                    namespace="Organizations"
-                  />
-                )}
               </CardContent>
             </Card>
 
@@ -433,82 +489,83 @@ export const OrganizationForm = ({
             )}
           </TabsContent>
 
-          <TabsContent value="contact" className="space-y-6">
+          <TabsContent value="contact" className="mt-0 space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>{tO("contactPanel")}</CardTitle>
+                <CardDescription>{tO("contactPanelHint")}</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <InputFormField
-                  name="contactName"
-                  label="contactName"
-                  namespace="Organizations"
-                />
-                <InputFormField
-                  name="contactRole"
-                  label="contactRole"
-                  namespace="Organizations"
-                />
-                <InputFormField
-                  name="contactEmail"
-                  label="contactEmail"
-                  namespace="Organizations"
-                  type="email"
-                />
-                <InputFormField
-                  name="contactPhone"
-                  label="contactPhone"
-                  namespace="Organizations"
-                />
+              <CardContent className="space-y-[18px]">
+                <div className="grid grid-cols-2 gap-4">
+                  <InputFormField
+                    name="contactName"
+                    label="contactName"
+                    namespace="Organizations"
+                  />
+                  <InputFormField
+                    name="contactRole"
+                    label="contactRole"
+                    namespace="Organizations"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <InputFormField
+                    name="contactEmail"
+                    label="contactEmail"
+                    namespace="Organizations"
+                    type="email"
+                  />
+                  <InputFormField
+                    name="contactPhone"
+                    label="contactPhone"
+                    namespace="Organizations"
+                  />
+                </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>{t("contact")}</CardTitle>
+                <CardTitle>{tO("contactChannelsPanel")}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <InputFormField name="phone" label="phone" />
-                <InputFormField name="email" label="email" type="email" />
-                <InputFormField name="website" label="website" />
-                <InputFormField
-                  name="billingEmail"
-                  label="billingEmail"
-                  namespace="Organizations"
-                  type="email"
-                />
-                <InputFormField
-                  name="parentMailSenderEmail"
-                  label="parentMailSenderEmail"
-                  namespace="Organizations"
-                  type="email"
-                  description="parentMailSenderEmailHelp"
-                />
+              <CardContent className="space-y-[18px]">
+                <div className="grid grid-cols-2 gap-4">
+                  <InputFormField name="website" label="website" />
+                  <InputFormField
+                    name="billingEmail"
+                    label="billingEmail"
+                    namespace="Organizations"
+                    type="email"
+                  />
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
           {!isCreate && (
-            <TabsContent value="features" className="space-y-6">
+            <TabsContent value="features" className="mt-0 space-y-6">
               <OrganizationFeaturesTab
                 organizationId={organization.id}
                 toggles={featureToggles}
               />
             </TabsContent>
           )}
-          </Tabs>
+          </div>
 
           {!isCreate && (
             <OrganizationSidebar organization={organization} usage={usage} />
           )}
-        </div>
+          </div>
+        </Tabs>
 
-        <FormActionButtons
-          disabled={form.formState.isSubmitting || isCreating}
-          onCancel={() => {
-            router.push(ROUTES.admin.organizations(locale));
-          }}
-        />
+        {isCreate && (
+          <FormActionButtons
+            disabled={isSubmitDisabled}
+            onCancel={() => {
+              router.push(ROUTES.admin.organizations(locale));
+            }}
+          />
+        )}
       </form>
     </Form>
   );

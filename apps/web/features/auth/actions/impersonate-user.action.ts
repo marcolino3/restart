@@ -144,6 +144,100 @@ export const impersonateUserAction = async (
   return { success: true };
 };
 
+/**
+ * SuperAdmin-only: starts an org-support impersonation session for that
+ * organization's ORG_OWNER. Unlike `impersonateUserAction`, the target is
+ * not caller-supplied — the backend resolves and enforces the ORG_OWNER
+ * itself (see `before` hook on `/admin/impersonate-user` in `lib/auth.ts`),
+ * this only passes `organizationId` through. The backend also shortens
+ * this session to 30 minutes and writes an `IMPERSONATION_STARTED` audit
+ * log entry, both specific to the org-support path.
+ */
+export const startOrgSupportImpersonationAction = async (
+  organizationId: string,
+  targetUserId: string
+): Promise<
+  { success: true } | { success: false; error: string; status?: number }
+> => {
+  const url =
+    process.env.INTERNAL_GRAPHQL_API_URL?.replace(/\/graphql\/?$/, "") ||
+    process.env.NEXT_PUBLIC_GRAPHQL_API_URL!.replace(/\/graphql\/?$/, "");
+
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore
+    .getAll()
+    .map((c) => `${c.name}=${c.value}`)
+    .join("; ");
+
+  const origin = await resolveOrigin();
+
+  const authUserId = await resolveAuthUserId(targetUserId);
+  if (!authUserId) {
+    return {
+      success: false,
+      error: "Target user has no linked auth account",
+    };
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${url}/api/auth/admin/impersonate-user`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        origin,
+        cookie: cookieHeader,
+      },
+      body: JSON.stringify({ userId: authUserId, organizationId }),
+      cache: "no-store",
+      redirect: "manual",
+    });
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Network error",
+    };
+  }
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    return {
+      success: false,
+      status: res.status,
+      error: body || `Impersonation failed (${res.status})`,
+    };
+  }
+
+  const setCookies = res.headers.getSetCookie?.() ?? [];
+  for (const raw of setCookies) {
+    const [pair, ...attrs] = raw.split(";").map((s) => s.trim());
+    const eqIdx = pair.indexOf("=");
+    if (eqIdx < 0) continue;
+    const name = pair.slice(0, eqIdx);
+    const value = pair.slice(eqIdx + 1);
+
+    const opts: Record<string, unknown> = {};
+    for (const a of attrs) {
+      const [k, v] = a.split("=");
+      const key = k.toLowerCase().trim();
+      if (key === "path") opts.path = v;
+      else if (key === "max-age") opts.maxAge = Number(v);
+      else if (key === "expires") opts.expires = new Date(v);
+      else if (key === "samesite") {
+        const norm = v?.toLowerCase();
+        if (norm === "lax" || norm === "strict" || norm === "none")
+          opts.sameSite = norm;
+      } else if (key === "secure") opts.secure = true;
+      else if (key === "httponly") opts.httpOnly = true;
+      else if (key === "domain") opts.domain = v;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    cookieStore.set({ name, value, ...opts } as any);
+  }
+
+  return { success: true };
+};
+
 export const stopImpersonatingAction = async (): Promise<
   { success: true } | { success: false; error: string }
 > => {
