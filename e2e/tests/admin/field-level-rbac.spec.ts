@@ -434,9 +434,11 @@ test.describe('Field-level RBAC — grossSalary read gate', () => {
       .click()
     await restrictedPage.getByRole('option', { name: /permanent/i }).click()
 
-    await restrictedPage
-      .locator('input[name="position"]')
-      .fill('E2E Test Position')
+    // position renders as a SelectFormField (combobox) fed by the org's
+    // employee-function catalog, not a text input — and a fresh test org has
+    // no functions configured, so there is nothing to select. It isn't
+    // required by buildEmployeeContractFormSchema, so this test (which only
+    // exercises the grossSalary permission-hidden exemption) leaves it unset.
 
     // PERMANENT normally requires grossSalary — the fix under test
     // (buildEmployeeContractFormSchema) must exempt it here since it's
