@@ -19,6 +19,9 @@
       ],
       "@restart/shared-schemas/org-features/*": [
         "../../packages/shared-schemas/dist/org-features/*"
+      ],
+      "@restart/shared-schemas/organizations/*": [
+        "../../packages/shared-schemas/dist/organizations/*"
       ]
     },
     "incremental": true,

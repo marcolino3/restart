@@ -1,6 +1,10 @@
 import {
   IsBoolean,
+  IsDateString,
   IsEmail,
+  IsIn,
+  IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -9,6 +13,12 @@ import { Transform, type TransformFnParams } from 'class-transformer';
 import { CreateOrganizationInput } from './create-organization.input';
 import { InputType, Field, PartialType, ID } from '@nestjs/graphql';
 import { IOrganization } from '../interfaces/organization.interface';
+import {
+  BillingInterval,
+  OrgLifecycleStatus,
+  OrgPlan,
+  SchoolType,
+} from '@restart/shared-schemas/organizations/organization-enums';
 
 // class-transformer types `TransformFnParams.value` as `any`; the inputs
 // here are always plain form/GraphQL string values.
@@ -92,6 +102,150 @@ export class UpdateOrganizationInput
   @IsString()
   @EmptyToUndefined()
   timezone?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @EmptyToUndefined()
+  shortCode?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsIn(Object.values(SchoolType))
+  @EmptyToUndefined()
+  schoolType?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @EmptyToUndefined()
+  legalEntity?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @EmptyToUndefined()
+  language?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @EmptyToUndefined()
+  logoUrl?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @EmptyToUndefined()
+  state?: string;
+
+  @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  billingAddressSameAsLocation?: boolean;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @EmptyToUndefined()
+  billingAddressExtra?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @EmptyToUndefined()
+  contactName?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @EmptyToUndefined()
+  contactRole?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsEmail()
+  @EmptyToUndefined()
+  contactEmail?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @EmptyToUndefined()
+  contactPhone?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsEmail()
+  @EmptyToUndefined()
+  billingEmail?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsEmail()
+  @EmptyToUndefined()
+  parentMailSenderEmail?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @EmptyToUndefined()
+  currentSchoolYear?: string;
+
+  @Field(() => [String], { nullable: true })
+  @IsOptional()
+  activeLevels?: string[];
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsIn(Object.values(OrgPlan))
+  @EmptyToUndefined()
+  plan?: string;
+
+  @Field(() => Number, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  userLicenseLimit?: number;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsDateString()
+  @EmptyToUndefined()
+  contractEndsAt?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsIn(Object.values(BillingInterval))
+  @EmptyToUndefined()
+  billingInterval?: string;
+
+  @Field(() => Number, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  billingAmountChf?: number;
+
+  @Field(() => Number, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  storageLimitGb?: number;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsIn(Object.values(OrgLifecycleStatus))
+  @EmptyToUndefined()
+  lifecycleStatus?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsDateString()
+  @EmptyToUndefined()
+  trialEndsAt?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @EmptyToUndefined()
+  suspendedReason?: string;
 
   @Field(() => [ID], { nullable: true })
   teamIds?: string[];

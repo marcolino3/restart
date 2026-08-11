@@ -14,7 +14,10 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import type { Request } from 'express';
 import { EntityManager } from 'typeorm';
 
-import type { OrgFeatureKey } from '@restart/shared-schemas/org-features/feature-catalog';
+import {
+  FEATURE_CATALOG,
+  type OrgFeatureKey,
+} from '@restart/shared-schemas/org-features/feature-catalog';
 import { ORG_FEATURE_REQUIRED_KEY } from '@/auth/decorators/org-feature-required.decorator';
 import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import {
@@ -44,10 +47,18 @@ export class OrgFeatureGuard implements CanActivate {
     if (!user?.orgId) return false;
 
     const cacheEntry = await getOrgFeatureCacheEntry(this.em, user.orgId);
-    if (!isOrgFeatureEnabled(cacheEntry, featureKey)) {
-      throw new ForbiddenException(
-        `Feature "${featureKey}" is disabled for this organization`,
-      );
+
+    // Walk the dependsOn chain: setEnabled() persists the cascade, but the
+    // guard re-checks ancestors too as defense in depth against any state
+    // where a child row is enabled while its parent isn't (e.g. stale cache).
+    let key: OrgFeatureKey | undefined = featureKey;
+    while (key) {
+      if (!isOrgFeatureEnabled(cacheEntry, key)) {
+        throw new ForbiddenException(
+          `Feature "${featureKey}" is disabled for this organization`,
+        );
+      }
+      key = FEATURE_CATALOG[key].dependsOn;
     }
 
     return true;

@@ -36,7 +36,7 @@ describe('OrganizationsService (Integration)', () => {
 
   describe('create', () => {
     it('should create an organization with seeded roles and permissions', async () => {
-      const org = await service.create();
+      const org = await service.create({});
 
       expect(org).toBeDefined();
       expect(org.id).toBeDefined();
@@ -45,48 +45,47 @@ describe('OrganizationsService (Integration)', () => {
     });
   });
 
-  describe('isSlugAvailable', () => {
-    it('should return true when slug is not taken', async () => {
-      expect(await service.isSlugAvailable('fresh-slug')).toBe(true);
+  describe('isSubdomainAvailable', () => {
+    it('should return true when subdomain is not taken', async () => {
+      expect(await service.isSubdomainAvailable('fresh-subdomain')).toBe(true);
     });
 
-    it('should return false when slug is taken', async () => {
-      // Create org and set slug
-      const org = await service.create();
+    it('should return false when subdomain is taken', async () => {
+      const org = await service.create({});
       const repo = dataSource.getRepository(Organization);
-      await repo.update(org.id, { slug: 'taken-slug' });
+      await repo.update(org.id, { subdomain: 'taken-subdomain' });
 
-      expect(await service.isSlugAvailable('taken-slug')).toBe(false);
+      expect(await service.isSubdomainAvailable('taken-subdomain')).toBe(false);
     });
   });
 
-  describe('findBySlug', () => {
-    it('should find an organization by slug', async () => {
-      const org = await service.create();
+  describe('findBySubdomain', () => {
+    it('should find an organization by subdomain', async () => {
+      const org = await service.create({});
       const repo = dataSource.getRepository(Organization);
-      await repo.update(org.id, { slug: 'my-org', name: 'My Org' });
+      await repo.update(org.id, { subdomain: 'my-org', name: 'My Org' });
 
-      const found = await service.findBySlug('my-org');
+      const found = await service.findBySubdomain('my-org');
       expect(found.id).toBe(org.id);
       expect(found.name).toBe('My Org');
     });
 
-    it('should throw NotFoundException for unknown slug', async () => {
-      await expect(service.findBySlug('nope')).rejects.toThrow();
+    it('should throw NotFoundException for unknown subdomain', async () => {
+      await expect(service.findBySubdomain('nope')).rejects.toThrow();
     });
   });
 
-  describe('slug uniqueness', () => {
-    it('should enforce unique slugs at DB level', async () => {
-      const org1 = await service.create();
-      const org2 = await service.create();
+  describe('subdomain uniqueness', () => {
+    it('should enforce unique subdomains at DB level', async () => {
+      const org1 = await service.create({});
+      const org2 = await service.create({});
 
       const repo = dataSource.getRepository(Organization);
-      await repo.update(org1.id, { slug: 'unique-slug' });
+      await repo.update(org1.id, { subdomain: 'unique-subdomain' });
 
-      // Directly trying to set the same slug on another org should fail
+      // Directly trying to set the same subdomain on another org should fail
       await expect(
-        repo.update(org2.id, { slug: 'unique-slug' }),
+        repo.update(org2.id, { subdomain: 'unique-subdomain' }),
       ).rejects.toThrow();
     });
   });

@@ -4,6 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OrganizationsResolver } from './organizations.resolver';
 import { OrganizationsService } from './organizations.service';
 import { UpdateOrganizationInput } from './dto/update-organization.input';
+import { CreateOrganizationInput } from './dto/create-organization.input';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { SuperAdminGuard } from '@/auth/guard/super-admin.guard';
@@ -50,6 +51,13 @@ describe('OrganizationsResolver', () => {
     removeOrganization: jest.Mock;
     isSubdomainAvailable: jest.Mock;
     isDomainAvailable: jest.Mock;
+    getOrganizationsOverview: jest.Mock;
+    getOrganizationUsage: jest.Mock;
+    suspendOrganization: jest.Mock;
+    reactivateOrganization: jest.Mock;
+    changeOrganizationPlan: jest.Mock;
+    getOrganizationAuditLog: jest.Mock;
+    exportOrganizationData: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -61,6 +69,13 @@ describe('OrganizationsResolver', () => {
       removeOrganization: jest.fn(),
       isSubdomainAvailable: jest.fn(),
       isDomainAvailable: jest.fn(),
+      getOrganizationsOverview: jest.fn(),
+      getOrganizationUsage: jest.fn(),
+      suspendOrganization: jest.fn(),
+      reactivateOrganization: jest.fn(),
+      changeOrganizationPlan: jest.fn(),
+      getOrganizationAuditLog: jest.fn(),
+      exportOrganizationData: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -88,9 +103,10 @@ describe('OrganizationsResolver', () => {
     it('delegates to the service', async () => {
       const created = { id: 'org-new' };
       service.create.mockResolvedValue(created);
+      const input = { organizationName: 'New Org' } as CreateOrganizationInput;
 
-      await expect(resolver.createOrganization()).resolves.toBe(created);
-      expect(service.create).toHaveBeenCalledTimes(1);
+      await expect(resolver.createOrganization(input)).resolves.toBe(created);
+      expect(service.create).toHaveBeenCalledWith(input);
     });
   });
 
@@ -157,6 +173,51 @@ describe('OrganizationsResolver', () => {
       );
     });
 
+    it('strips SuperAdmin-only billing/lifecycle fields for an org admin (privilege escalation)', async () => {
+      const input = {
+        id: ORG_ID,
+        name: 'Renamed School',
+        plan: 'ENTERPRISE',
+        userLicenseLimit: 999,
+        billingAmountChf: 0,
+        lifecycleStatus: 'ACTIVE',
+        trialEndsAt: '2099-01-01',
+        isActive: true,
+        isArchived: false,
+      } as UpdateOrganizationInput;
+
+      await resolver.updateOrganization(input, orgAdmin);
+
+      const passed = service.updateOrganization.mock
+        .calls[0][1] as UpdateOrganizationInput;
+      expect(passed.name).toBe('Renamed School');
+      expect(passed.plan).toBeUndefined();
+      expect(passed.userLicenseLimit).toBeUndefined();
+      expect(passed.billingAmountChf).toBeUndefined();
+      expect(passed.lifecycleStatus).toBeUndefined();
+      expect(passed.trialEndsAt).toBeUndefined();
+      expect(passed.isActive).toBeUndefined();
+      expect(passed.isArchived).toBeUndefined();
+    });
+
+    it('keeps billing/lifecycle fields for a SuperAdmin', async () => {
+      const input = {
+        id: OTHER_ORG_ID,
+        plan: 'ENTERPRISE',
+        lifecycleStatus: 'SUSPENDED',
+      } as UpdateOrganizationInput;
+
+      await resolver.updateOrganization(input, superAdmin);
+
+      expect(service.updateOrganization).toHaveBeenCalledWith(
+        OTHER_ORG_ID,
+        expect.objectContaining({
+          plan: 'ENTERPRISE',
+          lifecycleStatus: 'SUSPENDED',
+        }),
+      );
+    });
+
     it('keeps role requirement and auth guards on the mutation', () => {
       const handler = methodOf('updateOrganization');
       const roles: SystemRole[] = Reflect.getMetadata(ROLES_KEY, handler) ?? [];
@@ -210,11 +271,107 @@ describe('OrganizationsResolver', () => {
     it.each([
       ['createOrganization', methodOf('createOrganization')],
       ['removeOrganization', methodOf('removeOrganization')],
+      ['organizationsOverview', methodOf('organizationsOverview')],
+      ['organizationUsage', methodOf('organizationUsage')],
+      ['suspendOrganization', methodOf('suspendOrganization')],
+      ['reactivateOrganization', methodOf('reactivateOrganization')],
+      ['changeOrganizationPlan', methodOf('changeOrganizationPlan')],
+      ['organizationAuditLog', methodOf('organizationAuditLog')],
+      ['exportOrganizationData', methodOf('exportOrganizationData')],
     ])('%s requires SuperAdminGuard', (_name, handler) => {
       const guards: unknown[] =
         Reflect.getMetadata('__guards__', handler) ?? [];
       expect(guards).toEqual(
         expect.arrayContaining([GqlBetterAuthGuard, SuperAdminGuard]),
+      );
+    });
+  });
+
+  describe('organizationsOverview', () => {
+    it('delegates to the service', async () => {
+      const overview = { stats: {}, rows: [] };
+      service.getOrganizationsOverview.mockResolvedValue(overview);
+
+      await expect(resolver.organizationsOverview()).resolves.toBe(overview);
+    });
+  });
+
+  describe('organizationUsage', () => {
+    it('delegates to the service with the given org id', async () => {
+      const usage = { userCount: 5 };
+      service.getOrganizationUsage.mockResolvedValue(usage);
+
+      await expect(resolver.organizationUsage('org-1')).resolves.toBe(usage);
+      expect(service.getOrganizationUsage).toHaveBeenCalledWith('org-1');
+    });
+  });
+
+  describe('suspendOrganization', () => {
+    it('passes id, reason and the acting SuperAdmin id to the service', async () => {
+      service.suspendOrganization.mockResolvedValue({ id: 'org-1' });
+
+      await resolver.suspendOrganization(
+        { id: 'org-1', reason: 'no payment' },
+        superAdmin,
+      );
+      expect(service.suspendOrganization).toHaveBeenCalledWith(
+        'org-1',
+        'no payment',
+        superAdmin.sub,
+      );
+    });
+  });
+
+  describe('reactivateOrganization', () => {
+    it('passes id and the acting SuperAdmin id to the service', async () => {
+      service.reactivateOrganization.mockResolvedValue({ id: 'org-1' });
+
+      await resolver.reactivateOrganization('org-1', superAdmin);
+      expect(service.reactivateOrganization).toHaveBeenCalledWith(
+        'org-1',
+        superAdmin.sub,
+      );
+    });
+  });
+
+  describe('changeOrganizationPlan', () => {
+    it('passes the input and the acting SuperAdmin id to the service', async () => {
+      service.changeOrganizationPlan.mockResolvedValue({ id: 'org-1' });
+      const input = { id: 'org-1', plan: 'ENTERPRISE' } as never;
+
+      await resolver.changeOrganizationPlan(input, superAdmin);
+      expect(service.changeOrganizationPlan).toHaveBeenCalledWith(
+        input,
+        superAdmin.sub,
+      );
+    });
+  });
+
+  describe('organizationAuditLog', () => {
+    it('delegates pagination to the service', async () => {
+      const page = { items: [], total: 0 };
+      service.getOrganizationAuditLog.mockResolvedValue(page);
+
+      await resolver.organizationAuditLog('org-1', 10, 5);
+      expect(service.getOrganizationAuditLog).toHaveBeenCalledWith(
+        'org-1',
+        10,
+        5,
+      );
+    });
+  });
+
+  describe('exportOrganizationData', () => {
+    it('passes id and the acting SuperAdmin id to the service', async () => {
+      service.exportOrganizationData.mockResolvedValue({
+        jobId: 'job-1',
+        status: 'QUEUED',
+      });
+
+      await resolver.exportOrganizationData('org-1', superAdmin);
+      expect(service.exportOrganizationData).toHaveBeenCalledWith(
+        'org-1',
+        superAdmin.sub,
       );
     });
   });

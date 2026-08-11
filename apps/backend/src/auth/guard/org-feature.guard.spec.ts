@@ -114,4 +114,22 @@ describe('OrgFeatureGuard', () => {
     });
     await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
   });
+
+  it('rejects a dependent feature when its parent is disabled', async () => {
+    // TIME_REPORTS depends on TIME_TRACKING — even if TIME_REPORTS itself
+    // has an enabled row, a disabled parent must still block it.
+    const em = mockEntityManager({
+      maxUpdatedAt: new Date('2026-01-01'),
+      toggles: [
+        { featureKey: OrgFeatureKey.TIME_REPORTS, enabled: true },
+        { featureKey: OrgFeatureKey.TIME_TRACKING, enabled: false },
+      ],
+    });
+    const guard = new OrgFeatureGuard(reflector, em);
+    const ctx = mockGqlExecutionContext({
+      user: mockUser(),
+      handler: handlerRequiring(OrgFeatureKey.TIME_REPORTS),
+    });
+    await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
+  });
 });

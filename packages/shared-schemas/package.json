@@ -17,6 +17,11 @@
       "require": "./dist/org-features/*.js",
       "default": "./src/org-features/*.ts"
     },
+    "./organizations/*": {
+      "types": "./dist/organizations/*.d.ts",
+      "require": "./dist/organizations/*.js",
+      "default": "./src/organizations/*.ts"
+    },
     "./*": "./src/*.ts"
   },
   "files": [

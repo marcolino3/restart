@@ -110,10 +110,18 @@ export class GqlBetterAuthGuard implements CanActivate {
     // request — the unprotected `authContext` query has to stay reachable so
     // the frontend can route the user to /select-org. So a stale/invalid org
     // degrades to the same empty-roles payload as "no active org".
+    // A suspended organization must stop working immediately: its members
+    // degrade to the empty-roles payload (all org-scoped queries rejected,
+    // `authContext` stays reachable). SuperAdmins keep access so they can
+    // manage/reactivate the org.
     let ctx: Awaited<ReturnType<typeof getAuthContext>> | null = null;
     if (orgId) {
-      const orgExists = await this.em.existsBy(Organization, { id: orgId });
-      if (orgExists) {
+      const org = await this.em.findOne(Organization, {
+        where: { id: orgId },
+        select: { id: true, lifecycleStatus: true },
+      });
+      const suspended = org?.lifecycleStatus === 'SUSPENDED';
+      if (org && (!suspended || dbUser.isSuperAdmin)) {
         ctx = await getAuthContext(this.em, dbUser.id, orgId);
       }
     }
