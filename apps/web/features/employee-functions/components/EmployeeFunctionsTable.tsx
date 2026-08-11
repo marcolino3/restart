@@ -40,7 +40,10 @@ import { ArchiveConfirmationDialog } from "@/components/common/ArchiveConfirmati
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { DataTable } from "@/components/data-table/DataTable";
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
-import { useDataTable } from "@/components/data-table/use-data-table";
+import {
+  type AppTableFeatures,
+  useDataTable,
+} from "@/components/data-table/use-data-table";
 import { handleAction } from "@/lib/actions/handle-action";
 import { normalizeForSearch } from "@/lib/table/locale-sorting";
 import { cn } from "@/lib/utils";
@@ -95,7 +98,9 @@ export function EmployeeFunctionsTable({ initialItems }: Props) {
     return { success: false as const, error: res.error };
   };
 
-  const columns = useMemo<ColumnDef<EmployeeFunctionItem>[]>(
+  const columns = useMemo<
+    ColumnDef<AppTableFeatures, EmployeeFunctionItem, unknown>[]
+  >(
     () => [
       {
         id: "name",

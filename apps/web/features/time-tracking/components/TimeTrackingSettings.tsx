@@ -24,7 +24,10 @@ import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmation
 import { DataTable } from "@/components/data-table/DataTable";
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
 import type { FilterGroup } from "@/components/data-table/DataTableFilter";
-import { useDataTable } from "@/components/data-table/use-data-table";
+import {
+  type AppTableFeatures,
+  useDataTable,
+} from "@/components/data-table/use-data-table";
 import {
   DateRangePicker,
   type DateRangeValue,
@@ -142,7 +145,7 @@ export const HolidaysSection = ({ holidays }: { holidays: Holiday[] }) => {
       content: <HolidayForm copyFrom={holiday} />,
     });
 
-  const columns = useMemo<ColumnDef<Holiday>[]>(
+  const columns = useMemo<ColumnDef<AppTableFeatures, Holiday, unknown>[]>(
     () => [
       {
         id: "date",
@@ -290,7 +293,7 @@ export const CompanyVacationsSection = ({
     [companyVacations, dateRange],
   );
 
-  const columns = useMemo<ColumnDef<CompanyVacation>[]>(
+  const columns = useMemo<ColumnDef<AppTableFeatures, CompanyVacation, unknown>[]>(
     () => [
       {
         id: "name",

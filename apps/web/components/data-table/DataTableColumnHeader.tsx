@@ -6,9 +6,13 @@ import { useTranslations } from "next-intl";
 
 import { cn } from "@/lib/utils";
 
-interface DataTableColumnHeaderProps<TData, TValue>
-  extends React.HTMLAttributes<HTMLDivElement> {
-  column: Column<TData, TValue>;
+import { type AppTableFeatures } from "./use-data-table";
+
+interface DataTableColumnHeaderProps<
+  TData extends Record<string, unknown>,
+  TValue,
+> extends React.HTMLAttributes<HTMLDivElement> {
+  column: Column<AppTableFeatures, TData, TValue>;
   title: string;
 }
 
@@ -19,7 +23,10 @@ interface DataTableColumnHeaderProps<TData, TValue>
  * Cycles ascending -> descending -> unsorted, and exposes the current state
  * via `aria-sort` so the sort order is announced rather than only drawn.
  */
-export function DataTableColumnHeader<TData, TValue>({
+export function DataTableColumnHeader<
+  TData extends Record<string, unknown>,
+  TValue,
+>({
   column,
   title,
   className,

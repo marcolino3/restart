@@ -1,41 +1,79 @@
 "use client";
 
 import {
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
+  columnFacetingFeature,
+  columnFilteringFeature,
+  columnSizingFeature,
+  columnVisibilityFeature,
+  createFacetedRowModel,
+  createFacetedUniqueValues,
+  createFilteredRowModel,
+  createPaginatedRowModel,
+  createSortedRowModel,
+  globalFilteringFeature,
+  rowPaginationFeature,
+  rowSelectionFeature,
+  rowSortingFeature,
+  tableFeatures,
+  useTable,
   type ColumnDef,
   type ColumnFiltersState,
+  type ColumnVisibilityState,
   type PaginationState,
   type RowSelectionState,
   type SortingState,
   type TableOptions,
-  type VisibilityState,
 } from "@tanstack/react-table";
 import { useLocale } from "next-intl";
 import * as React from "react";
 
 import {
-  createLocaleSortingFn,
+  activeSortLocale,
+  localeSortFn,
   normalizeForSearch,
 } from "@/lib/table/locale-sorting";
 
-export interface UseDataTableOptions<TData>
+/**
+ * Shared feature set for every table in the app. Every `DataTable*` component
+ * and column-def type is generic over `AppTableFeatures` instead of each
+ * table declaring its own subset, since call sites all rely on the same
+ * sorting/filtering/visibility/selection/pagination/faceting surface.
+ */
+export const appTableFeatures = tableFeatures({
+  columnFilteringFeature,
+  columnVisibilityFeature,
+  columnSizingFeature,
+  globalFilteringFeature,
+  rowSelectionFeature,
+  rowSortingFeature,
+  rowPaginationFeature,
+  columnFacetingFeature,
+  filteredRowModel: createFilteredRowModel(),
+  sortedRowModel: createSortedRowModel(),
+  paginatedRowModel: createPaginatedRowModel(),
+  facetedRowModel: createFacetedRowModel(),
+  facetedUniqueValues: createFacetedUniqueValues(),
+  // Applies to every column that doesn't set its own `sortFn`, so tables get
+  // locale-correct ordering without opting in per column. Must be a stable
+  // reference (registered once here, not per `useTable()` call) — it reads
+  // the active locale from `activeSortLocale` instead of closing over it.
+  sortFns: { auto: localeSortFn },
+});
+
+export type AppTableFeatures = typeof appTableFeatures;
+
+export interface UseDataTableOptions<TData extends Record<string, unknown>>
   extends Omit<
-    TableOptions<TData>,
-    "getCoreRowModel" | "state" | "columns" | "data"
+    TableOptions<AppTableFeatures, TData>,
+    "features" | "state" | "columns" | "data"
   > {
   data: TData[];
-  columns: ColumnDef<TData, unknown>[];
+  columns: ColumnDef<AppTableFeatures, TData, unknown>[];
   /** Disables the pagination row model (renders every row). */
   paginated?: boolean;
   initialPageSize?: number;
   initialSorting?: SortingState;
-  initialVisibility?: VisibilityState;
+  initialVisibility?: ColumnVisibilityState;
   /** Enables the built-in search box wiring. */
   enableGlobalFilter?: boolean;
 }
@@ -49,7 +87,10 @@ export interface UseDataTableOptions<TData>
  *   `z` (see `lib/table/locale-sorting.ts`).
  * - **Diacritic-insensitive global search**, so "Muller" matches "Müller".
  */
-export function useDataTable<TData>({
+/** Sentinel page size that keeps every row on a single page when `paginated` is off. */
+const ALL_ROWS = Number.MAX_SAFE_INTEGER;
+
+export function useDataTable<TData extends Record<string, unknown>>({
   data,
   columns,
   paginated = true,
@@ -60,26 +101,23 @@ export function useDataTable<TData>({
   ...options
 }: UseDataTableOptions<TData>) {
   const locale = useLocale();
+  activeSortLocale.current = locale;
 
   const [sorting, setSorting] = React.useState<SortingState>(initialSorting);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
   );
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>(initialVisibility);
+    React.useState<ColumnVisibilityState>(initialVisibility);
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
-    pageSize: initialPageSize,
+    pageSize: paginated ? initialPageSize : ALL_ROWS,
   });
 
-  const localeSortingFn = React.useMemo(
-    () => createLocaleSortingFn<TData>(locale),
-    [locale],
-  );
-
-  const table = useReactTable<TData>({
+  const table = useTable<AppTableFeatures, TData>({
+    features: appTableFeatures,
     data,
     columns,
     state: {
@@ -87,8 +125,8 @@ export function useDataTable<TData>({
       columnFilters,
       columnVisibility,
       rowSelection,
+      pagination,
       ...(enableGlobalFilter ? { globalFilter } : {}),
-      ...(paginated ? { pagination } : {}),
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -96,12 +134,6 @@ export function useDataTable<TData>({
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    ...(paginated ? { getPaginationRowModel: getPaginationRowModel() } : {}),
     // Searches every visible cell, ignoring case and diacritics.
     globalFilterFn: (row, _columnId, filterValue) => {
       const needle = normalizeForSearch(filterValue);
@@ -113,9 +145,6 @@ export function useDataTable<TData>({
           normalizeForSearch(cell.getValue()).includes(needle),
         );
     },
-    // Applies to every column that doesn't set its own `sortingFn`, so tables
-    // get locale-correct ordering without opting in per column.
-    sortingFns: { auto: localeSortingFn },
     ...options,
   });
 

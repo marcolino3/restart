@@ -3,7 +3,7 @@
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
 
-export type EmployeeListItem = {
+export type EmployeeListItem = Record<string, unknown> & {
   membership: {
     employee?: {
       isActive: boolean;

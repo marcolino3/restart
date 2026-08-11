@@ -17,7 +17,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/data-table/DataTable";
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
-import { useDataTable } from "@/components/data-table/use-data-table";
+import {
+  type AppTableFeatures,
+  useDataTable,
+} from "@/components/data-table/use-data-table";
 import { OrganizationSetting } from "../actions/get-settings.action";
 import { getOrganizationSettingValueAction } from "../actions/get-setting-value.action";
 
@@ -63,7 +66,7 @@ export const SettingsTable = ({ data, organizationId, onEdit, onDelete }: Props)
     }
   };
 
-  const columns: ColumnDef<OrganizationSetting>[] = React.useMemo(
+  const columns: ColumnDef<AppTableFeatures, OrganizationSetting, unknown>[] = React.useMemo(
     () => [
       {
         id: "key",

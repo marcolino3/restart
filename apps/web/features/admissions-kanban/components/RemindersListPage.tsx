@@ -13,7 +13,10 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTable } from "@/components/data-table/DataTable";
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
 import type { FilterGroup } from "@/components/data-table/DataTableFilter";
-import { useDataTable } from "@/components/data-table/use-data-table";
+import {
+  type AppTableFeatures,
+  useDataTable,
+} from "@/components/data-table/use-data-table";
 import { multiSelectFilter } from "@/lib/table/locale-sorting";
 import { cn } from "@/lib/utils";
 
@@ -128,7 +131,9 @@ export function RemindersListPage({
   // Computed once per render so every row is bucketed against one instant.
   const now = new Date();
 
-  const columns = useMemo<ColumnDef<OrgAdmissionReminder>[]>(
+  const columns = useMemo<
+    ColumnDef<AppTableFeatures, OrgAdmissionReminder, unknown>[]
+  >(
     () => [
       {
         id: "title",

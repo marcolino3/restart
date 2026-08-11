@@ -1,25 +1,38 @@
-import type { Row } from "@tanstack/react-table";
+import type { Row, TableFeatures } from "@tanstack/react-table";
 import { describe, expect, it } from "vitest";
 
 import {
-  createLocaleSortingFn,
+  activeSortLocale,
   localeIncludesFilter,
+  localeSortFn,
   multiSelectFilter,
   normalizeForSearch,
 } from "./locale-sorting";
 
-interface Person {
+interface Person extends Record<string, unknown> {
   name: string;
 }
 
 /** Minimal `Row` stub — the sorting/filter fns only ever call `getValue`. */
-function row(value: unknown): Row<Person> {
-  return { getValue: () => value } as unknown as Row<Person>;
+function row(value: unknown): Row<TableFeatures, Person> {
+  return { getValue: () => value } as unknown as Row<TableFeatures, Person>;
+}
+
+/** Same stub, typed for the non-generic `FilterFn<TableFeatures, Record<string, unknown>>`s. */
+function filterRow(
+  value: unknown,
+): Row<TableFeatures, Record<string, unknown>> {
+  return { getValue: () => value } as unknown as Row<
+    TableFeatures,
+    Record<string, unknown>
+  >;
 }
 
 function sortNames(names: string[], locale = "de-CH"): string[] {
-  const sortingFn = createLocaleSortingFn<Person>(locale);
-  return [...names].sort((a, b) => sortingFn(row(a), row(b), "name"));
+  activeSortLocale.current = locale;
+  return [...names].sort((a, b) =>
+    localeSortFn<TableFeatures, Person>(row(a), row(b), "name"),
+  );
 }
 
 describe("createLocaleSortingFn", () => {
@@ -60,19 +73,23 @@ describe("createLocaleSortingFn", () => {
   });
 
   it("always sorts empty values last", () => {
-    const sortingFn = createLocaleSortingFn<Person>("de-CH");
+    activeSortLocale.current = "de-CH";
 
-    expect(sortingFn(row(""), row("Anna"), "name")).toBe(1);
-    expect(sortingFn(row("Anna"), row(""), "name")).toBe(-1);
-    expect(sortingFn(row(null), row(undefined), "name")).toBe(0);
+    expect(localeSortFn<TableFeatures, Person>(row(""), row("Anna"), "name")).toBe(1);
+    expect(localeSortFn<TableFeatures, Person>(row("Anna"), row(""), "name")).toBe(-1);
+    expect(
+      localeSortFn<TableFeatures, Person>(row(null), row(undefined), "name"),
+    ).toBe(0);
   });
 
   it("orders dates chronologically", () => {
-    const sortingFn = createLocaleSortingFn<Person>("de-CH");
+    activeSortLocale.current = "de-CH";
     const earlier = new Date("2026-01-01");
     const later = new Date("2026-07-31");
 
-    expect(sortingFn(row(earlier), row(later), "name")).toBeLessThan(0);
+    expect(
+      localeSortFn<TableFeatures, Person>(row(earlier), row(later), "name"),
+    ).toBeLessThan(0);
   });
 });
 
@@ -91,32 +108,42 @@ describe("normalizeForSearch", () => {
 
 describe("localeIncludesFilter", () => {
   it("matches across diacritics in both directions", () => {
-    expect(localeIncludesFilter(row("Müller"), "name", "muller")).toBe(true);
-    expect(localeIncludesFilter(row("Muller"), "name", "müller")).toBe(true);
+    expect(localeIncludesFilter(filterRow("Müller"), "name", "muller")).toBe(true);
+    expect(localeIncludesFilter(filterRow("Muller"), "name", "müller")).toBe(true);
   });
 
   it("matches case-insensitively on substrings", () => {
-    expect(localeIncludesFilter(row("Anna Meier"), "name", "MEIER")).toBe(true);
+    expect(
+      localeIncludesFilter(filterRow("Anna Meier"), "name", "MEIER"),
+    ).toBe(true);
   });
 
   it("passes everything through for an empty filter", () => {
-    expect(localeIncludesFilter(row("Anna"), "name", "")).toBe(true);
-    expect(localeIncludesFilter(row("Anna"), "name", undefined)).toBe(true);
+    expect(localeIncludesFilter(filterRow("Anna"), "name", "")).toBe(true);
+    expect(localeIncludesFilter(filterRow("Anna"), "name", undefined)).toBe(
+      true,
+    );
   });
 
   it("rejects non-matches", () => {
-    expect(localeIncludesFilter(row("Anna"), "name", "zzz")).toBe(false);
+    expect(localeIncludesFilter(filterRow("Anna"), "name", "zzz")).toBe(false);
   });
 });
 
 describe("multiSelectFilter", () => {
   it("keeps rows whose value is selected", () => {
-    expect(multiSelectFilter(row("ACTIVE"), "status", ["ACTIVE"])).toBe(true);
-    expect(multiSelectFilter(row("ACTIVE"), "status", ["ARCHIVED"])).toBe(false);
+    expect(multiSelectFilter(filterRow("ACTIVE"), "status", ["ACTIVE"])).toBe(
+      true,
+    );
+    expect(
+      multiSelectFilter(filterRow("ACTIVE"), "status", ["ARCHIVED"]),
+    ).toBe(false);
   });
 
   it("treats an empty selection as no filter", () => {
-    expect(multiSelectFilter(row("ACTIVE"), "status", [])).toBe(true);
-    expect(multiSelectFilter(row("ACTIVE"), "status", undefined)).toBe(true);
+    expect(multiSelectFilter(filterRow("ACTIVE"), "status", [])).toBe(true);
+    expect(
+      multiSelectFilter(filterRow("ACTIVE"), "status", undefined),
+    ).toBe(true);
   });
 });

@@ -10,7 +10,7 @@ export type AdmissionReminderListFilter =
   | "OPEN"
   | "COMPLETED";
 
-export type OrgAdmissionReminder = {
+export type OrgAdmissionReminder = Record<string, unknown> & {
   id: string;
   applicationId: string;
   applicationChildName: string;

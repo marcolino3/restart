@@ -1,6 +1,6 @@
 "use client";
 
-import { flexRender, type Row, type Table as TanStackTable } from "@tanstack/react-table";
+import { flexRender, type ReactTable, type Row } from "@tanstack/react-table";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
+import { type AppTableFeatures } from "./use-data-table";
 import { DataTableActiveFilters } from "./DataTableActiveFilters";
 import { DataTableFilter, type FilterGroup } from "./DataTableFilter";
 import { DataTablePagination } from "./DataTablePagination";
@@ -35,8 +36,8 @@ function columnMetaClassName(
   return (meta as DataTableColumnMeta | undefined)?.className;
 }
 
-interface DataTableProps<TData> {
-  table: TanStackTable<TData>;
+interface DataTableProps<TData extends Record<string, unknown>> {
+  table: ReactTable<AppTableFeatures, TData>;
   /** Search box value. Omit both search props to hide the search box. */
   globalFilter?: string;
   onGlobalFilterChange?: (value: string) => void;
@@ -55,7 +56,7 @@ interface DataTableProps<TData> {
   isLoading?: boolean;
   /** Rendered in place of the "no results" default. */
   emptyState?: React.ReactNode;
-  onRowClick?: (row: Row<TData>) => void;
+  onRowClick?: (row: Row<AppTableFeatures, TData>) => void;
   /**
    * Column ids whose cells swallow their own clicks, on top of the default
    * `select`/`actions`. Only relevant together with `onRowClick`.
@@ -75,7 +76,7 @@ interface DataTableProps<TData> {
    * Replaces the default `<TableRow>` while keeping the shared cell rendering.
    * Receives the row and its cells; use it for sortable/draggable rows.
    */
-  renderRow?: (row: Row<TData>, cells: React.ReactNode) => React.ReactNode;
+  renderRow?: (row: Row<AppTableFeatures, TData>, cells: React.ReactNode) => React.ReactNode;
   className?: string;
 }
 
@@ -87,7 +88,7 @@ interface DataTableProps<TData> {
  * `DataTable` namespace, so call sites never pass them in — that is what kept
  * the previous copy-pasted tables drifting apart between DE and EN.
  */
-export function DataTable<TData>({
+export function DataTable<TData extends Record<string, unknown>>({
   table,
   globalFilter,
   onGlobalFilterChange,
@@ -121,7 +122,7 @@ export function DataTable<TData>({
   // Derived from `columnFilters` state rather than `table.getColumn(...)`:
   // the table instance is referentially stable, so a memo keyed on it would
   // never recompute and the checkboxes would never tick.
-  const columnFilters = table.getState().columnFilters;
+  const columnFilters = table.state.columnFilters;
   const filterValue = React.useMemo(() => {
     const selection: Record<string, string[]> = {};
 
@@ -149,7 +150,7 @@ export function DataTable<TData>({
     return new Set([...INTERACTIVE_COLUMN_IDS, ...interactiveColumnIds]);
   }, [interactiveColumnIds]);
 
-  function renderCells(row: Row<TData>) {
+  function renderCells(row: Row<AppTableFeatures, TData>) {
     return row.getVisibleCells().map((cell) => (
       <TableCell
         key={cell.id}

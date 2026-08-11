@@ -10,7 +10,10 @@ import { PersonCell } from "@/components/common/PersonCell";
 import { DataTable } from "@/components/data-table/DataTable";
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
 import type { FilterGroup } from "@/components/data-table/DataTableFilter";
-import { useDataTable } from "@/components/data-table/use-data-table";
+import {
+  type AppTableFeatures,
+  useDataTable,
+} from "@/components/data-table/use-data-table";
 import type { BadgeProps } from "@/components/ui/badge";
 import { ROUTES } from "@/constants/routes";
 import { EmployeeListItem } from "../actions/get-employees.action";
@@ -55,7 +58,11 @@ const formatBalance = (mins: number): string => {
 };
 
 /** Search across name + email for the merged person column. */
-const personFilter: FilterFn<EmployeeListItem> = (row, _columnId, value) => {
+const personFilter: FilterFn<AppTableFeatures, EmployeeListItem> = (
+  row,
+  _columnId,
+  value,
+) => {
   const needle = String(value ?? "")
     .trim()
     .toLowerCase();
@@ -66,7 +73,11 @@ const personFilter: FilterFn<EmployeeListItem> = (row, _columnId, value) => {
   return hay.includes(needle);
 };
 
-const useColumns = (): ColumnDef<EmployeeListItem>[] => {
+const useColumns = (): ColumnDef<
+  AppTableFeatures,
+  EmployeeListItem,
+  unknown
+>[] => {
   const t = useTranslations("Common");
   const tE = useTranslations("Employees");
 

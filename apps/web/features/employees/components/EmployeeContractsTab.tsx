@@ -13,7 +13,10 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/data-table/DataTable";
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
 import type { FilterGroup } from "@/components/data-table/DataTableFilter";
-import { useDataTable } from "@/components/data-table/use-data-table";
+import {
+  type AppTableFeatures,
+  useDataTable,
+} from "@/components/data-table/use-data-table";
 import { multiSelectFilter } from "@/lib/table/locale-sorting";
 import { ROUTES } from "@/constants/routes";
 
@@ -71,8 +74,10 @@ export default function EmployeeContractsTab({
     }
   };
 
-  const columns = useMemo<ColumnDef<EmployeeContract>[]>(() => {
-    const cols: ColumnDef<EmployeeContract>[] = [
+  const columns = useMemo<
+    ColumnDef<AppTableFeatures, EmployeeContract, unknown>[]
+  >(() => {
+    const cols: ColumnDef<AppTableFeatures, EmployeeContract, unknown>[] = [
       {
         id: "startDate",
         // Sorted on the timestamp, not on the formatted date string.
