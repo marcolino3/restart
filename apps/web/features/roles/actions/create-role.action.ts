@@ -14,13 +14,14 @@ const CreateRoleDocument = gql`
 export const createRoleAction = async (
   name: string,
   description?: string,
-  permissionCodes?: string[]
+  permissionCodes?: string[],
+  membershipIds?: string[]
 ) => {
   const client = await serverCookieGqlClient();
 
   try {
     await client.request(CreateRoleDocument, {
-      input: { name, description, permissionCodes },
+      input: { name, description, permissionCodes, membershipIds },
     });
     return { success: true as const };
   } catch (error) {

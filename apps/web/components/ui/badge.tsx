@@ -25,6 +25,11 @@ const badgeVariants = cva(
         green:
           "border-transparent bg-status-green text-status-green-foreground",
         rose: "border-transparent bg-status-rose text-status-rose-foreground",
+        // Zugriffsstufen-Skala (Kein/Lesen/Bearbeiten/Vollzugriff) fuer Rollen & Berechtigungen
+        level0: "border-transparent bg-level-0 text-level-0-foreground",
+        level1: "border-transparent bg-level-1 text-level-1-foreground",
+        level2: "border-transparent bg-level-2 text-level-2-foreground",
+        level3: "border-transparent bg-level-3 text-level-3-foreground",
       },
     },
     defaultVariants: {

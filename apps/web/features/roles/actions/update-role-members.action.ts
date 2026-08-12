@@ -3,31 +3,27 @@
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
 
-const UpdateRolePermissionsDocument = gql`
-  mutation UpdateRolePermissions($input: UpdateRolePermissionsInput!) {
-    updateRolePermissions(input: $input) {
+const UpdateRoleMembersDocument = gql`
+  mutation UpdateRoleMembers($input: UpdateRoleMembersInput!) {
+    updateRoleMembers(input: $input) {
       id
-      permissions {
-        id
-        code
-      }
     }
   }
 `;
 
-export const updateRolePermissionsAction = async (
+export const updateRoleMembersAction = async (
   roleId: string,
-  permissionCodes: string[]
+  membershipIds: string[]
 ) => {
   const client = await serverCookieGqlClient();
 
   try {
-    await client.request(UpdateRolePermissionsDocument, {
-      input: { roleId, permissionCodes },
+    await client.request(UpdateRoleMembersDocument, {
+      input: { roleId, membershipIds },
     });
     return { success: true as const };
   } catch (error) {
-    console.error("updateRolePermissions failed", error);
+    console.error("updateRoleMembers failed", error);
     return { success: false as const, error: extractGqlMessage(error) };
   }
 };

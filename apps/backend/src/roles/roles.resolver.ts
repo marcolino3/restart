@@ -5,6 +5,7 @@ import { RoleFieldPermission } from './entities/role-field-permission.entity';
 import { CreateRoleInput } from './dto/create-role.input';
 import { UpdateRoleInput } from './dto/update-role.input';
 import { UpdateRolePermissionsInput } from './dto/update-role-permissions.input';
+import { UpdateRoleMembersInput } from './dto/update-role-members.input';
 import { UpdateRoleFieldPermissionsInput } from './dto/update-role-field-permissions.input';
 import { DuplicateRoleInput } from './dto/duplicate-role.input';
 import { UseGuards } from '@nestjs/common';
@@ -75,7 +76,12 @@ export class RolesResolver {
     @CurrentOrgId() orgId: string,
     @CurrentUser() user: TokenPayload,
   ) {
-    return this.rolesService.updateRole(orgId, input, user.permissions ?? []);
+    return this.rolesService.updateRole(
+      orgId,
+      input,
+      user.permissions ?? [],
+      user.isSuperAdmin ?? false,
+    );
   }
 
   @Mutation(() => Role)
@@ -90,6 +96,7 @@ export class RolesResolver {
       input.permissionCodes,
       orgId,
       user.permissions ?? [],
+      user.isSuperAdmin ?? false,
     );
   }
 
@@ -106,6 +113,19 @@ export class RolesResolver {
       input.fieldPermissions,
       user.fieldPermissions ?? new Map(),
       user.isSuperAdmin ?? false,
+    );
+  }
+
+  @Mutation(() => Role)
+  @Permissions('ROLE_ASSIGN')
+  updateRoleMembers(
+    @Args('input') input: UpdateRoleMembersInput,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.rolesService.updateRoleMembers(
+      orgId,
+      input.roleId,
+      input.membershipIds,
     );
   }
 

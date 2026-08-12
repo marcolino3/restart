@@ -30,6 +30,7 @@ const RoleDetailPage = async ({ params, searchParams }: RoleDetailPageProps) => 
   return (
     <RoleDetailView
       role={role}
+      roles={rolesResult.data}
       permissions={permissionsResult.data}
       expandedCategory={domain}
     />

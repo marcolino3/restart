@@ -18,6 +18,107 @@ test.describe('Employee functions — access control', () => {
 })
 
 test.describe('Employee functions — CRUD', () => {
+  // Tests below run against the shared fixture org from ensureActiveOrg and
+  // create functions with a unique "E2E ..." label instead of a fresh org
+  // per test. Track every created id here and archive (best-effort delete)
+  // them in afterAll so repeated local/CI runs don't pile up leftover rows —
+  // archive is used as the fallback because the "still assigned" test leaves
+  // a function referenced by an onboarding draft, which the hard-delete
+  // mutation intentionally refuses to remove.
+  const createdFunctionIds: string[] = []
+  const createdDrafts: { employeeId: string; orgId: string }[] = []
+
+  const activeOrgId = async (page: Page): Promise<string | undefined> =>
+    (await page.context().cookies()).find((c) => c.name === 'Active-Org')
+      ?.value
+
+  const trackCreatedFunction = async (page: Page, unique: string) => {
+    const listed = await page.request.post(`${BACKEND_URL}/graphql`, {
+      data: {
+        query: `{ employeeFunctionsByOrgId(includeArchived: true) { id translations { locale name } } }`,
+      },
+    })
+    const listedJson = (await listed.json()) as {
+      data?: {
+        employeeFunctionsByOrgId?: {
+          id: string
+          translations: { locale: string; name: string }[]
+        }[]
+      }
+    }
+    const id = listedJson.data?.employeeFunctionsByOrgId?.find((fn) =>
+      fn.translations.some((tr) => tr.name === unique),
+    )?.id
+    if (id) createdFunctionIds.push(id)
+  }
+
+  test.afterAll(async ({ browser }) => {
+    if (createdFunctionIds.length === 0 && createdDrafts.length === 0) {
+      return
+    }
+    // The bare `request` fixture has no session cookie; sign in through a
+    // throwaway page so the delete/archive mutations are authorized.
+    const context = await browser.newContext()
+    const page = await context.newPage()
+    await signInAsSuperAdmin(page)
+    // ensureActiveOrg creates a NEW org when no named org exists — it would
+    // not land back on the org each fixture was created in. Function
+    // deletes/archives are unscoped-by-org lookups, but the draft-employee
+    // removal is org-scoped, so its own Active-Org cookie is set per draft
+    // below instead of relying on a single shared org here.
+    const authedRequest = page.request
+
+    // Draft employees must go first — they're what keeps the "still
+    // assigned" fixture function from hard-deleting.
+    for (const { employeeId, orgId } of createdDrafts) {
+      await context.addCookies([
+        {
+          name: 'Active-Org',
+          value: orgId,
+          domain: new URL(BACKEND_URL).hostname,
+          path: '/',
+        },
+      ])
+      const removed = await authedRequest.post(`${BACKEND_URL}/graphql`, {
+        data: {
+          query: `mutation RemoveDraft($employeeId: ID!) {
+            removeEmployeeOnboardingDraft(employeeId: $employeeId)
+          }`,
+          variables: { employeeId },
+        },
+      })
+      const removedJson = (await removed.json()) as {
+        errors?: { message: string }[]
+      }
+      if (removedJson.errors?.length) {
+        console.warn(
+          `E2E teardown: could not remove onboarding draft ${employeeId} — ${removedJson.errors[0].message}`,
+        )
+      }
+    }
+
+    for (const id of createdFunctionIds) {
+      const del = await authedRequest.post(`${BACKEND_URL}/graphql`, {
+        data: {
+          query: `mutation Delete($id: ID!) { deleteEmployeeFunction(id: $id) }`,
+          variables: { id },
+        },
+      })
+      const delJson = (await del.json()) as { errors?: { message: string }[] }
+      if (delJson.errors?.length) {
+        // Still assigned (e.g. the "disables delete" fixture) — archive
+        // instead so it at least disappears from the default list.
+        await authedRequest.post(`${BACKEND_URL}/graphql`, {
+          data: {
+            query: `mutation Archive($id: ID!) { archiveEmployeeFunction(id: $id) }`,
+            variables: { id },
+          },
+        })
+      }
+    }
+    await context.close()
+  })
+
   const openPage = async (page: Page) => {
     await signInAsSuperAdmin(page)
     await ensureActiveOrg(page)
@@ -57,6 +158,7 @@ test.describe('Employee functions — CRUD', () => {
     await submitCreate(page, dialog)
     await page.reload({ waitUntil: 'networkidle' })
     await expect(rowFor(page, unique)).toBeVisible({ timeout: 15000 })
+    await trackCreatedFunction(page, unique)
   }
 
   const rowFor = (page: Page, unique: string) =>
@@ -198,12 +300,18 @@ test.describe('Employee functions — CRUD', () => {
         },
       })
       const draftJson = (await draft.json()) as {
+        data?: { upsertEmployeeOnboardingDraft?: { id: string } }
         errors?: { message: string }[]
       }
       if (draftJson.errors?.length) {
         throw new Error(
           `E2E fixture: could not assign function — ${draftJson.errors[0].message}`,
         )
+      }
+      const draftEmployeeId = draftJson.data?.upsertEmployeeOnboardingDraft?.id
+      if (draftEmployeeId) {
+        const orgId = await activeOrgId(page)
+        if (orgId) createdDrafts.push({ employeeId: draftEmployeeId, orgId })
       }
 
       await page.reload({ waitUntil: 'networkidle' })

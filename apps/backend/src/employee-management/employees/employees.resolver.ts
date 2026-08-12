@@ -176,6 +176,18 @@ export class EmployeesResolver {
     return this.employeesService.upsertEmployeeOnboardingDraft(input, orgId);
   }
 
+  @Mutation(() => Boolean, { name: 'removeEmployeeOnboardingDraft' })
+  @Permissions('EMPLOYEE_WRITE')
+  removeEmployeeOnboardingDraft(
+    @Args('employeeId', { type: () => ID }) employeeId: string,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.employeesService.removeEmployeeOnboardingDraft(
+      employeeId,
+      orgId,
+    );
+  }
+
   @Mutation(() => Employee, { name: 'finalizeEmployeeOnboarding' })
   @Permissions('EMPLOYEE_WRITE')
   finalizeEmployeeOnboarding(

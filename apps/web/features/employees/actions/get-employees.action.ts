@@ -5,6 +5,7 @@ import { gql } from "graphql-request";
 
 export type EmployeeListItem = Record<string, unknown> & {
   membership: {
+    id: string;
     employee?: {
       isActive: boolean;
       timeTrackingEnabled: boolean;
@@ -44,6 +45,7 @@ const GetEmployeesDocument = gql`
       workloadPercent
       timeBalanceMinutes
       membership {
+        id
         employee {
           isActive
           timeTrackingEnabled

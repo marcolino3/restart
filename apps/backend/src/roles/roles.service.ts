@@ -6,9 +6,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Role } from './entities/role.entity';
 import { RoleFieldPermission } from './entities/role-field-permission.entity';
+import { Membership } from '@/memberships/entities/membership.entity';
 import { PermissionsService } from '@/permissions/permissions.service';
 import { PermissionCode } from '@/permissions/entities/permission-code.enum';
 import { RoleFieldPermissionEntryInput } from './dto/update-role-field-permissions.input';
@@ -26,10 +27,13 @@ export class RolesService {
     private readonly roleRepo: Repository<Role>,
     @InjectRepository(RoleFieldPermission)
     private readonly roleFieldPermissionRepo: Repository<RoleFieldPermission>,
+    @InjectRepository(Membership)
+    private readonly membershipRepo: Repository<Membership>,
     private readonly permissionsService: PermissionsService,
   ) {}
 
   async findAllByOrgId(orgId: string): Promise<Role[]> {
+    if (!orgId) return [];
     return this.roleRepo.find({
       where: { organizationId: orgId },
       relations: ['permissions', 'memberships', 'memberships.user'],
@@ -38,6 +42,7 @@ export class RolesService {
   }
 
   async findOne(id: string, orgId: string): Promise<Role> {
+    if (!orgId) throw new NotFoundException(`Role ${id} not found`);
     const role = await this.roleRepo.findOne({
       where: { id, organizationId: orgId },
       relations: ['permissions'],
@@ -61,9 +66,11 @@ export class RolesService {
       description?: string;
       permissionCodes?: string[];
       duplicateFromRoleId?: string;
+      membershipIds?: string[];
     },
     actorPermissions: string[],
   ): Promise<Role> {
+    if (!orgId) throw new ForbiddenException('No active organization');
     let permissionCodes = input.permissionCodes ?? [];
     let fieldPermissions: RoleFieldPermissionEntryInput[] = [];
 
@@ -99,7 +106,76 @@ export class RolesService {
       await this.replaceFieldPermissions(saved.id, fieldPermissions);
     }
 
+    if (input.membershipIds?.length) {
+      await this.assignMembers(orgId, saved.id, input.membershipIds);
+    }
+
     return this.findOne(saved.id, orgId);
+  }
+
+  async assignMembers(
+    orgId: string,
+    roleId: string,
+    membershipIds: string[],
+  ): Promise<void> {
+    const memberships = await this.membershipRepo.find({
+      where: { id: In(membershipIds), organizationId: orgId },
+      relations: ['roles'],
+    });
+    if (memberships.length !== membershipIds.length) {
+      throw new NotFoundException('One or more memberships not found');
+    }
+
+    for (const membership of memberships) {
+      const existingIds = new Set((membership.roles ?? []).map((r) => r.id));
+      if (!existingIds.has(roleId)) {
+        membership.roles = [
+          ...(membership.roles ?? []),
+          { id: roleId } as Role,
+        ];
+      }
+    }
+    await this.membershipRepo.save(memberships);
+  }
+
+  async updateRoleMembers(
+    orgId: string,
+    roleId: string,
+    membershipIds: string[],
+  ): Promise<Role> {
+    const role = await this.findOne(roleId, orgId);
+
+    const memberships = await this.membershipRepo.find({
+      where: { id: In(membershipIds), organizationId: orgId },
+      relations: ['roles'],
+    });
+    if (memberships.length !== membershipIds.length) {
+      throw new NotFoundException('One or more memberships not found');
+    }
+
+    const targetIds = new Set(membershipIds);
+    const currentMembers = await this.membershipRepo.find({
+      where: { organizationId: orgId },
+      relations: ['roles'],
+    });
+
+    const toUpdate: Membership[] = [];
+    for (const membership of currentMembers) {
+      const hasRole = (membership.roles ?? []).some((r) => r.id === roleId);
+      const shouldHaveRole = targetIds.has(membership.id);
+      if (hasRole === shouldHaveRole) continue;
+
+      membership.roles = shouldHaveRole
+        ? [...(membership.roles ?? []), { id: roleId } as Role]
+        : (membership.roles ?? []).filter((r) => r.id !== roleId);
+      toUpdate.push(membership);
+    }
+
+    if (toUpdate.length > 0) {
+      await this.membershipRepo.save(toUpdate);
+    }
+
+    return this.findOne(role.id, orgId);
   }
 
   async duplicateRole(
@@ -124,12 +200,15 @@ export class RolesService {
       permissionCodes?: string[];
     },
     actorPermissions: string[],
+    actorIsSuperAdmin = false,
   ): Promise<Role> {
     const role = await this.findOne(input.id, orgId);
-    this.assertSystemRoleUnchanged(role);
+    this.assertSystemRoleIdentityUnchanged(role, input);
 
     if (input.permissionCodes) {
-      this.assertNoEscalation(actorPermissions, input.permissionCodes);
+      if (!actorIsSuperAdmin) {
+        this.assertNoEscalation(actorPermissions, input.permissionCodes);
+      }
       await this.assertNotStrippingLastOwnerRole(
         orgId,
         role,
@@ -150,11 +229,13 @@ export class RolesService {
     permissionCodes: string[],
     orgId: string,
     actorPermissions: string[],
+    actorIsSuperAdmin = false,
   ): Promise<Role> {
     return this.updateRole(
       orgId,
       { id: roleId, permissionCodes },
       actorPermissions,
+      actorIsSuperAdmin,
     );
   }
 
@@ -165,8 +246,8 @@ export class RolesService {
     actorFieldPermissions: Map<string, Set<string>>,
     actorIsSuperAdmin = false,
   ): Promise<Role> {
-    const role = await this.findOne(roleId, orgId);
-    this.assertSystemRoleUnchanged(role);
+    // Multi-tenant guard: throws when the role does not belong to this org.
+    await this.findOne(roleId, orgId);
     if (!actorIsSuperAdmin) {
       this.assertNoFieldEscalation(actorFieldPermissions, entries);
     }
@@ -177,17 +258,40 @@ export class RolesService {
 
   async deleteRole(orgId: string, roleId: string): Promise<boolean> {
     const role = await this.findOne(roleId, orgId);
-    this.assertSystemRoleUnchanged(role);
+    this.assertSystemRoleNotDeleted(role);
     await this.assertNotDeletingLastOwnerRole(orgId, role);
 
     await this.roleRepo.remove(role);
     return true;
   }
 
-  private assertSystemRoleUnchanged(role: Role): void {
+  // System roles keep their identity (name/description) so seeding and
+  // bootstrap stay reproducible, but their permissions are editable by anyone
+  // holding ROLE_ASSIGN - escalation is still blocked by assertNoEscalation.
+  private assertSystemRoleIdentityUnchanged(
+    role: Role,
+    input: { name?: string; description?: string },
+  ): void {
+    if (!role.isSystem) return;
+    if (input.name !== undefined && input.name !== role.name) {
+      throw new ForbiddenException(
+        `System role "${role.name}" cannot be renamed`,
+      );
+    }
+    if (
+      input.description !== undefined &&
+      input.description !== role.description
+    ) {
+      throw new ForbiddenException(
+        `System role "${role.name}" description cannot be changed`,
+      );
+    }
+  }
+
+  private assertSystemRoleNotDeleted(role: Role): void {
     if (role.isSystem) {
       throw new ForbiddenException(
-        `System role "${role.name}" cannot be modified or deleted`,
+        `System role "${role.name}" cannot be deleted`,
       );
     }
   }

@@ -410,6 +410,40 @@ export class EmployeesService {
   }
 
   /**
+   * Hard-deletes an unfinished onboarding draft (status DRAFT, never
+   * invited) and its User + Membership. Scoped to DRAFT so a finalized
+   * employee can never be removed this way — those go through offboarding.
+   */
+  async removeEmployeeOnboardingDraft(
+    employeeId: string,
+    organizationId: string,
+  ): Promise<boolean> {
+    const employee = await this.employeesService.findOne({
+      where: { id: employeeId },
+      relations: { membership: { user: true } },
+    });
+    if (!employee || employee.membership?.organizationId !== organizationId) {
+      throw new NotFoundException('Employee not found');
+    }
+    if (employee.status !== EmployeeStatus.DRAFT) {
+      throw new BadRequestException(
+        'Only unfinished onboarding drafts can be removed this way',
+      );
+    }
+
+    const membership = employee.membership;
+    const user = membership.user;
+
+    return this.entityManager.transaction(async (manager) => {
+      await manager.delete(EmployeeContract, { employeeId });
+      await manager.remove(Membership, membership);
+      await manager.remove(Employee, employee);
+      if (user) await manager.remove(User, user);
+      return true;
+    });
+  }
+
+  /**
    * Auto-saving upsert for the onboarding wizard. Without `id` a new DRAFT
    * employee (User + UserEmail + Membership + Employee) is created; with `id`
    * the existing draft is patched. Roles, team and the contract are applied in
