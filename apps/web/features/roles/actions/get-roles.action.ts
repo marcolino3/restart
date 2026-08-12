@@ -3,12 +3,18 @@
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
 
+export type RoleMember = {
+  id: string;
+  user: { id: string; firstName: string; lastName: string } | null;
+};
+
 export type RoleWithPermissions = {
   id: string;
   name: string | null;
   systemCode: string | null;
   isSystem: boolean;
   permissions: { id: string; code: string; name: string }[] | null;
+  memberships: RoleMember[] | null;
 };
 
 type GetRolesResponse = {
@@ -26,6 +32,14 @@ const GetRolesDocument = gql`
         id
         code
         name
+      }
+      memberships {
+        id
+        user {
+          id
+          firstName
+          lastName
+        }
       }
     }
   }

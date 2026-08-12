@@ -2771,6 +2771,7 @@
     "rolesCount": "{count, plural, one {# Rolle} other {# Rollen}}",
     "selectRole": "Rolle auswählen",
     "systemRole": "Systemrolle",
+    "customRole": "Eigene Rolle",
     "permissionsCount": "{count, plural, =0 {Keine Berechtigungen} one {# Berechtigung} other {# Berechtigungen}}",
     "savingHint": "Änderungen werden automatisch gespeichert.",
     "saveError": "Berechtigung konnte nicht gespeichert werden",
@@ -2845,6 +2846,9 @@
     "duplicateRoleTitle": "Rolle duplizieren",
     "duplicateRoleDescription": "Neue Rolle basierend auf \"{roleName}\" erstellen.",
     "roleName": "Rollenname",
+    "startingPoint": "Startpunkt",
+    "startEmpty": "Leer beginnen",
+    "copyOf": "Kopie: {roleName}",
     "loadingFields": "Feldberechtigungen werden geladen...",
     "fieldPermissionsTitle": "Feldberechtigungen",
     "fieldPermissionsDescription": "Steuere den Zugriff auf einzelne, sensible Felder.",
@@ -2857,7 +2861,8 @@
       "employeePaidOvertime": "Bezahlte Ueberzeit",
       "student": "Schueler/in",
       "studentRecordEntry": "Foerderprofil-Eintrag",
-      "admissionApplication": "Anmeldung"
+      "admissionApplication": "Anmeldung",
+      "admissionAuditLog": "Aenderungsprotokoll (Aufnahme)"
     },
     "fieldName": {
       "employeeHrProfile": {
@@ -2914,6 +2919,10 @@
       "admissionApplication": {
         "childNotes": "Notizen zum Kind",
         "rejectionReason": "Ablehnungsgrund"
+      },
+      "admissionAuditLog": {
+        "oldValue": "Alter Wert",
+        "newValue": "Neuer Wert"
       }
     },
     "fieldAction": {
@@ -2922,7 +2931,45 @@
       "update": "Bearbeiten",
       "delete": "Loeschen"
     },
-    "loadError": "Fehler beim Laden der Rollen und Berechtigungen."
+    "loadError": "Fehler beim Laden der Rollen und Berechtigungen.",
+    "level": {
+      "0": "Kein",
+      "1": "Lesen",
+      "2": "Bearbeiten",
+      "3": "Voll",
+      "individual": "Individuell"
+    },
+    "overview": {
+      "tabRoles": "Rollen",
+      "tabComparison": "Vergleich",
+      "tabPeople": "Personen",
+      "summaryLine": "{granted} von {categoryCount} Bereichen · {fullAccessCount} mit Vollzugriff · {lockedCount} gesperrt",
+      "manageAccess": "Zugriff verwalten",
+      "person": "Person",
+      "role": "Rolle"
+    },
+    "comparison": {
+      "category": "Bereich",
+      "permissionCount": "{count, plural, one {# Einzelrecht} other {# Einzelrechte}}"
+    },
+    "fieldPermissionsCount": "{granted} von {total} Feldern freigegeben",
+    "fieldPermissionsSpecialOnly": "Nur besonders schützenswerte ({count})",
+    "fieldGroup": {
+      "categoryLocked": "Bereich gesperrt",
+      "fieldCount": "{count, plural, one {# Feld} other {# Felder}} · {category}",
+      "specialCategory": "Besonders schützenswert"
+    },
+    "detail": {
+      "overview": "Überblick",
+      "grantedOfTotal": "{granted} von {total} Rechten",
+      "navPreviewTitle": "Was diese Rolle sieht",
+      "navHidden": "verborgen",
+      "assignedPeople": "Zugewiesene Personen",
+      "noPeople": "Niemand zugewiesen",
+      "dangerZone": "Gefahrenzone",
+      "tabDomains": "Bereiche",
+      "tabFields": "Sensible Felder"
+    }
   },
   "SchoolClasses": {
     "actions": "Aktionen",

@@ -56,6 +56,8 @@ export type ActionKey =
   | "move"
   | "enroll";
 
+export type PermissionLevel = 0 | 1 | 2 | 3;
+
 type Entry = {
   code: string;
   category: CategoryKey;
@@ -66,6 +68,12 @@ type Entry = {
    * the org owner role and never assignable elsewhere via this screen.
    */
   hidden?: boolean;
+  /**
+   * Level in the Kein(0)/Lesen(1)/Bearbeiten(2)/Voll(3) model used by the
+   * role overview & comparison matrix. Not set on hidden entries - those
+   * live outside the level model entirely.
+   */
+  level?: 1 | 2 | 3;
 };
 
 export const PERMISSION_CATALOG: Entry[] = [
@@ -73,84 +81,84 @@ export const PERMISSION_CATALOG: Entry[] = [
   { code: "ORG_TRANSFER_OWNERSHIP", category: "organization", feature: "organization", action: "transfer", hidden: true },
   { code: "BILLING_MANAGE", category: "organization", feature: "billing", action: "manage", hidden: true },
 
-  { code: "USER_INVITE", category: "userManagement", feature: "user", action: "invite" },
-  { code: "USER_REMOVE", category: "userManagement", feature: "user", action: "remove" },
-  { code: "ROLE_CREATE", category: "userManagement", feature: "role", action: "create" },
-  { code: "ROLE_DELETE", category: "userManagement", feature: "role", action: "delete" },
-  { code: "ROLE_ASSIGN", category: "userManagement", feature: "role", action: "assign" },
+  { code: "USER_INVITE", category: "userManagement", feature: "user", action: "invite", level: 2 },
+  { code: "USER_REMOVE", category: "userManagement", feature: "user", action: "remove", level: 3 },
+  { code: "ROLE_CREATE", category: "userManagement", feature: "role", action: "create", level: 3 },
+  { code: "ROLE_DELETE", category: "userManagement", feature: "role", action: "delete", level: 3 },
+  { code: "ROLE_ASSIGN", category: "userManagement", feature: "role", action: "assign", level: 2 },
 
-  { code: "TEAM_CREATE", category: "teams", feature: "team", action: "create" },
-  { code: "TEAM_DELETE", category: "teams", feature: "team", action: "delete" },
-  { code: "TEAM_MANAGE", category: "teams", feature: "team", action: "manage" },
+  { code: "TEAM_CREATE", category: "teams", feature: "team", action: "create", level: 2 },
+  { code: "TEAM_DELETE", category: "teams", feature: "team", action: "delete", level: 3 },
+  { code: "TEAM_MANAGE", category: "teams", feature: "team", action: "manage", level: 3 },
 
-  { code: "EMPLOYEE_READ", category: "employees", feature: "employee", action: "read" },
-  { code: "EMPLOYEE_WRITE", category: "employees", feature: "employee", action: "write" },
-  { code: "EMPLOYEE_ABSENCE_CATEGORY_READ", category: "employees", feature: "absenceCategory", action: "read" },
-  { code: "EMPLOYEE_ABSENCE_CATEGORY_MANAGE", category: "employees", feature: "absenceCategory", action: "manage" },
-  { code: "TIMESHEET_READ", category: "employees", feature: "timesheet", action: "read" },
-  { code: "TIMESHEET_WRITE", category: "employees", feature: "timesheet", action: "write" },
+  { code: "EMPLOYEE_READ", category: "employees", feature: "employee", action: "read", level: 1 },
+  { code: "EMPLOYEE_WRITE", category: "employees", feature: "employee", action: "write", level: 2 },
+  { code: "EMPLOYEE_ABSENCE_CATEGORY_READ", category: "employees", feature: "absenceCategory", action: "read", level: 1 },
+  { code: "EMPLOYEE_ABSENCE_CATEGORY_MANAGE", category: "employees", feature: "absenceCategory", action: "manage", level: 3 },
+  { code: "TIMESHEET_READ", category: "employees", feature: "timesheet", action: "read", level: 1 },
+  { code: "TIMESHEET_WRITE", category: "employees", feature: "timesheet", action: "write", level: 2 },
 
-  { code: "SCHOOL_CLASS_READ", category: "teacher", feature: "schoolClass", action: "read" },
-  { code: "SCHOOL_CLASS_WRITE", category: "teacher", feature: "schoolClass", action: "write" },
-  { code: "SCHOOL_CLASS_DELETE", category: "teacher", feature: "schoolClass", action: "delete" },
-  { code: "CONTACT_PERSON_READ", category: "teacher", feature: "contactPerson", action: "read" },
-  { code: "CONTACT_PERSON_WRITE", category: "teacher", feature: "contactPerson", action: "write" },
-  { code: "CONTACT_PERSON_DELETE", category: "teacher", feature: "contactPerson", action: "delete" },
-  { code: "CURRICULUM_LEVEL_READ", category: "teacher", feature: "curriculumLevel", action: "read" },
-  { code: "CURRICULUM_LEVEL_MANAGE", category: "teacher", feature: "curriculumLevel", action: "manage" },
-  { code: "CURRICULUM_READ", category: "teacher", feature: "curriculum", action: "read" },
-  { code: "CURRICULUM_MANAGE", category: "teacher", feature: "curriculum", action: "manage" },
+  { code: "SCHOOL_CLASS_READ", category: "teacher", feature: "schoolClass", action: "read", level: 1 },
+  { code: "SCHOOL_CLASS_WRITE", category: "teacher", feature: "schoolClass", action: "write", level: 2 },
+  { code: "SCHOOL_CLASS_DELETE", category: "teacher", feature: "schoolClass", action: "delete", level: 3 },
+  { code: "CONTACT_PERSON_READ", category: "teacher", feature: "contactPerson", action: "read", level: 1 },
+  { code: "CONTACT_PERSON_WRITE", category: "teacher", feature: "contactPerson", action: "write", level: 2 },
+  { code: "CONTACT_PERSON_DELETE", category: "teacher", feature: "contactPerson", action: "delete", level: 3 },
+  { code: "CURRICULUM_LEVEL_READ", category: "teacher", feature: "curriculumLevel", action: "read", level: 1 },
+  { code: "CURRICULUM_LEVEL_MANAGE", category: "teacher", feature: "curriculumLevel", action: "manage", level: 3 },
+  { code: "CURRICULUM_READ", category: "teacher", feature: "curriculum", action: "read", level: 1 },
+  { code: "CURRICULUM_MANAGE", category: "teacher", feature: "curriculum", action: "manage", level: 3 },
 
   // Admissions (Aufnahmeprozess)
-  { code: "ADMISSION_STAGE_READ", category: "admissions", feature: "admissionStage", action: "read" },
-  { code: "ADMISSION_STAGE_MANAGE", category: "admissions", feature: "admissionStage", action: "manage" },
-  { code: "ADMISSION_APPLICATION_READ", category: "admissions", feature: "admissionApplication", action: "read" },
-  { code: "ADMISSION_APPLICATION_WRITE", category: "admissions", feature: "admissionApplication", action: "write" },
-  { code: "ADMISSION_APPLICATION_MOVE", category: "admissions", feature: "admissionApplication", action: "move" },
-  { code: "ADMISSION_APPLICATION_ENROLL", category: "admissions", feature: "admissionApplication", action: "enroll" },
-  { code: "ADMISSION_APPLICATION_DELETE", category: "admissions", feature: "admissionApplication", action: "delete" },
-  { code: "ADMISSION_EMAIL_SEND", category: "admissions", feature: "admissionEmail", action: "send" },
-  { code: "ADMISSION_EMAIL_TEMPLATE_MANAGE", category: "admissions", feature: "admissionEmail", action: "manage" },
-  { code: "FAMILY_READ", category: "admissions", feature: "family", action: "read" },
-  { code: "FAMILY_WRITE", category: "admissions", feature: "family", action: "write" },
+  { code: "ADMISSION_STAGE_READ", category: "admissions", feature: "admissionStage", action: "read", level: 1 },
+  { code: "ADMISSION_STAGE_MANAGE", category: "admissions", feature: "admissionStage", action: "manage", level: 3 },
+  { code: "ADMISSION_APPLICATION_READ", category: "admissions", feature: "admissionApplication", action: "read", level: 1 },
+  { code: "ADMISSION_APPLICATION_WRITE", category: "admissions", feature: "admissionApplication", action: "write", level: 2 },
+  { code: "ADMISSION_APPLICATION_MOVE", category: "admissions", feature: "admissionApplication", action: "move", level: 2 },
+  { code: "ADMISSION_APPLICATION_ENROLL", category: "admissions", feature: "admissionApplication", action: "enroll", level: 2 },
+  { code: "ADMISSION_APPLICATION_DELETE", category: "admissions", feature: "admissionApplication", action: "delete", level: 3 },
+  { code: "ADMISSION_EMAIL_SEND", category: "admissions", feature: "admissionEmail", action: "send", level: 2 },
+  { code: "ADMISSION_EMAIL_TEMPLATE_MANAGE", category: "admissions", feature: "admissionEmail", action: "manage", level: 3 },
+  { code: "FAMILY_READ", category: "admissions", feature: "family", action: "read", level: 1 },
+  { code: "FAMILY_WRITE", category: "admissions", feature: "family", action: "write", level: 2 },
 
   // Students (Schüler:innen)
-  { code: "STUDENT_READ", category: "students", feature: "student", action: "read" },
-  { code: "STUDENT_WRITE", category: "students", feature: "student", action: "write" },
-  { code: "STUDENT_DELETE", category: "students", feature: "student", action: "delete" },
-  { code: "STUDENT_RECORD_READ", category: "students", feature: "studentRecord", action: "read" },
-  { code: "STUDENT_RECORD_WRITE", category: "students", feature: "studentRecord", action: "write" },
-  { code: "STUDENT_RECORD_DELETE", category: "students", feature: "studentRecord", action: "delete" },
-  { code: "STUDENT_RECORD_CATEGORY_WRITE", category: "students", feature: "studentRecordCategory", action: "manage" },
-  { code: "RECORD_KEEPING_READ", category: "students", feature: "recordKeeping", action: "read" },
-  { code: "RECORD_KEEPING_WRITE", category: "students", feature: "recordKeeping", action: "write" },
-  { code: "RECORD_KEEPING_SETTINGS_MANAGE", category: "students", feature: "recordKeeping", action: "manage" },
+  { code: "STUDENT_READ", category: "students", feature: "student", action: "read", level: 1 },
+  { code: "STUDENT_WRITE", category: "students", feature: "student", action: "write", level: 2 },
+  { code: "STUDENT_DELETE", category: "students", feature: "student", action: "delete", level: 3 },
+  { code: "STUDENT_RECORD_READ", category: "students", feature: "studentRecord", action: "read", level: 1 },
+  { code: "STUDENT_RECORD_WRITE", category: "students", feature: "studentRecord", action: "write", level: 2 },
+  { code: "STUDENT_RECORD_DELETE", category: "students", feature: "studentRecord", action: "delete", level: 3 },
+  { code: "STUDENT_RECORD_CATEGORY_WRITE", category: "students", feature: "studentRecordCategory", action: "manage", level: 3 },
+  { code: "RECORD_KEEPING_READ", category: "students", feature: "recordKeeping", action: "read", level: 1 },
+  { code: "RECORD_KEEPING_WRITE", category: "students", feature: "recordKeeping", action: "write", level: 2 },
+  { code: "RECORD_KEEPING_SETTINGS_MANAGE", category: "students", feature: "recordKeeping", action: "manage", level: 3 },
 
   // Projects (Projektmanagement)
-  { code: "PROJECT_READ", category: "projects", feature: "project", action: "read" },
-  { code: "PROJECT_CREATE", category: "projects", feature: "project", action: "create" },
-  { code: "PROJECT_MANAGE_ALL", category: "projects", feature: "project", action: "manage" },
-  { code: "PROJECT_TEMPLATE_MANAGE", category: "projects", feature: "projectTemplate", action: "manage" },
-  { code: "PROTOCOL_READ", category: "projects", feature: "protocol", action: "read" },
-  { code: "PROTOCOL_WRITE", category: "projects", feature: "protocol", action: "write" },
-  { code: "PROTOCOL_DELETE", category: "projects", feature: "protocol", action: "delete" },
+  { code: "PROJECT_READ", category: "projects", feature: "project", action: "read", level: 1 },
+  { code: "PROJECT_CREATE", category: "projects", feature: "project", action: "create", level: 2 },
+  { code: "PROJECT_MANAGE_ALL", category: "projects", feature: "project", action: "manage", level: 3 },
+  { code: "PROJECT_TEMPLATE_MANAGE", category: "projects", feature: "projectTemplate", action: "manage", level: 3 },
+  { code: "PROTOCOL_READ", category: "projects", feature: "protocol", action: "read", level: 1 },
+  { code: "PROTOCOL_WRITE", category: "projects", feature: "protocol", action: "write", level: 2 },
+  { code: "PROTOCOL_DELETE", category: "projects", feature: "protocol", action: "delete", level: 3 },
 
   // Data protection (Datenschutz / DSGVO / revDSG)
-  { code: "CONSENT_READ", category: "dataProtection", feature: "consent", action: "read" },
-  { code: "CONSENT_MANAGE", category: "dataProtection", feature: "consent", action: "manage" },
-  { code: "CONSENT_SETTINGS_MANAGE", category: "dataProtection", feature: "consentSettings", action: "manage" },
-  { code: "DATA_REQUEST_READ", category: "dataProtection", feature: "dataRequest", action: "read" },
-  { code: "DATA_REQUEST_MANAGE", category: "dataProtection", feature: "dataRequest", action: "manage" },
-  { code: "RETENTION_READ", category: "dataProtection", feature: "retention", action: "read" },
-  { code: "RETENTION_MANAGE", category: "dataProtection", feature: "retention", action: "manage" },
-  { code: "DATA_BREACH_READ", category: "dataProtection", feature: "dataBreach", action: "read" },
-  { code: "DATA_BREACH_MANAGE", category: "dataProtection", feature: "dataBreach", action: "manage" },
-  { code: "VVT_READ", category: "dataProtection", feature: "vvt", action: "read" },
-  { code: "VVT_MANAGE", category: "dataProtection", feature: "vvt", action: "manage" },
+  { code: "CONSENT_READ", category: "dataProtection", feature: "consent", action: "read", level: 1 },
+  { code: "CONSENT_MANAGE", category: "dataProtection", feature: "consent", action: "manage", level: 3 },
+  { code: "CONSENT_SETTINGS_MANAGE", category: "dataProtection", feature: "consentSettings", action: "manage", level: 3 },
+  { code: "DATA_REQUEST_READ", category: "dataProtection", feature: "dataRequest", action: "read", level: 1 },
+  { code: "DATA_REQUEST_MANAGE", category: "dataProtection", feature: "dataRequest", action: "manage", level: 3 },
+  { code: "RETENTION_READ", category: "dataProtection", feature: "retention", action: "read", level: 1 },
+  { code: "RETENTION_MANAGE", category: "dataProtection", feature: "retention", action: "manage", level: 3 },
+  { code: "DATA_BREACH_READ", category: "dataProtection", feature: "dataBreach", action: "read", level: 1 },
+  { code: "DATA_BREACH_MANAGE", category: "dataProtection", feature: "dataBreach", action: "manage", level: 3 },
+  { code: "VVT_READ", category: "dataProtection", feature: "vvt", action: "read", level: 1 },
+  { code: "VVT_MANAGE", category: "dataProtection", feature: "vvt", action: "manage", level: 3 },
 
-  { code: "ADDRESS_READ", category: "general", feature: "address", action: "read" },
-  { code: "ADDRESS_WRITE", category: "general", feature: "address", action: "write" },
-  { code: "ADDRESS_DELETE", category: "general", feature: "address", action: "delete" },
+  { code: "ADDRESS_READ", category: "general", feature: "address", action: "read", level: 1 },
+  { code: "ADDRESS_WRITE", category: "general", feature: "address", action: "write", level: 2 },
+  { code: "ADDRESS_DELETE", category: "general", feature: "address", action: "delete", level: 3 },
 ];
 
 export const CATEGORY_ORDER: CategoryKey[] = [
@@ -219,4 +227,60 @@ export function groupCatalog(availableCodes: Set<string>): GroupedCategory[] {
       codes: features.flatMap((f) => f.actions.map((a) => a.code)),
     };
   });
+}
+
+function levelEntries(
+  category: CategoryKey,
+  availableCodes: Set<string>,
+): { code: string; level: 1 | 2 | 3 }[] {
+  return PERMISSION_CATALOG.filter(
+    (e): e is Entry & { level: 1 | 2 | 3 } =>
+      !e.hidden &&
+      e.level !== undefined &&
+      e.category === category &&
+      availableCodes.has(e.code),
+  );
+}
+
+/** Codes of a category up to (and including) the given level. Level 0 => []. */
+export function codesForLevel(
+  category: CategoryKey,
+  level: PermissionLevel,
+  availableCodes: Set<string>,
+): string[] {
+  if (level === 0) return [];
+  return levelEntries(category, availableCodes)
+    .filter((e) => e.level <= level)
+    .map((e) => e.code);
+}
+
+/**
+ * Detects which level the granted codes of a category correspond to.
+ * Returns null ("Individuell") if the set doesn't match any level exactly.
+ */
+export function detectLevel(
+  category: CategoryKey,
+  grantedCodes: Set<string>,
+  availableCodes: Set<string>,
+): PermissionLevel | null {
+  const entries = levelEntries(category, availableCodes);
+  for (const level of [0, 1, 2, 3] as PermissionLevel[]) {
+    const matches = entries.every(
+      (e) => grantedCodes.has(e.code) === (e.level <= level),
+    );
+    if (matches) return level;
+  }
+  return null;
+}
+
+/** Number of category codes at exactly each level, for distribution bars. */
+export function categoryLevelCounts(
+  category: CategoryKey,
+  availableCodes: Set<string>,
+): Record<1 | 2 | 3, number> {
+  const counts: Record<1 | 2 | 3, number> = { 1: 0, 2: 0, 3: 0 };
+  for (const e of levelEntries(category, availableCodes)) {
+    counts[e.level] += 1;
+  }
+  return counts;
 }

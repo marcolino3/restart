@@ -2771,6 +2771,7 @@
     "rolesCount": "{count, plural, one {# role} other {# roles}}",
     "selectRole": "Select role",
     "systemRole": "System role",
+    "customRole": "Custom role",
     "permissionsCount": "{count, plural, =0 {No permissions} one {# permission} other {# permissions}}",
     "savingHint": "Changes are saved automatically.",
     "saveError": "Could not save permission",
@@ -2845,6 +2846,9 @@
     "duplicateRoleTitle": "Duplicate role",
     "duplicateRoleDescription": "Create a new role based on \"{roleName}\".",
     "roleName": "Role name",
+    "startingPoint": "Starting point",
+    "startEmpty": "Start empty",
+    "copyOf": "Copy of {roleName}",
     "loadingFields": "Loading field permissions...",
     "fieldPermissionsTitle": "Field permissions",
     "fieldPermissionsDescription": "Control access to individual sensitive fields.",
@@ -2857,7 +2861,8 @@
       "employeePaidOvertime": "Paid overtime",
       "student": "Student",
       "studentRecordEntry": "Record entry",
-      "admissionApplication": "Admission application"
+      "admissionApplication": "Admission application",
+      "admissionAuditLog": "Admission audit log"
     },
     "fieldName": {
       "employeeHrProfile": {
@@ -2914,6 +2919,10 @@
       "admissionApplication": {
         "childNotes": "Notes about child",
         "rejectionReason": "Rejection reason"
+      },
+      "admissionAuditLog": {
+        "oldValue": "Old value",
+        "newValue": "New value"
       }
     },
     "fieldAction": {
@@ -2922,7 +2931,45 @@
       "update": "Update",
       "delete": "Delete"
     },
-    "loadError": "Failed to load roles and permissions."
+    "loadError": "Failed to load roles and permissions.",
+    "level": {
+      "0": "None",
+      "1": "Read",
+      "2": "Edit",
+      "3": "Full",
+      "individual": "Custom"
+    },
+    "overview": {
+      "tabRoles": "Roles",
+      "tabComparison": "Comparison",
+      "tabPeople": "People",
+      "summaryLine": "{granted} of {categoryCount} areas · {fullAccessCount} full access · {lockedCount} locked",
+      "manageAccess": "Manage access",
+      "person": "Person",
+      "role": "Role"
+    },
+    "comparison": {
+      "category": "Area",
+      "permissionCount": "{count, plural, one {# permission} other {# permissions}}"
+    },
+    "fieldPermissionsCount": "{granted} of {total} fields granted",
+    "fieldPermissionsSpecialOnly": "Special category only ({count})",
+    "fieldGroup": {
+      "categoryLocked": "Area locked",
+      "fieldCount": "{count, plural, one {# field} other {# fields}} · {category}",
+      "specialCategory": "Special category"
+    },
+    "detail": {
+      "overview": "Overview",
+      "grantedOfTotal": "{granted} of {total} permissions",
+      "navPreviewTitle": "What this role sees",
+      "navHidden": "hidden",
+      "assignedPeople": "Assigned people",
+      "noPeople": "No one assigned",
+      "dangerZone": "Danger zone",
+      "tabDomains": "Areas",
+      "tabFields": "Sensitive fields"
+    }
   },
   "SchoolClasses": {
     "actions": "Actions",

@@ -4,6 +4,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { RolesService } from './roles.service';
 import { Role } from './entities/role.entity';
@@ -210,6 +211,43 @@ describe('RolesService', () => {
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
+
+    it('accepts the newly-catalogued admissionAuditLog fields as a valid grant', async () => {
+      roleRepo.findOne.mockResolvedValue({
+        id: 'role-1',
+        organizationId: orgId,
+        isSystem: false,
+        permissions: [],
+      });
+
+      const actorFieldPermissions = new Map<string, Set<string>>([
+        ['admissionAuditLog.oldValue', new Set(['read'])],
+        ['admissionAuditLog.newValue', new Set(['read'])],
+      ]);
+
+      await expect(
+        service.updateRoleFieldPermissions(
+          orgId,
+          'role-1',
+          [
+            {
+              resource: 'admissionAuditLog',
+              field: 'oldValue',
+              actions: ['read'],
+            },
+            {
+              resource: 'admissionAuditLog',
+              field: 'newValue',
+              actions: ['read'],
+            },
+          ],
+          actorFieldPermissions,
+        ),
+      ).resolves.toBeDefined();
+      expect(roleFieldPermissionRepo.delete).toHaveBeenCalledWith({
+        roleId: 'role-1',
+      });
+    });
   });
 
   describe('system role immutability', () => {
@@ -240,6 +278,30 @@ describe('RolesService', () => {
         service.deleteRole(orgId, 'role-sys'),
       ).rejects.toBeInstanceOf(ForbiddenException);
       expect(roleRepo.remove).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('multi-tenant isolation - field permissions', () => {
+    it('rejects updateRoleFieldPermissions for a role belonging to another org', async () => {
+      // findOne queries WHERE id AND organizationId - a foreign-org role never
+      // matches and TypeORM resolves null, exactly like a missing role.
+      roleRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.updateRoleFieldPermissions(
+          orgId,
+          'role-foreign',
+          [
+            {
+              resource: 'admissionAuditLog',
+              field: 'oldValue',
+              actions: ['read'],
+            },
+          ],
+          new Map(),
+        ),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(roleFieldPermissionRepo.save).not.toHaveBeenCalled();
     });
   });
 

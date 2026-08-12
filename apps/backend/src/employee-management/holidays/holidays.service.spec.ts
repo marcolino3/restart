@@ -114,6 +114,9 @@ describe('HolidaysService', () => {
         zone: 'Europe/Zurich',
       });
       if (!fixedNow.isValid) throw new Error('invalid DateTime fixture');
+      // isValid narrows for the ESLint type-checker but not for ts-jest's isolated
+      // program, so the assertion is required there even though it looks redundant.
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       jest.spyOn(DateTime, 'now').mockReturnValue(fixedNow as DateTime<true>);
 
       await service.create(
@@ -137,6 +140,9 @@ describe('HolidaysService', () => {
         zone: 'Europe/Zurich',
       });
       if (!fixedNow.isValid) throw new Error('invalid DateTime fixture');
+      // isValid narrows for the ESLint type-checker but not for ts-jest's isolated
+      // program, so the assertion is required there even though it looks redundant.
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       jest.spyOn(DateTime, 'now').mockReturnValue(fixedNow as DateTime<true>);
 
       await service.create(
@@ -201,6 +207,9 @@ describe('HolidaysService', () => {
         zone: 'Europe/Zurich',
       });
       if (!fixedNow.isValid) throw new Error('invalid DateTime fixture');
+      // isValid narrows for the ESLint type-checker but not for ts-jest's isolated
+      // program, so the assertion is required there even though it looks redundant.
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       jest.spyOn(DateTime, 'now').mockReturnValue(fixedNow as DateTime<true>);
 
       repo.findOne.mockResolvedValue({

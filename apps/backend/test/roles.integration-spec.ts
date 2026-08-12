@@ -16,6 +16,9 @@ import { Role } from '@/roles/entities/role.entity';
 import { RoleFieldPermission } from '@/roles/entities/role-field-permission.entity';
 import { Permission } from '@/permissions/entities/permission.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
+import { Membership } from '@/memberships/entities/membership.entity';
+import { User } from '@/users/entities/user.entity';
+import { Persona } from '@/common/enums/persona.enum';
 import { PermissionCode } from '@/permissions/entities/permission-code.enum';
 import { seedPermissionCatalog } from '@/permissions/seeds/permission-catalog.seeder';
 import { seedOrgSystemRoles } from '@/roles/seeds/system-roles.seeder';
@@ -35,6 +38,8 @@ describe('RolesService multi-tenant isolation (Integration)', () => {
           RoleFieldPermission,
           Permission,
           Organization,
+          Membership,
+          User,
         ]),
       ],
       {
@@ -178,5 +183,44 @@ describe('RolesService multi-tenant isolation (Integration)', () => {
     await expect(
       rolesService.deleteRole(orgAId, ownerRoleA!.id),
     ).rejects.toThrow();
+  });
+
+  it('loads roles with nested memberships.user relations without a query-builder error', async () => {
+    // Regression test: Membership.roles was missing the inverse-side function
+    // argument, so TypeORM never linked it to Role.memberships as the same
+    // relation. Loading `relations: ['memberships', 'memberships.user']` from
+    // the Role side then failed deep inside SelectQueryBuilder with
+    // "Cannot read properties of undefined (reading 'tablePath')" as soon as
+    // a role actually had a membership to join against.
+    const orgId = await createOrgWithSeeds();
+
+    const role = await rolesService.createRole(
+      orgId,
+      { name: 'Custom Role A', permissionCodes: [PermissionCode.ADDRESS_READ] },
+      [PermissionCode.ADDRESS_READ],
+    );
+
+    const user = await dataSource.manager.save(
+      dataSource.manager.create(User, {
+        email: 'roles-integration@example.com',
+        firstName: 'Roles',
+        lastName: 'Integration',
+        isSuperAdmin: false,
+      }),
+    );
+    await dataSource.manager.save(
+      dataSource.manager.create(Membership, {
+        organizationId: orgId,
+        userId: user.id,
+        persona: Persona.EMPLOYEE,
+        roles: [role],
+      }),
+    );
+
+    const roles = await rolesService.findAllByOrgId(orgId);
+    const loaded = roles.find((r) => r.id === role.id);
+
+    expect(loaded?.memberships).toHaveLength(1);
+    expect(loaded?.memberships?.[0].user?.id).toBe(user.id);
   });
 });

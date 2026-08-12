@@ -35,7 +35,7 @@ export class Membership extends AbstractEntity<Membership> {
 
   // Roles
   @Field(() => [Role], { nullable: true })
-  @ManyToMany(() => Role, { eager: false })
+  @ManyToMany(() => Role, (role) => role.memberships, { eager: false })
   @JoinTable({
     name: 'membership_roles',
     joinColumn: { name: 'membership_id', referencedColumnName: 'id' },
