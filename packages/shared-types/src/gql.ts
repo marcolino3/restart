@@ -259,7 +259,7 @@ type Documents = {
     "\n  mutation DuplicateRole($input: DuplicateRoleInput!) {\n    duplicateRole(input: $input) {\n      id\n    }\n  }\n": typeof types.DuplicateRoleDocument,
     "\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n": typeof types.GetPermissionsDocument,
     "\n  query GetRoleFieldPermissions($roleId: ID!) {\n    roleFieldPermissions(roleId: $roleId) {\n      resource\n      field\n      actions\n    }\n  }\n": typeof types.GetRoleFieldPermissionsDocument,
-    "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n": typeof types.GetRolesByOrgIdDocument,
+    "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n      memberships {\n        id\n        user {\n          id\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": typeof types.GetRolesByOrgIdDocument,
     "\n  mutation UpdateRoleFieldPermissions($input: UpdateRoleFieldPermissionsInput!) {\n    updateRoleFieldPermissions(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateRoleFieldPermissionsDocument,
     "\n  mutation UpdateRolePermissions($input: UpdateRolePermissionsInput!) {\n    updateRolePermissions(input: $input) {\n      id\n      permissions {\n        id\n        code\n      }\n    }\n  }\n": typeof types.UpdateRolePermissionsDocument,
     "\n  mutation UpdateRole($input: UpdateRoleInput!) {\n    updateRole(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateRoleDocument,
@@ -605,7 +605,7 @@ const documents: Documents = {
     "\n  mutation DuplicateRole($input: DuplicateRoleInput!) {\n    duplicateRole(input: $input) {\n      id\n    }\n  }\n": types.DuplicateRoleDocument,
     "\n  query GetPermissions {\n    permissions {\n      id\n      code\n      name\n      description\n    }\n  }\n": types.GetPermissionsDocument,
     "\n  query GetRoleFieldPermissions($roleId: ID!) {\n    roleFieldPermissions(roleId: $roleId) {\n      resource\n      field\n      actions\n    }\n  }\n": types.GetRoleFieldPermissionsDocument,
-    "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n": types.GetRolesByOrgIdDocument,
+    "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n      memberships {\n        id\n        user {\n          id\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n": types.GetRolesByOrgIdDocument,
     "\n  mutation UpdateRoleFieldPermissions($input: UpdateRoleFieldPermissionsInput!) {\n    updateRoleFieldPermissions(input: $input) {\n      id\n    }\n  }\n": types.UpdateRoleFieldPermissionsDocument,
     "\n  mutation UpdateRolePermissions($input: UpdateRolePermissionsInput!) {\n    updateRolePermissions(input: $input) {\n      id\n      permissions {\n        id\n        code\n      }\n    }\n  }\n": types.UpdateRolePermissionsDocument,
     "\n  mutation UpdateRole($input: UpdateRoleInput!) {\n    updateRole(input: $input) {\n      id\n    }\n  }\n": types.UpdateRoleDocument,
@@ -1703,7 +1703,7 @@ export function graphql(source: "\n  query GetRoleFieldPermissions($roleId: ID!)
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n    }\n  }\n"];
+export function graphql(source: "\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n      memberships {\n        id\n        user {\n          id\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetRolesByOrgId {\n    rolesByOrgId {\n      id\n      name\n      systemCode\n      isSystem\n      permissions {\n        id\n        code\n        name\n      }\n      memberships {\n        id\n        user {\n          id\n          firstName\n          lastName\n        }\n      }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
