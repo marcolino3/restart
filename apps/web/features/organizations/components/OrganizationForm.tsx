@@ -20,7 +20,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { PageHead } from "@/components/common/PageHead";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
-import { FormActionButtons } from "@/components/form/form-fields/FormActionButtons";
 import { CountryComboboxFormField } from "@/components/form/form-fields/CountryComboboxFormField";
 import { TimezoneComboboxFormField } from "@/components/form/form-fields/TimezoneComboboxFormField";
 import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
@@ -557,15 +556,6 @@ export const OrganizationForm = ({
           )}
           </div>
         </Tabs>
-
-        {isCreate && (
-          <FormActionButtons
-            disabled={isSubmitDisabled}
-            onCancel={() => {
-              router.push(ROUTES.admin.organizations(locale));
-            }}
-          />
-        )}
       </form>
     </Form>
   );
