@@ -3,7 +3,7 @@ export const ROUTES = {
     // Organizations
     organizations: (locale: string) => `/${locale}/admin/organizations`,
     organizationsCreate: (locale: string) =>
-      `/${locale}/admin/organizations/edit`,
+      `/${locale}/admin/organizations/create`,
     organizationsEdit: (locale: string, id: string) =>
       `/${locale}/admin/organizations/edit/${id}`,
 

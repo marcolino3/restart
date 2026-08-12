@@ -9,5 +9,6 @@
     "strict": true,
     "skipLibCheck": true
   },
-  "include": ["src/rbac", "src/org-features"]
+  "include": ["src/rbac", "src/org-features", "src/organizations"],
+  "exclude": ["**/*.test.ts", "**/*.spec.ts"]
 }

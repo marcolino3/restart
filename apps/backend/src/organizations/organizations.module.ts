@@ -3,6 +3,7 @@ import { OrganizationsService } from './organizations.service';
 import { OrganizationsResolver } from './organizations.resolver';
 import { OrganizationFeatureTogglesResolver } from './organization-feature-toggles.resolver';
 import { OrganizationFeatureTogglesService } from './organization-feature-toggles.service';
+import { OrganizationAuditLogService } from './organization-audit-log.service';
 import { SetupStatusResolver } from './setup-status.resolver';
 import { SetupStatusService } from './setup-status.service';
 import { CommonModule } from '@/common/common.module';
@@ -16,9 +17,14 @@ import { GoogleModule } from '@/google/google.module';
     OrganizationsService,
     OrganizationFeatureTogglesResolver,
     OrganizationFeatureTogglesService,
+    OrganizationAuditLogService,
     SetupStatusResolver,
     SetupStatusService,
   ],
-  exports: [OrganizationsService, OrganizationFeatureTogglesService],
+  exports: [
+    OrganizationsService,
+    OrganizationFeatureTogglesService,
+    OrganizationAuditLogService,
+  ],
 })
 export class OrganizationsModule {}

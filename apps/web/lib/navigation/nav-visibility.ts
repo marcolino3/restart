@@ -40,10 +40,47 @@ const TIME_REPORT_ROLES: ReadonlySet<string> = new Set([
 ]);
 
 export function canSeeTimeReport(user: NavVisibilityUser): boolean {
+  if (!hasOrgFeature(user, "TIME_REPORTS")) return false;
   if (!user) return false;
   if (user.isSuperAdmin) return true;
   if (user.roles?.some((role) => TIME_REPORT_ROLES.has(role))) return true;
   return user.roles?.includes("TEAM_LEAD") ?? false;
+}
+
+export function canSeeAbsences(user: NavVisibilityUser): boolean {
+  return hasOrgFeature(user, "ABSENCES");
+}
+
+export function canSeeEmployees(user: NavVisibilityUser): boolean {
+  return hasOrgFeature(user, "EMPLOYEES");
+}
+
+export function canSeeClasses(user: NavVisibilityUser): boolean {
+  return hasOrgFeature(user, "CLASSES");
+}
+
+export function canSeeCurricula(user: NavVisibilityUser): boolean {
+  return hasOrgFeature(user, "CURRICULA");
+}
+
+export function canSeeProgress(user: NavVisibilityUser): boolean {
+  return hasOrgFeature(user, "PROGRESS");
+}
+
+export function canSeeLearningReports(user: NavVisibilityUser): boolean {
+  return hasOrgFeature(user, "LEARNING_REPORTS");
+}
+
+export function canSeeAdmissions(user: NavVisibilityUser): boolean {
+  return hasOrgFeature(user, "ADMISSIONS");
+}
+
+export function canSeeContactPersons(user: NavVisibilityUser): boolean {
+  return hasOrgFeature(user, "CONTACT_PERSONS");
+}
+
+export function canSeeParentPortal(user: NavVisibilityUser): boolean {
+  return hasOrgFeature(user, "PARENT_PORTAL");
 }
 
 // Projekte: Mitglied in mindestens einem Projekt ODER sieht ohnehin alle

@@ -22,6 +22,31 @@ const OrganizationByIdDocument = graphql(`
       latitude
       longitude
       isActive
+      shortCode
+      schoolType
+      legalEntity
+      language
+      logoUrl
+      state
+      billingAddressSameAsLocation
+      billingAddressExtra
+      contactName
+      contactRole
+      contactEmail
+      contactPhone
+      billingEmail
+      parentMailSenderEmail
+      currentSchoolYear
+      activeLevels
+      plan
+      userLicenseLimit
+      contractEndsAt
+      billingInterval
+      billingAmountChf
+      storageLimitGb
+      lifecycleStatus
+      trialEndsAt
+      suspendedReason
       bvgProvider
       bvgContactPhone
       uvgProvider

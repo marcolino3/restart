@@ -45,7 +45,12 @@ test.describe('Org feature toggles', () => {
       { input: { organizationId: orgId, featureKey: 'PROTOCOLS', enabled: false } },
     )
     expect(disabled.errors ?? []).toEqual([])
-    expect(disabled.data?.updateOrganizationFeatureToggle?.enabled).toBe(false)
+    // The mutation returns every affected row (dependency cascade), so find
+    // the toggled key in the list instead of expecting a single object.
+    const protocolsToggle = disabled.data?.updateOrganizationFeatureToggle?.find(
+      (t: { featureKey: string }) => t.featureKey === 'PROTOCOLS',
+    )
+    expect(protocolsToggle?.enabled).toBe(false)
 
     // Sidebar: nav item disappears after reload.
     await owner.page.reload()

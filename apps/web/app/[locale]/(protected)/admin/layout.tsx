@@ -50,7 +50,11 @@ const AdminLayout = async ({ children }: { children: React.ReactNode }) => {
         <SheetProvider>
           <SidebarInset>
             {impersonationInfo.isImpersonating && (
-              <ImpersonationBanner asUserName={impersonationInfo.asUserName} />
+              <ImpersonationBanner
+                asUserName={impersonationInfo.asUserName}
+                organizationName={impersonationInfo.organizationName}
+                expiresAt={impersonationInfo.expiresAt}
+              />
             )}
             <SiteHeader />
             {/* On full-bleed pages the whole content column is pinned to the

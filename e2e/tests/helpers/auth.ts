@@ -40,11 +40,22 @@ export async function ensureActiveOrg(page: Page): Promise<string> {
     }>
   }
 
-  const listed = await gql('{ organizations { id } }')
-  let orgId = listed.data?.organizations?.[0]?.id
+  const listed = await gql(
+    '{ organizations { id name lifecycleStatus } }',
+  )
+  const usable = (
+    listed.data?.organizations as unknown as {
+      id: string
+      name: string
+      lifecycleStatus?: string
+    }[]
+  )?.filter((o) => o.name && o.lifecycleStatus !== 'SUSPENDED')
+  let orgId = usable?.[0]?.id
 
   if (!orgId) {
-    const created = await gql('mutation { createOrganization { id } }')
+    const created = await gql(
+      'mutation { createOrganization(input: {}) { id } }',
+    )
     orgId = created.data?.createOrganization?.id
   }
   if (!orgId) {
@@ -207,7 +218,9 @@ export async function setupSecondOrgUser(
   const adminCookiesBefore = await adminPage.context().cookies()
   const adminOrgId = adminCookiesBefore.find((c) => c.name === 'Active-Org')?.value
 
-  const created = await gql('mutation { createOrganization { id } }')
+  const created = await gql(
+    'mutation { createOrganization(input: {}) { id } }',
+  )
   const orgId = created.data?.createOrganization?.id
   if (!orgId) {
     throw new Error(

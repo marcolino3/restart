@@ -67,6 +67,214 @@ export class Organization
   @Column({ name: 'website', type: 'varchar', length: 500, nullable: true })
   website?: string;
 
+  @Field({ nullable: true })
+  @Column({ name: 'short_code', type: 'varchar', length: 8, nullable: true })
+  shortCode?: string;
+
+  /**
+   * Plain varchar validated against the TS enum in
+   * packages/shared-schemas/src/organizations/organization-enums.ts, not a
+   * PG enum — new values must not require a migration (CLAUDE.md 55P04
+   * rule), mirrors organization_feature_toggles.feature_key.
+   */
+  @Field({ nullable: true })
+  @Column({ name: 'school_type', type: 'varchar', length: 50, nullable: true })
+  schoolType?: string;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'legal_entity',
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
+  legalEntity?: string;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'language',
+    type: 'varchar',
+    length: 10,
+    nullable: true,
+    default: 'de-CH',
+  })
+  language?: string;
+
+  @Field({ nullable: true })
+  @Column({ name: 'logo_url', type: 'varchar', length: 500, nullable: true })
+  logoUrl?: string;
+
+  @Field({ nullable: true })
+  @Column({ name: 'state', type: 'varchar', length: 100, nullable: true })
+  state?: string;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'billing_address_same_as_location',
+    type: 'boolean',
+    nullable: true,
+    default: true,
+  })
+  billingAddressSameAsLocation?: boolean;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'billing_address_extra',
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
+  billingAddressExtra?: string;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'contact_name',
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
+  contactName?: string;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'contact_role',
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
+  contactRole?: string;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'contact_email',
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
+  contactEmail?: string;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'contact_phone',
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+  })
+  contactPhone?: string;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'billing_email',
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
+  billingEmail?: string;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'parent_mail_sender_email',
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
+  parentMailSenderEmail?: string;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'current_school_year',
+    type: 'varchar',
+    length: 20,
+    nullable: true,
+  })
+  currentSchoolYear?: string;
+
+  @Field(() => [String], { nullable: true })
+  @Column({ name: 'active_levels', type: 'text', array: true, nullable: true })
+  activeLevels?: string[];
+
+  /**
+   * Plain varchar, same reasoning as schoolType above.
+   */
+  @Field({ nullable: true })
+  @Column({
+    name: 'plan',
+    type: 'varchar',
+    length: 30,
+    nullable: true,
+    default: 'STARTER',
+  })
+  plan?: string;
+
+  @Field(() => Int, { nullable: true })
+  @Column({ name: 'user_license_limit', type: 'int', nullable: true })
+  userLicenseLimit?: number;
+
+  @Field({ nullable: true })
+  @Column({ name: 'contract_ends_at', type: 'date', nullable: true })
+  contractEndsAt?: string;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'billing_interval',
+    type: 'varchar',
+    length: 20,
+    nullable: true,
+    default: 'YEARLY',
+  })
+  billingInterval?: string;
+
+  @Field(() => Float, { nullable: true })
+  @Column({
+    name: 'billing_amount_chf',
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
+  billingAmountChf?: number;
+
+  @Field(() => Int, { nullable: true })
+  @Column({ name: 'storage_limit_gb', type: 'int', nullable: true })
+  storageLimitGb?: number;
+
+  /**
+   * Plain varchar, same reasoning as schoolType above. `isActive`
+   * (AbstractEntity) stays the source of truth for login/query gating and is
+   * kept in sync from this field; this field carries the richer Trial/
+   * Suspended distinction the UI needs.
+   */
+  @Field({ nullable: true })
+  @Column({
+    name: 'lifecycle_status',
+    type: 'varchar',
+    length: 20,
+    nullable: true,
+    default: 'ACTIVE',
+  })
+  lifecycleStatus?: string;
+
+  @Field({ nullable: true })
+  @Column({ name: 'trial_ends_at', type: 'date', nullable: true })
+  trialEndsAt?: string;
+
+  @Field({ nullable: true })
+  @Column({ name: 'suspended_at', type: 'timestamp', nullable: true })
+  suspendedAt?: Date;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'suspended_reason',
+    type: 'varchar',
+    length: 500,
+    nullable: true,
+  })
+  suspendedReason?: string;
+
+  @Field({ nullable: true })
+  @Column({ name: 'suspended_by_id', type: 'uuid', nullable: true })
+  suspendedById?: string;
+
   @Field()
   @Column({
     name: 'timezone',
