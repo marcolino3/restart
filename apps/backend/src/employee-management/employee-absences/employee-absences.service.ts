@@ -16,7 +16,7 @@ import { Organization } from '@/organizations/entities/organization.entity';
 import { daysInterval } from '@/common/utils/days-interval';
 import { EmployeeAbsenceDay } from './entities/employee-absence-days.entity';
 import { DateTime } from 'luxon';
-import { GoogleCalendarService } from '@/google/google-calendar.service';
+import { AbsenceCalendarSyncService } from './absence-calendar-sync.service';
 import { StorageService } from '@/storage/storage.service';
 import { BalanceRecomputeService } from '../work-time-calculation/balance-recompute.service';
 import { TimeTrackingAccessService } from '../work-time-calculation/time-tracking-access.service';
@@ -30,7 +30,7 @@ function toIsoDate(d: Date): string {
 
 const ABSENCE_DOC_URL_RE = /^\/api\/absence-certificates\/[a-zA-Z0-9.-]+$/;
 
-const ABSENCE_CATEGORY_LABELS: Record<string, string> = {
+export const ABSENCE_CATEGORY_LABELS: Record<string, string> = {
   SICKNESS: 'Krankheit',
   ACCIDENT: 'Unfall',
   CHILDCARE_SICK: 'Kind krank',
@@ -42,11 +42,16 @@ const ABSENCE_CATEGORY_LABELS: Record<string, string> = {
   OTHER: 'Sonstiges',
 };
 
+/** German calendar/label wording for a system category code. */
+export function absenceCategoryLabel(systemCode?: string | null): string {
+  return ABSENCE_CATEGORY_LABELS[systemCode ?? ''] ?? systemCode ?? 'Absenz';
+}
+
 @Injectable()
 export class EmployeeAbsencesService {
   constructor(
     private readonly entityManager: EntityManager,
-    private readonly googleCalendarService: GoogleCalendarService,
+    private readonly calendarSync: AbsenceCalendarSyncService,
     private readonly balanceRecompute: BalanceRecomputeService,
     private readonly access: TimeTrackingAccessService,
     private readonly periods: TimeTrackingPeriodsService,
@@ -167,7 +172,7 @@ export class EmployeeAbsencesService {
       endDate ?? startDate,
     );
 
-    const employeeAbsenceSaved = await this.entityManager.transaction(
+    const transactionResult = await this.entityManager.transaction(
       async (manager) => {
         const organization = await manager.findOne(Organization, {
           where: { id: orgId },
@@ -231,28 +236,11 @@ export class EmployeeAbsencesService {
         });
         await manager.save(EmployeeAbsenceDay, absenceDays);
 
-        const germanLabel =
-          ABSENCE_CATEGORY_LABELS[absenceCategory.systemCode ?? ''] ??
-          absenceCategory.systemCode ??
-          'Absenz';
-
-        try {
-          await this.googleCalendarService.createAbsenceEvent({
-            summary: `${membership.user?.firstName} ${membership.user?.lastName} ${germanLabel}`,
-            description: `${saved.note ?? ''}`,
-            start: DateTime.fromJSDate(saved.startDate).toJSDate(),
-            end: DateTime.fromJSDate(saved.endDate)
-              .plus({ days: 1 })
-              .toJSDate(),
-            allDay: true,
-          });
-        } catch {
-          // Calendar sync is best-effort; absence itself is already saved.
-        }
-
-        return saved;
+        return { saved, absenceCategory };
       },
     );
+
+    const { saved: employeeAbsenceSaved, absenceCategory } = transactionResult;
 
     await this.balanceRecompute.recomputeRange(
       orgId,
@@ -260,6 +248,20 @@ export class EmployeeAbsencesService {
       startDate,
       endDate ?? startDate,
     );
+
+    // Calendar sync runs AFTER the commit: it is an outbound HTTP call and must
+    // never hold a database transaction open, nor fail the saved absence.
+    await this.calendarSync.sync({
+      organizationId: orgId,
+      absenceId: employeeAbsenceSaved.id,
+      employeeName:
+        `${membership.user?.firstName ?? ''} ${membership.user?.lastName ?? ''}`.trim(),
+      absenceLabel: absenceCategoryLabel(absenceCategory.systemCode),
+      startDate: employeeAbsenceSaved.startDate,
+      endDate: employeeAbsenceSaved.endDate,
+      startTime: employeeAbsenceSaved.startTime,
+      note: employeeAbsenceSaved.note,
+    });
 
     return employeeAbsenceSaved;
   }

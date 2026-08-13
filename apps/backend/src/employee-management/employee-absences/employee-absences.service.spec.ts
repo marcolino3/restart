@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { EmployeeAbsencesService } from './employee-absences.service';
-import { GoogleCalendarService } from '@/google/google-calendar.service';
+import { AbsenceCalendarSyncService } from './absence-calendar-sync.service';
 import { StorageService } from '@/storage/storage.service';
 import { BalanceRecomputeService } from '../work-time-calculation/balance-recompute.service';
 import { TimeTrackingAccessService } from '../work-time-calculation/time-tracking-access.service';
@@ -49,7 +49,13 @@ describe('EmployeeAbsencesService', () => {
       providers: [
         EmployeeAbsencesService,
         { provide: EntityManager, useValue: entityManager },
-        { provide: GoogleCalendarService, useValue: {} },
+        {
+          provide: AbsenceCalendarSyncService,
+          useValue: {
+            sync: jest.fn().mockResolvedValue(undefined),
+            remove: jest.fn().mockResolvedValue(undefined),
+          },
+        },
         { provide: BalanceRecomputeService, useValue: recompute },
         { provide: TimeTrackingAccessService, useValue: access },
         { provide: TimeTrackingPeriodsService, useValue: periods },

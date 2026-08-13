@@ -18,6 +18,7 @@ import { CompanyVacationAssignmentsModule } from './company-vacation-assignments
 import { EmployeeVacationsModule } from './employee-vacations/employee-vacations.module';
 import { EmployeePaidOvertimeModule } from './employee-paid-overtime/employee-paid-overtime.module';
 import { TimeTrackingPeriodsModule } from './time-tracking-periods/time-tracking-periods.module';
+import { SickLeaveModule } from './sick-leave/sick-leave.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { TimeTrackingPeriodsModule } from './time-tracking-periods/time-tracking
     EmployeeVacationsModule,
     EmployeePaidOvertimeModule,
     TimeTrackingPeriodsModule,
+    SickLeaveModule,
   ],
 })
 export class EmployeeManagementModule {}

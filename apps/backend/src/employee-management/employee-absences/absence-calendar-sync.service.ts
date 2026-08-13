@@ -1,0 +1,162 @@
+import { GoogleCalendarService } from '@/google/google-calendar.service';
+import { Injectable, Logger } from '@nestjs/common';
+import { DateTime } from 'luxon';
+import { EntityManager } from 'typeorm';
+import { AbsenceCalendarSync } from './entities/absence-calendar-sync.entity';
+import { CalendarProvider } from './entities/calendar-provider.enum';
+
+export interface AbsenceCalendarSyncInput {
+  organizationId: string;
+  absenceId: string;
+  /** Full name of the absent employee, used verbatim in the event title. */
+  employeeName: string;
+  /** Localised absence label, e.g. `krank`. */
+  absenceLabel: string;
+  startDate: Date;
+  endDate: Date;
+  /** `HH:mm[:ss]` when the absence starts mid-day, otherwise null. */
+  startTime?: string | null;
+  note?: string | null;
+}
+
+/**
+ * Mirrors an absence onto the organization's external calendar as a single
+ * all-day event, remembering the provider event id so later extensions patch
+ * that event instead of creating duplicates.
+ *
+ * Sync is best-effort by design: every failure is recorded on the sync row and
+ * swallowed, because the absence itself is already persisted and must not be
+ * rolled back over a calendar outage. Must be called AFTER the absence
+ * transaction has committed — never inside it.
+ */
+@Injectable()
+export class AbsenceCalendarSyncService {
+  private readonly logger = new Logger(AbsenceCalendarSyncService.name);
+
+  constructor(
+    private readonly entityManager: EntityManager,
+    private readonly googleCalendar: GoogleCalendarService,
+  ) {}
+
+  async sync(input: AbsenceCalendarSyncInput): Promise<void> {
+    const { organizationId, absenceId } = input;
+
+    const existing = await this.entityManager.findOne(AbsenceCalendarSync, {
+      where: {
+        organizationId,
+        absenceId,
+        provider: CalendarProvider.GOOGLE,
+      },
+    });
+
+    try {
+      const result = await this.googleCalendar.upsertAllDayEvent({
+        organizationId,
+        externalEventId: existing?.externalEventId,
+        summary: buildSummary(input),
+        description: input.note ?? undefined,
+        startDate: toIsoDate(input.startDate),
+        endDate: toIsoDate(input.endDate),
+      });
+
+      // Organization has no calendar configured — nothing to record.
+      if (!result) return;
+
+      await this.entityManager.save(
+        AbsenceCalendarSync,
+        this.entityManager.create(AbsenceCalendarSync, {
+          ...(existing ? { id: existing.id, version: existing.version } : {}),
+          organizationId,
+          absenceId,
+          provider: CalendarProvider.GOOGLE,
+          calendarId: result.calendarId,
+          externalEventId: result.externalEventId,
+          lastSyncedAt: new Date(),
+          lastError: null,
+        }),
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(
+        `Calendar sync failed for absence ${absenceId}: ${message}`,
+      );
+      await this.recordFailure(input, existing, message);
+    }
+  }
+
+  /** Remove the mirrored event, e.g. when an absence is deleted. */
+  async remove(organizationId: string, absenceId: string): Promise<void> {
+    const existing = await this.entityManager.findOne(AbsenceCalendarSync, {
+      where: { organizationId, absenceId, provider: CalendarProvider.GOOGLE },
+    });
+    if (!existing) return;
+
+    try {
+      await this.googleCalendar.deleteEvent({
+        organizationId,
+        externalEventId: existing.externalEventId,
+      });
+      await this.entityManager.delete(AbsenceCalendarSync, {
+        id: existing.id,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(
+        `Calendar event removal failed for absence ${absenceId}: ${message}`,
+      );
+      existing.lastError = message;
+      await this.entityManager.save(existing);
+    }
+  }
+
+  private async recordFailure(
+    input: AbsenceCalendarSyncInput,
+    existing: AbsenceCalendarSync | null,
+    message: string,
+  ): Promise<void> {
+    try {
+      if (existing) {
+        existing.lastError = message;
+        await this.entityManager.save(existing);
+        return;
+      }
+      // No event exists yet: keep a row so the failure stays visible.
+      await this.entityManager.save(
+        AbsenceCalendarSync,
+        this.entityManager.create(AbsenceCalendarSync, {
+          organizationId: input.organizationId,
+          absenceId: input.absenceId,
+          provider: CalendarProvider.GOOGLE,
+          calendarId: '',
+          externalEventId: '',
+          lastError: message,
+        }),
+      );
+    } catch (persistError) {
+      this.logger.error(
+        `Could not persist calendar sync failure for absence ${input.absenceId}`,
+        persistError as Error,
+      );
+    }
+  }
+}
+
+/**
+ * `Vorname Nachname krank`, plus the start time when the employee fell ill
+ * mid-day. The event stays all-day regardless — the time is informational.
+ */
+function buildSummary(input: AbsenceCalendarSyncInput): string {
+  const base = `${input.employeeName} ${input.absenceLabel}`.trim();
+  const time = formatTime(input.startTime);
+  return time ? `${base} (ab ${time})` : base;
+}
+
+function formatTime(value?: string | null): string | null {
+  if (!value) return null;
+  const match = /^(\d{2}):(\d{2})/.exec(value);
+  return match ? `${match[1]}:${match[2]}` : null;
+}
+
+function toIsoDate(date: Date): string {
+  return DateTime.fromJSDate(date).toISODate() as string;
+}
