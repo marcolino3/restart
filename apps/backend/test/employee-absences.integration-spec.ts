@@ -26,7 +26,7 @@ import { User } from '@/users/entities/user.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { Persona } from '@/common/enums/persona.enum';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
-import { GoogleCalendarService } from '@/google/google-calendar.service';
+import { AbsenceCalendarSyncService } from '@/employee-management/employee-absences/absence-calendar-sync.service';
 import { StorageService } from '@/storage/storage.service';
 import { BalanceRecomputeService } from '@/employee-management/work-time-calculation/balance-recompute.service';
 import { TimeTrackingAccessService } from '@/employee-management/work-time-calculation/time-tracking-access.service';
@@ -48,9 +48,14 @@ import { createTestingApp, cleanDatabase } from './test-utils';
   ],
   providers: [
     EmployeeAbsencesService,
+    // The calendar mirror is a network side effect with its own unit spec;
+    // here it only has to exist so the service can be constructed.
     {
-      provide: GoogleCalendarService,
-      useValue: { createAbsenceEvent: jest.fn().mockResolvedValue(undefined) },
+      provide: AbsenceCalendarSyncService,
+      useValue: {
+        sync: jest.fn().mockResolvedValue(undefined),
+        remove: jest.fn().mockResolvedValue(undefined),
+      },
     },
     {
       provide: BalanceRecomputeService,

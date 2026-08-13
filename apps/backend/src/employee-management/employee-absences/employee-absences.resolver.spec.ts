@@ -15,6 +15,7 @@ describe('EmployeeAbsencesResolver', () => {
     createEmployeeAbsenceNotice: jest.Mock;
     createEmployeeAbsence: jest.Mock;
     findAllByEmployeeId: jest.Mock;
+    findAllForCaller: jest.Mock;
     findOne: jest.Mock;
     updateEmployeeAbsence: jest.Mock;
     deleteEmployeeAbsence: jest.Mock;
@@ -37,6 +38,7 @@ describe('EmployeeAbsencesResolver', () => {
       createEmployeeAbsenceNotice: jest.fn(),
       createEmployeeAbsence: jest.fn(),
       findAllByEmployeeId: jest.fn(),
+      findAllForCaller: jest.fn(),
       findOne: jest.fn(),
       updateEmployeeAbsence: jest.fn(),
       deleteEmployeeAbsence: jest.fn(),
@@ -95,6 +97,55 @@ describe('EmployeeAbsencesResolver', () => {
         'emp-1',
         user,
       );
+    });
+  });
+
+  describe('myEmployeeAbsences', () => {
+    it('requires a verified org membership', () => {
+      const handler = Object.getOwnPropertyDescriptor(
+        EmployeeAbsencesResolver.prototype,
+        'myEmployeeAbsences',
+      )?.value as object;
+      const guards: unknown[] =
+        Reflect.getMetadata('__guards__', handler) ?? [];
+      expect(guards).toContain(MembershipGuard);
+    });
+
+    it('takes no employeeId argument — the caller cannot ask for a foreign record', () => {
+      // Self-service by construction: the handler only receives the token, so
+      // there is no argument through which another employee could be targeted.
+      const handler = Object.getOwnPropertyDescriptor(
+        EmployeeAbsencesResolver.prototype,
+        'myEmployeeAbsences',
+      )?.value as (...args: unknown[]) => unknown;
+      expect(handler.length).toBe(1);
+    });
+
+    it('forwards only the session token to the service', async () => {
+      const rows = [{ id: 'abs-1' }];
+      employeeAbsencesService.findAllForCaller.mockResolvedValue(rows);
+
+      await expect(resolver.myEmployeeAbsences(user)).resolves.toBe(rows);
+      expect(employeeAbsencesService.findAllForCaller).toHaveBeenCalledWith(
+        user,
+      );
+    });
+
+    it('passes each caller their own organization', async () => {
+      employeeAbsencesService.findAllForCaller.mockResolvedValue([]);
+      const foreignUser: TokenPayload = {
+        sub: 'user-2',
+        orgId: 'org-2',
+        membershipId: 'mem-2',
+      };
+
+      await resolver.myEmployeeAbsences(user);
+      await resolver.myEmployeeAbsences(foreignUser);
+
+      const orgs = employeeAbsencesService.findAllForCaller.mock.calls.map(
+        (call) => (call[0] as TokenPayload).orgId,
+      );
+      expect(orgs).toEqual(['org-1', 'org-2']);
     });
   });
 

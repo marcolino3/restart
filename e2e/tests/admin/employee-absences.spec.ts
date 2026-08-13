@@ -80,8 +80,12 @@ test.describe('Employee absences — CRUD', () => {
     })
 
     const updatedRow = page.getByRole('row', { name: new RegExp(updatedNote) })
-    page.once('dialog', (dialog) => dialog.accept())
+    // Deletion goes through DeleteConfirmationDialog, not window.confirm.
     await updatedRow.getByRole('button', { name: /^delete$/i }).click()
+    await page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: /^delete$/i })
+      .click()
     await expect(page.getByText(updatedNote)).toHaveCount(0, {
       timeout: 15000,
     })
