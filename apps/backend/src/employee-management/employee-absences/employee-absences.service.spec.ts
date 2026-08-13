@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { EmployeeAbsencesService } from './employee-absences.service';
-import { GoogleCalendarService } from '@/google/google-calendar.service';
+import { AbsenceCalendarSyncService } from './absence-calendar-sync.service';
 import { StorageService } from '@/storage/storage.service';
 import { BalanceRecomputeService } from '../work-time-calculation/balance-recompute.service';
 import { TimeTrackingAccessService } from '../work-time-calculation/time-tracking-access.service';
@@ -49,7 +49,13 @@ describe('EmployeeAbsencesService', () => {
       providers: [
         EmployeeAbsencesService,
         { provide: EntityManager, useValue: entityManager },
-        { provide: GoogleCalendarService, useValue: {} },
+        {
+          provide: AbsenceCalendarSyncService,
+          useValue: {
+            sync: jest.fn().mockResolvedValue(undefined),
+            remove: jest.fn().mockResolvedValue(undefined),
+          },
+        },
         { provide: BalanceRecomputeService, useValue: recompute },
         { provide: TimeTrackingAccessService, useValue: access },
         { provide: TimeTrackingPeriodsService, useValue: periods },
@@ -78,6 +84,83 @@ describe('EmployeeAbsencesService', () => {
             isActive: true,
           }),
         }),
+      );
+    });
+  });
+
+  describe('findAllForCaller', () => {
+    it('löst den Mitarbeiter aus dem Token auf, org-gefiltert', async () => {
+      entityManager.findOne.mockResolvedValue({
+        id: 'mem-1',
+        organizationId: 'org-1',
+        employee: { id: 'emp-1' },
+      });
+      entityManager.find.mockResolvedValue([]);
+
+      await service.findAllForCaller(user);
+
+      expect(entityManager.findOne).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          where: { id: 'mem-1', organizationId: 'org-1' },
+        }),
+      );
+      expect(entityManager.find).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          where: expect.objectContaining({
+            organizationId: 'org-1',
+            employeeId: 'emp-1',
+            isActive: true,
+          }),
+        }),
+      );
+    });
+
+    it('nutzt niemals eine Employee-ID aus dem Aufruf', async () => {
+      // Selbstbedienung: die Employee-ID stammt ausschliesslich aus der
+      // Membership des Tokens, es gibt kein Argument, über das ein Aufrufer
+      // fremde Absenzen anfordern könnte.
+      entityManager.findOne.mockResolvedValue({
+        id: 'mem-1',
+        organizationId: 'org-1',
+        employee: { id: 'emp-own' },
+      });
+      entityManager.find.mockResolvedValue([]);
+
+      await service.findAllForCaller({
+        ...user,
+        employeeId: 'emp-foreign',
+      } as unknown as TokenPayload);
+
+      const findArgs = entityManager.find.mock.calls[0][1] as {
+        where: { employeeId: string };
+      };
+      expect(findArgs.where.employeeId).toBe('emp-own');
+    });
+
+    it('wirft 404, wenn die Membership nicht zur aktiven Org gehört', async () => {
+      // Fremd-Org: die org-gefilterte Suche findet die Membership nicht.
+      entityManager.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.findAllForCaller({
+          orgId: 'org-foreign',
+          membershipId: 'mem-1',
+        } as unknown as TokenPayload),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(entityManager.find).not.toHaveBeenCalled();
+    });
+
+    it('wirft 404, wenn die Membership keinen Mitarbeiter hat', async () => {
+      entityManager.findOne.mockResolvedValue({
+        id: 'mem-1',
+        organizationId: 'org-1',
+        employee: null,
+      });
+
+      await expect(service.findAllForCaller(user)).rejects.toBeInstanceOf(
+        NotFoundException,
       );
     });
   });

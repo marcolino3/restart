@@ -5,7 +5,7 @@ import { getOrganizationSettingsAction } from "@/features/organization-settings/
 import { CreateSettingForm } from "@/features/organization-settings/components/CreateSettingForm";
 import { SettingsPageClient } from "@/features/organization-settings/components/SettingsPageClient";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
-import { KeyRound, PlusIcon, Sliders } from "lucide-react";
+import { KeyRound, PlusIcon, Sliders, Thermometer } from "lucide-react";
 import { getLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
 
@@ -85,6 +85,18 @@ const SettingsPage = async () => {
             <div className="font-medium">Länder-Templates</div>
             <p className="text-muted-foreground text-sm">
               Telefon-, AHV- und Land-spezifische Eingabe-Masken.
+            </p>
+          </div>
+        </Link>
+        <Link
+          href={`/${locale}/admin/settings/sick-leave`}
+          className="hover:bg-accent flex items-start gap-3 rounded-lg border p-4 transition-colors"
+        >
+          <Thermometer className="text-primary mt-0.5 h-5 w-5" />
+          <div>
+            <div className="font-medium">Krankmeldung</div>
+            <p className="text-muted-foreground text-sm">
+              Benachrichtigungsadresse und Google-Kalender für Krankmeldungen.
             </p>
           </div>
         </Link>

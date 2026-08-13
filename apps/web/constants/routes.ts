@@ -29,6 +29,9 @@ export const ROUTES = {
       absenceId: string,
     ) => `/${locale}/admin/employees/${employeeId}/absences/edit/${absenceId}`,
 
+    // My Absences (self-service, independent of the time-tracking feature)
+    myAbsences: (locale: string) => `/${locale}/admin/my-absences`,
+
     // My Time Tracking
     myTimeTracking: (locale: string) => `/${locale}/admin/my-time-tracking`,
     myTimeTrackingCreate: (locale: string) =>
@@ -136,6 +139,11 @@ export const ROUTES = {
     // Employee Functions (org admin)
     employeeFunctions: (locale: string) =>
       `/${locale}/admin/employee-functions`,
+
+    // Organization Settings (encrypted key/value store + feature sub-pages)
+    settings: (locale: string) => `/${locale}/admin/settings`,
+    sickLeaveSettings: (locale: string) =>
+      `/${locale}/admin/settings/sick-leave`,
 
     // Country Input Templates
     countryTemplates: (locale: string) =>

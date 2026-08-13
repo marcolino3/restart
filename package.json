@@ -50,7 +50,9 @@
       "@jest/environment@29": "30.4.1",
       "@jest/fake-timers@29": "30.4.1",
       "jest-environment-node@29": "30.4.1",
-      "nanoid@>=3.0.0 <3.3.17": ">=3.3.18 <4.0.0"
+      "nanoid@>=3.0.0 <3.3.17": ">=3.3.18 <4.0.0",
+      "undici@>=6.0.0 <6.28.0": ">=6.28.0 <7.0.0",
+      "body-parser@<2.3.0": ">=2.3.0"
     },
     "auditConfig": {
       "ignoreGhsas": [

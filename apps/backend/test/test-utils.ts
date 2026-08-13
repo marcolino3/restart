@@ -14,6 +14,12 @@ config({ path: join(__dirname, '.env.test') });
  *
  * Usage:
  *   const { module, dataSource } = await createTestingApp([OrganizationsModule]);
+ *
+ * Run the suite with `pnpm test:e2e`, which pins `--runInBand`: every suite
+ * connects with `dropSchema: true`, so parallel workers pull the schema out
+ * from under each other and the hooks time out. The same script also excludes
+ * `app.e2e-spec.ts`, broken since the initial import (its namespace-style
+ * `supertest` import is not callable), matching what CI does.
  */
 export async function createTestingApp(
   imports: any[] = [],

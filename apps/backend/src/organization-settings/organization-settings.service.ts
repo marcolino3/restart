@@ -230,6 +230,18 @@ export class OrganizationSettingsService {
   }
 
   /**
+   * Public gate for features that act on settings without going through this
+   * service's CRUD methods (e.g. testing an org's calendar connection). Same
+   * rule as the CRUD path: SuperAdmin, ORG_OWNER or ORG_ADMIN.
+   */
+  async assertCanManageSettings(
+    organizationId: string,
+    user: TokenPayload,
+  ): Promise<void> {
+    await this.checkOrgAccess(organizationId, user);
+  }
+
+  /**
    * Check if user has access to organization settings
    */
   private async checkOrgAccess(

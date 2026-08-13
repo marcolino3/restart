@@ -79,6 +79,14 @@ const ListByEmployeeDocument = gql`
   }
 `;
 
+const MyAbsencesDocument = gql`
+  query MyEmployeeAbsences {
+    myEmployeeAbsences {
+      ${AbsenceFields}
+    }
+  }
+`;
+
 const ByIdDocument = gql`
   query EmployeeAbsenceById($id: ID!) {
     employeeAbsenceById(id: $id) {
@@ -128,6 +136,24 @@ export const getEmployeeAbsencesAction = async (employeeId: string) => {
       success: true as const,
       data: employeeAbsencesByEmployeeId,
     };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false as const,
+      error: "Failed to load absences",
+      data: [] as EmployeeAbsence[],
+    };
+  }
+};
+
+/** Self-service: the caller's own absences, no employeeId argument. */
+export const getMyEmployeeAbsencesAction = async () => {
+  const client = await serverCookieGqlClient();
+  try {
+    const { myEmployeeAbsences } = await client.request<{
+      myEmployeeAbsences: EmployeeAbsence[];
+    }>(MyAbsencesDocument);
+    return { success: true as const, data: myEmployeeAbsences };
   } catch (error) {
     console.error(error);
     return {

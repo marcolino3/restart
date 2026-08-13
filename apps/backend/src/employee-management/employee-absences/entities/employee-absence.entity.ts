@@ -67,7 +67,20 @@ export class EmployeeAbsence extends AbstractEntity<EmployeeAbsence> {
   @Column('timestamptz', { nullable: true })
   endDate: Date;
 
-  @Field(() => String)
+  // Uhrzeit ab der die Absenz am startDate gilt ('HH:mm:ss'). NULL = ab Tagesbeginn
+  // (ganztaegig). Gesetzt z. B. bei einer Krankmeldung ab Mittag.
+  @Field(() => String, { nullable: true })
+  @Column('time', { name: 'start_time', nullable: true })
+  startTime?: string | null;
+
+  // Uhrzeit bis zu der die Absenz am endDate gilt ('HH:mm:ss'). NULL = bis Tagesende.
+  @Field(() => String, { nullable: true })
+  @Column('time', { name: 'end_time', nullable: true })
+  endTime?: string | null;
+
+  // Nullable in the database, so it must be nullable in the schema too:
+  // absences created without a note otherwise fail the whole query.
+  @Field(() => String, { nullable: true })
   @Column({ nullable: true })
   note?: string;
 
