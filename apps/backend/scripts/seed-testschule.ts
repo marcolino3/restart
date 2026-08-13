@@ -41,7 +41,7 @@ import { INestApplicationContext } from '@nestjs/common';
 // Deterministic per-lesson pseudo-random in [0, 1). Seed reruns stay stable
 // while each lesson lands on a different point in the range.
 function lessonRand(lessonId: string, salt: string): number {
-  const h = createHash('sha1').update(`${lessonId}::${salt}`).digest();
+  const h = createHash('sha256').update(`${lessonId}::${salt}`).digest();
   return h.readUInt32BE(0) / 0x100000000;
 }
 
@@ -3895,7 +3895,6 @@ async function seedEmployeeManagement(c: Client, ORG_ID: string) {
       });
     }
   }
-  const teacherEmails = USERS.filter((u) => u.isTeacher).map((u) => u.email);
   const officeEmails = USERS.filter((u) => !u.isTeacher).map((u) => u.email);
 
   // -------- 10a. Employee contracts --------
@@ -4177,15 +4176,12 @@ async function seedEmployeeManagement(c: Client, ORG_ID: string) {
   const periodEndStr = periodEnd.toISOString().slice(0, 10);
   const periodLabel = `${periodStart.getUTCFullYear()}`;
 
-  let periodId: string;
   const { rows: existingPeriod } = await c.query<{ id: string }>(
     `SELECT id FROM time_tracking_periods WHERE organization_id = $1 AND start_date = $2`,
     [ORG_ID, periodStartStr],
   );
-  if (existingPeriod[0]) {
-    periodId = existingPeriod[0].id;
-  } else {
-    periodId = randomUUID();
+  if (!existingPeriod[0]) {
+    const periodId = randomUUID();
     await c.query(
       `INSERT INTO time_tracking_periods (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
             organization_id, label, start_date, end_date, status)
