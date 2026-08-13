@@ -4,14 +4,17 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { PageHead } from "@/components/common/PageHead";
 import { InitialsAvatar } from "@/components/common/InitialsAvatar";
 import type { RoleWithPermissions } from "../actions/get-roles.action";
 import type { PermissionItem } from "../actions/get-permissions.action";
+import { CATEGORY_ORDER, groupCatalog } from "../permission-catalog";
 import { RoleCard } from "./RoleCard";
 import { RoleComparisonMatrix } from "./RoleComparisonMatrix";
 import { RoleLevelLegend } from "./RoleLevelLegend";
 import { CreateRoleDialog } from "./CreateRoleDialog";
+import { roleDisplayName } from "../lib/role-display-name";
 
 type RolesOverviewProps = {
   roles: RoleWithPermissions[];
@@ -22,11 +25,14 @@ export function RolesOverview({ roles, permissions }: RolesOverviewProps) {
   const t = useTranslations("Roles");
   const router = useRouter();
   const availableCodes = new Set(permissions.map((p) => p.code));
+  const categoryCount = CATEGORY_ORDER.filter((category) =>
+    groupCatalog(availableCodes).some((c) => c.category === category),
+  ).length;
 
   const people = roles.flatMap((role) =>
     (role.memberships ?? []).map((member) => ({
       member,
-      roleName: role.name,
+      roleName: roleDisplayName(t, role),
     })),
   );
 
@@ -34,7 +40,7 @@ export function RolesOverview({ roles, permissions }: RolesOverviewProps) {
     <div className="flex flex-col gap-4">
       <PageHead
         title={t("title")}
-        subtitle={t("rolesCount", { count: roles.length })}
+        subtitle={t("rolesCountWithPeople", { count: roles.length, peopleCount: people.length })}
         action={
           <CreateRoleDialog
             availableSourceRoles={roles}
@@ -42,18 +48,29 @@ export function RolesOverview({ roles, permissions }: RolesOverviewProps) {
           />
         }
       />
-      <RoleLevelLegend />
+      <div className="flex items-center justify-between">
+        <RoleLevelLegend />
+        <span className="text-xs text-muted-foreground">
+          {t("overview.areasSummary", { categoryCount, totalCount: availableCodes.size })}
+        </span>
+      </div>
 
       <Tabs defaultValue="roles">
         <TabsList variant="underline">
-          <TabsTrigger variant="underline" value="roles">
+          <TabsTrigger variant="underline" value="roles" className="gap-1.5">
             {t("overview.tabRoles")}
+            <Badge variant="secondary" className="px-1.5">
+              {roles.length}
+            </Badge>
           </TabsTrigger>
           <TabsTrigger variant="underline" value="comparison">
             {t("overview.tabComparison")}
           </TabsTrigger>
-          <TabsTrigger variant="underline" value="people">
+          <TabsTrigger variant="underline" value="people" className="gap-1.5">
             {t("overview.tabPeople")}
+            <Badge variant="secondary" className="px-1.5">
+              {people.length}
+            </Badge>
           </TabsTrigger>
         </TabsList>
 

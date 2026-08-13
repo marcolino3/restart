@@ -1,16 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { EmployeesService } from './employees.service';
 import { EmployeeInvitationService } from './employee-invitation.service';
-import { Employee } from './entities/employee.entity';
+import { Employee, EmployeeStatus } from './entities/employee.entity';
+import { EmployeeContract } from '@/employee-management/employee-contracts/entities/employee-contract.entity';
 import { PasswordService } from '@/users/password.service';
 import { EmployeeAuditLogService } from '../employee-audit-log/employee-audit-log.service';
 import { EmployeeAuditLogEntityType } from '../employee-audit-log/entities/employee-audit-log.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { UserEmail } from '@/user-emails/entities/user-email.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
+import { User } from '@/users/entities/user.entity';
 import { Persona } from '@/common/enums/persona.enum';
 import { CreateEmployeeInput } from './dto/create-employee.input';
 
@@ -20,6 +26,8 @@ type MockManager = {
   findOneOrFail: jest.Mock;
   create: jest.Mock;
   save: jest.Mock;
+  remove: jest.Mock;
+  delete: jest.Mock;
 };
 
 describe('EmployeesService', () => {
@@ -36,6 +44,10 @@ describe('EmployeesService', () => {
       findOneOrFail: jest.fn(),
       create: jest.fn((_entity: unknown, data: unknown) => data),
       save: jest.fn((_entity: unknown, data: unknown) => Promise.resolve(data)),
+      remove: jest.fn((_entity: unknown, data: unknown) =>
+        Promise.resolve(data),
+      ),
+      delete: jest.fn().mockResolvedValue({ affected: 0 }),
     };
     entityManager = {
       transaction: jest.fn(
@@ -241,6 +253,76 @@ describe('EmployeesService', () => {
 
       expect(auditLogService.logChanges).not.toHaveBeenCalled();
       expect(manager.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('removeEmployeeOnboardingDraft', () => {
+    const buildDraft = (organizationId: string) => ({
+      id: 'emp-1',
+      status: EmployeeStatus.DRAFT,
+      membership: {
+        id: 'mem-1',
+        organizationId,
+        user: { id: 'user-1' },
+      },
+    });
+
+    it('hard-deletes employee, membership and user for a DRAFT in the caller org', async () => {
+      const employee = buildDraft('org-1');
+      employeeRepo.findOne.mockResolvedValue(employee);
+
+      const result = await service.removeEmployeeOnboardingDraft(
+        'emp-1',
+        'org-1',
+      );
+
+      expect(result).toBe(true);
+      expect(manager.delete).toHaveBeenCalledWith(EmployeeContract, {
+        employeeId: 'emp-1',
+      });
+      expect(manager.remove).toHaveBeenNthCalledWith(
+        1,
+        Membership,
+        employee.membership,
+      );
+      expect(manager.remove).toHaveBeenNthCalledWith(2, Employee, employee);
+      expect(manager.remove).toHaveBeenNthCalledWith(
+        3,
+        User,
+        employee.membership.user,
+      );
+    });
+
+    it('throws NotFoundException when the employee does not exist', async () => {
+      employeeRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.removeEmployeeOnboardingDraft('emp-1', 'org-1'),
+      ).rejects.toThrow(NotFoundException);
+      expect(manager.remove).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException for a foreign-org employee (multi-tenant isolation)', async () => {
+      const employee = buildDraft('org-2');
+      employeeRepo.findOne.mockResolvedValue(employee);
+
+      await expect(
+        service.removeEmployeeOnboardingDraft('emp-1', 'org-1'),
+      ).rejects.toThrow(NotFoundException);
+      expect(manager.remove).not.toHaveBeenCalled();
+    });
+
+    it('throws BadRequestException when the employee is no longer a draft', async () => {
+      const employee = {
+        ...buildDraft('org-1'),
+        status: EmployeeStatus.ACTIVE,
+      };
+      employeeRepo.findOne.mockResolvedValue(employee);
+
+      await expect(
+        service.removeEmployeeOnboardingDraft('emp-1', 'org-1'),
+      ).rejects.toThrow(BadRequestException);
+      expect(manager.remove).not.toHaveBeenCalled();
     });
   });
 });

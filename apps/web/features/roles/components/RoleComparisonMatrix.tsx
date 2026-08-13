@@ -8,6 +8,7 @@ import { ROUTES } from "@/constants/routes";
 import type { RoleWithPermissions } from "../actions/get-roles.action";
 import { CATEGORY_ORDER, detectLevel, groupCatalog } from "../permission-catalog";
 import { levelBadgeVariant } from "../lib/level-meta";
+import { roleDisplayName } from "../lib/role-display-name";
 
 type RoleComparisonMatrixProps = {
   roles: RoleWithPermissions[];
@@ -27,10 +28,15 @@ export function RoleComparisonMatrix({ roles, availableCodes }: RoleComparisonMa
       <table className="w-full min-w-max text-sm">
         <thead>
           <tr className="border-b bg-muted/50">
-            <th className="p-3 text-left font-medium">{t("comparison.category")}</th>
+            <th className="p-3 text-left text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              {t("comparison.category")}
+            </th>
             {roles.map((role) => (
-              <th key={role.id} className="min-w-32 p-3 text-left font-medium">
-                {role.name}
+              <th
+                key={role.id}
+                className="min-w-32 p-3 text-center text-xs font-medium tracking-wide text-muted-foreground uppercase"
+              >
+                {roleDisplayName(t, role)}
               </th>
             ))}
           </tr>
@@ -53,7 +59,7 @@ export function RoleComparisonMatrix({ roles, availableCodes }: RoleComparisonMa
                   );
                   const level = detectLevel(category, grantedCodes, availableCodes);
                   return (
-                    <td key={role.id} className="p-3">
+                    <td key={role.id} className="p-3 text-center">
                       <Link href={`${ROUTES.admin.roleDetail(locale, role.id)}?domain=${category}`}>
                         <Badge variant={levelBadgeVariant(level)} className="cursor-pointer">
                           {level === null ? t("level.individual") : t(`level.${level}` as const)}
@@ -66,6 +72,21 @@ export function RoleComparisonMatrix({ roles, availableCodes }: RoleComparisonMa
             );
           })}
         </tbody>
+        <tfoot>
+          <tr className="border-t bg-muted/50">
+            <td className="p-3 font-medium text-muted-foreground">
+              {t("comparison.totalLabel")}
+            </td>
+            {roles.map((role) => {
+              const grantedCount = (role.permissions ?? []).length;
+              return (
+                <td key={role.id} className="p-3 text-center font-medium">
+                  {grantedCount} / {availableCodes.size}
+                </td>
+              );
+            })}
+          </tr>
+        </tfoot>
       </table>
     </div>
   );

@@ -34,4 +34,12 @@ export class CreateRoleInput {
   @IsOptional()
   @IsUUID('4')
   duplicateFromRoleId?: string;
+
+  // Memberships to assign this role to immediately after creation. Must
+  // belong to the same org (enforced in service).
+  @Field(() => [ID], { nullable: true })
+  @IsOptional()
+  @ArrayMaxSize(200)
+  @IsUUID('4', { each: true })
+  membershipIds?: string[];
 }

@@ -97,6 +97,7 @@ const member = (
 
 const employee = (empId: string, first: string, last: string): EmployeeListItem => ({
   membership: {
+    id: empId,
     employee: {
       isActive: true,
       timeTrackingEnabled: false,
