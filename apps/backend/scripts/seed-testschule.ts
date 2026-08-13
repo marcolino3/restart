@@ -1,25 +1,47 @@
 /**
- * Idempotent seed script for the local "Testschule" dev environment.
+ * Idempotent, self-sufficient seed script for the local "Testschule" dev
+ * environment. Safe to run against a completely empty database.
  *
  * Run with:
  *   cd apps/backend
  *   npx ts-node -T scripts/seed-testschule.ts
  *
- * Renames the existing "Rietberg Montesori" org (UUID hard-coded below) to
- * "Testschule" and fills it with employees (incl. logins, password = test1234),
- * admission stages, grade levels, classes + enrollments, contact persons +
- * relationships, and lesson records for Levin Baumann so the radar chart shows
- * varied per-area mastery.
+ * What it does, in order:
+ *   1. Boots a NestJS application context (no HTTP listener) so it can call
+ *      real backend services for anything with non-trivial business logic —
+ *      org creation (`OrganizationsService.create`, which transitively seeds
+ *      system roles/permissions/absence categories/admission stages/feature
+ *      toggles) and the admission→enrollment flow
+ *      (`AdmissionApplicationsService.create` + `.finalizeEnrollment`, which
+ *      creates the Student row, mirrors family contacts onto the student, and
+ *      creates the SchoolClassEnrollment row).
+ *   2. Finds-or-creates an org named "Testschule" — the org id is discovered
+ *      at runtime, never hardcoded.
+ *   3. Everything else (test users, admission stages/applications, contact
+ *      persons, lesson records, Hattie/Montessori observation axes, employee
+ *      contracts, vacations, absences, teams, time tracking, projects, chats)
+ *      is seeded via a raw `pg` Client, following this file's own established
+ *      idempotency conventions (existence-check-then-insert / ON CONFLICT).
  *
- * Safe to re-run — each section uses ON CONFLICT or check-then-insert.
+ * Safe to re-run — every section uses ON CONFLICT or check-then-insert.
  */
+import 'reflect-metadata';
+import 'dotenv/config';
+// AppModule and everything it transitively imports uses the `@/*` → `src/*`
+// path alias (see tsconfig.json). ts-node doesn't resolve TS path mappings on
+// its own — tsconfig-paths/register patches Node's module resolution to
+// honor them, same as this repo's other ts-node entry points (see the
+// `typeorm`/`test:debug` package.json scripts).
+import 'tsconfig-paths/register';
 import { Client } from 'pg';
 import { createHash, randomUUID, randomBytes } from 'crypto';
+import { NestFactory } from '@nestjs/core';
+import { INestApplicationContext } from '@nestjs/common';
 
 // Deterministic per-lesson pseudo-random in [0, 1). Seed reruns stay stable
 // while each lesson lands on a different point in the range.
 function lessonRand(lessonId: string, salt: string): number {
-  const h = createHash('sha1').update(`${lessonId}::${salt}`).digest();
+  const h = createHash('sha256').update(`${lessonId}::${salt}`).digest();
   return h.readUInt32BE(0) / 0x100000000;
 }
 
@@ -33,7 +55,8 @@ function pickInRange(
 }
 import { hashPassword } from '@better-auth/utils/password';
 
-const ORG_ID = '8e5ec09a-c2b7-458f-bf28-b8081a6af409';
+const ORG_NAME = 'Testschule';
+const ORG_SUBDOMAIN = 'testschule';
 const PW_PLAIN = 'test1234';
 
 const DB = {
@@ -43,6 +66,39 @@ const DB = {
   password: process.env.DB_PASSWORD ?? 'postgres',
   database: process.env.DB_NAME ?? 'restart',
 };
+
+// AppModule's TypeOrmModule/GraphQLModule use `configService.getOrThrow(...)`
+// for these — fill in the same fallbacks as DB above (and a couple of other
+// required-at-boot vars) BEFORE importing AppModule, so `createApplicationContext`
+// works out of the box in a bare dev shell with no `.env` file.
+process.env.DB_HOST ??= DB.host;
+process.env.DB_PORT ??= String(DB.port);
+process.env.DB_USERNAME ??= DB.user;
+process.env.DB_PASSWORD ??= DB.password;
+process.env.DB_NAME ??= DB.database;
+process.env.PORT ??= '4001';
+process.env.NODE_ENV ??= 'development';
+// better-auth (src/lib/auth.ts) requires these at import time even though
+// this script never exercises a real login/OAuth flow (it writes better-auth
+// rows directly via `pg`, same as the rest of this file always has). Dummy
+// dev-only values — never used to sign or verify anything real.
+process.env.BETTER_AUTH_SECRET ??=
+  'dev-only-seed-script-secret-not-for-production';
+process.env.BETTER_AUTH_URL ??= 'http://localhost:4001';
+process.env.GOOGLE_AUTH_CLIENT_ID ??= 'dev-only-seed-script-placeholder';
+process.env.GOOGLE_AUTH_CLIENT_SECRET ??= 'dev-only-seed-script-placeholder';
+process.env.GOOGLE_MAIL_REFRESH_TOKEN ??= 'dev-only-seed-script-placeholder';
+process.env.SMTP_USER ??= 'dev-only-seed-script@example.invalid';
+process.env.ALLOWED_ORIGINS ??= 'http://localhost:4000';
+// Must be a real 64-hex-char (32-byte) key — EncryptionService validates the
+// format at construction time. Dev-only fixed value (not a secret in the
+// sense of protecting anything real; this script never encrypts data anyone
+// relies on) so re-runs stay deterministic.
+process.env.ORG_SETTINGS_ENCRYPTION_KEY ??=
+  '1655e2e5be862029c914f072a87ae319264b6571f3fe63b676c94d1366b6d893'.slice(
+    0,
+    64,
+  );
 
 const baId = (len = 32) => randomBytes(len).toString('base64url').slice(0, len);
 
@@ -206,13 +262,55 @@ const GRADE_LEVEL_COLOR_DEFAULTS: Record<string, string> = {
   Oberstufe: '#8B5CF6',
 };
 
+// "Klasse PA" ("Primarstufe A") is the class Levin Baumann and his classmates
+// (see KLASSE_PA_STUDENTS below) get enrolled into — section 9's Hattie/
+// Montessori observation-axis generation looks students up by this exact
+// class name, so keep it in sync if you rename it here.
+const PA_CLASS_NAME = 'Klasse PA';
+
 const NEW_CLASSES: Array<{
   name: string;
   color: string;
   room: string;
   maxCapacity: number;
   gradeLevel: string;
-}> = [];
+}> = [
+  {
+    name: 'Kinderhaus 1',
+    color: '#FBBF24',
+    room: 'Raum 101',
+    maxCapacity: 20,
+    gradeLevel: 'Vorschule',
+  },
+  {
+    name: 'Kinderhaus 2',
+    color: '#FBBF24',
+    room: 'Raum 102',
+    maxCapacity: 20,
+    gradeLevel: 'Vorschule',
+  },
+  {
+    name: PA_CLASS_NAME,
+    color: '#6366F1',
+    room: 'Raum 201',
+    maxCapacity: 24,
+    gradeLevel: 'Primarstufe',
+  },
+  {
+    name: 'Klasse PB',
+    color: '#6366F1',
+    room: 'Raum 202',
+    maxCapacity: 24,
+    gradeLevel: 'Primarstufe',
+  },
+  {
+    name: 'Klasse OA',
+    color: '#8B5CF6',
+    room: 'Raum 301',
+    maxCapacity: 22,
+    gradeLevel: 'Oberstufe',
+  },
+];
 
 // Permissions to grant to each role (the seeder shipped without school-related
 // perms). Idempotent INSERT, so safe to extend.
@@ -1155,8 +1253,20 @@ const APPLICANT_FAMILIES: ApplicantFamily[] = [
 
 // Contact persons (parents/guardians) to add — keyed by student lastname so we
 // can wire up the relationship below.
-const CONTACTS: {
+// The "Klasse PA" roster: Levin Baumann (the student the curriculum/Hattie
+// demo data below is written for) plus four classmates. Each entry doubles as
+// (a) the source for the admission-application → finalizeEnrollment flow that
+// creates the real `students` + `school_class_enrollments` rows via
+// AdmissionApplicationsService, and (b) the source for the legacy `contacts`
+// list that seeds parent/guardian ContactPersons directly on the *enrolled*
+// student (mirroring what finalizeEnrollment does for the family's own
+// contacts, but this list additionally covers non-family emergency contacts
+// like grandparents that were never part of the admission application).
+const KLASSE_PA_STUDENTS: {
+  studentFirstName: string;
   studentLastName: string;
+  dateOfBirth: string;
+  gender: 'MALE' | 'FEMALE' | 'OTHER';
   contacts: {
     firstName: string;
     lastName: string;
@@ -1179,7 +1289,10 @@ const CONTACTS: {
   }[];
 }[] = [
   {
+    studentFirstName: 'Levin',
     studentLastName: 'Baumann',
+    dateOfBirth: '2018-03-14',
+    gender: 'MALE',
     contacts: [
       {
         firstName: 'Sabine',
@@ -1213,7 +1326,10 @@ const CONTACTS: {
     ],
   },
   {
+    studentFirstName: 'Mia',
     studentLastName: 'Müller',
+    dateOfBirth: '2018-07-02',
+    gender: 'FEMALE',
     contacts: [
       {
         firstName: 'Claudia',
@@ -1239,7 +1355,10 @@ const CONTACTS: {
     ],
   },
   {
+    studentFirstName: 'Finn',
     studentLastName: 'Keller',
+    dateOfBirth: '2018-01-25',
+    gender: 'MALE',
     contacts: [
       {
         firstName: 'Andrea',
@@ -1265,7 +1384,10 @@ const CONTACTS: {
     ],
   },
   {
+    studentFirstName: 'Emma',
     studentLastName: 'Schmid',
+    dateOfBirth: '2018-11-09',
+    gender: 'FEMALE',
     contacts: [
       {
         firstName: 'Karin',
@@ -1290,7 +1412,10 @@ const CONTACTS: {
     ],
   },
   {
+    studentFirstName: 'Noah',
     studentLastName: 'Brunner',
+    dateOfBirth: '2018-05-30',
+    gender: 'MALE',
     contacts: [
       {
         firstName: 'Ursula',
@@ -1359,14 +1484,84 @@ const LEVIN_AREA_RECORDS: {
 async function main() {
   const c = new Client(DB);
   await c.connect();
-  console.log('▶ Connected');
+  console.log('▶ Connected (pg)');
 
-  // -------- 1. Org rename --------
-  await c.query(
-    `UPDATE organizations SET name = 'Testschule', subdomain = 'testschule' WHERE id = $1`,
+  // -------- 0. Bootstrap NestJS application context + org (findOrCreate) ---
+  // We boot the real Nest app (no HTTP listener — createApplicationContext)
+  // so org creation runs through the real OrganizationsService.create(),
+  // which transactionally seeds system roles, role permissions, absence
+  // categories, employee functions, admission stages/sources and feature
+  // toggles as a side effect. That is the same logic production uses when a
+  // SuperAdmin creates an org via GraphQL — re-implementing it in raw SQL
+  // here would be exactly the kind of drift this rewrite is meant to avoid.
+  //
+  // Dynamic import so `reflect-metadata`/env vars above are guaranteed to run
+  // first, and so a `pg`-only failure (e.g. DB not reachable) surfaces before
+  // we pay the cost of loading the whole Nest dependency graph.
+  const { AppModule } = await import('../src/app.module');
+  const { OrganizationsService } =
+    await import('../src/organizations/organizations.service');
+  const { AdmissionApplicationsService } =
+    await import('../src/school-management/admissions/admission-applications.service');
+
+  console.log('▶ Booting NestJS application context…');
+  const app: INestApplicationContext =
+    await NestFactory.createApplicationContext(AppModule, {
+      logger: ['error', 'warn'],
+    });
+  console.log('✓ NestJS application context ready');
+
+  const orgsService = app.get(OrganizationsService);
+  const admissionsService = app.get(AdmissionApplicationsService);
+
+  // find-or-create by name — idempotent across re-runs.
+  const { rows: existingOrgRows } = await c.query<{ id: string }>(
+    `SELECT id FROM organizations WHERE name = $1 LIMIT 1`,
+    [ORG_NAME],
+  );
+  let ORG_ID: string;
+  if (existingOrgRows[0]) {
+    ORG_ID = existingOrgRows[0].id;
+    console.log(`✓ Org "${ORG_NAME}" already exists (${ORG_ID})`);
+  } else {
+    const created = await orgsService.create({
+      organizationName: ORG_NAME,
+      organizationSubdomain: ORG_SUBDOMAIN,
+      country: 'CH',
+      timezone: 'Europe/Zurich',
+    });
+    ORG_ID = created.id;
+    console.log(`✓ Org "${ORG_NAME}" created (${ORG_ID})`);
+  }
+
+  // Verify the side effects actually fired instead of assuming they did —
+  // OrganizationsService.create() is expected to seed exactly the 6 system
+  // roles via seedOrgSystemRoles(manager, org.id).
+  const { rows: systemRoleRows } = await c.query<{ system_code: string }>(
+    `SELECT system_code FROM roles WHERE organization_id = $1 AND is_system = true`,
     [ORG_ID],
   );
-  console.log('✓ Org renamed → Testschule');
+  const EXPECTED_SYSTEM_ROLES = [
+    'ORG_OWNER',
+    'ORG_ADMIN',
+    'HR_MANAGER',
+    'OFFICE',
+    'TEAM_LEAD',
+    'EMPLOYEE',
+  ];
+  const seededRoleCodes = new Set(systemRoleRows.map((r) => r.system_code));
+  const missingRoles = EXPECTED_SYSTEM_ROLES.filter(
+    (code) => !seededRoleCodes.has(code),
+  );
+  if (missingRoles.length > 0) {
+    throw new Error(
+      `System roles missing after org creation: ${missingRoles.join(', ')}. ` +
+        `OrganizationsService.create() should have seeded these via seedOrgSystemRoles — aborting.`,
+    );
+  }
+  console.log(
+    `✓ System roles verified (${systemRoleRows.length}: ${[...seededRoleCodes].join(', ')})`,
+  );
 
   // -------- 2. Patch role permissions --------
   for (const [roleCode, perms] of Object.entries(ROLE_PERMS)) {
@@ -1603,9 +1798,72 @@ async function main() {
   }
   console.log(`✓ Teachers assigned to ${allClasses.length} classes`);
 
+  // -------- 7b. Admission → enrollment: Klasse PA roster --------
+  // Levin Baumann + classmates need real `students` + `school_class_enrollments`
+  // rows before section 9 (lesson records / Hattie axes) or section 8 (contact
+  // persons) can do anything. Route them through the real admission pipeline
+  // (AdmissionApplicationsService.create + .finalizeEnrollment) instead of
+  // hand-writing `students`/`school_class_enrollments` INSERTs, so the same
+  // business logic production uses (contact-person mirroring, application
+  // status transition, audit log) runs here too.
+  const { rows: paClassRows } = await c.query<{ id: string }>(
+    `SELECT id FROM school_classes WHERE organization_id = $1 AND name = $2 LIMIT 1`,
+    [ORG_ID, PA_CLASS_NAME],
+  );
+  const paClassId = paClassRows[0]?.id;
+  if (!paClassId) {
+    console.warn(
+      `⚠ "${PA_CLASS_NAME}" not found — skipping Klasse-PA enrollment`,
+    );
+  } else {
+    let paEnrolled = 0;
+    for (const stu of KLASSE_PA_STUDENTS) {
+      // Idempotency: skip if this student already exists (name + dob unique
+      // per org, matching the Student entity's own unique index).
+      const { rows: existingStudent } = await c.query<{ id: string }>(
+        `SELECT id FROM students
+          WHERE organization_id = $1 AND "firstName" = $2 AND "lastName" = $3 AND "dateOfBirth" = $4`,
+        [ORG_ID, stu.studentFirstName, stu.studentLastName, stu.dateOfBirth],
+      );
+      if (existingStudent[0]) continue;
+
+      const application = await admissionsService.create(
+        {
+          familyName: `Familie ${stu.studentLastName}`,
+          childFirstName: stu.studentFirstName,
+          childLastName: stu.studentLastName,
+          childDateOfBirth: stu.dateOfBirth,
+          childGender: stu.gender as never,
+          contactPersons: stu.contacts.map((cp, idx) => ({
+            firstName: cp.firstName,
+            lastName: cp.lastName,
+            email: cp.email,
+            phone: cp.phone,
+            salutation: cp.salutation as never,
+            roles: [cp.relationship as never],
+            sortOrder: idx,
+          })),
+        },
+        ORG_ID,
+        null,
+      );
+      await admissionsService.finalizeEnrollment(
+        {
+          applicationId: application.id,
+          schoolClassId: paClassId,
+          enrollmentDate: '2025-08-18',
+        },
+        ORG_ID,
+        null,
+      );
+      paEnrolled++;
+    }
+    console.log(`✓ Klasse-PA roster enrolled (+${paEnrolled})`);
+  }
+
   // -------- 8. Contact persons + relationships --------
   let cpAdded = 0;
-  for (const block of CONTACTS) {
+  for (const block of KLASSE_PA_STUDENTS) {
     const { rows: studRows } = await c.query<{ id: string }>(
       `SELECT id FROM students WHERE organization_id = $1 AND "lastName" = $2 LIMIT 1`,
       [ORG_ID, block.studentLastName],
@@ -2247,7 +2505,7 @@ async function main() {
     // Deterministisch: alle Random-Picks gehen über `lessonRand` mit
     // student-spezifischem Salt. Re-Runs erzeugen identische Daten,
     // der org-weite BACKFILL_NOTE-Cleanup oben ersetzt die alten Rows.
-    const PA_CLASS_NAME = 'Klasse PA';
+    // (PA_CLASS_NAME is declared once, top-level, near NEW_CLASSES.)
     const { rows: classmates } = await c.query<{
       id: string;
       firstName: string;
@@ -3047,10 +3305,83 @@ async function main() {
     );
   }
 
+  // -------- Admission → enrollment: finalize "Vertrag"-stage applicants ----
+  // Children whose application already sits at the "Vertrag" (contract)
+  // stage are realistic candidates to already be enrolled — contract signed,
+  // just needs a class assignment. Finalizing them via the real
+  // AdmissionApplicationsService exercises the exact same enrollment path as
+  // the Klasse-PA roster above, just triggered from application data instead
+  // of a fixed roster, and spreads students across the other seeded classes
+  // (not just Klasse PA) so class rosters outside the Hattie-demo class are
+  // non-empty too.
+  {
+    const { rows: vertragStage } = await c.query<{ id: string }>(
+      `SELECT id FROM admission_stages WHERE organization_id = $1 AND slug = 'vertrag' LIMIT 1`,
+      [ORG_ID],
+    );
+    const { rows: otherClasses } = await c.query<{
+      id: string;
+      name: string;
+    }>(
+      `SELECT id, name FROM school_classes
+        WHERE organization_id = $1 AND name <> $2
+        ORDER BY name`,
+      [ORG_ID, PA_CLASS_NAME],
+    );
+    if (vertragStage[0] && otherClasses.length > 0) {
+      const { rows: vertragApps } = await c.query<{
+        id: string;
+        child_first_name: string;
+        child_last_name: string;
+      }>(
+        `SELECT id, child_first_name, child_last_name FROM admission_applications
+          WHERE organization_id = $1 AND admission_stage_id = $2 AND status = 'ACTIVE'
+          ORDER BY child_last_name, child_first_name`,
+        [ORG_ID, vertragStage[0].id],
+      );
+      let vertragEnrolled = 0;
+      for (let i = 0; i < vertragApps.length; i++) {
+        const app = vertragApps[i];
+        const targetClass = otherClasses[i % otherClasses.length];
+        try {
+          await admissionsService.finalizeEnrollment(
+            {
+              applicationId: app.id,
+              schoolClassId: targetClass.id,
+              enrollmentDate: '2025-08-18',
+            },
+            ORG_ID,
+            null,
+          );
+          vertragEnrolled++;
+        } catch (err) {
+          // Already enrolled on a prior run (finalizeEnrollment rejects a
+          // second call for the same application) — expected on re-runs.
+          const message = err instanceof Error ? err.message : String(err);
+          if (!message.includes('already marked as enrolled')) throw err;
+        }
+      }
+      console.log(
+        `✓ Vertrag-stage applicants finalized to enrollment (+${vertragEnrolled})`,
+      );
+    }
+  }
+
   // -------- N. System Absenzkategorien (seed + Translations) --------
-  await ensureSystemAbsenceCategories(c);
+  await ensureSystemAbsenceCategories(c, ORG_ID);
+
+  // -------- 10. Employee-management: contracts, vacations, absences, teams,
+  //              time tracking --------
+  await seedEmployeeManagement(c, ORG_ID);
+
+  // -------- 11. Project management: projects, members, tasks, protocol -----
+  await seedProjectManagement(c, ORG_ID);
+
+  // -------- 12. Chats: conversations + messages --------------------------
+  await seedChats(c, ORG_ID);
 
   await c.end();
+  await app.close();
   console.log('\n✨ Done. Login with any of these (password: test1234):');
   USERS.forEach((u) =>
     console.log(`   ${u.email}  →  ${u.persona} / ${u.roleCode}`),
@@ -3066,7 +3397,7 @@ async function main() {
  * Quelle: apps/backend/src/employee-management/employee-absence-categories/
  *   seeds/system-employee-absence-categories.ts
  */
-async function ensureSystemAbsenceCategories(c: Client) {
+async function ensureSystemAbsenceCategories(c: Client, ORG_ID: string) {
   type T = { name: string; description: string | null };
   type CatDef = {
     code: string;
@@ -3524,6 +3855,858 @@ async function ensureSystemAbsenceCategories(c: Client) {
   }
   console.log(
     `✓ System absence categories: +${created} created, ${translations} translations synced`,
+  );
+}
+
+/**
+ * Employee-management seed: contracts, company vacations (+ assignments),
+ * absences, teams (+ members), time tracking entries/periods.
+ *
+ * All employees/memberships/users were already created by the USERS loop in
+ * main(). We resolve them here by better-auth email (unique, stable across
+ * re-runs) rather than passing IDs around, so this function stays
+ * self-contained and safe to re-run independently.
+ */
+async function seedEmployeeManagement(c: Client, ORG_ID: string) {
+  // Employees keyed by email, restricted to the seeded teacher/staff personas
+  // (skip PARENT/STUDENT personas — none exist in USERS today, but this keeps
+  // the query correct if that ever changes).
+  const { rows: staff } = await c.query<{
+    email: string;
+    employee_id: string;
+    membership_id: string;
+  }>(
+    `SELECT ue.email, m.employee_id, m.id AS membership_id
+       FROM memberships m
+       JOIN user_emails ue ON ue.id = m.user_email_id
+      WHERE m.organization_id = $1 AND m.employee_id IS NOT NULL`,
+    [ORG_ID],
+  );
+  // De-dup (a membership can have >1 role row) and index by email.
+  const byEmail = new Map<
+    string,
+    { employeeId: string; membershipId: string }
+  >();
+  for (const row of staff) {
+    if (!byEmail.has(row.email)) {
+      byEmail.set(row.email, {
+        employeeId: row.employee_id,
+        membershipId: row.membership_id,
+      });
+    }
+  }
+  const officeEmails = USERS.filter((u) => !u.isTeacher).map((u) => u.email);
+
+  // -------- 10a. Employee contracts --------
+  let contractsAdded = 0;
+  const CONTRACT_DEFAULTS: Record<
+    string,
+    { workload: number; type: string; position: string }
+  > = {
+    'admin@testschule.ch': {
+      workload: 100,
+      type: 'PERMANENT',
+      position: 'Schulleitung',
+    },
+    'hr@testschule.ch': {
+      workload: 80,
+      type: 'PERMANENT',
+      position: 'HR-Verantwortliche',
+    },
+    'sekretariat@testschule.ch': {
+      workload: 60,
+      type: 'PERMANENT',
+      position: 'Sekretariat',
+    },
+    'sandra.lehrerin@testschule.ch': {
+      workload: 100,
+      type: 'PERMANENT',
+      position: 'Klassenlehrperson',
+    },
+    'thomas.lehrer@testschule.ch': {
+      workload: 100,
+      type: 'PERMANENT',
+      position: 'Klassenlehrperson',
+    },
+    'mira.assistentin@testschule.ch': {
+      workload: 60,
+      type: 'PERMANENT',
+      position: 'Assistenz',
+    },
+    'daniel.lehrer@testschule.ch': {
+      workload: 80,
+      type: 'PERMANENT',
+      position: 'Fachlehrperson',
+    },
+    'petra.lehrerin@testschule.ch': {
+      workload: 40,
+      type: 'TEMPORARY',
+      position: 'Fachlehrperson (befristet)',
+    },
+    'lukas.hauswart@testschule.ch': {
+      workload: 50,
+      type: 'PERMANENT',
+      position: 'Hauswart',
+    },
+  };
+  for (const [email, def] of Object.entries(CONTRACT_DEFAULTS)) {
+    const person = byEmail.get(email);
+    if (!person) continue;
+    const { rows: existing } = await c.query(
+      `SELECT id FROM employee_contracts WHERE employee_id = $1 AND start_date = '2025-08-01'`,
+      [person.employeeId],
+    );
+    if (existing[0]) continue;
+    await c.query(
+      `INSERT INTO employee_contracts (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+            organization_id, employee_id, start_date, contract_type, "position",
+            workload_percent, annual_vacation_days, has_13th_salary)
+       VALUES ($1, 1, true, false, now(), now(), $2, $3, '2025-08-01', $4, $5, $6, 25, true)`,
+      [
+        randomUUID(),
+        ORG_ID,
+        person.employeeId,
+        def.type,
+        def.position,
+        def.workload,
+      ],
+    );
+    contractsAdded++;
+  }
+  console.log(`✓ Employee contracts (+${contractsAdded})`);
+
+  // -------- 10b. Company vacations + assignments --------
+  const COMPANY_VACATIONS: {
+    name: string;
+    start: string;
+    end: string;
+    effectiveDays: number;
+  }[] = [
+    {
+      name: 'Sommerferien 2026',
+      start: '2026-07-06',
+      end: '2026-08-16',
+      effectiveDays: 30,
+    },
+    {
+      name: 'Weihnachtsferien 2025/26',
+      start: '2025-12-22',
+      end: '2026-01-04',
+      effectiveDays: 10,
+    },
+    {
+      name: 'Sportferien 2026',
+      start: '2026-02-09',
+      end: '2026-02-20',
+      effectiveDays: 10,
+    },
+  ];
+  let vacationsAdded = 0;
+  let vacationAssignmentsAdded = 0;
+  const allStaffIds = [...byEmail.values()].map((p) => p.employeeId);
+  for (const v of COMPANY_VACATIONS) {
+    let vacationId: string;
+    const { rows: existing } = await c.query<{ id: string }>(
+      `SELECT id FROM company_vacations WHERE organization_id = $1 AND name = $2`,
+      [ORG_ID, v.name],
+    );
+    if (existing[0]) {
+      vacationId = existing[0].id;
+    } else {
+      vacationId = randomUUID();
+      await c.query(
+        `INSERT INTO company_vacations (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+              organization_id, name, start_date, end_date, effective_days)
+         VALUES ($1, 1, true, false, now(), now(), $2, $3, $4, $5, $6)`,
+        [vacationId, ORG_ID, v.name, v.start, v.end, v.effectiveDays],
+      );
+      vacationsAdded++;
+    }
+    for (const employeeId of allStaffIds) {
+      const { rowCount } = await c.query(
+        `INSERT INTO company_vacation_assignments (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+              organization_id, company_vacation_id, employee_id)
+         VALUES ($1, 1, true, false, now(), now(), $2, $3, $4)
+         ON CONFLICT (company_vacation_id, employee_id) DO NOTHING`,
+        [randomUUID(), ORG_ID, vacationId, employeeId],
+      );
+      vacationAssignmentsAdded += rowCount ?? 0;
+    }
+  }
+  console.log(
+    `✓ Company vacations (+${vacationsAdded}), assignments (+${vacationAssignmentsAdded})`,
+  );
+
+  // -------- 10c. Employee absences --------
+  // Reuses the system absence categories seeded by ensureSystemAbsenceCategories
+  // (run earlier in main()) — looked up by system_code.
+  const ABSENCES: {
+    email: string;
+    categoryCode: string;
+    start: string;
+    end: string;
+  }[] = [
+    {
+      email: 'sandra.lehrerin@testschule.ch',
+      categoryCode: 'SICKNESS',
+      start: '2026-01-12',
+      end: '2026-01-14',
+    },
+    {
+      email: 'thomas.lehrer@testschule.ch',
+      categoryCode: 'TRAINING',
+      start: '2026-03-02',
+      end: '2026-03-03',
+    },
+  ];
+  let absencesAdded = 0;
+  for (const a of ABSENCES) {
+    const person = byEmail.get(a.email);
+    if (!person) continue;
+    const { rows: catRows } = await c.query<{ id: string }>(
+      `SELECT id FROM employee_absence_categories WHERE organization_id = $1 AND system_code = $2`,
+      [ORG_ID, a.categoryCode],
+    );
+    const categoryId = catRows[0]?.id;
+    if (!categoryId) continue;
+    const { rows: existing } = await c.query(
+      `SELECT id FROM employee_absences
+        WHERE employee_id = $1 AND "startDate" = $2::timestamptz`,
+      [person.employeeId, a.start],
+    );
+    if (existing[0]) continue;
+    await c.query(
+      `INSERT INTO employee_absences (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+            organization_id, membership_id, employee_id, absence_category_id, "startDate", "endDate")
+       VALUES ($1, 1, true, false, now(), now(), $2, $3, $4, $5, $6::timestamptz, $7::timestamptz)`,
+      [
+        randomUUID(),
+        ORG_ID,
+        person.membershipId,
+        person.employeeId,
+        categoryId,
+        a.start,
+        a.end,
+      ],
+    );
+    absencesAdded++;
+  }
+  console.log(`✓ Employee absences (+${absencesAdded})`);
+
+  // -------- 10d. Teams + team members --------
+  const TEAMS: { name: string; memberEmails: string[]; leadEmail: string }[] = [
+    {
+      name: 'Unterrichtsteam Primarstufe',
+      memberEmails: [
+        'sandra.lehrerin@testschule.ch',
+        'thomas.lehrer@testschule.ch',
+        'mira.assistentin@testschule.ch',
+        'daniel.lehrer@testschule.ch',
+      ],
+      leadEmail: 'sandra.lehrerin@testschule.ch',
+    },
+    {
+      name: 'Administration',
+      memberEmails: [
+        'admin@testschule.ch',
+        'hr@testschule.ch',
+        'sekretariat@testschule.ch',
+      ],
+      leadEmail: 'admin@testschule.ch',
+    },
+  ];
+  let teamsAdded = 0;
+  let teamMembersAdded = 0;
+  for (const t of TEAMS) {
+    let teamId: string;
+    const { rows: existing } = await c.query<{ id: string }>(
+      `SELECT id FROM teams WHERE organization_id = $1 AND name = $2`,
+      [ORG_ID, t.name],
+    );
+    if (existing[0]) {
+      teamId = existing[0].id;
+    } else {
+      teamId = randomUUID();
+      await c.query(
+        `INSERT INTO teams (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+              organization_id, name, "sortOrder")
+         VALUES ($1, 1, true, false, now(), now(), $2, $3, 0)`,
+        [teamId, ORG_ID, t.name],
+      );
+      teamsAdded++;
+    }
+    for (const email of t.memberEmails) {
+      const person = byEmail.get(email);
+      if (!person) continue;
+      const role = email === t.leadEmail ? 'LEAD' : 'MEMBER';
+      const { rowCount } = await c.query(
+        `INSERT INTO team_members (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+              organization_id, team_id, employee_id, role)
+         VALUES ($1, 1, true, false, now(), now(), $2, $3, $4, $5)
+         ON CONFLICT (team_id, employee_id) DO NOTHING`,
+        [randomUUID(), ORG_ID, teamId, person.employeeId, role],
+      );
+      teamMembersAdded += rowCount ?? 0;
+    }
+  }
+  console.log(`✓ Teams (+${teamsAdded}), team members (+${teamMembersAdded})`);
+
+  // -------- 10e. Time tracking (enable flag + a few weeks of entries) ------
+  // Enable time tracking for office/admin staff (teachers stay off — school
+  // classes track lesson time via lesson_records, not clock in/out).
+  const TIME_TRACKING_EMAILS = officeEmails;
+  await c.query(
+    `UPDATE employees SET time_tracking_enabled = true
+      WHERE id = ANY($1::uuid[])`,
+    [
+      TIME_TRACKING_EMAILS.map((e) => byEmail.get(e)?.employeeId).filter(
+        (id): id is string => Boolean(id),
+      ),
+    ],
+  );
+
+  // Time-tracking period covering the last ~8 weeks, so seeded entries have
+  // somewhere to reconcile into.
+  const periodStart = new Date();
+  periodStart.setUTCDate(periodStart.getUTCDate() - 56);
+  periodStart.setUTCDate(1); // normalize to month start for a stable label
+  const periodStartStr = periodStart.toISOString().slice(0, 10);
+  const periodEnd = new Date();
+  periodEnd.setUTCDate(periodEnd.getUTCDate() + 30);
+  const periodEndStr = periodEnd.toISOString().slice(0, 10);
+  const periodLabel = `${periodStart.getUTCFullYear()}`;
+
+  const { rows: existingPeriod } = await c.query<{ id: string }>(
+    `SELECT id FROM time_tracking_periods WHERE organization_id = $1 AND start_date = $2`,
+    [ORG_ID, periodStartStr],
+  );
+  if (!existingPeriod[0]) {
+    const periodId = randomUUID();
+    await c.query(
+      `INSERT INTO time_tracking_periods (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+            organization_id, label, start_date, end_date, status)
+       VALUES ($1, 1, true, false, now(), now(), $2, $3, $4, $5, 'OPEN')`,
+      [periodId, ORG_ID, periodLabel, periodStartStr, periodEndStr],
+    );
+    console.log(`✓ Time-tracking period "${periodLabel}" created`);
+  }
+
+  // Weekday entries for the last 6 weeks, Mon–Fri, ~08:00–17:00 with a lunch
+  // break — deterministic per employee+day via pickInRange so re-runs match.
+  let entriesAdded = 0;
+  const SEED_TT_NOTE = '__seed_tt__';
+  for (const email of TIME_TRACKING_EMAILS) {
+    const person = byEmail.get(email);
+    if (!person) continue;
+    for (let weekAgo = 0; weekAgo < 6; weekAgo++) {
+      for (let dow = 1; dow <= 5; dow++) {
+        // Monday=1..Friday=5
+        const d = new Date();
+        d.setUTCHours(0, 0, 0, 0);
+        const currentDow = d.getUTCDay() === 0 ? 7 : d.getUTCDay();
+        d.setUTCDate(d.getUTCDate() - weekAgo * 7 - (currentDow - dow));
+        const entryDate = d.toISOString().slice(0, 10);
+        // Skip future dates (dow after "today" in the current week).
+        if (d.getTime() > Date.now()) continue;
+
+        const { rows: existing } = await c.query(
+          `SELECT 1 FROM time_tracking_entries
+            WHERE employee_id = $1 AND entry_date = $2 AND notes = $3`,
+          [person.employeeId, entryDate, SEED_TT_NOTE],
+        );
+        if (existing[0]) continue;
+
+        const startHour = pickInRange(
+          `${person.employeeId}:${entryDate}`,
+          'startH',
+          7,
+          8,
+        );
+        const startMin = pickInRange(
+          `${person.employeeId}:${entryDate}`,
+          'startM',
+          0,
+          59,
+        );
+        const workMinutes = pickInRange(
+          `${person.employeeId}:${entryDate}`,
+          'workMin',
+          370,
+          470,
+        ); // ~6.2h–7.8h
+        const breakMinutes = 30;
+        const startedAt = new Date(
+          `${entryDate}T${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}:00Z`,
+        );
+        const endedAt = new Date(
+          startedAt.getTime() + (workMinutes + breakMinutes) * 60_000,
+        );
+
+        await c.query(
+          `INSERT INTO time_tracking_entries (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+                organization_id, employee_id, started_at, ended_at, break_minutes, entry_date, work_minutes, source, notes)
+           VALUES ($1, 1, true, false, now(), now(), $2, $3, $4, $5, $6, $7, $8, 'MANUAL', $9)`,
+          [
+            randomUUID(),
+            ORG_ID,
+            person.employeeId,
+            startedAt.toISOString(),
+            endedAt.toISOString(),
+            breakMinutes,
+            entryDate,
+            workMinutes,
+            SEED_TT_NOTE,
+          ],
+        );
+        entriesAdded++;
+      }
+    }
+  }
+  console.log(`✓ Time-tracking entries (+${entriesAdded})`);
+}
+
+/**
+ * Project-management seed: a couple of projects with members drawn from the
+ * seeded staff, a handful of tasks per project in varying states, one
+ * protocol.
+ */
+async function seedProjectManagement(c: Client, ORG_ID: string) {
+  const { rows: staff } = await c.query<{
+    email: string;
+    membership_id: string;
+  }>(
+    `SELECT ue.email, m.id AS membership_id
+       FROM memberships m
+       JOIN user_emails ue ON ue.id = m.user_email_id
+      WHERE m.organization_id = $1 AND m.employee_id IS NOT NULL`,
+    [ORG_ID],
+  );
+  const membershipByEmail = new Map(
+    staff.map((s) => [s.email, s.membership_id]),
+  );
+  const adminMembershipId = membershipByEmail.get('admin@testschule.ch');
+
+  const PROJECTS: {
+    title: string;
+    description: string;
+    status: string;
+    color: string;
+    memberEmails: string[];
+    ownerEmail: string;
+    tasks: { title: string; status: string; priority: string }[];
+  }[] = [
+    {
+      title: 'Schuljahresstart 2026/27',
+      description:
+        'Vorbereitung des neuen Schuljahres: Klasseneinteilung, Material, Elternabende.',
+      status: 'ACTIVE',
+      color: '#6366F1',
+      memberEmails: [
+        'admin@testschule.ch',
+        'sekretariat@testschule.ch',
+        'sandra.lehrerin@testschule.ch',
+      ],
+      ownerEmail: 'admin@testschule.ch',
+      tasks: [
+        {
+          title: 'Klassenlisten finalisieren',
+          status: 'DONE',
+          priority: 'HIGH',
+        },
+        {
+          title: 'Elternabend Termine fixieren',
+          status: 'IN_PROGRESS',
+          priority: 'HIGH',
+        },
+        { title: 'Material bestellen', status: 'OPEN', priority: 'MEDIUM' },
+        {
+          title: 'Stundenplan Entwurf prüfen',
+          status: 'IN_PROGRESS',
+          priority: 'MEDIUM',
+        },
+      ],
+    },
+    {
+      title: 'Digitalisierung Lernmaterial',
+      description:
+        'Montessori-Lernmaterial digital katalogisieren und Fotos ergänzen.',
+      status: 'ACTIVE',
+      color: '#22C55E',
+      memberEmails: [
+        'thomas.lehrer@testschule.ch',
+        'mira.assistentin@testschule.ch',
+        'daniel.lehrer@testschule.ch',
+      ],
+      ownerEmail: 'thomas.lehrer@testschule.ch',
+      tasks: [
+        {
+          title: 'Sinnesmaterial fotografieren',
+          status: 'DONE',
+          priority: 'LOW',
+        },
+        {
+          title: 'Mathematik-Material katalogisieren',
+          status: 'IN_PROGRESS',
+          priority: 'MEDIUM',
+        },
+        {
+          title: 'Sprachmaterial katalogisieren',
+          status: 'OPEN',
+          priority: 'MEDIUM',
+        },
+        { title: 'Review mit Kollegium', status: 'BLOCKED', priority: 'LOW' },
+      ],
+    },
+    {
+      title: 'Gebäudeunterhalt Sommer',
+      description: 'Wartungsarbeiten während der Sommerferien.',
+      status: 'ON_HOLD',
+      color: '#F97316',
+      memberEmails: ['lukas.hauswart@testschule.ch', 'admin@testschule.ch'],
+      ownerEmail: 'lukas.hauswart@testschule.ch',
+      tasks: [
+        { title: 'Heizung warten', status: 'OPEN', priority: 'HIGH' },
+        { title: 'Fassade streichen', status: 'OPEN', priority: 'LOW' },
+      ],
+    },
+  ];
+
+  let projectsAdded = 0;
+  let membersAdded = 0;
+  let tasksAdded = 0;
+  let assigneesAdded = 0;
+
+  for (const p of PROJECTS) {
+    const ownerMembershipId =
+      membershipByEmail.get(p.ownerEmail) ?? adminMembershipId;
+    let projectId: string;
+    const { rows: existing } = await c.query<{ id: string }>(
+      `SELECT id FROM projects WHERE organization_id = $1 AND title = $2`,
+      [ORG_ID, p.title],
+    );
+    if (existing[0]) {
+      projectId = existing[0].id;
+    } else {
+      projectId = randomUUID();
+      await c.query(
+        `INSERT INTO projects (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+              organization_id, title, description, status, color, created_by_membership_id)
+         VALUES ($1, 1, true, false, now(), now(), $2, $3, $4, $5, $6, $7)`,
+        [
+          projectId,
+          ORG_ID,
+          p.title,
+          p.description,
+          p.status,
+          p.color,
+          ownerMembershipId ?? null,
+        ],
+      );
+      projectsAdded++;
+    }
+
+    for (const email of p.memberEmails) {
+      const membershipId = membershipByEmail.get(email);
+      if (!membershipId) continue;
+      const role = email === p.ownerEmail ? 'OWNER' : 'MEMBER';
+      const { rowCount } = await c.query(
+        `INSERT INTO project_members (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+              organization_id, project_id, membership_id, role)
+         VALUES ($1, 1, true, false, now(), now(), $2, $3, $4, $5)
+         ON CONFLICT (project_id, membership_id) DO NOTHING`,
+        [randomUUID(), ORG_ID, projectId, membershipId, role],
+      );
+      membersAdded += rowCount ?? 0;
+    }
+
+    let sortOrder = 0;
+    for (const t of p.tasks) {
+      const { rows: existingTask } = await c.query(
+        `SELECT id FROM tasks WHERE organization_id = $1 AND project_id = $2 AND title = $3`,
+        [ORG_ID, projectId, t.title],
+      );
+      if (existingTask[0]) {
+        sortOrder++;
+        continue;
+      }
+      const taskId = randomUUID();
+      const completedAt = t.status === 'DONE' ? new Date().toISOString() : null;
+      await c.query(
+        `INSERT INTO tasks (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+              organization_id, project_id, title, status, priority, sort_order,
+              checklist, notes, created_by_membership_id, completed_at)
+         VALUES ($1, 1, true, false, now(), now(), $2, $3, $4, $5, $6, $7, '[]'::jsonb, '[]'::jsonb, $8, $9)`,
+        [
+          taskId,
+          ORG_ID,
+          projectId,
+          t.title,
+          t.status,
+          t.priority,
+          sortOrder++,
+          ownerMembershipId ?? null,
+          completedAt,
+        ],
+      );
+      tasksAdded++;
+
+      // Assign 1 member as the task assignee (deterministic: first project member).
+      const assigneeMembershipId = membershipByEmail.get(p.memberEmails[0]);
+      if (assigneeMembershipId) {
+        const { rowCount } = await c.query(
+          `INSERT INTO task_assignees (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+                organization_id, task_id, membership_id, sort_order)
+           VALUES ($1, 1, true, false, now(), now(), $2, $3, $4, 0)
+           ON CONFLICT (task_id, membership_id) DO NOTHING`,
+          [randomUUID(), ORG_ID, taskId, assigneeMembershipId],
+        );
+        assigneesAdded += rowCount ?? 0;
+      }
+    }
+  }
+  console.log(
+    `✓ Projects (+${projectsAdded}), members (+${membersAdded}), tasks (+${tasksAdded}), assignees (+${assigneesAdded})`,
+  );
+
+  // -------- One protocol (meeting minutes) on the first project --------
+  const { rows: firstProject } = await c.query<{ id: string }>(
+    `SELECT id FROM projects WHERE organization_id = $1 AND title = $2`,
+    [ORG_ID, PROJECTS[0].title],
+  );
+  if (firstProject[0]) {
+    const { rows: existingProtocol } = await c.query(
+      `SELECT id FROM protocols WHERE organization_id = $1 AND project_id = $2 AND title = $3`,
+      [ORG_ID, firstProject[0].id, 'Kickoff Schuljahresstart'],
+    );
+    if (!existingProtocol[0]) {
+      const sections = {
+        agendaItems: [
+          { no: 1, topic: 'Klasseneinteilung', goal: 'DECISION' },
+          { no: 2, topic: 'Elternabende', goal: 'DISCUSSION' },
+        ],
+        decisions: [
+          {
+            topic: 'Klasseneinteilung PA/PB',
+            decision: 'Aufteilung nach Alter, finale Liste bis Ende Monat',
+            responsible: 'Anna Admin',
+          },
+        ],
+        communications: [
+          {
+            topic: 'Elternbrief Schuljahresstart',
+            audience: 'Alle Eltern',
+            channel: 'E-Mail',
+          },
+        ],
+        infoPoints: ['Neues Sinnesmaterial ist eingetroffen.'],
+        challenges: [],
+        openPoints: [
+          {
+            topic: 'Stundenplan Feinschliff',
+            nextStep: 'Entwurf bis nächste Sitzung',
+            forNextMeeting: true,
+          },
+        ],
+      };
+      await c.query(
+        `INSERT INTO protocols (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+              organization_id, project_id, title, meeting_date, status, created_by_membership_id, sections)
+         VALUES ($1, 1, true, false, now(), now(), $2, $3, $4, $5, 'FINALIZED', $6, $7::jsonb)`,
+        [
+          randomUUID(),
+          ORG_ID,
+          firstProject[0].id,
+          'Kickoff Schuljahresstart',
+          '2025-08-11',
+          adminMembershipId ?? null,
+          JSON.stringify(sections),
+        ],
+      );
+      console.log('✓ Protocol "Kickoff Schuljahresstart" created');
+    }
+  }
+}
+
+/**
+ * Chats seed: a direct conversation between two teachers and a group
+ * conversation for the admin team, each with a handful of messages.
+ */
+async function seedChats(c: Client, ORG_ID: string) {
+  const { rows: staff } = await c.query<{
+    email: string;
+    membership_id: string;
+  }>(
+    `SELECT ue.email, m.id AS membership_id
+       FROM memberships m
+       JOIN user_emails ue ON ue.id = m.user_email_id
+      WHERE m.organization_id = $1 AND m.employee_id IS NOT NULL`,
+    [ORG_ID],
+  );
+  const membershipByEmail = new Map(
+    staff.map((s) => [s.email, s.membership_id]),
+  );
+
+  const CONVERSATIONS: {
+    type: 'DIRECT' | 'GROUP';
+    name: string | null;
+    participantEmails: string[];
+    messages: { fromEmail: string; body: string }[];
+  }[] = [
+    {
+      type: 'DIRECT',
+      name: null,
+      participantEmails: [
+        'sandra.lehrerin@testschule.ch',
+        'thomas.lehrer@testschule.ch',
+      ],
+      messages: [
+        {
+          fromEmail: 'sandra.lehrerin@testschule.ch',
+          body: 'Hoi Thomas, hast du das Material für die Klasse PA schon vorbereitet?',
+        },
+        {
+          fromEmail: 'thomas.lehrer@testschule.ch',
+          body: 'Ja, liegt bereit im Regal. Sinnesmaterial ist auch schon sortiert.',
+        },
+        {
+          fromEmail: 'sandra.lehrerin@testschule.ch',
+          body: 'Perfekt, danke dir!',
+        },
+      ],
+    },
+    {
+      type: 'GROUP',
+      name: 'Administration',
+      participantEmails: [
+        'admin@testschule.ch',
+        'hr@testschule.ch',
+        'sekretariat@testschule.ch',
+      ],
+      messages: [
+        {
+          fromEmail: 'admin@testschule.ch',
+          body: 'Kurzes Update: Elternabend-Termine sind fixiert, siehe Projekt.',
+        },
+        {
+          fromEmail: 'sekretariat@testschule.ch',
+          body: 'Super, ich verschicke die Einladungen diese Woche.',
+        },
+        {
+          fromEmail: 'hr@testschule.ch',
+          body: 'Danke — ich ergänze die Termine im HR-Kalender.',
+        },
+      ],
+    },
+  ];
+
+  let conversationsAdded = 0;
+  let participantsAdded = 0;
+  let messagesAdded = 0;
+
+  for (const conv of CONVERSATIONS) {
+    const participantIds = conv.participantEmails
+      .map((e) => membershipByEmail.get(e))
+      .filter((id): id is string => Boolean(id));
+    if (participantIds.length < 2) continue;
+
+    let conversationId: string;
+    if (conv.type === 'GROUP') {
+      const { rows: existing } = await c.query<{ id: string }>(
+        `SELECT id FROM conversations WHERE organization_id = $1 AND type = 'GROUP' AND name = $2`,
+        [ORG_ID, conv.name],
+      );
+      if (existing[0]) {
+        conversationId = existing[0].id;
+      } else {
+        conversationId = randomUUID();
+        await c.query(
+          `INSERT INTO conversations (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+                organization_id, type, name)
+           VALUES ($1, 1, true, false, now(), now(), $2, 'GROUP', $3)`,
+          [conversationId, ORG_ID, conv.name],
+        );
+        conversationsAdded++;
+      }
+    } else {
+      // DIRECT: idempotency via the participant pair (no natural unique key
+      // on the conversation itself for DIRECT/GROUP — only TEAM conversations
+      // have a unique (org, team) constraint).
+      const { rows: existing } = await c.query<{ id: string }>(
+        `SELECT cv.id
+           FROM conversations cv
+          WHERE cv.organization_id = $1 AND cv.type = 'DIRECT'
+            AND (SELECT COUNT(*) FROM conversation_participants cp WHERE cp.conversation_id = cv.id) = 2
+            AND EXISTS (SELECT 1 FROM conversation_participants cp WHERE cp.conversation_id = cv.id AND cp.membership_id = $2)
+            AND EXISTS (SELECT 1 FROM conversation_participants cp WHERE cp.conversation_id = cv.id AND cp.membership_id = $3)
+          LIMIT 1`,
+        [ORG_ID, participantIds[0], participantIds[1]],
+      );
+      if (existing[0]) {
+        conversationId = existing[0].id;
+      } else {
+        conversationId = randomUUID();
+        await c.query(
+          `INSERT INTO conversations (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+                organization_id, type, name)
+           VALUES ($1, 1, true, false, now(), now(), $2, 'DIRECT', NULL)`,
+          [conversationId, ORG_ID],
+        );
+        conversationsAdded++;
+      }
+    }
+
+    for (const membershipId of participantIds) {
+      const { rowCount } = await c.query(
+        `INSERT INTO conversation_participants (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+              organization_id, conversation_id, membership_id, role)
+         VALUES ($1, 1, true, false, now(), now(), $2, $3, $4, 'MEMBER')
+         ON CONFLICT (conversation_id, membership_id) DO NOTHING`,
+        [randomUUID(), ORG_ID, conversationId, membershipId],
+      );
+      participantsAdded += rowCount ?? 0;
+    }
+
+    const { rows: existingMessages } = await c.query<{ count: string }>(
+      `SELECT COUNT(*)::text AS count FROM messages WHERE conversation_id = $1`,
+      [conversationId],
+    );
+    if (Number(existingMessages[0]?.count ?? 0) >= conv.messages.length) {
+      continue; // already fully seeded on a prior run
+    }
+
+    let lastMessageAt: string | null = null;
+    for (let i = 0; i < conv.messages.length; i++) {
+      const m = conv.messages[i];
+      const senderMembershipId = membershipByEmail.get(m.fromEmail);
+      if (!senderMembershipId) continue;
+      const sentAt = new Date(
+        Date.now() - (conv.messages.length - i) * 3_600_000,
+      );
+      await c.query(
+        `INSERT INTO messages (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
+              organization_id, conversation_id, sender_membership_id, body)
+         VALUES ($1, 1, true, false, $2, $2, $3, $4, $5, $6)`,
+        [
+          randomUUID(),
+          sentAt.toISOString(),
+          ORG_ID,
+          conversationId,
+          senderMembershipId,
+          m.body,
+        ],
+      );
+      lastMessageAt = sentAt.toISOString();
+      messagesAdded++;
+    }
+    if (lastMessageAt) {
+      await c.query(
+        `UPDATE conversations SET last_message_at = $1 WHERE id = $2`,
+        [lastMessageAt, conversationId],
+      );
+    }
+  }
+  console.log(
+    `✓ Conversations (+${conversationsAdded}), participants (+${participantsAdded}), messages (+${messagesAdded})`,
   );
 }
 
