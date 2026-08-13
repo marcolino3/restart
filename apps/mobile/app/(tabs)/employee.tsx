@@ -180,6 +180,15 @@ export default function EmployeeTab() {
             </Text>
           ) : null}
 
+          <Pressable
+            onPress={() => router.push("/sick-leave")}
+            className="items-center rounded-md border border-border px-4 py-3"
+          >
+            <Text className="text-base font-medium text-foreground">
+              {t("SickLeave.title")}
+            </Text>
+          </Pressable>
+
           {/* Verlauf */}
           <View className="gap-2">
             <View className="flex-row items-center justify-between">
