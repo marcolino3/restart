@@ -71,6 +71,31 @@ export class EmployeeAbsencesService {
     });
   }
 
+  /**
+   * Self-service list: the caller's own absences. No permission code — the
+   * employee is resolved from the token's membership, never from an argument,
+   * so a caller can only ever read their own records.
+   */
+  async findAllForCaller(user: TokenPayload): Promise<EmployeeAbsence[]> {
+    const orgId = user.orgId as string;
+    const membership = await this.entityManager.findOne(Membership, {
+      where: { id: user.membershipId, organizationId: orgId },
+      relations: ['employee'],
+    });
+    if (!membership?.employee) {
+      throw new NotFoundException('Membership not found.');
+    }
+    return this.entityManager.find(EmployeeAbsence, {
+      where: {
+        organizationId: orgId,
+        employeeId: membership.employee.id,
+        isActive: true,
+      },
+      relations: ['absenceCategory', 'absenceCategory.translations'],
+      order: { startDate: 'DESC' },
+    });
+  }
+
   async findOne(id: string, user: TokenPayload): Promise<EmployeeAbsence> {
     const orgId = user.orgId as string;
     const absence = await this.findOneOrFail(id, orgId);
