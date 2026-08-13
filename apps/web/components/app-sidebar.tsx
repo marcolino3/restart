@@ -28,6 +28,7 @@ import {
   IconShield,
   IconSquareCheck,
   IconStack2,
+  IconThermometer,
   IconUsers,
   IconWorld,
 } from "@tabler/icons-react";
@@ -104,6 +105,13 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
             },
           ]
         : []),
+      // Absenzen: bewusst ohne Gate — auch Mitarbeitende ohne Zeiterfassung
+      // müssen sich krank melden und ihre Abwesenheiten sehen können.
+      {
+        title: t("myAbsences"),
+        url: ROUTES.admin.myAbsences(locale),
+        icon: IconThermometer,
+      },
       // Zeitauswertung: ADMIN/HR + Teamleiter (OFFICE ausgeschlossen).
       ...(canSeeTimeReport(user)
         ? [
@@ -328,11 +336,17 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
       },
     ],
     navSecondary: [
-      {
-        title: tCommon("settings"),
-        url: "#",
-        icon: IconSettings,
-      },
+      // Org-Settings halten Credentials (SMTP, Google-Service-Account) — daher
+      // nur fuer Org-Admins sichtbar. Backend-Guards bleiben massgeblich.
+      ...(canSeeOrgAdmin
+        ? [
+            {
+              title: tCommon("settings"),
+              url: ROUTES.admin.settings(locale),
+              icon: IconSettings,
+            },
+          ]
+        : []),
       {
         title: tCommon("getHelp"),
         url: "#",

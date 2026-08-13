@@ -581,6 +581,13 @@ export type BulkUpdateOrganizationFeatureTogglesInput = {
   updates: Array<FeatureToggleUpdateInput>;
 };
 
+export type CalendarConnectionTestOutput = {
+  __typename?: 'CalendarConnectionTestOutput';
+  calendarSummary?: Maybe<Scalars['String']['output']>;
+  error?: Maybe<Scalars['String']['output']>;
+  ok: Scalars['Boolean']['output'];
+};
+
 export type ChangeOrganizationPlanInput = {
   billingAmountChf?: InputMaybe<Scalars['Float']['input']>;
   billingInterval?: InputMaybe<Scalars['String']['input']>;
@@ -1834,16 +1841,18 @@ export type EmployeeAbsence = {
   employee: Employee;
   employeeId: Scalars['String']['output'];
   endDate?: Maybe<Scalars['DateTime']['output']>;
+  endTime?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   isActive: Scalars['Boolean']['output'];
   isArchived: Scalars['Boolean']['output'];
   isTeamInformed: Scalars['Boolean']['output'];
   isVacationCapable: Scalars['Boolean']['output'];
   membershipId: Scalars['String']['output'];
-  note: Scalars['String']['output'];
+  note?: Maybe<Scalars['String']['output']>;
   organizationId: Scalars['String']['output'];
   percentage: Scalars['Int']['output'];
   startDate: Scalars['DateTime']['output'];
+  startTime?: Maybe<Scalars['String']['output']>;
   updatedAt: Scalars['DateTime']['output'];
   version: Scalars['Int']['output'];
 };
@@ -2857,6 +2866,7 @@ export type Mutation = {
   reorderSchoolClasses: Array<SchoolClass>;
   reorderStudentRecordCategories: Array<StudentRecordCategory>;
   reorderTeams: Array<Team>;
+  reportSickLeave: ReportSickLeavePayload;
   resendAdmissionEmail: AdmissionEmail;
   restoreAdmissionApplication: AdmissionApplication;
   resyncSystemEmployeeAbsenceCategoryTranslations: Scalars['Boolean']['output'];
@@ -2878,6 +2888,7 @@ export type Mutation = {
   startTimeTracking: TimeTracking;
   stopTimeTracking: TimeTracking;
   suspendOrganization: Organization;
+  testCalendarConnection: CalendarConnectionTestOutput;
   transferStudentToSchoolClass?: Maybe<SchoolClassEnrollment>;
   unarchiveCurriculum: Curriculum;
   unarchiveCurriculumNode: Scalars['Boolean']['output'];
@@ -3744,6 +3755,11 @@ export type MutationReorderStudentRecordCategoriesArgs = {
 
 export type MutationReorderTeamsArgs = {
   input: ReorderTeamsInput;
+};
+
+
+export type MutationReportSickLeaveArgs = {
+  input: ReportSickLeaveInput;
 };
 
 
@@ -4939,6 +4955,7 @@ export type Query = {
   membershipsByOrgId: Array<Membership>;
   myChatMembershipId: Scalars['ID']['output'];
   myConversations: Array<ConversationListItem>;
+  myEmployeeAbsences: Array<EmployeeAbsence>;
   myEmployeeId?: Maybe<Scalars['ID']['output']>;
   myLessonRecordStats: MyLessonRecordStatsOutput;
   myMissingRecordDays: Array<Scalars['String']['output']>;
@@ -5846,6 +5863,19 @@ export type ReorderStudentRecordCategoriesInput = {
 export type ReorderTeamsInput = {
   ids: Array<Scalars['ID']['input']>;
   parentId?: InputMaybe<Scalars['ID']['input']>;
+};
+
+export type ReportSickLeaveInput = {
+  comment?: InputMaybe<Scalars['String']['input']>;
+  date: Scalars['String']['input'];
+  startTime?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ReportSickLeavePayload = {
+  __typename?: 'ReportSickLeavePayload';
+  absence: EmployeeAbsence;
+  isExtension: Scalars['Boolean']['output'];
+  isUnchanged: Scalars['Boolean']['output'];
 };
 
 /** Action taken when the retention period lapses */
@@ -8233,6 +8263,18 @@ export type GetEmployeeAbsenceCategoriesByOrgIdQueryVariables = Exact<{ [key: st
 
 export type GetEmployeeAbsenceCategoriesByOrgIdQuery = { __typename?: 'Query', employeeAbsenceCategoriesByOrgId: Array<{ __typename?: 'EmployeeAbsenceCategory', id: string, systemCode?: SystemEmployeeAbsenceCategory | null }> };
 
+export type ReportSickLeaveMutationVariables = Exact<{
+  input: ReportSickLeaveInput;
+}>;
+
+
+export type ReportSickLeaveMutation = { __typename?: 'Mutation', reportSickLeave: { __typename?: 'ReportSickLeavePayload', isExtension: boolean, isUnchanged: boolean, absence: { __typename?: 'EmployeeAbsence', id: string, startDate: any, endDate?: any | null } } };
+
+export type TestCalendarConnectionMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type TestCalendarConnectionMutation = { __typename?: 'Mutation', testCalendarConnection: { __typename?: 'CalendarConnectionTestOutput', ok: boolean, calendarSummary?: string | null, error?: string | null } };
+
 export type ArchiveEmployeeFunctionMutationVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
@@ -9876,6 +9918,8 @@ export const SetEmployeeAbsenceCategoryActiveDocument = {"kind":"Document","defi
 export const UpdateEmployeeAbsenceCategoryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateEmployeeAbsenceCategory"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateEmployeeAbsenceCategoryInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateEmployeeAbsenceCategory"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateEmployeeAbsenceCategoryMutation, UpdateEmployeeAbsenceCategoryMutationVariables>;
 export const CreateEmployeeAbsenceNoticeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateEmployeeAbsenceNotice"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"createEmployeeAbsenceInput"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateEmployeeAbsenceNoticeInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createEmployeeAbsenceNotice"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"createEmployeeAbsenceInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"createEmployeeAbsenceInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateEmployeeAbsenceNoticeMutation, CreateEmployeeAbsenceNoticeMutationVariables>;
 export const GetEmployeeAbsenceCategoriesByOrgIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEmployeeAbsenceCategoriesByOrgId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeAbsenceCategoriesByOrgId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"systemCode"}}]}}]}}]} as unknown as DocumentNode<GetEmployeeAbsenceCategoriesByOrgIdQuery, GetEmployeeAbsenceCategoriesByOrgIdQueryVariables>;
+export const ReportSickLeaveDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ReportSickLeave"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ReportSickLeaveInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"reportSickLeave"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"isExtension"}},{"kind":"Field","name":{"kind":"Name","value":"isUnchanged"}},{"kind":"Field","name":{"kind":"Name","value":"absence"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"startDate"}},{"kind":"Field","name":{"kind":"Name","value":"endDate"}}]}}]}}]}}]} as unknown as DocumentNode<ReportSickLeaveMutation, ReportSickLeaveMutationVariables>;
+export const TestCalendarConnectionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"TestCalendarConnection"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"testCalendarConnection"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"ok"}},{"kind":"Field","name":{"kind":"Name","value":"calendarSummary"}},{"kind":"Field","name":{"kind":"Name","value":"error"}}]}}]}}]} as unknown as DocumentNode<TestCalendarConnectionMutation, TestCalendarConnectionMutationVariables>;
 export const ArchiveEmployeeFunctionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ArchiveEmployeeFunction"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"archiveEmployeeFunction"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<ArchiveEmployeeFunctionMutation, ArchiveEmployeeFunctionMutationVariables>;
 export const CreateEmployeeFunctionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateEmployeeFunction"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateEmployeeFunctionInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createEmployeeFunction"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"isArchived"}},{"kind":"Field","name":{"kind":"Name","value":"translations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<CreateEmployeeFunctionMutation, CreateEmployeeFunctionMutationVariables>;
 export const DeleteEmployeeFunctionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteEmployeeFunction"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteEmployeeFunction"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteEmployeeFunctionMutation, DeleteEmployeeFunctionMutationVariables>;

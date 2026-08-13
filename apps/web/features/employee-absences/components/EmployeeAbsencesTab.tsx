@@ -6,7 +6,6 @@ import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FileText, Plus, Pencil, Trash2 } from "lucide-react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +18,7 @@ import {
 } from "@/components/data-table/use-data-table";
 import { multiSelectFilter } from "@/lib/table/locale-sorting";
 import { ROUTES } from "@/constants/routes";
+import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { DetailPanel, KvRow } from "@/components/common/DetailPanel";
 import { pickAbsenceCategoryName } from "@/features/employee-absence-categories/types";
 import {
@@ -45,6 +45,8 @@ interface Props {
   absences: EmployeeAbsence[];
   categorySummary?: CategorySummary[];
   editable?: boolean;
+  /** `false` when the surrounding page already carries the heading. */
+  showHeading?: boolean;
 }
 
 export default function EmployeeAbsencesTab({
@@ -52,6 +54,7 @@ export default function EmployeeAbsencesTab({
   absences,
   categorySummary = [],
   editable,
+  showHeading = true,
 }: Props) {
   const t = useTranslations("Common");
   const tE = useTranslations("Employees");
@@ -81,14 +84,10 @@ export default function EmployeeAbsencesTab({
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(tE("absence.deleteConfirm"))) return;
     const res = await deleteEmployeeAbsenceAction(id);
-    if (res.success) {
-      toast.success(tE("absence.deleted"));
-      router.refresh();
-    } else {
-      toast.error(tE("absence.deleteError"));
-    }
+    return res.success
+      ? { success: true as const }
+      : { success: false as const, error: tE("absence.deleteError") };
   };
 
   const columns = useMemo<ColumnDef<AppTableFeatures, EmployeeAbsence, unknown>[]>(() => {
@@ -271,14 +270,16 @@ export default function EmployeeAbsencesTab({
                 <Pencil className="h-4 w-4" />
               </Link>
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleDelete(row.original.id)}
-              aria-label={t("delete")}
-            >
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
+            <DeleteConfirmationDialog
+              description={tE("absence.deleteConfirm")}
+              onConfirm={() => handleDelete(row.original.id)}
+              onSuccess={() => router.refresh()}
+              trigger={
+                <Button variant="ghost" size="icon" aria-label={t("delete")}>
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              }
+            />
           </div>
         ),
       });
@@ -333,26 +334,28 @@ export default function EmployeeAbsencesTab({
       )}
 
       <div>
-        <div className="mb-4 flex items-center justify-between px-4 sm:px-0">
-          <div>
-            <h3 className="text-base/7 font-semibold text-foreground">
-              {tE("tabAbsences")}
-            </h3>
-            <p className="mt-1 text-sm/6 text-muted-foreground">
-              {tE("absence.listDescription")}
-            </p>
+        {showHeading && (
+          <div className="mb-4 flex items-center justify-between px-4 sm:px-0">
+            <div>
+              <h3 className="text-base/7 font-semibold text-foreground">
+                {tE("tabAbsences")}
+              </h3>
+              <p className="mt-1 text-sm/6 text-muted-foreground">
+                {tE("absence.listDescription")}
+              </p>
+            </div>
+            {editable && (
+              <Button asChild>
+                <Link
+                  href={ROUTES.admin.employeesAbsenceCreate(locale, employeeId)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  {tE("absence.create")}
+                </Link>
+              </Button>
+            )}
           </div>
-          {editable && (
-            <Button asChild>
-              <Link
-                href={ROUTES.admin.employeesAbsenceCreate(locale, employeeId)}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                {tE("absence.create")}
-              </Link>
-            </Button>
-          )}
-        </div>
+        )}
 
         <DataTable
           table={table}
