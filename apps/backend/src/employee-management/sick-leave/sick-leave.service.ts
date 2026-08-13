@@ -19,6 +19,7 @@ import { EmployeeAbsenceDay } from '../employee-absences/entities/employee-absen
 import { EmployeeAbsence } from '../employee-absences/entities/employee-absence.entity';
 import { Holiday } from '../holidays/entities/holiday.entity';
 import { TimeTrackingPeriodsService } from '../time-tracking-periods/time-tracking-periods.service';
+import { BalanceRecomputeService } from '../work-time-calculation/balance-recompute.service';
 import { findHolidayForDate } from '../work-time-calculation/work-time-calculation';
 import { ReportSickLeaveInput } from './dto/report-sick-leave.input';
 import { SickLeaveNotificationService } from './sick-leave-notification.service';
@@ -55,6 +56,7 @@ export class SickLeaveService {
     private readonly calendarSync: AbsenceCalendarSyncService,
     private readonly notifications: SickLeaveNotificationService,
     private readonly organizationSettings: OrganizationSettingsService,
+    private readonly balanceRecompute: BalanceRecomputeService,
   ) {}
 
   /**
@@ -105,6 +107,19 @@ export class SickLeaveService {
       date,
       input,
     });
+
+    // Without this the absence never reaches work_day_balances, so it stays
+    // invisible in the time views and the balances silently stay wrong.
+    // Recompute from the absence start, because an extension moves endDate
+    // forward while startDate may lie further back.
+    if (!result.isUnchanged) {
+      await this.balanceRecompute.recomputeRange(
+        organizationId,
+        employee.id,
+        toIsoDate(result.absence.startDate),
+        toIsoDate(result.absence.endDate ?? result.absence.startDate),
+      );
+    }
 
     await this.runSideEffects(result, {
       organizationId,
@@ -200,8 +215,12 @@ export class SickLeaveService {
     candidate: EmployeeAbsence,
     date: Date,
   ): Promise<boolean> {
-    const end = DateTime.fromJSDate(candidate.endDate ?? candidate.startDate);
-    const target = DateTime.fromJSDate(date);
+    // UTC throughout: the stored dates are UTC midnight, so a local-zone
+    // reading would shift weekday and holiday checks by a day.
+    const end = DateTime.fromJSDate(candidate.endDate ?? candidate.startDate, {
+      zone: 'utc',
+    }).startOf('day');
+    const target = DateTime.fromJSDate(date, { zone: 'utc' }).startOf('day');
     if (target <= end) return true;
 
     const holidays = await this.entityManager.find(Holiday, {
@@ -232,7 +251,8 @@ export class SickLeaveService {
     return this.entityManager.transaction(async (manager) => {
       const previousEnd = DateTime.fromJSDate(
         candidate.endDate ?? candidate.startDate,
-      );
+        { zone: 'utc' },
+      ).startOf('day');
 
       candidate.endDate = date;
       candidate.note = appendComment(candidate.note, date, input.comment);
@@ -243,7 +263,7 @@ export class SickLeaveService {
       const newDays: EmployeeAbsenceDay[] = [];
       for (
         let d = previousEnd.plus({ days: 1 });
-        d <= DateTime.fromJSDate(date);
+        d <= DateTime.fromJSDate(date, { zone: 'utc' }).startOf('day');
         d = d.plus({ days: 1 })
       ) {
         const day = new EmployeeAbsenceDay();
@@ -319,7 +339,9 @@ export class SickLeaveService {
       day.employeeId = employeeId;
       day.organizationId = organizationId;
       day.absenceCategoryId = category.id;
-      day.date = DateTime.fromJSDate(date).toISODate() as unknown as Date;
+      day.date = DateTime.fromJSDate(date, {
+        zone: 'utc',
+      }).toISODate() as unknown as Date;
       await manager.save(EmployeeAbsenceDay, day);
 
       return saved;
@@ -344,29 +366,46 @@ export class SickLeaveService {
 
     const { absence } = result;
 
-    if (await this.isCalendarEnabled(context.organizationId)) {
-      await this.calendarSync.sync({
+    // Each side effect is isolated: a calendar outage must not cost the
+    // employee their notification mails, and neither may surface as a failed
+    // mutation once the absence is committed.
+    try {
+      if (await this.isCalendarEnabled(context.organizationId)) {
+        await this.calendarSync.sync({
+          organizationId: context.organizationId,
+          absenceId: absence.id,
+          employeeName: context.employeeName,
+          absenceLabel: absenceCategoryLabel(context.categorySystemCode),
+          startDate: absence.startDate,
+          endDate: absence.endDate ?? absence.startDate,
+          startTime: absence.startTime,
+          note: absence.note,
+        });
+      }
+    } catch (error) {
+      this.logger.error(
+        `Calendar sync failed for absence ${absence.id}`,
+        error as Error,
+      );
+    }
+
+    try {
+      await this.notifications.notify({
         organizationId: context.organizationId,
-        absenceId: absence.id,
+        employeeId: context.employeeId,
         employeeName: context.employeeName,
-        absenceLabel: absenceCategoryLabel(context.categorySystemCode),
         startDate: absence.startDate,
         endDate: absence.endDate ?? absence.startDate,
         startTime: absence.startTime,
-        note: absence.note,
+        comment: context.comment,
+        isExtension: result.isExtension,
       });
+    } catch (error) {
+      this.logger.error(
+        `Sick leave notification failed for absence ${absence.id}`,
+        error as Error,
+      );
     }
-
-    await this.notifications.notify({
-      organizationId: context.organizationId,
-      employeeId: context.employeeId,
-      employeeName: context.employeeName,
-      startDate: absence.startDate,
-      endDate: absence.endDate ?? absence.startDate,
-      startTime: absence.startTime,
-      comment: context.comment,
-      isExtension: result.isExtension,
-    });
   }
 
   /** Calendar sync is opt-in per org; unset counts as enabled when configured. */
@@ -388,21 +427,34 @@ export class SickLeaveService {
   }
 }
 
-/** `YYYY-MM-DD` to a Date at local midnight — absences are day-granular. */
+/**
+ * `YYYY-MM-DD` to a Date at UTC midnight. The absence columns are `timestamptz`
+ * and the regular absence flow stores `new Date('YYYY-MM-DD')`, which is UTC
+ * midnight. Parsing in the server's local zone instead would store the previous
+ * day east of UTC and make the same calendar day compare unequal between the
+ * two flows.
+ */
 function parseIsoDate(value: string): Date {
-  const parsed = DateTime.fromISO(value.slice(0, 10));
+  const parsed = DateTime.fromISO(value.slice(0, 10), { zone: 'utc' });
   if (!parsed.isValid) {
     throw new BadRequestException('Invalid date.');
   }
   return parsed.startOf('day').toJSDate();
 }
 
+/** `YYYY-MM-DD` in UTC — matches how the dates were stored. */
+function toIsoDate(value: Date): string {
+  return DateTime.fromJSDate(value, { zone: 'utc' }).toISODate() as string;
+}
+
 function isWithinRange(absence: EmployeeAbsence, date: Date): boolean {
-  const start = DateTime.fromJSDate(absence.startDate).startOf('day');
-  const end = DateTime.fromJSDate(absence.endDate ?? absence.startDate).startOf(
-    'day',
-  );
-  const target = DateTime.fromJSDate(date).startOf('day');
+  const start = DateTime.fromJSDate(absence.startDate, {
+    zone: 'utc',
+  }).startOf('day');
+  const end = DateTime.fromJSDate(absence.endDate ?? absence.startDate, {
+    zone: 'utc',
+  }).startOf('day');
+  const target = DateTime.fromJSDate(date, { zone: 'utc' }).startOf('day');
   return target >= start && target <= end;
 }
 
@@ -418,7 +470,9 @@ function appendComment(
   const trimmed = comment?.trim();
   if (!trimmed) return existing ?? undefined;
 
-  const prefix = DateTime.fromJSDate(date).toFormat('dd.MM.yyyy');
+  const prefix = DateTime.fromJSDate(date, { zone: 'utc' }).toFormat(
+    'dd.MM.yyyy',
+  );
   const entry = `${prefix}: ${trimmed}`;
   return existing ? `${existing}\n${entry}` : entry;
 }

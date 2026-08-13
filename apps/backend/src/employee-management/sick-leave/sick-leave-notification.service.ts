@@ -267,8 +267,9 @@ function joinName(
   return name || null;
 }
 
+/** Absence dates are stored as UTC midnight — read them back in UTC. */
 function formatDate(date: Date): string {
-  return DateTime.fromJSDate(date).toFormat('dd.MM.yyyy');
+  return DateTime.fromJSDate(date, { zone: 'utc' }).toFormat('dd.MM.yyyy');
 }
 
 function formatTime(value: string): string {

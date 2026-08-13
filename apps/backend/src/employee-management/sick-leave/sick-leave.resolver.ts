@@ -7,6 +7,7 @@ import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Resolver } from '@nestjs/graphql';
 import { EmployeeAbsence } from '../employee-absences/entities/employee-absence.entity';
 import { ReportSickLeaveInput } from './dto/report-sick-leave.input';
+import { ReportSickLeavePayload } from './dto/report-sick-leave.payload';
 import { SickLeaveService } from './sick-leave.service';
 
 @Resolver(() => EmployeeAbsence)
@@ -21,13 +22,12 @@ export class SickLeaveResolver {
    * employee are taken from the token, so a caller can only report for
    * themselves.
    */
-  @Mutation(() => EmployeeAbsence, { name: 'reportSickLeave' })
+  @Mutation(() => ReportSickLeavePayload, { name: 'reportSickLeave' })
   @UseGuards(MembershipGuard)
-  async reportSickLeave(
+  reportSickLeave(
     @Args('input') input: ReportSickLeaveInput,
     @CurrentUser() user: TokenPayload,
-  ): Promise<EmployeeAbsence> {
-    const result = await this.sickLeaveService.reportSickLeave(input, user);
-    return result.absence;
+  ): Promise<ReportSickLeavePayload> {
+    return this.sickLeaveService.reportSickLeave(input, user);
   }
 }

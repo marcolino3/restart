@@ -41,15 +41,19 @@ export class AbsenceCalendarSyncService {
   async sync(input: AbsenceCalendarSyncInput): Promise<void> {
     const { organizationId, absenceId } = input;
 
-    const existing = await this.entityManager.findOne(AbsenceCalendarSync, {
-      where: {
-        organizationId,
-        absenceId,
-        provider: CalendarProvider.GOOGLE,
-      },
-    });
+    // Inside the try as well: a lookup failure must not escape either, the
+    // absence is already committed at this point.
+    let existing: AbsenceCalendarSync | null = null;
 
     try {
+      existing = await this.entityManager.findOne(AbsenceCalendarSync, {
+        where: {
+          organizationId,
+          absenceId,
+          provider: CalendarProvider.GOOGLE,
+        },
+      });
+
       const result = await this.googleCalendar.upsertAllDayEvent({
         organizationId,
         externalEventId: existing?.externalEventId,
@@ -86,12 +90,14 @@ export class AbsenceCalendarSyncService {
 
   /** Remove the mirrored event, e.g. when an absence is deleted. */
   async remove(organizationId: string, absenceId: string): Promise<void> {
-    const existing = await this.entityManager.findOne(AbsenceCalendarSync, {
-      where: { organizationId, absenceId, provider: CalendarProvider.GOOGLE },
-    });
-    if (!existing) return;
+    let existing: AbsenceCalendarSync | null = null;
 
     try {
+      existing = await this.entityManager.findOne(AbsenceCalendarSync, {
+        where: { organizationId, absenceId, provider: CalendarProvider.GOOGLE },
+      });
+      if (!existing) return;
+
       await this.googleCalendar.deleteEvent({
         organizationId,
         externalEventId: existing.externalEventId,
@@ -104,8 +110,16 @@ export class AbsenceCalendarSyncService {
       this.logger.warn(
         `Calendar event removal failed for absence ${absenceId}: ${message}`,
       );
-      existing.lastError = message;
-      await this.entityManager.save(existing);
+      if (!existing) return;
+      try {
+        existing.lastError = message;
+        await this.entityManager.save(existing);
+      } catch (persistError) {
+        this.logger.error(
+          `Could not persist calendar removal failure for absence ${absenceId}`,
+          persistError as Error,
+        );
+      }
     }
   }
 
@@ -157,6 +171,7 @@ function formatTime(value?: string | null): string | null {
   return match ? `${match[1]}:${match[2]}` : null;
 }
 
+/** Absence dates are stored as UTC midnight — read them back in UTC. */
 function toIsoDate(date: Date): string {
-  return DateTime.fromJSDate(date).toISODate() as string;
+  return DateTime.fromJSDate(date, { zone: 'utc' }).toISODate() as string;
 }

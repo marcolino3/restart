@@ -78,7 +78,9 @@ export class EmployeeAbsence extends AbstractEntity<EmployeeAbsence> {
   @Column('time', { name: 'end_time', nullable: true })
   endTime?: string | null;
 
-  @Field(() => String)
+  // Nullable in the database, so it must be nullable in the schema too:
+  // absences created without a note otherwise fail the whole query.
+  @Field(() => String, { nullable: true })
   @Column({ nullable: true })
   note?: string;
 

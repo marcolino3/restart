@@ -3,6 +3,7 @@ import { SmtpService } from '@/school-management/admissions/smtp.service';
 import { Module } from '@nestjs/common';
 import { EmployeeAbsencesModule } from '../employee-absences/employee-absences.module';
 import { TimeTrackingPeriodsModule } from '../time-tracking-periods/time-tracking-periods.module';
+import { WorkTimeCalculationModule } from '../work-time-calculation/work-time-calculation.module';
 import { SickLeaveNotificationService } from './sick-leave-notification.service';
 import { SickLeaveResolver } from './sick-leave.resolver';
 import { SickLeaveService } from './sick-leave.service';
@@ -12,6 +13,7 @@ import { SickLeaveService } from './sick-leave.service';
     EmployeeAbsencesModule,
     TimeTrackingPeriodsModule,
     OrganizationSettingsModule,
+    WorkTimeCalculationModule,
   ],
   providers: [
     SickLeaveResolver,
