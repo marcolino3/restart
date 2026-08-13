@@ -3,7 +3,7 @@
 import { useSheet } from "@/components/providers/sheet-provider";
 import { Button } from "@/components/ui/button"; // optional: dein eigener Button-Wrapper
 import { useMessages, useTranslations } from "next-intl";
-import { ReactNode } from "react";
+import { ComponentProps, ReactNode } from "react";
 
 interface OpenSheetButtonProps {
   title?: string;
@@ -12,6 +12,8 @@ interface OpenSheetButtonProps {
   buttonLabel: string;
   icon: ReactNode;
   side?: "left" | "right" | "top" | "bottom";
+  /** Button style, for pages showing more than one sheet trigger. */
+  variant?: ComponentProps<typeof Button>["variant"];
 }
 
 export const OpenSheetButton = ({
@@ -21,6 +23,7 @@ export const OpenSheetButton = ({
   buttonLabel,
   icon,
   side = "right",
+  variant,
 }: OpenSheetButtonProps) => {
   const t = useTranslations("Common");
   const messages = useMessages();
@@ -35,6 +38,7 @@ export const OpenSheetButton = ({
 
   return (
     <Button
+      variant={variant}
       onClick={() => {
         open({
           title: translateCommon(title),

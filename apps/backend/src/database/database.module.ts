@@ -4,6 +4,7 @@ import { Country } from '@/countries/entities/country.entity';
 import { CountryInputTemplate } from '@/country-input-templates/entities/country-input-template.entity';
 import { EmployeeAbsenceCategory } from '@/employee-management/employee-absence-categories/entities/employee-absence-category.entity';
 import { EmployeeAbsenceCategoryTranslation } from '@/employee-management/employee-absence-categories/entities/employee-absence-category-translation.entity';
+import { AbsenceCalendarSync } from '@/employee-management/employee-absences/entities/absence-calendar-sync.entity';
 import { EmployeeAbsenceDay } from '@/employee-management/employee-absences/entities/employee-absence-days.entity';
 import { EmployeeAbsence } from '@/employee-management/employee-absences/entities/employee-absence.entity';
 import { EmployeeAuditLog } from '@/employee-management/employee-audit-log/entities/employee-audit-log.entity';
@@ -130,6 +131,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       EmployeeAbsenceCategoryTranslation,
       EmployeeAbsence,
       EmployeeAbsenceDay,
+      AbsenceCalendarSync,
       EmployeeNote,
       EmployeeAuditLog,
       EmployeeHrProfile,

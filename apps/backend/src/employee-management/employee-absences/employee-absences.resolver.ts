@@ -28,6 +28,15 @@ export class EmployeeAbsencesResolver {
     return this.employeeAbsencesService.findAllByEmployeeId(employeeId, user);
   }
 
+  // Self-service list (always the caller's own employee record) — no
+  // permission code required, but the caller must be a verified member of the
+  // active organization.
+  @Query(() => [EmployeeAbsence], { name: 'myEmployeeAbsences' })
+  @UseGuards(MembershipGuard)
+  myEmployeeAbsences(@CurrentUser() user: TokenPayload) {
+    return this.employeeAbsencesService.findAllForCaller(user);
+  }
+
   @Permissions('TIMESHEET_READ')
   @Query(() => EmployeeAbsence, { name: 'employeeAbsenceById' })
   employeeAbsenceById(
