@@ -1,4 +1,5 @@
 import { expect, type Browser, type Page } from '@playwright/test'
+import { e2eOrgName } from './fixture-naming'
 
 /**
  * Shared auth fixture for happy-path E2E tests.
@@ -30,9 +31,9 @@ export async function signInAsSuperAdmin(page: Page): Promise<void> {
  * database, then sets the Active-Org cookie via POST /api/org/switch.
  */
 export async function ensureActiveOrg(page: Page): Promise<string> {
-  const gql = async (query: string) => {
+  const gql = async (query: string, variables?: Record<string, unknown>) => {
     const res = await page.request.post(`${BACKEND_URL}/graphql`, {
-      data: { query },
+      data: { query, variables },
     })
     return res.json() as Promise<{
       data?: Record<string, { id: string }[] & { id: string }>
@@ -53,8 +54,11 @@ export async function ensureActiveOrg(page: Page): Promise<string> {
   let orgId = usable?.[0]?.id
 
   if (!orgId) {
+    // Named with the E2E fixture prefix so the global teardown can delete it
+    // again — an unnamed org would silently pile up in the database.
     const created = await gql(
-      'mutation { createOrganization(input: {}) { id } }',
+      'mutation Create($input: CreateOrganizationInput!) { createOrganization(input: $input) { id } }',
+      { input: { name: e2eOrgName('Primary') } },
     )
     orgId = created.data?.createOrganization?.id
   }
@@ -218,8 +222,11 @@ export async function setupSecondOrgUser(
   const adminCookiesBefore = await adminPage.context().cookies()
   const adminOrgId = adminCookiesBefore.find((c) => c.name === 'Active-Org')?.value
 
+  // Named with the E2E fixture prefix so the global teardown can delete it
+  // again — an unnamed org would silently pile up in the database.
   const created = await gql(
-    'mutation { createOrganization(input: {}) { id } }',
+    'mutation Create($input: CreateOrganizationInput!) { createOrganization(input: $input) { id } }',
+    { input: { name: e2eOrgName('SecondOrg') } },
   )
   const orgId = created.data?.createOrganization?.id
   if (!orgId) {
