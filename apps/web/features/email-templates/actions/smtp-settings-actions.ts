@@ -8,7 +8,8 @@ import { getOrganizationSettingValueAction } from "@/features/organization-setti
 import { createOrganizationSettingAction } from "@/features/organization-settings/actions/create-setting.action";
 import { updateOrganizationSettingAction } from "@/features/organization-settings/actions/update-setting.action";
 
-const SETTINGS_PATH = "/admin/admissions/email-settings";
+// SMTP lives in the org settings; the admissions route redirects there.
+const SETTINGS_PATH = "/admin/settings/smtp";
 
 // Keys must match SMTP_SETTING_KEYS in the backend SmtpService.
 const KEYS = {

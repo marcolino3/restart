@@ -264,6 +264,14 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
                 },
               ]
             : []),
+          // Org-Settings halten Credentials (SMTP, Google-Service-Account) —
+          // daher nur fuer Org-Admins sichtbar. Backend-Guards bleiben
+          // massgeblich.
+          {
+            title: tCommon("settings"),
+            url: ROUTES.admin.settings(locale),
+            icon: IconSettings,
+          },
         ]
       : [],
     ...(isSuperAdmin
@@ -336,17 +344,6 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
       },
     ],
     navSecondary: [
-      // Org-Settings halten Credentials (SMTP, Google-Service-Account) — daher
-      // nur fuer Org-Admins sichtbar. Backend-Guards bleiben massgeblich.
-      ...(canSeeOrgAdmin
-        ? [
-            {
-              title: tCommon("settings"),
-              url: ROUTES.admin.settings(locale),
-              icon: IconSettings,
-            },
-          ]
-        : []),
       {
         title: tCommon("getHelp"),
         url: "#",

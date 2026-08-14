@@ -24,7 +24,7 @@ const CountryTemplateDetailPage = async ({ params }: Props) => {
 
   const countryCode = rawCode.toUpperCase();
   if (!/^[A-Z]{2}$/.test(countryCode)) {
-    redirect(`/${locale}/admin/settings/country-templates`);
+    redirect(`/${locale}/admin/country-templates`);
   }
 
   const templatesRes = await getCountryInputTemplatesAction();
