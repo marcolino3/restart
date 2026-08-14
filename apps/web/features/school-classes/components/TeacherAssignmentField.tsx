@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { NumberFormField } from "@/components/form/form-fields/NumberFormField";
 import {
   Select,
   SelectContent,
@@ -20,7 +20,7 @@ import { TeacherOption } from "../actions/get-teachers.action";
 type TeacherAssignmentValue = {
   employeeId: string;
   role?: "LEAD" | "ASSISTANT";
-  workloadPercent?: number | string | null;
+  workloadPercent?: number | null;
 };
 
 interface Props {
@@ -111,14 +111,14 @@ export function TeacherAssignmentField({ name, teachers }: Props) {
                 />
 
                 <div className="flex items-center gap-1">
-                  <Input
-                    type="number"
+                  <NumberFormField
+                    name={`${name}.${index}.workloadPercent`}
                     min={0}
                     max={100}
                     placeholder="—"
-                    aria-label={t("workloadPercent")}
-                    className="h-8 w-20 text-sm"
-                    {...register(`${name}.${index}.workloadPercent`)}
+                    ariaLabel={t("workloadPercent")}
+                    width="w-20"
+                    className="[&_input]:h-8 [&_input]:text-sm"
                   />
                   <span className="text-sm text-muted-foreground">%</span>
                 </div>
@@ -149,7 +149,7 @@ export function TeacherAssignmentField({ name, teachers }: Props) {
         <Select
           value=""
           onValueChange={(employeeId) =>
-            append({ employeeId, role: "LEAD", workloadPercent: "" })
+            append({ employeeId, role: "LEAD", workloadPercent: null })
           }
         >
           <SelectTrigger className="w-full" aria-label={t("assignTeacher")}>

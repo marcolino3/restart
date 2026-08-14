@@ -80,7 +80,7 @@ export default function EditSchoolClassPageForm({
       teachers: (schoolClass.teacherAssignments ?? []).map((a) => ({
         employeeId: a.employeeId,
         role: a.role,
-        workloadPercent: a.workloadPercent ?? ("" as unknown as number),
+        workloadPercent: a.workloadPercent ?? null,
       })),
       color: schoolClass.color ?? null,
       description: schoolClass.description ?? "",

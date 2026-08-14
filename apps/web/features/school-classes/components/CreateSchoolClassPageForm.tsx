@@ -56,7 +56,7 @@ export default function CreateSchoolClassPageForm({
       teachers: [] as {
         employeeId: string;
         role: "LEAD" | "ASSISTANT";
-        workloadPercent: number | string;
+        workloadPercent: number | null;
       }[],
       color: null as string | null,
       description: "",

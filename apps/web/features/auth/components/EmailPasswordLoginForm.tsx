@@ -11,6 +11,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
+import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { LoginFormSchema, LoginFormType } from "../schemas/login-form.schema";
@@ -57,24 +58,13 @@ export const EmailPasswordLoginForm = () => {
         onSubmit={form.handleSubmit(onSubmit)}
         className="grid gap-6"
       >
-        <FormField
+        <InputFormField
           name="email"
-          control={form.control}
-          render={({ field }) => (
-            <FormItem className="grid gap-2">
-              <Label htmlFor="login-email">{tCommon("email")}</Label>
-              <FormControl>
-                <Input
-                  {...field}
-                  id="login-email"
-                  type="email"
-                  placeholder={t("emailPlaceholder")}
-                  autoComplete="email"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="email"
+          type="email"
+          placeholder={t("emailPlaceholder")}
+          autoComplete="email"
+          className="grid gap-2"
         />
         <FormField
           name="password"
