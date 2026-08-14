@@ -6,11 +6,24 @@ import { ScrollViewStyleReset } from 'expo-router/html';
 // do not have access to the DOM or browser APIs.
 export default function Root({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="de">
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover"
+        />
+
+        {/* PWA: installable web app metadata. The manifest and icons are served
+            verbatim from public/, which expo export copies into dist/ as-is. */}
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#3a7d44" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Restart" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 
         {/* 
           Disable body scrolling on web. This makes ScrollView components work closer to how they do on native. 
@@ -27,12 +40,9 @@ export default function Root({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Matches the Salbei `background` token in tailwind.config.js so the installed
+// PWA does not flash a different color before the app shell paints.
 const responsiveBackground = `
 body {
-  background-color: #fff;
-}
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: #000;
-  }
+  background-color: #f7f5f0;
 }`;
