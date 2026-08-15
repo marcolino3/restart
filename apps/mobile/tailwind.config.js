@@ -68,6 +68,9 @@ module.exports = {
         semibold: ["Geist_600SemiBold"],
         bold: ["Geist_700Bold"],
         mono: ["GeistMono_400Regular"],
+        // React Native picks a font file by family name, not by weight, so a
+        // bold mono figure needs its own family rather than `font-bold`.
+        "mono-bold": ["GeistMono_700Bold"],
       },
     },
   },

@@ -6,7 +6,10 @@ import {
   Geist_600SemiBold,
   Geist_700Bold,
 } from "@expo-google-fonts/geist";
-import { GeistMono_400Regular } from "@expo-google-fonts/geist-mono";
+import {
+  GeistMono_400Regular,
+  GeistMono_700Bold,
+} from "@expo-google-fonts/geist-mono";
 import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -31,6 +34,7 @@ export default function RootLayout() {
     Geist_600SemiBold,
     Geist_700Bold,
     GeistMono_400Regular,
+    GeistMono_700Bold,
     ...FontAwesome.font,
   });
 

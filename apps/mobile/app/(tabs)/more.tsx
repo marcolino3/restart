@@ -16,14 +16,26 @@ export default function MoreTab() {
           {t("MobileNav.morePageTitle")}
         </Text>
 
+        {/* Time tracking has its own tab now; the slots it displaced live here. */}
         <Pressable
           className="mt-4 rounded-xl border border-border p-4"
-          onPress={() => router.push("/(tabs)/employee")}
+          onPress={() => router.push("/(tabs)/chats")}
           accessibilityRole="button"
-          accessibilityLabel={t("MobileNav.moreTimeTracking")}
+          accessibilityLabel={t("MobileNav.tabChats")}
         >
           <Text className="font-semibold text-foreground">
-            {t("MobileNav.moreTimeTracking")}
+            {t("MobileNav.tabChats")}
+          </Text>
+        </Pressable>
+
+        <Pressable
+          className="rounded-xl border border-border p-4"
+          onPress={() => router.push("/(tabs)/parent")}
+          accessibilityRole="button"
+          accessibilityLabel={t("MobileNav.tabChildren")}
+        >
+          <Text className="font-semibold text-foreground">
+            {t("MobileNav.tabChildren")}
           </Text>
         </Pressable>
 
