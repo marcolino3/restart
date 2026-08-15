@@ -57,7 +57,7 @@ import { hashPassword } from '@better-auth/utils/password';
 
 const ORG_NAME = 'Testschule';
 const ORG_SUBDOMAIN = 'testschule';
-const PW_PLAIN = 'test1234';
+const PW_PLAIN = '*Restart2026*';
 
 const DB = {
   host: process.env.DB_HOST ?? 'localhost',
@@ -3382,7 +3382,7 @@ async function main() {
 
   await c.end();
   await app.close();
-  console.log('\n✨ Done. Login with any of these (password: test1234):');
+  console.log(`\n✨ Done. Login with any of these (password: ${PW_PLAIN}):`);
   USERS.forEach((u) =>
     console.log(`   ${u.email}  →  ${u.persona} / ${u.roleCode}`),
   );
