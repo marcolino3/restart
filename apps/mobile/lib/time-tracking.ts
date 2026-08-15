@@ -25,12 +25,34 @@ export type VacationBalance = {
   remainingDays: number;
 };
 
+/** One day inside a monthly group, as the backend computes it. */
+export type DailyTimeTracking = {
+  date: string;
+  label?: string | null;
+  color?: string | null;
+  workMinutes: number;
+  plannedMinutes: number;
+};
+
+export type MonthlyTimeTrackingGroup = {
+  year: number;
+  /** 1-based, as delivered by the backend. */
+  month: number;
+  workedMinutes: number;
+  plannedMinutes: number;
+  days: DailyTimeTracking[];
+};
+
 export type MyTimeTracking = {
   employeeId: string | null;
   balance: WorkTimeBalance | null;
   vacation: VacationBalance | null;
   entries: TimeEntry[];
   openEntry: TimeEntry | null;
+  /** Working days in the period without an entry — flagged in the calendar. */
+  missingRecordDays: string[];
+  /** Per-month totals and per-day figures; the calendar renders from these. */
+  monthlyGroups: MonthlyTimeTrackingGroup[];
 };
 
 const MyEmployeeIdDocument = gql`
@@ -61,6 +83,20 @@ const MyDataDocument = gql`
       notes
       entryDate
       source
+    }
+    myMissingRecordDays(from: $from, to: $to)
+    myMonthlyTimeTracking(from: $from, to: $to) {
+      year
+      month
+      workedMinutes
+      plannedMinutes
+      days {
+        date
+        label
+        color
+        workMinutes
+        plannedMinutes
+      }
     }
   }
 `;
@@ -156,6 +192,8 @@ export async function fetchMyTimeTracking(): Promise<MyTimeTracking> {
       vacation: null,
       entries: [],
       openEntry: null,
+      missingRecordDays: [],
+      monthlyGroups: [],
     };
   }
 
@@ -164,6 +202,8 @@ export async function fetchMyTimeTracking(): Promise<MyTimeTracking> {
     myWorkTimeBalance: WorkTimeBalance;
     myVacationBalance: VacationBalance;
     timeTrackingByEmployeeId: TimeEntry[];
+    myMissingRecordDays: string[];
+    myMonthlyTimeTracking: MonthlyTimeTrackingGroup[];
   }>(MyDataDocument, { employeeId: myEmployeeId, from, to });
 
   const entries = data.timeTrackingByEmployeeId ?? [];
@@ -173,6 +213,8 @@ export async function fetchMyTimeTracking(): Promise<MyTimeTracking> {
     vacation: data.myVacationBalance,
     entries,
     openEntry: entries.find((e) => !e.endedAt) ?? null,
+    missingRecordDays: data.myMissingRecordDays ?? [],
+    monthlyGroups: data.myMonthlyTimeTracking ?? [],
   };
 }
 

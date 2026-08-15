@@ -81,6 +81,21 @@ Vorhandene Operationen in `lib/time-tracking.ts`: `fetchMyTimeTracking`,
 Für den Stichtag zusätzlich abgefragt: `timeTrackingPeriodAnchor` (org-scoped,
 hinter `TIMESHEET_READ`).
 
+Alle Zahlen kommen aus dem Backend, nichts wird im Client gerechnet oder
+gruppiert. Der Kalender speist sich aus zwei weiteren Queries, beide ebenfalls
+hinter `TIMESHEET_READ`:
+
+- `myMissingRecordDays(from, to): [String!]!` — Arbeitstage der Periode ohne
+  Eintrag, im Kalender markiert.
+- `myMonthlyTimeTracking(from, to, locale): [MonthlyTimeTrackingGroup!]!` —
+  Monatssummen (`workedMinutes`, `plannedMinutes`) und je Tag `date`, `label`,
+  `color`, `workMinutes`, `plannedMinutes`. `month` ist 1-basiert
+  (`EXTRACT(MONTH FROM date)` in `getMonthlySummaries`). `locale` ist nullable
+  und wird von Mobile nicht gesetzt.
+
+Die Design-Vorlage liegt entpackt als `design-reference.html` neben dieser
+Datei.
+
 Nicht im Backend vorhanden und daher nicht baubar: Standort, Freigabestatus,
 Pause als eigener Stempelzustand, tagesgenaues Soll (und damit „Feierabend
 ca."). Das Artefakt zeigt diese Elemente — sie entfallen.
