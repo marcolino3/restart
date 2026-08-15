@@ -1,22 +1,34 @@
 import { useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as AppleAuthentication from "expo-apple-authentication";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
 
 import { GoogleLoginButton } from "@/features/auth/GoogleLoginButton";
+import {
+  LoginField,
+  PrimaryButton,
+  Separator,
+  Wordmark,
+} from "@/features/auth/login-ui";
 import { signIn } from "@/lib/auth-client";
 
+/**
+ * Native login, in the design's "0 · Login" layout. Apple sign-in stays — it
+ * exists on native and the design's third SSO slot ("Face ID") has no backend
+ * flow behind it, so Apple takes that slot instead of a dead button.
+ */
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState<"email" | "google" | "apple" | null>(
     null,
   );
@@ -62,17 +74,18 @@ export default function LoginScreen() {
           },
           callbackURL: "/",
         });
-        if (signInError) throw new Error(signInError.message ?? "Apple sign-in failed");
+        if (signInError)
+          throw new Error(signInError.message ?? "Apple sign-in failed");
       } else {
         const { error: signInError } = await signIn.social({
           provider: "apple",
           callbackURL: "/",
         });
-        if (signInError) throw new Error(signInError.message ?? "Apple sign-in failed");
+        if (signInError)
+          throw new Error(signInError.message ?? "Apple sign-in failed");
       }
     } catch (e) {
-      const message =
-        e instanceof Error ? e.message : "Apple sign-in failed";
+      const message = e instanceof Error ? e.message : "Apple sign-in failed";
       if (!message.includes("ERR_REQUEST_CANCELED")) setError(message);
     } finally {
       setLoading(null);
@@ -87,103 +100,104 @@ export default function LoginScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
       >
-        <View className="flex-1 justify-center px-6">
-          <Text className="mb-2 text-3xl font-bold text-foreground">
-            Restart
-          </Text>
-          <Text className="mb-8 text-muted-foreground">
-            Sign in to your school
-          </Text>
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="grow px-6"
+          keyboardShouldPersistTaps="handled"
+        >
+          <View className="grow">
+            <Wordmark />
 
-          <View className="mb-4">
-            <Text className="mb-2 text-sm font-medium text-foreground">
-              Email
+            <Text className="mt-5 text-[27px] font-semibold leading-tight text-foreground">
+              Willkommen{"\n"}zurück.
             </Text>
-            <TextInput
-              autoCapitalize="none"
-              autoComplete="email"
-              keyboardType="email-address"
-              value={email}
-              onChangeText={setEmail}
-              className="rounded-md border border-border bg-background px-4 py-3 text-foreground"
-              placeholder="you@school.ch"
-              placeholderTextColor="#999"
-            />
-          </View>
-
-          <View className="mb-6">
-            <Text className="mb-2 text-sm font-medium text-foreground">
-              Password
+            <Text className="mt-2 text-[13.5px] leading-5 text-muted-foreground">
+              Melde dich an, um deine Zeit zu erfassen und den Schulalltag im
+              Blick zu behalten.
             </Text>
-            <TextInput
-              secureTextEntry
-              autoComplete="password"
-              value={password}
-              onChangeText={setPassword}
-              className="rounded-md border border-border bg-background px-4 py-3 text-foreground"
-              placeholder="••••••••"
-              placeholderTextColor="#999"
-            />
+
+            <View className="mt-5 gap-2.5">
+              <LoginField
+                icon="envelope-o"
+                caption="E-Mail"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="du@schule.ch"
+                autoComplete="email"
+                keyboardType="email-address"
+                onSubmitEditing={() => void onEmailSignIn()}
+              />
+
+              <LoginField
+                icon="lock"
+                caption="Passwort"
+                value={password}
+                onChangeText={setPassword}
+                placeholder="••••••••"
+                secureTextEntry={!showPassword}
+                autoComplete="password"
+                onSubmitEditing={() => void onEmailSignIn()}
+                trailing={
+                  <Pressable
+                    onPress={() => setShowPassword((v) => !v)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      showPassword ? "Passwort verbergen" : "Passwort anzeigen"
+                    }
+                  >
+                    <FontAwesome
+                      name={showPassword ? "eye-slash" : "eye"}
+                      size={18}
+                      color="#837d70"
+                    />
+                  </Pressable>
+                }
+              />
+
+              {error ? (
+                <Text className="text-sm text-destructive">{error}</Text>
+              ) : null}
+
+              <PrimaryButton
+                label="Anmelden"
+                onPress={() => void onEmailSignIn()}
+                loading={loading === "email"}
+                disabled={busy || !email || !password}
+                className="mt-4"
+              />
+            </View>
+
+            <Separator label="oder" />
+
+            <View className="gap-2.5">
+              <GoogleLoginButton
+                onPress={() => void onGoogleSignIn()}
+                loading={loading === "google"}
+                disabled={busy}
+              />
+
+              {Platform.OS === "ios" ? (
+                <AppleAuthentication.AppleAuthenticationButton
+                  buttonType={
+                    AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
+                  }
+                  buttonStyle={
+                    AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                  }
+                  cornerRadius={18}
+                  style={{ width: "100%", height: 52 }}
+                  onPress={onAppleSignIn}
+                />
+              ) : null}
+            </View>
+
+            <Text className="mt-auto py-5 text-center text-xs leading-5 text-muted-foreground">
+              Mit der Anmeldung akzeptierst du die Nutzungsbedingungen und den
+              Datenschutz.
+            </Text>
           </View>
-
-          {error ? (
-            <Text className="mb-4 text-sm text-destructive">{error}</Text>
-          ) : null}
-
-          <Pressable
-            onPress={onEmailSignIn}
-            disabled={busy || !email || !password}
-            className="rounded-md bg-primary py-3 active:opacity-80 disabled:opacity-50"
-          >
-            {loading === "email" ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text className="text-center font-medium text-primary-foreground">
-                Sign in
-              </Text>
-            )}
-          </Pressable>
-
-          <View className="my-6 flex-row items-center">
-            <View className="h-px flex-1 bg-border" />
-            <Text className="mx-3 text-xs text-muted-foreground">OR</Text>
-            <View className="h-px flex-1 bg-border" />
-          </View>
-
-          <GoogleLoginButton
-            onPress={onGoogleSignIn}
-            loading={loading === "google"}
-            disabled={busy}
-          />
-
-          {Platform.OS === "ios" ? (
-            <AppleAuthentication.AppleAuthenticationButton
-              buttonType={
-                AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
-              }
-              buttonStyle={
-                AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
-              }
-              cornerRadius={6}
-              style={{ width: "100%", height: 48 }}
-              onPress={onAppleSignIn}
-            />
-          ) : (
-            <Pressable
-              onPress={onAppleSignIn}
-              disabled={busy}
-              className="rounded-md border border-border bg-background py-3 active:opacity-80 disabled:opacity-50"
-            >
-              {loading === "apple" ? (
-                <ActivityIndicator />
-              ) : (
-                <Text className="text-center font-medium text-foreground">
-                  Continue with Apple
-                </Text>
-              )}
-            </Pressable>
-          )}
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

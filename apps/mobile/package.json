@@ -20,6 +20,7 @@
     "@expo-google-fonts/geist": "^0.4.2",
     "@expo-google-fonts/geist-mono": "^0.4.3",
     "@expo/vector-icons": "^15.0.3",
+    "@react-native-community/datetimepicker": "8.4.4",
     "@react-navigation/native": "^7.3.16",
     "@restart/shared-auth-client": "workspace:*",
     "@restart/shared-i18n": "workspace:*",

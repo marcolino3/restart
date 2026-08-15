@@ -1,22 +1,31 @@
 import { useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Pressable,
+  ScrollView,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
 
 import { GoogleLoginButton } from "@/features/auth/GoogleLoginButton";
+import {
+  LoginField,
+  PrimaryButton,
+  Separator,
+  Wordmark,
+} from "@/features/auth/login-ui";
 import { signIn } from "@/lib/auth-client";
 
 /**
- * Web login. Mirrors login.tsx minus Apple sign-in: expo-apple-authentication
- * is native-only, and Sign in with Apple on the web is a separate OAuth setup
- * (its own Services ID and return URL) that is not configured. Email/password
- * and Google cover the web flow.
+ * Web login, in the design's "0 · Login" layout. Mirrors login.tsx minus Apple
+ * sign-in: expo-apple-authentication is native-only, and Sign in with Apple on
+ * the web is a separate OAuth setup (its own Services ID and return URL) that
+ * is not configured. Email/password and Google cover the web flow.
+ *
+ * Face ID from the design is left out — there is no passkey or biometric flow
+ * behind it yet, and a button that does nothing is worse than none.
  *
  * The session arrives as an httpOnly cookie set by the backend — see
  * auth-client.web.ts. Nothing here touches the token.
@@ -24,6 +33,7 @@ import { signIn } from "@/lib/auth-client";
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState<"email" | "google" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,80 +67,88 @@ export default function LoginScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <KeyboardAvoidingView className="flex-1">
-        <View className="flex-1 justify-center px-6">
-          <View className="mx-auto w-full max-w-sm">
-            <Text className="mb-2 text-3xl font-bold text-foreground">
-              Restart
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="grow px-6"
+          keyboardShouldPersistTaps="handled"
+        >
+          <View className="mx-auto w-full max-w-sm grow">
+            <Wordmark />
+
+            <Text className="mt-5 text-[27px] font-semibold leading-tight text-foreground">
+              Willkommen{"\n"}zurück.
             </Text>
-            <Text className="mb-8 text-muted-foreground">
-              Bei deiner Schule anmelden
+            <Text className="mt-2 text-[13.5px] leading-5 text-muted-foreground">
+              Melde dich an, um deine Zeit zu erfassen und den Schulalltag im
+              Blick zu behalten.
             </Text>
 
-            <View className="mb-4">
-              <Text className="mb-2 text-sm font-medium text-foreground">
-                E-Mail
-              </Text>
-              <TextInput
-                autoCapitalize="none"
-                autoComplete="email"
-                keyboardType="email-address"
+            <View className="mt-5 gap-2.5">
+              <LoginField
+                icon="envelope-o"
+                caption="E-Mail"
                 value={email}
                 onChangeText={setEmail}
-                onSubmitEditing={() => void onEmailSignIn()}
-                className="rounded-md border border-border bg-background px-4 py-3 text-foreground"
                 placeholder="du@schule.ch"
-                placeholderTextColor="#837d70"
+                autoComplete="email"
+                keyboardType="email-address"
+                onSubmitEditing={() => void onEmailSignIn()}
               />
-            </View>
 
-            <View className="mb-6">
-              <Text className="mb-2 text-sm font-medium text-foreground">
-                Passwort
-              </Text>
-              <TextInput
-                secureTextEntry
-                autoComplete="password"
+              <LoginField
+                icon="lock"
+                caption="Passwort"
                 value={password}
                 onChangeText={setPassword}
-                onSubmitEditing={() => void onEmailSignIn()}
-                className="rounded-md border border-border bg-background px-4 py-3 text-foreground"
                 placeholder="••••••••"
-                placeholderTextColor="#837d70"
+                secureTextEntry={!showPassword}
+                autoComplete="password"
+                onSubmitEditing={() => void onEmailSignIn()}
+                trailing={
+                  <Pressable
+                    onPress={() => setShowPassword((v) => !v)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      showPassword ? "Passwort verbergen" : "Passwort anzeigen"
+                    }
+                  >
+                    <FontAwesome
+                      name={showPassword ? "eye-slash" : "eye"}
+                      size={18}
+                      color="#837d70"
+                    />
+                  </Pressable>
+                }
+              />
+
+              {error ? (
+                <Text className="text-sm text-destructive">{error}</Text>
+              ) : null}
+
+              <PrimaryButton
+                label="Anmelden"
+                onPress={() => void onEmailSignIn()}
+                loading={loading === "email"}
+                disabled={busy || !email || !password}
+                className="mt-4"
               />
             </View>
 
-            {error ? (
-              <Text className="mb-4 text-sm text-destructive">{error}</Text>
-            ) : null}
-
-            <Pressable
-              onPress={onEmailSignIn}
-              disabled={busy || !email || !password}
-              accessibilityRole="button"
-              className="h-12 items-center justify-center rounded-md bg-primary active:opacity-80 disabled:opacity-50"
-            >
-              {loading === "email" ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text className="text-center font-medium text-primary-foreground">
-                  Anmelden
-                </Text>
-              )}
-            </Pressable>
-
-            <View className="my-6 flex-row items-center">
-              <View className="h-px flex-1 bg-border" />
-              <Text className="mx-3 text-xs text-muted-foreground">ODER</Text>
-              <View className="h-px flex-1 bg-border" />
-            </View>
+            <Separator label="oder" />
 
             <GoogleLoginButton
-              onPress={onGoogleSignIn}
+              onPress={() => void onGoogleSignIn()}
               loading={loading === "google"}
               disabled={busy}
             />
+
+            <Text className="mt-auto py-5 text-center text-xs leading-5 text-muted-foreground">
+              Mit der Anmeldung akzeptierst du die Nutzungsbedingungen und den
+              Datenschutz.
+            </Text>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
