@@ -1,6 +1,6 @@
 import { gql } from "graphql-request";
 import { gqlClient, setActiveOrg } from "./gql-client";
-import { authClient } from "./auth-client";
+import { authCredentials, authHeaders } from "./auth-headers";
 import { API_BASE_URL } from "./env";
 
 type Org = { id: string; name?: string | null };
@@ -53,15 +53,14 @@ export async function ensureActiveOrg(
 
 /** Sets the Active-Org cookie server-side and the header on the gql client. */
 export async function switchOrg(orgId: string): Promise<void> {
-  const cookie = authClient.getCookie();
   await fetch(`${API_BASE_URL}/api/org/switch`, {
     method: "POST",
-    // credentials: "omit" so RN's native cookie jar doesn't override our
-    // manual Cookie header (same reason as in gql-client.ts).
-    credentials: "omit",
+    // Platform-dependent: manual Cookie header with the jar off on native,
+    // browser-sent cookie on web. See auth-headers.ts.
+    credentials: authCredentials,
     headers: {
       "Content-Type": "application/json",
-      ...(cookie ? { Cookie: cookie } : {}),
+      ...authHeaders(),
     },
     body: JSON.stringify({ orgId }),
   });

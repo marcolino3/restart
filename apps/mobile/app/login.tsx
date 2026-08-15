@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as AppleAuthentication from "expo-apple-authentication";
 
+import { GoogleLoginButton } from "@/features/auth/GoogleLoginButton";
 import { signIn } from "@/lib/auth-client";
 
 export default function LoginScreen() {
@@ -149,19 +150,11 @@ export default function LoginScreen() {
             <View className="h-px flex-1 bg-border" />
           </View>
 
-          <Pressable
+          <GoogleLoginButton
             onPress={onGoogleSignIn}
+            loading={loading === "google"}
             disabled={busy}
-            className="mb-3 flex-row items-center justify-center rounded-md border border-border bg-background py-3 active:opacity-80 disabled:opacity-50"
-          >
-            {loading === "google" ? (
-              <ActivityIndicator />
-            ) : (
-              <Text className="font-medium text-foreground">
-                Continue with Google
-              </Text>
-            )}
-          </Pressable>
+          />
 
           {Platform.OS === "ios" ? (
             <AppleAuthentication.AppleAuthenticationButton
