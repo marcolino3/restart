@@ -25,10 +25,21 @@ export type VacationBalance = {
   remainingDays: number;
 };
 
+/** What a day in the monthly overview stands for. */
+export type DailyTimeTrackingKind =
+  | "ENTRY"
+  | "ABSENCE"
+  | "VACATION"
+  | "HOLIDAY"
+  | "NONE";
+
 /** One day inside a monthly group, as the backend computes it. */
 export type DailyTimeTracking = {
   date: string;
+  kind: DailyTimeTrackingKind;
+  /** Category, vacation or holiday name — only set for the non-ENTRY kinds. */
   label?: string | null;
+  /** Absence-category colour, if the category defines one. */
   color?: string | null;
   workMinutes: number;
   plannedMinutes: number;
@@ -92,6 +103,7 @@ const MyDataDocument = gql`
       plannedMinutes
       days {
         date
+        kind
         label
         color
         workMinutes
