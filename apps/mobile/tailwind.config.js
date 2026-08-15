@@ -34,6 +34,12 @@ module.exports = {
         "sidebar-accent-foreground": "#ffffff",
         gold: "#e9c46a",
         "gold-foreground": "#43350e",
+        // Dark band behind a running clock, mirroring --timer-bg/--timer-fg.
+        timer: "#24422a",
+        "timer-foreground": "#eef3e8",
+        // --row-h / --field: the two surfaces that sit between background and card.
+        "row-hover": "#faf8f2",
+        field: "#f4f1e9",
         "status-slate-bg": "#efece1",
         "status-slate-fg": "#77705d",
         "status-sky-bg": "#e0ebe8",
@@ -49,6 +55,12 @@ module.exports = {
         lg: "16px",
         md: "11px",
         sm: "8px",
+        // The mobile time-tracking screens use softer corners than the
+        // --r-card token: cards 22, rows/summary 20, timer band and calendar 24.
+        row: "20px",
+        card: "22px",
+        band: "24px",
+        tile: "15px",
       },
       fontFamily: {
         sans: ["Geist_400Regular"],

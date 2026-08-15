@@ -1,5 +1,6 @@
 import { gql } from "graphql-request";
 import { gqlClient } from "./gql-client";
+import { toEntryDate } from "@/features/time-tracking/date-utils";
 
 export type TimeEntry = {
   id: string;
@@ -35,6 +36,7 @@ export type MyTimeTracking = {
 const MyEmployeeIdDocument = gql`
   query MyEmployeeId {
     myEmployeeId
+    timeTrackingPeriodAnchor
   }
 `;
 
@@ -117,14 +119,34 @@ export type UpdateEntryInput = {
   notes?: string | null;
 };
 
-const currentYearRange = () => {
-  const year = new Date().getFullYear();
-  return { from: `${year}-01-01`, to: `${year}-12-31` };
+/**
+ * The org's accounting period, which is what every balance is measured
+ * against. The anchor is an `MM-DD` string: a period runs from the anchor to
+ * the day before the next one, so an anchor of `08-01` puts January in the
+ * period that started the previous August. Hardcoding a calendar year here
+ * would show a different balance than the web app for every org whose anchor
+ * is not 01-01.
+ */
+const periodRange = (anchor: string | null) => {
+  const now = new Date();
+  const [am, ad] = (anchor ?? "01-01").split("-").map(Number);
+  const month = (am || 1) - 1;
+  const day = ad || 1;
+
+  let startYear = now.getFullYear();
+  const anchorThisYear = new Date(startYear, month, day);
+  if (now < anchorThisYear) startYear -= 1;
+
+  const start = new Date(startYear, month, day);
+  // End the day before the anchor repeats, so periods tile without overlap.
+  const end = new Date(startYear + 1, month, day - 1);
+  return { from: toEntryDate(start), to: toEntryDate(end) };
 };
 
 export async function fetchMyTimeTracking(): Promise<MyTimeTracking> {
-  const { myEmployeeId } = await gqlClient.request<{
+  const { myEmployeeId, timeTrackingPeriodAnchor } = await gqlClient.request<{
     myEmployeeId: string | null;
+    timeTrackingPeriodAnchor: string | null;
   }>(MyEmployeeIdDocument);
 
   if (!myEmployeeId) {
@@ -137,7 +159,7 @@ export async function fetchMyTimeTracking(): Promise<MyTimeTracking> {
     };
   }
 
-  const { from, to } = currentYearRange();
+  const { from, to } = periodRange(timeTrackingPeriodAnchor);
   const data = await gqlClient.request<{
     myWorkTimeBalance: WorkTimeBalance;
     myVacationBalance: VacationBalance;
