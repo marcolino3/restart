@@ -51,6 +51,25 @@ export async function ensureActiveOrg(
   return { activeOrgId: null, choices: organizations };
 }
 
+/**
+ * The active organization's name, for the place shown next to the date on
+ * "Heute". Returns null when it cannot be resolved — the line then omits the
+ * place rather than showing an id or an error.
+ */
+export async function activeOrgName(
+  activeOrgId: string | null,
+): Promise<string | null> {
+  if (!activeOrgId) return null;
+  try {
+    const { organizations } = await gqlClient.request<{ organizations: Org[] }>(
+      MyOrganizationsDocument,
+    );
+    return organizations.find((o) => o.id === activeOrgId)?.name ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Sets the Active-Org cookie server-side and the header on the gql client. */
 export async function switchOrg(orgId: string): Promise<void> {
   await fetch(`${API_BASE_URL}/api/org/switch`, {

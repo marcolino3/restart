@@ -4,8 +4,10 @@
  * no computation. Figures arrive already formatted from the caller.
  */
 import React from "react";
-import { Text, View, type ViewProps } from "react-native";
+import { Pressable, Text, View, type ViewProps } from "react-native";
 
+import { useColors, withAlpha } from "@/lib/theme";
+import { Icon, type IconName } from "./Icon";
 import { dayOfMonth, weekdayShort } from "./date-utils";
 
 /** White panel with the soft shadow the design uses for cards and rows. */
@@ -33,8 +35,8 @@ export function SectionHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <View className="flex-row items-baseline gap-3">
-      <Text className="flex-1 text-[17px] font-semibold text-foreground">
+    <View className="mt-1 flex-row items-baseline gap-2.5">
+      <Text className="flex-1 text-[17px] font-semibold tracking-tight text-foreground">
         {title}
       </Text>
       {action}
@@ -64,6 +66,8 @@ export function MetricCard({
   muted?: boolean;
   positive?: boolean;
 }) {
+  const colors = useColors();
+
   return (
     <Panel
       className={`flex-1 rounded-card p-4 ${muted ? "bg-secondary shadow-none" : ""}`}
@@ -98,12 +102,11 @@ export function MetricCard({
       <View className="mt-3.5 flex-row items-baseline">
         <Text
           className={`font-mono-bold text-3xl ${
-            muted
-              ? "text-muted-foreground/60"
-              : positive
-                ? "text-status-green-fg"
-                : "text-foreground"
+            positive && !muted ? "text-status-green-fg" : "text-foreground"
           }`}
+          style={
+            muted ? { color: withAlpha(colors.mutedForeground, 0.6) } : undefined
+          }
         >
           {value}
         </Text>
@@ -125,6 +128,8 @@ export function DateTile({
   date: string;
   selected?: boolean;
 }) {
+  const colors = useColors();
+
   return (
     <View
       className={`w-[66px] items-center justify-center gap-px rounded-tile py-3 ${
@@ -139,9 +144,13 @@ export function DateTile({
         {dayOfMonth(date)}
       </Text>
       <Text
-        className={`text-[11.5px] font-semibold ${
-          selected ? "text-accent-foreground/85" : "text-primary-foreground/85"
-        }`}
+        className="text-[11.5px] font-semibold"
+        style={{
+          color: withAlpha(
+            selected ? colors.accentForeground : colors.primaryForeground,
+            0.85,
+          ),
+        }}
       >
         {weekdayShort(date)}
       </Text>
@@ -161,15 +170,16 @@ function TripCell({
   divider: boolean;
   selected: boolean;
 }) {
+  const colors = useColors();
+
   return (
     <View
-      className={`flex-1 items-center gap-0.5 ${
-        divider
-          ? selected
-            ? "border-l border-accent-foreground/25"
-            : "border-l border-border"
-          : ""
-      }`}
+      className={`flex-1 items-center gap-0.5 ${divider ? "border-l" : ""}`}
+      style={
+        divider && selected
+          ? { borderLeftColor: withAlpha(colors.accentForeground, 0.25) }
+          : undefined
+      }
     >
       <Text
         className={`font-mono-bold text-[15.5px] ${
@@ -179,9 +189,12 @@ function TripCell({
         {value}
       </Text>
       <Text
-        className={`text-[10.5px] ${
-          selected ? "text-accent-foreground/75" : "text-muted-foreground"
-        }`}
+        className={`text-[10.5px] ${selected ? "" : "text-muted-foreground"}`}
+        style={
+          selected
+            ? { color: withAlpha(colors.accentForeground, 0.75) }
+            : undefined
+        }
       >
         {caption}
       </Text>
@@ -204,6 +217,8 @@ export function EntryRow({
   footer?: React.ReactNode;
   selected?: boolean;
 }) {
+  const colors = useColors();
+
   return (
     <View
       className={`flex-row gap-3 rounded-row p-3 ${
@@ -211,7 +226,7 @@ export function EntryRow({
       }`}
     >
       <DateTile date={date} selected={selected} />
-      <View className="flex-1 justify-center gap-2.5">
+      <View className="flex-1 justify-center gap-[9px]">
         <View className="flex-row">
           {cells.map(([value, caption], i) => (
             <TripCell
@@ -225,9 +240,14 @@ export function EntryRow({
         </View>
         {footer ? (
           <View
-            className={`flex-row items-center justify-center gap-2 border-t pt-2 ${
-              selected ? "border-accent-foreground/25" : "border-border"
+            className={`flex-row items-center justify-center gap-[7px] border-t pt-2 ${
+              selected ? "" : "border-border"
             }`}
+            style={
+              selected
+                ? { borderTopColor: withAlpha(colors.accentForeground, 0.25) }
+                : undefined
+            }
           >
             {footer}
           </View>
@@ -244,6 +264,160 @@ export function RowTag({ label }: { label: string }) {
       <Text className="text-[10.5px] font-semibold text-status-amber-fg">
         {label}
       </Text>
+    </View>
+  );
+}
+
+/** The round icon button of both headers. `small` is the flat back-bar variant. */
+export function RoundButton({
+  icon,
+  onPress,
+  label,
+  badge = false,
+  small = false,
+  disabled = false,
+}: {
+  icon: IconName;
+  onPress?: () => void;
+  label: string;
+  badge?: boolean;
+  /** The design's `.rnd.sm`: 38px, flat and transparent, used in back bars. */
+  small?: boolean;
+  /**
+   * Holds the slot the design draws without pretending to work. Used where the
+   * design shows an action we have no feature for yet: dimmed, unfocusable and
+   * announced as disabled, so it never reads as a working control.
+   */
+  disabled?: boolean;
+}) {
+  const colors = useColors();
+  const size = small ? 38 : 44;
+
+  return (
+    <Pressable
+      onPress={disabled ? undefined : onPress}
+      disabled={disabled}
+      focusable={!disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      style={{ width: size, height: size, opacity: disabled ? 0.35 : 1 }}
+      className={`items-center justify-center rounded-full ${
+        small ? "" : "bg-card shadow-sm shadow-black/5"
+      }`}
+    >
+      <Icon name={icon} size={20} color={colors.foreground} />
+      {badge ? (
+        <View className="absolute right-3 top-[11px] h-[7px] w-[7px] rounded-full border-2 border-card bg-status-rose-fg" />
+      ) : null}
+    </Pressable>
+  );
+}
+
+/**
+ * "Guten Morgen," over the name, with the notification button — the design's
+ * header on "Heute".
+ */
+export function GreetingHeader({
+  greeting,
+  name,
+  onNotifications,
+  notificationsLabel,
+  hasUnread = false,
+}: {
+  greeting: string;
+  name: string;
+  onNotifications?: () => void;
+  notificationsLabel: string;
+  hasUnread?: boolean;
+}) {
+  return (
+    <View className="flex-row items-center gap-3">
+      <View className="flex-1">
+        <Text className="text-sm text-muted-foreground">{greeting}</Text>
+        <Text
+          numberOfLines={1}
+          className="text-[21px] font-semibold tracking-tight text-foreground"
+        >
+          {name}
+        </Text>
+      </View>
+      <RoundButton
+        icon="bell"
+        onPress={onNotifications}
+        label={notificationsLabel}
+        badge={hasUnread}
+        // No notification screen exists yet; without a handler the bell holds
+        // the design's slot rather than acting as a button that does nothing.
+        disabled={!onNotifications}
+      />
+    </View>
+  );
+}
+
+/**
+ * The line under the greeting: today's date on the left, the place on the
+ * right. The design names a building ("Schulhaus Seefeld"); we have no field
+ * for one, so the caller passes the organization instead.
+ */
+export function DateLocationLine({
+  date,
+  location,
+}: {
+  date: string;
+  location?: string | null;
+}) {
+  const colors = useColors();
+
+  return (
+    <View className="flex-row items-center gap-2.5">
+      <Text
+        numberOfLines={1}
+        className="flex-1 text-[13px] font-medium text-foreground"
+      >
+        {date}
+      </Text>
+      {location ? (
+        <View className="flex-row items-center gap-[7px] rounded-full bg-primary px-[15px] py-[9px]">
+          <Icon name="pin" size={14} color={colors.primaryForeground} />
+          <Text
+            numberOfLines={1}
+            className="max-w-[150px] text-[12.5px] font-semibold text-primary-foreground"
+          >
+            {location}
+          </Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/**
+ * Back arrow, centred title, optional action — the header of "Verlauf" and the
+ * day view. The right slot keeps its width even when empty so the title stays
+ * centred.
+ */
+export function BackHeader({
+  title,
+  onBack,
+  backLabel,
+  action,
+}: {
+  title: string;
+  onBack: () => void;
+  backLabel: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <View className="flex-row items-center gap-3">
+      <RoundButton icon="left" onPress={onBack} label={backLabel} small />
+      <Text
+        numberOfLines={1}
+        className="flex-1 text-center text-[17px] font-semibold text-foreground"
+      >
+        {title}
+      </Text>
+      {action ?? <View style={{ width: 38, height: 38 }} />}
     </View>
   );
 }

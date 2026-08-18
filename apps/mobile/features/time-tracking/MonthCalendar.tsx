@@ -8,7 +8,8 @@
  */
 import React from "react";
 import { Pressable, Text, View } from "react-native";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { useColors, withAlpha } from "@/lib/theme";
+import { Icon } from "./Icon";
 
 import {
   monthGrid,
@@ -20,23 +21,24 @@ import type { DailyTimeTracking } from "@/lib/time-tracking";
 
 const WEEKDAY_HEADS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"] as const;
 
-const ACCENT = "#3a7d44";
-const ROSE = "#a3452e";
-const AMBER = "#8a6414";
-
-/** Marker colour for a day, or null when the day gets no dot. */
+/**
+ * Marker colour for a day, or null when the day gets no dot. The palette is
+ * passed in rather than read from a constant, so the dots follow the theme.
+ */
 const dotColor = (
   day: DailyTimeTracking | undefined,
   missing: boolean,
+  colors: { primary: string; destructive: string; amberFg: string },
 ): string | null => {
   if (day) {
-    if (day.kind === "ENTRY") return ACCENT;
+    if (day.kind === "ENTRY") return colors.primary;
     // A category may carry its own colour; fall back to the rose the design
     // uses for every kind of day off.
-    if (day.kind === "ABSENCE") return day.color ?? ROSE;
-    if (day.kind === "VACATION" || day.kind === "HOLIDAY") return ROSE;
+    if (day.kind === "ABSENCE") return day.color ?? colors.destructive;
+    if (day.kind === "VACATION" || day.kind === "HOLIDAY")
+      return colors.destructive;
   }
-  return missing ? AMBER : null;
+  return missing ? colors.amberFg : null;
 };
 
 export function MonthCalendar({
@@ -61,13 +63,14 @@ export function MonthCalendar({
   onPrev: () => void;
   onNext: () => void;
 }) {
+  const colors = useColors();
   const byDate = new Map(days.map((d) => [d.date, d]));
   const cells = monthGrid(year, month);
 
   const renderCell = (cell: CalendarCell) => {
     const isSelected = cell.date === selected;
     const dot = cell.inMonth
-      ? dotColor(byDate.get(cell.date), missingDays.has(cell.date))
+      ? dotColor(byDate.get(cell.date), missingDays.has(cell.date), colors)
       : null;
 
     return (
@@ -92,8 +95,13 @@ export function MonthCalendar({
                 ? "font-semibold text-primary-foreground"
                 : cell.inMonth
                   ? "text-foreground"
-                  : "text-muted-foreground/45"
+                  : ""
             }`}
+            style={
+              !isSelected && !cell.inMonth
+                ? { color: withAlpha(colors.mutedForeground, 0.45) }
+                : undefined
+            }
           >
             {parseEntryDate(cell.date).getDate()}
           </Text>
@@ -101,7 +109,7 @@ export function MonthCalendar({
             <View
               className="absolute bottom-1 h-[5px] w-[5px] rounded-full"
               style={{
-                backgroundColor: isSelected ? "#ffffff" : dot,
+                backgroundColor: isSelected ? colors.primaryForeground : dot,
               }}
             />
           ) : null}
@@ -119,7 +127,7 @@ export function MonthCalendar({
           className="h-7 w-7 items-center justify-center rounded-full bg-primary"
           accessibilityRole="button"
         >
-          <FontAwesome name="chevron-left" size={12} color="#ffffff" />
+          <Icon name="left" size={14} color={colors.primaryForeground} />
         </Pressable>
         <Text className="text-[15.5px] font-semibold text-foreground">
           {monthLabel(year, month)}
@@ -130,7 +138,7 @@ export function MonthCalendar({
           className="h-7 w-7 items-center justify-center rounded-full bg-primary"
           accessibilityRole="button"
         >
-          <FontAwesome name="chevron-right" size={12} color="#ffffff" />
+          <Icon name="right" size={14} color={colors.primaryForeground} />
         </Pressable>
       </View>
 

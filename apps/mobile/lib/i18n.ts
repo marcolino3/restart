@@ -13,6 +13,12 @@ export const i18n = new I18n({
 i18n.defaultLocale = defaultLocale;
 i18n.enableFallback = true;
 
+// The messages are shared with the web app, which runs them through next-intl
+// and so writes interpolations as `{name}`. i18n-js looks for `%{name}` by
+// default and would leave ours in the output verbatim, so point it at the ICU
+// form instead.
+i18n.placeholder = /(?:\{(\w+)\})/g;
+
 const deviceLocale = (getLocales()[0]?.languageCode ?? defaultLocale) as Locale;
 i18n.locale = ["de", "en"].includes(deviceLocale) ? deviceLocale : defaultLocale;
 

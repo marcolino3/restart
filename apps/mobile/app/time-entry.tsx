@@ -19,7 +19,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { Icon } from "@/features/time-tracking/Icon";
+import { useColors, withAlpha } from "@/lib/theme";
 
 import {
   createEntry,
@@ -29,6 +30,7 @@ import {
   updateEntry,
 } from "@/lib/time-tracking";
 import { DateField, TimeField } from "@/features/time-tracking/DateTimeField";
+import { BackHeader, RoundButton } from "@/features/time-tracking/ui";
 import {
   combineDateTime,
   formatDayLong,
@@ -41,7 +43,6 @@ import { t } from "@/lib/i18n";
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-const ACCENT_INK = "#ffffff";
 
 /** Worked minutes for the values currently in the form, or null if incomplete. */
 const previewMinutes = (
@@ -63,6 +64,7 @@ const previewMinutes = (
 
 export default function TimeEntryScreen() {
   const router = useRouter();
+  const colors = useColors();
   const params = useLocalSearchParams<{
     id?: string;
     employeeId?: string;
@@ -188,28 +190,29 @@ export default function TimeEntryScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerClassName="gap-4 p-5"
         >
-          <View className="flex-row items-center gap-3">
-            <Pressable
-              onPress={() => router.back()}
-              hitSlop={8}
-              className="h-[38px] w-[38px] items-center justify-center rounded-full"
-              accessibilityRole="button"
-              accessibilityLabel={t("Common.cancel")}
-            >
-              <FontAwesome name="chevron-left" size={17} color="#26251f" />
-            </Pressable>
-            <Text className="flex-1 text-center text-[17px] font-semibold text-foreground">
-              {DATE_RE.test(date)
-                ? formatDayLong(date)
-                : t("TimeTracking.addEntry")}
-            </Text>
-            <View className="h-[38px] w-[38px]" />
-          </View>
+          <BackHeader
+            title={
+              DATE_RE.test(date) ? formatDayLong(date) : t("TimeTracking.addEntry")
+            }
+            onBack={() => router.back()}
+            backLabel={t("Common.cancel")}
+            action={
+              <RoundButton
+                icon="edit"
+                label={t("MobileNav.edit")}
+                small
+                disabled
+              />
+            }
+          />
 
           {/* The design's green day header: recorded span left, total right. */}
           <View className="flex-row items-center gap-4 rounded-band bg-primary p-[18px]">
             <View className="flex-1">
-              <Text className="text-[12.5px] text-primary-foreground/80">
+              <Text
+                className="text-[12.5px]"
+                style={{ color: withAlpha(colors.primaryForeground, 0.8) }}
+              >
                 {t("TimeTracking.worked")}
               </Text>
               <Text className="mt-0.5 text-lg font-semibold text-primary-foreground">
@@ -220,7 +223,10 @@ export default function TimeEntryScreen() {
               <Text className="font-mono-bold text-[27px] text-primary-foreground">
                 {minutes != null ? formatDuration(minutes) : "–"}
               </Text>
-              <Text className="text-[11.5px] text-primary-foreground/80">
+              <Text
+                className="text-[11.5px]"
+                style={{ color: withAlpha(colors.primaryForeground, 0.8) }}
+              >
                 {t("TimeTracking.break")} {breakMin || "0"}′
               </Text>
             </View>
@@ -256,7 +262,7 @@ export default function TimeEntryScreen() {
 
           <View className="gap-1.5">
             <View className="flex-row items-center gap-3 rounded-lg bg-field px-4 py-3">
-              <FontAwesome name="coffee" size={16} color="#837d70" />
+              <Icon name="pause" size={16} color={colors.mutedForeground} />
               <View className="flex-1">
                 <Text className="text-[12.5px] text-muted-foreground">
                   {t("TimeTracking.breakMinutes")}
@@ -267,7 +273,7 @@ export default function TimeEntryScreen() {
                   keyboardType="numeric"
                   maxLength={4}
                   className="p-0 text-[15px] font-semibold text-foreground"
-                  placeholderTextColor="#837d70"
+                  placeholderTextColor={colors.mutedForeground}
                 />
               </View>
             </View>
@@ -289,7 +295,7 @@ export default function TimeEntryScreen() {
                 multiline
                 maxLength={255}
                 className="min-h-16 p-0 text-[15px] text-foreground"
-                placeholderTextColor="#837d70"
+                placeholderTextColor={colors.mutedForeground}
               />
             </View>
             {errors.notes ? (
@@ -304,7 +310,7 @@ export default function TimeEntryScreen() {
               busy ? "opacity-60" : ""
             }`}
           >
-            <FontAwesome name="check" size={16} color={ACCENT_INK} />
+            <Icon name="check" size={16} color={colors.primaryForeground} strokeWidth={2.6} />
             <Text className="text-sm font-semibold text-primary-foreground">
               {t("TimeTracking.saveEntry")}
             </Text>
@@ -318,7 +324,7 @@ export default function TimeEntryScreen() {
                 busy ? "opacity-60" : ""
               }`}
             >
-              <FontAwesome name="trash-o" size={16} color="#a3452e" />
+              <Icon name="x" size={16} color={colors.destructive} />
               <Text className="text-sm font-semibold text-destructive">
                 {t("TimeTracking.deleteEntry")}
               </Text>

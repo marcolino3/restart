@@ -6,12 +6,14 @@
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { Icon } from "@/features/time-tracking/Icon";
+import { useColors } from "@/lib/theme";
 
 import { t } from "@/lib/i18n";
 
 export default function AbsencesTab() {
   const router = useRouter();
+  const colors = useColors();
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
@@ -24,7 +26,7 @@ export default function AbsencesTab() {
           onPress={() => router.push("/sick-leave")}
           className="flex-row items-center justify-center gap-2 rounded-lg border border-border bg-card p-3.5 active:opacity-70"
         >
-          <FontAwesome name="plus" size={16} color="#26251f" />
+          <Icon name="plus" size={16} color={colors.foreground} />
           <Text className="text-sm font-semibold text-foreground">
             {t("SickLeave.title")}
           </Text>

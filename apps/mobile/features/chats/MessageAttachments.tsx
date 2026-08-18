@@ -2,6 +2,7 @@ import { Linking, Pressable, Text, View } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import type { MessageAttachment } from "./chats-api";
 import { attachmentUrl } from "./chats-api";
+import { useColors, withAlpha } from "@/lib/theme";
 
 function humanSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -20,6 +21,7 @@ interface Props {
  * web MessageAttachments; token-based styling sits inside either bubble colour.
  */
 export function MessageAttachments({ attachments, mine }: Props) {
+  const colors = useColors();
   if (attachments.length === 0) return null;
   return (
     <View className="flex-col gap-1">
@@ -29,14 +31,17 @@ export function MessageAttachments({ attachments, mine }: Props) {
           <Pressable
             key={att.id}
             onPress={() => void Linking.openURL(attachmentUrl(att.id))}
-            className={`flex-row items-center gap-2 rounded-lg px-2.5 py-1.5 ${
-              mine ? "bg-primary-foreground/15" : "bg-background/70"
-            }`}
+            className="flex-row items-center gap-2 rounded-lg px-2.5 py-1.5"
+            style={{
+              backgroundColor: mine
+                ? withAlpha(colors.primaryForeground, 0.15)
+                : withAlpha(colors.background, 0.7),
+            }}
           >
             <FontAwesome
               name={isImage ? "file-image-o" : "file-text-o"}
               size={13}
-              color={mine ? "#ffffff" : "#6b7280"}
+              color={mine ? colors.primaryForeground : colors.mutedForeground}
             />
             <Text
               numberOfLines={1}
@@ -47,9 +52,12 @@ export function MessageAttachments({ attachments, mine }: Props) {
               {att.originalName}
             </Text>
             <Text
-              className={`text-xs ${
-                mine ? "text-primary-foreground/70" : "text-muted-foreground"
-              }`}
+              className={`text-xs ${mine ? "" : "text-muted-foreground"}`}
+              style={
+                mine
+                  ? { color: withAlpha(colors.primaryForeground, 0.7) }
+                  : undefined
+              }
             >
               {humanSize(att.sizeBytes)}
             </Text>

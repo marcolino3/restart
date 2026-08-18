@@ -12,6 +12,7 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useRouter } from "expo-router";
 import { ensureActiveOrg } from "@/lib/active-org";
 import { gqlErrorMessage } from "@/lib/time-tracking";
+import { useColors, withAlpha } from "@/lib/theme";
 import { t } from "@/lib/i18n";
 import {
   fetchContacts,
@@ -28,6 +29,7 @@ type Contact = { id: string; name: string };
  * straight into the fresh conversation.
  */
 export default function NewChatScreen() {
+  const colors = useColors();
   const router = useRouter();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,17 +130,17 @@ export default function NewChatScreen() {
             value={groupName}
             onChangeText={setGroupName}
             placeholder={t("Chats.groupNamePlaceholder")}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.mutedForeground}
             className="rounded-md border border-border bg-background px-3 py-2.5 text-base text-foreground"
           />
         ) : null}
         <View className="flex-row items-center gap-2 rounded-md border border-border bg-background px-3">
-          <FontAwesome name="search" size={14} color="#9ca3af" />
+          <FontAwesome name="search" size={14} color={colors.mutedForeground} />
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder={t("Chats.searchPlaceholder")}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.mutedForeground}
             className="flex-1 py-2.5 text-base text-foreground"
           />
         </View>
@@ -168,8 +170,13 @@ export default function NewChatScreen() {
               <Pressable
                 onPress={() => toggle(item.id)}
                 className={`flex-row items-center gap-3 rounded-lg px-2 py-2.5 ${
-                  active ? "bg-primary/10" : "active:bg-muted"
+                  active ? "" : "active:bg-muted"
                 }`}
+                style={
+                  active
+                    ? { backgroundColor: withAlpha(colors.primary, 0.1) }
+                    : undefined
+                }
               >
                 <View className="h-9 w-9 items-center justify-center rounded-full bg-muted">
                   <Text className="text-xs font-semibold text-muted-foreground">
@@ -180,7 +187,7 @@ export default function NewChatScreen() {
                   {item.name}
                 </Text>
                 {active ? (
-                  <FontAwesome name="check" size={16} color="#3a7d44" />
+                  <FontAwesome name="check" size={16} color={colors.primary} />
                 ) : null}
               </Pressable>
             );

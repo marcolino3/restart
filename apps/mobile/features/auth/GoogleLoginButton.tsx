@@ -1,5 +1,7 @@
 import { ActivityIndicator, Image, Pressable, Text } from "react-native";
 
+import { t } from "@/lib/i18n";
+
 // The Google mark in its brand colours, as the design's login screen shows it
 // ("Mit Google fortfahren"). Inlined as a data URI so the button needs no SVG
 // renderer (react-native-svg is not a dependency) and no asset round-trip.
@@ -22,13 +24,17 @@ export function GoogleLoginButton({
   onPress,
   loading,
   disabled,
-  label = "Mit Google fortfahren",
+  label,
 }: {
   onPress: () => void;
   loading: boolean;
   disabled: boolean;
   label?: string;
 }) {
+  // Resolved here, not as a parameter default: a default is evaluated when the
+  // module loads, before i18n has picked the device locale.
+  const text = label ?? t("Auth.continueWithGoogle");
+
   return (
     <Pressable
       onPress={onPress}
@@ -47,7 +53,7 @@ export function GoogleLoginButton({
             accessibilityIgnoresInvertColors
           />
           <Text className="text-[14.5px] font-semibold text-foreground">
-            {label}
+            {text}
           </Text>
         </>
       )}

@@ -31,7 +31,13 @@ import {
   MonthCalendar,
   MonthSummary,
 } from "@/features/time-tracking/MonthCalendar";
-import { EntryRow, RowTag, SectionHeader } from "@/features/time-tracking/ui";
+import {
+  BackHeader,
+  EntryRow,
+  RoundButton,
+  RowTag,
+  SectionHeader,
+} from "@/features/time-tracking/ui";
 import { parseEntryDate, todayEntryDate } from "@/features/time-tracking/date-utils";
 import { t } from "@/lib/i18n";
 
@@ -145,9 +151,23 @@ export default function HistoryTab() {
         refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}
       >
         <View className="gap-4 px-5 pb-32 pt-2">
-          <Text className="text-center text-[17px] font-semibold text-foreground">
-            {t("MobileNav.tabHistory")}
-          </Text>
+          <BackHeader
+            title={t("MobileNav.tabHistory")}
+            // A tab may be the first screen in the stack; fall back to "Heute"
+            // so the arrow always leads somewhere.
+            onBack={() =>
+              router.canGoBack() ? router.back() : router.replace("/(tabs)/employee")
+            }
+            backLabel={t("MobileNav.back")}
+            action={
+              <RoundButton
+                icon="sum"
+                label={t("MobileNav.summary")}
+                small
+                disabled
+              />
+            }
+          />
 
           {error ? <Text className="text-destructive">{error}</Text> : null}
 

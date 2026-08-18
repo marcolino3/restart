@@ -11,10 +11,9 @@ import {
   TextInput,
   View,
 } from "react-native";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { Icon, type IconName } from "@/features/time-tracking/Icon";
+import { useColors } from "@/lib/theme";
 
-const SOFT = "#837d70";
-const ACCENT = "#3a7d44";
 
 /** "R" tile plus the product name. */
 export function Wordmark() {
@@ -44,7 +43,7 @@ export function LoginField({
   onSubmitEditing,
   trailing,
 }: {
-  icon: React.ComponentProps<typeof FontAwesome>["name"];
+  icon: IconName;
   caption: string;
   value: string;
   onChangeText: (v: string) => void;
@@ -55,15 +54,18 @@ export function LoginField({
   onSubmitEditing?: () => void;
   trailing?: React.ReactNode;
 }) {
+  const colors = useColors();
   const [focused, setFocused] = React.useState(false);
 
   return (
     <View
-      className={`flex-row items-center gap-3 rounded-[18px] bg-card px-4 py-3.5 shadow-sm shadow-black/5 ${
-        focused ? "border-2 border-primary" : ""
+      // The border is always present, only its colour changes: a border that
+      // appears on focus would shift the contents by its own width.
+      className={`flex-row items-center gap-3 rounded-[18px] border-2 bg-card px-4 py-[13px] shadow-sm shadow-black/5 ${
+        focused ? "border-primary" : "border-transparent"
       }`}
     >
-      <FontAwesome name={icon} size={18} color={SOFT} />
+      <Icon name={icon} size={18} color={colors.mutedForeground} />
       <View className="flex-1">
         <Text className="text-[11px] font-semibold text-muted-foreground">
           {caption}
@@ -75,13 +77,13 @@ export function LoginField({
           onBlur={() => setFocused(false)}
           onSubmitEditing={onSubmitEditing}
           placeholder={placeholder}
-          placeholderTextColor="#a8a294"
+          placeholderTextColor={colors.mutedForeground}
           secureTextEntry={secureTextEntry}
           autoComplete={autoComplete}
           keyboardType={keyboardType}
           autoCapitalize="none"
           autoCorrect={false}
-          className="mt-px p-0 text-[15px] text-foreground"
+          className="mt-px p-0 text-[15px] font-medium text-foreground"
         />
       </View>
       {trailing}
@@ -103,6 +105,8 @@ export function PrimaryButton({
   disabled?: boolean;
   className?: string;
 }) {
+  const colors = useColors();
+
   return (
     <Pressable
       onPress={onPress}
@@ -113,7 +117,7 @@ export function PrimaryButton({
         disabled || loading ? "opacity-50" : ""
       } ${className}`}
       style={{
-        shadowColor: ACCENT,
+        shadowColor: colors.primary,
         shadowOpacity: 0.34,
         shadowOffset: { width: 0, height: 8 },
         shadowRadius: 20,
@@ -121,12 +125,79 @@ export function PrimaryButton({
       }}
     >
       {loading ? (
-        <ActivityIndicator color="#ffffff" />
+        <ActivityIndicator color={colors.primaryForeground} />
       ) : (
         <Text className="text-[15px] font-semibold text-primary-foreground">
           {label}
         </Text>
       )}
+    </Pressable>
+  );
+}
+
+/**
+ * `.orgpick` — one organization to choose from: a square initials tile, the
+ * role over the name, and a chevron. `active` renders the filled accent variant
+ * the design gives the currently selected org.
+ */
+export function OrgRow({
+  initials,
+  caption,
+  name,
+  active = false,
+  onPress,
+}: {
+  initials: string;
+  caption: string;
+  name: string;
+  active?: boolean;
+  onPress: () => void;
+}) {
+  const colors = useColors();
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${caption}: ${name}`}
+      accessibilityState={{ selected: active }}
+      className={`flex-row items-center gap-[11px] rounded-[18px] px-[15px] py-3 ${
+        active ? "bg-accent" : "bg-card shadow-sm shadow-black/5"
+      }`}
+    >
+      <View
+        className={`h-[34px] w-[34px] items-center justify-center rounded-[11px] ${
+          active ? "bg-primary" : "bg-field"
+        }`}
+      >
+        <Text
+          className={`text-[12.5px] font-bold ${
+            active ? "text-primary-foreground" : "text-muted-foreground"
+          }`}
+        >
+          {initials}
+        </Text>
+      </View>
+      <View className="flex-1">
+        <Text
+          className={`text-[11px] font-semibold ${
+            active ? "text-accent-foreground" : "text-muted-foreground"
+          }`}
+        >
+          {caption}
+        </Text>
+        <Text
+          numberOfLines={1}
+          className="mt-px text-sm font-semibold text-foreground"
+        >
+          {name}
+        </Text>
+      </View>
+      <Icon
+        name="right"
+        size={16}
+        color={active ? colors.accentForeground : colors.mutedForeground}
+      />
     </Pressable>
   );
 }

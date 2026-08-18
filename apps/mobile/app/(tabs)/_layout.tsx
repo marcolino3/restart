@@ -4,22 +4,17 @@
  * that starts a time entry.
  */
 import React from "react";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Tabs, useRouter } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
+import { Icon, type IconName } from "@/features/time-tracking/Icon";
+import { useColors } from "@/lib/theme";
 import { t } from "@/lib/i18n";
 
 type TabBarProps = NonNullable<React.ComponentProps<typeof Tabs>["tabBar"]>;
 type TabBarPropsArg = Parameters<TabBarProps>[0];
 type TabRoute = TabBarPropsArg["state"]["routes"][number];
 
-type IconName = React.ComponentProps<typeof FontAwesome>["name"];
-
-const ACCENT = "#3a7d44";
-const INK = "#26251f";
-const SOFT = "#837d70";
-const PANEL = "#ffffff";
 
 const TAB_LABEL_KEYS: Record<string, string> = {
   employee: "MobileNav.tabToday",
@@ -29,17 +24,18 @@ const TAB_LABEL_KEYS: Record<string, string> = {
 };
 
 const TAB_ICONS: Record<string, IconName> = {
-  employee: "clock-o",
+  employee: "clock",
   history: "calendar",
-  absences: "sun-o",
-  more: "ellipsis-h",
+  absences: "calendarOff",
+  more: "more",
 };
 
-/** The four surrounding slots, in the order the design shows them. */
+/** The four slots around the stamp button, in the design's order. */
 const VISIBLE_TAB_NAMES = ["employee", "history", "absences", "more"];
 
 function FabTabBar({ state, navigation }: TabBarPropsArg) {
   const router = useRouter();
+  const colors = useColors();
   const routes = VISIBLE_TAB_NAMES.map((name) =>
     state.routes.find((route) => route.name === name),
   ).filter((route): route is TabRoute => Boolean(route));
@@ -47,7 +43,7 @@ function FabTabBar({ state, navigation }: TabBarPropsArg) {
   const renderTab = (route: TabRoute) => {
     const routeIndex = state.routes.findIndex((r) => r.key === route.key);
     const isFocused = state.index === routeIndex;
-    const color = isFocused ? INK : SOFT;
+    const color = isFocused ? colors.foreground : colors.mutedForeground;
     const label = TAB_LABEL_KEYS[route.name]
       ? t(TAB_LABEL_KEYS[route.name])
       : route.name;
@@ -70,10 +66,10 @@ function FabTabBar({ state, navigation }: TabBarPropsArg) {
         accessibilityLabel={label}
         style={{ alignItems: "center", justifyContent: "center", gap: 5 }}
       >
-        <FontAwesome
+        <Icon
           size={21}
-          name={TAB_ICONS[route.name] ?? "circle"}
-          color={isFocused ? ACCENT : SOFT}
+          name={TAB_ICONS[route.name] ?? "more"}
+          color={isFocused ? colors.primary : colors.mutedForeground}
         />
         <Text style={{ color, fontSize: 10.5, fontWeight: "600" }}>
           {label}
@@ -92,7 +88,7 @@ function FabTabBar({ state, navigation }: TabBarPropsArg) {
         bottom: 14,
         height: 68,
         paddingHorizontal: 6,
-        backgroundColor: PANEL,
+        backgroundColor: colors.card,
         borderRadius: 26,
         flexDirection: "row",
         alignItems: "center",
@@ -111,9 +107,9 @@ function FabTabBar({ state, navigation }: TabBarPropsArg) {
 
       <View style={{ flex: 1, alignItems: "center" }}>
         <Pressable
-          onPress={() => router.push("/time-entry")}
+          onPress={() => router.push("/capture-time")}
           accessibilityRole="button"
-          accessibilityLabel={t("TimeTracking.addEntry")}
+          accessibilityLabel={t("TimeTracking.captureWorkTime")}
           style={{
             width: 62,
             height: 62,
@@ -121,18 +117,18 @@ function FabTabBar({ state, navigation }: TabBarPropsArg) {
             marginTop: -26,
             borderRadius: 999,
             borderWidth: 5,
-            borderColor: PANEL,
-            backgroundColor: ACCENT,
+            borderColor: colors.card,
+            backgroundColor: colors.primary,
             alignItems: "center",
             justifyContent: "center",
             elevation: 6,
-            shadowColor: ACCENT,
+            shadowColor: colors.primary,
             shadowOpacity: 0.42,
             shadowOffset: { width: 0, height: 8 },
             shadowRadius: 20,
           }}
         >
-          <FontAwesome name="plus" size={26} color="#ffffff" />
+          <Icon name="fingerprint" size={26} color={colors.primaryForeground} />
         </Pressable>
       </View>
 
@@ -164,22 +160,15 @@ export default function TabLayout() {
         options={{ title: t("MobileNav.tabAbsences") }}
       />
       <Tabs.Screen name="more" options={{ title: t("MobileNav.tabMore") }} />
-      {/* Reachable from "Mehr", not from the bar itself. */}
-      <Tabs.Screen
-        name="index"
-        options={{ title: t("MobileNav.tabToday"), href: null }}
-      />
-      <Tabs.Screen
-        name="parent"
-        options={{ title: t("MobileNav.tabChildren"), href: null }}
-      />
+      {/* Reachable from "Mehr", not a slot of its own — the design has four. */}
       <Tabs.Screen
         name="chats"
         options={{ title: t("MobileNav.tabChats"), href: null }}
       />
+      {/* Forwards to "Heute"; never a slot of its own. */}
       <Tabs.Screen
-        name="teacher"
-        options={{ title: t("MobileNav.moreClasses"), href: null }}
+        name="index"
+        options={{ title: t("MobileNav.tabToday"), href: null }}
       />
     </Tabs>
   );

@@ -9,7 +9,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as AppleAuthentication from "expo-apple-authentication";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { Icon } from "@/features/time-tracking/Icon";
+import { useColors } from "@/lib/theme";
 
 import { GoogleLoginButton } from "@/features/auth/GoogleLoginButton";
 import {
@@ -19,6 +20,7 @@ import {
   Wordmark,
 } from "@/features/auth/login-ui";
 import { signIn } from "@/lib/auth-client";
+import { t } from "@/lib/i18n";
 
 /**
  * Native login, in the design's "0 · Login" layout. Apple sign-in stays — it
@@ -26,6 +28,7 @@ import { signIn } from "@/lib/auth-client";
  * flow behind it, so Apple takes that slot instead of a dead button.
  */
 export default function LoginScreen() {
+  const colors = useColors();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -39,7 +42,8 @@ export default function LoginScreen() {
     setLoading("email");
     const { error: signInError } = await signIn.email({ email, password });
     setLoading(null);
-    if (signInError) setError(signInError.message ?? "Login failed");
+    if (signInError)
+      setError(signInError.message ?? t("Auth.signInError"));
   };
 
   const onGoogleSignIn = async () => {
@@ -50,7 +54,8 @@ export default function LoginScreen() {
       callbackURL: "/",
     });
     setLoading(null);
-    if (signInError) setError(signInError.message ?? "Google sign-in failed");
+    if (signInError)
+      setError(signInError.message ?? t("Auth.googleSignInError"));
   };
 
   const onAppleSignIn = async () => {
@@ -65,7 +70,7 @@ export default function LoginScreen() {
           ],
         });
         if (!credential.identityToken) {
-          throw new Error("Apple did not return an identity token");
+          throw new Error(t("Auth.appleNoIdentityToken"));
         }
         const { error: signInError } = await signIn.social({
           provider: "apple",
@@ -75,17 +80,18 @@ export default function LoginScreen() {
           callbackURL: "/",
         });
         if (signInError)
-          throw new Error(signInError.message ?? "Apple sign-in failed");
+          throw new Error(signInError.message ?? t("Auth.appleSignInError"));
       } else {
         const { error: signInError } = await signIn.social({
           provider: "apple",
           callbackURL: "/",
         });
         if (signInError)
-          throw new Error(signInError.message ?? "Apple sign-in failed");
+          throw new Error(signInError.message ?? t("Auth.appleSignInError"));
       }
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Apple sign-in failed";
+      const message =
+        e instanceof Error ? e.message : t("Auth.appleSignInError");
       if (!message.includes("ERR_REQUEST_CANCELED")) setError(message);
     } finally {
       setLoading(null);
@@ -109,20 +115,19 @@ export default function LoginScreen() {
             <Wordmark />
 
             <Text className="mt-5 text-[27px] font-semibold leading-tight text-foreground">
-              Willkommen{"\n"}zurück.
+              {t("Auth.welcomeBack")}
             </Text>
             <Text className="mt-2 text-[13.5px] leading-5 text-muted-foreground">
-              Melde dich an, um deine Zeit zu erfassen und den Schulalltag im
-              Blick zu behalten.
+              {t("Auth.mobileLoginSubtitle")}
             </Text>
 
             <View className="mt-5 gap-2.5">
               <LoginField
-                icon="envelope-o"
-                caption="E-Mail"
+                icon="mail"
+                caption={t("Auth.email")}
                 value={email}
                 onChangeText={setEmail}
-                placeholder="du@schule.ch"
+                placeholder={t("Auth.mobileEmailPlaceholder")}
                 autoComplete="email"
                 keyboardType="email-address"
                 onSubmitEditing={() => void onEmailSignIn()}
@@ -130,7 +135,7 @@ export default function LoginScreen() {
 
               <LoginField
                 icon="lock"
-                caption="Passwort"
+                caption={t("Auth.password")}
                 value={password}
                 onChangeText={setPassword}
                 placeholder="••••••••"
@@ -143,13 +148,24 @@ export default function LoginScreen() {
                     hitSlop={8}
                     accessibilityRole="button"
                     accessibilityLabel={
-                      showPassword ? "Passwort verbergen" : "Passwort anzeigen"
+                      showPassword
+                        ? t("Auth.hidePassword")
+                        : t("Auth.showPassword")
                     }
                   >
-                    <FontAwesome
-                      name={showPassword ? "eye-slash" : "eye"}
+                    {/*
+                     * The design has one eye glyph, no struck-through variant,
+                     * so the state shows as accent vs. muted; the button's
+                     * label still announces which action it performs.
+                     */}
+                    <Icon
+                      name="eye"
                       size={18}
-                      color="#837d70"
+                      color={
+                        showPassword
+                          ? colors.primary
+                          : colors.mutedForeground
+                      }
                     />
                   </Pressable>
                 }
@@ -160,7 +176,7 @@ export default function LoginScreen() {
               ) : null}
 
               <PrimaryButton
-                label="Anmelden"
+                label={t("Auth.signIn")}
                 onPress={() => void onEmailSignIn()}
                 loading={loading === "email"}
                 disabled={busy || !email || !password}
@@ -168,7 +184,7 @@ export default function LoginScreen() {
               />
             </View>
 
-            <Separator label="oder" />
+            <Separator label={t("Auth.or")} />
 
             <View className="gap-2.5">
               <GoogleLoginButton
@@ -193,8 +209,7 @@ export default function LoginScreen() {
             </View>
 
             <Text className="mt-auto py-5 text-center text-xs leading-5 text-muted-foreground">
-              Mit der Anmeldung akzeptierst du die Nutzungsbedingungen und den
-              Datenschutz.
+              {t("Auth.mobileTerms")}
             </Text>
           </View>
         </ScrollView>

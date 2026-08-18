@@ -6,7 +6,7 @@
  * grid, and the most recent days close the screen. Every number is taken from
  * the backend as delivered; nothing is recomputed here.
  */
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -17,7 +17,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
+
+import { Icon } from "@/features/time-tracking/Icon";
+import { useColors } from "@/lib/theme";
 
 import { useSession } from "@/lib/auth-client";
 import { setActiveOrg } from "@/lib/gql-client";
@@ -32,23 +34,36 @@ import {
   type TimeEntry,
 } from "@/lib/time-tracking";
 import { TimerBand } from "@/features/time-tracking/TimerBand";
+import { activeOrgName } from "@/lib/active-org";
 import {
+  DateLocationLine,
   EntryRow,
+  GreetingHeader,
   MetricCard,
   RowTag,
   SectionHeader,
 } from "@/features/time-tracking/ui";
-import { formatDateLine, todayEntryDate } from "@/features/time-tracking/date-utils";
+import {
+  formatDateLine,
+  todayEntryDate,
+} from "@/features/time-tracking/date-utils";
 import { t } from "@/lib/i18n";
 
-const ICON_ON_PRIMARY = "#ffffff";
-const ICON_MUTED = "#837d70";
 
 /** How many days the home screen previews before "Verlauf" takes over. */
 const PREVIEW_DAYS = 3;
 
+/** The design greets by time of day: morning until 11, afternoon until 17. */
+const greetingKey = (): string => {
+  const hour = new Date().getHours();
+  if (hour < 11) return t("MobileNav.greetingMorning");
+  if (hour < 17) return t("MobileNav.greetingAfternoon");
+  return t("MobileNav.greetingEvening");
+};
+
 export default function EmployeeTab() {
   const router = useRouter();
+  const colors = useColors();
   const { data: session } = useSession();
   const activeOrgId =
     (session as { activeOrganizationId?: string | null } | undefined)
@@ -58,6 +73,7 @@ export default function EmployeeTab() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [orgName, setOrgName] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -70,6 +86,18 @@ export default function EmployeeTab() {
     } finally {
       setLoading(false);
     }
+  }, [activeOrgId]);
+
+  // The place next to the date. Loaded separately: it is decoration, so a
+  // failure here must not keep the screen's figures from rendering.
+  useEffect(() => {
+    let cancelled = false;
+    void activeOrgName(activeOrgId).then((name) => {
+      if (!cancelled) setOrgName(name);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [activeOrgId]);
 
   // Runs on mount and every time the tab regains focus, e.g. after
@@ -96,7 +124,7 @@ export default function EmployeeTab() {
   const openCreate = () => {
     if (!data?.employeeId) return;
     router.push({
-      pathname: "/time-entry",
+      pathname: "/capture-time",
       params: { employeeId: data.employeeId },
     });
   };
@@ -155,6 +183,23 @@ export default function EmployeeTab() {
       .flatMap((g) => g.days)
       .find((d) => d.date === today)?.plannedMinutes ?? 0;
 
+  /**
+   * When the day is projected to end: start plus the day's target plus the
+   * break already taken. Null unless the clock is running and a target exists,
+   * since the design's line would otherwise state a time nothing backs.
+   */
+  const expectedEnd = (() => {
+    const started = data.openEntry?.startedAt;
+    if (!started || plannedToday <= 0) return null;
+    const end = new Date(
+      new Date(started).getTime() +
+        (plannedToday + (todayEntry?.breakMinutes ?? 0)) * 60_000,
+    );
+    return `${String(end.getHours()).padStart(2, "0")}:${String(
+      end.getMinutes(),
+    ).padStart(2, "0")}`;
+  })();
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       <ScrollView
@@ -162,22 +207,24 @@ export default function EmployeeTab() {
         refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}
       >
         <View className="gap-4 px-5 pb-32 pt-2">
-          <View className="flex-row items-center gap-3">
-            <View className="flex-1">
-              <Text className="text-sm text-muted-foreground">
-                {formatDateLine(new Date())}
-              </Text>
-              <Text className="text-[21px] font-semibold text-foreground">
-                {t("TimeTracking.myTime")}
-              </Text>
-            </View>
-          </View>
+          <GreetingHeader
+            greeting={greetingKey()}
+            name={session?.user?.name ?? t("TimeTracking.myTime")}
+            notificationsLabel={t("MobileNav.notifications")}
+          />
+
+          <DateLocationLine
+            date={formatDateLine(new Date())}
+            location={orgName}
+          />
 
           {error ? <Text className="text-destructive">{error}</Text> : null}
 
           <TimerBand
             startedAt={data.openEntry?.startedAt ?? null}
             plannedMinutes={plannedToday}
+            breakMinutes={todayEntry?.breakMinutes ?? null}
+            expectedEnd={expectedEnd}
             busy={busy}
             onStart={() => void runClock(startClock)}
             onStop={() => void runClock(stopClock)}
@@ -186,22 +233,20 @@ export default function EmployeeTab() {
 
           <View className="flex-row gap-3">
             <MetricCard
-              icon={
-                <FontAwesome
-                  name="sign-in"
-                  size={17}
-                  color={ICON_ON_PRIMARY}
-                />
-              }
+              icon={<Icon name="in" size={17} color={colors.primaryForeground} />}
               label={t("TimeTracking.startTime")}
               value={timeOf(todayEntry?.startedAt)}
             />
             <MetricCard
               icon={
-                <FontAwesome
-                  name="sign-out"
+                <Icon
+                  name="out"
                   size={17}
-                  color={todayEntry?.endedAt ? ICON_ON_PRIMARY : ICON_MUTED}
+                  color={
+                    todayEntry?.endedAt
+                      ? colors.primaryForeground
+                      : colors.mutedForeground
+                  }
                 />
               }
               label={t("TimeTracking.endTime")}
@@ -213,9 +258,7 @@ export default function EmployeeTab() {
 
           <View className="flex-row gap-3">
             <MetricCard
-              icon={
-                <FontAwesome name="bar-chart" size={16} color={ICON_ON_PRIMARY} />
-              }
+              icon={<Icon name="sum" size={17} color={colors.primaryForeground} />}
               label={t("TimeTracking.netBalance")}
               hint={t("TimeTracking.period")}
               value={formatDuration(net)}
@@ -223,15 +266,12 @@ export default function EmployeeTab() {
             />
             <MetricCard
               icon={
-                <FontAwesome
-                  name="calendar-o"
-                  size={16}
-                  color={ICON_ON_PRIMARY}
-                />
+                <Icon name="calendarOff" size={17} color={colors.primaryForeground} />
               }
               label={t("TimeTracking.absenceDays")}
               hint={t("TimeTracking.period")}
               value={String(data.balance?.absenceDaysCount ?? 0)}
+              unit={t("TimeTracking.daysUnit")}
             />
           </View>
 

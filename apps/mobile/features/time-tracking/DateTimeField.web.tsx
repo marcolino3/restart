@@ -11,8 +11,10 @@ import { Text, View } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 
 import { formatDayLong } from "./date-utils";
+import { useColors } from "@/lib/theme";
+import { Icon } from "./Icon";
+import { PickRow, TimeValue } from "./sheet-ui";
 
-const ICON = "#837d70";
 
 /** The bare input, sized to cover the field so the whole row is clickable. */
 const inputStyle: React.CSSProperties = {
@@ -42,6 +44,8 @@ function FieldShell({
   error?: string | null;
   input: React.ReactNode;
 }) {
+  const colors = useColors();
+
   return (
     <View className="gap-1.5">
       <View
@@ -49,7 +53,7 @@ function FieldShell({
           error ? "border border-destructive" : ""
         }`}
       >
-        <FontAwesome name={icon} size={17} color={ICON} />
+        <FontAwesome name={icon} size={17} color={colors.mutedForeground} />
         <View className="flex-1">
           <Text className="text-[12.5px] text-muted-foreground">{caption}</Text>
           <Text className="text-[15px] font-semibold text-foreground">
@@ -90,6 +94,77 @@ export function DateField({
         />
       }
     />
+  );
+}
+
+/**
+ * The date row of the capture sheet — the design's `.pick` shape with the
+ * calendar glyph trailing instead of a chevron, as opposed to the soft
+ * `DateField` used in forms.
+ */
+export function DateCard({
+  label,
+  value,
+  onChange,
+  error,
+}: {
+  label: string;
+  value: string;
+  onChange: (date: string) => void;
+  error?: string | null;
+}) {
+  const colors = useColors();
+
+  return (
+    <View className="gap-1.5">
+      <View className="relative">
+        <PickRow
+          caption={label}
+          value={value ? formatDayLong(value) : "–"}
+          trailing={<Icon name="calendar" size={18} color={colors.mutedForeground} />}
+        />
+        <input
+          type="date"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-label={label}
+          style={inputStyle}
+        />
+      </View>
+      {error ? <Text className="text-xs text-destructive">{error}</Text> : null}
+    </View>
+  );
+}
+
+/**
+ * The large time inside the capture sheet's span card. Same picker as
+ * `TimeField`, but drawn as the design's `.frow2 .fv` rather than a field row.
+ */
+export function TimeValueField({
+  label,
+  value,
+  onChange,
+  active = false,
+  onFocus,
+}: {
+  label: string;
+  value: string;
+  onChange: (time: string) => void;
+  active?: boolean;
+  onFocus?: () => void;
+}) {
+  return (
+    <View className="relative flex-1">
+      <TimeValue caption={label} value={value || "–"} active={active} />
+      <input
+        type="time"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={onFocus}
+        aria-label={label}
+        style={inputStyle}
+      />
+    </View>
   );
 }
 
