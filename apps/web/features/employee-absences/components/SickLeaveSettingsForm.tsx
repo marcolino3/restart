@@ -94,9 +94,9 @@ export function SickLeaveSettingsForm({
   };
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6 p-4 sm:p-6">
+    <div className="mx-auto w-full max-w-2xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold">{t("settingsTitle")}</h1>
+        <h3 className="text-lg font-semibold">{t("settingsTitle")}</h3>
         <p className="text-sm text-muted-foreground">
           {t("settingsDescription")}
         </p>
