@@ -2,7 +2,7 @@
 
 import { graphql } from "@restart/shared-types";
 import { GetOrganizationsQuery } from "@restart/shared-types/graphql";
-import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
+import { serverCookieGqlClientWithoutRedirect } from "@/lib/graphql/server-cookie-graphql-client";
 
 const GetOrganizationsDocument = graphql(`
   query GetOrganizations {
@@ -17,7 +17,10 @@ const GetOrganizationsDocument = graphql(`
 `);
 
 export async function getOrganizationsAction() {
-  const client = await serverCookieGqlClient();
+  // No auto-redirect: this runs in the admin layout, where a caller without
+  // an active org must still reach the page. The error fallback below is the
+  // correct outcome there.
+  const client = await serverCookieGqlClientWithoutRedirect();
 
   try {
     const { organizations } =

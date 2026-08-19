@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { graphql } from "@restart/shared-types";
 import { OrganizationNameQuery } from "@restart/shared-types/graphql";
-import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
+import { serverCookieGqlClientWithoutRedirect } from "@/lib/graphql/server-cookie-graphql-client";
 
 export type ImpersonationInfo = {
   isImpersonating: boolean;
@@ -72,7 +72,7 @@ export const getImpersonationInfoAction =
       let organizationName: string | undefined;
       if (organizationId) {
         try {
-          const client = await serverCookieGqlClient();
+          const client = await serverCookieGqlClientWithoutRedirect();
           const { organization } = await client.request<OrganizationNameQuery>(
             OrganizationNameDocument,
             { id: organizationId }

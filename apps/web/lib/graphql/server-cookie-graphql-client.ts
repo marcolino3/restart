@@ -18,7 +18,38 @@ export const readSessionCookieHeader = async (): Promise<string> => {
 };
 
 /**
+ * Builds a GraphQL client that surfaces auth errors to the caller instead of
+ * redirecting to /sign-in.
+ *
+ * Required for pages that *are* the sign-in destination (`/sign-in`,
+ * `/select-org`) and for any caller that must distinguish "not logged in" from
+ * a hard failure. Redirecting from inside the client turns an unauthenticated
+ * render of /sign-in into a redirect back to /sign-in, which never resolves.
+ */
+export const createGqlClientWithoutRedirect = (cookieHeader: string) => {
+  const url =
+    process.env.INTERNAL_GRAPHQL_API_URL ||
+    process.env.NEXT_PUBLIC_GRAPHQL_API_URL!;
+
+  return new GraphQLClient(url, {
+    headers: { cookie: cookieHeader },
+    fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }),
+  });
+};
+
+/**
+ * Creates a GraphQL client that does not redirect on auth errors.
+ */
+export const serverCookieGqlClientWithoutRedirect = async () => {
+  const cookieHeader = await readSessionCookieHeader();
+  return createGqlClientWithoutRedirect(cookieHeader);
+};
+
+/**
  * Builds a GraphQL client around a pre-resolved cookie header.
+ *
+ * Redirects to /sign-in on auth errors — do not use from the sign-in or
+ * select-org pages (see `createGqlClientWithoutRedirect`).
  *
  * Use this from within `unstable_cache(...)` scopes (combine with
  * `readSessionCookieHeader()` which must be called *outside* the cache).
@@ -64,7 +95,7 @@ export const serverCookieGqlClient = async () => {
   return createGqlClientWithCookieHeader(cookieHeader);
 };
 
-function isAuthError(error: unknown): boolean {
+export function isAuthError(error: unknown): boolean {
   if (error instanceof ClientError) {
     return error.response?.errors?.some(
       (e) =>
