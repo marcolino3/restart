@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   NotFoundException,
@@ -12,6 +13,15 @@ import { Organization } from '@/organizations/entities/organization.entity';
 import { GeocodingService } from '@/google/geocoding.service';
 import { OrganizationAuditLogService } from './organization-audit-log.service';
 import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
+import {
+  BillingInterval,
+  CareModel,
+  EducationLevel,
+  OrgLifecycleStatus,
+  OrgPlan,
+  SchoolType,
+  Sponsorship,
+} from '@restart/shared-schemas/organizations/organization-enums';
 
 // Mock seeders to avoid deep repository calls in unit tests
 jest.mock(
@@ -120,6 +130,7 @@ const txManager = {
       Promise.resolve({ id: 'new-org', ...data }),
     ),
   create: jest.fn((_: unknown, data: Record<string, unknown>) => data),
+  findOne: jest.fn().mockResolvedValue(null),
   getRepository: jest.fn().mockReturnValue({
     create: jest.fn((data: Record<string, unknown>) => data),
     insert: jest.fn().mockResolvedValue({ identifiers: [] }),
@@ -134,6 +145,10 @@ describe('OrganizationsService', () => {
   let auditLog: ReturnType<typeof createMockAuditLogService>;
 
   beforeEach(async () => {
+    // txManager lives at module scope, so its call history has to be cleared
+    // explicitly for the per-call assertions below to be meaningful.
+    txManager.create.mockClear();
+    txManager.save.mockClear();
     orgRepo = createMockRepository();
     em = createMockEntityManager();
     geocoding = createMockGeocodingService();
@@ -162,6 +177,153 @@ describe('OrganizationsService', () => {
       expect(result).toBeDefined();
       expect(txManager.create).toHaveBeenCalled();
       expect(txManager.save).toHaveBeenCalled();
+    });
+
+    // Regression: `name` is optional on the shared profile input, so
+    // `createOrganization(input: {})` used to succeed and leave a nameless
+    // organization that no list or org switcher can show.
+    it.each([
+      ['no name at all', {}],
+      ['an empty name', { name: '' }],
+      ['a whitespace-only name', { name: '   ' }],
+    ])(
+      'should reject creating an organization with %s',
+      async (_label, input) => {
+        await expect(service.create(input)).rejects.toThrow(
+          BadRequestException,
+        );
+        expect(txManager.save).not.toHaveBeenCalled();
+      },
+    );
+
+    it('should persist the full organization profile, not just name and address', async () => {
+      await service.create({
+        name: 'Montessori Rietberg',
+        subdomain: 'rietberg',
+        shortCode: 'MR',
+        sponsorship: Sponsorship.PRIVAT_ANERKANNT,
+        schoolType: SchoolType.MONTESSORI,
+        careModel: CareModel.TAGESSCHULE,
+        activeLevels: [EducationLevel.PRIMARSTUFE],
+        legalEntity: 'Verein',
+        language: 'de-CH',
+        contactSalutation: 'MRS',
+        contactTitle: 'Dr.',
+        contactFirstName: 'Anna',
+        contactLastName: 'Muster',
+        contactRole: 'Leitung',
+        contactEmail: 'anna@example.org',
+        contactPhone: '+41 44 000 00 00',
+        billingEmail: 'billing@example.org',
+        billingAddressSameAsLocation: false,
+        billingAddressExtra: 'c/o Treuhand',
+        plan: OrgPlan.PROFESSIONAL,
+        userLicenseLimit: 50,
+        billingInterval: BillingInterval.MONTHLY,
+        billingAmountChf: 990,
+        storageLimitGb: 100,
+        lifecycleStatus: OrgLifecycleStatus.TRIAL,
+        bvgProvider: 'AXA',
+      });
+
+      expect(txManager.create).toHaveBeenCalledWith(
+        Organization,
+        expect.objectContaining({
+          name: 'Montessori Rietberg',
+          subdomain: 'rietberg',
+          shortCode: 'MR',
+          sponsorship: Sponsorship.PRIVAT_ANERKANNT,
+          schoolType: SchoolType.MONTESSORI,
+          careModel: CareModel.TAGESSCHULE,
+          activeLevels: [EducationLevel.PRIMARSTUFE],
+          legalEntity: 'Verein',
+          language: 'de-CH',
+          contactSalutation: 'MRS',
+          contactTitle: 'Dr.',
+          contactFirstName: 'Anna',
+          contactLastName: 'Muster',
+          contactRole: 'Leitung',
+          contactEmail: 'anna@example.org',
+          contactPhone: '+41 44 000 00 00',
+          billingEmail: 'billing@example.org',
+          billingAddressSameAsLocation: false,
+          billingAddressExtra: 'c/o Treuhand',
+          plan: OrgPlan.PROFESSIONAL,
+          userLicenseLimit: 50,
+          billingInterval: BillingInterval.MONTHLY,
+          billingAmountChf: 990,
+          storageLimitGb: 100,
+          lifecycleStatus: OrgLifecycleStatus.TRIAL,
+          bvgProvider: 'AXA',
+        }),
+      );
+    });
+
+    it('should normalise the subdomain and default timezone and isActive', async () => {
+      await service.create({ name: 'New Org', subdomain: '  RietBerg  ' });
+
+      expect(txManager.create).toHaveBeenCalledWith(
+        Organization,
+        expect.objectContaining({
+          subdomain: 'rietberg',
+          timezone: 'Europe/Berlin',
+          isActive: true,
+        }),
+      );
+    });
+
+    it('should respect an explicitly disabled isActive flag', async () => {
+      await service.create({ name: 'New Org', isActive: false });
+
+      expect(txManager.create).toHaveBeenCalledWith(
+        Organization,
+        expect.objectContaining({ isActive: false }),
+      );
+    });
+
+    it('should still accept the legacy organizationName/organizationSubdomain aliases', async () => {
+      await service.create({
+        organizationName: 'Legacy Org',
+        organizationSubdomain: 'LEGACY',
+      });
+
+      expect(txManager.create).toHaveBeenCalledWith(
+        Organization,
+        expect.objectContaining({ name: 'Legacy Org', subdomain: 'legacy' }),
+      );
+    });
+
+    it('should prefer the canonical name/subdomain over the legacy aliases', async () => {
+      await service.create({
+        name: 'Canonical',
+        subdomain: 'canonical',
+        organizationName: 'Legacy',
+        organizationSubdomain: 'legacy',
+      });
+
+      expect(txManager.create).toHaveBeenCalledWith(
+        Organization,
+        expect.objectContaining({ name: 'Canonical', subdomain: 'canonical' }),
+      );
+    });
+
+    it('should not leak owner credentials into the organization row', async () => {
+      await service.create({
+        name: 'New Org',
+        ownerFirstName: 'Anna',
+        ownerLastName: 'Muster',
+        // no ownerPassword — bcrypt hashing is not what this test covers and
+        // makes it flaky under load.
+        ownerEmail: 'anna@example.org',
+      });
+
+      const [, orgData] = txManager.create.mock.calls[0];
+      expect(orgData).not.toHaveProperty('ownerFirstName');
+      expect(orgData).not.toHaveProperty('ownerLastName');
+      expect(orgData).not.toHaveProperty('ownerEmail');
+      expect(orgData).not.toHaveProperty('ownerPassword');
+      expect(orgData).not.toHaveProperty('organizationName');
+      expect(orgData).not.toHaveProperty('organizationSubdomain');
     });
   });
 

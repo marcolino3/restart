@@ -27,6 +27,8 @@ interface Props {
   width?: string;
   className?: string;
   disabled?: boolean;
+  /** Accessible name for compact rows that carry no visible `label`. */
+  ariaLabel?: string;
   namespace?: string;
 }
 
@@ -48,6 +50,7 @@ export const NumberFormField = ({
   width = "w-full",
   className,
   disabled = false,
+  ariaLabel,
   namespace = "Common",
 }: Props) => {
   const t = useTranslations(namespace);
@@ -64,6 +67,7 @@ export const NumberFormField = ({
             <Input
               type="number"
               inputMode="numeric"
+              aria-label={ariaLabel}
               disabled={disabled}
               min={min}
               max={max}

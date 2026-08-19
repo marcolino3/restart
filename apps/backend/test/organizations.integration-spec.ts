@@ -18,6 +18,15 @@ import { GeocodingService } from '@/google/geocoding.service';
 import { User } from '@/users/entities/user.entity';
 import { CreateBetterAuthTables1777000000001 } from '@/migrations/1777000000001-CreateBetterAuthTables';
 import { createTestingApp, cleanDatabase } from './test-utils';
+import {
+  BillingInterval,
+  CareModel,
+  EducationLevel,
+  OrgLifecycleStatus,
+  OrgPlan,
+  SchoolType,
+  Sponsorship,
+} from '@restart/shared-schemas/organizations/organization-enums';
 
 let actorUserId: string;
 
@@ -44,6 +53,9 @@ describe('OrganizationsService (Integration)', () => {
   let module: TestingModule;
   let dataSource: DataSource;
   let service: OrganizationsService;
+  // `create` rejects a missing/blank name, so every test org needs one; the
+  // counter keeps them distinguishable in assertion output.
+  let orgCounter = 0;
 
   beforeAll(async () => {
     const app = await createTestingApp([OrganizationsTestModule], {
@@ -82,12 +94,127 @@ describe('OrganizationsService (Integration)', () => {
 
   describe('create', () => {
     it('should create an organization with seeded roles and permissions', async () => {
-      const org = await service.create({});
+      const org = await service.create({
+        name: `Integration Org ${++orgCounter}`,
+      });
 
       expect(org).toBeDefined();
       expect(org.id).toBeDefined();
       expect(org.timezone).toBe('Europe/Berlin');
       expect(org.isActive).toBe(true);
+    });
+
+    it('should persist every profile field the update form can submit', async () => {
+      const created = await service.create({
+        name: 'Montessori Rietberg',
+        subdomain: 'RietBerg',
+        domain: 'rietberg.example',
+        street: 'Bahnhofstrasse 1',
+        zip: '8001',
+        city: 'Zuerich',
+        country: 'CH',
+        phone: '+41 44 000 00 00',
+        email: 'info@example.org',
+        website: 'https://example.org',
+        timezone: 'Europe/Zurich',
+        shortCode: 'MR',
+        sponsorship: Sponsorship.PRIVAT_ANERKANNT,
+        schoolType: SchoolType.MONTESSORI,
+        careModel: CareModel.TAGESSCHULE,
+        activeLevels: [
+          EducationLevel.KINDERGARTEN_CASA,
+          EducationLevel.PRIMARSTUFE,
+        ],
+        legalEntity: 'Verein',
+        language: 'de-CH',
+        billingAddressSameAsLocation: false,
+        billingAddressExtra: 'c/o Treuhand',
+        contactSalutation: 'MRS',
+        contactTitle: 'Dr.',
+        contactFirstName: 'Anna',
+        contactLastName: 'Muster',
+        contactRole: 'Leitung',
+        contactEmail: 'anna@example.org',
+        contactPhone: '+41 44 111 11 11',
+        billingEmail: 'billing@example.org',
+        parentMailSenderEmail: 'eltern@example.org',
+        currentSchoolYear: '2026/27',
+        plan: OrgPlan.PROFESSIONAL,
+        userLicenseLimit: 50,
+        billingInterval: BillingInterval.MONTHLY,
+        billingAmountChf: 990,
+        storageLimitGb: 100,
+        lifecycleStatus: OrgLifecycleStatus.TRIAL,
+        bvgProvider: 'AXA',
+        bvgContactPhone: '+41 44 222 22 22',
+        uvgProvider: 'Suva',
+        uvgContactPhone: '+41 44 333 33 33',
+        dailySicknessProvider: 'Helsana',
+        dailySicknessContactPhone: '+41 44 444 44 44',
+      });
+
+      // read back from the DB, not from the in-memory return value
+      const org = await dataSource
+        .getRepository(Organization)
+        .findOneByOrFail({ id: created.id });
+
+      expect(org).toMatchObject({
+        name: 'Montessori Rietberg',
+        subdomain: 'rietberg',
+        domain: 'rietberg.example',
+        street: 'Bahnhofstrasse 1',
+        zip: '8001',
+        city: 'Zuerich',
+        country: 'CH',
+        phone: '+41 44 000 00 00',
+        email: 'info@example.org',
+        website: 'https://example.org',
+        timezone: 'Europe/Zurich',
+        shortCode: 'MR',
+        sponsorship: Sponsorship.PRIVAT_ANERKANNT,
+        schoolType: SchoolType.MONTESSORI,
+        careModel: CareModel.TAGESSCHULE,
+        activeLevels: [
+          EducationLevel.KINDERGARTEN_CASA,
+          EducationLevel.PRIMARSTUFE,
+        ],
+        legalEntity: 'Verein',
+        language: 'de-CH',
+        billingAddressSameAsLocation: false,
+        billingAddressExtra: 'c/o Treuhand',
+        contactSalutation: 'MRS',
+        contactTitle: 'Dr.',
+        contactFirstName: 'Anna',
+        contactLastName: 'Muster',
+        contactRole: 'Leitung',
+        contactEmail: 'anna@example.org',
+        contactPhone: '+41 44 111 11 11',
+        billingEmail: 'billing@example.org',
+        parentMailSenderEmail: 'eltern@example.org',
+        currentSchoolYear: '2026/27',
+        plan: OrgPlan.PROFESSIONAL,
+        userLicenseLimit: 50,
+        billingInterval: BillingInterval.MONTHLY,
+        storageLimitGb: 100,
+        lifecycleStatus: OrgLifecycleStatus.TRIAL,
+        bvgProvider: 'AXA',
+        bvgContactPhone: '+41 44 222 22 22',
+        uvgProvider: 'Suva',
+        uvgContactPhone: '+41 44 333 33 33',
+        dailySicknessProvider: 'Helsana',
+        dailySicknessContactPhone: '+41 44 444 44 44',
+      });
+      expect(Number(org.billingAmountChf)).toBe(990);
+    });
+
+    it('should keep accepting the legacy organizationName/organizationSubdomain aliases', async () => {
+      const org = await service.create({
+        organizationName: 'Legacy Org',
+        organizationSubdomain: 'LEGACY',
+      });
+
+      expect(org.name).toBe('Legacy Org');
+      expect(org.subdomain).toBe('legacy');
     });
   });
 
@@ -97,7 +224,9 @@ describe('OrganizationsService (Integration)', () => {
     });
 
     it('should return false when subdomain is taken', async () => {
-      const org = await service.create({});
+      const org = await service.create({
+        name: `Integration Org ${++orgCounter}`,
+      });
       const repo = dataSource.getRepository(Organization);
       await repo.update(org.id, { subdomain: 'taken-subdomain' });
 
@@ -107,7 +236,9 @@ describe('OrganizationsService (Integration)', () => {
 
   describe('findBySubdomain', () => {
     it('should find an organization by subdomain', async () => {
-      const org = await service.create({});
+      const org = await service.create({
+        name: `Integration Org ${++orgCounter}`,
+      });
       const repo = dataSource.getRepository(Organization);
       await repo.update(org.id, { subdomain: 'my-org', name: 'My Org' });
 
@@ -123,8 +254,12 @@ describe('OrganizationsService (Integration)', () => {
 
   describe('subdomain uniqueness', () => {
     it('should enforce unique subdomains at DB level', async () => {
-      const org1 = await service.create({});
-      const org2 = await service.create({});
+      const org1 = await service.create({
+        name: `Integration Org ${++orgCounter}`,
+      });
+      const org2 = await service.create({
+        name: `Integration Org ${++orgCounter}`,
+      });
 
       const repo = dataSource.getRepository(Organization);
       await repo.update(org1.id, { subdomain: 'unique-subdomain' });
@@ -138,8 +273,12 @@ describe('OrganizationsService (Integration)', () => {
 
   describe('multi-tenant isolation for admin operations', () => {
     it('suspendOrganization only affects the target organization', async () => {
-      const org1 = await service.create({});
-      const org2 = await service.create({});
+      const org1 = await service.create({
+        name: `Integration Org ${++orgCounter}`,
+      });
+      const org2 = await service.create({
+        name: `Integration Org ${++orgCounter}`,
+      });
 
       await service.suspendOrganization(org1.id, 'test reason', actorUserId);
 
@@ -152,8 +291,12 @@ describe('OrganizationsService (Integration)', () => {
     });
 
     it('getOrganizationAuditLog never returns entries from another organization', async () => {
-      const org1 = await service.create({});
-      const org2 = await service.create({});
+      const org1 = await service.create({
+        name: `Integration Org ${++orgCounter}`,
+      });
+      const org2 = await service.create({
+        name: `Integration Org ${++orgCounter}`,
+      });
 
       await service.suspendOrganization(org1.id, 'org1 reason', actorUserId);
       await service.suspendOrganization(org2.id, 'org2 reason', actorUserId);
@@ -172,8 +315,12 @@ describe('OrganizationsService (Integration)', () => {
     });
 
     it('getOrganizationUsage scopes membership/child counts to the given organization', async () => {
-      const org1 = await service.create({});
-      const org2 = await service.create({});
+      const org1 = await service.create({
+        name: `Integration Org ${++orgCounter}`,
+      });
+      const org2 = await service.create({
+        name: `Integration Org ${++orgCounter}`,
+      });
 
       const usage1 = await service.getOrganizationUsage(org1.id);
       const usage2 = await service.getOrganizationUsage(org2.id);

@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { OrganizationFormSchema } from './organization-form.schema'
+import {
+  CreateOrganizationFormSchema,
+  OrganizationFormSchema,
+} from './organization-form.schema'
 
 describe('OrganizationFormSchema', () => {
   const validInput = {
@@ -116,5 +119,31 @@ describe('OrganizationFormSchema', () => {
       expect(result.subdomain).toBe('')
       expect(result.domain).toBe('')
     })
+  })
+})
+
+describe('CreateOrganizationFormSchema', () => {
+  const base = { id: '550e8400-e29b-41d4-a716-446655440000' }
+
+  it('should accept a non-empty name', () => {
+    const result = CreateOrganizationFormSchema.safeParse({
+      ...base,
+      name: 'Acme Corp',
+    })
+    expect(result.success).toBe(true)
+  })
+
+  // Regression: the base schema's `.optional().default('')` neutralises its
+  // own `.min(1)`, which let the create form submit a nameless organization.
+  it.each([
+    ['a missing name', {}],
+    ['an empty name', { name: '' }],
+    ['a whitespace-only name', { name: '   ' }],
+  ])('should reject %s', (_label, override) => {
+    const result = CreateOrganizationFormSchema.safeParse({
+      ...base,
+      ...override,
+    })
+    expect(result.success).toBe(false)
   })
 })

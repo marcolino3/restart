@@ -23,14 +23,18 @@ const OrganizationByIdDocument = graphql(`
       longitude
       isActive
       shortCode
+      sponsorship
       schoolType
+      careModel
       legalEntity
       language
       logoUrl
-      state
       billingAddressSameAsLocation
       billingAddressExtra
-      contactName
+      contactSalutation
+      contactTitle
+      contactFirstName
+      contactLastName
       contactRole
       contactEmail
       contactPhone

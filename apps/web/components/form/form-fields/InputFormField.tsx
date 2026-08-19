@@ -24,6 +24,8 @@ interface Props {
   width?: string;
   className?: string;
   disabled?: boolean;
+  /** Maps to the native `autocomplete` attribute, e.g. `"email"`. */
+  autoComplete?: string;
   onChange?: () => void;
   onBlur?: () => void;
   /**
@@ -45,6 +47,7 @@ export const InputFormField = ({
   width = "w-full",
   className,
   disabled = false,
+  autoComplete,
   onChange: onChangeProp,
   onBlur: onBlurProp,
   namespace = "Common",
@@ -67,6 +70,7 @@ export const InputFormField = ({
               step={step}
               placeholder={placeholder}
               disabled={disabled}
+              autoComplete={autoComplete}
               onChange={(e) => {
                 field.onChange(e);
                 onChangeProp?.();
