@@ -1,5 +1,6 @@
 import { gql } from "graphql-request";
 import { gqlClient } from "./gql-client";
+import { toEntryDate } from "@/features/time-tracking/date-utils";
 
 export type TimeEntry = {
   id: string;
@@ -24,17 +25,51 @@ export type VacationBalance = {
   remainingDays: number;
 };
 
+/** What a day in the monthly overview stands for. */
+export type DailyTimeTrackingKind =
+  | "ENTRY"
+  | "ABSENCE"
+  | "VACATION"
+  | "HOLIDAY"
+  | "NONE";
+
+/** One day inside a monthly group, as the backend computes it. */
+export type DailyTimeTracking = {
+  date: string;
+  kind: DailyTimeTrackingKind;
+  /** Category, vacation or holiday name — only set for the non-ENTRY kinds. */
+  label?: string | null;
+  /** Absence-category colour, if the category defines one. */
+  color?: string | null;
+  workMinutes: number;
+  plannedMinutes: number;
+};
+
+export type MonthlyTimeTrackingGroup = {
+  year: number;
+  /** 1-based, as delivered by the backend. */
+  month: number;
+  workedMinutes: number;
+  plannedMinutes: number;
+  days: DailyTimeTracking[];
+};
+
 export type MyTimeTracking = {
   employeeId: string | null;
   balance: WorkTimeBalance | null;
   vacation: VacationBalance | null;
   entries: TimeEntry[];
   openEntry: TimeEntry | null;
+  /** Working days in the period without an entry — flagged in the calendar. */
+  missingRecordDays: string[];
+  /** Per-month totals and per-day figures; the calendar renders from these. */
+  monthlyGroups: MonthlyTimeTrackingGroup[];
 };
 
 const MyEmployeeIdDocument = gql`
   query MyEmployeeId {
     myEmployeeId
+    timeTrackingPeriodAnchor
   }
 `;
 
@@ -59,6 +94,21 @@ const MyDataDocument = gql`
       notes
       entryDate
       source
+    }
+    myMissingRecordDays(from: $from, to: $to)
+    myMonthlyTimeTracking(from: $from, to: $to) {
+      year
+      month
+      workedMinutes
+      plannedMinutes
+      days {
+        date
+        kind
+        label
+        color
+        workMinutes
+        plannedMinutes
+      }
     }
   }
 `;
@@ -117,14 +167,34 @@ export type UpdateEntryInput = {
   notes?: string | null;
 };
 
-const currentYearRange = () => {
-  const year = new Date().getFullYear();
-  return { from: `${year}-01-01`, to: `${year}-12-31` };
+/**
+ * The org's accounting period, which is what every balance is measured
+ * against. The anchor is an `MM-DD` string: a period runs from the anchor to
+ * the day before the next one, so an anchor of `08-01` puts January in the
+ * period that started the previous August. Hardcoding a calendar year here
+ * would show a different balance than the web app for every org whose anchor
+ * is not 01-01.
+ */
+const periodRange = (anchor: string | null) => {
+  const now = new Date();
+  const [am, ad] = (anchor ?? "01-01").split("-").map(Number);
+  const month = (am || 1) - 1;
+  const day = ad || 1;
+
+  let startYear = now.getFullYear();
+  const anchorThisYear = new Date(startYear, month, day);
+  if (now < anchorThisYear) startYear -= 1;
+
+  const start = new Date(startYear, month, day);
+  // End the day before the anchor repeats, so periods tile without overlap.
+  const end = new Date(startYear + 1, month, day - 1);
+  return { from: toEntryDate(start), to: toEntryDate(end) };
 };
 
 export async function fetchMyTimeTracking(): Promise<MyTimeTracking> {
-  const { myEmployeeId } = await gqlClient.request<{
+  const { myEmployeeId, timeTrackingPeriodAnchor } = await gqlClient.request<{
     myEmployeeId: string | null;
+    timeTrackingPeriodAnchor: string | null;
   }>(MyEmployeeIdDocument);
 
   if (!myEmployeeId) {
@@ -134,14 +204,18 @@ export async function fetchMyTimeTracking(): Promise<MyTimeTracking> {
       vacation: null,
       entries: [],
       openEntry: null,
+      missingRecordDays: [],
+      monthlyGroups: [],
     };
   }
 
-  const { from, to } = currentYearRange();
+  const { from, to } = periodRange(timeTrackingPeriodAnchor);
   const data = await gqlClient.request<{
     myWorkTimeBalance: WorkTimeBalance;
     myVacationBalance: VacationBalance;
     timeTrackingByEmployeeId: TimeEntry[];
+    myMissingRecordDays: string[];
+    myMonthlyTimeTracking: MonthlyTimeTrackingGroup[];
   }>(MyDataDocument, { employeeId: myEmployeeId, from, to });
 
   const entries = data.timeTrackingByEmployeeId ?? [];
@@ -151,6 +225,8 @@ export async function fetchMyTimeTracking(): Promise<MyTimeTracking> {
     vacation: data.myVacationBalance,
     entries,
     openEntry: entries.find((e) => !e.endedAt) ?? null,
+    missingRecordDays: data.myMissingRecordDays ?? [],
+    monthlyGroups: data.myMonthlyTimeTracking ?? [],
   };
 }
 

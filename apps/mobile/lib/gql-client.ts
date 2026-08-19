@@ -1,6 +1,6 @@
 import { GraphQLClient } from "graphql-request";
 
-import { authClient } from "./auth-client";
+import { authCredentials, authHeaders } from "./auth-headers";
 import { API_BASE_URL } from "./env";
 import { ACTIVE_ORG_COOKIE } from "@restart/shared-auth-client";
 
@@ -15,15 +15,12 @@ export const setActiveOrg = (orgId: string | null) => {
 };
 
 export const gqlClient = new GraphQLClient(`${API_BASE_URL}/graphql`, {
-  // credentials: "omit" is REQUIRED on React Native. RN's fetch has a native
-  // shared cookie jar (iOS NSHTTPCookieStorage / Android OkHttp) that would
-  // otherwise override our manually-set Cookie header with whatever it cached
-  // from a prior Set-Cookie — producing "No active session" even though
-  // getCookie() returns a valid cookie. Omitting credentials disables that jar
-  // so only our explicit Cookie header is sent (per the better-auth expo docs).
-  credentials: "omit",
+  // Native replays the session as an explicit Cookie header with the cookie
+  // jar disabled; web lets the browser send its httpOnly cookie instead. See
+  // auth-headers.ts / auth-headers.web.ts for why each side needs the other's
+  // opposite.
+  credentials: authCredentials,
   requestMiddleware: (request) => {
-    const cookie = authClient.getCookie();
     // request.headers is a Headers instance in graphql-request 7; spreading it
     // yields {}, so copy it explicitly before adding ours.
     const base: Record<string, string> = {};
@@ -42,7 +39,7 @@ export const gqlClient = new GraphQLClient(`${API_BASE_URL}/graphql`, {
         // header; send both.
         "content-type": "application/json",
         "apollo-require-preflight": "true",
-        ...(cookie ? { Cookie: cookie } : {}),
+        ...authHeaders(),
         ...(activeOrgId
           ? { [ACTIVE_ORG_COOKIE.toLowerCase()]: activeOrgId }
           : {}),

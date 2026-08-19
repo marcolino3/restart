@@ -14,6 +14,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSession } from "@/lib/auth-client";
 import { ensureActiveOrg } from "@/lib/active-org";
 import { gqlErrorMessage } from "@/lib/time-tracking";
+import { useColors } from "@/lib/theme";
 import { t } from "@/lib/i18n";
 import {
   fetchConversations,
@@ -48,6 +49,7 @@ type Row =
   | { kind: "message"; key: string; message: ChatMessage; startsRun: boolean };
 
 export default function ChatDetailScreen() {
+  const colors = useColors();
   const router = useRouter();
   const { id, title } = useLocalSearchParams<{ id: string; title?: string }>();
   const { data: session } = useSession();
@@ -169,7 +171,7 @@ export default function ChatDetailScreen() {
       {/* Header */}
       <View className="flex-row items-center gap-3 border-b border-border px-3 py-2.5">
         <Pressable onPress={() => router.back()} className="p-1">
-          <FontAwesome name="chevron-left" size={18} color="#3a7d44" />
+          <FontAwesome name="chevron-left" size={18} color={colors.primary} />
         </Pressable>
         <Text
           numberOfLines={1}

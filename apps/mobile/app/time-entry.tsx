@@ -1,3 +1,11 @@
+/**
+ * "Tagesansicht" — one day, editable.
+ *
+ * The design's third screen, minus the multi-block timeline: the backend
+ * allows exactly one entry per day (`assertNoDuplicateForDay`), so a day is
+ * one arrival, one departure, one break and a note. The green band at the top
+ * shows the recorded span and the resulting total.
+ */
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
@@ -11,78 +19,52 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Icon } from "@/features/time-tracking/Icon";
+import { useColors, withAlpha } from "@/lib/theme";
+
 import {
   createEntry,
   deleteEntry,
+  formatDuration,
   gqlErrorMessage,
   updateEntry,
 } from "@/lib/time-tracking";
+import { DateField, TimeField } from "@/features/time-tracking/DateTimeField";
+import { BackHeader, RoundButton } from "@/features/time-tracking/ui";
+import {
+  combineDateTime,
+  formatDayLong,
+  timeValue,
+  toEntryDate,
+  todayEntryDate,
+} from "@/features/time-tracking/date-utils";
 import { t } from "@/lib/i18n";
 
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_RE = /^([01]?\d|2[0-3]):[0-5]\d$/;
 
-const pad = (n: number) => n.toString().padStart(2, "0");
 
-/** Date → local "YYYY-MM-DD". */
-const toDateStr = (d: Date) =>
-  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-
-/** Date → local "HH:MM". */
-const toTimeStr = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-
-/** Local "YYYY-MM-DD" + "HH:MM" → Date (local timezone). */
-const toDate = (date: string, time: string) => {
-  const [y, m, d] = date.split("-").map(Number);
-  const [h, min] = time.split(":").map(Number);
-  return new Date(y, m - 1, d, h, min, 0, 0);
+/** Worked minutes for the values currently in the form, or null if incomplete. */
+const previewMinutes = (
+  date: string,
+  start: string,
+  end: string,
+  breakMin: string,
+): number | null => {
+  if (!DATE_RE.test(date) || !TIME_RE.test(start) || !TIME_RE.test(end)) {
+    return null;
+  }
+  const from = new Date(combineDateTime(date, start)).getTime();
+  const to = new Date(combineDateTime(date, end)).getTime();
+  if (to <= from) return null;
+  const gross = Math.round((to - from) / 60000);
+  const pause = Number(breakMin);
+  return gross - (Number.isInteger(pause) && pause > 0 ? pause : 0);
 };
 
-type FieldProps = {
-  label: string;
-  value: string;
-  onChangeText: (v: string) => void;
-  placeholder?: string;
-  keyboardType?: "default" | "numeric" | "numbers-and-punctuation";
-  multiline?: boolean;
-  maxLength?: number;
-  error?: string | null;
-};
-
-function FormField({
-  label,
-  value,
-  onChangeText,
-  placeholder,
-  keyboardType = "default",
-  multiline = false,
-  maxLength,
-  error,
-}: FieldProps) {
-  return (
-    <View className="gap-1.5">
-      <Text className="text-sm font-medium text-foreground">{label}</Text>
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        keyboardType={keyboardType}
-        multiline={multiline}
-        maxLength={maxLength}
-        autoCapitalize="none"
-        autoCorrect={false}
-        className={`rounded-md border bg-background px-3 py-2.5 text-base text-foreground ${
-          error ? "border-destructive" : "border-border"
-        } ${multiline ? "min-h-20" : ""}`}
-        placeholderTextColor="#9ca3af"
-      />
-      {error ? <Text className="text-xs text-destructive">{error}</Text> : null}
-    </View>
-  );
-}
-
-export default function TimeEntryModal() {
+export default function TimeEntryScreen() {
   const router = useRouter();
+  const colors = useColors();
   const params = useLocalSearchParams<{
     id?: string;
     employeeId?: string;
@@ -94,17 +76,12 @@ export default function TimeEntryModal() {
 
   const isEdit = Boolean(params.id);
   const initialStart = params.startedAt ? new Date(params.startedAt) : null;
-  const initialEnd = params.endedAt ? new Date(params.endedAt) : null;
 
   const [date, setDate] = useState(
-    initialStart ? toDateStr(initialStart) : toDateStr(new Date()),
+    initialStart ? toEntryDate(initialStart) : todayEntryDate(),
   );
-  const [startTime, setStartTime] = useState(
-    initialStart ? toTimeStr(initialStart) : "",
-  );
-  const [endTime, setEndTime] = useState(
-    initialEnd ? toTimeStr(initialEnd) : "",
-  );
+  const [startTime, setStartTime] = useState(timeValue(params.startedAt));
+  const [endTime, setEndTime] = useState(timeValue(params.endedAt));
   const [breakMin, setBreakMin] = useState(
     params.breakMinutes != null && params.breakMinutes !== ""
       ? String(params.breakMinutes)
@@ -116,17 +93,14 @@ export default function TimeEntryModal() {
 
   const validate = (): boolean => {
     const next: Record<string, string> = {};
-    if (!DATE_RE.test(date) || Number.isNaN(toDate(date, "00:00").getTime())) {
-      next.date = t("TimeTracking.invalidDate");
-    }
-    if (!TIME_RE.test(startTime)) {
-      next.startTime = t("TimeTracking.invalidTime");
-    }
-    if (!TIME_RE.test(endTime)) {
-      next.endTime = t("TimeTracking.invalidTime");
-    }
+    if (!DATE_RE.test(date)) next.date = t("TimeTracking.invalidDate");
+    if (!TIME_RE.test(startTime)) next.startTime = t("TimeTracking.invalidTime");
+    if (!TIME_RE.test(endTime)) next.endTime = t("TimeTracking.invalidTime");
     if (!next.date && !next.startTime && !next.endTime) {
-      if (toDate(date, endTime) <= toDate(date, startTime)) {
+      if (
+        new Date(combineDateTime(date, endTime)) <=
+        new Date(combineDateTime(date, startTime))
+      ) {
         next.endTime = t("TimeTracking.endBeforeStart");
       }
     }
@@ -138,9 +112,7 @@ export default function TimeEntryModal() {
     ) {
       next.breakMin = t("TimeTracking.invalidBreak");
     }
-    if (notes.length > 255) {
-      next.notes = t("TimeTracking.noteTooLong");
-    }
+    if (notes.length > 255) next.notes = t("TimeTracking.noteTooLong");
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -149,8 +121,8 @@ export default function TimeEntryModal() {
     if (!validate()) return;
     setBusy(true);
     try {
-      const startedAt = toDate(date, startTime).toISOString();
-      const endedAt = toDate(date, endTime).toISOString();
+      const startedAt = combineDateTime(date, startTime);
+      const endedAt = combineDateTime(date, endTime);
       const breakMinutes = Number(breakMin);
       const trimmedNotes = notes.trim();
       if (isEdit && params.id) {
@@ -205,8 +177,10 @@ export default function TimeEntryModal() {
     );
   };
 
+  const minutes = previewMinutes(date, startTime, endTime, breakMin);
+
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -214,83 +188,130 @@ export default function TimeEntryModal() {
         <ScrollView
           className="flex-1"
           keyboardShouldPersistTaps="handled"
-          contentContainerClassName="gap-5 p-5"
+          contentContainerClassName="gap-4 p-5"
         >
-          <View className="flex-row items-center justify-between">
-            <Text className="text-2xl font-bold text-foreground">
-              {isEdit
-                ? t("TimeTracking.editEntry")
-                : t("TimeTracking.addEntry")}
-            </Text>
-            <Pressable onPress={() => router.back()} hitSlop={8}>
-              <Text className="text-base text-muted-foreground">
-                {t("Common.cancel")}
+          <BackHeader
+            title={
+              DATE_RE.test(date) ? formatDayLong(date) : t("TimeTracking.addEntry")
+            }
+            onBack={() => router.back()}
+            backLabel={t("Common.cancel")}
+            action={
+              <RoundButton
+                icon="edit"
+                label={t("MobileNav.edit")}
+                small
+                disabled
+              />
+            }
+          />
+
+          {/* The design's green day header: recorded span left, total right. */}
+          <View className="flex-row items-center gap-4 rounded-band bg-primary p-[18px]">
+            <View className="flex-1">
+              <Text
+                className="text-[12.5px]"
+                style={{ color: withAlpha(colors.primaryForeground, 0.8) }}
+              >
+                {t("TimeTracking.worked")}
               </Text>
-            </Pressable>
+              <Text className="mt-0.5 text-lg font-semibold text-primary-foreground">
+                {startTime || "–"} – {endTime || "–"}
+              </Text>
+            </View>
+            <View className="items-end">
+              <Text className="font-mono-bold text-[27px] text-primary-foreground">
+                {minutes != null ? formatDuration(minutes) : "–"}
+              </Text>
+              <Text
+                className="text-[11.5px]"
+                style={{ color: withAlpha(colors.primaryForeground, 0.8) }}
+              >
+                {t("TimeTracking.break")} {breakMin || "0"}′
+              </Text>
+            </View>
           </View>
 
-          <FormField
+          <DateField
             label={t("TimeTracking.date")}
             value={date}
-            onChangeText={setDate}
-            placeholder="2026-01-31"
-            keyboardType="numbers-and-punctuation"
-            maxLength={10}
+            onChange={setDate}
             error={errors.date}
           />
 
           <View className="flex-row gap-3">
             <View className="flex-1">
-              <FormField
+              <TimeField
                 label={t("TimeTracking.startTime")}
+                date={date}
                 value={startTime}
-                onChangeText={setStartTime}
-                placeholder="08:00"
-                keyboardType="numbers-and-punctuation"
-                maxLength={5}
+                onChange={setStartTime}
                 error={errors.startTime}
               />
             </View>
             <View className="flex-1">
-              <FormField
+              <TimeField
                 label={t("TimeTracking.endTime")}
+                date={date}
                 value={endTime}
-                onChangeText={setEndTime}
-                placeholder="17:00"
-                keyboardType="numbers-and-punctuation"
-                maxLength={5}
+                onChange={setEndTime}
                 error={errors.endTime}
               />
             </View>
           </View>
 
-          <FormField
-            label={t("TimeTracking.breakMinutes")}
-            value={breakMin}
-            onChangeText={setBreakMin}
-            placeholder="30"
-            keyboardType="numeric"
-            maxLength={4}
-            error={errors.breakMin}
-          />
+          <View className="gap-1.5">
+            <View className="flex-row items-center gap-3 rounded-lg bg-field px-4 py-3">
+              <Icon name="pause" size={16} color={colors.mutedForeground} />
+              <View className="flex-1">
+                <Text className="text-[12.5px] text-muted-foreground">
+                  {t("TimeTracking.breakMinutes")}
+                </Text>
+                <TextInput
+                  value={breakMin}
+                  onChangeText={setBreakMin}
+                  keyboardType="numeric"
+                  maxLength={4}
+                  className="p-0 text-[15px] font-semibold text-foreground"
+                  placeholderTextColor={colors.mutedForeground}
+                />
+              </View>
+            </View>
+            {errors.breakMin ? (
+              <Text className="text-xs text-destructive">
+                {errors.breakMin}
+              </Text>
+            ) : null}
+          </View>
 
-          <FormField
-            label={t("TimeTracking.note")}
-            value={notes}
-            onChangeText={setNotes}
-            multiline
-            maxLength={255}
-            error={errors.notes}
-          />
+          <View className="gap-1.5">
+            <View className="gap-1.5 rounded-lg bg-field px-4 py-3">
+              <Text className="text-[12.5px] text-muted-foreground">
+                {t("TimeTracking.note")}
+              </Text>
+              <TextInput
+                value={notes}
+                onChangeText={setNotes}
+                multiline
+                maxLength={255}
+                className="min-h-16 p-0 text-[15px] text-foreground"
+                placeholderTextColor={colors.mutedForeground}
+              />
+            </View>
+            {errors.notes ? (
+              <Text className="text-xs text-destructive">{errors.notes}</Text>
+            ) : null}
+          </View>
 
           <Pressable
             onPress={save}
             disabled={busy}
-            className={`items-center rounded-md bg-primary px-4 py-4 ${
+            className={`flex-row items-center justify-center gap-2 rounded-lg bg-primary p-3.5 ${
               busy ? "opacity-60" : ""
             }`}
           >
-            <Text className="text-base font-semibold text-primary-foreground">
+            <Icon name="check" size={16} color={colors.primaryForeground} strokeWidth={2.6} />
+            <Text className="text-sm font-semibold text-primary-foreground">
               {t("TimeTracking.saveEntry")}
             </Text>
           </Pressable>
@@ -299,11 +320,12 @@ export default function TimeEntryModal() {
             <Pressable
               onPress={confirmDelete}
               disabled={busy}
-              className={`items-center rounded-md border border-destructive px-4 py-4 ${
+              className={`flex-row items-center justify-center gap-2 rounded-lg border border-border bg-card p-3.5 ${
                 busy ? "opacity-60" : ""
               }`}
             >
-              <Text className="text-base font-semibold text-destructive">
+              <Icon name="x" size={16} color={colors.destructive} />
+              <Text className="text-sm font-semibold text-destructive">
                 {t("TimeTracking.deleteEntry")}
               </Text>
             </Pressable>

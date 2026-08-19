@@ -10,6 +10,7 @@ import {
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
+import { useColors } from "@/lib/theme";
 import { t } from "@/lib/i18n";
 import { uploadAttachment } from "./chats-api";
 
@@ -32,6 +33,7 @@ export function Composer({
   onSend,
   onError,
 }: Props) {
+  const colors = useColors();
   const inputRef = useRef<TextInput>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -133,9 +135,9 @@ export function Composer({
         accessibilityLabel={t("Chats.attach")}
       >
         {uploading ? (
-          <ActivityIndicator size="small" color="#9ca3af" />
+          <ActivityIndicator size="small" color={colors.mutedForeground} />
         ) : (
-          <FontAwesome name="paperclip" size={18} color="#6b7280" />
+          <FontAwesome name="paperclip" size={18} color={colors.mutedForeground} />
         )}
       </Pressable>
       <TextInput
@@ -144,7 +146,7 @@ export function Composer({
         onChangeText={setDraft}
         multiline
         placeholder={placeholder}
-        placeholderTextColor="#9ca3af"
+        placeholderTextColor={colors.mutedForeground}
         style={{ height: Math.max(40, Math.min(120, inputHeight)) }}
         onContentSizeChange={(e) =>
           setInputHeight(e.nativeEvent.contentSize.height + 16)
@@ -156,7 +158,7 @@ export function Composer({
         className="h-11 w-9 items-center justify-center"
         accessibilityLabel={t("Chats.emoji")}
       >
-        <FontAwesome name="smile-o" size={20} color="#6b7280" />
+        <FontAwesome name="smile-o" size={20} color={colors.mutedForeground} />
       </Pressable>
       <Pressable
         onPress={() => void handleSend()}
@@ -169,7 +171,7 @@ export function Composer({
         <FontAwesome
           name="send"
           size={16}
-          color={canSend ? "#fff" : "#9ca3af"}
+          color={canSend ? colors.primaryForeground : colors.mutedForeground}
         />
       </Pressable>
     </View>

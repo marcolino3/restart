@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { reportSickLeave } from "@/lib/sick-leave";
 import { gqlErrorMessage } from "@/lib/time-tracking";
+import { useColors } from "@/lib/theme";
 import { t } from "@/lib/i18n";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -26,6 +27,7 @@ const toDateStr = (d: Date) =>
   `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 export default function SickLeaveModal() {
+  const colors = useColors();
   const router = useRouter();
 
   const [date, setDate] = useState(toDateStr(new Date()));
@@ -114,7 +116,7 @@ export default function SickLeaveModal() {
               className={`rounded-md border bg-background px-3 py-2.5 text-base text-foreground ${
                 errors.date ? "border-destructive" : "border-border"
               }`}
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.mutedForeground}
             />
             {errors.date ? (
               <Text className="text-xs text-destructive">{errors.date}</Text>
@@ -149,7 +151,7 @@ export default function SickLeaveModal() {
                 className={`rounded-md border bg-background px-3 py-2.5 text-base text-foreground ${
                   errors.startTime ? "border-destructive" : "border-border"
                 }`}
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={colors.mutedForeground}
               />
               {errors.startTime ? (
                 <Text className="text-xs text-destructive">
@@ -169,7 +171,7 @@ export default function SickLeaveModal() {
               multiline
               maxLength={500}
               className="min-h-20 rounded-md border border-border bg-background px-3 py-2.5 text-base text-foreground"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.mutedForeground}
             />
             <Text className="text-xs text-muted-foreground">
               {t("SickLeave.commentDescription")}

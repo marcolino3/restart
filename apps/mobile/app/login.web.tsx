@@ -1,14 +1,12 @@
 import { useState } from "react";
 import {
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   Text,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as AppleAuthentication from "expo-apple-authentication";
 import { Icon } from "@/features/time-tracking/Icon";
 import { useColors } from "@/lib/theme";
 
@@ -23,18 +21,23 @@ import { signIn } from "@/lib/auth-client";
 import { t } from "@/lib/i18n";
 
 /**
- * Native login, in the design's "0 · Login" layout. Apple sign-in stays — it
- * exists on native and the design's third SSO slot ("Face ID") has no backend
- * flow behind it, so Apple takes that slot instead of a dead button.
+ * Web login, in the design's "0 · Login" layout. Mirrors login.tsx minus Apple
+ * sign-in: expo-apple-authentication is native-only, and Sign in with Apple on
+ * the web is a separate OAuth setup (its own Services ID and return URL) that
+ * is not configured. Email/password and Google cover the web flow.
+ *
+ * Face ID from the design is left out — there is no passkey or biometric flow
+ * behind it yet, and a button that does nothing is worse than none.
+ *
+ * The session arrives as an httpOnly cookie set by the backend — see
+ * auth-client.web.ts. Nothing here touches the token.
  */
 export default function LoginScreen() {
   const colors = useColors();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState<"email" | "google" | "apple" | null>(
-    null,
-  );
+  const [loading, setLoading] = useState<"email" | "google" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const onEmailSignIn = async () => {
@@ -49,52 +52,17 @@ export default function LoginScreen() {
   const onGoogleSignIn = async () => {
     setError(null);
     setLoading("google");
+    // Full-page redirect to Google and back to the backend callback, which
+    // then returns here. Keep loading set: on success this frame is replaced,
+    // and only an error path ever resumes it.
     const { error: signInError } = await signIn.social({
       provider: "google",
-      callbackURL: "/",
+      callbackURL: window.location.origin,
+      errorCallbackURL: `${window.location.origin}/login`,
     });
-    setLoading(null);
-    if (signInError)
-      setError(signInError.message ?? t("Auth.googleSignInError"));
-  };
-
-  const onAppleSignIn = async () => {
-    setError(null);
-    setLoading("apple");
-    try {
-      if (Platform.OS === "ios") {
-        const credential = await AppleAuthentication.signInAsync({
-          requestedScopes: [
-            AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-            AppleAuthentication.AppleAuthenticationScope.EMAIL,
-          ],
-        });
-        if (!credential.identityToken) {
-          throw new Error(t("Auth.appleNoIdentityToken"));
-        }
-        const { error: signInError } = await signIn.social({
-          provider: "apple",
-          idToken: {
-            token: credential.identityToken,
-          },
-          callbackURL: "/",
-        });
-        if (signInError)
-          throw new Error(signInError.message ?? t("Auth.appleSignInError"));
-      } else {
-        const { error: signInError } = await signIn.social({
-          provider: "apple",
-          callbackURL: "/",
-        });
-        if (signInError)
-          throw new Error(signInError.message ?? t("Auth.appleSignInError"));
-      }
-    } catch (e) {
-      const message =
-        e instanceof Error ? e.message : t("Auth.appleSignInError");
-      if (!message.includes("ERR_REQUEST_CANCELED")) setError(message);
-    } finally {
+    if (signInError) {
       setLoading(null);
+      setError(signInError.message ?? t("Auth.googleSignInError"));
     }
   };
 
@@ -102,16 +70,13 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        className="flex-1"
-      >
+      <KeyboardAvoidingView className="flex-1">
         <ScrollView
           className="flex-1"
           contentContainerClassName="grow px-6"
           keyboardShouldPersistTaps="handled"
         >
-          <View className="grow">
+          <View className="mx-auto w-full max-w-sm grow">
             <Wordmark />
 
             <Text className="mt-5 text-[27px] font-semibold leading-tight text-foreground">
@@ -153,11 +118,6 @@ export default function LoginScreen() {
                         : t("Auth.showPassword")
                     }
                   >
-                    {/*
-                     * The design has one eye glyph, no struck-through variant,
-                     * so the state shows as accent vs. muted; the button's
-                     * label still announces which action it performs.
-                     */}
                     <Icon
                       name="eye"
                       size={18}
@@ -186,27 +146,11 @@ export default function LoginScreen() {
 
             <Separator label={t("Auth.or")} />
 
-            <View className="gap-2.5">
-              <GoogleLoginButton
-                onPress={() => void onGoogleSignIn()}
-                loading={loading === "google"}
-                disabled={busy}
-              />
-
-              {Platform.OS === "ios" ? (
-                <AppleAuthentication.AppleAuthenticationButton
-                  buttonType={
-                    AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
-                  }
-                  buttonStyle={
-                    AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
-                  }
-                  cornerRadius={18}
-                  style={{ width: "100%", height: 52 }}
-                  onPress={onAppleSignIn}
-                />
-              ) : null}
-            </View>
+            <GoogleLoginButton
+              onPress={() => void onGoogleSignIn()}
+              loading={loading === "google"}
+              disabled={busy}
+            />
 
             <Text className="mt-auto py-5 text-center text-xs leading-5 text-muted-foreground">
               {t("Auth.mobileTerms")}
