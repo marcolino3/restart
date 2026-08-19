@@ -5,11 +5,8 @@ import {
   IconBuilding,
   IconBuildingCommunity,
   IconBriefcase,
-  IconCamera,
   IconChartHistogram,
   IconClock,
-  IconFileAi,
-  IconFileDescription,
   IconHeart,
   IconFileText,
   IconLayoutDashboard,
@@ -289,54 +286,6 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
           ],
         }
       : {}),
-    navClouds: [
-      {
-        title: "Capture",
-        icon: IconCamera,
-        isActive: true,
-        url: "#",
-        items: [
-          {
-            title: "Active Proposals",
-            url: "#",
-          },
-          {
-            title: "Archived",
-            url: "#",
-          },
-        ],
-      },
-      {
-        title: "Proposal",
-        icon: IconFileDescription,
-        url: "#",
-        items: [
-          {
-            title: "Active Proposals",
-            url: "#",
-          },
-          {
-            title: "Archived",
-            url: "#",
-          },
-        ],
-      },
-      {
-        title: "Prompts",
-        icon: IconFileAi,
-        url: "#",
-        items: [
-          {
-            title: "Active Proposals",
-            url: "#",
-          },
-          {
-            title: "Archived",
-            url: "#",
-          },
-        ],
-      },
-    ],
     navSecondary: [
       // Org-Settings halten Credentials (SMTP, Google-Service-Account) — daher
       // nur fuer Org-Admins sichtbar. Backend-Guards bleiben massgeblich.
