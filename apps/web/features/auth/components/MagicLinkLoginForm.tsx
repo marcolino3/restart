@@ -2,15 +2,8 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
+import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import {
@@ -23,7 +16,6 @@ import { authClient } from "@/lib/auth-client";
 
 export const MagicLinkLoginForm = () => {
   const t = useTranslations("Auth");
-  const tCommon = useTranslations("Common");
   const locale = useLocale();
   const [sent, setSent] = useState(false);
   const [sentEmail, setSentEmail] = useState("");
@@ -76,24 +68,13 @@ export const MagicLinkLoginForm = () => {
         <p className="text-sm text-muted-foreground">
           {t("magicLinkDescription")}
         </p>
-        <FormField
+        <InputFormField
           name="email"
-          control={form.control}
-          render={({ field }) => (
-            <FormItem className="grid gap-2">
-              <Label htmlFor="magic-link-email">{tCommon("email")}</Label>
-              <FormControl>
-                <Input
-                  {...field}
-                  id="magic-link-email"
-                  type="email"
-                  placeholder={t("emailPlaceholder")}
-                  autoComplete="email"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="email"
+          type="email"
+          placeholder={t("emailPlaceholder")}
+          autoComplete="email"
+          className="grid gap-2"
         />
         <Button
           type="submit"

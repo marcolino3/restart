@@ -4,13 +4,16 @@ import { z } from "zod";
 export const SchoolClassTeacherAssignmentSchema = z.object({
   employeeId: z.string().uuid(),
   role: z.enum(["LEAD", "ASSISTANT"]).default("LEAD"),
-  /** Share of a full teaching load. Empty means "not tracked". */
+  /**
+   * Share of a full teaching load. Empty means "not tracked" — the number
+   * field clears to `null`, older drafts may still carry `""`.
+   */
   workloadPercent: z.coerce
     .number()
     .int()
     .min(0)
     .max(100)
-    .optional()
+    .nullish()
     .or(z.literal("")),
 });
 

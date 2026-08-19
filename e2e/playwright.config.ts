@@ -5,6 +5,9 @@ export default defineConfig({
   // Seeds a better-auth credential account for the superadmin so the
   // authenticated suites can sign in via the UI (see helpers/global-setup).
   globalSetup: './tests/helpers/global-setup.ts',
+  // Deletes every organization/user the fixtures created, so a run leaves the
+  // database as it found it (set E2E_SKIP_TEARDOWN=true to inspect leftovers).
+  globalTeardown: './tests/helpers/global-teardown.ts',
   timeout: 60000,
   retries: process.env.CI ? 2 : 0,
   // CI: github annotations + HTML report (uploaded as artifact on failure).

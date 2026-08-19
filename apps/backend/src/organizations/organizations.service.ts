@@ -1,5 +1,6 @@
 // src/organizations/organizations.service.ts
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -56,20 +57,42 @@ export class OrganizationsService {
    * wird der komplette Vorgang zurueckgerollt.
    */
   async create(input: CreateOrganizationInput) {
+    const {
+      organizationName,
+      organizationSubdomain,
+      ownerFirstName: _ownerFirstName,
+      ownerLastName: _ownerLastName,
+      ownerEmail: _ownerEmail,
+      ownerPassword: _ownerPassword,
+      name,
+      subdomain,
+      timezone,
+      isActive,
+      ...profile
+    } = input;
+
+    // Ohne Namen ist eine Organisation in jeder Liste und jedem Org-Switcher
+    // unsichtbar — abgebrochene Formulare und Test-Fixtures haben so still
+    // namenlose Karteileichen erzeugt. Der Name ist im Input optional, weil
+    // Create und Update denselben Profil-Input teilen; beim Anlegen ist er
+    // Pflicht.
+    const resolvedName = (name ?? organizationName)?.trim();
+    if (!resolvedName) {
+      throw new BadRequestException('Organization name is required');
+    }
+
+    const resolvedSubdomain = (subdomain ?? organizationSubdomain)
+      ?.trim()
+      .toLowerCase();
+
     return this.entityManager.transaction(async (manager) => {
       const org = await manager.save(
         manager.create(Organization, {
-          name: input.organizationName,
-          subdomain: input.organizationSubdomain?.trim().toLowerCase(),
-          street: input.street,
-          zip: input.zip,
-          city: input.city,
-          country: input.country,
-          phone: input.phone,
-          email: input.email,
-          website: input.website,
-          timezone: input.timezone ?? 'Europe/Berlin',
-          isActive: true,
+          ...profile,
+          name: resolvedName,
+          subdomain: resolvedSubdomain,
+          timezone: timezone ?? 'Europe/Berlin',
+          isActive: isActive ?? true,
         }),
       );
 

@@ -72,14 +72,26 @@ export class Organization
   shortCode?: string;
 
   /**
-   * Plain varchar validated against the TS enum in
+   * Sponsorship, schoolType, careModel and activeLevels are four independent
+   * dimensions — funding, pedagogy, care model and age bands. They used to be
+   * squeezed into schoolType alone, which made none of them evaluable.
+   *
+   * All plain varchar validated against the TS enums in
    * packages/shared-schemas/src/organizations/organization-enums.ts, not a
    * PG enum — new values must not require a migration (CLAUDE.md 55P04
    * rule), mirrors organization_feature_toggles.feature_key.
    */
   @Field({ nullable: true })
+  @Column({ name: 'sponsorship', type: 'varchar', length: 50, nullable: true })
+  sponsorship?: string;
+
+  @Field({ nullable: true })
   @Column({ name: 'school_type', type: 'varchar', length: 50, nullable: true })
   schoolType?: string;
+
+  @Field({ nullable: true })
+  @Column({ name: 'care_model', type: 'varchar', length: 50, nullable: true })
+  careModel?: string;
 
   @Field({ nullable: true })
   @Column({
@@ -105,10 +117,6 @@ export class Organization
   logoUrl?: string;
 
   @Field({ nullable: true })
-  @Column({ name: 'state', type: 'varchar', length: 100, nullable: true })
-  state?: string;
-
-  @Field({ nullable: true })
   @Column({
     name: 'billing_address_same_as_location',
     type: 'boolean',
@@ -126,14 +134,42 @@ export class Organization
   })
   billingAddressExtra?: string;
 
+  /** Structured like ContactPerson: salutation + title + first/last name. */
   @Field({ nullable: true })
   @Column({
-    name: 'contact_name',
+    name: 'contact_salutation',
     type: 'varchar',
-    length: 200,
+    length: 20,
     nullable: true,
   })
-  contactName?: string;
+  contactSalutation?: string;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'contact_title',
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+  })
+  contactTitle?: string;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'contact_first_name',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
+  contactFirstName?: string;
+
+  @Field({ nullable: true })
+  @Column({
+    name: 'contact_last_name',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
+  contactLastName?: string;
 
   @Field({ nullable: true })
   @Column({
