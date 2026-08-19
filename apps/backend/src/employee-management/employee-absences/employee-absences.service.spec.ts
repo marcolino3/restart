@@ -139,8 +139,9 @@ describe('EmployeeAbsencesService', () => {
       expect(findArgs.where.employeeId).toBe('emp-own');
     });
 
-    it('wirft 404, wenn die Membership nicht zur aktiven Org gehört', async () => {
-      // Fremd-Org: die org-gefilterte Suche findet die Membership nicht.
+    it('liefert nichts, wenn die Membership nicht zur aktiven Org gehört', async () => {
+      // Fremd-Org: die org-gefilterte Suche findet die Membership nicht — es
+      // darf keine einzige Absenz geladen werden.
       entityManager.findOne.mockResolvedValue(null);
 
       await expect(
@@ -148,20 +149,19 @@ describe('EmployeeAbsencesService', () => {
           orgId: 'org-foreign',
           membershipId: 'mem-1',
         } as unknown as TokenPayload),
-      ).rejects.toBeInstanceOf(NotFoundException);
+      ).resolves.toEqual([]);
       expect(entityManager.find).not.toHaveBeenCalled();
     });
 
-    it('wirft 404, wenn die Membership keinen Mitarbeiter hat', async () => {
+    it('liefert eine leere Liste, wenn die Membership keinen Mitarbeiter hat', async () => {
       entityManager.findOne.mockResolvedValue({
         id: 'mem-1',
         organizationId: 'org-1',
         employee: null,
       });
 
-      await expect(service.findAllForCaller(user)).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
+      await expect(service.findAllForCaller(user)).resolves.toEqual([]);
+      expect(entityManager.find).not.toHaveBeenCalled();
     });
   });
 

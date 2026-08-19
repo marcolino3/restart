@@ -145,11 +145,10 @@ export const ROUTES = {
     sickLeaveSettings: (locale: string) =>
       `/${locale}/admin/settings/sick-leave`,
 
-    // Country Input Templates
-    countryTemplates: (locale: string) =>
-      `/${locale}/admin/settings/country-templates`,
+    // Country Input Templates (SuperAdmin only — not part of org settings)
+    countryTemplates: (locale: string) => `/${locale}/admin/country-templates`,
     countryTemplatesDetail: (locale: string, countryCode: string) =>
-      `/${locale}/admin/settings/country-templates/${countryCode.toUpperCase()}`,
+      `/${locale}/admin/country-templates/${countryCode.toUpperCase()}`,
 
     // Roles
     roles: (locale: string) => `/${locale}/admin/roles`,

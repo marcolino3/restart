@@ -33,6 +33,21 @@ describe('MembershipGuard', () => {
     expect(em.exists).not.toHaveBeenCalled();
   });
 
+  it('allows a SuperAdmin without a membership in the active org', async () => {
+    const ctx = mockGqlExecutionContext({
+      user: mockUser({ membershipId: undefined, isSuperAdmin: true }),
+    });
+    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    expect(em.exists).not.toHaveBeenCalled();
+  });
+
+  it('still rejects a SuperAdmin without an active org', async () => {
+    const ctx = mockGqlExecutionContext({
+      user: mockUser({ orgId: undefined, isSuperAdmin: true }),
+    });
+    await expect(guard.canActivate(ctx)).resolves.toBe(false);
+  });
+
   it('multi-tenant isolation: checks membership scoped to org + user + membership id', async () => {
     em.exists.mockResolvedValue(true);
     const user = mockUser({

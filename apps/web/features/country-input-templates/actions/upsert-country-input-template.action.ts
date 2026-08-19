@@ -48,9 +48,9 @@ export const upsertCountryInputTemplateAction = async (
     const { upsertCountryInputTemplate } = await client.request<{
       upsertCountryInputTemplate: CountryInputTemplate;
     }>(UpsertDocument, { input });
-    revalidatePath(`/${locale}/admin/settings/country-templates`);
+    revalidatePath(`/${locale}/admin/country-templates`);
     revalidatePath(
-      `/${locale}/admin/settings/country-templates/${upsertCountryInputTemplate.countryCode}`,
+      `/${locale}/admin/country-templates/${upsertCountryInputTemplate.countryCode}`,
     );
     return { success: true as const, data: upsertCountryInputTemplate };
   } catch (error) {

@@ -16,7 +16,7 @@ export const deleteCountryInputTemplateAction = async (id: string) => {
   const client = await serverCookieGqlClient();
   try {
     await client.request(DeleteDocument, { id });
-    revalidatePath(`/${locale}/admin/settings/country-templates`);
+    revalidatePath(`/${locale}/admin/country-templates`);
     return { success: true as const };
   } catch (error) {
     console.error(error);

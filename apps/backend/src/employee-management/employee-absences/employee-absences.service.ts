@@ -82,8 +82,10 @@ export class EmployeeAbsencesService {
       where: { id: user.membershipId, organizationId: orgId },
       relations: ['employee'],
     });
+    // A caller without an employee record (e.g. a SuperAdmin browsing an org
+    // they are not staffed in) simply has no own absences — not an error.
     if (!membership?.employee) {
-      throw new NotFoundException('Membership not found.');
+      return [];
     }
     return this.entityManager.find(EmployeeAbsence, {
       where: {

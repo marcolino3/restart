@@ -16,7 +16,14 @@ export class MembershipGuard implements CanActivate {
     const gqlCtx = ctx.getContext<GqlContext>();
     const user = gqlCtx.req.user as TokenPayload;
 
-    if (!user?.orgId || !user?.membershipId) return false;
+    if (!user?.orgId) return false;
+
+    // SuperAdmins can act in any organization, including ones they hold no
+    // membership in. Downstream services must still resolve data by orgId and
+    // tolerate a missing employee record.
+    if (user.isSuperAdmin) return true;
+
+    if (!user.membershipId) return false;
 
     // Harter Check gegen DB (schnell, Index auf orgId/userId/membershipId)
     const exists = await this.entityManager.exists(Membership, {
