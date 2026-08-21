@@ -14,6 +14,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { useSession } from "@/lib/auth-client";
 import { ensureActiveOrg } from "@/lib/active-org";
 import { gqlErrorMessage } from "@/lib/time-tracking";
+import { useColors, withAlpha } from "@/lib/theme";
 import { t } from "@/lib/i18n";
 import {
   fetchConversations,
@@ -28,6 +29,7 @@ import {
 type Filter = "all" | "DIRECT" | "GROUP" | "TEAM";
 
 export default function ChatsTab() {
+  const colors = useColors();
   const router = useRouter();
   const { data: session } = useSession();
   const activeOrgId =
@@ -90,7 +92,7 @@ export default function ChatsTab() {
             value={query}
             onChangeText={setQuery}
             placeholder={t("Chats.searchPlaceholder")}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.mutedForeground}
             className="flex-1 rounded-md border border-border bg-background px-3 py-2.5 text-base text-foreground"
           />
           <Pressable
@@ -98,7 +100,7 @@ export default function ChatsTab() {
             accessibilityLabel={t("Chats.newChat")}
             className="h-11 w-11 shrink-0 items-center justify-center rounded-md bg-primary"
           >
-            <FontAwesome name="plus" size={16} color="#fff" />
+            <FontAwesome name="plus" size={16} color={colors.primaryForeground} />
           </Pressable>
         </View>
         <View className="mt-2 flex-row gap-1">
@@ -167,11 +169,16 @@ export default function ChatsTab() {
               >
                 <View
                   className={`h-11 w-11 items-center justify-center rounded-full ${
-                    isGroup ? "bg-primary/10" : "bg-muted"
+                    isGroup ? "" : "bg-muted"
                   }`}
+                  style={
+                    isGroup
+                      ? { backgroundColor: withAlpha(colors.primary, 0.1) }
+                      : undefined
+                  }
                 >
                   {isGroup ? (
-                    <FontAwesome name="users" size={16} color="#3a7d44" />
+                    <FontAwesome name="users" size={16} color={colors.primary} />
                   ) : (
                     <Text className="text-xs font-semibold text-muted-foreground">
                       {initials(title)}

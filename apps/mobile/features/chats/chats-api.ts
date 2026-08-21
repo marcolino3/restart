@@ -1,6 +1,6 @@
 import { gql } from "graphql-request";
 import { gqlClient } from "@/lib/gql-client";
-import { authClient } from "@/lib/auth-client";
+import { authCredentials, authHeaders } from "@/lib/auth-headers";
 import { API_BASE_URL } from "@/lib/env";
 
 export type ConversationType = "DIRECT" | "GROUP" | "TEAM";
@@ -284,14 +284,17 @@ export function attachmentUrl(attachmentId: string): string {
  * publishes it over the messageAdded subscription, so it arrives in realtime
  * like any text message — no GraphQL round-trip needed here.
  *
- * `credentials: "omit"` is required on React Native so the native cookie jar
- * doesn't override our manual Cookie header (same reason as gql-client.ts).
+ * Session handling is platform-split via auth-headers.ts — manual Cookie
+ * header with the jar off on native, browser-sent cookie on web.
+ *
+ * The FormData part below is React-Native-shaped ({uri, name, type}); a web
+ * caller would have to pass a real File/Blob instead. Chat attachments are
+ * not wired up on web yet.
  */
 export async function uploadAttachment(
   conversationId: string,
   file: { uri: string; name: string; mimeType: string },
 ): Promise<void> {
-  const cookie = authClient.getCookie();
   const form = new FormData();
   // React Native's FormData takes {uri, name, type} for file parts.
   form.append("file", {
@@ -306,10 +309,10 @@ export async function uploadAttachment(
     )}`,
     {
       method: "POST",
-      credentials: "omit",
+      credentials: authCredentials,
       headers: {
         "apollo-require-preflight": "true",
-        ...(cookie ? { Cookie: cookie } : {}),
+        ...authHeaders(),
       },
       body: form,
     },

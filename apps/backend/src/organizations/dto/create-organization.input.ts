@@ -1,6 +1,7 @@
 import { Field, InputType } from '@nestjs/graphql';
 import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 import { Transform, type TransformFnParams } from 'class-transformer';
+import { OrganizationProfileInput } from './organization-profile.input';
 
 // class-transformer types `TransformFnParams.value` as `any`; the inputs
 // here are always plain form/GraphQL string values.
@@ -10,13 +11,15 @@ const EmptyToUndefined = () =>
   );
 
 @InputType()
-export class CreateOrganizationInput {
+export class CreateOrganizationInput extends OrganizationProfileInput {
+  /** @deprecated Use `name`. Kept for the seed scripts. */
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
   @EmptyToUndefined()
   organizationName?: string;
 
+  /** @deprecated Use `subdomain`. Kept for the seed scripts. */
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
@@ -46,52 +49,4 @@ export class CreateOrganizationInput {
   @MinLength(8)
   @EmptyToUndefined()
   ownerPassword?: string;
-
-  @Field(() => String, { nullable: true })
-  @IsOptional()
-  @IsString()
-  @EmptyToUndefined()
-  street?: string;
-
-  @Field(() => String, { nullable: true })
-  @IsOptional()
-  @IsString()
-  @EmptyToUndefined()
-  zip?: string;
-
-  @Field(() => String, { nullable: true })
-  @IsOptional()
-  @IsString()
-  @EmptyToUndefined()
-  city?: string;
-
-  @Field(() => String, { nullable: true })
-  @IsOptional()
-  @IsString()
-  @EmptyToUndefined()
-  country?: string;
-
-  @Field(() => String, { nullable: true })
-  @IsOptional()
-  @IsString()
-  @EmptyToUndefined()
-  phone?: string;
-
-  @Field(() => String, { nullable: true })
-  @IsOptional()
-  @IsEmail()
-  @EmptyToUndefined()
-  email?: string;
-
-  @Field(() => String, { nullable: true })
-  @IsOptional()
-  @IsString()
-  @EmptyToUndefined()
-  website?: string;
-
-  @Field(() => String, { nullable: true })
-  @IsOptional()
-  @IsString()
-  @EmptyToUndefined()
-  timezone?: string;
 }

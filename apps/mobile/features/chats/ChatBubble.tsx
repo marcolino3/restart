@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { formatTime, senderName, initials } from "./chat-display";
+import { useColors, withAlpha } from "@/lib/theme";
 import { t } from "@/lib/i18n";
 import type { ChatMessage } from "./chats-api";
 import { MessageAttachments } from "./MessageAttachments";
@@ -39,6 +40,7 @@ export function ChatBubble({
   onEdit,
   onDelete,
 }: Props) {
+  const colors = useColors();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(message.body);
   const attachments = message.attachments ?? [];
@@ -109,7 +111,7 @@ export function ChatBubble({
           onPress={() => void submitEdit()}
           className="h-9 w-9 items-center justify-center rounded-full bg-primary"
         >
-          <FontAwesome name="check" size={14} color="#fff" />
+          <FontAwesome name="check" size={14} color={colors.primaryForeground} />
         </Pressable>
         <Pressable
           onPress={() => {
@@ -118,7 +120,7 @@ export function ChatBubble({
           }}
           className="h-9 w-9 items-center justify-center rounded-full bg-muted"
         >
-          <FontAwesome name="close" size={14} color="#6b7280" />
+          <FontAwesome name="close" size={14} color={colors.mutedForeground} />
         </Pressable>
       </View>
     );
@@ -151,9 +153,10 @@ export function ChatBubble({
   return (
     <View className="flex-row items-end gap-2">
       <View
-        className={`h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 ${
+        className={`h-8 w-8 shrink-0 items-center justify-center rounded-full ${
           startsRun ? "" : "opacity-0"
         }`}
+        style={{ backgroundColor: withAlpha(colors.primary, 0.1) }}
       >
         <Text className="text-[10px] font-semibold text-primary">
           {initials(author)}

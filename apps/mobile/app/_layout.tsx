@@ -6,7 +6,10 @@ import {
   Geist_600SemiBold,
   Geist_700Bold,
 } from "@expo-google-fonts/geist";
-import { GeistMono_400Regular } from "@expo-google-fonts/geist-mono";
+import {
+  GeistMono_400Regular,
+  GeistMono_700Bold,
+} from "@expo-google-fonts/geist-mono";
 import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -15,6 +18,7 @@ import "react-native-reanimated";
 import "../global.css";
 
 import { useSession } from "@/lib/auth-client";
+import { ThemeProvider as PaletteProvider } from "@/lib/theme";
 
 export { ErrorBoundary } from "expo-router";
 
@@ -31,6 +35,7 @@ export default function RootLayout() {
     Geist_600SemiBold,
     Geist_700Bold,
     GeistMono_400Regular,
+    GeistMono_700Bold,
     ...FontAwesome.font,
   });
 
@@ -52,27 +57,49 @@ function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
 
+  const activeOrgId =
+    (session as { activeOrganizationId?: string | null } | undefined)
+      ?.activeOrganizationId ?? null;
+
   useEffect(() => {
     if (isPending) return;
     const inAuthGroup = segments[0] === "login";
+    const onOrgPicker = segments[0] === "select-org";
     if (!session && !inAuthGroup) {
       router.replace("/login");
-    } else if (session && inAuthGroup) {
-      router.replace("/");
+      return;
     }
-  }, [session, isPending, segments, router]);
+    if (session && inAuthGroup) {
+      router.replace("/");
+      return;
+    }
+    // Signed in without an active org: every org-scoped query would fail with
+    // "No active membership", so the choice comes first. `select-org` resolves
+    // a single membership itself and continues without asking.
+    if (session && !activeOrgId && !onOrgPicker) {
+      router.replace("/select-org");
+    }
+  }, [session, activeOrgId, isPending, segments, router]);
 
   return (
     <ThemeProvider value={DefaultTheme}>
-      <Stack>
+      <PaletteProvider>
+        <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="login"
           options={{ headerShown: false, animation: "fade" }}
         />
-        <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+        <Stack.Screen
+          name="select-org"
+          options={{ headerShown: false, animation: "fade" }}
+        />
         <Stack.Screen
           name="time-entry"
+          options={{ presentation: "modal", headerShown: false }}
+        />
+        <Stack.Screen
+          name="capture-time"
           options={{ presentation: "modal", headerShown: false }}
         />
         <Stack.Screen
@@ -84,7 +111,8 @@ function RootLayoutNav() {
           name="chats/new"
           options={{ presentation: "modal", headerShown: false }}
         />
-      </Stack>
+        </Stack>
+      </PaletteProvider>
     </ThemeProvider>
   );
 }

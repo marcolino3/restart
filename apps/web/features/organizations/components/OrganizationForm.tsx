@@ -15,15 +15,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { PageHead } from "@/components/common/PageHead";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { CountryComboboxFormField } from "@/components/form/form-fields/CountryComboboxFormField";
 import { TimezoneComboboxFormField } from "@/components/form/form-fields/TimezoneComboboxFormField";
 import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
-import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
+import { ComboboxFormField } from "@/components/form/form-fields/ComboboxFormField";
 import { GoogleMapDisplay } from "@/components/google-maps/GoogleMapDisplay";
 import { ROUTES } from "@/constants/routes";
 import { handleAction } from "@/lib/actions/handle-action";
@@ -32,22 +30,24 @@ import { sanitizeFormData } from "@/lib/forms/sanitize-form-data";
 import { cn } from "@/lib/utils";
 import { OrganizationQuery } from "@restart/shared-types/graphql";
 import {
+  CareModel,
+  EducationLevel,
+  ORGANIZATION_LOCALES,
+  SALUTATIONS,
   SchoolType,
+  Sponsorship,
   OrgLifecycleStatus,
 } from "@restart/shared-schemas/organizations/organization-enums";
 
 import {
+  CreateOrganizationFormSchema,
   OrganizationFormSchema,
   OrganizationFormOutput,
 } from "../schemas/organization-form.schema";
 import { updateOrganizationAction } from "../actions/update-organization.action";
-import {
-  createOrganizationAction,
-  CreateOrganizationParams,
-} from "../actions/create-organization.action";
+import { createOrganizationAction } from "../actions/create-organization.action";
 import { checkSubdomainAvailableAction } from "../actions/check-subdomain-available.action";
 import { checkDomainAvailableAction } from "../actions/check-domain-available.action";
-import { SWISS_CANTONS } from "../constants/swiss-cantons";
 import { OrganizationFeaturesTab } from "./OrganizationFeaturesTab";
 import { OrganizationSidebar } from "./OrganizationSidebar";
 
@@ -102,7 +102,11 @@ export const OrganizationForm = ({
   };
 
   const form = useForm({
-    resolver: zodResolver(OrganizationFormSchema),
+    // Create mode requires a name — the base schema treats every field as
+    // optional so the edit form can load a partially filled organization.
+    resolver: zodResolver(
+      isCreate ? CreateOrganizationFormSchema : OrganizationFormSchema,
+    ),
     defaultValues: OrganizationFormSchema.parse(sanitizeFormData(organization)),
   });
 
@@ -142,9 +146,6 @@ export const OrganizationForm = ({
 
   const billingAddressSameAsLocation = form.watch("billingAddressSameAsLocation");
 
-  const [ownerFirstName, setOwnerFirstName] = useState("");
-  const [ownerLastName, setOwnerLastName] = useState("");
-  const [ownerEmail, setOwnerEmail] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
   const onSubmit = async (values: Record<string, unknown>) => {
@@ -158,25 +159,10 @@ export const OrganizationForm = ({
     }
 
     if (isCreate) {
-      const output = values as OrganizationFormOutput;
-      const createValues: CreateOrganizationParams = {
-        organizationName: output.name,
-        organizationSubdomain: output.subdomain,
-        ownerFirstName,
-        ownerLastName,
-        ownerEmail,
-        street: output.street,
-        zip: output.zip,
-        city: output.city,
-        country: output.country,
-        phone: output.phone,
-        email: output.email,
-        website: output.website,
-        timezone: output.timezone,
-      };
-
       setIsCreating(true);
-      const result = await createOrganizationAction(createValues);
+      const result = await createOrganizationAction(
+        values as OrganizationFormOutput
+      );
       setIsCreating(false);
 
       // createOrganizationAction redirects to the edit page on success and
@@ -214,17 +200,15 @@ export const OrganizationForm = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        {!isCreate && (
-          <Link
-            href={ROUTES.admin.organizations(locale)}
-            className="mb-[3px] inline-block text-[12.5px] font-[550] text-muted-foreground hover:text-accent-foreground"
-          >
-            &lsaquo; {tO("backToOrganizations")}
-          </Link>
-        )}
+        <Link
+          href={ROUTES.admin.organizations(locale)}
+          className="mb-[3px] inline-block text-[12.5px] font-[550] text-muted-foreground hover:text-accent-foreground"
+        >
+          &lsaquo; {tO("backToOrganizations")}
+        </Link>
 
         <PageHead
-          title={organization.name}
+          title={isCreate ? tO("createOrganization") : organization.name}
           stacked
           subtitle={
             !isCreate && (
@@ -275,9 +259,13 @@ export const OrganizationForm = ({
             <TabsTrigger value="general">{tO("general")}</TabsTrigger>
             <TabsTrigger value="address">{t("address")}</TabsTrigger>
             <TabsTrigger value="contact">{t("contact")}</TabsTrigger>
-            {!isCreate && (
-              <TabsTrigger value="features">{tO("featuresTitle")}</TabsTrigger>
-            )}
+            <TabsTrigger
+              value="features"
+              disabled={isCreate}
+              title={isCreate ? tO("featuresAvailableAfterCreate") : undefined}
+            >
+              {tO("featuresTitle")}
+            </TabsTrigger>
           </TabsList>
 
           <div
@@ -303,28 +291,75 @@ export const OrganizationForm = ({
                     namespace="Organizations"
                   />
                 </div>
+                {/* Four independent dimensions: who funds the school, which
+                    pedagogy it follows, which age bands it covers and how long
+                    children are looked after. */}
                 <div className="grid grid-cols-2 gap-4">
-                  <SelectFormField
+                  <ComboboxFormField
+                    name="sponsorship"
+                    label="sponsorship"
+                    namespace="Organizations"
+                    width="w-full"
+                    clearable
+                    options={Object.values(Sponsorship).map((value) => ({
+                      value,
+                      label: `sponsorship_${value}`,
+                    }))}
+                  />
+                  <ComboboxFormField
                     name="schoolType"
                     label="schoolType"
                     namespace="Organizations"
+                    width="w-full"
+                    clearable
                     options={Object.values(SchoolType).map((value) => ({
                       value,
                       label: `schoolType_${value}`,
                     }))}
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <ComboboxFormField
+                    name="activeLevels"
+                    label="activeLevels"
+                    namespace="Organizations"
+                    width="w-full"
+                    multiple
+                    options={Object.values(EducationLevel).map((value) => ({
+                      value,
+                      label: `activeLevels_${value}`,
+                    }))}
+                  />
+                  <ComboboxFormField
+                    name="careModel"
+                    label="careModel"
+                    namespace="Organizations"
+                    width="w-full"
+                    clearable
+                    options={Object.values(CareModel).map((value) => ({
+                      value,
+                      label: `careModel_${value}`,
+                    }))}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <InputFormField
                     name="legalEntity"
                     label="legalEntity"
                     namespace="Organizations"
                   />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <InputFormField
+                  <ComboboxFormField
                     name="language"
                     label="language"
                     namespace="Organizations"
+                    width="w-full"
+                    options={ORGANIZATION_LOCALES.map((value) => ({
+                      value,
+                      label: `language_${value}`,
+                    }))}
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <TimezoneComboboxFormField name="timezone" />
                 </div>
                 <Separator />
@@ -354,43 +389,6 @@ export const OrganizationForm = ({
               </CardContent>
             </Card>
 
-            {isCreate && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{tO("createOwnerPanel")}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-[18px]">
-                  <div className="flex gap-4">
-                    <div className="w-1/2 space-y-2">
-                      <Label htmlFor="ownerFirstName">{tO("ownerFirstName")}</Label>
-                      <Input
-                        id="ownerFirstName"
-                        value={ownerFirstName}
-                        onChange={(e) => setOwnerFirstName(e.target.value)}
-                      />
-                    </div>
-                    <div className="w-1/2 space-y-2">
-                      <Label htmlFor="ownerLastName">{tO("ownerLastName")}</Label>
-                      <Input
-                        id="ownerLastName"
-                        value={ownerLastName}
-                        onChange={(e) => setOwnerLastName(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="ownerEmail">{tO("ownerEmail")}</Label>
-                    <Input
-                      id="ownerEmail"
-                      type="email"
-                      value={ownerEmail}
-                      onChange={(e) => setOwnerEmail(e.target.value)}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
           </TabsContent>
 
           <TabsContent value="address" className="mt-0 space-y-6">
@@ -405,17 +403,6 @@ export const OrganizationForm = ({
                   <InputFormField name="city" label="city" width="w-2/3" />
                 </div>
                 <div className="flex gap-4">
-                  <SelectFormField
-                    name="state"
-                    label="state"
-                    namespace="Organizations"
-                    width="w-1/2"
-                    translateOptions={false}
-                    options={SWISS_CANTONS.map((canton) => ({
-                      value: canton.value,
-                      label: canton.label,
-                    }))}
-                  />
                   <CountryComboboxFormField name="country" />
                 </div>
               </CardContent>
@@ -496,11 +483,36 @@ export const OrganizationForm = ({
               </CardHeader>
               <CardContent className="space-y-[18px]">
                 <div className="grid grid-cols-2 gap-4">
+                  <ComboboxFormField
+                    name="contactSalutation"
+                    label="contactSalutation"
+                    namespace="Organizations"
+                    width="w-full"
+                    clearable
+                    options={SALUTATIONS.map((value) => ({
+                      value,
+                      label: `contactSalutation_${value}`,
+                    }))}
+                  />
                   <InputFormField
-                    name="contactName"
-                    label="contactName"
+                    name="contactTitle"
+                    label="contactTitle"
                     namespace="Organizations"
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <InputFormField
+                    name="contactFirstName"
+                    label="contactFirstName"
+                    namespace="Organizations"
+                  />
+                  <InputFormField
+                    name="contactLastName"
+                    label="contactLastName"
+                    namespace="Organizations"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <InputFormField
                     name="contactRole"
                     label="contactRole"

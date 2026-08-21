@@ -18,7 +18,8 @@ interface Props {
   label?: string;
   placeholder?: string;
   description?: string;
-
+  /** Visible rows of the textarea. Falls back to the browser default. */
+  rows?: number;
   width?: string;
   className?: string;
   /** i18n namespace for `label` + `description`. Default `"Common"`. */
@@ -30,6 +31,7 @@ export const TextareaFormField = ({
   label,
   placeholder,
   description,
+  rows,
   width = "w-full",
   className,
   namespace = "Common",
@@ -45,7 +47,7 @@ export const TextareaFormField = ({
         <FormItem className={cn(className, width)}>
           {label && <FormLabel>{t(label)}</FormLabel>}
           <FormControl>
-            <Textarea {...field} placeholder={placeholder} />
+            <Textarea {...field} placeholder={placeholder} rows={rows} />
           </FormControl>
           <FormMessage />
           {description && <FormDescription>{t(description)}</FormDescription>}

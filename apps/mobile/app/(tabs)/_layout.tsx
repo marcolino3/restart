@@ -1,51 +1,49 @@
+/**
+ * The floating tabbar from `features/time-tracking/design-reference.html`:
+ * a white panel card with five slots, the middle one a raised accent button
+ * that starts a time entry.
+ */
 import React from "react";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Tabs, useRouter } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
+import { Icon, type IconName } from "@/features/time-tracking/Icon";
+import { useColors } from "@/lib/theme";
 import { t } from "@/lib/i18n";
 
-type TabBarProps = NonNullable<
-  React.ComponentProps<typeof Tabs>["tabBar"]
->;
+type TabBarProps = NonNullable<React.ComponentProps<typeof Tabs>["tabBar"]>;
 type TabBarPropsArg = Parameters<TabBarProps>[0];
 type TabRoute = TabBarPropsArg["state"]["routes"][number];
 
-type IconName = React.ComponentProps<typeof FontAwesome>["name"];
-
-const ACTIVE_COLOR = "#3a7d44";
-const INACTIVE_COLOR = "#837d70";
-
-function TabBarIcon({ name, color }: { name: IconName; color: string }) {
-  return <FontAwesome size={22} name={name} color={color} />;
-}
 
 const TAB_LABEL_KEYS: Record<string, string> = {
-  index: "MobileNav.tabToday",
-  parent: "MobileNav.tabChildren",
-  chats: "MobileNav.tabChats",
+  employee: "MobileNav.tabToday",
+  history: "MobileNav.tabHistory",
+  absences: "MobileNav.tabAbsences",
   more: "MobileNav.tabMore",
 };
 
 const TAB_ICONS: Record<string, IconName> = {
-  index: "home",
-  parent: "child",
-  chats: "comments",
-  more: "th-large",
+  employee: "clock",
+  history: "calendar",
+  absences: "calendarOff",
+  more: "more",
 };
 
-const VISIBLE_TAB_NAMES = ["index", "parent", "chats", "more"];
+/** The four slots around the stamp button, in the design's order. */
+const VISIBLE_TAB_NAMES = ["employee", "history", "absences", "more"];
 
 function FabTabBar({ state, navigation }: TabBarPropsArg) {
   const router = useRouter();
-  const routes = state.routes.filter((route) =>
-    VISIBLE_TAB_NAMES.includes(route.name),
-  );
+  const colors = useColors();
+  const routes = VISIBLE_TAB_NAMES.map((name) =>
+    state.routes.find((route) => route.name === name),
+  ).filter((route): route is TabRoute => Boolean(route));
 
   const renderTab = (route: TabRoute) => {
     const routeIndex = state.routes.findIndex((r) => r.key === route.key);
     const isFocused = state.index === routeIndex;
-    const color = isFocused ? ACTIVE_COLOR : INACTIVE_COLOR;
+    const color = isFocused ? colors.foreground : colors.mutedForeground;
     const label = TAB_LABEL_KEYS[route.name]
       ? t(TAB_LABEL_KEYS[route.name])
       : route.name;
@@ -66,16 +64,14 @@ function FabTabBar({ state, navigation }: TabBarPropsArg) {
         accessibilityRole="tab"
         accessibilityState={{ selected: isFocused }}
         accessibilityLabel={label}
-        style={{ alignItems: "center", justifyContent: "center", gap: 3 }}
+        style={{ alignItems: "center", justifyContent: "center", gap: 5 }}
       >
-        <TabBarIcon name={TAB_ICONS[route.name] ?? "circle"} color={color} />
-        <Text
-          style={{
-            color,
-            fontSize: 10,
-            fontWeight: isFocused ? "700" : "600",
-          }}
-        >
+        <Icon
+          size={21}
+          name={TAB_ICONS[route.name] ?? "more"}
+          color={isFocused ? colors.primary : colors.mutedForeground}
+        />
+        <Text style={{ color, fontSize: 10.5, fontWeight: "600" }}>
           {label}
         </Text>
       </Pressable>
@@ -87,25 +83,23 @@ function FabTabBar({ state, navigation }: TabBarPropsArg) {
       pointerEvents="box-none"
       style={{
         position: "absolute",
-        left: 18,
-        right: 18,
-        bottom: 16,
-        height: 62,
+        left: 16,
+        right: 16,
+        bottom: 14,
+        height: 68,
         paddingHorizontal: 6,
-        backgroundColor: "rgba(255,255,255,0.88)",
-        borderWidth: 1,
-        borderColor: "rgba(25,20,10,0.08)",
-        borderRadius: 999,
+        backgroundColor: colors.card,
+        borderRadius: 26,
         flexDirection: "row",
         alignItems: "center",
         elevation: 8,
-        shadowColor: "#19140a",
-        shadowOpacity: 0.22,
-        shadowOffset: { width: 0, height: 10 },
-        shadowRadius: 30,
+        shadowColor: "#1e1e19",
+        shadowOpacity: 0.14,
+        shadowOffset: { width: 0, height: 8 },
+        shadowRadius: 28,
       }}
     >
-      {routes.slice(0, Math.ceil(routes.length / 2)).map((route) => (
+      {routes.slice(0, 2).map((route) => (
         <View key={route.key} style={{ flex: 1 }}>
           {renderTab(route)}
         </View>
@@ -113,29 +107,32 @@ function FabTabBar({ state, navigation }: TabBarPropsArg) {
 
       <View style={{ flex: 1, alignItems: "center" }}>
         <Pressable
-          onPress={() => router.push("/time-entry")}
+          onPress={() => router.push("/capture-time")}
           accessibilityRole="button"
-          accessibilityLabel={t("MobileNav.moreTimeTracking")}
+          accessibilityLabel={t("TimeTracking.captureWorkTime")}
           style={{
-            width: 48,
-            height: 48,
-            marginTop: -2,
+            width: 62,
+            height: 62,
+            // Lifted out of the bar, with a panel-coloured ring around it.
+            marginTop: -26,
             borderRadius: 999,
-            backgroundColor: ACTIVE_COLOR,
+            borderWidth: 5,
+            borderColor: colors.card,
+            backgroundColor: colors.primary,
             alignItems: "center",
             justifyContent: "center",
-            elevation: 4,
-            shadowColor: ACTIVE_COLOR,
-            shadowOpacity: 0.3,
-            shadowOffset: { width: 0, height: 4 },
-            shadowRadius: 8,
+            elevation: 6,
+            shadowColor: colors.primary,
+            shadowOpacity: 0.42,
+            shadowOffset: { width: 0, height: 8 },
+            shadowRadius: 20,
           }}
         >
-          <FontAwesome name="plus" size={24} color="#ffffff" />
+          <Icon name="fingerprint" size={26} color={colors.primaryForeground} />
         </Pressable>
       </View>
 
-      {routes.slice(Math.ceil(routes.length / 2)).map((route) => (
+      {routes.slice(2).map((route) => (
         <View key={route.key} style={{ flex: 1 }}>
           {renderTab(route)}
         </View>
@@ -150,20 +147,28 @@ export default function TabLayout() {
       tabBar={(props) => <FabTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
-      <Tabs.Screen name="index" options={{ title: t("MobileNav.tabToday") }} />
-      <Tabs.Screen
-        name="parent"
-        options={{ title: t("MobileNav.tabChildren") }}
-      />
-      <Tabs.Screen name="chats" options={{ title: t("MobileNav.tabChats") }} />
-      <Tabs.Screen name="more" options={{ title: t("MobileNav.tabMore") }} />
-      <Tabs.Screen
-        name="teacher"
-        options={{ title: t("MobileNav.moreClasses"), href: null }}
-      />
       <Tabs.Screen
         name="employee"
-        options={{ title: t("MobileNav.moreTimeTracking"), href: null }}
+        options={{ title: t("MobileNav.tabToday") }}
+      />
+      <Tabs.Screen
+        name="history"
+        options={{ title: t("MobileNav.tabHistory") }}
+      />
+      <Tabs.Screen
+        name="absences"
+        options={{ title: t("MobileNav.tabAbsences") }}
+      />
+      <Tabs.Screen name="more" options={{ title: t("MobileNav.tabMore") }} />
+      {/* Reachable from "Mehr", not a slot of its own — the design has four. */}
+      <Tabs.Screen
+        name="chats"
+        options={{ title: t("MobileNav.tabChats"), href: null }}
+      />
+      {/* Forwards to "Heute"; never a slot of its own. */}
+      <Tabs.Screen
+        name="index"
+        options={{ title: t("MobileNav.tabToday"), href: null }}
       />
     </Tabs>
   );

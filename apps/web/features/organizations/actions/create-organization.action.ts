@@ -6,6 +6,10 @@ import { redirect } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
 import { getLocale } from "next-intl/server";
 import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
+import {
+  OrganizationFormSchema,
+  OrganizationFormOutput,
+} from "../schemas/organization-form.schema";
 
 const CreateOrganizationDocument = graphql(`
   mutation CreateOrganization($input: CreateOrganizationInput!) {
@@ -15,34 +19,24 @@ const CreateOrganizationDocument = graphql(`
   }
 `);
 
-export interface CreateOrganizationParams {
-  organizationName?: string;
-  organizationSubdomain?: string;
-  ownerFirstName?: string;
-  ownerLastName?: string;
-  ownerEmail?: string;
-  street?: string;
-  zip?: string;
-  city?: string;
-  country?: string;
-  phone?: string;
-  email?: string;
-  website?: string;
-  timezone?: string;
-}
+/**
+ * The create form is the update form, so it submits the full organization
+ * profile. `id` only exists to satisfy the shared zod schema and is dropped
+ * before the mutation — the backend assigns the real one.
+ */
+export type CreateOrganizationParams = Omit<OrganizationFormOutput, "id">;
 
-export async function createOrganizationAction(
-  values: CreateOrganizationParams
-) {
+export async function createOrganizationAction(values: OrganizationFormOutput) {
   const locale = await getLocale();
   const client = await serverCookieGqlClient();
+  const { id: _id, ...input } = OrganizationFormSchema.parse(values);
 
   let createdId: string;
   try {
     const { createOrganization } =
       await client.request<CreateOrganizationMutation>(
         CreateOrganizationDocument,
-        { input: values }
+        { input }
       );
     createdId = createOrganization.id;
   } catch (error) {

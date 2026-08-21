@@ -20,7 +20,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SearchInput } from "@/components/common/SearchInput";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -28,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
 import { cn } from "@/lib/utils";
 import { PageHead } from "@/components/common/PageHead";
 import { BackButton } from "@/components/common/BackButton";
@@ -587,17 +586,14 @@ export const LessonFirstBulkEntry = ({ lessons, classes, editGroup }: Props) => 
                 </p>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="note" className="text-sm font-medium">
-                    {t("note")}
-                  </Label>
-                  <Textarea
-                    id="note"
-                    {...form.register("note")}
-                    placeholder={t("notePlaceholder")}
-                    rows={3}
-                  />
-                </div>
+                <TextareaFormField
+                  name="note"
+                  label="note"
+                  placeholder={t("notePlaceholder")}
+                  rows={3}
+                  namespace="RecordKeeping"
+                  className="flex flex-col gap-2"
+                />
 
                 <RecordAttachmentsBlock />
               </CardContent>

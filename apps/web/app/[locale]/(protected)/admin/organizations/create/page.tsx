@@ -1,4 +1,3 @@
-import { getTranslations } from "next-intl/server";
 import { OrganizationForm } from "@/features/organizations/components/OrganizationForm";
 import { OrganizationQuery } from "@restart/shared-types/graphql";
 
@@ -22,14 +21,18 @@ const EMPTY_ORGANIZATION: OrganizationQuery["organization"] = {
   longitude: null,
   isActive: true,
   shortCode: null,
+  sponsorship: null,
   schoolType: null,
+  careModel: null,
   legalEntity: null,
   language: "de-CH",
   logoUrl: null,
-  state: null,
   billingAddressSameAsLocation: true,
   billingAddressExtra: null,
-  contactName: null,
+  contactSalutation: null,
+  contactTitle: null,
+  contactFirstName: null,
+  contactLastName: null,
   contactRole: null,
   contactEmail: null,
   contactPhone: null,
@@ -56,19 +59,12 @@ const EMPTY_ORGANIZATION: OrganizationQuery["organization"] = {
   updatedAt: new Date().toISOString(),
 };
 
-const CreateOrganizationPage = async () => {
-  const tO = await getTranslations("Organizations");
-
-  return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">{tO("createOrganization")}</h1>
-      <OrganizationForm
-        organization={EMPTY_ORGANIZATION}
-        featureToggles={[]}
-        isCreate
-      />
-    </div>
-  );
-};
+const CreateOrganizationPage = () => (
+  <OrganizationForm
+    organization={EMPTY_ORGANIZATION}
+    featureToggles={[]}
+    isCreate
+  />
+);
 
 export default CreateOrganizationPage;

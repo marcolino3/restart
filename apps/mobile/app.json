@@ -44,7 +44,8 @@
         {
           "photosPermission": "Der Zugriff auf deine Fotos wird benötigt, um Bilder als Chat-Anhang zu senden."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,
