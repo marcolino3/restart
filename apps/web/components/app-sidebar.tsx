@@ -5,25 +5,17 @@ import {
   IconBuilding,
   IconBuildingCommunity,
   IconBriefcase,
-  IconCamera,
   IconChartHistogram,
   IconClock,
-  IconDatabase,
-  IconFileAi,
-  IconFileDescription,
-  IconFileWord,
   IconHeart,
-  IconHelp,
   IconFileText,
   IconLayoutDashboard,
   IconLayoutKanban,
   IconListCheck,
   IconMessage,
-  IconReport,
   IconBook,
   IconClipboardCheck,
   IconSchool,
-  IconSearch,
   IconSettings,
   IconShield,
   IconSquareCheck,
@@ -33,7 +25,6 @@ import {
   IconWorld,
 } from "@tabler/icons-react";
 
-import { NavDocuments } from "@/components/nav-documents";
 import { NavGroup } from "@/components/nav-group";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
@@ -295,82 +286,18 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
           ],
         }
       : {}),
-    navClouds: [
-      {
-        title: "Capture",
-        icon: IconCamera,
-        isActive: true,
-        url: "#",
-        items: [
-          {
-            title: "Active Proposals",
-            url: "#",
-          },
-          {
-            title: "Archived",
-            url: "#",
-          },
-        ],
-      },
-      {
-        title: "Proposal",
-        icon: IconFileDescription,
-        url: "#",
-        items: [
-          {
-            title: "Active Proposals",
-            url: "#",
-          },
-          {
-            title: "Archived",
-            url: "#",
-          },
-        ],
-      },
-      {
-        title: "Prompts",
-        icon: IconFileAi,
-        url: "#",
-        items: [
-          {
-            title: "Active Proposals",
-            url: "#",
-          },
-          {
-            title: "Archived",
-            url: "#",
-          },
-        ],
-      },
-    ],
     navSecondary: [
-      {
-        title: tCommon("getHelp"),
-        url: "#",
-        icon: IconHelp,
-      },
-      {
-        title: tCommon("search"),
-        url: "#",
-        icon: IconSearch,
-      },
-    ],
-    documents: [
-      {
-        name: tCommon("dataLibrary"),
-        url: "#",
-        icon: IconDatabase,
-      },
-      {
-        name: tCommon("reports"),
-        url: "#",
-        icon: IconReport,
-      },
-      {
-        name: tCommon("wordAssistant"),
-        url: "#",
-        icon: IconFileWord,
-      },
+      // Org-Settings halten Credentials (SMTP, Google-Service-Account) — daher
+      // nur fuer Org-Admins sichtbar. Backend-Guards bleiben massgeblich.
+      ...(canSeeOrgAdmin
+        ? [
+            {
+              title: tCommon("settings"),
+              url: ROUTES.admin.settings(locale),
+              icon: IconSettings,
+            },
+          ]
+        : []),
     ],
   };
   return (
@@ -412,7 +339,6 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
             items={data.navSuperAdmin}
           />
         )}
-        <NavDocuments items={data.documents} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

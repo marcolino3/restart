@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { PageHead } from "@/components/common/PageHead";
@@ -5,6 +6,7 @@ import { getCurrentUserAction } from "@/features/users/actions/get-current-user.
 import { getSetupStatusAction } from "@/features/setup/actions/get-setup-status.action";
 import { SetupChecklist } from "@/features/setup/components/SetupChecklist";
 import { buildSetupLabels } from "@/features/setup/lib/build-setup-labels";
+import { hasAdminRole } from "@/features/users/lib/admin-roles";
 
 const SetupPage = async () => {
   const t = await getTranslations("Setup");
@@ -16,6 +18,12 @@ const SetupPage = async () => {
         <p>{t("selectOrganizationFirst")}</p>
       </div>
     );
+  }
+
+  // Setup-Assistent ist Org-Administration — Mitarbeitende ohne Admin-Rolle
+  // koennen die verlinkten Schritte ohnehin nicht ausfuehren.
+  if (!(userRes.data.isSuperAdmin || hasAdminRole(userRes.data.roles))) {
+    notFound();
   }
 
   const [locale, setupRes] = await Promise.all([

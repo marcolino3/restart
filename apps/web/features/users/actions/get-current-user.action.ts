@@ -1,6 +1,9 @@
 "use server";
 
-import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
+import {
+  isAuthError,
+  serverCookieGqlClientWithoutRedirect,
+} from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
 
 type UserEmail = {
@@ -75,7 +78,7 @@ const GetAuthContextDocument = gql`
 `;
 
 export const getCurrentUserAction = async () => {
-  const client = await serverCookieGqlClient();
+  const client = await serverCookieGqlClientWithoutRedirect();
   try {
     const data: AuthContextResponse = await client.request(
       GetAuthContextDocument
@@ -105,6 +108,14 @@ export const getCurrentUserAction = async () => {
       },
     };
   } catch (error) {
-    console.log(error);
+    // An unauthenticated caller is an expected state here, not a failure: the
+    // sign-in and select-org pages call this to decide what to render. Returning
+    // { success: false } lets each caller route on its own — redirecting from
+    // inside the GraphQL client would bounce /sign-in back to /sign-in forever.
+    if (isAuthError(error)) {
+      return { success: false as const };
+    }
+    console.error("[getCurrentUserAction]", error);
+    return { success: false as const };
   }
 };

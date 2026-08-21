@@ -8,12 +8,13 @@ import { DashboardAdmissionStagesPanel } from "@/features/dashboard/components/D
 import { DashboardAttentionPanel } from "@/features/dashboard/components/DashboardAttentionPanel";
 import { getClassroomAttentionAction } from "@/features/record-keeping/actions/get-classroom-attention.action";
 import { getClassroomHeatmapAction } from "@/features/record-keeping/actions/get-classroom-heatmap.action";
-import { getSchoolClassesAction } from "@/features/school-classes/actions/get-school-classes.action";
+import { getMyTeachingSchoolClassesAction } from "@/features/school-classes/actions/get-my-teaching-school-classes.action";
 import { getStudentsAction } from "@/features/students/actions/get-students.action";
 import { getSetupStatusAction } from "@/features/setup/actions/get-setup-status.action";
 import { SetupChecklist } from "@/features/setup/components/SetupChecklist";
 import { buildSetupLabels } from "@/features/setup/lib/build-setup-labels";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
+import { hasAdminRole } from "@/features/users/lib/admin-roles";
 
 const TIME_ZONE = "Europe/Zurich";
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -66,13 +67,31 @@ export default async function DashboardPage() {
     );
   }
 
+  // Only ask for what the caller may read — the backend rejects the admission
+  // queries without ADMISSION_APPLICATION_READ, so a teacher would otherwise
+  // trigger a guaranteed 403 on every dashboard load.
+  // Setup-Assistent richtet die Organisation ein — nur fuer Org-Admins.
+  const canSeeSetup =
+    userRes.data.isSuperAdmin || hasAdminRole(userRes.data.roles);
+
+  const canReadAdmissions =
+    userRes.data.isSuperAdmin ||
+    (userRes.data.permissions?.includes("ADMISSION_APPLICATION_READ") ?? false);
+
   const [studentsRes, classesRes, admissionsRes, remindersRes, setupRes] =
     await Promise.all([
       getStudentsAction(),
-      getSchoolClassesAction(),
-      getAdmissionsDataAction(),
-      getOrgAdmissionRemindersAction("OPEN"),
-      getSetupStatusAction(),
+      // Teachers may only open their own classrooms; admins get all of them.
+      getMyTeachingSchoolClassesAction(),
+      canReadAdmissions
+        ? getAdmissionsDataAction()
+        : Promise.resolve({ success: false as const }),
+      canReadAdmissions
+        ? getOrgAdmissionRemindersAction("OPEN")
+        : Promise.resolve({ success: false as const }),
+      canSeeSetup
+        ? getSetupStatusAction()
+        : Promise.resolve({ success: false as const }),
     ]);
 
   // Optional context — a failed load must not take the dashboard down with it.
@@ -155,16 +174,20 @@ export default async function DashboardPage() {
           value={activeStudents ?? "—"}
           sub={t("statStudentsSub", { count: activeClasses.length })}
         />
-        <StatCard
-          label={t("statApplications")}
-          value={admissionsRes.success ? activeApplications.length : "—"}
-          sub={t("statApplicationsSub", { count: newThisWeek })}
-        />
-        <StatCard
-          label={t("statReminders")}
-          value={remindersRes.success ? openReminders.length : "—"}
-          sub={t("statRemindersSub", { count: overdueReminders })}
-        />
+        {canReadAdmissions && (
+          <>
+            <StatCard
+              label={t("statApplications")}
+              value={admissionsRes.success ? activeApplications.length : "—"}
+              sub={t("statApplicationsSub", { count: newThisWeek })}
+            />
+            <StatCard
+              label={t("statReminders")}
+              value={remindersRes.success ? openReminders.length : "—"}
+              sub={t("statRemindersSub", { count: overdueReminders })}
+            />
+          </>
+        )}
         <StatCard
           label={t("statMastered")}
           value={
