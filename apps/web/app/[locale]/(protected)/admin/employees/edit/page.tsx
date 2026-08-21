@@ -1,7 +1,8 @@
 import { EmployeeOnboardingWizard } from "@/features/employees/components/wizard/EmployeeOnboardingWizard";
 import { getEmployeeFunctionsAction } from "@/features/employee-functions/actions/get-employee-functions.action";
 import { getActiveOrganizationAction } from "@/features/organizations/actions/get-active-organization.action";
-import { getRolesByOrgAction } from "@/features/users/actions/get-roles-by-org.action";
+import { getRolesAction } from "@/features/roles/actions/get-roles.action";
+import { buildRoleOptions } from "@/features/employees/lib/role-options";
 import { getTeamsAction } from "@/features/teams/actions/get-teams.action";
 import { requireAdminRole } from "@/features/users/guards/require-admin-role";
 import { getTranslations } from "next-intl/server";
@@ -15,31 +16,14 @@ export default async function CreateEmployeePage() {
   const orgCountry = org?.country ?? null;
 
   const [rolesRes, teamsRes, functionsRes] = await Promise.all([
-    org?.id ? getRolesByOrgAction(org.id) : Promise.resolve({ success: false as const }),
+    getRolesAction(),
     getTeamsAction(),
     getEmployeeFunctionsAction(),
   ]);
 
-  const roleOptions =
-    "data" in rolesRes && rolesRes.success
-      ? rolesRes.data.map((r) => {
-          const nameKey = `roleName_${r.systemCode}`;
-          const descKey = `roleDesc_${r.systemCode}`;
-          // Prefer a custom role name; otherwise the translated system-role
-          // label/description. Falls back to the raw code if untranslated.
-          return {
-            value: r.id,
-            // System roles carry their code as name in the DB — prefer the
-            // translated label; custom roles use their own name.
-            label:
-              r.systemCode && t.has(nameKey)
-                ? t(nameKey)
-                : (r.name ?? r.systemCode ?? r.id),
-            description:
-              r.systemCode && t.has(descKey) ? t(descKey) : undefined,
-          };
-        })
-      : [];
+  const roleOptions = rolesRes.success
+    ? buildRoleOptions(rolesRes.data, t)
+    : [];
 
   const teamOptions = teamsRes.success
     ? teamsRes.data.map((tm) => ({ value: tm.id, label: tm.name }))
