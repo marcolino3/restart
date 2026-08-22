@@ -16,12 +16,12 @@ import React from "react";
 
 const AdminLayout = async ({ children }: { children: React.ReactNode }) => {
   const locale = await getLocale();
-  const [res, orgsRes, templatesRes, impersonationInfo] = await Promise.all([
-    getCurrentUserAction(),
-    getOrganizationsAction(),
-    getCountryInputTemplatesAction(),
-    getImpersonationInfoAction(),
-  ]);
+
+  // Auth and org context must be resolved BEFORE any org-scoped fetch. Those
+  // fetches redirect to /sign-in on UNAUTHENTICATED, so running them in the
+  // same Promise.all would hijack the redirect and bounce a user who merely
+  // lacks an active org to the login page instead of /select-org.
+  const res = await getCurrentUserAction();
 
   if (!res?.success) redirect(`/${locale}/sign-in`);
 
@@ -31,6 +31,12 @@ const AdminLayout = async ({ children }: { children: React.ReactNode }) => {
   if (!res.data.orgId && !res.data.isSuperAdmin) {
     redirect(`/${locale}/select-org`);
   }
+
+  const [orgsRes, templatesRes, impersonationInfo] = await Promise.all([
+    getOrganizationsAction(),
+    getCountryInputTemplatesAction(),
+    getImpersonationInfoAction(),
+  ]);
 
   const organizations = res.data.isSuperAdmin && orgsRes.success ? orgsRes.data : undefined;
 

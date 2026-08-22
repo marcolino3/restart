@@ -1,6 +1,6 @@
 "use server";
 
-import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
+import { serverCookieGqlClientWithoutRedirect } from "@/lib/graphql/server-cookie-graphql-client";
 import { gql } from "graphql-request";
 import { CountryInputTemplate } from "../types";
 
@@ -25,7 +25,10 @@ export const getCountryInputTemplatesAction = async (): Promise<{
   data: CountryInputTemplate[];
   error?: string;
 }> => {
-  const client = await serverCookieGqlClient();
+  // No auto-redirect: a SuperAdmin without an active org legitimately cannot
+  // read org-scoped templates. The empty-array fallback below is the correct
+  // outcome there — redirecting to /sign-in would log them out instead.
+  const client = await serverCookieGqlClientWithoutRedirect();
   try {
     const { countryInputTemplates } = await client.request<{
       countryInputTemplates: CountryInputTemplate[];

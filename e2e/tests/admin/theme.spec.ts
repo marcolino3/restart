@@ -37,6 +37,8 @@ test.describe('Theme — persisted in the profile', () => {
     const target = current === 'lagune' ? 'himmel' : 'lagune'
     const targetLabel = target === 'lagune' ? 'Lagune' : 'Himmel'
 
+    // The swatches live in a popover; the trigger shows only the active theme.
+    await page.getByRole('button', { name: 'Theme' }).click()
     await page.getByRole('radio', { name: targetLabel }).click()
     await expect(html).toHaveAttribute('data-theme', target)
 
