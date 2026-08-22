@@ -19,8 +19,8 @@
   "type": "commonjs",
   "devDependencies": {
     "@playwright/test": "^1.62.0",
-    "@types/pg": "^8.21.0",
-    "pg": "^8.22.0",
+    "@types/pg": "^8.23.1",
+    "pg": "^8.23.0",
     "typescript": "^5.9.3"
   }
 }
