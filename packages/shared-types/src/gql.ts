@@ -134,7 +134,7 @@ type Documents = {
     "\n  mutation SetEmployeeAbsenceCategoryActive($id: ID!, $isActive: Boolean!) {\n    setEmployeeAbsenceCategoryActive(id: $id, isActive: $isActive) {\n      id\n      isActive\n    }\n  }\n": typeof types.SetEmployeeAbsenceCategoryActiveDocument,
     "\n  mutation UpdateEmployeeAbsenceCategory(\n    $input: UpdateEmployeeAbsenceCategoryInput!\n  ) {\n    updateEmployeeAbsenceCategory(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateEmployeeAbsenceCategoryDocument,
     "\n  mutation CreateEmployeeAbsenceNotice(\n    $createEmployeeAbsenceInput: CreateEmployeeAbsenceNoticeInput!\n  ) {\n    createEmployeeAbsenceNotice(\n      createEmployeeAbsenceInput: $createEmployeeAbsenceInput\n    ) {\n      id\n    }\n  }\n": typeof types.CreateEmployeeAbsenceNoticeDocument,
-    "\n  query GetEmployeeAbsenceCategoriesByOrgId {\n    employeeAbsenceCategoriesByOrgId {\n      id\n      systemCode\n    }\n  }\n": typeof types.GetEmployeeAbsenceCategoriesByOrgIdDocument,
+    "\n  query GetEmployeeAbsenceCategoriesByOrgId {\n    employeeAbsenceCategoriesByOrgId {\n      id\n      systemCode\n      requiresApproval\n      isActive\n      translations {\n        locale\n        name\n      }\n    }\n  }\n": typeof types.GetEmployeeAbsenceCategoriesByOrgIdDocument,
     "\n  mutation ReportSickLeave($input: ReportSickLeaveInput!) {\n    reportSickLeave(input: $input) {\n      isExtension\n      isUnchanged\n      absence {\n        id\n        startDate\n        endDate\n      }\n    }\n  }\n": typeof types.ReportSickLeaveDocument,
     "\n  mutation TestCalendarConnection {\n    testCalendarConnection {\n      ok\n      calendarSummary\n      error\n    }\n  }\n": typeof types.TestCalendarConnectionDocument,
     "\n  mutation ArchiveEmployeeFunction($id: ID!) {\n    archiveEmployeeFunction(id: $id)\n  }\n": typeof types.ArchiveEmployeeFunctionDocument,
@@ -483,7 +483,7 @@ const documents: Documents = {
     "\n  mutation SetEmployeeAbsenceCategoryActive($id: ID!, $isActive: Boolean!) {\n    setEmployeeAbsenceCategoryActive(id: $id, isActive: $isActive) {\n      id\n      isActive\n    }\n  }\n": types.SetEmployeeAbsenceCategoryActiveDocument,
     "\n  mutation UpdateEmployeeAbsenceCategory(\n    $input: UpdateEmployeeAbsenceCategoryInput!\n  ) {\n    updateEmployeeAbsenceCategory(input: $input) {\n      id\n    }\n  }\n": types.UpdateEmployeeAbsenceCategoryDocument,
     "\n  mutation CreateEmployeeAbsenceNotice(\n    $createEmployeeAbsenceInput: CreateEmployeeAbsenceNoticeInput!\n  ) {\n    createEmployeeAbsenceNotice(\n      createEmployeeAbsenceInput: $createEmployeeAbsenceInput\n    ) {\n      id\n    }\n  }\n": types.CreateEmployeeAbsenceNoticeDocument,
-    "\n  query GetEmployeeAbsenceCategoriesByOrgId {\n    employeeAbsenceCategoriesByOrgId {\n      id\n      systemCode\n    }\n  }\n": types.GetEmployeeAbsenceCategoriesByOrgIdDocument,
+    "\n  query GetEmployeeAbsenceCategoriesByOrgId {\n    employeeAbsenceCategoriesByOrgId {\n      id\n      systemCode\n      requiresApproval\n      isActive\n      translations {\n        locale\n        name\n      }\n    }\n  }\n": types.GetEmployeeAbsenceCategoriesByOrgIdDocument,
     "\n  mutation ReportSickLeave($input: ReportSickLeaveInput!) {\n    reportSickLeave(input: $input) {\n      isExtension\n      isUnchanged\n      absence {\n        id\n        startDate\n        endDate\n      }\n    }\n  }\n": types.ReportSickLeaveDocument,
     "\n  mutation TestCalendarConnection {\n    testCalendarConnection {\n      ok\n      calendarSummary\n      error\n    }\n  }\n": types.TestCalendarConnectionDocument,
     "\n  mutation ArchiveEmployeeFunction($id: ID!) {\n    archiveEmployeeFunction(id: $id)\n  }\n": types.ArchiveEmployeeFunctionDocument,
@@ -1209,7 +1209,7 @@ export function graphql(source: "\n  mutation CreateEmployeeAbsenceNotice(\n    
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query GetEmployeeAbsenceCategoriesByOrgId {\n    employeeAbsenceCategoriesByOrgId {\n      id\n      systemCode\n    }\n  }\n"): (typeof documents)["\n  query GetEmployeeAbsenceCategoriesByOrgId {\n    employeeAbsenceCategoriesByOrgId {\n      id\n      systemCode\n    }\n  }\n"];
+export function graphql(source: "\n  query GetEmployeeAbsenceCategoriesByOrgId {\n    employeeAbsenceCategoriesByOrgId {\n      id\n      systemCode\n      requiresApproval\n      isActive\n      translations {\n        locale\n        name\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetEmployeeAbsenceCategoriesByOrgId {\n    employeeAbsenceCategoriesByOrgId {\n      id\n      systemCode\n      requiresApproval\n      isActive\n      translations {\n        locale\n        name\n      }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

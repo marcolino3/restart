@@ -34,8 +34,8 @@
     "affectsVacationBalanceHelp": "Bezieht sich Tage vom Ferienkontingent (z. B. unbezahlter Urlaub).",
     "defaultIsVacationCapableLabel": "Standardmässig ferienfähig",
     "defaultIsVacationCapableHelp": "Wenn deaktiviert, werden überlappende Ferientage gutgeschrieben (typisch bei Krankheit). Pro Buchung überschreibbar.",
-    "requiresApprovalLabel": "Genehmigung erforderlich",
-    "requiresApprovalHelp": "HR/OrgAdmin muss die Buchung freigeben.",
+    "requiresApprovalLabel": "Muss beantragt werden",
+    "requiresApprovalHelp": "Aktiv: Mitarbeitende beantragen diese Absenz beliebig im Voraus, sie wird erst nach Genehmigung durch Teamleitung, HR oder Admin definitiv. Inaktiv: Die Absenz wird nur mitgeteilt (heute oder morgen) und sofort definitiv erfasst.",
     "requiresCertificateLabel": "Nachweis erforderlich",
     "requiresCertificateHelp": "Arztzeugnis oder ähnlicher Nachweis muss hochgeladen werden.",
     "limitsTitle": "Limits & Defaults",
@@ -1813,7 +1813,39 @@
       "docLabelPlaceholder": "z. B. Erstattung, Folgezeugnis, Unfallmeldung",
       "docUntitled": "Dokument {index}",
       "docTypesOnly": "Nur PDF, JPEG, PNG oder WebP erlaubt",
-      "docUploadError": "Upload fehlgeschlagen"
+      "docUploadError": "Upload fehlgeschlagen",
+      "employeeColumn": "Mitarbeitende:r",
+      "status": {
+        "label": "Status",
+        "PENDING": "In Genehmigung",
+        "APPROVED": "Genehmigt",
+        "REJECTED": "Abgelehnt"
+      },
+      "requiresApprovalHint": "Diese Kategorie muss beantragt werden. Der Antrag geht an die Vorgesetzten und wird erst nach der Genehmigung definitiv.",
+      "noticeOnlyHint": "Diese Kategorie wird nur mitgeteilt und sofort definitiv erfasst — möglich für heute oder morgen.",
+      "requestSubmitted": "Antrag eingereicht. Die Vorgesetzten wurden informiert.",
+      "dateError": {
+        "past": "Das Datum darf nicht in der Vergangenheit liegen.",
+        "tooFar": "Diese Kategorie kann nur für heute oder morgen gemeldet werden.",
+        "endBeforeStart": "Das Enddatum darf nicht vor dem Startdatum liegen."
+      },
+      "withdraw": "Zurückziehen",
+      "withdrawTitle": "Antrag zurückziehen",
+      "withdrawConfirm": "Soll dieser Antrag zurückgezogen werden?",
+      "withdrawError": "Der Antrag konnte nicht zurückgezogen werden.",
+      "approve": "Genehmigen",
+      "approveTitle": "Antrag genehmigen",
+      "approveConfirm": "Der Antrag wird definitiv erfasst und die Mitarbeitenden werden informiert.",
+      "approveError": "Der Antrag konnte nicht genehmigt werden.",
+      "reject": "Ablehnen",
+      "rejectTitle": "Antrag ablehnen",
+      "rejectDescription": "Bitte eine Begründung angeben. Sie wird den Mitarbeitenden mitgeteilt.",
+      "rejectNotePlaceholder": "Begründung",
+      "rejectSuccess": "Antrag abgelehnt.",
+      "rejectError": "Der Antrag konnte nicht abgelehnt werden.",
+      "requestsTitle": "Absenzanträge",
+      "requestsDescription": "Offene Absenzanträge der Mitarbeitenden prüfen und entscheiden.",
+      "noPendingRequests": "Keine offenen Anträge."
     },
     "searchPlaceholder": "Name oder E-Mail suchen...",
     "newEmployee": "Neue:r Mitarbeiter:in",
@@ -3271,7 +3303,8 @@
     "chats": "Chats",
     "projectTemplates": "Vorlagen",
     "protocols": "Protokolle",
-    "employeeFunctions": "Funktionen"
+    "employeeFunctions": "Funktionen",
+    "absenceRequests": "Absenzanträge"
   },
   "StudentNotes": {
     "logbook": "Notizen",

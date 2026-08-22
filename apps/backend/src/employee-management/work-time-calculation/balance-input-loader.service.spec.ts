@@ -1,3 +1,4 @@
+import { EmployeeAbsenceStatus } from '@/employee-management/employee-absences/entities/employee-absence-status.enum';
 import { BalanceInputLoaderService } from './balance-input-loader.service';
 
 describe('BalanceInputLoaderService', () => {
@@ -78,5 +79,27 @@ describe('BalanceInputLoaderService', () => {
       { contractEndDateOverride: '2026-06-30' },
     );
     expect(input.contracts).toHaveLength(0);
+  });
+
+  it('loads only APPROVED absences into the balance input', async () => {
+    const absenceRepo = { find: jest.fn().mockResolvedValue([]) };
+    const contractRepo = { find: jest.fn().mockResolvedValue([baseContract]) };
+    const emptyRepo = { find: jest.fn().mockResolvedValue([]) };
+    const service = new BalanceInputLoaderService(
+      contractRepo as any,
+      emptyRepo as any,
+      absenceRepo as any,
+      emptyRepo as any,
+      emptyRepo as any,
+      emptyRepo as any,
+    );
+    await service.loadCalcInput(orgId, employeeId, '2026-01-01', '2026-12-31');
+    expect(absenceRepo.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          status: EmployeeAbsenceStatus.APPROVED,
+        }),
+      }),
+    );
   });
 });

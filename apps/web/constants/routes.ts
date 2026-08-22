@@ -128,6 +128,9 @@ export const ROUTES = {
     admissionsEmailTemplates: (locale: string) =>
       `/${locale}/admin/admissions/email-templates`,
 
+    // Absence requests (approval workflow)
+    absenceRequests: (locale: string) => `/${locale}/admin/absence-requests`,
+
     // Absence Categories (HR)
     absenceCategories: (locale: string) =>
       `/${locale}/admin/absence-categories`,

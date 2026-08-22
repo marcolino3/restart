@@ -2,16 +2,21 @@ import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { Membership } from '@/memberships/entities/membership.entity';
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { EntityManager } from 'typeorm';
+import { EntityManager, In } from 'typeorm';
+import { SystemRole } from '@/roles/entities/system-role.enum';
 import { EmployeeAbsenceCategory } from '../employee-absence-categories/entities/employee-absence-category.entity';
 import { CreateEmployeeAbsenceNoticeInput } from './dto/create-employee-absence-notice.input';
 import { CreateEmployeeAbsenceInput } from './dto/create-employee-absence.input';
 import { UpdateEmployeeAbsenceInput } from './dto/update-employee-absence.input';
 import { AbsenceDocument } from './entities/absence-document.type';
 import { EmployeeAbsence } from './entities/employee-absence.entity';
+import { EmployeeAbsenceStatus } from './entities/employee-absence-status.enum';
+import { AbsenceRequestNotificationService } from './absence-request-notification.service';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { daysInterval } from '@/common/utils/days-interval';
 import { EmployeeAbsenceDay } from './entities/employee-absence-days.entity';
@@ -27,6 +32,21 @@ import { Employee } from '../employees/entities/employee.entity';
 function toIsoDate(d: Date): string {
   return DateTime.fromJSDate(d).toISODate() as string;
 }
+
+/** UTC-Tag, weil Absenzdaten als UTC-Mitternacht gespeichert werden. */
+function utcDay(value: string | Date): DateTime {
+  const dt =
+    typeof value === 'string'
+      ? DateTime.fromISO(value.slice(0, 10), { zone: 'utc' })
+      : DateTime.fromJSDate(value, { zone: 'utc' });
+  return dt.startOf('day');
+}
+
+/** Roles that may decide requests of ANY employee, including their own. */
+const APPROVAL_ADMIN_ROLES: ReadonlySet<string> = new Set([
+  SystemRole.ORG_ADMIN,
+  SystemRole.HR_MANAGER,
+]);
 
 const ABSENCE_DOC_URL_RE = /^\/api\/absence-certificates\/[a-zA-Z0-9.-]+$/;
 
@@ -49,9 +69,12 @@ export function absenceCategoryLabel(systemCode?: string | null): string {
 
 @Injectable()
 export class EmployeeAbsencesService {
+  private readonly logger = new Logger(EmployeeAbsencesService.name);
+
   constructor(
     private readonly entityManager: EntityManager,
     private readonly calendarSync: AbsenceCalendarSyncService,
+    private readonly requestNotifications: AbsenceRequestNotificationService,
     private readonly balanceRecompute: BalanceRecomputeService,
     private readonly access: TimeTrackingAccessService,
     private readonly periods: TimeTrackingPeriodsService,
@@ -121,7 +144,32 @@ export class EmployeeAbsencesService {
       throw new NotFoundException('Membership not found.');
     }
 
-    return this.createAbsenceForMembership({
+    const category = await this.entityManager.findOne(EmployeeAbsenceCategory, {
+      where: {
+        id: input.absenceCategoryId,
+        organizationId: orgId as string,
+        isActive: true,
+      },
+    });
+    if (!category) throw new NotFoundException('Absenzcategory not found!');
+
+    // Self-service rules: a plain notice only covers today or tomorrow and is
+    // definitive at once; a request may lie anywhere in the future but waits
+    // for a decision.
+    const start = utcDay(input.startDate);
+    const today = DateTime.utc().startOf('day');
+    if (start < today) {
+      throw new BadRequestException(
+        'Absences cannot be reported for days in the past.',
+      );
+    }
+    if (!category.requiresApproval && start > today.plus({ days: 1 })) {
+      throw new BadRequestException(
+        'This absence category can only be reported for today or tomorrow.',
+      );
+    }
+
+    const absence = await this.createAbsenceForMembership({
       input,
       user,
       orgId: orgId as string,
@@ -129,7 +177,25 @@ export class EmployeeAbsencesService {
       employee: membership.employee,
       certificates: [],
       additionalDocuments: [],
+      status: category.requiresApproval
+        ? EmployeeAbsenceStatus.PENDING
+        : EmployeeAbsenceStatus.APPROVED,
     });
+
+    if (absence.status === EmployeeAbsenceStatus.PENDING) {
+      await this.safely('request notification', () =>
+        this.requestNotifications.notifyRequested({
+          organizationId: orgId as string,
+          employeeId: absence.employeeId,
+          employeeName: membershipName(membership),
+          categoryLabel: absenceCategoryLabel(category.systemCode),
+          startDate: absence.startDate,
+          endDate: absence.endDate ?? absence.startDate,
+          note: absence.note,
+        }),
+      );
+    }
+    return absence;
   }
 
   /** Admin/HR/Team-Lead(self-scope)/Self: create absence for an employee. */
@@ -164,6 +230,7 @@ export class EmployeeAbsencesService {
       employee,
       certificates,
       additionalDocuments,
+      status: EmployeeAbsenceStatus.APPROVED,
     });
   }
 
@@ -175,6 +242,7 @@ export class EmployeeAbsencesService {
     employee: Employee;
     certificates: EmployeeAbsence['certificates'];
     additionalDocuments: EmployeeAbsence['additionalDocuments'];
+    status: EmployeeAbsenceStatus;
   }) {
     const {
       input,
@@ -183,7 +251,9 @@ export class EmployeeAbsencesService {
       employee,
       certificates,
       additionalDocuments,
+      status,
     } = args;
+    const isApproved = status === EmployeeAbsenceStatus.APPROVED;
     const {
       startDate,
       endDate,
@@ -221,6 +291,9 @@ export class EmployeeAbsencesService {
             employeeId: employee.id,
           })
           .andWhere('absence."isActive" = true')
+          .andWhere('absence.status <> :rejected', {
+            rejected: EmployeeAbsenceStatus.REJECTED,
+          })
           .andWhere('absence."startDate" <= :endDate', {
             endDate: new Date(endDate ?? startDate),
           })
@@ -248,26 +321,24 @@ export class EmployeeAbsencesService {
           percentage: input.percentage ?? absenceCategory.defaultPercentage,
           certificates,
           additionalDocuments,
+          status,
+          requestedAt: isApproved ? null : new Date(),
         });
         const saved = await manager.save(employeeAbsence);
 
-        const days = daysInterval(saved.startDate, saved.endDate);
-        const absenceDays = days.map((luxonDate: DateTime) => {
-          const day = new EmployeeAbsenceDay();
-          day.employeeAbsence = saved;
-          day.employee = saved.employee;
-          day.organization = saved.organization;
-          day.absenceCategory = saved.absenceCategory;
-          day.date = luxonDate.toISODate() as unknown as Date;
-          return day;
-        });
-        await manager.save(EmployeeAbsenceDay, absenceDays);
+        // Absence days only exist for definitive absences: they feed balances
+        // and reports, and a pending request must not count anywhere yet.
+        if (isApproved) {
+          await this.writeAbsenceDays(manager, saved);
+        }
 
         return { saved, absenceCategory };
       },
     );
 
     const { saved: employeeAbsenceSaved, absenceCategory } = transactionResult;
+
+    if (!isApproved) return employeeAbsenceSaved;
 
     await this.balanceRecompute.recomputeRange(
       orgId,
@@ -291,6 +362,203 @@ export class EmployeeAbsencesService {
     });
 
     return employeeAbsenceSaved;
+  }
+
+  /** Rewrites the per-day rows of an absence (delete + insert). */
+  private async writeAbsenceDays(
+    manager: EntityManager,
+    absence: EmployeeAbsence,
+  ): Promise<void> {
+    await manager.delete(EmployeeAbsenceDay, {
+      employeeAbsenceId: absence.id,
+      organizationId: absence.organizationId,
+    });
+    const days = daysInterval(
+      absence.startDate,
+      absence.endDate ?? absence.startDate,
+    ).map((luxonDate: DateTime) =>
+      manager.create(EmployeeAbsenceDay, {
+        employeeAbsenceId: absence.id,
+        employeeId: absence.employeeId,
+        organizationId: absence.organizationId,
+        absenceCategoryId: absence.absenceCategoryId,
+        date: luxonDate.toISODate() as unknown as Date,
+      }),
+    );
+    await manager.save(EmployeeAbsenceDay, days);
+  }
+
+  /** Side effects after commit: log and swallow, never fail the mutation. */
+  private async safely(label: string, fn: () => Promise<void>): Promise<void> {
+    try {
+      await fn();
+    } catch (error) {
+      this.logger.error(`Absence ${label} failed`, error as Error);
+    }
+  }
+
+  /**
+   * Open requests the caller may decide: every employee for ORG_ADMIN/HR,
+   * the led teams for a TEAM_LEAD, nothing for everyone else.
+   */
+  async findPendingRequests(user: TokenPayload): Promise<EmployeeAbsence[]> {
+    const orgId = user.orgId as string;
+    const scope = await this.access.resolveOverviewScope(user, orgId);
+    if (scope !== null && scope.length === 0) return [];
+    return this.entityManager.find(EmployeeAbsence, {
+      where: {
+        organizationId: orgId,
+        isActive: true,
+        status: EmployeeAbsenceStatus.PENDING,
+        ...(scope ? { employeeId: In(scope) } : {}),
+      },
+      relations: [
+        'absenceCategory',
+        'absenceCategory.translations',
+        'employee',
+        'employee.membership',
+        'employee.membership.user',
+      ],
+      order: { requestedAt: 'ASC' },
+    });
+  }
+
+  async approveEmployeeAbsence(
+    id: string,
+    note: string | null | undefined,
+    user: TokenPayload,
+  ): Promise<EmployeeAbsence> {
+    return this.decide(id, true, note ?? null, user);
+  }
+
+  async rejectEmployeeAbsence(
+    id: string,
+    note: string | null | undefined,
+    user: TokenPayload,
+  ): Promise<EmployeeAbsence> {
+    if (!note?.trim()) {
+      throw new BadRequestException(
+        'A reason is required to reject a request.',
+      );
+    }
+    return this.decide(id, false, note.trim(), user);
+  }
+
+  private async decide(
+    id: string,
+    approved: boolean,
+    note: string | null,
+    user: TokenPayload,
+  ): Promise<EmployeeAbsence> {
+    const orgId = user.orgId as string;
+    const absence = await this.findOneOrFail(id, orgId);
+    await this.access.assertCanManageAbsence(user, absence.employeeId);
+
+    if (absence.status !== EmployeeAbsenceStatus.PENDING) {
+      throw new BadRequestException('Only pending requests can be decided.');
+    }
+
+    // A lead must not approve their own request; admins/HR may.
+    const callerMembership = await this.entityManager.findOne(Membership, {
+      where: { id: user.membershipId, organizationId: orgId },
+      relations: ['user'],
+    });
+    const isApprovalAdmin =
+      user.isSuperAdmin ||
+      (user.roles ?? []).some((r) => APPROVAL_ADMIN_ROLES.has(r));
+    if (
+      !isApprovalAdmin &&
+      callerMembership?.employeeId === absence.employeeId
+    ) {
+      throw new ForbiddenException('You cannot decide your own request.');
+    }
+
+    const start = toIsoDate(absence.startDate);
+    const end = toIsoDate(absence.endDate ?? absence.startDate);
+    await this.periods.assertRangeUnlocked(orgId, start, end);
+
+    absence.status = approved
+      ? EmployeeAbsenceStatus.APPROVED
+      : EmployeeAbsenceStatus.REJECTED;
+    absence.decidedAt = new Date();
+    absence.decidedByMembershipId = callerMembership?.id ?? null;
+    absence.decisionNote = note;
+
+    const saved = await this.entityManager.transaction(async (manager) => {
+      const saved = await manager.save(EmployeeAbsence, absence);
+      if (approved) await this.writeAbsenceDays(manager, saved);
+      return saved;
+    });
+
+    const requester = await this.entityManager.findOne(Membership, {
+      where: { id: saved.membershipId, organizationId: orgId },
+      relations: ['user'],
+    });
+    const employeeName = requester ? membershipName(requester) : '';
+    const categoryLabel = absenceCategoryLabel(
+      saved.absenceCategory?.systemCode,
+    );
+
+    if (approved) {
+      await this.balanceRecompute.recomputeRange(
+        orgId,
+        saved.employeeId,
+        start,
+        end,
+      );
+      await this.safely('calendar sync', () =>
+        this.calendarSync.sync({
+          organizationId: orgId,
+          absenceId: saved.id,
+          employeeName,
+          absenceLabel: categoryLabel,
+          startDate: saved.startDate,
+          endDate: saved.endDate,
+          startTime: saved.startTime,
+          note: saved.note,
+        }),
+      );
+    }
+
+    await this.safely('decision notification', () =>
+      this.requestNotifications.notifyDecided({
+        organizationId: orgId,
+        employeeId: saved.employeeId,
+        employeeName,
+        categoryLabel,
+        startDate: saved.startDate,
+        endDate: saved.endDate ?? saved.startDate,
+        note: saved.note,
+        approved,
+        deciderName: callerMembership ? membershipName(callerMembership) : null,
+        decisionNote: note,
+      }),
+    );
+
+    return saved;
+  }
+
+  /** Self-service: withdraw an own, still pending request (soft delete). */
+  async withdrawMyAbsenceRequest(
+    id: string,
+    user: TokenPayload,
+  ): Promise<boolean> {
+    const orgId = user.orgId as string;
+    const absence = await this.entityManager.findOne(EmployeeAbsence, {
+      where: {
+        id,
+        organizationId: orgId,
+        membershipId: user.membershipId,
+        isActive: true,
+      },
+    });
+    if (!absence) throw new NotFoundException('Absence not found!');
+    if (absence.status !== EmployeeAbsenceStatus.PENDING) {
+      throw new BadRequestException('Only pending requests can be withdrawn.');
+    }
+    absence.isActive = false;
+    await this.entityManager.save(EmployeeAbsence, absence);
+    return true;
   }
 
   /** Absenz laden (org-scoped, aktiv) oder 404. */
@@ -405,23 +673,10 @@ export class EmployeeAbsencesService {
     const newEnd = toIsoDate(absence.endDate);
     await this.periods.assertRangeUnlocked(orgId, newStart, newEnd);
 
+    const isApproved = absence.status === EmployeeAbsenceStatus.APPROVED;
     const saved = await this.entityManager.transaction(async (manager) => {
       const saved = await manager.save(EmployeeAbsence, absence);
-      await manager.delete(EmployeeAbsenceDay, {
-        employeeAbsenceId: saved.id,
-        organizationId: orgId,
-      });
-      const days = daysInterval(saved.startDate, saved.endDate).map(
-        (luxonDate: DateTime) =>
-          manager.create(EmployeeAbsenceDay, {
-            employeeAbsenceId: saved.id,
-            employeeId: saved.employeeId,
-            organizationId: orgId,
-            absenceCategoryId: saved.absenceCategoryId,
-            date: luxonDate.toISODate() as unknown as Date,
-          }),
-      );
-      await manager.save(EmployeeAbsenceDay, days);
+      if (isApproved) await this.writeAbsenceDays(manager, saved);
       return saved;
     });
 
@@ -431,14 +686,16 @@ export class EmployeeAbsencesService {
     ];
     await this.deleteOrphanedDocuments(orgId, previousDocs, nextDocs);
 
-    const from = prevStart < newStart ? prevStart : newStart;
-    const to = prevEnd > newEnd ? prevEnd : newEnd;
-    await this.balanceRecompute.recomputeRange(
-      orgId,
-      saved.employeeId,
-      from,
-      to,
-    );
+    if (isApproved) {
+      const from = prevStart < newStart ? prevStart : newStart;
+      const to = prevEnd > newEnd ? prevEnd : newEnd;
+      await this.balanceRecompute.recomputeRange(
+        orgId,
+        saved.employeeId,
+        from,
+        to,
+      );
+    }
     return saved;
   }
 
@@ -470,12 +727,18 @@ export class EmployeeAbsencesService {
 
     await this.deleteOrphanedDocuments(orgId, docs, []);
 
-    await this.balanceRecompute.recomputeRange(
-      orgId,
-      absence.employeeId,
-      start,
-      end,
-    );
+    if (absence.status === EmployeeAbsenceStatus.APPROVED) {
+      await this.balanceRecompute.recomputeRange(
+        orgId,
+        absence.employeeId,
+        start,
+        end,
+      );
+    }
     return true;
   }
+}
+
+function membershipName(membership: Membership): string {
+  return `${membership.user?.firstName ?? ''} ${membership.user?.lastName ?? ''}`.trim();
 }

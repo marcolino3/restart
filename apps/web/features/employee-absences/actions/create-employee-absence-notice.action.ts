@@ -25,7 +25,14 @@ export const createEmployeeAbsenceNoticeAction = async (
 ) => {
   const client = await serverCookieGqlClient();
 
-  const parsedValues = EmployeeAbsenceNoticeFormSchema.parse(values);
+  const parsed = EmployeeAbsenceNoticeFormSchema.parse(values);
+  // The backend validates ISO date strings, so Date objects are serialized here
+  // instead of relying on implicit JSON conversion.
+  const parsedValues = {
+    ...parsed,
+    startDate: parsed.startDate.toISOString(),
+    endDate: parsed.endDate ? parsed.endDate.toISOString() : null,
+  };
 
   try {
     const { createEmployeeAbsenceNotice } =
