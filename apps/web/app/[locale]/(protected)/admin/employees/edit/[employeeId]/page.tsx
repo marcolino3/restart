@@ -4,7 +4,8 @@ import { getEmployeeContractsAction } from "@/features/employees/actions/employe
 import { getEmployeeFunctionsAction } from "@/features/employee-functions/actions/get-employee-functions.action";
 import { mapEmployeeToOnboardingForm } from "@/features/employees/lib/map-employee-to-onboarding-form";
 import { getActiveOrganizationAction } from "@/features/organizations/actions/get-active-organization.action";
-import { getRolesByOrgAction } from "@/features/users/actions/get-roles-by-org.action";
+import { getRolesAction } from "@/features/roles/actions/get-roles.action";
+import { buildRoleOptions } from "@/features/employees/lib/role-options";
 import { getTeamsAction } from "@/features/teams/actions/get-teams.action";
 import { requireAdminRole } from "@/features/users/guards/require-admin-role";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -53,30 +54,14 @@ const EditEmployeePage = async ({ params }: Props) => {
     employeeFunctions,
   });
 
-  const org = orgResult.success ? orgResult.data : null;
   const [rolesRes, teamsRes] = await Promise.all([
-    org?.id
-      ? getRolesByOrgAction(org.id)
-      : Promise.resolve({ success: false as const }),
+    getRolesAction(),
     getTeamsAction(),
   ]);
 
-  const roleOptions =
-    "data" in rolesRes && rolesRes.success
-      ? rolesRes.data.map((r) => {
-          const nameKey = `roleName_${r.systemCode}`;
-          const descKey = `roleDesc_${r.systemCode}`;
-          return {
-            value: r.id,
-            label:
-              r.systemCode && t.has(nameKey)
-                ? t(nameKey)
-                : (r.name ?? r.systemCode ?? r.id),
-            description:
-              r.systemCode && t.has(descKey) ? t(descKey) : undefined,
-          };
-        })
-      : [];
+  const roleOptions = rolesRes.success
+    ? buildRoleOptions(rolesRes.data, t)
+    : [];
 
   const teamOptions = teamsRes.success
     ? teamsRes.data.map((tm) => ({ value: tm.id, label: tm.name }))

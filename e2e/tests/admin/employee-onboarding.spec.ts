@@ -63,6 +63,14 @@ test.describe('Employee onboarding — wizard happy path', () => {
     // match by substring (non-exact) and take the first (outside-month days can
     // repeat the number).
     await page.getByRole('gridcell', { name: '15' }).first().click()
+
+    // The wizard auto-saves the draft on a 1500ms debounce. Clicking "next"
+    // before that save lands races it: the entry date never reaches the
+    // contract row, and finalize later rejects the draft for a missing start
+    // date. Wait for the explicit "Draft saved" indicator instead.
+    await expect(page.getByText(/draft saved/i).first()).toBeVisible({
+      timeout: 15000,
+    })
     await page.getByRole('button', { name: /^next$/i }).click()
 
     // Step 3 (Roles & access) becomes active once the entry date is set.
@@ -84,6 +92,11 @@ test.describe('Employee onboarding — wizard happy path', () => {
 
     // Back on the list; the new employee (draft or active) is visible.
     await expect(page).toHaveURL(/\/admin\/employees(\?|$)/, { timeout: 20000 })
+    // The wizard routes back before `revalidatePath` has refreshed the cached
+    // list, so the first render can still be the stale one. Search for the new
+    // employee instead of waiting on a background revalidation.
+    await page.getByRole('searchbox', { name: /search name or email/i })
+      .fill(`Wizard ${stamp}`)
     await expect(page.getByText(new RegExp(`Wizard ${stamp}`))).toBeVisible({
       timeout: 15000,
     })
