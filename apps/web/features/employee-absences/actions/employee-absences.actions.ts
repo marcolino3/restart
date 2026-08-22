@@ -11,6 +11,7 @@ import {
 import { toAbsenceIsoDateTime } from "@restart/shared-schemas/employee-absences/absence-date";
 import type { AbsenceDocument } from "@restart/shared-schemas/employee-absences/absence-document";
 import type { AbsenceCategoryTranslation } from "@/features/employee-absence-categories/types";
+import type { EmployeeAbsenceStatusType } from "../schemas/employee-absence-notice-form.schema";
 
 export type EmployeeAbsence = Record<string, unknown> & {
   id: string;
@@ -25,6 +26,17 @@ export type EmployeeAbsence = Record<string, unknown> & {
   certificates?: AbsenceDocument[] | null;
   additionalDocuments?: AbsenceDocument[] | null;
   isActive: boolean;
+  status: EmployeeAbsenceStatusType;
+  requestedAt?: string | null;
+  decidedAt?: string | null;
+  decisionNote?: string | null;
+  employee?: {
+    id: string;
+    membership?: {
+      id: string;
+      user?: { firstName?: string | null; lastName?: string | null } | null;
+    } | null;
+  } | null;
   absenceCategory?: {
     id: string;
     systemCode?: string | null;
@@ -56,6 +68,10 @@ const AbsenceFields = `
     label
   }
   isActive
+  status
+  requestedAt
+  decidedAt
+  decisionNote
   absenceCategory {
     id
     systemCode
@@ -112,6 +128,48 @@ const UpdateDocument = gql`
     ) {
       id
     }
+  }
+`;
+
+const PendingRequestsDocument = gql`
+  query PendingAbsenceRequests {
+    pendingAbsenceRequests {
+      ${AbsenceFields}
+      employee {
+        id
+        membership {
+          id
+          user {
+            firstName
+            lastName
+          }
+        }
+      }
+    }
+  }
+`;
+
+const ApproveDocument = gql`
+  mutation ApproveEmployeeAbsence($input: DecideEmployeeAbsenceInput!) {
+    approveEmployeeAbsence(input: $input) {
+      id
+      status
+    }
+  }
+`;
+
+const RejectDocument = gql`
+  mutation RejectEmployeeAbsence($input: DecideEmployeeAbsenceInput!) {
+    rejectEmployeeAbsence(input: $input) {
+      id
+      status
+    }
+  }
+`;
+
+const WithdrawDocument = gql`
+  mutation WithdrawMyEmployeeAbsenceRequest($id: ID!) {
+    withdrawMyEmployeeAbsenceRequest(id: $id)
   }
 `;
 
@@ -243,5 +301,72 @@ export const deleteEmployeeAbsenceAction = async (id: string) => {
   } catch (error) {
     console.error(error);
     return { success: false as const, error: "Failed to delete absence" };
+  }
+};
+
+/** Open requests the caller may decide (admin/HR: all, lead: own teams). */
+export const getPendingAbsenceRequestsAction = async () => {
+  const client = await serverCookieGqlClient();
+  try {
+    const { pendingAbsenceRequests } = await client.request<{
+      pendingAbsenceRequests: EmployeeAbsence[];
+    }>(PendingRequestsDocument);
+    return { success: true as const, data: pendingAbsenceRequests };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false as const,
+      error: "Failed to load absence requests",
+      data: [] as EmployeeAbsence[],
+    };
+  }
+};
+
+const revalidateAbsences = async () => {
+  const locale = await getLocale();
+  revalidatePath(`/${locale}/admin/absence-requests`, "page");
+  revalidatePath(`/${locale}/admin/my-absences`, "page");
+  revalidatePath(`/${locale}/admin/employees`, "layout");
+};
+
+export const approveEmployeeAbsenceAction = async (
+  id: string,
+  note?: string,
+) => {
+  const client = await serverCookieGqlClient();
+  try {
+    await client.request(ApproveDocument, {
+      input: { id, note: note?.trim() || null },
+    });
+    await revalidateAbsences();
+    return { success: true as const };
+  } catch (error) {
+    console.error(error);
+    return { success: false as const, error: "Failed to approve request" };
+  }
+};
+
+export const rejectEmployeeAbsenceAction = async (id: string, note: string) => {
+  const client = await serverCookieGqlClient();
+  try {
+    await client.request(RejectDocument, { input: { id, note: note.trim() } });
+    await revalidateAbsences();
+    return { success: true as const };
+  } catch (error) {
+    console.error(error);
+    return { success: false as const, error: "Failed to reject request" };
+  }
+};
+
+/** Self-service: withdraw an own request that is still pending. */
+export const withdrawMyEmployeeAbsenceRequestAction = async (id: string) => {
+  const client = await serverCookieGqlClient();
+  try {
+    await client.request(WithdrawDocument, { id });
+    await revalidateAbsences();
+    return { success: true as const };
+  } catch (error) {
+    console.error(error);
+    return { success: false as const, error: "Failed to withdraw request" };
   }
 };

@@ -5,6 +5,7 @@ import { DateTime } from 'luxon';
 import { EmployeeContract } from '@/employee-management/employee-contracts/entities/employee-contract.entity';
 import { Holiday } from '@/employee-management/holidays/entities/holiday.entity';
 import { EmployeeAbsence } from '@/employee-management/employee-absences/entities/employee-absence.entity';
+import { EmployeeAbsenceStatus } from '@/employee-management/employee-absences/entities/employee-absence-status.enum';
 import { EmployeeVacation } from '@/employee-management/employee-vacations/entities/employee-vacation.entity';
 import { CompanyVacationAssignment } from '@/employee-management/company-vacation-assignments/entities/company-vacation-assignment.entity';
 import { TimeTracking } from '@/employee-management/time-tracking/entities/time-tracking.entity';
@@ -77,8 +78,15 @@ export class BalanceInputLoaderService {
         where: { organizationId, employeeId, isActive: true },
       }),
       this.holidayRepo.find({ where: { organizationId, isActive: true } }),
+      // Only definitive absences count: pending requests and rejected ones
+      // must not touch the balance.
       this.absenceRepo.find({
-        where: { organizationId, employeeId, isActive: true },
+        where: {
+          organizationId,
+          employeeId,
+          isActive: true,
+          status: EmployeeAbsenceStatus.APPROVED,
+        },
         relations: ['absenceCategory'],
       }),
       this.vacationRepo.find({

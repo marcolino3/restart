@@ -9,6 +9,12 @@ const GetEmployeeAbsenceCategoriesByOrgIdDocument = graphql(`
     employeeAbsenceCategoriesByOrgId {
       id
       systemCode
+      requiresApproval
+      isActive
+      translations {
+        locale
+        name
+      }
     }
   }
 `);

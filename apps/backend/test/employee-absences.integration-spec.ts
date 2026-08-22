@@ -10,7 +10,11 @@
  */
 import { DataSource, Repository } from 'typeorm';
 import { Module } from '@nestjs/common';
-import { NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TestingModule } from '@nestjs/testing';
 
@@ -27,6 +31,10 @@ import { Organization } from '@/organizations/entities/organization.entity';
 import { Persona } from '@/common/enums/persona.enum';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { AbsenceCalendarSyncService } from '@/employee-management/employee-absences/absence-calendar-sync.service';
+import { AbsenceRequestNotificationService } from '@/employee-management/employee-absences/absence-request-notification.service';
+import { EmployeeAbsenceStatus } from '@/employee-management/employee-absences/entities/employee-absence-status.enum';
+import { CreateEmployeeAbsenceNoticeInput } from '@/employee-management/employee-absences/dto/create-employee-absence-notice.input';
+import { SystemRole } from '@/roles/entities/system-role.enum';
 import { StorageService } from '@/storage/storage.service';
 import { BalanceRecomputeService } from '@/employee-management/work-time-calculation/balance-recompute.service';
 import { TimeTrackingAccessService } from '@/employee-management/work-time-calculation/time-tracking-access.service';
@@ -58,6 +66,13 @@ import { createTestingApp, cleanDatabase } from './test-utils';
       },
     },
     {
+      provide: AbsenceRequestNotificationService,
+      useValue: {
+        notifyRequested: jest.fn().mockResolvedValue(undefined),
+        notifyDecided: jest.fn().mockResolvedValue(undefined),
+      },
+    },
+    {
       provide: BalanceRecomputeService,
       useValue: { recomputeRange: jest.fn().mockResolvedValue(undefined) },
     },
@@ -67,6 +82,7 @@ import { createTestingApp, cleanDatabase } from './test-utils';
         assertCanViewEmployee: jest.fn().mockResolvedValue(undefined),
         assertCanManageEmployee: jest.fn().mockResolvedValue(undefined),
         assertCanManageAbsence: jest.fn().mockResolvedValue(undefined),
+        resolveOverviewScope: jest.fn().mockResolvedValue(null),
       },
     },
     {
@@ -86,6 +102,11 @@ describe('EmployeeAbsencesService (Integration)', () => {
   let dataSource: DataSource;
   let service: EmployeeAbsencesService;
   let recompute: { recomputeRange: jest.Mock };
+  let access: {
+    assertCanManageAbsence: jest.Mock;
+    resolveOverviewScope: jest.Mock;
+  };
+  let notifications: { notifyRequested: jest.Mock; notifyDecided: jest.Mock };
 
   let orgRepo: Repository<Organization>;
   let userRepo: Repository<User>;
@@ -145,6 +166,8 @@ describe('EmployeeAbsencesService (Integration)', () => {
     dataSource = app.dataSource;
     service = module.get(EmployeeAbsencesService);
     recompute = module.get(BalanceRecomputeService);
+    access = module.get(TimeTrackingAccessService);
+    notifications = module.get(AbsenceRequestNotificationService);
 
     orgRepo = dataSource.getRepository(Organization);
     userRepo = dataSource.getRepository(User);
@@ -162,6 +185,10 @@ describe('EmployeeAbsencesService (Integration)', () => {
   beforeEach(async () => {
     await cleanDatabase(dataSource);
     recompute.recomputeRange.mockClear();
+    access.assertCanManageAbsence.mockReset().mockResolvedValue(undefined);
+    access.resolveOverviewScope.mockReset().mockResolvedValue(null);
+    notifications.notifyRequested.mockClear();
+    notifications.notifyDecided.mockClear();
 
     const org = await orgRepo.save(
       orgRepo.create({ name: 'Testschule', subdomain: `t${Date.now()}` }),
@@ -351,6 +378,203 @@ describe('EmployeeAbsencesService (Integration)', () => {
       await expect(
         service.deleteEmployeeAbsence(foreign.id, adminUser()),
       ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe('approval workflow', () => {
+    const dayRepo = () => dataSource.getRepository(EmployeeAbsenceDay);
+    const isoPlus = (days: number) =>
+      new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+
+    /** Category that must be requested (TRAINING is seeded with requiresApproval=true). */
+    const requestCategoryId = async (organizationId = orgId) =>
+      (
+        await categoryRepo.findOneByOrFail({
+          organizationId,
+          systemCode: SystemEmployeeAbsenceCategory.TRAINING,
+        })
+      ).id;
+
+    const employeeUser = (): TokenPayload =>
+      ({ orgId, membershipId, persona: Persona.EMPLOYEE }) as TokenPayload;
+
+    const requestAbsence = async (user = employeeUser(), startOffset = 30) =>
+      service.createEmployeeAbsenceNotice(
+        {
+          absenceCategoryId: await requestCategoryId(user.orgId),
+          startDate: isoPlus(startOffset),
+          endDate: isoPlus(startOffset + 1),
+        } as CreateEmployeeAbsenceNoticeInput,
+        user,
+      );
+
+    it('stores a request as PENDING without absence days or recompute', async () => {
+      const created = await requestAbsence();
+      expect(created.status).toBe(EmployeeAbsenceStatus.PENDING);
+      expect(created.requestedAt).toBeTruthy();
+      expect(await dayRepo().countBy({ employeeAbsenceId: created.id })).toBe(
+        0,
+      );
+      expect(recompute.recomputeRange).not.toHaveBeenCalled();
+      expect(notifications.notifyRequested).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects a notice category beyond tomorrow', async () => {
+      await expect(
+        service.createEmployeeAbsenceNotice(
+          {
+            absenceCategoryId: categoryId,
+            startDate: isoPlus(3),
+          } as CreateEmployeeAbsenceNoticeInput,
+          employeeUser(),
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('approve by admin writes days, recomputes and notifies', async () => {
+      const created = await requestAbsence();
+      const { membership: adminMembership } = await createEmployeeInOrg(orgId);
+      const admin = {
+        orgId,
+        membershipId: adminMembership.id,
+        roles: [SystemRole.ORG_ADMIN],
+      } as TokenPayload;
+
+      const approved = await service.approveEmployeeAbsence(
+        created.id,
+        null,
+        admin,
+      );
+      expect(approved.status).toBe(EmployeeAbsenceStatus.APPROVED);
+      expect(approved.decidedByMembershipId).toBe(adminMembership.id);
+      expect(await dayRepo().countBy({ employeeAbsenceId: created.id })).toBe(
+        2,
+      );
+      expect(recompute.recomputeRange).toHaveBeenCalledTimes(1);
+      expect(notifications.notifyDecided).toHaveBeenCalledWith(
+        expect.objectContaining({ approved: true }),
+      );
+    });
+
+    it('reject requires a note and never writes days', async () => {
+      const created = await requestAbsence();
+      const { membership: hr } = await createEmployeeInOrg(orgId);
+      const hrUser = {
+        orgId,
+        membershipId: hr.id,
+        roles: [SystemRole.HR_MANAGER],
+      } as TokenPayload;
+
+      await expect(
+        service.rejectEmployeeAbsence(created.id, '', hrUser),
+      ).rejects.toBeInstanceOf(BadRequestException);
+
+      const rejected = await service.rejectEmployeeAbsence(
+        created.id,
+        'Zu wenig Personal',
+        hrUser,
+      );
+      expect(rejected.status).toBe(EmployeeAbsenceStatus.REJECTED);
+      expect(rejected.decisionNote).toBe('Zu wenig Personal');
+      expect(await dayRepo().countBy({ employeeAbsenceId: created.id })).toBe(
+        0,
+      );
+      expect(recompute.recomputeRange).not.toHaveBeenCalled();
+
+      // A rejected request no longer blocks the same range.
+      await expect(requestAbsence()).resolves.toMatchObject({
+        status: EmployeeAbsenceStatus.PENDING,
+      });
+    });
+
+    it('a pending request blocks an overlapping request', async () => {
+      await requestAbsence();
+      await expect(requestAbsence()).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it('a lead cannot decide their own request', async () => {
+      const created = await requestAbsence();
+      await expect(
+        service.approveEmployeeAbsence(created.id, null, {
+          ...employeeUser(),
+          roles: [SystemRole.TEAM_LEAD],
+        }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('a lead outside the employee scope gets 403', async () => {
+      const created = await requestAbsence();
+      const { membership: lead } = await createEmployeeInOrg(orgId);
+      access.assertCanManageAbsence.mockRejectedValueOnce(
+        new ForbiddenException('scope'),
+      );
+      await expect(
+        service.approveEmployeeAbsence(created.id, null, {
+          orgId,
+          membershipId: lead.id,
+          roles: [SystemRole.TEAM_LEAD],
+        } as TokenPayload),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      const stored = await absenceRepo.findOneByOrFail({ id: created.id });
+      expect(stored.status).toBe(EmployeeAbsenceStatus.PENDING);
+    });
+
+    it('a foreign-org admin cannot see or decide the request', async () => {
+      const created = await requestAbsence();
+      const { membership: foreignAdmin } =
+        await createEmployeeInOrg(otherOrgId);
+      const foreign = {
+        orgId: otherOrgId,
+        membershipId: foreignAdmin.id,
+        roles: [SystemRole.ORG_ADMIN],
+      } as TokenPayload;
+
+      await expect(
+        service.approveEmployeeAbsence(created.id, null, foreign),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(
+        service.rejectEmployeeAbsence(created.id, 'nope', foreign),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(await service.findPendingRequests(foreign)).toHaveLength(0);
+    });
+
+    it('findPendingRequests honours the lead scope', async () => {
+      const created = await requestAbsence();
+      const { employee: otherEmployee, membership: otherMembership } =
+        await createEmployeeInOrg(orgId);
+      await requestAbsence(
+        { orgId, membershipId: otherMembership.id } as TokenPayload,
+        60,
+      );
+
+      expect(await service.findPendingRequests(adminUser())).toHaveLength(2);
+
+      access.resolveOverviewScope.mockResolvedValueOnce([otherEmployee.id]);
+      const scoped = await service.findPendingRequests(adminUser());
+      expect(scoped.map((a) => a.employeeId)).toEqual([otherEmployee.id]);
+
+      access.resolveOverviewScope.mockResolvedValueOnce([]);
+      expect(await service.findPendingRequests(adminUser())).toHaveLength(0);
+      expect(scoped.find((a) => a.id === created.id)).toBeUndefined();
+    });
+
+    it('withdraw only works for the own pending request', async () => {
+      const created = await requestAbsence();
+      const { membership: stranger } = await createEmployeeInOrg(orgId);
+      await expect(
+        service.withdrawMyAbsenceRequest(created.id, {
+          orgId,
+          membershipId: stranger.id,
+        } as TokenPayload),
+      ).rejects.toBeInstanceOf(NotFoundException);
+
+      await expect(
+        service.withdrawMyAbsenceRequest(created.id, employeeUser()),
+      ).resolves.toBe(true);
+      const stored = await absenceRepo.findOneByOrFail({ id: created.id });
+      expect(stored.isActive).toBe(false);
     });
   });
 });

@@ -1,11 +1,14 @@
 import { getTranslations } from "next-intl/server";
-import { ThermometerIcon } from "lucide-react";
+import { PlusIcon, ThermometerIcon } from "lucide-react";
 
 import { OpenSheetButton } from "@/components/buttons/OpenSheetButton";
 import { PageHead } from "@/components/common/PageHead";
 import { getMyEmployeeAbsencesAction } from "@/features/employee-absences/actions/employee-absences.actions";
+import { getEmployeeAbsenceCategoriesByOrgIdAction } from "@/features/employee-absences/actions/get-employee-absence-categories-by-org-id.action";
+import { EmployeeAbsenceNoticeForm } from "@/features/employee-absences/components/EmployeeAbsenceNoticeForm";
 import EmployeeAbsencesTab from "@/features/employee-absences/components/EmployeeAbsencesTab";
 import { SickLeaveForm } from "@/features/employee-absences/components/SickLeaveForm";
+import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 
 /**
  * Self-service absence overview. Deliberately not gated on the time-tracking
@@ -14,7 +17,23 @@ import { SickLeaveForm } from "@/features/employee-absences/components/SickLeave
  */
 const MyAbsencesPage = async () => {
   const t = await getTranslations("Common");
-  const absencesRes = await getMyEmployeeAbsencesAction();
+  const tE = await getTranslations("Employees");
+  const userRes = await getCurrentUserAction();
+
+  // Own absences are org-scoped as well — without an active org there is
+  // nothing to show, so ask for an organization instead of an empty table.
+  if (!userRes?.data?.orgId) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
+        <p>{tE("selectOrganizationFirst")}</p>
+      </div>
+    );
+  }
+
+  const [absencesRes, categoriesRes] = await Promise.all([
+    getMyEmployeeAbsencesAction(),
+    getEmployeeAbsenceCategoriesByOrgIdAction(),
+  ]);
   const absences = absencesRes.data;
 
   return (
@@ -23,14 +42,29 @@ const MyAbsencesPage = async () => {
         title={t("myAbsences")}
         subtitle={t("myAbsencesDescription")}
         action={
-          <OpenSheetButton
-            buttonLabel="reportSickLeave"
-            icon={<ThermometerIcon />}
-            title="reportSickLeave"
-            description="reportSickLeaveDescription"
-          >
-            <SickLeaveForm />
-          </OpenSheetButton>
+          <div className="flex flex-wrap items-center gap-2">
+            <OpenSheetButton
+              buttonLabel="reportSickLeave"
+              icon={<ThermometerIcon />}
+              title="reportSickLeave"
+              description="reportSickLeaveDescription"
+              variant="outline"
+            >
+              <SickLeaveForm />
+            </OpenSheetButton>
+            {categoriesRes.data ? (
+              <OpenSheetButton
+                buttonLabel="createAbsenceNotice"
+                icon={<PlusIcon />}
+                title="createAbsenceNotice"
+                description="createAbsenceNoticeDescription"
+              >
+                <EmployeeAbsenceNoticeForm
+                  absenceCategories={categoriesRes.data}
+                />
+              </OpenSheetButton>
+            ) : null}
+          </div>
         }
       />
 
@@ -38,6 +72,7 @@ const MyAbsencesPage = async () => {
         employeeId={absences[0]?.employeeId ?? ""}
         absences={absences}
         showHeading={false}
+        allowWithdraw
       />
     </div>
   );

@@ -17,6 +17,7 @@
     "clean": "turbo run clean && rm -rf node_modules .turbo",
     "check:affected": "turbo run lint typecheck test build --filter=...[origin/main]",
     "prepush": "sh scripts/git-pre-push.sh --manual",
+    "db:reset": "sh scripts/reset-dev-db.sh",
     "prepare": "husky"
   },
   "devDependencies": {

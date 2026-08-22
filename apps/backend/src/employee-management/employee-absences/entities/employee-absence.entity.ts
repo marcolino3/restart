@@ -4,6 +4,7 @@ import { ObjectType, Field, Int } from '@nestjs/graphql';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { EmployeeAbsenceDay } from './employee-absence-days.entity';
 import { AbsenceDocument } from './absence-document.type';
+import { EmployeeAbsenceStatus } from './employee-absence-status.enum';
 import { AbstractEntity } from '@/database/abstract.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
@@ -99,6 +100,36 @@ export class EmployeeAbsence extends AbstractEntity<EmployeeAbsence> {
   @Field(() => Int)
   @Column('int', { default: 100 })
   percentage: number;
+
+  // Approval-Workflow. Kategorien mit requiresApproval erzeugen PENDING;
+  // alles andere (Admin-Eintrag, Mitteilung, Krankmeldung) ist sofort APPROVED.
+  @Field(() => EmployeeAbsenceStatus)
+  @Column('varchar', {
+    length: 16,
+    default: EmployeeAbsenceStatus.APPROVED,
+  })
+  status: EmployeeAbsenceStatus;
+
+  @Field(() => Date, { nullable: true })
+  @Column('timestamptz', { name: 'requested_at', nullable: true })
+  requestedAt?: Date | null;
+
+  @Field(() => Date, { nullable: true })
+  @Column('timestamptz', { name: 'decided_at', nullable: true })
+  decidedAt?: Date | null;
+
+  @ManyToOne(() => Membership, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'decided_by_membership_id' })
+  decidedBy?: Membership | null;
+
+  @Field(() => String, { nullable: true })
+  @Column('uuid', { name: 'decided_by_membership_id', nullable: true })
+  decidedByMembershipId?: string | null;
+
+  // Begruendung bei Ablehnung (Pflicht) bzw. optionaler Kommentar bei Genehmigung.
+  @Field(() => String, { nullable: true })
+  @Column('text', { name: 'decision_note', nullable: true })
+  decisionNote?: string | null;
 
   // Arztzeugnisse (private Storage-URLs via /api/absence-certificates/…).
   @Field(() => [AbsenceDocument])

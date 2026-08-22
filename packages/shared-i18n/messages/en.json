@@ -34,8 +34,8 @@
     "affectsVacationBalanceHelp": "Subtracts days from vacation quota (e.g. unpaid leave).",
     "defaultIsVacationCapableLabel": "Vacation-capable by default",
     "defaultIsVacationCapableHelp": "When off, overlapping vacation days will be credited back (typical for sickness). Can be overridden per booking.",
-    "requiresApprovalLabel": "Requires approval",
-    "requiresApprovalHelp": "HR/OrgAdmin must approve the booking.",
+    "requiresApprovalLabel": "Requires a request",
+    "requiresApprovalHelp": "On: employees request this absence any time in advance and it only becomes definitive once a team lead, HR or an admin approves it. Off: the absence is merely reported (today or tomorrow) and recorded immediately.",
     "requiresCertificateLabel": "Requires certificate",
     "requiresCertificateHelp": "A medical certificate or similar proof must be uploaded.",
     "limitsTitle": "Limits & defaults",
@@ -1813,7 +1813,39 @@
       "docLabelPlaceholder": "e.g. initial certificate, follow-up, accident report",
       "docUntitled": "Document {index}",
       "docTypesOnly": "Only PDF, JPEG, PNG or WebP allowed",
-      "docUploadError": "Upload failed"
+      "docUploadError": "Upload failed",
+      "employeeColumn": "Employee",
+      "status": {
+        "label": "Status",
+        "PENDING": "Pending approval",
+        "APPROVED": "Approved",
+        "REJECTED": "Rejected"
+      },
+      "requiresApprovalHint": "This category has to be requested. The request goes to your supervisors and only becomes definitive once approved.",
+      "noticeOnlyHint": "This category is only reported and recorded immediately — possible for today or tomorrow.",
+      "requestSubmitted": "Request submitted. Your supervisors have been notified.",
+      "dateError": {
+        "past": "The date must not be in the past.",
+        "tooFar": "This category can only be reported for today or tomorrow.",
+        "endBeforeStart": "The end date must not be before the start date."
+      },
+      "withdraw": "Withdraw",
+      "withdrawTitle": "Withdraw request",
+      "withdrawConfirm": "Do you want to withdraw this request?",
+      "withdrawError": "The request could not be withdrawn.",
+      "approve": "Approve",
+      "approveTitle": "Approve request",
+      "approveConfirm": "The absence will be recorded definitively and the employee will be notified.",
+      "approveError": "The request could not be approved.",
+      "reject": "Reject",
+      "rejectTitle": "Reject request",
+      "rejectDescription": "Please provide a reason. It will be shared with the employee.",
+      "rejectNotePlaceholder": "Reason",
+      "rejectSuccess": "Request rejected.",
+      "rejectError": "The request could not be rejected.",
+      "requestsTitle": "Absence requests",
+      "requestsDescription": "Review and decide open absence requests from your employees.",
+      "noPendingRequests": "No open requests."
     },
     "searchPlaceholder": "Search name or email...",
     "newEmployee": "New employee",
@@ -3271,7 +3303,8 @@
     "chats": "Chats",
     "projectTemplates": "Templates",
     "protocols": "Protocols",
-    "employeeFunctions": "Functions"
+    "employeeFunctions": "Functions",
+    "absenceRequests": "Absence requests"
   },
   "StudentNotes": {
     "logbook": "Notes",
