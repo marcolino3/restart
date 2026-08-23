@@ -8,6 +8,7 @@ import { UseGuards } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CreateEmployeeAbsenceNoticeInput } from './dto/create-employee-absence-notice.input';
 import { CreateEmployeeAbsenceInput } from './dto/create-employee-absence.input';
+import { DecideEmployeeAbsenceInput } from './dto/decide-employee-absence.input';
 import { UpdateEmployeeAbsenceInput } from './dto/update-employee-absence.input';
 import { EmployeeAbsencesService } from './employee-absences.service';
 import { EmployeeAbsence } from './entities/employee-absence.entity';
@@ -35,6 +36,13 @@ export class EmployeeAbsencesResolver {
   @UseGuards(MembershipGuard)
   myEmployeeAbsences(@CurrentUser() user: TokenPayload) {
     return this.employeeAbsencesService.findAllForCaller(user);
+  }
+
+  // Open requests within the caller's scope (all / led teams / none).
+  @Permissions('TIMESHEET_READ')
+  @Query(() => [EmployeeAbsence], { name: 'pendingAbsenceRequests' })
+  pendingAbsenceRequests(@CurrentUser() user: TokenPayload) {
+    return this.employeeAbsencesService.findPendingRequests(user);
   }
 
   @Permissions('TIMESHEET_READ')
@@ -79,6 +87,43 @@ export class EmployeeAbsencesResolver {
     @CurrentUser() user: TokenPayload,
   ) {
     return this.employeeAbsencesService.updateEmployeeAbsence(input, user);
+  }
+
+  @Permissions('TIMESHEET_WRITE')
+  @Mutation(() => EmployeeAbsence, { name: 'approveEmployeeAbsence' })
+  approveEmployeeAbsence(
+    @Args('input') input: DecideEmployeeAbsenceInput,
+    @CurrentUser() user: TokenPayload,
+  ) {
+    return this.employeeAbsencesService.approveEmployeeAbsence(
+      input.id,
+      input.note,
+      user,
+    );
+  }
+
+  @Permissions('TIMESHEET_WRITE')
+  @Mutation(() => EmployeeAbsence, { name: 'rejectEmployeeAbsence' })
+  rejectEmployeeAbsence(
+    @Args('input') input: DecideEmployeeAbsenceInput,
+    @CurrentUser() user: TokenPayload,
+  ) {
+    return this.employeeAbsencesService.rejectEmployeeAbsence(
+      input.id,
+      input.note,
+      user,
+    );
+  }
+
+  // Self-service: withdraw an own pending request. Scoped to the caller's
+  // membership inside the service, so no permission code is needed.
+  @Mutation(() => Boolean, { name: 'withdrawMyEmployeeAbsenceRequest' })
+  @UseGuards(MembershipGuard)
+  withdrawMyEmployeeAbsenceRequest(
+    @Args('id', { type: () => ID }) id: string,
+    @CurrentUser() user: TokenPayload,
+  ) {
+    return this.employeeAbsencesService.withdrawMyAbsenceRequest(id, user);
   }
 
   @Permissions('TIMESHEET_WRITE')
