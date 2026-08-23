@@ -17,6 +17,7 @@ import { AbsenceCalendarSyncService } from '../employee-absences/absence-calenda
 import { absenceCategoryLabel } from '../employee-absences/employee-absences.service';
 import { EmployeeAbsenceDay } from '../employee-absences/entities/employee-absence-days.entity';
 import { EmployeeAbsence } from '../employee-absences/entities/employee-absence.entity';
+import { EmployeeAbsenceStatus } from '../employee-absences/entities/employee-absence-status.enum';
 import { Holiday } from '../holidays/entities/holiday.entity';
 import { TimeTrackingPeriodsService } from '../time-tracking-periods/time-tracking-periods.service';
 import { BalanceRecomputeService } from '../work-time-calculation/balance-recompute.service';
@@ -192,6 +193,9 @@ export class SickLeaveService {
       .where('absence.organization_id = :organizationId', { organizationId })
       .andWhere('absence.employee_id = :employeeId', { employeeId })
       .andWhere('absence."isActive" = true')
+      .andWhere('absence.status = :approved', {
+        approved: EmployeeAbsenceStatus.APPROVED,
+      })
       .andWhere('absence."startDate" <= :date', { date })
       .andWhere('absence."endDate" >= :lookbackStart', { lookbackStart })
       .orderBy('absence."endDate"', 'DESC')
@@ -305,6 +309,9 @@ export class SickLeaveService {
         .where('absence.organization_id = :organizationId', { organizationId })
         .andWhere('absence.employee_id = :employeeId', { employeeId })
         .andWhere('absence."isActive" = true')
+        .andWhere('absence.status <> :rejected', {
+          rejected: EmployeeAbsenceStatus.REJECTED,
+        })
         .andWhere('absence."startDate" <= :date', { date })
         .andWhere('absence."endDate" >= :date', { date })
         .getOne();
@@ -329,6 +336,7 @@ export class SickLeaveService {
         isTeamInformed: false,
         isVacationCapable: category.defaultIsVacationCapable,
         percentage: category.defaultPercentage,
+        status: EmployeeAbsenceStatus.APPROVED,
         certificates: [],
         additionalDocuments: [],
       });

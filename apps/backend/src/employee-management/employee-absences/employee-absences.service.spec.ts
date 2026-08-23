@@ -1,8 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { EmployeeAbsencesService } from './employee-absences.service';
 import { AbsenceCalendarSyncService } from './absence-calendar-sync.service';
+import { AbsenceRequestNotificationService } from './absence-request-notification.service';
+import { EmployeeAbsenceStatus } from './entities/employee-absence-status.enum';
+import { CreateEmployeeAbsenceNoticeInput } from './dto/create-employee-absence-notice.input';
 import { StorageService } from '@/storage/storage.service';
 import { BalanceRecomputeService } from '../work-time-calculation/balance-recompute.service';
 import { TimeTrackingAccessService } from '../work-time-calculation/time-tracking-access.service';
@@ -21,6 +28,7 @@ describe('EmployeeAbsencesService', () => {
     find: jest.Mock;
     findOneOrFail: jest.Mock;
     transaction: jest.Mock;
+    save: jest.Mock;
   };
   let periods: { assertRangeUnlocked: jest.Mock };
   let access: {
@@ -29,6 +37,8 @@ describe('EmployeeAbsencesService', () => {
   };
   let recompute: { recomputeRange: jest.Mock };
   let storage: { delete: jest.Mock };
+  let notifications: { notifyRequested: jest.Mock; notifyDecided: jest.Mock };
+  let calendarSync: { sync: jest.Mock; remove: jest.Mock };
 
   beforeEach(async () => {
     entityManager = {
@@ -36,6 +46,7 @@ describe('EmployeeAbsencesService', () => {
       find: jest.fn(),
       findOneOrFail: jest.fn(),
       transaction: jest.fn(),
+      save: jest.fn().mockImplementation((_e, v) => Promise.resolve(v)),
     };
     periods = { assertRangeUnlocked: jest.fn().mockResolvedValue(undefined) };
     access = {
@@ -44,18 +55,21 @@ describe('EmployeeAbsencesService', () => {
     };
     recompute = { recomputeRange: jest.fn().mockResolvedValue(undefined) };
     storage = { delete: jest.fn().mockResolvedValue(undefined) };
+    notifications = {
+      notifyRequested: jest.fn().mockResolvedValue(undefined),
+      notifyDecided: jest.fn().mockResolvedValue(undefined),
+    };
+    calendarSync = {
+      sync: jest.fn().mockResolvedValue(undefined),
+      remove: jest.fn().mockResolvedValue(undefined),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EmployeeAbsencesService,
         { provide: EntityManager, useValue: entityManager },
-        {
-          provide: AbsenceCalendarSyncService,
-          useValue: {
-            sync: jest.fn().mockResolvedValue(undefined),
-            remove: jest.fn().mockResolvedValue(undefined),
-          },
-        },
+        { provide: AbsenceCalendarSyncService, useValue: calendarSync },
+        { provide: AbsenceRequestNotificationService, useValue: notifications },
         { provide: BalanceRecomputeService, useValue: recompute },
         { provide: TimeTrackingAccessService, useValue: access },
         { provide: TimeTrackingPeriodsService, useValue: periods },
@@ -199,6 +213,7 @@ describe('EmployeeAbsencesService', () => {
       entityManager.findOne.mockResolvedValue({
         id: 'abs-1',
         employeeId: 'emp-9',
+        status: EmployeeAbsenceStatus.APPROVED,
         startDate: new Date('2026-01-05'),
         endDate: new Date('2026-01-06'),
       });
@@ -253,6 +268,7 @@ describe('EmployeeAbsencesService', () => {
               .mockResolvedValueOnce({ id: 'cat-1', systemCode: 'SICKNESS' }),
             createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
             create: jest.fn().mockImplementation((_e, v) => v),
+            delete: jest.fn(),
             save: jest.fn().mockImplementation((v) => {
               if (v && typeof v === 'object' && 'certificates' in v) {
                 savedAbsence = v as Record<string, unknown>;
@@ -327,6 +343,7 @@ describe('EmployeeAbsencesService', () => {
         employeeId: 'emp-1',
         organizationId: 'org-1',
         absenceCategoryId: 'cat-1',
+        status: EmployeeAbsenceStatus.APPROVED,
         startDate: new Date('2026-01-05'),
         endDate: new Date('2026-01-06'),
       };
@@ -446,6 +463,227 @@ describe('EmployeeAbsencesService', () => {
       expect(storage.delete).toHaveBeenCalledWith(
         'absence-certificates/org-1/d.pdf',
       );
+    });
+  });
+
+  describe('approval workflow', () => {
+    const today = new Date();
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    const plusDays = (n: number) =>
+      iso(new Date(today.getTime() + n * 86_400_000));
+
+    function mockNoticeContext(requiresApproval: boolean) {
+      entityManager.findOne
+        .mockResolvedValueOnce({
+          id: 'mem-1',
+          employee: { id: 'emp-1' },
+          user: { firstName: 'Anna', lastName: 'Test' },
+        })
+        .mockResolvedValueOnce({
+          id: 'cat-1',
+          systemCode: 'VACATION',
+          requiresApproval,
+        });
+      const tx = {
+        findOne: jest
+          .fn()
+          .mockResolvedValueOnce({ id: 'org-1' })
+          .mockResolvedValueOnce({ id: 'cat-1', systemCode: 'VACATION' }),
+        createQueryBuilder: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnThis(),
+          andWhere: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValue(null),
+        }),
+        create: jest.fn().mockImplementation((_e, v) => v),
+        save: jest
+          .fn()
+          .mockImplementation((v) => Promise.resolve({ ...v, id: 'abs-new' })),
+        delete: jest.fn(),
+      };
+      entityManager.transaction.mockImplementation(
+        async (fn: (m: unknown) => Promise<unknown>) => fn(tx),
+      );
+      return tx;
+    }
+
+    it('lehnt Mitteilungs-Kategorie übermorgen ab', async () => {
+      mockNoticeContext(false);
+      await expect(
+        service.createEmployeeAbsenceNotice(
+          {
+            absenceCategoryId: 'cat-1',
+            startDate: plusDays(2),
+          } as CreateEmployeeAbsenceNoticeInput,
+          user,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(entityManager.transaction).not.toHaveBeenCalled();
+    });
+
+    it('Antrags-Kategorie wird PENDING ohne Days/Recompute, Mail an Vorgesetzte', async () => {
+      const tx = mockNoticeContext(true);
+      const result = await service.createEmployeeAbsenceNotice(
+        {
+          absenceCategoryId: 'cat-1',
+          startDate: plusDays(30),
+        } as CreateEmployeeAbsenceNoticeInput,
+        user,
+      );
+      expect(result.status).toBe(EmployeeAbsenceStatus.PENDING);
+      expect(tx.delete).not.toHaveBeenCalled();
+      expect(recompute.recomputeRange).not.toHaveBeenCalled();
+      expect(calendarSync.sync).not.toHaveBeenCalled();
+      expect(notifications.notifyRequested).toHaveBeenCalledTimes(1);
+    });
+
+    it('Mitteilungs-Kategorie morgen wird sofort APPROVED mit Recompute', async () => {
+      mockNoticeContext(false);
+      const result = await service.createEmployeeAbsenceNotice(
+        {
+          absenceCategoryId: 'cat-1',
+          startDate: plusDays(1),
+        } as CreateEmployeeAbsenceNoticeInput,
+        user,
+      );
+      expect(result.status).toBe(EmployeeAbsenceStatus.APPROVED);
+      expect(recompute.recomputeRange).toHaveBeenCalledTimes(1);
+      expect(notifications.notifyRequested).not.toHaveBeenCalled();
+    });
+
+    function mockPending(employeeId = 'emp-9') {
+      const absence = {
+        id: 'abs-1',
+        organizationId: 'org-1',
+        employeeId,
+        membershipId: 'mem-9',
+        status: EmployeeAbsenceStatus.PENDING,
+        startDate: new Date('2026-05-04'),
+        endDate: new Date('2026-05-06'),
+        absenceCategory: { systemCode: 'VACATION' },
+      };
+      entityManager.findOne
+        .mockResolvedValueOnce(absence)
+        .mockResolvedValueOnce({
+          id: 'mem-1',
+          employeeId: 'emp-1',
+          user: { firstName: 'Lead', lastName: 'One' },
+        })
+        .mockResolvedValueOnce({
+          id: 'mem-9',
+          user: { firstName: 'Anna', lastName: 'Test' },
+        });
+      const tx = {
+        create: jest.fn().mockImplementation((_e, v) => v),
+        save: jest.fn().mockImplementation((_e, v) => Promise.resolve(v)),
+        delete: jest.fn(),
+      };
+      entityManager.transaction.mockImplementation(
+        async (fn: (m: unknown) => Promise<unknown>) => fn(tx),
+      );
+      return { absence, tx };
+    }
+
+    it('approve setzt APPROVED, schreibt Days, recomputed und mailt', async () => {
+      const { tx } = mockPending();
+      const result = await service.approveEmployeeAbsence('abs-1', null, user);
+      expect(access.assertCanManageAbsence).toHaveBeenCalledWith(user, 'emp-9');
+      expect(result.status).toBe(EmployeeAbsenceStatus.APPROVED);
+      expect(result.decidedByMembershipId).toBe('mem-1');
+      expect(tx.delete).toHaveBeenCalled();
+      expect(tx.save).toHaveBeenCalledTimes(2);
+      expect(recompute.recomputeRange).toHaveBeenCalledWith(
+        'org-1',
+        'emp-9',
+        '2026-05-04',
+        '2026-05-06',
+      );
+      expect(calendarSync.sync).toHaveBeenCalledTimes(1);
+      expect(notifications.notifyDecided).toHaveBeenCalledWith(
+        expect.objectContaining({ approved: true, employeeId: 'emp-9' }),
+      );
+    });
+
+    it('reject ohne Begründung -> 400', async () => {
+      await expect(
+        service.rejectEmployeeAbsence('abs-1', '  ', user),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(entityManager.findOne).not.toHaveBeenCalled();
+    });
+
+    it('reject setzt REJECTED ohne Days/Recompute', async () => {
+      const { tx } = mockPending();
+      const result = await service.rejectEmployeeAbsence('abs-1', 'Nein', user);
+      expect(result.status).toBe(EmployeeAbsenceStatus.REJECTED);
+      expect(result.decisionNote).toBe('Nein');
+      expect(tx.delete).not.toHaveBeenCalled();
+      expect(recompute.recomputeRange).not.toHaveBeenCalled();
+      expect(notifications.notifyDecided).toHaveBeenCalledWith(
+        expect.objectContaining({ approved: false, decisionNote: 'Nein' }),
+      );
+    });
+
+    it('Lead darf eigenen Antrag nicht genehmigen -> 403', async () => {
+      mockPending('emp-1');
+      await expect(
+        service.approveEmployeeAbsence('abs-1', null, {
+          ...user,
+          roles: ['TEAM_LEAD'],
+        }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(recompute.recomputeRange).not.toHaveBeenCalled();
+    });
+
+    it('HR darf eigenen Antrag genehmigen', async () => {
+      mockPending('emp-1');
+      const result = await service.approveEmployeeAbsence('abs-1', null, {
+        ...user,
+        roles: ['HR_MANAGER'],
+      });
+      expect(result.status).toBe(EmployeeAbsenceStatus.APPROVED);
+    });
+
+    it('nur PENDING kann entschieden werden', async () => {
+      entityManager.findOne.mockResolvedValueOnce({
+        id: 'abs-1',
+        employeeId: 'emp-9',
+        status: EmployeeAbsenceStatus.APPROVED,
+      });
+      await expect(
+        service.approveEmployeeAbsence('abs-1', null, user),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('withdraw nur eigener PENDING-Antrag', async () => {
+      entityManager.findOne.mockResolvedValueOnce({
+        id: 'abs-1',
+        status: EmployeeAbsenceStatus.PENDING,
+        isActive: true,
+      });
+      await expect(
+        service.withdrawMyAbsenceRequest('abs-1', user),
+      ).resolves.toBe(true);
+      expect(entityManager.findOne).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          where: expect.objectContaining({
+            organizationId: 'org-1',
+            membershipId: 'mem-1',
+          }),
+        }),
+      );
+      expect(entityManager.save).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ isActive: false }),
+      );
+
+      entityManager.findOne.mockResolvedValueOnce({
+        id: 'abs-2',
+        status: EmployeeAbsenceStatus.APPROVED,
+        isActive: true,
+      });
+      await expect(
+        service.withdrawMyAbsenceRequest('abs-2', user),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
   });
 });

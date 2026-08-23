@@ -3,6 +3,7 @@ import { SmtpService } from '@/school-management/admissions/smtp.service';
 import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { EntityManager } from 'typeorm';
+import { AbsenceRecipientsService } from '../employee-absences/absence-recipients.service';
 import { SickLeaveNotificationService } from './sick-leave-notification.service';
 import { SICK_LEAVE_SETTING_KEYS } from './sick-leave-setting-keys';
 
@@ -74,6 +75,7 @@ describe('SickLeaveNotificationService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SickLeaveNotificationService,
+        AbsenceRecipientsService,
         { provide: EntityManager, useValue: entityManager },
         { provide: SmtpService, useValue: smtp },
         {

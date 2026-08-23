@@ -46,6 +46,7 @@ import {
   canSeeMyTasks,
   canSeeProjects,
   canSeeProtocols,
+  canSeeAbsences,
   canSeeTimeReport,
   canSeeTimeTracking,
 } from "@/lib/navigation/nav-visibility";
@@ -103,6 +104,16 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
         url: ROUTES.admin.myAbsences(locale),
         icon: IconThermometer,
       },
+      // Absenzanträge: nur wer Absenzen schreiben darf (ADMIN/HR/Teamleitung).
+      ...(hasPermission("TIMESHEET_WRITE") && canSeeAbsences(user)
+        ? [
+            {
+              title: t("absenceRequests"),
+              url: ROUTES.admin.absenceRequests(locale),
+              icon: IconClipboardCheck,
+            },
+          ]
+        : []),
       // Zeitauswertung: ADMIN/HR + Teamleiter (OFFICE ausgeschlossen).
       ...(canSeeTimeReport(user)
         ? [

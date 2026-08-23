@@ -24,6 +24,10 @@ import { E2E_ORG_PREFIX } from './fixture-naming'
  * graph and would otherwise survive.
  */
 const FIXTURE_EMAIL_PATTERN = 'e2e.%@example.com'
+// Absences the specs create carry an "E2E …" note. They usually live in the
+// seeded local organization (not a fixture org), and the app only soft-deletes
+// them (isActive=false), so they would pile up run after run.
+const FIXTURE_ABSENCE_NOTE_PATTERN = 'E2E%'
 
 /**
  * Reads the DB_* connection settings from the backend's .env when they are
@@ -158,6 +162,28 @@ export default async function globalTeardown(): Promise<void> {
       // eslint-disable-next-line no-console
       console.log(
         `[global-teardown] removed ${orgIds.length} fixture organization(s) and ${deletedRows} dependent row(s)`,
+      )
+    }
+
+    // Absences created by the specs, wherever they live. Hard delete, because
+    // the app itself only flags them inactive.
+    const absenceIds = await client.query<{ id: string }>(
+      `SELECT id FROM employee_absences WHERE note LIKE $1`,
+      [FIXTURE_ABSENCE_NOTE_PATTERN],
+    )
+    if (absenceIds.rows.length > 0) {
+      const ids = absenceIds.rows.map((r) => r.id)
+      await client.query(
+        'DELETE FROM employee_absence_days WHERE employee_absence_id = ANY($1::uuid[])',
+        [ids],
+      )
+      await client.query(
+        'DELETE FROM employee_absences WHERE id = ANY($1::uuid[])',
+        [ids],
+      )
+      // eslint-disable-next-line no-console
+      console.log(
+        `[global-teardown] removed ${ids.length} E2E absence(s) and their days`,
       )
     }
 

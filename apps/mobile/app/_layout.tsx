@@ -106,6 +106,10 @@ function RootLayoutNav() {
           name="sick-leave"
           options={{ presentation: "modal", headerShown: false }}
         />
+        <Stack.Screen
+          name="absence-request"
+          options={{ presentation: "modal", headerShown: false }}
+        />
         <Stack.Screen name="chats/[id]" options={{ headerShown: false }} />
         <Stack.Screen
           name="chats/new"

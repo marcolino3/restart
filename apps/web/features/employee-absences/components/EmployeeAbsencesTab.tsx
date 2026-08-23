@@ -31,7 +31,11 @@ import {
 } from "@restart/shared-schemas/employee-absences/absence-document";
 
 import type { EmployeeAbsence } from "../actions/employee-absences.actions";
-import { deleteEmployeeAbsenceAction } from "../actions/employee-absences.actions";
+import {
+  deleteEmployeeAbsenceAction,
+  withdrawMyEmployeeAbsenceRequestAction,
+} from "../actions/employee-absences.actions";
+import { AbsenceStatusBadge } from "./AbsenceStatusBadge";
 
 type CategorySummary = {
   categoryId: string;
@@ -47,6 +51,8 @@ interface Props {
   editable?: boolean;
   /** `false` when the surrounding page already carries the heading. */
   showHeading?: boolean;
+  /** `true` on the self-service page: pending own requests can be withdrawn. */
+  allowWithdraw?: boolean;
 }
 
 export default function EmployeeAbsencesTab({
@@ -55,6 +61,7 @@ export default function EmployeeAbsencesTab({
   categorySummary = [],
   editable,
   showHeading = true,
+  allowWithdraw = false,
 }: Props) {
   const t = useTranslations("Common");
   const tE = useTranslations("Employees");
@@ -81,6 +88,13 @@ export default function EmployeeAbsencesTab({
       );
     }
     return "–";
+  };
+
+  const handleWithdraw = async (id: string) => {
+    const res = await withdrawMyEmployeeAbsenceRequestAction(id);
+    return res.success
+      ? { success: true as const }
+      : { success: false as const, error: tE("absence.withdrawError") };
   };
 
   const handleDelete = async (id: string) => {
@@ -233,6 +247,24 @@ export default function EmployeeAbsencesTab({
         },
       },
       {
+        id: "status",
+        accessorFn: (a) => tE(`absence.status.${a.status ?? "APPROVED"}`),
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title={tE("absence.status.label")}
+          />
+        ),
+        meta: { labelKey: "absence.status.label" },
+        filterFn: multiSelectFilter,
+        cell: ({ row }) => (
+          <AbsenceStatusBadge
+            status={row.original.status}
+            decisionNote={row.original.decisionNote}
+          />
+        ),
+      },
+      {
         id: "note",
         accessorFn: (a) => a.note ?? "",
         header: ({ column }) => (
@@ -250,6 +282,31 @@ export default function EmployeeAbsencesTab({
         },
       },
     ];
+
+    if (allowWithdraw) {
+      cols.push({
+        id: "withdraw",
+        enableHiding: false,
+        enableSorting: false,
+        header: () => <span className="sr-only">{t("actions")}</span>,
+        cell: ({ row }) =>
+          row.original.status === "PENDING" ? (
+            <div className="text-right">
+              <DeleteConfirmationDialog
+                title={tE("absence.withdrawTitle")}
+                description={tE("absence.withdrawConfirm")}
+                onConfirm={() => handleWithdraw(row.original.id)}
+                onSuccess={() => router.refresh()}
+                trigger={
+                  <Button variant="ghost" size="sm">
+                    {tE("absence.withdraw")}
+                  </Button>
+                }
+              />
+            </div>
+          ) : null,
+      });
+    }
 
     if (editable) {
       cols.push({
@@ -287,7 +344,7 @@ export default function EmployeeAbsencesTab({
 
     return cols;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [t, tE, editable, locale, employeeId]);
+  }, [t, tE, editable, allowWithdraw, locale, employeeId]);
 
   const { table, globalFilter, setGlobalFilter } = useDataTable({
     data: absences,
