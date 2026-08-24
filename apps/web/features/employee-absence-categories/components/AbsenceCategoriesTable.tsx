@@ -281,6 +281,13 @@ function SortableTableRow({
         {item.maxDaysPerYear && (
           <div>{t("limitMaxDays", { n: item.maxDaysPerYear })}</div>
         )}
+        {item.allowsDateRange && (
+          <div>
+            {item.maxDaysPerRequest
+              ? t("limitMaxDaysPerRequest", { n: item.maxDaysPerRequest })
+              : t("limitDateRange")}
+          </div>
+        )}
         {item.certificateRequiredFromDay && (
           <div>
             {t("limitCertificateFromDay", {

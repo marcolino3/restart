@@ -19,6 +19,8 @@ const Document = gql`
       requiresCertificate
       certificateRequiredFromDay
       maxDaysPerYear
+      allowsDateRange
+      maxDaysPerRequest
       defaultPercentage
       requiresApproval
       color

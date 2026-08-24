@@ -22,6 +22,7 @@ const requiredInt = z.preprocess(
 
 export function createAbsenceCategoryFormSchema(messages: {
   atLeastOneNameRequired: string;
+  maxDaysPerRequestNeedsRange: string;
 }) {
   return z
     .object({
@@ -36,6 +37,8 @@ export function createAbsenceCategoryFormSchema(messages: {
       requiresCertificate: z.boolean(),
       certificateRequiredFromDay: nullableInt,
       maxDaysPerYear: nullableInt,
+      allowsDateRange: z.boolean(),
+      maxDaysPerRequest: nullableInt,
       defaultPercentage: requiredInt.pipe(z.number().int().min(1).max(100)),
       requiresApproval: z.boolean(),
       color: z
@@ -46,6 +49,13 @@ export function createAbsenceCategoryFormSchema(messages: {
       sortOrder: requiredInt.pipe(z.number().int().min(0)),
     })
     .superRefine((data, ctx) => {
+      if (!data.allowsDateRange && data.maxDaysPerRequest != null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["maxDaysPerRequest"],
+          message: messages.maxDaysPerRequestNeedsRange,
+        });
+      }
       const hasAny = data.translations.some((tr) => tr.name.trim());
       if (hasAny) return;
 
@@ -82,6 +92,8 @@ export const ABSENCE_CATEGORY_FORM_DEFAULTS: AbsenceCategoryFormInput = {
   requiresCertificate: false,
   certificateRequiredFromDay: null,
   maxDaysPerYear: null,
+  allowsDateRange: false,
+  maxDaysPerRequest: null,
   defaultPercentage: 100,
   requiresApproval: false,
   color: null,

@@ -10,12 +10,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
@@ -31,10 +26,7 @@ import {
   type AbsenceCategoryFormInput,
   type AbsenceCategoryFormValues,
 } from "../schemas/employee-absence-category-form.schema";
-import type {
-  AbsenceCategoryItem,
-  AbsenceCategoryLocale,
-} from "../types";
+import type { AbsenceCategoryItem, AbsenceCategoryLocale } from "../types";
 import { createEmployeeAbsenceCategoryAction } from "../actions/create-employee-absence-category.action";
 import { updateEmployeeAbsenceCategoryAction } from "../actions/update-employee-absence-category.action";
 
@@ -58,16 +50,22 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
     () =>
       createAbsenceCategoryFormSchema({
         atLeastOneNameRequired: t("atLeastOneNameRequired"),
+        maxDaysPerRequestNeedsRange: t("maxDaysPerRequestNeedsRange"),
       }),
     [t],
   );
 
-  const form = useForm<AbsenceCategoryFormInput, unknown, AbsenceCategoryFormValues>({
+  const form = useForm<
+    AbsenceCategoryFormInput,
+    unknown,
+    AbsenceCategoryFormValues
+  >({
     resolver: zodResolver(schema),
     defaultValues: initial
       ? mapInitialToFormValues(initial)
       : ABSENCE_CATEGORY_FORM_DEFAULTS,
   });
+  const allowsDateRange = form.watch("allowsDateRange");
 
   const onSubmit = (values: AbsenceCategoryFormValues) => {
     startTransition(async () => {
@@ -86,6 +84,10 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
               certificateRequiredFromDay:
                 values.certificateRequiredFromDay ?? null,
               maxDaysPerYear: values.maxDaysPerYear ?? null,
+              allowsDateRange: values.allowsDateRange,
+              maxDaysPerRequest: values.allowsDateRange
+                ? (values.maxDaysPerRequest ?? null)
+                : null,
               defaultPercentage: values.defaultPercentage,
               requiresApproval: values.requiresApproval,
               color: values.color,
@@ -119,6 +121,10 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
                     certificateRequiredFromDay:
                       values.certificateRequiredFromDay ?? null,
                     maxDaysPerYear: values.maxDaysPerYear ?? null,
+                    allowsDateRange: values.allowsDateRange,
+                    maxDaysPerRequest: values.allowsDateRange
+                      ? (values.maxDaysPerRequest ?? null)
+                      : null,
                     defaultPercentage: values.defaultPercentage,
                     requiresApproval: values.requiresApproval,
                   }),
@@ -137,7 +143,10 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
   const onInvalid = (errors: FieldErrors<AbsenceCategoryFormInput>) => {
     // Translations-Fehler? -> zum richtigen Sprachen-Tab springen
     const translationErrors = errors.translations as
-      | Array<{ name?: { message?: string }; description?: { message?: string } } | undefined>
+      | Array<
+          | { name?: { message?: string }; description?: { message?: string } }
+          | undefined
+        >
       | undefined;
     if (Array.isArray(translationErrors)) {
       const idx = translationErrors.findIndex((e) => e?.name || e?.description);
@@ -172,7 +181,9 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
             <CardTitle>{t("translationsTitle")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4 text-xs">{t("localeHint")}</p>
+            <p className="text-muted-foreground mb-4 text-xs">
+              {t("localeHint")}
+            </p>
             <Tabs
               value={activeTab}
               onValueChange={(v) => setActiveTab(v as AbsenceCategoryLocale)}
@@ -246,6 +257,12 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
                 namespace="AbsenceCategories"
               />
               <SwitchFormField
+                name="allowsDateRange"
+                label="allowsDateRangeLabel"
+                description="allowsDateRangeHelp"
+                namespace="AbsenceCategories"
+              />
+              <SwitchFormField
                 name="requiresCertificate"
                 label="requiresCertificateLabel"
                 description="requiresCertificateHelp"
@@ -277,6 +294,15 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
                 description="maxDaysPerYearHelp"
                 min={1}
                 max={365}
+                namespace="AbsenceCategories"
+              />
+              <NumberFormField
+                name="maxDaysPerRequest"
+                label="maxDaysPerRequestLabel"
+                description="maxDaysPerRequestHelp"
+                min={1}
+                max={365}
+                disabled={!allowsDateRange}
                 namespace="AbsenceCategories"
               />
               <NumberFormField
@@ -329,9 +355,7 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
           <Button
             type="button"
             variant="outline"
-            onClick={() =>
-              router.push(ROUTES.admin.absenceCategories(locale))
-            }
+            onClick={() => router.push(ROUTES.admin.absenceCategories(locale))}
           >
             {t("cancel")}
           </Button>
@@ -398,6 +422,8 @@ function mapInitialToFormValues(
     requiresCertificate: item.requiresCertificate,
     certificateRequiredFromDay: item.certificateRequiredFromDay,
     maxDaysPerYear: item.maxDaysPerYear,
+    allowsDateRange: item.allowsDateRange,
+    maxDaysPerRequest: item.maxDaysPerRequest,
     defaultPercentage: item.defaultPercentage,
     requiresApproval: item.requiresApproval,
     color: item.color,

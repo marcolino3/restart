@@ -30,6 +30,8 @@ type CreateInput = {
   requiresCertificate: boolean;
   certificateRequiredFromDay?: number | null;
   maxDaysPerYear?: number | null;
+  allowsDateRange?: boolean;
+  maxDaysPerRequest?: number | null;
   defaultPercentage: number;
   requiresApproval: boolean;
   color?: string | null;
@@ -64,6 +66,7 @@ function sanitize(input: CreateInput) {
     reducesVacationEntitlementAfterDays,
     certificateRequiredFromDay,
     maxDaysPerYear,
+    maxDaysPerRequest,
     color,
     iconName,
     translations,
@@ -83,6 +86,7 @@ function sanitize(input: CreateInput) {
       : {}),
     ...(certificateRequiredFromDay ? { certificateRequiredFromDay } : {}),
     ...(maxDaysPerYear ? { maxDaysPerYear } : {}),
+    ...(maxDaysPerRequest ? { maxDaysPerRequest } : {}),
     ...(color ? { color } : {}),
     ...(iconName ? { iconName } : {}),
   };

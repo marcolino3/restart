@@ -7,6 +7,7 @@ import {
 
 const schema = createAbsenceCategoryFormSchema({
   atLeastOneNameRequired: "At least one label is required.",
+  maxDaysPerRequestNeedsRange: "Needs date range.",
 });
 
 describe("createAbsenceCategoryFormSchema", () => {

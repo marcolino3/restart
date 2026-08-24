@@ -31,6 +31,8 @@ type UpdateInput = {
   requiresCertificate?: boolean;
   certificateRequiredFromDay?: number | null;
   maxDaysPerYear?: number | null;
+  allowsDateRange?: boolean;
+  maxDaysPerRequest?: number | null;
   defaultPercentage?: number;
   requiresApproval?: boolean;
   color?: string | null;
@@ -79,6 +81,7 @@ function sanitize(input: UpdateInput) {
     "defaultIsVacationCapable",
     "requiresCertificate",
     "requiresApproval",
+    "allowsDateRange",
     "defaultPercentage",
     "sortOrder",
   ];
@@ -89,6 +92,7 @@ function sanitize(input: UpdateInput) {
     "reducesVacationEntitlementAfterDays",
     "certificateRequiredFromDay",
     "maxDaysPerYear",
+    "maxDaysPerRequest",
   ];
   for (const k of nullableNumberKeys) {
     const v = input[k];

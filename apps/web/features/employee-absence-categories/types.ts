@@ -22,6 +22,8 @@ export type AbsenceCategorySystemCode =
   | "MOVE"
   | "MILITARY_SERVICE"
   | "CIVIL_SERVICE"
+  | "COMPENSATION"
+  | "UNPAID_LEAVE"
   | "OTHER";
 
 export type AbsenceCategoryItem = {
@@ -37,6 +39,8 @@ export type AbsenceCategoryItem = {
   requiresCertificate: boolean;
   certificateRequiredFromDay: number | null;
   maxDaysPerYear: number | null;
+  allowsDateRange: boolean;
+  maxDaysPerRequest: number | null;
   defaultPercentage: number;
   requiresApproval: boolean;
   color: string | null;
@@ -47,7 +51,10 @@ export type AbsenceCategoryItem = {
 
 /** Returns name in preferred locale, falling back DE → EN → first available. */
 export function pickAbsenceCategoryName(
-  item: { translations: AbsenceCategoryTranslation[]; systemCode: string | null },
+  item: {
+    translations: AbsenceCategoryTranslation[];
+    systemCode: string | null;
+  },
   preferred: string,
 ): string {
   const upper = preferred.toUpperCase() as AbsenceCategoryLocale;
