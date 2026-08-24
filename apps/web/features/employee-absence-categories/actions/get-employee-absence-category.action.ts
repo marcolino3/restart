@@ -20,6 +20,8 @@ const Document = gql`
       certificateRequiredFromDay
       maxDaysPerYear
       allowsDateRange
+      syncToCalendar
+      calendarTitleTemplate
       maxDaysPerRequest
       defaultPercentage
       requiresApproval

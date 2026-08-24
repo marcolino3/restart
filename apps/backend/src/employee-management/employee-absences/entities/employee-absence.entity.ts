@@ -89,18 +89,6 @@ export class EmployeeAbsence extends AbstractEntity<EmployeeAbsence> {
   @Column({ default: false })
   isTeamInformed: boolean;
 
-  // Whether the absence is mirrored onto the organization calendar.
-  @Field(() => Boolean)
-  @Column('boolean', { name: 'sync_to_calendar', default: true })
-  syncToCalendar: boolean;
-
-  // Optional event title template; placeholders {firstName} {lastName}
-  // {category} are resolved at sync time. NULL = default "{firstName}
-  // {lastName} {category}".
-  @Field(() => String, { nullable: true })
-  @Column('varchar', { name: 'calendar_title', length: 200, nullable: true })
-  calendarTitle?: string | null;
-
   // Ferienfaehigkeit: false = ueberlappende Ferientage werden gutgeschrieben.
   // Initial aus EmployeeAbsenceCategory.defaultIsVacationCapable; pro Fall ueberschreibbar.
   @Field(() => Boolean)

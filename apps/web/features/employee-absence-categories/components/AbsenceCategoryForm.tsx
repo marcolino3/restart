@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ABSENCE_CALENDAR_TITLE_DEFAULT } from "../schemas/employee-absence-category-form.schema";
 import { IconComboboxFormField } from "@/components/form/form-fields/IconComboboxFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
@@ -67,6 +68,7 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
       : ABSENCE_CATEGORY_FORM_DEFAULTS,
   });
   const allowsDateRange = form.watch("allowsDateRange");
+  const syncToCalendar = form.watch("syncToCalendar");
 
   const onSubmit = (values: AbsenceCategoryFormValues) => {
     startTransition(async () => {
@@ -93,6 +95,10 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
               requiresApproval: values.requiresApproval,
               color: values.color,
               iconName: values.iconName,
+              syncToCalendar: values.syncToCalendar,
+              calendarTitleTemplate: values.syncToCalendar
+                ? values.calendarTitleTemplate || null
+                : null,
               // sortOrder wird vom Backend automatisch ans Ende gesetzt;
               // Reihenfolge wird per DnD in der Liste verwaltet.
               sortOrder: 0,
@@ -127,6 +133,10 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
               requiresApproval: values.requiresApproval,
               color: values.color,
               iconName: values.iconName,
+              syncToCalendar: values.syncToCalendar,
+              calendarTitleTemplate: values.syncToCalendar
+                ? values.calendarTitleTemplate || null
+                : null,
               // Reihenfolge wird per DnD in der Liste verwaltet.
             }),
           successMessage: t("savedToast"),
@@ -347,6 +357,30 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
           </CardContent>
         </Card>
 
+        {/* Calendar */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("calendarTitle")}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <SwitchFormField
+              name="syncToCalendar"
+              label="syncToCalendarLabel"
+              description="syncToCalendarHelp"
+              namespace="AbsenceCategories"
+            />
+            {syncToCalendar && (
+              <InputFormField
+                name="calendarTitleTemplate"
+                label="calendarTitleTemplateLabel"
+                description="calendarTitleTemplateHelp"
+                placeholder={ABSENCE_CALENDAR_TITLE_DEFAULT}
+                namespace="AbsenceCategories"
+              />
+            )}
+          </CardContent>
+        </Card>
+
         <div className="flex justify-end gap-3">
           <Button
             type="button"
@@ -424,6 +458,8 @@ function mapInitialToFormValues(
     requiresApproval: item.requiresApproval,
     color: item.color,
     iconName: item.iconName,
+    syncToCalendar: item.syncToCalendar,
+    calendarTitleTemplate: item.calendarTitleTemplate,
     sortOrder: item.sortOrder,
   };
 }

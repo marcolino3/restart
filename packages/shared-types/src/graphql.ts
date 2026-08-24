@@ -1084,6 +1084,7 @@ export type CreateEmailTemplateInput = {
 export type CreateEmployeeAbsenceCategoryInput = {
   affectsVacationBalance?: InputMaybe<Scalars['Boolean']['input']>;
   allowsDateRange?: InputMaybe<Scalars['Boolean']['input']>;
+  calendarTitleTemplate?: InputMaybe<Scalars['String']['input']>;
   certificateRequiredFromDay?: InputMaybe<Scalars['Int']['input']>;
   color?: InputMaybe<Scalars['String']['input']>;
   countsAsWorkTime?: InputMaybe<Scalars['Boolean']['input']>;
@@ -1097,13 +1098,13 @@ export type CreateEmployeeAbsenceCategoryInput = {
   requiresApproval?: InputMaybe<Scalars['Boolean']['input']>;
   requiresCertificate?: InputMaybe<Scalars['Boolean']['input']>;
   sortOrder?: InputMaybe<Scalars['Int']['input']>;
+  syncToCalendar?: InputMaybe<Scalars['Boolean']['input']>;
   translations: Array<EmployeeAbsenceCategoryTranslationInput>;
 };
 
 export type CreateEmployeeAbsenceInput = {
   absenceCategoryId: Scalars['ID']['input'];
   additionalDocuments?: InputMaybe<Array<AbsenceDocumentInput>>;
-  calendarTitle?: InputMaybe<Scalars['String']['input']>;
   certificates?: InputMaybe<Array<AbsenceDocumentInput>>;
   employeeId: Scalars['ID']['input'];
   endDate?: InputMaybe<Scalars['String']['input']>;
@@ -1112,19 +1113,16 @@ export type CreateEmployeeAbsenceInput = {
   note: Scalars['String']['input'];
   percentage?: InputMaybe<Scalars['Int']['input']>;
   startDate: Scalars['String']['input'];
-  syncToCalendar?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type CreateEmployeeAbsenceNoticeInput = {
   absenceCategoryId: Scalars['ID']['input'];
-  calendarTitle?: InputMaybe<Scalars['String']['input']>;
   endDate?: InputMaybe<Scalars['String']['input']>;
   isTeamInformed: Scalars['Boolean']['input'];
   isVacationCapable?: InputMaybe<Scalars['Boolean']['input']>;
   note: Scalars['String']['input'];
   percentage?: InputMaybe<Scalars['Int']['input']>;
   startDate: Scalars['String']['input'];
-  syncToCalendar?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type CreateEmployeeContractInput = {
@@ -1895,7 +1893,6 @@ export type EmployeeAbsence = {
   absenceCategoryId: Scalars['String']['output'];
   absenceDays?: Maybe<Array<EmployeeAbsenceDay>>;
   additionalDocuments: Array<AbsenceDocument>;
-  calendarTitle?: Maybe<Scalars['String']['output']>;
   certificates: Array<AbsenceDocument>;
   createdAt: Scalars['DateTime']['output'];
   decidedAt?: Maybe<Scalars['DateTime']['output']>;
@@ -1919,7 +1916,6 @@ export type EmployeeAbsence = {
   startDate: Scalars['DateTime']['output'];
   startTime?: Maybe<Scalars['String']['output']>;
   status: EmployeeAbsenceStatus;
-  syncToCalendar: Scalars['Boolean']['output'];
   updatedAt: Scalars['DateTime']['output'];
   version: Scalars['Int']['output'];
 };
@@ -1928,6 +1924,7 @@ export type EmployeeAbsenceCategory = {
   __typename?: 'EmployeeAbsenceCategory';
   affectsVacationBalance: Scalars['Boolean']['output'];
   allowsDateRange: Scalars['Boolean']['output'];
+  calendarTitleTemplate?: Maybe<Scalars['String']['output']>;
   certificateRequiredFromDay?: Maybe<Scalars['Int']['output']>;
   color?: Maybe<Scalars['String']['output']>;
   countsAsWorkTime: Scalars['Boolean']['output'];
@@ -1948,6 +1945,7 @@ export type EmployeeAbsenceCategory = {
   requiresApproval: Scalars['Boolean']['output'];
   requiresCertificate: Scalars['Boolean']['output'];
   sortOrder: Scalars['Int']['output'];
+  syncToCalendar: Scalars['Boolean']['output'];
   systemCode?: Maybe<SystemEmployeeAbsenceCategory>;
   translations?: Maybe<Array<EmployeeAbsenceCategoryTranslation>>;
   updatedAt: Scalars['DateTime']['output'];
@@ -6866,6 +6864,7 @@ export type UpdateEmailTemplateInput = {
 export type UpdateEmployeeAbsenceCategoryInput = {
   affectsVacationBalance?: InputMaybe<Scalars['Boolean']['input']>;
   allowsDateRange?: InputMaybe<Scalars['Boolean']['input']>;
+  calendarTitleTemplate?: InputMaybe<Scalars['String']['input']>;
   certificateRequiredFromDay?: InputMaybe<Scalars['Int']['input']>;
   color?: InputMaybe<Scalars['String']['input']>;
   countsAsWorkTime?: InputMaybe<Scalars['Boolean']['input']>;
@@ -6880,13 +6879,13 @@ export type UpdateEmployeeAbsenceCategoryInput = {
   requiresApproval?: InputMaybe<Scalars['Boolean']['input']>;
   requiresCertificate?: InputMaybe<Scalars['Boolean']['input']>;
   sortOrder?: InputMaybe<Scalars['Int']['input']>;
+  syncToCalendar?: InputMaybe<Scalars['Boolean']['input']>;
   translations?: InputMaybe<Array<EmployeeAbsenceCategoryTranslationInput>>;
 };
 
 export type UpdateEmployeeAbsenceInput = {
   absenceCategoryId?: InputMaybe<Scalars['ID']['input']>;
   additionalDocuments?: InputMaybe<Array<AbsenceDocumentInput>>;
-  calendarTitle?: InputMaybe<Scalars['String']['input']>;
   certificates?: InputMaybe<Array<AbsenceDocumentInput>>;
   endDate?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
@@ -6895,7 +6894,6 @@ export type UpdateEmployeeAbsenceInput = {
   note?: InputMaybe<Scalars['String']['input']>;
   percentage?: InputMaybe<Scalars['Int']['input']>;
   startDate?: InputMaybe<Scalars['String']['input']>;
-  syncToCalendar?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type UpdateEmployeeContractInput = {
@@ -8311,14 +8309,14 @@ export type CreateEmployeeAbsenceCategoryMutation = { __typename?: 'Mutation', c
 export type EmployeeAbsenceCategoriesByOrgIdFullQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type EmployeeAbsenceCategoriesByOrgIdFullQuery = { __typename?: 'Query', employeeAbsenceCategoriesByOrgId: Array<{ __typename?: 'EmployeeAbsenceCategory', id: string, systemCode?: SystemEmployeeAbsenceCategory | null, isSystem: boolean, isActive: boolean, countsAsWorkTime: boolean, isPaid: boolean, affectsVacationBalance: boolean, defaultIsVacationCapable: boolean, reducesVacationEntitlementAfterDays?: number | null, requiresCertificate: boolean, certificateRequiredFromDay?: number | null, maxDaysPerYear?: number | null, allowsDateRange: boolean, maxDaysPerRequest?: number | null, defaultPercentage: number, requiresApproval: boolean, color?: string | null, iconName?: string | null, sortOrder: number, translations?: Array<{ __typename?: 'EmployeeAbsenceCategoryTranslation', locale: Locale, name: string, description?: string | null }> | null }> };
+export type EmployeeAbsenceCategoriesByOrgIdFullQuery = { __typename?: 'Query', employeeAbsenceCategoriesByOrgId: Array<{ __typename?: 'EmployeeAbsenceCategory', id: string, systemCode?: SystemEmployeeAbsenceCategory | null, isSystem: boolean, isActive: boolean, countsAsWorkTime: boolean, isPaid: boolean, affectsVacationBalance: boolean, defaultIsVacationCapable: boolean, reducesVacationEntitlementAfterDays?: number | null, requiresCertificate: boolean, certificateRequiredFromDay?: number | null, maxDaysPerYear?: number | null, allowsDateRange: boolean, syncToCalendar: boolean, calendarTitleTemplate?: string | null, maxDaysPerRequest?: number | null, defaultPercentage: number, requiresApproval: boolean, color?: string | null, iconName?: string | null, sortOrder: number, translations?: Array<{ __typename?: 'EmployeeAbsenceCategoryTranslation', locale: Locale, name: string, description?: string | null }> | null }> };
 
 export type EmployeeAbsenceCategoryByIdQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type EmployeeAbsenceCategoryByIdQuery = { __typename?: 'Query', employeeAbsenceCategoryById: { __typename?: 'EmployeeAbsenceCategory', id: string, systemCode?: SystemEmployeeAbsenceCategory | null, isSystem: boolean, isActive: boolean, countsAsWorkTime: boolean, isPaid: boolean, affectsVacationBalance: boolean, defaultIsVacationCapable: boolean, reducesVacationEntitlementAfterDays?: number | null, requiresCertificate: boolean, certificateRequiredFromDay?: number | null, maxDaysPerYear?: number | null, allowsDateRange: boolean, maxDaysPerRequest?: number | null, defaultPercentage: number, requiresApproval: boolean, color?: string | null, iconName?: string | null, sortOrder: number, translations?: Array<{ __typename?: 'EmployeeAbsenceCategoryTranslation', locale: Locale, name: string, description?: string | null }> | null } };
+export type EmployeeAbsenceCategoryByIdQuery = { __typename?: 'Query', employeeAbsenceCategoryById: { __typename?: 'EmployeeAbsenceCategory', id: string, systemCode?: SystemEmployeeAbsenceCategory | null, isSystem: boolean, isActive: boolean, countsAsWorkTime: boolean, isPaid: boolean, affectsVacationBalance: boolean, defaultIsVacationCapable: boolean, reducesVacationEntitlementAfterDays?: number | null, requiresCertificate: boolean, certificateRequiredFromDay?: number | null, maxDaysPerYear?: number | null, allowsDateRange: boolean, syncToCalendar: boolean, calendarTitleTemplate?: string | null, maxDaysPerRequest?: number | null, defaultPercentage: number, requiresApproval: boolean, color?: string | null, iconName?: string | null, sortOrder: number, translations?: Array<{ __typename?: 'EmployeeAbsenceCategoryTranslation', locale: Locale, name: string, description?: string | null }> | null } };
 
 export type ReorderEmployeeAbsenceCategoriesMutationVariables = Exact<{
   ids: Array<Scalars['ID']['input']> | Scalars['ID']['input'];
@@ -10003,8 +10001,8 @@ export const UpdateEmailTemplateDocument = {"kind":"Document","definitions":[{"k
 export const DeleteEmailTemplateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteEmailTemplate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteEmailTemplate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteEmailTemplateMutation, DeleteEmailTemplateMutationVariables>;
 export const ArchiveEmployeeAbsenceCategoryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ArchiveEmployeeAbsenceCategory"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"archiveEmployeeAbsenceCategory"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<ArchiveEmployeeAbsenceCategoryMutation, ArchiveEmployeeAbsenceCategoryMutationVariables>;
 export const CreateEmployeeAbsenceCategoryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateEmployeeAbsenceCategory"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateEmployeeAbsenceCategoryInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createEmployeeAbsenceCategory"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateEmployeeAbsenceCategoryMutation, CreateEmployeeAbsenceCategoryMutationVariables>;
-export const EmployeeAbsenceCategoriesByOrgIdFullDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"EmployeeAbsenceCategoriesByOrgIdFull"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeAbsenceCategoriesByOrgId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"systemCode"}},{"kind":"Field","name":{"kind":"Name","value":"isSystem"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"countsAsWorkTime"}},{"kind":"Field","name":{"kind":"Name","value":"isPaid"}},{"kind":"Field","name":{"kind":"Name","value":"affectsVacationBalance"}},{"kind":"Field","name":{"kind":"Name","value":"defaultIsVacationCapable"}},{"kind":"Field","name":{"kind":"Name","value":"reducesVacationEntitlementAfterDays"}},{"kind":"Field","name":{"kind":"Name","value":"requiresCertificate"}},{"kind":"Field","name":{"kind":"Name","value":"certificateRequiredFromDay"}},{"kind":"Field","name":{"kind":"Name","value":"maxDaysPerYear"}},{"kind":"Field","name":{"kind":"Name","value":"allowsDateRange"}},{"kind":"Field","name":{"kind":"Name","value":"maxDaysPerRequest"}},{"kind":"Field","name":{"kind":"Name","value":"defaultPercentage"}},{"kind":"Field","name":{"kind":"Name","value":"requiresApproval"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"iconName"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"translations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]}}]} as unknown as DocumentNode<EmployeeAbsenceCategoriesByOrgIdFullQuery, EmployeeAbsenceCategoriesByOrgIdFullQueryVariables>;
-export const EmployeeAbsenceCategoryByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"EmployeeAbsenceCategoryById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeAbsenceCategoryById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"systemCode"}},{"kind":"Field","name":{"kind":"Name","value":"isSystem"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"countsAsWorkTime"}},{"kind":"Field","name":{"kind":"Name","value":"isPaid"}},{"kind":"Field","name":{"kind":"Name","value":"affectsVacationBalance"}},{"kind":"Field","name":{"kind":"Name","value":"defaultIsVacationCapable"}},{"kind":"Field","name":{"kind":"Name","value":"reducesVacationEntitlementAfterDays"}},{"kind":"Field","name":{"kind":"Name","value":"requiresCertificate"}},{"kind":"Field","name":{"kind":"Name","value":"certificateRequiredFromDay"}},{"kind":"Field","name":{"kind":"Name","value":"maxDaysPerYear"}},{"kind":"Field","name":{"kind":"Name","value":"allowsDateRange"}},{"kind":"Field","name":{"kind":"Name","value":"maxDaysPerRequest"}},{"kind":"Field","name":{"kind":"Name","value":"defaultPercentage"}},{"kind":"Field","name":{"kind":"Name","value":"requiresApproval"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"iconName"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"translations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]}}]} as unknown as DocumentNode<EmployeeAbsenceCategoryByIdQuery, EmployeeAbsenceCategoryByIdQueryVariables>;
+export const EmployeeAbsenceCategoriesByOrgIdFullDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"EmployeeAbsenceCategoriesByOrgIdFull"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeAbsenceCategoriesByOrgId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"systemCode"}},{"kind":"Field","name":{"kind":"Name","value":"isSystem"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"countsAsWorkTime"}},{"kind":"Field","name":{"kind":"Name","value":"isPaid"}},{"kind":"Field","name":{"kind":"Name","value":"affectsVacationBalance"}},{"kind":"Field","name":{"kind":"Name","value":"defaultIsVacationCapable"}},{"kind":"Field","name":{"kind":"Name","value":"reducesVacationEntitlementAfterDays"}},{"kind":"Field","name":{"kind":"Name","value":"requiresCertificate"}},{"kind":"Field","name":{"kind":"Name","value":"certificateRequiredFromDay"}},{"kind":"Field","name":{"kind":"Name","value":"maxDaysPerYear"}},{"kind":"Field","name":{"kind":"Name","value":"allowsDateRange"}},{"kind":"Field","name":{"kind":"Name","value":"syncToCalendar"}},{"kind":"Field","name":{"kind":"Name","value":"calendarTitleTemplate"}},{"kind":"Field","name":{"kind":"Name","value":"maxDaysPerRequest"}},{"kind":"Field","name":{"kind":"Name","value":"defaultPercentage"}},{"kind":"Field","name":{"kind":"Name","value":"requiresApproval"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"iconName"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"translations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]}}]} as unknown as DocumentNode<EmployeeAbsenceCategoriesByOrgIdFullQuery, EmployeeAbsenceCategoriesByOrgIdFullQueryVariables>;
+export const EmployeeAbsenceCategoryByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"EmployeeAbsenceCategoryById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeAbsenceCategoryById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"systemCode"}},{"kind":"Field","name":{"kind":"Name","value":"isSystem"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"countsAsWorkTime"}},{"kind":"Field","name":{"kind":"Name","value":"isPaid"}},{"kind":"Field","name":{"kind":"Name","value":"affectsVacationBalance"}},{"kind":"Field","name":{"kind":"Name","value":"defaultIsVacationCapable"}},{"kind":"Field","name":{"kind":"Name","value":"reducesVacationEntitlementAfterDays"}},{"kind":"Field","name":{"kind":"Name","value":"requiresCertificate"}},{"kind":"Field","name":{"kind":"Name","value":"certificateRequiredFromDay"}},{"kind":"Field","name":{"kind":"Name","value":"maxDaysPerYear"}},{"kind":"Field","name":{"kind":"Name","value":"allowsDateRange"}},{"kind":"Field","name":{"kind":"Name","value":"syncToCalendar"}},{"kind":"Field","name":{"kind":"Name","value":"calendarTitleTemplate"}},{"kind":"Field","name":{"kind":"Name","value":"maxDaysPerRequest"}},{"kind":"Field","name":{"kind":"Name","value":"defaultPercentage"}},{"kind":"Field","name":{"kind":"Name","value":"requiresApproval"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"iconName"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"translations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]}}]} as unknown as DocumentNode<EmployeeAbsenceCategoryByIdQuery, EmployeeAbsenceCategoryByIdQueryVariables>;
 export const ReorderEmployeeAbsenceCategoriesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ReorderEmployeeAbsenceCategories"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"ids"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"reorderEmployeeAbsenceCategories"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"ids"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}}]}}]}}]} as unknown as DocumentNode<ReorderEmployeeAbsenceCategoriesMutation, ReorderEmployeeAbsenceCategoriesMutationVariables>;
 export const SetEmployeeAbsenceCategoryActiveDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SetEmployeeAbsenceCategoryActive"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"isActive"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"setEmployeeAbsenceCategoryActive"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"isActive"},"value":{"kind":"Variable","name":{"kind":"Name","value":"isActive"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}}]}}]}}]} as unknown as DocumentNode<SetEmployeeAbsenceCategoryActiveMutation, SetEmployeeAbsenceCategoryActiveMutationVariables>;
 export const UpdateEmployeeAbsenceCategoryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateEmployeeAbsenceCategory"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateEmployeeAbsenceCategoryInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateEmployeeAbsenceCategory"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateEmployeeAbsenceCategoryMutation, UpdateEmployeeAbsenceCategoryMutationVariables>;

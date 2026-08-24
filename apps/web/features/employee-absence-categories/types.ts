@@ -41,6 +41,8 @@ export type AbsenceCategoryItem = {
   certificateRequiredFromDay: number | null;
   maxDaysPerYear: number | null;
   allowsDateRange: boolean;
+  syncToCalendar: boolean;
+  calendarTitleTemplate: string | null;
   maxDaysPerRequest: number | null;
   defaultPercentage: number;
   requiresApproval: boolean;

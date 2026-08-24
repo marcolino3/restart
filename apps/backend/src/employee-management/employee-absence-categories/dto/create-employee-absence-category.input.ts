@@ -84,6 +84,18 @@ export class CreateEmployeeAbsenceCategoryInput {
   @IsBoolean()
   allowsDateRange?: boolean;
 
+  @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  syncToCalendar?: boolean;
+
+  // Calendar event title template ({firstName} {lastName} {category}).
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  calendarTitleTemplate?: string | null;
+
   @Field(() => Int, { nullable: true })
   @IsOptional()
   @IsInt()

@@ -293,8 +293,6 @@ export class EmployeeAbsencesService {
       absenceCategoryId,
       isTeamInformed,
       isVacationCapable,
-      syncToCalendar,
-      calendarTitle,
     } = input;
 
     await this.periods.assertRangeUnlocked(
@@ -350,8 +348,6 @@ export class EmployeeAbsencesService {
           endDate: new Date(endDate ?? startDate),
           note,
           isTeamInformed,
-          syncToCalendar: syncToCalendar ?? true,
-          calendarTitle: calendarTitle?.trim() || null,
           isVacationCapable:
             isVacationCapable ?? absenceCategory.defaultIsVacationCapable,
           percentage: input.percentage ?? absenceCategory.defaultPercentage,
@@ -383,7 +379,8 @@ export class EmployeeAbsencesService {
       endDate ?? startDate,
     );
 
-    if (!employeeAbsenceSaved.syncToCalendar) return employeeAbsenceSaved;
+    // Calendar mirroring is an admin setting on the category.
+    if (absenceCategory.syncToCalendar === false) return employeeAbsenceSaved;
 
     // Calendar sync runs AFTER the commit: it is an outbound HTTP call and must
     // never hold a database transaction open, nor fail the saved absence.
@@ -393,7 +390,7 @@ export class EmployeeAbsencesService {
       employeeName:
         `${membership.user?.firstName ?? ''} ${membership.user?.lastName ?? ''}`.trim(),
       absenceLabel: absenceCategoryLabel(absenceCategory.systemCode),
-      titleTemplate: employeeAbsenceSaved.calendarTitle,
+      titleTemplate: absenceCategory.calendarTitleTemplate ?? null,
       startDate: employeeAbsenceSaved.startDate,
       endDate: employeeAbsenceSaved.endDate,
       startTime: employeeAbsenceSaved.startTime,
@@ -671,14 +668,14 @@ export class EmployeeAbsencesService {
         start,
         end,
       );
-      if (saved.syncToCalendar !== false) {
+      if (saved.absenceCategory?.syncToCalendar !== false) {
         await this.safely('calendar sync', () =>
           this.calendarSync.sync({
             organizationId: orgId,
             absenceId: saved.id,
             employeeName,
             absenceLabel: categoryLabel,
-            titleTemplate: saved.calendarTitle,
+            titleTemplate: saved.absenceCategory?.calendarTitleTemplate ?? null,
             startDate: saved.startDate,
             endDate: saved.endDate,
             startTime: saved.startTime,

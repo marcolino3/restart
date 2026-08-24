@@ -3,7 +3,6 @@ import {
   absenceNoticeDayCount,
   absenceNoticeErrorCode,
   checkAbsenceNoticeDates,
-  ABSENCE_CALENDAR_TITLE_DEFAULT,
   EmployeeAbsenceNoticeFormSchema,
   EmployeeAbsenceNoticeFormType,
 } from "../schemas/employee-absence-notice-form.schema";
@@ -17,7 +16,6 @@ import { TextareaFormField } from "@/components/form/form-fields/TextareaFormFie
 import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
 import { CreateButton } from "@/components/buttons/CreateButton";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
-import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CalendarCheck, ClipboardCheck } from "lucide-react";
 import { createEmployeeAbsenceNoticeAction } from "../actions/create-employee-absence-notice.action";
@@ -78,7 +76,6 @@ export const EmployeeAbsenceNoticeForm = ({ absenceCategories }: Props) => {
   }));
 
   const selectedCategoryId = form.watch("absenceCategoryId");
-  const syncToCalendar = form.watch("syncToCalendar");
   const selectedCategory = categories.find((c) => c.id === selectedCategoryId);
   // Without a category the stricter rule applies, so nobody can slip a far
   // future date past the form before picking one.
@@ -230,15 +227,6 @@ export const EmployeeAbsenceNoticeForm = ({ absenceCategories }: Props) => {
             description="absenceNoteDescription"
           />
           <SwitchFormField name="isTeamInformed" label="isTeamInformed" />
-          <SwitchFormField name="syncToCalendar" label="syncToCalendar" />
-          {syncToCalendar && (
-            <InputFormField
-              name="calendarTitle"
-              label="calendarTitle"
-              description="calendarTitleDescription"
-              placeholder={ABSENCE_CALENDAR_TITLE_DEFAULT}
-            />
-          )}
           <CreateButton isSubmitting={form.formState.isSubmitting} />
         </form>
       </Form>

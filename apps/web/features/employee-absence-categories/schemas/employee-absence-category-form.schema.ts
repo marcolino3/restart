@@ -38,6 +38,8 @@ export function createAbsenceCategoryFormSchema(messages: {
       certificateRequiredFromDay: nullableInt,
       maxDaysPerYear: nullableInt,
       allowsDateRange: z.boolean(),
+      syncToCalendar: z.boolean(),
+      calendarTitleTemplate: z.string().trim().max(200).nullable(),
       maxDaysPerRequest: nullableInt,
       defaultPercentage: requiredInt.pipe(z.number().int().min(1).max(100)),
       requiresApproval: z.boolean(),
@@ -77,6 +79,9 @@ export type AbsenceCategoryFormValues = z.output<
   ReturnType<typeof createAbsenceCategoryFormSchema>
 >;
 
+export const ABSENCE_CALENDAR_TITLE_DEFAULT =
+  "{firstName} {lastName} {category}";
+
 export const ABSENCE_CATEGORY_FORM_DEFAULTS: AbsenceCategoryFormInput = {
   translations: [
     { locale: "DE", name: "", description: undefined },
@@ -93,6 +98,8 @@ export const ABSENCE_CATEGORY_FORM_DEFAULTS: AbsenceCategoryFormInput = {
   certificateRequiredFromDay: null,
   maxDaysPerYear: null,
   allowsDateRange: false,
+  syncToCalendar: true,
+  calendarTitleTemplate: null,
   maxDaysPerRequest: null,
   defaultPercentage: 100,
   requiresApproval: false,

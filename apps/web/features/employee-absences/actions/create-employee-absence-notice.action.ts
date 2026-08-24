@@ -34,7 +34,6 @@ export const createEmployeeAbsenceNoticeAction = async (
     startDate:
       toAbsenceIsoDate(parsed.startDate) ?? parsed.startDate.toISOString(),
     endDate: parsed.endDate ? (toAbsenceIsoDate(parsed.endDate) ?? null) : null,
-    calendarTitle: parsed.syncToCalendar ? parsed.calendarTitle || null : null,
   };
 
   try {

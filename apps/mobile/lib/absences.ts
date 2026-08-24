@@ -134,13 +134,7 @@ export type CreateAbsenceNoticeInput = {
   absenceCategoryId: string;
   note: string;
   isTeamInformed: boolean;
-  syncToCalendar?: boolean;
-  /** Template with {firstName} {lastName} {category}; null = backend default. */
-  calendarTitle?: string | null;
 };
-
-export const ABSENCE_CALENDAR_TITLE_DEFAULT =
-  "{firstName} {lastName} {category}";
 
 export async function createAbsenceNotice(
   input: CreateAbsenceNoticeInput,

@@ -472,7 +472,10 @@ describe('EmployeeAbsencesService', () => {
     const plusDays = (n: number) =>
       iso(new Date(today.getTime() + n * 86_400_000));
 
-    function mockNoticeContext(requiresApproval: boolean) {
+    function mockNoticeContext(
+      requiresApproval: boolean,
+      category: Record<string, unknown> = {},
+    ) {
       entityManager.findOne
         .mockResolvedValueOnce({
           id: 'mem-1',
@@ -483,12 +486,17 @@ describe('EmployeeAbsencesService', () => {
           id: 'cat-1',
           systemCode: 'VACATION',
           requiresApproval,
+          ...category,
         });
       const tx = {
         findOne: jest
           .fn()
           .mockResolvedValueOnce({ id: 'org-1' })
-          .mockResolvedValueOnce({ id: 'cat-1', systemCode: 'VACATION' }),
+          .mockResolvedValueOnce({
+            id: 'cat-1',
+            systemCode: 'VACATION',
+            ...category,
+          }),
         createQueryBuilder: jest.fn().mockReturnValue({
           where: jest.fn().mockReturnThis(),
           andWhere: jest.fn().mockReturnThis(),
@@ -536,26 +544,24 @@ describe('EmployeeAbsencesService', () => {
       expect(notifications.notifyRequested).toHaveBeenCalledTimes(1);
     });
 
-    it('Mitteilung ohne Kalender-Sync ruft den Sync nicht auf', async () => {
-      mockNoticeContext(false);
+    it('Kategorie ohne Kalender-Sync ruft den Sync nicht auf', async () => {
+      mockNoticeContext(false, { syncToCalendar: false });
       await service.createEmployeeAbsenceNotice(
         {
           absenceCategoryId: 'cat-1',
           startDate: plusDays(1),
-          syncToCalendar: false,
         } as CreateEmployeeAbsenceNoticeInput,
         user,
       );
       expect(calendarSync.sync).not.toHaveBeenCalled();
     });
 
-    it('Mitteilung reicht das Titel-Template an den Kalender-Sync weiter', async () => {
-      mockNoticeContext(false);
+    it('Titel-Template der Kategorie geht an den Kalender-Sync', async () => {
+      mockNoticeContext(false, { calendarTitleTemplate: '{lastName} krank' });
       await service.createEmployeeAbsenceNotice(
         {
           absenceCategoryId: 'cat-1',
           startDate: plusDays(1),
-          calendarTitle: ' {lastName} krank ',
         } as CreateEmployeeAbsenceNoticeInput,
         user,
       );
@@ -590,9 +596,7 @@ describe('EmployeeAbsencesService', () => {
         status: EmployeeAbsenceStatus.PENDING,
         startDate: new Date('2026-05-04'),
         endDate: new Date('2026-05-06'),
-        absenceCategory: { systemCode: 'VACATION' },
-        syncToCalendar: true,
-        calendarTitle: null,
+        absenceCategory: { systemCode: 'VACATION', syncToCalendar: true },
       };
       entityManager.findOne
         .mockResolvedValueOnce(absence)

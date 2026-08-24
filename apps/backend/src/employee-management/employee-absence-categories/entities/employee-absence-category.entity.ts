@@ -105,6 +105,22 @@ export class EmployeeAbsenceCategory extends AbstractEntity<EmployeeAbsenceCateg
   @Column('int', { name: 'max_days_per_request', nullable: true })
   maxDaysPerRequest!: number | null;
 
+  // Whether absences of this category are mirrored onto the organization
+  // calendar (admin decision, not per absence).
+  @Field(() => Boolean)
+  @Column('boolean', { name: 'sync_to_calendar', default: true })
+  syncToCalendar!: boolean;
+
+  // Event title template; placeholders {firstName} {lastName} {category}
+  // are resolved at sync time. NULL = "{firstName} {lastName} {category}".
+  @Field(() => String, { nullable: true })
+  @Column('varchar', {
+    name: 'calendar_title_template',
+    length: 200,
+    nullable: true,
+  })
+  calendarTitleTemplate!: string | null;
+
   // UI-Hints
   @Field(() => String, { nullable: true })
   @Column('varchar', { length: 7, nullable: true })

@@ -149,6 +149,8 @@ export class EmployeeAbsenceCategoriesService {
         defaultPercentage: input.defaultPercentage ?? 100,
         requiresApproval: input.requiresApproval ?? false,
         allowsDateRange: input.allowsDateRange ?? false,
+        syncToCalendar: input.syncToCalendar ?? true,
+        calendarTitleTemplate: input.calendarTitleTemplate?.trim() || null,
         maxDaysPerRequest: input.maxDaysPerRequest ?? null,
         color: input.color ?? null,
         iconName: input.iconName ?? null,
@@ -209,6 +211,11 @@ export class EmployeeAbsenceCategoriesService {
       category.requiresApproval = input.requiresApproval;
     if (input.allowsDateRange !== undefined)
       category.allowsDateRange = input.allowsDateRange;
+    if (input.syncToCalendar !== undefined)
+      category.syncToCalendar = input.syncToCalendar;
+    if (input.calendarTitleTemplate !== undefined)
+      category.calendarTitleTemplate =
+        input.calendarTitleTemplate?.trim() || null;
     if (input.maxDaysPerRequest !== undefined)
       category.maxDaysPerRequest = input.maxDaysPerRequest;
     this.assertRangeSettings(category);
