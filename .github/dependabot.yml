@@ -350,6 +350,15 @@ updates:
       # JS-Config-Auflösung.
       - dependency-name: "tailwindcss"
         versions: [">=4.0.0"]
+      # graphql >=16.14.1 bricht den Web-Build: packages/shared-types hat
+      # graphql als peerDependency und liefert rohe .ts-Quellen; ein
+      # abweichender graphql-Stand in irgendeinem Workspace erzeugt einen
+      # zweiten, peer-suffigierten Lockfile-Eintrag und Turbopack verliert
+      # die Modul-Zuordnung (Details im /apps/backend-Eintrag). Ein Bump im
+      # Mobile-Verzeichnis triggert exakt dasselbe — #347 kam prompt, weil
+      # diese Sperre hier anfangs fehlte.
+      - dependency-name: "graphql"
+        versions: [">=16.14.1"]
       # TypeScript wird im Monorepo gemeinsam angehoben, nicht paketweise.
       - dependency-name: "typescript"
         versions: [">=6.0.0"]
