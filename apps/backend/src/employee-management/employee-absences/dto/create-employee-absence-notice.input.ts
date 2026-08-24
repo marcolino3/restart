@@ -7,6 +7,7 @@ import {
   IsString,
   IsUUID,
   Max,
+  MaxLength,
   Min,
 } from 'class-validator';
 
@@ -32,6 +33,19 @@ export class CreateEmployeeAbsenceNoticeInput {
   @Field(() => Boolean)
   @IsBoolean()
   isTeamInformed: boolean;
+
+  // Mirror the absence onto the organization calendar. Default: true.
+  @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  syncToCalendar?: boolean;
+
+  // Calendar event title template ({firstName} {lastName} {category}).
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  calendarTitle?: string;
 
   // Optional: ueberschreibt den Kategorie-Default (z.B. trotz Krankheit ferienfaehig)
   @Field(() => Boolean, { nullable: true })

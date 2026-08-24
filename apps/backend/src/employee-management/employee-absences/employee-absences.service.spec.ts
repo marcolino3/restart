@@ -536,6 +536,37 @@ describe('EmployeeAbsencesService', () => {
       expect(notifications.notifyRequested).toHaveBeenCalledTimes(1);
     });
 
+    it('Mitteilung ohne Kalender-Sync ruft den Sync nicht auf', async () => {
+      mockNoticeContext(false);
+      await service.createEmployeeAbsenceNotice(
+        {
+          absenceCategoryId: 'cat-1',
+          startDate: plusDays(1),
+          syncToCalendar: false,
+        } as CreateEmployeeAbsenceNoticeInput,
+        user,
+      );
+      expect(calendarSync.sync).not.toHaveBeenCalled();
+    });
+
+    it('Mitteilung reicht das Titel-Template an den Kalender-Sync weiter', async () => {
+      mockNoticeContext(false);
+      await service.createEmployeeAbsenceNotice(
+        {
+          absenceCategoryId: 'cat-1',
+          startDate: plusDays(1),
+          calendarTitle: ' {lastName} krank ',
+        } as CreateEmployeeAbsenceNoticeInput,
+        user,
+      );
+      expect(calendarSync.sync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          employeeName: 'Anna Test',
+          titleTemplate: '{lastName} krank',
+        }),
+      );
+    });
+
     it('Mitteilungs-Kategorie morgen wird sofort APPROVED mit Recompute', async () => {
       mockNoticeContext(false);
       const result = await service.createEmployeeAbsenceNotice(
@@ -560,6 +591,8 @@ describe('EmployeeAbsencesService', () => {
         startDate: new Date('2026-05-04'),
         endDate: new Date('2026-05-06'),
         absenceCategory: { systemCode: 'VACATION' },
+        syncToCalendar: true,
+        calendarTitle: null,
       };
       entityManager.findOne
         .mockResolvedValueOnce(absence)

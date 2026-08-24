@@ -53,6 +53,7 @@ const APPROVAL_ADMIN_ROLES: ReadonlySet<string> = new Set([
 const ABSENCE_DOC_URL_RE = /^\/api\/absence-certificates\/[a-zA-Z0-9.-]+$/;
 
 export const ABSENCE_CATEGORY_LABELS: Record<string, string> = {
+  VACATION: 'Ferien',
   SICKNESS: 'Krankheit',
   ACCIDENT: 'Unfall',
   CHILDCARE_SICK: 'Kind krank',
@@ -292,6 +293,8 @@ export class EmployeeAbsencesService {
       absenceCategoryId,
       isTeamInformed,
       isVacationCapable,
+      syncToCalendar,
+      calendarTitle,
     } = input;
 
     await this.periods.assertRangeUnlocked(
@@ -347,6 +350,8 @@ export class EmployeeAbsencesService {
           endDate: new Date(endDate ?? startDate),
           note,
           isTeamInformed,
+          syncToCalendar: syncToCalendar ?? true,
+          calendarTitle: calendarTitle?.trim() || null,
           isVacationCapable:
             isVacationCapable ?? absenceCategory.defaultIsVacationCapable,
           percentage: input.percentage ?? absenceCategory.defaultPercentage,
@@ -378,6 +383,8 @@ export class EmployeeAbsencesService {
       endDate ?? startDate,
     );
 
+    if (!employeeAbsenceSaved.syncToCalendar) return employeeAbsenceSaved;
+
     // Calendar sync runs AFTER the commit: it is an outbound HTTP call and must
     // never hold a database transaction open, nor fail the saved absence.
     await this.calendarSync.sync({
@@ -386,6 +393,7 @@ export class EmployeeAbsencesService {
       employeeName:
         `${membership.user?.firstName ?? ''} ${membership.user?.lastName ?? ''}`.trim(),
       absenceLabel: absenceCategoryLabel(absenceCategory.systemCode),
+      titleTemplate: employeeAbsenceSaved.calendarTitle,
       startDate: employeeAbsenceSaved.startDate,
       endDate: employeeAbsenceSaved.endDate,
       startTime: employeeAbsenceSaved.startTime,
@@ -663,18 +671,21 @@ export class EmployeeAbsencesService {
         start,
         end,
       );
-      await this.safely('calendar sync', () =>
-        this.calendarSync.sync({
-          organizationId: orgId,
-          absenceId: saved.id,
-          employeeName,
-          absenceLabel: categoryLabel,
-          startDate: saved.startDate,
-          endDate: saved.endDate,
-          startTime: saved.startTime,
-          note: saved.note,
-        }),
-      );
+      if (saved.syncToCalendar !== false) {
+        await this.safely('calendar sync', () =>
+          this.calendarSync.sync({
+            organizationId: orgId,
+            absenceId: saved.id,
+            employeeName,
+            absenceLabel: categoryLabel,
+            titleTemplate: saved.calendarTitle,
+            startDate: saved.startDate,
+            endDate: saved.endDate,
+            startTime: saved.startTime,
+            note: saved.note,
+          }),
+        );
+      }
     }
 
     await this.safely('decision notification', () =>

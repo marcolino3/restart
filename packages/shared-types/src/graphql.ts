@@ -1103,6 +1103,7 @@ export type CreateEmployeeAbsenceCategoryInput = {
 export type CreateEmployeeAbsenceInput = {
   absenceCategoryId: Scalars['ID']['input'];
   additionalDocuments?: InputMaybe<Array<AbsenceDocumentInput>>;
+  calendarTitle?: InputMaybe<Scalars['String']['input']>;
   certificates?: InputMaybe<Array<AbsenceDocumentInput>>;
   employeeId: Scalars['ID']['input'];
   endDate?: InputMaybe<Scalars['String']['input']>;
@@ -1111,16 +1112,19 @@ export type CreateEmployeeAbsenceInput = {
   note: Scalars['String']['input'];
   percentage?: InputMaybe<Scalars['Int']['input']>;
   startDate: Scalars['String']['input'];
+  syncToCalendar?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type CreateEmployeeAbsenceNoticeInput = {
   absenceCategoryId: Scalars['ID']['input'];
+  calendarTitle?: InputMaybe<Scalars['String']['input']>;
   endDate?: InputMaybe<Scalars['String']['input']>;
   isTeamInformed: Scalars['Boolean']['input'];
   isVacationCapable?: InputMaybe<Scalars['Boolean']['input']>;
   note: Scalars['String']['input'];
   percentage?: InputMaybe<Scalars['Int']['input']>;
   startDate: Scalars['String']['input'];
+  syncToCalendar?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type CreateEmployeeContractInput = {
@@ -1891,6 +1895,7 @@ export type EmployeeAbsence = {
   absenceCategoryId: Scalars['String']['output'];
   absenceDays?: Maybe<Array<EmployeeAbsenceDay>>;
   additionalDocuments: Array<AbsenceDocument>;
+  calendarTitle?: Maybe<Scalars['String']['output']>;
   certificates: Array<AbsenceDocument>;
   createdAt: Scalars['DateTime']['output'];
   decidedAt?: Maybe<Scalars['DateTime']['output']>;
@@ -1914,6 +1919,7 @@ export type EmployeeAbsence = {
   startDate: Scalars['DateTime']['output'];
   startTime?: Maybe<Scalars['String']['output']>;
   status: EmployeeAbsenceStatus;
+  syncToCalendar: Scalars['Boolean']['output'];
   updatedAt: Scalars['DateTime']['output'];
   version: Scalars['Int']['output'];
 };
@@ -6409,7 +6415,8 @@ export enum SystemEmployeeAbsenceCategory {
   Other = 'OTHER',
   Sickness = 'SICKNESS',
   Training = 'TRAINING',
-  UnpaidLeave = 'UNPAID_LEAVE'
+  UnpaidLeave = 'UNPAID_LEAVE',
+  Vacation = 'VACATION'
 }
 
 /** Supported System Roles */
@@ -6879,6 +6886,7 @@ export type UpdateEmployeeAbsenceCategoryInput = {
 export type UpdateEmployeeAbsenceInput = {
   absenceCategoryId?: InputMaybe<Scalars['ID']['input']>;
   additionalDocuments?: InputMaybe<Array<AbsenceDocumentInput>>;
+  calendarTitle?: InputMaybe<Scalars['String']['input']>;
   certificates?: InputMaybe<Array<AbsenceDocumentInput>>;
   endDate?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
@@ -6887,6 +6895,7 @@ export type UpdateEmployeeAbsenceInput = {
   note?: InputMaybe<Scalars['String']['input']>;
   percentage?: InputMaybe<Scalars['Int']['input']>;
   startDate?: InputMaybe<Scalars['String']['input']>;
+  syncToCalendar?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type UpdateEmployeeContractInput = {
