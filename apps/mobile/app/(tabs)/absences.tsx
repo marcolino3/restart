@@ -1,5 +1,5 @@
 /**
- * "Absenzen" — self-service tab: report sick, report or request an absence and
+ * "Absenzen" — self-service tab: report or request an absence and
  * see the own absences with their approval state.
  */
 import { useCallback, useState } from "react";
@@ -104,16 +104,6 @@ export default function AbsencesTab() {
         </Text>
 
         <View className="gap-2">
-          <Pressable
-            onPress={() => router.push("/sick-leave")}
-            className="flex-row items-center justify-center gap-2 rounded-lg border border-border bg-card p-3.5 active:opacity-70"
-          >
-            <Icon name="plus" size={16} color={colors.foreground} />
-            <Text className="text-sm font-semibold text-foreground">
-              {t("SickLeave.title")}
-            </Text>
-          </Pressable>
-
           <Pressable
             onPress={() => router.push("/absence-request")}
             className="flex-row items-center justify-center gap-2 rounded-lg border border-border bg-card p-3.5 active:opacity-70"

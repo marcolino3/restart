@@ -163,7 +163,7 @@ export const EmployeeAbsenceNoticeForm = ({ absenceCategories }: Props) => {
         <form onSubmit={form.handleSubmit(onSubmit)} className="form-gap-y">
           <SelectFormField
             name="absenceCategoryId"
-            label="absenceCategories"
+            label="absenceCategory"
             options={absenceCategoryOptions}
           />
           {selectedCategory && (
