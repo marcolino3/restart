@@ -910,7 +910,11 @@
     "remove": "Remove",
     "workloadPercent": "Workload",
     "timeBalanceMinutes": "Time balance",
-    "role": "Role"
+    "role": "Role",
+    "MEDICAL_APPOINTMENT": "Medical appointment",
+    "THERAPY_APPOINTMENT": "Therapy appointment",
+    "OFFICIAL_APPOINTMENT": "Official appointment",
+    "WEDDING": "Wedding"
   },
   "ConsentManagement": {
     "centerTitle": "Data Protection Center",

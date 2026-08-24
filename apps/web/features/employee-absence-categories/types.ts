@@ -23,6 +23,10 @@ export type AbsenceCategorySystemCode =
   | "MOVE"
   | "MILITARY_SERVICE"
   | "CIVIL_SERVICE"
+  | "MEDICAL_APPOINTMENT"
+  | "THERAPY_APPOINTMENT"
+  | "OFFICIAL_APPOINTMENT"
+  | "WEDDING"
   | "COMPENSATION"
   | "UNPAID_LEAVE"
   | "OTHER";

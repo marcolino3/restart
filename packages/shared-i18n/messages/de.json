@@ -910,7 +910,11 @@
     "remove": "Entfernen",
     "workloadPercent": "Pensum",
     "timeBalanceMinutes": "Zeitsaldo",
-    "role": "Rolle"
+    "role": "Rolle",
+    "MEDICAL_APPOINTMENT": "Arzttermin",
+    "THERAPY_APPOINTMENT": "Therapietermin",
+    "OFFICIAL_APPOINTMENT": "Behördentermin",
+    "WEDDING": "Hochzeit"
   },
   "ConsentManagement": {
     "centerTitle": "Datenschutz-Center",

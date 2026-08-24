@@ -382,6 +382,166 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       },
     },
     {
+      code: SystemEmployeeAbsenceCategory.MEDICAL_APPOINTMENT,
+      countsAsWorkTime: true,
+      isPaid: true,
+      affectsVacationBalance: false,
+      defaultIsVacationCapable: true,
+      reducesVacationEntitlementAfterDays: null,
+      requiresCertificate: false,
+      certificateRequiredFromDay: null,
+      maxDaysPerYear: null,
+      defaultPercentage: 100,
+      requiresApproval: false,
+      allowsDateRange: false,
+      maxDaysPerRequest: null,
+      color: '#EC4899',
+      iconName: 'stethoscope',
+      sortOrder: 32,
+      translations: {
+        DE: {
+          name: 'Arzttermin',
+          description:
+            'Arzt- oder Zahnarzttermin waehrend der Arbeitszeit; nach Moeglichkeit an Randzeiten legen. Stundenweise als Anwesenheitsgrad erfassen.',
+        },
+        FR: {
+          name: 'Rendez-vous médical',
+          description:
+            'Rendez-vous chez le médecin ou le dentiste pendant les heures de travail; à placer si possible en début ou fin de journée.',
+        },
+        IT: {
+          name: 'Visita medica',
+          description:
+            'Visita medica o dentistica durante l’orario di lavoro; da fissare possibilmente a inizio o fine giornata.',
+        },
+        EN: {
+          name: 'Medical appointment',
+          description:
+            'Doctor or dentist appointment during working hours; schedule at the edges of the day where possible. Record hours via the attendance rate.',
+        },
+      },
+    },
+    {
+      code: SystemEmployeeAbsenceCategory.THERAPY_APPOINTMENT,
+      countsAsWorkTime: true,
+      isPaid: true,
+      affectsVacationBalance: false,
+      defaultIsVacationCapable: true,
+      reducesVacationEntitlementAfterDays: null,
+      requiresCertificate: false,
+      certificateRequiredFromDay: null,
+      maxDaysPerYear: null,
+      defaultPercentage: 100,
+      requiresApproval: false,
+      allowsDateRange: false,
+      maxDaysPerRequest: null,
+      color: '#D946EF',
+      iconName: 'hand-heart',
+      sortOrder: 34,
+      translations: {
+        DE: {
+          name: 'Therapietermin',
+          description:
+            'Physio-, Psycho- oder andere aerztlich verordnete Therapie waehrend der Arbeitszeit. Stundenweise als Anwesenheitsgrad erfassen.',
+        },
+        FR: {
+          name: 'Rendez-vous thérapeutique',
+          description:
+            'Physiothérapie, psychothérapie ou autre thérapie prescrite pendant les heures de travail.',
+        },
+        IT: {
+          name: 'Seduta terapeutica',
+          description:
+            'Fisioterapia, psicoterapia o altra terapia prescritta durante l’orario di lavoro.',
+        },
+        EN: {
+          name: 'Therapy appointment',
+          description:
+            'Physiotherapy, psychotherapy or other prescribed therapy during working hours. Record hours via the attendance rate.',
+        },
+      },
+    },
+    {
+      code: SystemEmployeeAbsenceCategory.OFFICIAL_APPOINTMENT,
+      countsAsWorkTime: true,
+      isPaid: true,
+      affectsVacationBalance: false,
+      defaultIsVacationCapable: true,
+      reducesVacationEntitlementAfterDays: null,
+      requiresCertificate: false,
+      certificateRequiredFromDay: null,
+      maxDaysPerYear: null,
+      defaultPercentage: 100,
+      requiresApproval: false,
+      allowsDateRange: false,
+      maxDaysPerRequest: null,
+      color: '#64748B',
+      iconName: 'landmark',
+      sortOrder: 36,
+      translations: {
+        DE: {
+          name: 'Behoerdentermin',
+          description:
+            'Amtlicher Termin, der nicht ausserhalb der Arbeitszeit moeglich ist (Behoerde, Gericht, Zeugenaussage).',
+        },
+        FR: {
+          name: 'Rendez-vous administratif',
+          description:
+            'Rendez-vous officiel impossible en dehors des heures de travail (administration, tribunal, témoignage).',
+        },
+        IT: {
+          name: 'Appuntamento ufficiale',
+          description:
+            'Appuntamento ufficiale non possibile fuori dall’orario di lavoro (autorità, tribunale, testimonianza).',
+        },
+        EN: {
+          name: 'Official appointment',
+          description:
+            'Official appointment that cannot take place outside working hours (authority, court, witness testimony).',
+        },
+      },
+    },
+    {
+      code: SystemEmployeeAbsenceCategory.WEDDING,
+      countsAsWorkTime: true,
+      isPaid: true,
+      affectsVacationBalance: false,
+      defaultIsVacationCapable: true,
+      reducesVacationEntitlementAfterDays: null,
+      requiresCertificate: false,
+      certificateRequiredFromDay: null,
+      maxDaysPerYear: 2,
+      defaultPercentage: 100,
+      requiresApproval: true,
+      allowsDateRange: true,
+      maxDaysPerRequest: 2,
+      color: '#F43F5E',
+      iconName: 'gem',
+      sortOrder: 55,
+      translations: {
+        DE: {
+          name: 'Hochzeit',
+          description:
+            'Eigene Hochzeit oder eingetragene Partnerschaft; bis zu 2 bezahlte Tage, im Voraus zu beantragen.',
+        },
+        FR: {
+          name: 'Mariage',
+          description:
+            'Propre mariage ou partenariat enregistré; jusqu’à 2 jours rémunérés, à demander à l’avance.',
+        },
+        IT: {
+          name: 'Matrimonio',
+          description:
+            'Proprio matrimonio o unione registrata; fino a 2 giorni retribuiti, da richiedere in anticipo.',
+        },
+        EN: {
+          name: 'Wedding',
+          description:
+            'Own wedding or registered partnership; up to 2 paid days, to be requested in advance.',
+        },
+      },
+    },
+    {
       code: SystemEmployeeAbsenceCategory.COMPENSATION,
       countsAsWorkTime: false,
       isPaid: true,
