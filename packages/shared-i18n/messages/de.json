@@ -651,6 +651,8 @@
     "deleteConfirm": "Diese Nachricht wirklich löschen?"
   },
   "Common": {
+    "selectDate": "Datum wählen",
+    "clearDate": "Löschen",
     "fieldPermissionDenied": "Keine Berechtigung zum Bearbeiten dieses Feldes",
     "childrenCount": "{count, plural, one {# Kind} other {# Kinder}}",
     "pickDateTime": "Datum & Uhrzeit wählen",
