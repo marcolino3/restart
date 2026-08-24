@@ -26,9 +26,12 @@ export const createEmployeeAbsenceNoticeAction = async (
 ) => {
   const client = await serverCookieGqlClient();
 
-  const parsed = EmployeeAbsenceNoticeFormSchema.parse(values);
-  // Self-service absences are whole days: send calendar dates only so the
-  // stored value carries no time of day (the table would otherwise show one).
+  // entryMode is a form-only switch; the API derives the mode from
+  // dayPart/startTime/endTime.
+  const { entryMode: _entryMode, ...parsed } =
+    EmployeeAbsenceNoticeFormSchema.parse(values);
+  // Send calendar dates only so the stored value carries no time of day
+  // (the table would otherwise show one).
   const parsedValues = {
     ...parsed,
     startDate:
