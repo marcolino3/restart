@@ -24,22 +24,22 @@ export class CreateEmployeeAbsenceCategoryInput {
   @Type(() => EmployeeAbsenceCategoryTranslationInput)
   translations: EmployeeAbsenceCategoryTranslationInput[];
 
-  @Field(() => Boolean, { nullable: true, defaultValue: true })
+  @Field(() => Boolean, { nullable: true })
   @IsOptional()
   @IsBoolean()
   countsAsWorkTime?: boolean;
 
-  @Field(() => Boolean, { nullable: true, defaultValue: true })
+  @Field(() => Boolean, { nullable: true })
   @IsOptional()
   @IsBoolean()
   isPaid?: boolean;
 
-  @Field(() => Boolean, { nullable: true, defaultValue: false })
+  @Field(() => Boolean, { nullable: true })
   @IsOptional()
   @IsBoolean()
   affectsVacationBalance?: boolean;
 
-  @Field(() => Boolean, { nullable: true, defaultValue: true })
+  @Field(() => Boolean, { nullable: true })
   @IsOptional()
   @IsBoolean()
   defaultIsVacationCapable?: boolean;
@@ -50,7 +50,7 @@ export class CreateEmployeeAbsenceCategoryInput {
   @Min(1)
   reducesVacationEntitlementAfterDays?: number;
 
-  @Field(() => Boolean, { nullable: true, defaultValue: false })
+  @Field(() => Boolean, { nullable: true })
   @IsOptional()
   @IsBoolean()
   requiresCertificate?: boolean;
@@ -67,19 +67,19 @@ export class CreateEmployeeAbsenceCategoryInput {
   @Min(1)
   maxDaysPerYear?: number;
 
-  @Field(() => Int, { nullable: true, defaultValue: 100 })
+  @Field(() => Int, { nullable: true })
   @IsOptional()
   @IsInt()
   @Min(1)
   @Max(100)
   defaultPercentage?: number;
 
-  @Field(() => Boolean, { nullable: true, defaultValue: false })
+  @Field(() => Boolean, { nullable: true })
   @IsOptional()
   @IsBoolean()
   requiresApproval?: boolean;
 
-  @Field(() => Boolean, { nullable: true, defaultValue: false })
+  @Field(() => Boolean, { nullable: true })
   @IsOptional()
   @IsBoolean()
   allowsDateRange?: boolean;
@@ -104,7 +104,7 @@ export class CreateEmployeeAbsenceCategoryInput {
   @MaxLength(64)
   iconName?: string;
 
-  @Field(() => Int, { nullable: true, defaultValue: 0 })
+  @Field(() => Int, { nullable: true })
   @IsOptional()
   @IsInt()
   @Min(0)

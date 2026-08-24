@@ -1718,8 +1718,8 @@ async function main() {
     );
     if (!existingAcct[0]) {
       await c.query(
-        `INSERT INTO account (id, "accountId", "providerId", "userId", password, "createdAt", "updatedAt")
-         VALUES ($1, $2, 'credential', $3, $4, now(), now())`,
+        `INSERT INTO account (id, "accountId", "providerId", issuer, "userId", password, "createdAt", "updatedAt")
+         VALUES ($1, $2, 'credential', 'local:credential', $3, $4, now(), now())`,
         [baId(32), baUserId, baUserId, pwHash],
       );
     }
@@ -4710,7 +4710,13 @@ async function seedChats(c: Client, ORG_ID: string) {
   );
 }
 
-main().catch((err) => {
-  console.error('\n❌ Seed failed:', err);
-  process.exit(1);
-});
+main()
+  .then(() => {
+    // The Nest context keeps a pubsub connection alive after app.close();
+    // exit explicitly so the script does not hang once seeding is done.
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error('\n❌ Seed failed:', err);
+    process.exit(1);
+  });

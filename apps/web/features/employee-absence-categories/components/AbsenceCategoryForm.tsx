@@ -106,28 +106,24 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
             updateEmployeeAbsenceCategoryAction({
               id: initial.id,
               translations: values.translations,
-              // System-Kategorien: Behavior-Felder werden im Backend ignoriert,
-              // aber wir senden sie nicht, um Missverstaendnisse zu vermeiden.
-              ...(isSystem
-                ? {}
-                : {
-                    countsAsWorkTime: values.countsAsWorkTime,
-                    isPaid: values.isPaid,
-                    affectsVacationBalance: values.affectsVacationBalance,
-                    defaultIsVacationCapable: values.defaultIsVacationCapable,
-                    reducesVacationEntitlementAfterDays:
-                      values.reducesVacationEntitlementAfterDays ?? null,
-                    requiresCertificate: values.requiresCertificate,
-                    certificateRequiredFromDay:
-                      values.certificateRequiredFromDay ?? null,
-                    maxDaysPerYear: values.maxDaysPerYear ?? null,
-                    allowsDateRange: values.allowsDateRange,
-                    maxDaysPerRequest: values.allowsDateRange
-                      ? (values.maxDaysPerRequest ?? null)
-                      : null,
-                    defaultPercentage: values.defaultPercentage,
-                    requiresApproval: values.requiresApproval,
-                  }),
+              // System-Kategorien sind nur nicht loeschbar; Behavior/Limits
+              // duerfen genauso wie bei Custom-Kategorien angepasst werden.
+              countsAsWorkTime: values.countsAsWorkTime,
+              isPaid: values.isPaid,
+              affectsVacationBalance: values.affectsVacationBalance,
+              defaultIsVacationCapable: values.defaultIsVacationCapable,
+              reducesVacationEntitlementAfterDays:
+                values.reducesVacationEntitlementAfterDays ?? null,
+              requiresCertificate: values.requiresCertificate,
+              certificateRequiredFromDay:
+                values.certificateRequiredFromDay ?? null,
+              maxDaysPerYear: values.maxDaysPerYear ?? null,
+              allowsDateRange: values.allowsDateRange,
+              maxDaysPerRequest: values.allowsDateRange
+                ? (values.maxDaysPerRequest ?? null)
+                : null,
+              defaultPercentage: values.defaultPercentage,
+              requiresApproval: values.requiresApproval,
               color: values.color,
               iconName: values.iconName,
               // Reihenfolge wird per DnD in der Liste verwaltet.
