@@ -109,6 +109,12 @@ export class CreateEmployeeAbsenceCategoryInput {
   @Min(1)
   maxDaysPerRequest?: number | null;
 
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  maxDaysAhead?: number | null;
+
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()

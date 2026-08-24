@@ -101,6 +101,7 @@ function buildCategoryFromDefaults(
     allowsDateRange: def.allowsDateRange,
     entryPrecision: def.entryPrecision,
     maxDaysPerRequest: def.maxDaysPerRequest,
+    maxDaysAhead: def.maxDaysAhead,
     color: def.color,
     iconName: def.iconName,
     sortOrder: def.sortOrder,

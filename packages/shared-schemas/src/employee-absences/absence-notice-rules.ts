@@ -8,7 +8,10 @@ const startOfDay = (value: Date) => {
   return d;
 };
 
-/** Finest unit an employee may use for a category; mirrors the backend enum. */
+/**
+ * Finest unit an employee may use for a category (upper bound: TIME also
+ * allows whole and half days); mirrors the backend enum.
+ */
 export const AbsenceEntryPrecision = {
   DAY: "DAY",
   HALF_DAY: "HALF_DAY",
@@ -31,6 +34,8 @@ export interface AbsenceNoticeCategoryRules {
   allowsDateRange?: boolean | null;
   maxDaysPerRequest?: number | null;
   entryPrecision?: AbsenceEntryPrecisionType | null;
+  /** Latest allowed start, in days from today (1 = today or tomorrow); null = open. */
+  maxDaysAhead?: number | null;
 }
 
 export type AbsenceNoticeDateErrorCode =
@@ -47,9 +52,30 @@ export type AbsenceNoticeDateErrorCode =
 export type AbsenceNoticeErrorField =
   "startDate" | "endDate" | "startTime" | "endTime";
 
+/** How the employee chose to enter a single absence; same scale as the precision. */
+export type AbsenceEntryModeType = AbsenceEntryPrecisionType;
+
+const PRECISION_RANK: Record<AbsenceEntryPrecisionType, number> = {
+  DAY: 0,
+  HALF_DAY: 1,
+  TIME: 2,
+};
+
+/** Entry modes a category permits, coarsest first. */
+export function allowedAbsenceEntryModes(
+  precision: AbsenceEntryPrecisionType | null | undefined,
+): AbsenceEntryModeType[] {
+  const rank = PRECISION_RANK[precision ?? AbsenceEntryPrecision.DAY];
+  return (Object.keys(PRECISION_RANK) as AbsenceEntryPrecisionType[]).filter(
+    (mode) => PRECISION_RANK[mode] <= rank,
+  );
+}
+
 export interface AbsenceNoticeValues {
   startDate?: Date | null;
   endDate?: Date | null;
+  /** Chosen entry mode; defaults to DAY when omitted. */
+  entryMode?: AbsenceEntryModeType | null;
   dayPart?: AbsenceDayPartType | null;
   /** "HH:mm" */
   startTime?: string | null;
@@ -70,26 +96,28 @@ export function absenceNoticeDayCount(start: Date, end?: Date | null): number {
 }
 
 /**
- * Self-service date rules, mirrored by the backend. A notice category
- * (`requiresApproval = false`) only covers today or tomorrow and is definitive
- * at once; a request category may lie anywhere in the future and waits for a
- * decision. A range is only allowed when the category permits it and, if
- * configured, must not exceed `maxDaysPerRequest` days.
+ * Self-service date rules, mirrored by the backend. The start must not lie in
+ * the past nor more than `maxDaysAhead` days ahead (null = open future; the
+ * boolean shorthand keeps the legacy "notice = today or tomorrow" rule). A
+ * range is only allowed when the category permits it and, if configured, must
+ * not exceed `maxDaysPerRequest` days.
  */
 export function checkAbsenceNoticeDates(
   values: AbsenceNoticeValues,
   category: boolean | AbsenceNoticeCategoryRules,
 ): { field: AbsenceNoticeErrorField; code: AbsenceNoticeDateErrorCode } | null {
   const rules: AbsenceNoticeCategoryRules =
-    typeof category === "boolean" ? { requiresApproval: category } : category;
+    typeof category === "boolean"
+      ? { requiresApproval: category, maxDaysAhead: category ? null : 1 }
+      : category;
   const start = values.startDate ? startOfDay(values.startDate) : null;
   if (!start) return null;
   const today = startOfDay(new Date());
   if (start < today) return { field: "startDate", code: "past" };
-  if (!rules.requiresApproval) {
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    if (start > tomorrow) return { field: "startDate", code: "tooFar" };
+  if (rules.maxDaysAhead != null) {
+    const last = new Date(today);
+    last.setDate(last.getDate() + rules.maxDaysAhead);
+    if (start > last) return { field: "startDate", code: "tooFar" };
   }
   const end = values.endDate ? startOfDay(values.endDate) : null;
   if (end && end < start) return { field: "endDate", code: "endBeforeStart" };
@@ -110,35 +138,44 @@ export function checkAbsenceNoticeDates(
 }
 
 /**
- * Day-part / time rules per entry precision (mirrored by the backend): a TIME
- * category needs a valid start–end pair on one day, a HALF_DAY category may
- * carry a day part on single days only, a DAY category neither.
+ * Day-part / time rules (mirrored by the backend). The precision is an upper
+ * bound: a TIME category accepts whole days, half days and a time of day, a
+ * HALF_DAY category whole and half days, a DAY category whole days only.
+ * Half days and times are single-day only; the end time may stay open.
  */
 export function checkAbsenceNoticeTiming(
-  values: Pick<AbsenceNoticeValues, "dayPart" | "startTime" | "endTime">,
+  values: Pick<
+    AbsenceNoticeValues,
+    "entryMode" | "dayPart" | "startTime" | "endTime"
+  >,
   rules: Pick<AbsenceNoticeCategoryRules, "entryPrecision">,
   requestedDays: number,
 ): { field: AbsenceNoticeErrorField; code: AbsenceNoticeDateErrorCode } | null {
-  const precision = rules.entryPrecision ?? AbsenceEntryPrecision.DAY;
-  const dayPart = values.dayPart ?? AbsenceDayPart.FULL;
-  if (precision === AbsenceEntryPrecision.TIME) {
+  const allowed = allowedAbsenceEntryModes(rules.entryPrecision);
+  const mode = values.entryMode ?? AbsenceEntryPrecision.DAY;
+  if (!allowed.includes(mode)) return null; // hidden in the UI; backend rejects
+  if (mode === AbsenceEntryPrecision.TIME) {
     if (!values.startTime || !HHMM.test(values.startTime)) {
       return { field: "startTime", code: "timeRequired" };
     }
-    if (!values.endTime || !HHMM.test(values.endTime)) {
-      return { field: "endTime", code: "timeRequired" };
+    if (values.endTime) {
+      if (!HHMM.test(values.endTime)) {
+        return { field: "endTime", code: "timeRequired" };
+      }
+      if (toMinutes(values.endTime) <= toMinutes(values.startTime)) {
+        return { field: "endTime", code: "timeOrder" };
+      }
     }
-    if (toMinutes(values.endTime) <= toMinutes(values.startTime)) {
-      return { field: "endTime", code: "timeOrder" };
+    if (requestedDays > 1) {
+      return { field: "endDate", code: "halfDaySingleDay" };
     }
     return null;
   }
-  if (
-    dayPart !== AbsenceDayPart.FULL &&
-    precision === AbsenceEntryPrecision.HALF_DAY &&
-    requestedDays > 1
-  ) {
-    return { field: "endDate", code: "halfDaySingleDay" };
+  if (mode === AbsenceEntryPrecision.HALF_DAY) {
+    const dayPart = values.dayPart ?? AbsenceDayPart.FULL;
+    if (dayPart !== AbsenceDayPart.FULL && requestedDays > 1) {
+      return { field: "endDate", code: "halfDaySingleDay" };
+    }
   }
   return null;
 }
@@ -154,7 +191,10 @@ export function absenceNoticeErrorCode(
   if (message.includes("End time must be after")) {
     return { field: "endTime", code: "timeOrder" };
   }
-  if (message.includes("Half days are only possible")) {
+  if (
+    message.includes("Half days are only possible") ||
+    message.includes("time of day is only possible")
+  ) {
     return { field: "endDate", code: "halfDaySingleDay" };
   }
   if (message.includes("ABSENCE_YEARLY_CAP")) {
@@ -166,7 +206,7 @@ export function absenceNoticeErrorCode(
   if (message.includes("days per request")) {
     return { field: "endDate", code: "tooManyDays" };
   }
-  if (message.includes("today or tomorrow")) {
+  if (message.includes("days ahead")) {
     return { field: "startDate", code: "tooFar" };
   }
   return null;

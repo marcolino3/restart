@@ -13,6 +13,7 @@ const GetEmployeeAbsenceCategoriesByOrgIdDocument = graphql(`
       allowsDateRange
       entryPrecision
       maxDaysPerRequest
+      maxDaysAhead
       maxDaysPerYear
       isActive
       translations {

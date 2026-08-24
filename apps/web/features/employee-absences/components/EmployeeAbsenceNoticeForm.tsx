@@ -2,12 +2,14 @@
 import {
   AbsenceDayPart,
   AbsenceEntryPrecision,
+  allowedAbsenceEntryModes,
   absenceNoticeDayCount,
   absenceNoticeErrorCode,
   checkAbsenceNoticeDates,
   EmployeeAbsenceNoticeFormSchema,
   EmployeeAbsenceNoticeFormType,
   type AbsenceDayPartType,
+  type AbsenceEntryModeType,
   type AbsenceEntryPrecisionType,
 } from "../schemas/employee-absence-notice-form.schema";
 import { useEffect, useState } from "react";
@@ -42,6 +44,7 @@ export interface NoticeAbsenceCategory {
   allowsDateRange?: boolean | null;
   entryPrecision?: AbsenceEntryPrecisionType | null;
   maxDaysPerRequest?: number | null;
+  maxDaysAhead?: number | null;
   maxDaysPerYear?: number | null;
   isActive?: boolean | null;
   translations?: { locale: string; name: string }[] | null;
@@ -89,35 +92,58 @@ export const EmployeeAbsenceNoticeForm = ({ absenceCategories }: Props) => {
   const requiresApproval = selectedCategory?.requiresApproval === true;
   const entryPrecision: AbsenceEntryPrecisionType =
     selectedCategory?.entryPrecision ?? AbsenceEntryPrecision.DAY;
-  const isTimeRange = entryPrecision === AbsenceEntryPrecision.TIME;
-  const allowsDateRange =
-    selectedCategory?.allowsDateRange === true && !isTimeRange;
+  const allowsDateRange = selectedCategory?.allowsDateRange === true;
   const rules = {
     requiresApproval,
     allowsDateRange,
     entryPrecision,
     maxDaysPerRequest: selectedCategory?.maxDaysPerRequest ?? null,
+    maxDaysAhead: selectedCategory?.maxDaysAhead ?? null,
   };
 
   // Multi-day categories default to a single day: a range picker for one
   // day is clumsy, so the employee opts into "several days" explicitly.
   const [multiDay, setMultiDay] = useState(false);
-  const useRange = allowsDateRange && multiDay;
-  const dayPart = form.watch("dayPart") ?? AbsenceDayPart.FULL;
+  // The category's precision is the upper bound of what the employee may
+  // pick: whole day, half day or a time of day.
+  const entryModes = allowedAbsenceEntryModes(entryPrecision);
+  const entryMode = form.watch("entryMode") ?? AbsenceEntryPrecision.DAY;
+  const isHalfDay = entryMode === AbsenceEntryPrecision.HALF_DAY;
+  const isTimeRange = entryMode === AbsenceEntryPrecision.TIME;
+  // Several days only make sense for whole-day entries.
+  const canUseRange =
+    allowsDateRange && entryMode === AbsenceEntryPrecision.DAY;
+  const useRange = canUseRange && multiDay;
+  const dayPart = form.watch("dayPart") ?? AbsenceDayPart.MORNING;
 
-  // Fields that the active precision / mode does not use are cleared so a
-  // category switch never submits stale values.
+  // Fields that the active mode does not use are cleared so a category or
+  // mode switch never submits stale values.
   useEffect(() => {
-    if (!allowsDateRange) setMultiDay(false);
+    if (!entryModes.includes(entryMode)) {
+      form.setValue("entryMode", AbsenceEntryPrecision.DAY);
+    }
+    if (!canUseRange) setMultiDay(false);
     if (!useRange) form.setValue("endDate", undefined);
-    if (entryPrecision !== AbsenceEntryPrecision.HALF_DAY || useRange) {
+    if (isHalfDay) {
+      if (form.getValues("dayPart") === AbsenceDayPart.FULL) {
+        form.setValue("dayPart", AbsenceDayPart.MORNING);
+      }
+    } else {
       form.setValue("dayPart", AbsenceDayPart.FULL);
     }
     if (!isTimeRange) {
       form.setValue("startTime", undefined);
       form.setValue("endTime", undefined);
     }
-  }, [allowsDateRange, useRange, entryPrecision, isTimeRange, form]);
+  }, [
+    entryModes,
+    entryMode,
+    canUseRange,
+    useRange,
+    isHalfDay,
+    isTimeRange,
+    form,
+  ]);
 
   const [quota, setQuota] = useState<MyAbsenceCategoryQuota | null>(null);
   useEffect(() => {
@@ -136,10 +162,10 @@ export const EmployeeAbsenceNoticeForm = ({ absenceCategories }: Props) => {
   const disabledDate = (date: Date) => {
     const today = startOfToday();
     if (date < today) return true;
-    if (!requiresApproval) {
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      return date > tomorrow;
+    if (rules.maxDaysAhead != null) {
+      const last = new Date(today);
+      last.setDate(last.getDate() + rules.maxDaysAhead);
+      return date > last;
     }
     return false;
   };
@@ -164,12 +190,10 @@ export const EmployeeAbsenceNoticeForm = ({ absenceCategories }: Props) => {
       const result = await createEmployeeAbsenceNoticeAction({
         ...values,
         endDate: useRange ? values.endDate : undefined,
-        dayPart:
-          entryPrecision === AbsenceEntryPrecision.HALF_DAY && !useRange
-            ? values.dayPart
-            : AbsenceDayPart.FULL,
+        entryMode: undefined,
+        dayPart: isHalfDay ? values.dayPart : AbsenceDayPart.FULL,
         startTime: isTimeRange ? values.startTime : undefined,
-        endTime: isTimeRange ? values.endTime : undefined,
+        endTime: isTimeRange ? values.endTime || undefined : undefined,
       });
       if (!result.success) {
         const mapped = absenceNoticeErrorCode(result.message);
@@ -214,6 +238,16 @@ export const EmployeeAbsenceNoticeForm = ({ absenceCategories }: Props) => {
                 {requiresApproval
                   ? tE("absence.requiresApprovalHint")
                   : tE("absence.noticeOnlyHint")}
+                {rules.maxDaysAhead != null && (
+                  <>
+                    {" "}
+                    {rules.maxDaysAhead <= 1
+                      ? tE("absence.daysAheadTomorrow")
+                      : tE("absence.daysAheadHint", {
+                          days: rules.maxDaysAhead,
+                        })}
+                  </>
+                )}
               </AlertDescription>
             </Alert>
           )}
@@ -241,7 +275,20 @@ export const EmployeeAbsenceNoticeForm = ({ absenceCategories }: Props) => {
                   })}
             </p>
           )}
-          {allowsDateRange && (
+          {entryModes.length > 1 && (
+            <SegmentedControl<AbsenceEntryModeType>
+              value={entryMode}
+              onChange={(v) =>
+                form.setValue("entryMode", v, { shouldDirty: true })
+              }
+              label={tE("absence.entryModeLabel")}
+              options={entryModes.map((value) => ({
+                value,
+                label: tE(`absence.entryMode.${value}`),
+              }))}
+            />
+          )}
+          {canUseRange && (
             <SegmentedControl
               value={multiDay ? "multi" : "single"}
               onChange={(v) => setMultiDay(v === "multi")}
@@ -258,42 +305,40 @@ export const EmployeeAbsenceNoticeForm = ({ absenceCategories }: Props) => {
               endName="endDate"
               label="dateRange"
               disabledDate={disabledRangeDate}
+              inlineMessage
             />
           ) : (
             <DatePickerFormField
               name="startDate"
               label="startDate"
               disabledDate={disabledDate}
+              inlineMessage
             />
           )}
-          {entryPrecision === AbsenceEntryPrecision.HALF_DAY && !useRange && (
-            <div className="space-y-1.5">
-              <p className="text-sm font-medium">
-                {tE("absence.dayPartLabel")}
-              </p>
-              <SegmentedControl<AbsenceDayPartType>
-                value={dayPart}
-                onChange={(v) =>
-                  form.setValue("dayPart", v, { shouldDirty: true })
-                }
-                label={tE("absence.dayPartLabel")}
-                options={(
-                  [
-                    AbsenceDayPart.FULL,
-                    AbsenceDayPart.MORNING,
-                    AbsenceDayPart.AFTERNOON,
-                  ] as const
-                ).map((value) => ({
-                  value,
-                  label: tE(`absence.dayPart.${value}`),
-                }))}
-              />
-            </div>
+          {isHalfDay && (
+            <SegmentedControl<AbsenceDayPartType>
+              value={dayPart}
+              onChange={(v) =>
+                form.setValue("dayPart", v, { shouldDirty: true })
+              }
+              label={tE("absence.dayPartLabel")}
+              options={(
+                [AbsenceDayPart.MORNING, AbsenceDayPart.AFTERNOON] as const
+              ).map((value) => ({
+                value,
+                label: tE(`absence.dayPart.${value}`),
+              }))}
+            />
           )}
           {isTimeRange && (
             <div className="grid grid-cols-2 gap-3">
               <InputFormField name="startTime" label="startTime" type="time" />
-              <InputFormField name="endTime" label="endTime" type="time" />
+              <InputFormField
+                name="endTime"
+                label="endTime"
+                type="time"
+                description="endTimeOpenHint"
+              />
             </div>
           )}
           <TextareaFormField

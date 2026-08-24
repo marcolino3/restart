@@ -3,6 +3,7 @@ import {
   absenceNoticeErrorCode,
   checkAbsenceNoticeDates,
   checkAbsenceNoticeTiming,
+  allowedAbsenceEntryModes,
 } from "./employee-absence-notice-form.schema";
 
 const dayOffset = (days: number) => {
@@ -114,23 +115,60 @@ describe("checkAbsenceNoticeDates", () => {
   });
 });
 
+describe("maxDaysAhead", () => {
+  it("limits the start independently of the approval flag", () => {
+    const rules = { requiresApproval: true, maxDaysAhead: 2 };
+    expect(
+      checkAbsenceNoticeDates({ startDate: dayOffset(2) }, rules),
+    ).toBeNull();
+    expect(checkAbsenceNoticeDates({ startDate: dayOffset(3) }, rules)).toEqual(
+      { field: "startDate", code: "tooFar" },
+    );
+    expect(
+      checkAbsenceNoticeDates(
+        { startDate: dayOffset(30) },
+        { requiresApproval: false, maxDaysAhead: null },
+      ),
+    ).toBeNull();
+  });
+});
+
 describe("checkAbsenceNoticeTiming", () => {
-  it("TIME category needs a valid, ordered start–end pair", () => {
-    const time = { entryPrecision: "TIME" as const };
-    expect(checkAbsenceNoticeTiming({}, time, 1)).toEqual({
+  const time = { entryPrecision: "TIME" as const };
+
+  it("TIME mode needs a valid start; the end may stay open but must follow", () => {
+    expect(checkAbsenceNoticeTiming({ entryMode: "TIME" }, time, 1)).toEqual({
       field: "startTime",
       code: "timeRequired",
     });
     expect(
       checkAbsenceNoticeTiming(
-        { startTime: "14:00", endTime: "13:00" },
+        { entryMode: "TIME", startTime: "14:00", endTime: "13:00" },
         time,
         1,
       ),
     ).toEqual({ field: "endTime", code: "timeOrder" });
     expect(
       checkAbsenceNoticeTiming(
-        { startTime: "14:00", endTime: "15:30" },
+        { entryMode: "TIME", startTime: "15:00" },
+        time,
+        1,
+      ),
+    ).toBeNull();
+    expect(
+      checkAbsenceNoticeTiming(
+        { entryMode: "TIME", startTime: "14:00", endTime: "15:30" },
+        time,
+        2,
+      ),
+    ).toEqual({ field: "endDate", code: "halfDaySingleDay" });
+  });
+
+  it("a TIME category still accepts whole and half days", () => {
+    expect(checkAbsenceNoticeTiming({ entryMode: "DAY" }, time, 3)).toBeNull();
+    expect(
+      checkAbsenceNoticeTiming(
+        { entryMode: "HALF_DAY", dayPart: "MORNING" },
         time,
         1,
       ),
@@ -140,28 +178,34 @@ describe("checkAbsenceNoticeTiming", () => {
   it("HALF_DAY: a day part is only valid on single days", () => {
     const half = { entryPrecision: "HALF_DAY" as const };
     expect(
-      checkAbsenceNoticeTiming({ dayPart: "MORNING" }, half, 1),
-    ).toBeNull();
-    expect(checkAbsenceNoticeTiming({ dayPart: "MORNING" }, half, 2)).toEqual({
-      field: "endDate",
-      code: "halfDaySingleDay",
-    });
-  });
-
-  it("DAY category ignores day part and times client-side", () => {
-    expect(
       checkAbsenceNoticeTiming(
-        { dayPart: "AFTERNOON" },
-        { entryPrecision: "DAY" },
+        { entryMode: "HALF_DAY", dayPart: "MORNING" },
+        half,
         1,
       ),
     ).toBeNull();
+    expect(
+      checkAbsenceNoticeTiming(
+        { entryMode: "HALF_DAY", dayPart: "MORNING" },
+        half,
+        2,
+      ),
+    ).toEqual({ field: "endDate", code: "halfDaySingleDay" });
+  });
+
+  it("lists the entry modes a precision permits", () => {
+    expect(allowedAbsenceEntryModes("DAY")).toEqual(["DAY"]);
+    expect(allowedAbsenceEntryModes("TIME")).toEqual([
+      "DAY",
+      "HALF_DAY",
+      "TIME",
+    ]);
   });
 
   it("is reached through checkAbsenceNoticeDates", () => {
     expect(
       checkAbsenceNoticeDates(
-        { startDate: dayOffset(1) },
+        { startDate: dayOffset(1), entryMode: "TIME" },
         { requiresApproval: false, entryPrecision: "TIME" },
       ),
     ).toEqual({ field: "startTime", code: "timeRequired" });

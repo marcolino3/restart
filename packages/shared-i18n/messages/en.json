@@ -115,23 +115,24 @@
     "previewUnpaid": "Unpaid",
     "previewSingleDay": "single day",
     "previewNoCertificate": "no certificate",
-    "entryPrecisionLabel": "Entry precision",
+    "entryPrecisionLabel": "Finest allowed entry",
     "entryPrecision": {
       "DAY": {
         "label": "Whole days",
-        "help": "Date or period; vacation, military service, training."
+        "help": "Date or period only; military service, training, moving."
       },
       "HALF_DAY": {
-        "label": "Half days",
-        "help": "Also morning / afternoon; sickness, sick child."
+        "label": "Down to half days",
+        "help": "Also morning / afternoon; vacation, compensation."
       },
       "TIME": {
-        "label": "Time of day",
-        "help": "From–to on the same day; medical, therapy, official appointments."
+        "label": "Down to time of day",
+        "help": "Also from–to on the same day (open end possible); sickness, appointments."
       }
     },
-    "timeExcludesRange": "With time-of-day entry, absences are always single-day.",
-    "previewSampleTime": "Mon 14 July · 14:00–15:30"
+    "previewSampleTime": "Mon 14 July · 14:00–15:30",
+    "maxDaysAheadLabel": "Max. days ahead",
+    "maxDaysAheadHelp": "How far in advance entries are allowed: 0 = today only, 1 = today or tomorrow. Empty = unlimited."
   },
   "AccessReview": {
     "tab": "Access",
@@ -933,7 +934,8 @@
     "OFFICIAL_APPOINTMENT": "Official appointment",
     "WEDDING": "Wedding",
     "startTime": "From",
-    "endTime": "To"
+    "endTime": "To",
+    "endTimeOpenHint": "Leave empty for until the end of the working day."
   },
   "ConsentManagement": {
     "centerTitle": "Data Protection Center",
@@ -1886,7 +1888,7 @@
       "requiresApprovalTitle": "Approval required",
       "noticeOnlyTitle": "Notice only",
       "requiresApprovalHint": "This category has to be requested. The request goes to your supervisors and only becomes definitive once approved.",
-      "noticeOnlyHint": "This category is only reported and recorded immediately — possible for today or tomorrow.",
+      "noticeOnlyHint": "This category is only reported and recorded immediately.",
       "requestSubmitted": "Request submitted. Your supervisors have been notified.",
       "dateError": {
         "past": "The date must not be in the past.",
@@ -1926,7 +1928,15 @@
         "MORNING": "Morning",
         "AFTERNOON": "Afternoon"
       },
-      "timeRangeLabel": "Time"
+      "timeRangeLabel": "Time",
+      "entryModeLabel": "Entry type",
+      "entryMode": {
+        "DAY": "Whole day",
+        "HALF_DAY": "Half day",
+        "TIME": "Time of day"
+      },
+      "daysAheadTomorrow": "Possible for today or tomorrow.",
+      "daysAheadHint": "Possible up to {days} days ahead."
     },
     "searchPlaceholder": "Search name or email...",
     "newEmployee": "New employee",

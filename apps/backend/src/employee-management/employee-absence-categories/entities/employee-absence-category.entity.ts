@@ -111,6 +111,12 @@ export class EmployeeAbsenceCategory extends AbstractEntity<EmployeeAbsenceCateg
   })
   entryPrecision!: AbsenceEntryPrecision;
 
+  // Latest allowed start for self-service, in days from today (1 = today or
+  // tomorrow); null = open future.
+  @Field(() => Int, { nullable: true })
+  @Column('int', { name: 'max_days_ahead', nullable: true })
+  maxDaysAhead!: number | null;
+
   // Max. Kalendertage pro Self-Service-Antrag (nur mit allowsDateRange).
   @Field(() => Int, { nullable: true })
   @Column('int', { name: 'max_days_per_request', nullable: true })

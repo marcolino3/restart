@@ -155,6 +155,7 @@ export class EmployeeAbsenceCategoriesService {
         syncToCalendar: input.syncToCalendar ?? true,
         calendarTitleTemplate: input.calendarTitleTemplate?.trim() || null,
         maxDaysPerRequest: input.maxDaysPerRequest ?? null,
+        maxDaysAhead: input.maxDaysAhead ?? null,
         color: input.color ?? null,
         iconName: input.iconName ?? null,
         sortOrder: input.sortOrder ?? nextSortOrder,
@@ -223,6 +224,8 @@ export class EmployeeAbsenceCategoriesService {
         input.calendarTitleTemplate?.trim() || null;
     if (input.maxDaysPerRequest !== undefined)
       category.maxDaysPerRequest = input.maxDaysPerRequest;
+    if (input.maxDaysAhead !== undefined)
+      category.maxDaysAhead = input.maxDaysAhead;
     this.assertRangeSettings(category);
     if (input.color !== undefined) category.color = input.color;
     if (input.iconName !== undefined) category.iconName = input.iconName;
@@ -359,11 +362,6 @@ export class EmployeeAbsenceCategoriesService {
     if (!c.allowsDateRange && c.maxDaysPerRequest != null) {
       throw new BadRequestException(
         'maxDaysPerRequest requires allowsDateRange to be enabled.',
-      );
-    }
-    if (c.entryPrecision === AbsenceEntryPrecision.TIME && c.allowsDateRange) {
-      throw new BadRequestException(
-        'A time-range category cannot allow multi-day entries.',
       );
     }
   }

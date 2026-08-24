@@ -160,8 +160,8 @@ export class EmployeeAbsencesService {
     });
     if (!category) throw new NotFoundException('Absenzcategory not found!');
 
-    // Self-service rules: a plain notice only covers today or tomorrow and is
-    // definitive at once; a request may lie anywhere in the future but waits
+    // Self-service rules: the start may lie at most `maxDaysAhead` days ahead
+    // (null = open future); a notice is definitive at once, a request waits
     // for a decision.
     const start = utcDay(input.startDate);
     const today = DateTime.utc().startOf('day');
@@ -170,9 +170,12 @@ export class EmployeeAbsencesService {
         'Absences cannot be reported for days in the past.',
       );
     }
-    if (!category.requiresApproval && start > today.plus({ days: 1 })) {
+    if (
+      category.maxDaysAhead != null &&
+      start > today.plus({ days: category.maxDaysAhead })
+    ) {
       throw new BadRequestException(
-        'This absence category can only be reported for today or tomorrow.',
+        `This absence category can only be reported up to ${category.maxDaysAhead} days ahead.`,
       );
     }
     const end = utcDay(input.endDate ?? input.startDate);
@@ -922,6 +925,8 @@ function membershipName(membership: Membership): string {
  * credits the exact minutes, see `CalcAbsenceDay.absenceMinutes`.
  */
 export const STANDARD_DAY_MINUTES = 504;
+/** Assumed end of a working day for absences with an open end time. */
+export const STANDARD_DAY_END = '17:00';
 
 export interface EntryTiming {
   dayPart: AbsenceDayPart;
@@ -954,8 +959,15 @@ export function resolveEntryTiming(
   const dayPart = input.dayPart ?? AbsenceDayPart.FULL;
   const hasTimes = input.startTime != null || input.endTime != null;
 
-  if (precision === AbsenceEntryPrecision.TIME) {
-    if (!input.startTime || !input.endTime) {
+  // The precision is an upper bound: TIME allows whole days, half days and a
+  // time of day; HALF_DAY allows whole and half days; DAY only whole days.
+  if (hasTimes) {
+    if (precision !== AbsenceEntryPrecision.TIME) {
+      throw new BadRequestException(
+        'This absence category does not allow a time range.',
+      );
+    }
+    if (!input.startTime) {
       throw new BadRequestException(
         'This absence category requires a start and end time.',
       );
@@ -965,14 +977,23 @@ export function resolveEntryTiming(
         'Half days cannot be combined with a time range.',
       );
     }
-    const minutes = toMinutes(input.endTime) - toMinutes(input.startTime);
+    if (requestedDays > 1) {
+      throw new BadRequestException(
+        'A time of day is only possible for single-day absences.',
+      );
+    }
+    // An open end ("leaves at 15:00") runs until the end of the standard day.
+    const endMinutes = input.endTime
+      ? toMinutes(input.endTime)
+      : Math.max(toMinutes(STANDARD_DAY_END), toMinutes(input.startTime));
+    const minutes = endMinutes - toMinutes(input.startTime);
     if (minutes <= 0) {
       throw new BadRequestException('End time must be after start time.');
     }
     return {
       dayPart: AbsenceDayPart.FULL,
       startTime: input.startTime,
-      endTime: input.endTime,
+      endTime: input.endTime ?? undefined,
       percentage: Math.min(
         100,
         Math.max(1, Math.round((minutes / STANDARD_DAY_MINUTES) * 100)),
@@ -980,13 +1001,8 @@ export function resolveEntryTiming(
     };
   }
 
-  if (hasTimes) {
-    throw new BadRequestException(
-      'This absence category does not allow a time range.',
-    );
-  }
   if (dayPart !== AbsenceDayPart.FULL) {
-    if (precision !== AbsenceEntryPrecision.HALF_DAY) {
+    if (precision === AbsenceEntryPrecision.DAY) {
       throw new BadRequestException(
         'This absence category only allows whole days.',
       );

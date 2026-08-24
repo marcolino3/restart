@@ -79,7 +79,6 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
       createAbsenceCategoryFormSchema({
         atLeastOneNameRequired: t("atLeastOneNameRequired"),
         maxDaysPerRequestNeedsRange: t("maxDaysPerRequestNeedsRange"),
-        timeExcludesRange: t("timeExcludesRange"),
       }),
     [t],
   );
@@ -95,8 +94,7 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
       : ABSENCE_CATEGORY_FORM_DEFAULTS,
   });
   const watched = form.watch();
-  const isTimeRange = watched.entryPrecision === "TIME";
-  const allowsDateRange = watched.allowsDateRange && !isTimeRange;
+  const allowsDateRange = watched.allowsDateRange;
   const requiresCertificate = watched.requiresCertificate;
   const syncToCalendar = watched.syncToCalendar;
   const filledLocales = LOCALES.filter((_, idx) =>
@@ -117,12 +115,11 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
       : null,
     maxDaysPerYear: values.maxDaysPerYear ?? null,
     entryPrecision: values.entryPrecision,
-    allowsDateRange:
-      values.entryPrecision === "TIME" ? false : values.allowsDateRange,
-    maxDaysPerRequest:
-      values.allowsDateRange && values.entryPrecision !== "TIME"
-        ? (values.maxDaysPerRequest ?? null)
-        : null,
+    allowsDateRange: values.allowsDateRange,
+    maxDaysPerRequest: values.allowsDateRange
+      ? (values.maxDaysPerRequest ?? null)
+      : null,
+    maxDaysAhead: values.maxDaysAhead ?? null,
     defaultPercentage: values.defaultPercentage,
     requiresApproval: values.requiresApproval,
     color: values.color,
@@ -367,11 +364,8 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
                   <SwitchTileFormField
                     name="allowsDateRange"
                     label="allowsDateRangeLabel"
-                    description={
-                      isTimeRange ? "timeExcludesRange" : "allowsDateRangeHelp"
-                    }
+                    description="allowsDateRangeHelp"
                     icon={<ArrowRight />}
-                    disabled={isTimeRange}
                     namespace="AbsenceCategories"
                   />
                   <SwitchTileFormField
@@ -408,6 +402,15 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
                     description="maxDaysPerYearHelp"
                     placeholder={t("unlimited")}
                     min={1}
+                    max={365}
+                    namespace="AbsenceCategories"
+                  />
+                  <NumberFormField
+                    name="maxDaysAhead"
+                    label="maxDaysAheadLabel"
+                    description="maxDaysAheadHelp"
+                    placeholder={t("unlimited")}
+                    min={0}
                     max={365}
                     namespace="AbsenceCategories"
                   />
@@ -563,9 +566,7 @@ function Preview({
   const summary = [
     values.requiresApproval ? t("badgeApproval") : t("badgeNoticeOnly"),
     t(`entryPrecision.${values.entryPrecision}.label`),
-    values.allowsDateRange && values.entryPrecision !== "TIME"
-      ? t("limitDateRange")
-      : t("previewSingleDay"),
+    values.allowsDateRange ? t("limitDateRange") : t("previewSingleDay"),
     values.requiresCertificate
       ? t("badgeCertificate")
       : t("previewNoCertificate"),
@@ -684,6 +685,7 @@ function mapInitialToFormValues(
     allowsDateRange: item.allowsDateRange,
     entryPrecision: item.entryPrecision ?? "DAY",
     maxDaysPerRequest: item.maxDaysPerRequest,
+    maxDaysAhead: item.maxDaysAhead ?? null,
     defaultPercentage: item.defaultPercentage,
     requiresApproval: item.requiresApproval,
     color: item.color,

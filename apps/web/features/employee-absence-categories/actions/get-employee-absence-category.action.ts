@@ -24,6 +24,7 @@ const Document = gql`
       syncToCalendar
       calendarTitleTemplate
       maxDaysPerRequest
+      maxDaysAhead
       defaultPercentage
       requiresApproval
       color

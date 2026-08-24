@@ -49,6 +49,7 @@ export type AbsenceCategoryItem = {
   syncToCalendar: boolean;
   calendarTitleTemplate: string | null;
   maxDaysPerRequest: number | null;
+  maxDaysAhead: number | null;
   defaultPercentage: number;
   requiresApproval: boolean;
   color: string | null;

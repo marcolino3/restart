@@ -486,6 +486,7 @@ describe('EmployeeAbsencesService', () => {
           id: 'cat-1',
           systemCode: 'VACATION',
           requiresApproval,
+          maxDaysAhead: requiresApproval ? null : 1,
           ...category,
         });
       const tx = {
@@ -544,17 +545,82 @@ describe('EmployeeAbsencesService', () => {
       expect(notifications.notifyRequested).toHaveBeenCalledTimes(1);
     });
 
-    it('TIME-Kategorie verlangt Von/Bis', async () => {
+    it('TIME-Kategorie: Bis ohne Von wird abgelehnt', async () => {
       mockNoticeContext(false, { entryPrecision: 'TIME' });
       await expect(
         service.createEmployeeAbsenceNotice(
           {
             absenceCategoryId: 'cat-1',
             startDate: plusDays(1),
+            endTime: '15:00',
           } as CreateEmployeeAbsenceNoticeInput,
           user,
         ),
       ).rejects.toThrow('requires a start and end time');
+    });
+
+    it('TIME-Kategorie erlaubt auch ganze Tage', async () => {
+      const tx = mockNoticeContext(false, {
+        entryPrecision: 'TIME',
+        defaultPercentage: 100,
+      });
+      await service.createEmployeeAbsenceNotice(
+        {
+          absenceCategoryId: 'cat-1',
+          startDate: plusDays(1),
+        } as CreateEmployeeAbsenceNoticeInput,
+        user,
+      );
+      const created = tx.create.mock.calls[0][1] as Record<string, unknown>;
+      expect(created.dayPart).toBe('FULL');
+      expect(created.percentage).toBe(100);
+    });
+
+    it('TIME-Kategorie: offenes Ende läuft bis Tagesende', async () => {
+      const tx = mockNoticeContext(false, {
+        entryPrecision: 'TIME',
+        defaultPercentage: 100,
+      });
+      await service.createEmployeeAbsenceNotice(
+        {
+          absenceCategoryId: 'cat-1',
+          startDate: plusDays(1),
+          startTime: '15:00',
+        } as CreateEmployeeAbsenceNoticeInput,
+        user,
+      );
+      const created = tx.create.mock.calls[0][1] as Record<string, unknown>;
+      expect(created.startTime).toBe('15:00');
+      expect(created.endTime).toBeNull();
+      expect(created.percentage).toBe(24);
+    });
+
+    it('HALF_DAY-Kategorie lehnt Uhrzeiten ab', async () => {
+      mockNoticeContext(false, { entryPrecision: 'HALF_DAY' });
+      await expect(
+        service.createEmployeeAbsenceNotice(
+          {
+            absenceCategoryId: 'cat-1',
+            startDate: plusDays(1),
+            startTime: '14:00',
+            endTime: '15:00',
+          } as CreateEmployeeAbsenceNoticeInput,
+          user,
+        ),
+      ).rejects.toThrow('does not allow a time range');
+    });
+
+    it('maxDaysAhead begrenzt den Vorlauf unabhängig von der Genehmigung', async () => {
+      mockNoticeContext(true, { maxDaysAhead: 2 });
+      await expect(
+        service.createEmployeeAbsenceNotice(
+          {
+            absenceCategoryId: 'cat-1',
+            startDate: plusDays(3),
+          } as CreateEmployeeAbsenceNoticeInput,
+          user,
+        ),
+      ).rejects.toThrow('up to 2 days ahead');
     });
 
     it('TIME-Kategorie speichert Zeiten und abgeleiteten Grad', async () => {

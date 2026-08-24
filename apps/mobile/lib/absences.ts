@@ -15,6 +15,7 @@ export type AbsenceCategory = {
   allowsDateRange: boolean;
   entryPrecision?: "DAY" | "HALF_DAY" | "TIME" | null;
   maxDaysPerRequest?: number | null;
+  maxDaysAhead?: number | null;
   maxDaysPerYear?: number | null;
   isActive: boolean;
   translations?: AbsenceCategoryTranslation[] | null;
@@ -52,6 +53,7 @@ const CategoriesDocument = gql`
       allowsDateRange
       entryPrecision
       maxDaysPerRequest
+      maxDaysAhead
       maxDaysPerYear
       isActive
       translations {

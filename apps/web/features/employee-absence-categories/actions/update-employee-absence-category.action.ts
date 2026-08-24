@@ -36,6 +36,7 @@ type UpdateInput = {
   syncToCalendar?: boolean;
   calendarTitleTemplate?: string | null;
   maxDaysPerRequest?: number | null;
+  maxDaysAhead?: number | null;
   defaultPercentage?: number;
   requiresApproval?: boolean;
   color?: string | null;
@@ -99,6 +100,7 @@ function sanitize(input: UpdateInput) {
     "certificateRequiredFromDay",
     "maxDaysPerYear",
     "maxDaysPerRequest",
+    "maxDaysAhead",
   ];
   for (const k of nullableNumberKeys) {
     const v = input[k];

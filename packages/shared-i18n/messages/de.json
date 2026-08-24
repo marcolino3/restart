@@ -115,23 +115,24 @@
     "previewUnpaid": "Unbezahlt",
     "previewSingleDay": "eintägig",
     "previewNoCertificate": "ohne Nachweis",
-    "entryPrecisionLabel": "Genauigkeit der Erfassung",
+    "entryPrecisionLabel": "Feinste erlaubte Eingabe",
     "entryPrecision": {
       "DAY": {
         "label": "Ganze Tage",
-        "help": "Datum bzw. Zeitraum; Ferien, Militär, Weiterbildung."
+        "help": "Nur Datum bzw. Zeitraum; Militär, Weiterbildung, Umzug."
       },
       "HALF_DAY": {
-        "label": "Halbe Tage",
-        "help": "Zusätzlich Vormittag / Nachmittag; Krankheit, Kind krank."
+        "label": "Bis halbe Tage",
+        "help": "Zusätzlich Vormittag / Nachmittag; Ferien, Kompensation."
       },
       "TIME": {
-        "label": "Uhrzeit",
-        "help": "Von–Bis am selben Tag; Arzt-, Therapie-, Behördentermine."
+        "label": "Bis Uhrzeit",
+        "help": "Zusätzlich Von–Bis am selben Tag (Ende offen möglich); Krankheit, Termine."
       }
     },
-    "timeExcludesRange": "Bei Uhrzeit-Erfassung sind Absenzen immer eintägig.",
-    "previewSampleTime": "Mo, 14. Juli · 14:00–15:30"
+    "previewSampleTime": "Mo, 14. Juli · 14:00–15:30",
+    "maxDaysAheadLabel": "Vorlauf max. Tage",
+    "maxDaysAheadHelp": "Wie weit im Voraus erfasst werden darf: 0 = nur heute, 1 = heute oder morgen. Leer = beliebig."
   },
   "AccessReview": {
     "tab": "Zugriffe",
@@ -933,7 +934,8 @@
     "OFFICIAL_APPOINTMENT": "Behördentermin",
     "WEDDING": "Hochzeit",
     "startTime": "Von",
-    "endTime": "Bis"
+    "endTime": "Bis",
+    "endTimeOpenHint": "Leer = bis Ende des Arbeitstags."
   },
   "ConsentManagement": {
     "centerTitle": "Datenschutz-Center",
@@ -1886,7 +1888,7 @@
       "requiresApprovalTitle": "Genehmigung erforderlich",
       "noticeOnlyTitle": "Nur Meldung",
       "requiresApprovalHint": "Diese Kategorie muss beantragt werden. Der Antrag geht an die Vorgesetzten und wird erst nach der Genehmigung definitiv.",
-      "noticeOnlyHint": "Diese Kategorie wird nur mitgeteilt und sofort definitiv erfasst — möglich für heute oder morgen.",
+      "noticeOnlyHint": "Diese Kategorie wird nur mitgeteilt und sofort definitiv erfasst.",
       "requestSubmitted": "Antrag eingereicht. Die Vorgesetzten wurden informiert.",
       "dateError": {
         "past": "Das Datum darf nicht in der Vergangenheit liegen.",
@@ -1926,7 +1928,15 @@
         "MORNING": "Vormittag",
         "AFTERNOON": "Nachmittag"
       },
-      "timeRangeLabel": "Uhrzeit"
+      "timeRangeLabel": "Uhrzeit",
+      "entryModeLabel": "Art der Eingabe",
+      "entryMode": {
+        "DAY": "Ganzer Tag",
+        "HALF_DAY": "Halber Tag",
+        "TIME": "Uhrzeit"
+      },
+      "daysAheadTomorrow": "Möglich für heute oder morgen.",
+      "daysAheadHint": "Möglich bis {days} Tage im Voraus."
     },
     "searchPlaceholder": "Name oder E-Mail suchen...",
     "newEmployee": "Neue:r Mitarbeiter:in",

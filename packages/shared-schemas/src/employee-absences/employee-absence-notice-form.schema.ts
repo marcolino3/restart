@@ -16,6 +16,7 @@ export const EmployeeAbsenceNoticeFormSchema = z.object({
   absenceCategoryId: z.string().default(""),
   note: z.string().default(""),
   isTeamInformed: z.boolean().default(true),
+  entryMode: z.enum(["DAY", "HALF_DAY", "TIME"]).default("DAY"),
   dayPart: z.enum(["FULL", "MORNING", "AFTERNOON"]).default("FULL"),
   /** "HH:mm", only for TIME categories. */
   startTime: z.string().optional(),
@@ -37,8 +38,10 @@ export {
   absenceNoticeErrorCode,
   checkAbsenceNoticeDates,
   checkAbsenceNoticeTiming,
+  allowedAbsenceEntryModes,
   type AbsenceDayPartType,
   type AbsenceEntryPrecisionType,
+  type AbsenceEntryModeType,
   type AbsenceNoticeCategoryRules,
   type AbsenceNoticeDateErrorCode,
   type AbsenceNoticeErrorField,

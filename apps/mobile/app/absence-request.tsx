@@ -1,10 +1,12 @@
 import {
   AbsenceDayPart,
   AbsenceEntryPrecision,
+  allowedAbsenceEntryModes,
   absenceNoticeDayCount,
   absenceNoticeErrorCode,
   checkAbsenceNoticeDates,
   type AbsenceDayPartType,
+  type AbsenceEntryModeType,
   type AbsenceNoticeCategoryRules,
 } from "@restart/shared-schemas/employee-absences/absence-notice-rules";
 import { useRouter } from "expo-router";
@@ -76,8 +78,11 @@ export default function AbsenceRequestModal() {
   const [startDate, setStartDate] = useState<Date | null>(startOfToday());
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [multiDay, setMultiDay] = useState(false);
+  const [entryMode, setEntryMode] = useState<AbsenceEntryModeType>(
+    AbsenceEntryPrecision.DAY,
+  );
   const [dayPart, setDayPart] = useState<AbsenceDayPartType>(
-    AbsenceDayPart.FULL,
+    AbsenceDayPart.MORNING,
   );
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [endTime, setEndTime] = useState<Date | null>(null);
@@ -109,32 +114,40 @@ export default function AbsenceRequestModal() {
     [categories, categoryId],
   );
   const entryPrecision = selected?.entryPrecision ?? AbsenceEntryPrecision.DAY;
-  const isTimeRange = entryPrecision === AbsenceEntryPrecision.TIME;
   const rules: AbsenceNoticeCategoryRules = useMemo(
     () => ({
       requiresApproval: selected?.requiresApproval === true,
-      allowsDateRange: selected?.allowsDateRange === true && !isTimeRange,
+      allowsDateRange: selected?.allowsDateRange === true,
       entryPrecision,
       maxDaysPerRequest: selected?.maxDaysPerRequest ?? null,
+      maxDaysAhead: selected?.maxDaysAhead ?? null,
     }),
-    [selected, entryPrecision, isTimeRange],
+    [selected, entryPrecision],
   );
-  // Several days are opt-in even for range categories: a single day is the
-  // common case and needs no end date.
-  const useRange = rules.allowsDateRange === true && multiDay;
-  const showDayPart =
-    entryPrecision === AbsenceEntryPrecision.HALF_DAY && !useRange;
+  // The category's precision is the upper bound of what may be picked:
+  // whole day, half day or a time of day.
+  const entryModes = useMemo(
+    () => allowedAbsenceEntryModes(entryPrecision),
+    [entryPrecision],
+  );
+  const isHalfDay = entryMode === AbsenceEntryPrecision.HALF_DAY;
+  const isTimeRange = entryMode === AbsenceEntryPrecision.TIME;
+  // Several days are opt-in and only for whole-day entries.
+  const canUseRange =
+    rules.allowsDateRange === true && entryMode === AbsenceEntryPrecision.DAY;
+  const useRange = canUseRange && multiDay;
 
-  // Clear whatever the active precision / mode does not use.
+  // Clear whatever the active mode does not use.
   useEffect(() => {
-    if (!rules.allowsDateRange) setMultiDay(false);
+    if (!entryModes.includes(entryMode))
+      setEntryMode(AbsenceEntryPrecision.DAY);
+    if (!canUseRange) setMultiDay(false);
     if (!useRange) setEndDate(null);
-    if (!showDayPart) setDayPart(AbsenceDayPart.FULL);
     if (!isTimeRange) {
       setStartTime(null);
       setEndTime(null);
     }
-  }, [rules.allowsDateRange, useRange, showDayPart, isTimeRange]);
+  }, [entryModes, entryMode, canUseRange, useRange, isTimeRange]);
 
   // Remaining yearly allowance, only for capped categories.
   useEffect(() => {
@@ -159,7 +172,8 @@ export default function AbsenceRequestModal() {
   }, [selected, startDate]);
 
   const today = startOfToday();
-  const startMax = rules.requiresApproval ? undefined : addDays(today, 1);
+  const startMax =
+    rules.maxDaysAhead != null ? addDays(today, rules.maxDaysAhead) : undefined;
   const endMin = startDate ?? today;
   const endMax =
     startDate && rules.maxDaysPerRequest != null
@@ -184,7 +198,8 @@ export default function AbsenceRequestModal() {
         {
           startDate,
           endDate,
-          dayPart,
+          entryMode,
+          dayPart: isHalfDay ? dayPart : AbsenceDayPart.FULL,
           startTime: startTime ? toTimeStr(startTime) : null,
           endTime: endTime ? toTimeStr(endTime) : null,
         },
@@ -208,7 +223,7 @@ export default function AbsenceRequestModal() {
         absenceCategoryId: categoryId,
         note: note.trim(),
         isTeamInformed,
-        dayPart: showDayPart ? dayPart : AbsenceDayPart.FULL,
+        dayPart: isHalfDay ? dayPart : AbsenceDayPart.FULL,
         startTime: isTimeRange && startTime ? toTimeStr(startTime) : null,
         endTime: isTimeRange && endTime ? toTimeStr(endTime) : null,
       });
@@ -320,6 +335,14 @@ export default function AbsenceRequestModal() {
                   {rules.requiresApproval
                     ? t("Employees.absence.requiresApprovalHint")
                     : t("Employees.absence.noticeOnlyHint")}
+                  {rules.maxDaysAhead != null
+                    ? " " +
+                      (rules.maxDaysAhead <= 1
+                        ? t("Employees.absence.daysAheadTomorrow")
+                        : t("Employees.absence.daysAheadHint", {
+                            days: rules.maxDaysAhead,
+                          }))
+                    : null}
                 </Text>
               </View>
             ) : null}
@@ -343,7 +366,18 @@ export default function AbsenceRequestModal() {
             ) : null}
           </View>
 
-          {rules.allowsDateRange ? (
+          {entryModes.length > 1 ? (
+            <Segment
+              value={entryMode}
+              onChange={setEntryMode}
+              options={entryModes.map((value) => ({
+                value,
+                label: t(`Employees.absence.entryMode.${value}`),
+              }))}
+            />
+          ) : null}
+
+          {canUseRange ? (
             <Segment
               value={multiDay ? "multi" : "single"}
               onChange={(v) => setMultiDay(v === "multi")}
@@ -378,7 +412,7 @@ export default function AbsenceRequestModal() {
             />
           ) : null}
 
-          {showDayPart ? (
+          {isHalfDay ? (
             <View className="gap-1.5">
               <Text className="text-sm font-medium text-foreground">
                 {t("Employees.absence.dayPartLabel")}
@@ -387,11 +421,7 @@ export default function AbsenceRequestModal() {
                 value={dayPart}
                 onChange={setDayPart}
                 options={(
-                  [
-                    AbsenceDayPart.FULL,
-                    AbsenceDayPart.MORNING,
-                    AbsenceDayPart.AFTERNOON,
-                  ] as const
+                  [AbsenceDayPart.MORNING, AbsenceDayPart.AFTERNOON] as const
                 ).map((value) => ({
                   value,
                   label: t(`Employees.absence.dayPart.${value}`),
@@ -417,6 +447,7 @@ export default function AbsenceRequestModal() {
                   label={t("Common.endTime")}
                   value={endTime}
                   onChange={setEndTime}
+                  optional
                   error={errors.endTime}
                 />
               </View>
