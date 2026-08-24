@@ -15,6 +15,13 @@ const nullableInt = z.preprocess((v) => {
   return Number.isFinite(n) ? n : null;
 }, z.number().int().min(1).nullable());
 
+// Like nullableInt, but 0 is meaningful ("only today").
+const nullableNonNegativeInt = z.preprocess((v) => {
+  if (v === "" || v === null || v === undefined) return null;
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : null;
+}, z.number().int().min(0).nullable());
+
 const requiredInt = z.preprocess(
   (v) => (typeof v === "number" ? v : Number(v)),
   z.number().int(),
@@ -42,7 +49,7 @@ export function createAbsenceCategoryFormSchema(messages: {
       syncToCalendar: z.boolean(),
       calendarTitleTemplate: z.string().trim().max(200).nullable(),
       maxDaysPerRequest: nullableInt,
-      maxDaysAhead: nullableInt,
+      maxDaysAhead: nullableNonNegativeInt,
       defaultPercentage: requiredInt.pipe(z.number().int().min(1).max(100)),
       requiresApproval: z.boolean(),
       color: z

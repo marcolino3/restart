@@ -49,4 +49,35 @@ describe("createAbsenceCategoryFormSchema", () => {
       );
     }
   });
+
+  describe("maxDaysAhead", () => {
+    const withLabel = {
+      ...ABSENCE_CATEGORY_FORM_DEFAULTS,
+      translations: ABSENCE_CATEGORY_FORM_DEFAULTS.translations.map((tr) =>
+        tr.locale === "DE" ? { ...tr, name: "Krankheit" } : tr,
+      ),
+    };
+
+    it("accepts 0 (only today), 1 and empty (open future)", () => {
+      for (const value of [0, 1, "", null]) {
+        const result = schema.safeParse({ ...withLabel, maxDaysAhead: value });
+        expect(result.success, `value ${String(value)}`).toBe(true);
+      }
+      expect(
+        schema.parse({ ...withLabel, maxDaysAhead: "" }).maxDaysAhead,
+      ).toBe(null);
+      expect(
+        schema.parse({ ...withLabel, maxDaysAhead: "3" }).maxDaysAhead,
+      ).toBe(3);
+    });
+
+    it("rejects negative and fractional values", () => {
+      expect(schema.safeParse({ ...withLabel, maxDaysAhead: -1 }).success).toBe(
+        false,
+      );
+      expect(
+        schema.safeParse({ ...withLabel, maxDaysAhead: 1.5 }).success,
+      ).toBe(false);
+    });
+  });
 });

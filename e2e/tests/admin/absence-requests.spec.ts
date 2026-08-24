@@ -147,9 +147,13 @@ const createRequest = async (
 const absenceStatus = async (page: Page, id: string): Promise<string> => {
   const { employeeAbsenceById } = await gql<{
     employeeAbsenceById: { status: string; decisionNote: string | null }
-  }>(page, `query($id: ID!) { employeeAbsenceById(id: $id) { status decisionNote } }`, {
-    id,
-  })
+  }>(
+    page,
+    `query($id: ID!) { employeeAbsenceById(id: $id) { status decisionNote } }`,
+    {
+      id,
+    },
+  )
   return employeeAbsenceById.status
 }
 
@@ -237,5 +241,100 @@ test.describe('Absence request approval', () => {
     await expect(page.getByText('Rejected').first()).toBeVisible({
       timeout: 15000,
     })
+  })
+})
+
+test.describe('Absence notice form', () => {
+  // Today: seeded "Sick leave" only allows today or tomorrow, and the form
+  // preselects today, so no calendar interaction is needed. Whatever is
+  // recorded for today is cleared first.
+  const TODAY = new Date().toISOString().slice(0, 10)
+
+  let employeeId: string
+
+  const openNoticeSheet = async (page: Page) => {
+    await page.goto('/en/admin/my-absences', { waitUntil: 'networkidle' })
+    await page.getByRole('button', { name: 'Create absence notice' }).click()
+    await page.getByRole('combobox', { name: /absence category/i }).click()
+    await page.getByRole('option', { name: /^sick leave$/i }).click()
+  }
+
+  test.beforeEach(async ({ page }) => {
+    await signInAsSuperAdmin(page)
+    await ensureActiveOrg(page)
+    employeeId = await ensureSelfEmployee(page)
+    await clearAbsencesOn(page, employeeId, [TODAY])
+  })
+
+  test.afterEach(async ({ page }) => {
+    await clearAbsencesOn(page, employeeId, [TODAY])
+  })
+
+  test('shows the days-ahead hint and records a time-of-day notice', async ({
+    page,
+  }) => {
+    const note = `E2E notice time ${Date.now()}`
+    await openNoticeSheet(page)
+
+    await expect(
+      page.getByText('Possible for today or tomorrow.'),
+    ).toBeVisible()
+
+    await page
+      .getByRole('radiogroup', { name: /entry type/i })
+      .getByRole('radio', { name: /time of day/i })
+      .click()
+    await page.getByLabel(/^from$/i).fill('15:00')
+    await page.getByLabel(/^note$/i).fill(note)
+    await page.getByRole('button', { name: /^create$/i }).click()
+
+    await expect
+      .poll(
+        async () => {
+          const { employeeAbsencesByEmployeeId } = await gql<{
+            employeeAbsencesByEmployeeId: {
+              note: string | null
+              startTime: string | null
+              endTime: string | null
+            }[]
+          }>(
+            page,
+            `query($employeeId: ID!) {
+              employeeAbsencesByEmployeeId(employeeId: $employeeId) {
+                note startTime endTime
+              }
+            }`,
+            { employeeId },
+          )
+          const created = employeeAbsencesByEmployeeId.find(
+            (a) => a.note === note,
+          )
+          return created
+            ? `${created.startTime?.slice(0, 5)}-${created.endTime ?? 'open'}`
+            : null
+        },
+        { timeout: 15000 },
+      )
+      .toBe('15:00-open')
+  })
+
+  test('shows the overlap error when the day is already taken', async ({
+    page,
+  }) => {
+    await createRequest(page, {
+      startDate: TODAY,
+      endDate: TODAY,
+      note: 'E2E overlap blocker',
+    })
+
+    await openNoticeSheet(page)
+    await page.getByLabel(/^note$/i).fill('E2E overlap attempt')
+    await page.getByRole('button', { name: /^create$/i }).click()
+
+    await expect(
+      page.getByText(
+        'An absence is already recorded for one of the selected days.',
+      ),
+    ).toBeVisible({ timeout: 15000 })
   })
 })
