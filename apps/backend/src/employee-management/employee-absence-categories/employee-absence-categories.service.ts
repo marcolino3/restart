@@ -1,3 +1,4 @@
+import { AbsenceEntryPrecision } from './interfaces/absence-entry-precision.enum';
 import {
   BadRequestException,
   ConflictException,
@@ -121,6 +122,7 @@ export class EmployeeAbsenceCategoriesService {
     this.assertRangeSettings({
       allowsDateRange: input.allowsDateRange ?? false,
       maxDaysPerRequest: input.maxDaysPerRequest ?? null,
+      entryPrecision: input.entryPrecision ?? AbsenceEntryPrecision.DAY,
     });
 
     return this.dataSource.transaction(async (m) => {
@@ -149,6 +151,7 @@ export class EmployeeAbsenceCategoriesService {
         defaultPercentage: input.defaultPercentage ?? 100,
         requiresApproval: input.requiresApproval ?? false,
         allowsDateRange: input.allowsDateRange ?? false,
+        entryPrecision: input.entryPrecision ?? AbsenceEntryPrecision.DAY,
         syncToCalendar: input.syncToCalendar ?? true,
         calendarTitleTemplate: input.calendarTitleTemplate?.trim() || null,
         maxDaysPerRequest: input.maxDaysPerRequest ?? null,
@@ -211,6 +214,8 @@ export class EmployeeAbsenceCategoriesService {
       category.requiresApproval = input.requiresApproval;
     if (input.allowsDateRange !== undefined)
       category.allowsDateRange = input.allowsDateRange;
+    if (input.entryPrecision !== undefined)
+      category.entryPrecision = input.entryPrecision;
     if (input.syncToCalendar !== undefined)
       category.syncToCalendar = input.syncToCalendar;
     if (input.calendarTitleTemplate !== undefined)
@@ -342,14 +347,23 @@ export class EmployeeAbsenceCategoriesService {
     }
   }
 
-  /** A per-request day limit only makes sense for multi-day categories. */
+  /**
+   * A per-request day limit only makes sense for multi-day categories, and a
+   * time-range category is by definition single-day.
+   */
   private assertRangeSettings(c: {
     allowsDateRange: boolean;
     maxDaysPerRequest: number | null;
+    entryPrecision: AbsenceEntryPrecision;
   }): void {
     if (!c.allowsDateRange && c.maxDaysPerRequest != null) {
       throw new BadRequestException(
         'maxDaysPerRequest requires allowsDateRange to be enabled.',
+      );
+    }
+    if (c.entryPrecision === AbsenceEntryPrecision.TIME && c.allowsDateRange) {
+      throw new BadRequestException(
+        'A time-range category cannot allow multi-day entries.',
       );
     }
   }

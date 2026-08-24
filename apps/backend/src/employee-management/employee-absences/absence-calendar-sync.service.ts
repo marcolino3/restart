@@ -21,6 +21,8 @@ export interface AbsenceCalendarSyncInput {
   endDate: Date;
   /** `HH:mm[:ss]` when the absence starts mid-day, otherwise null. */
   startTime?: string | null;
+  /** `HH:mm[:ss]` when the absence ends mid-day (timed appointment). */
+  endTime?: string | null;
   note?: string | null;
 }
 
@@ -169,8 +171,10 @@ function buildSummary(input: AbsenceCalendarSyncInput): string {
   const base = template
     ? renderAbsenceCalendarTitle(template, input)
     : `${input.employeeName} ${input.absenceLabel}`.trim();
-  const time = formatTime(input.startTime);
-  return time ? `${base} (ab ${time})` : base;
+  const from = formatTime(input.startTime);
+  const to = formatTime(input.endTime);
+  if (from && to) return `${base} (${from}–${to})`;
+  return from ? `${base} (ab ${from})` : base;
 }
 
 /** Resolves `{firstName}`, `{lastName}` and `{category}` in a title template. */

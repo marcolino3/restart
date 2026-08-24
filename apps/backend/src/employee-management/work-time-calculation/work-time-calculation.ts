@@ -84,6 +84,17 @@ function activeContractFor(
   return chosen;
 }
 
+/** Angerechnete Minuten: exakte Dauer bei Von–Bis, sonst Anteil des Solls. */
+function creditedAbsenceMinutes(
+  plannedMinutes: number,
+  absence: CalcAbsenceDay,
+): number {
+  if (absence.absenceMinutes != null) {
+    return Math.min(absence.absenceMinutes, plannedMinutes);
+  }
+  return Math.round((plannedMinutes * absence.percentage) / 100);
+}
+
 /** Dominante Absenz eines Tages (höchster Abwesenheitsgrad). */
 function dominantAbsence(
   absences: CalcAbsenceDay[],
@@ -307,8 +318,9 @@ export function calculateDays(input: CalcInput): DayResult[] {
         // Krank/verunfallt in den Ferien und nicht ferienfähig: der Ferientag
         // wird gutgeschrieben (nicht konsumiert), die Absenz deckt den Tag.
         result.isAbsence = true;
-        result.absenceMinutes = Math.round(
-          (result.plannedMinutes * absence.percentage) / 100,
+        result.absenceMinutes = creditedAbsenceMinutes(
+          result.plannedMinutes,
+          absence,
         );
       } else if (isVacationDay) {
         // Ferien decken den Tag; eine gleichzeitige Absenz zählt nicht
@@ -319,8 +331,9 @@ export function calculateDays(input: CalcInput): DayResult[] {
         // Absenz: zählt nur als Arbeitszeit, wenn die Kategorie es vorsieht.
         result.isAbsence = true;
         if (absence.countsAsWorkTime) {
-          result.absenceMinutes = Math.round(
-            (result.plannedMinutes * absence.percentage) / 100,
+          result.absenceMinutes = creditedAbsenceMinutes(
+            result.plannedMinutes,
+            absence,
           );
         }
       }

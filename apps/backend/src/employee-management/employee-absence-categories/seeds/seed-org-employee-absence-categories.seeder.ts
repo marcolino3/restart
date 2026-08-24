@@ -99,6 +99,7 @@ function buildCategoryFromDefaults(
     defaultPercentage: def.defaultPercentage,
     requiresApproval: def.requiresApproval,
     allowsDateRange: def.allowsDateRange,
+    entryPrecision: def.entryPrecision,
     maxDaysPerRequest: def.maxDaysPerRequest,
     color: def.color,
     iconName: def.iconName,

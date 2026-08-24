@@ -16,6 +16,8 @@ import { UpdateEmployeeAbsenceInput } from './dto/update-employee-absence.input'
 import { AbsenceDocument } from './entities/absence-document.type';
 import { EmployeeAbsence } from './entities/employee-absence.entity';
 import { EmployeeAbsenceStatus } from './entities/employee-absence-status.enum';
+import { AbsenceDayPart } from './entities/absence-day-part.enum';
+import { AbsenceEntryPrecision } from '../employee-absence-categories/interfaces/absence-entry-precision.enum';
 import { AbsenceRequestNotificationService } from './absence-request-notification.service';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { daysInterval } from '@/common/utils/days-interval';
@@ -191,6 +193,7 @@ export class EmployeeAbsencesService {
         `This absence category allows at most ${category.maxDaysPerRequest} days per request.`,
       );
     }
+    const timing = resolveEntryTiming(category, input, requestedDays);
     // Yearly cap only guards self-service; admins may exceed it deliberately
     // via createEmployeeAbsence.
     await this.assertYearlyCap(
@@ -202,7 +205,7 @@ export class EmployeeAbsencesService {
     );
 
     const absence = await this.createAbsenceForMembership({
-      input,
+      input: { ...input, ...timing },
       user,
       orgId: orgId as string,
       membership,
@@ -351,6 +354,9 @@ export class EmployeeAbsencesService {
           isVacationCapable:
             isVacationCapable ?? absenceCategory.defaultIsVacationCapable,
           percentage: input.percentage ?? absenceCategory.defaultPercentage,
+          dayPart: input.dayPart ?? AbsenceDayPart.FULL,
+          startTime: input.startTime ?? null,
+          endTime: input.endTime ?? null,
           certificates,
           additionalDocuments,
           status,
@@ -394,6 +400,7 @@ export class EmployeeAbsencesService {
       startDate: employeeAbsenceSaved.startDate,
       endDate: employeeAbsenceSaved.endDate,
       startTime: employeeAbsenceSaved.startTime,
+      endTime: employeeAbsenceSaved.endTime,
       note: employeeAbsenceSaved.note,
     });
 
@@ -679,6 +686,7 @@ export class EmployeeAbsencesService {
             startDate: saved.startDate,
             endDate: saved.endDate,
             startTime: saved.startTime,
+            endTime: saved.endTime,
             note: saved.note,
           }),
         );
@@ -906,4 +914,92 @@ export class EmployeeAbsencesService {
 
 function membershipName(membership: Membership): string {
   return `${membership.user?.firstName ?? ''} ${membership.user?.lastName ?? ''}`.trim();
+}
+
+/**
+ * Reference day used to express a timed absence as a percentage for the
+ * existing balance/report logic (42 h week, CH standard). The balance itself
+ * credits the exact minutes, see `CalcAbsenceDay.absenceMinutes`.
+ */
+export const STANDARD_DAY_MINUTES = 504;
+
+export interface EntryTiming {
+  dayPart: AbsenceDayPart;
+  startTime?: string;
+  endTime?: string;
+  percentage: number;
+}
+
+const toMinutes = (hhmm: string): number => {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+};
+
+/**
+ * Validates day part and times against the category's entry precision and
+ * derives the day part / percentage stored on the absence.
+ */
+export function resolveEntryTiming(
+  category: Pick<
+    EmployeeAbsenceCategory,
+    'entryPrecision' | 'defaultPercentage'
+  >,
+  input: Pick<
+    CreateEmployeeAbsenceNoticeInput,
+    'dayPart' | 'startTime' | 'endTime' | 'percentage'
+  >,
+  requestedDays: number,
+): EntryTiming {
+  const precision = category.entryPrecision ?? AbsenceEntryPrecision.DAY;
+  const dayPart = input.dayPart ?? AbsenceDayPart.FULL;
+  const hasTimes = input.startTime != null || input.endTime != null;
+
+  if (precision === AbsenceEntryPrecision.TIME) {
+    if (!input.startTime || !input.endTime) {
+      throw new BadRequestException(
+        'This absence category requires a start and end time.',
+      );
+    }
+    if (dayPart !== AbsenceDayPart.FULL) {
+      throw new BadRequestException(
+        'Half days cannot be combined with a time range.',
+      );
+    }
+    const minutes = toMinutes(input.endTime) - toMinutes(input.startTime);
+    if (minutes <= 0) {
+      throw new BadRequestException('End time must be after start time.');
+    }
+    return {
+      dayPart: AbsenceDayPart.FULL,
+      startTime: input.startTime,
+      endTime: input.endTime,
+      percentage: Math.min(
+        100,
+        Math.max(1, Math.round((minutes / STANDARD_DAY_MINUTES) * 100)),
+      ),
+    };
+  }
+
+  if (hasTimes) {
+    throw new BadRequestException(
+      'This absence category does not allow a time range.',
+    );
+  }
+  if (dayPart !== AbsenceDayPart.FULL) {
+    if (precision !== AbsenceEntryPrecision.HALF_DAY) {
+      throw new BadRequestException(
+        'This absence category only allows whole days.',
+      );
+    }
+    if (requestedDays > 1) {
+      throw new BadRequestException(
+        'Half days are only possible for single-day absences.',
+      );
+    }
+    return { dayPart, percentage: 50 };
+  }
+  return {
+    dayPart: AbsenceDayPart.FULL,
+    percentage: input.percentage ?? category.defaultPercentage,
+  };
 }

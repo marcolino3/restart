@@ -544,6 +544,74 @@ describe('EmployeeAbsencesService', () => {
       expect(notifications.notifyRequested).toHaveBeenCalledTimes(1);
     });
 
+    it('TIME-Kategorie verlangt Von/Bis', async () => {
+      mockNoticeContext(false, { entryPrecision: 'TIME' });
+      await expect(
+        service.createEmployeeAbsenceNotice(
+          {
+            absenceCategoryId: 'cat-1',
+            startDate: plusDays(1),
+          } as CreateEmployeeAbsenceNoticeInput,
+          user,
+        ),
+      ).rejects.toThrow('requires a start and end time');
+    });
+
+    it('TIME-Kategorie speichert Zeiten und abgeleiteten Grad', async () => {
+      const tx = mockNoticeContext(false, {
+        entryPrecision: 'TIME',
+        defaultPercentage: 100,
+      });
+      await service.createEmployeeAbsenceNotice(
+        {
+          absenceCategoryId: 'cat-1',
+          startDate: plusDays(1),
+          startTime: '14:00',
+          endTime: '15:30',
+        } as CreateEmployeeAbsenceNoticeInput,
+        user,
+      );
+      const created = tx.create.mock.calls[0][1] as Record<string, unknown>;
+      expect(created.startTime).toBe('14:00');
+      expect(created.endTime).toBe('15:30');
+      expect(created.percentage).toBe(18);
+      expect(calendarSync.sync).toHaveBeenCalledWith(
+        expect.objectContaining({ startTime: '14:00', endTime: '15:30' }),
+      );
+    });
+
+    it('DAY-Kategorie lehnt Halbtag und Zeiten ab', async () => {
+      mockNoticeContext(false, { entryPrecision: 'DAY' });
+      await expect(
+        service.createEmployeeAbsenceNotice(
+          {
+            absenceCategoryId: 'cat-1',
+            startDate: plusDays(1),
+            dayPart: 'AFTERNOON',
+          } as CreateEmployeeAbsenceNoticeInput,
+          user,
+        ),
+      ).rejects.toThrow('only allows whole days');
+    });
+
+    it('HALF_DAY-Kategorie: Nachmittag ergibt 50 %', async () => {
+      const tx = mockNoticeContext(false, {
+        entryPrecision: 'HALF_DAY',
+        defaultPercentage: 100,
+      });
+      await service.createEmployeeAbsenceNotice(
+        {
+          absenceCategoryId: 'cat-1',
+          startDate: plusDays(1),
+          dayPart: 'AFTERNOON',
+        } as CreateEmployeeAbsenceNoticeInput,
+        user,
+      );
+      const created = tx.create.mock.calls[0][1] as Record<string, unknown>;
+      expect(created.dayPart).toBe('AFTERNOON');
+      expect(created.percentage).toBe(50);
+    });
+
     it('Kategorie ohne Kalender-Sync ruft den Sync nicht auf', async () => {
       mockNoticeContext(false, { syncToCalendar: false });
       await service.createEmployeeAbsenceNotice(

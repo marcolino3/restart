@@ -1,4 +1,5 @@
 import { Locale } from '@/database/enums/locale.enum';
+import { AbsenceEntryPrecision } from '../interfaces/absence-entry-precision.enum';
 import { SystemEmployeeAbsenceCategory } from '../interfaces/system-employee-absence-categories.enum';
 
 export type SystemEmployeeAbsenceCategoryDefaults = {
@@ -14,6 +15,7 @@ export type SystemEmployeeAbsenceCategoryDefaults = {
   defaultPercentage: number;
   requiresApproval: boolean;
   allowsDateRange: boolean;
+  entryPrecision: AbsenceEntryPrecision;
   maxDaysPerRequest: number | null;
   color: string | null;
   iconName: string | null;
@@ -38,6 +40,7 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       defaultPercentage: 100,
       requiresApproval: true,
       allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.DAY,
       maxDaysPerRequest: null,
       color: '#22C55E',
       iconName: 'sun',
@@ -78,6 +81,7 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       defaultPercentage: 100,
       requiresApproval: false,
       allowsDateRange: false,
+      entryPrecision: AbsenceEntryPrecision.HALF_DAY,
       maxDaysPerRequest: null,
       color: '#EF4444',
       iconName: 'thermometer',
@@ -118,6 +122,7 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       defaultPercentage: 100,
       requiresApproval: false,
       allowsDateRange: false,
+      entryPrecision: AbsenceEntryPrecision.HALF_DAY,
       maxDaysPerRequest: null,
       color: '#F97316',
       iconName: 'heart-pulse',
@@ -158,6 +163,7 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       defaultPercentage: 100,
       requiresApproval: false,
       allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.HALF_DAY,
       maxDaysPerRequest: 3,
       color: '#F59E0B',
       iconName: 'baby',
@@ -198,6 +204,7 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       defaultPercentage: 100,
       requiresApproval: true,
       allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.DAY,
       maxDaysPerRequest: null,
       color: '#3B82F6',
       iconName: 'graduation-cap',
@@ -234,6 +241,7 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       defaultPercentage: 100,
       requiresApproval: false,
       allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.HALF_DAY,
       maxDaysPerRequest: 3,
       color: '#6B7280',
       iconName: 'flower',
@@ -274,6 +282,7 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       defaultPercentage: 100,
       requiresApproval: true,
       allowsDateRange: false,
+      entryPrecision: AbsenceEntryPrecision.DAY,
       maxDaysPerRequest: null,
       color: '#8B5CF6',
       iconName: 'truck',
@@ -314,6 +323,7 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       defaultPercentage: 100,
       requiresApproval: true,
       allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.DAY,
       maxDaysPerRequest: null,
       color: '#10B981',
       iconName: 'shield',
@@ -354,6 +364,7 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       defaultPercentage: 100,
       requiresApproval: true,
       allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.DAY,
       maxDaysPerRequest: null,
       color: '#14B8A6',
       iconName: 'shield-check',
@@ -394,6 +405,7 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       defaultPercentage: 100,
       requiresApproval: false,
       allowsDateRange: false,
+      entryPrecision: AbsenceEntryPrecision.TIME,
       maxDaysPerRequest: null,
       color: '#EC4899',
       iconName: 'stethoscope',
@@ -434,6 +446,7 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       defaultPercentage: 100,
       requiresApproval: false,
       allowsDateRange: false,
+      entryPrecision: AbsenceEntryPrecision.TIME,
       maxDaysPerRequest: null,
       color: '#D946EF',
       iconName: 'hand-heart',
@@ -474,6 +487,7 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       defaultPercentage: 100,
       requiresApproval: false,
       allowsDateRange: false,
+      entryPrecision: AbsenceEntryPrecision.TIME,
       maxDaysPerRequest: null,
       color: '#64748B',
       iconName: 'landmark',
@@ -514,6 +528,7 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       defaultPercentage: 100,
       requiresApproval: true,
       allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.DAY,
       maxDaysPerRequest: 2,
       color: '#F43F5E',
       iconName: 'gem',
@@ -554,6 +569,7 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       defaultPercentage: 100,
       requiresApproval: true,
       allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.DAY,
       maxDaysPerRequest: null,
       color: '#0EA5E9',
       iconName: 'clock',
@@ -592,6 +608,7 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       defaultPercentage: 100,
       requiresApproval: true,
       allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.DAY,
       maxDaysPerRequest: null,
       color: '#A78BFA',
       iconName: 'plane',
@@ -628,6 +645,7 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       defaultPercentage: 100,
       requiresApproval: true,
       allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.HALF_DAY,
       maxDaysPerRequest: null,
       color: '#9CA3AF',
       iconName: 'help-circle',

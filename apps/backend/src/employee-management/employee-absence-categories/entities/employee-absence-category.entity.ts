@@ -1,3 +1,4 @@
+import { AbsenceEntryPrecision } from '../interfaces/absence-entry-precision.enum';
 import { ObjectType, Field, ID, Int } from '@nestjs/graphql';
 import {
   Column,
@@ -99,6 +100,16 @@ export class EmployeeAbsenceCategory extends AbstractEntity<EmployeeAbsenceCateg
   @Field(() => Boolean)
   @Column('boolean', { name: 'allows_date_range', default: false })
   allowsDateRange!: boolean;
+
+  // Finest unit for self-service entries: whole days, half days or a time
+  // range on one day. TIME excludes allowsDateRange.
+  @Field(() => AbsenceEntryPrecision)
+  @Column('varchar', {
+    name: 'entry_precision',
+    length: 16,
+    default: AbsenceEntryPrecision.DAY,
+  })
+  entryPrecision!: AbsenceEntryPrecision;
 
   // Max. Kalendertage pro Self-Service-Antrag (nur mit allowsDateRange).
   @Field(() => Int, { nullable: true })

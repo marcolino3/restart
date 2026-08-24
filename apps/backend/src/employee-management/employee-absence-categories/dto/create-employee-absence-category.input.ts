@@ -1,9 +1,11 @@
+import { AbsenceEntryPrecision } from '../interfaces/absence-entry-precision.enum';
 import { Field, InputType, Int } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
   IsBoolean,
+  IsEnum,
   IsInt,
   IsOptional,
   IsString,
@@ -83,6 +85,11 @@ export class CreateEmployeeAbsenceCategoryInput {
   @IsOptional()
   @IsBoolean()
   allowsDateRange?: boolean;
+
+  @Field(() => AbsenceEntryPrecision, { nullable: true })
+  @IsOptional()
+  @IsEnum(AbsenceEntryPrecision)
+  entryPrecision?: AbsenceEntryPrecision;
 
   @Field(() => Boolean, { nullable: true })
   @IsOptional()

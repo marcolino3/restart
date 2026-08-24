@@ -38,6 +38,12 @@ export type AbsenceCategorySummary = {
   totalDays: Scalars['Int']['output'];
 };
 
+export enum AbsenceDayPart {
+  Afternoon = 'AFTERNOON',
+  Full = 'FULL',
+  Morning = 'MORNING'
+}
+
 export type AbsenceDocument = {
   __typename?: 'AbsenceDocument';
   label: Scalars['String']['output'];
@@ -48,6 +54,13 @@ export type AbsenceDocumentInput = {
   label: Scalars['String']['input'];
   url: Scalars['String']['input'];
 };
+
+/** Finest unit for reporting an absence of a category */
+export enum AbsenceEntryPrecision {
+  Day = 'DAY',
+  HalfDay = 'HALF_DAY',
+  Time = 'TIME'
+}
 
 export type AccessReviewEntry = {
   __typename?: 'AccessReviewEntry';
@@ -1090,6 +1103,7 @@ export type CreateEmployeeAbsenceCategoryInput = {
   countsAsWorkTime?: InputMaybe<Scalars['Boolean']['input']>;
   defaultIsVacationCapable?: InputMaybe<Scalars['Boolean']['input']>;
   defaultPercentage?: InputMaybe<Scalars['Int']['input']>;
+  entryPrecision?: InputMaybe<AbsenceEntryPrecision>;
   iconName?: InputMaybe<Scalars['String']['input']>;
   isPaid?: InputMaybe<Scalars['Boolean']['input']>;
   maxDaysPerRequest?: InputMaybe<Scalars['Int']['input']>;
@@ -1106,23 +1120,29 @@ export type CreateEmployeeAbsenceInput = {
   absenceCategoryId: Scalars['ID']['input'];
   additionalDocuments?: InputMaybe<Array<AbsenceDocumentInput>>;
   certificates?: InputMaybe<Array<AbsenceDocumentInput>>;
+  dayPart?: InputMaybe<AbsenceDayPart>;
   employeeId: Scalars['ID']['input'];
   endDate?: InputMaybe<Scalars['String']['input']>;
+  endTime?: InputMaybe<Scalars['String']['input']>;
   isTeamInformed: Scalars['Boolean']['input'];
   isVacationCapable?: InputMaybe<Scalars['Boolean']['input']>;
   note: Scalars['String']['input'];
   percentage?: InputMaybe<Scalars['Int']['input']>;
   startDate: Scalars['String']['input'];
+  startTime?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type CreateEmployeeAbsenceNoticeInput = {
   absenceCategoryId: Scalars['ID']['input'];
+  dayPart?: InputMaybe<AbsenceDayPart>;
   endDate?: InputMaybe<Scalars['String']['input']>;
+  endTime?: InputMaybe<Scalars['String']['input']>;
   isTeamInformed: Scalars['Boolean']['input'];
   isVacationCapable?: InputMaybe<Scalars['Boolean']['input']>;
   note: Scalars['String']['input'];
   percentage?: InputMaybe<Scalars['Int']['input']>;
   startDate: Scalars['String']['input'];
+  startTime?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type CreateEmployeeContractInput = {
@@ -1895,6 +1915,7 @@ export type EmployeeAbsence = {
   additionalDocuments: Array<AbsenceDocument>;
   certificates: Array<AbsenceDocument>;
   createdAt: Scalars['DateTime']['output'];
+  dayPart: AbsenceDayPart;
   decidedAt?: Maybe<Scalars['DateTime']['output']>;
   decidedByMembershipId?: Maybe<Scalars['String']['output']>;
   decisionNote?: Maybe<Scalars['String']['output']>;
@@ -1932,6 +1953,7 @@ export type EmployeeAbsenceCategory = {
   defaultIsVacationCapable: Scalars['Boolean']['output'];
   defaultPercentage: Scalars['Int']['output'];
   deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  entryPrecision: AbsenceEntryPrecision;
   iconName?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   isActive: Scalars['Boolean']['output'];
@@ -6408,13 +6430,17 @@ export enum SystemEmployeeAbsenceCategory {
   CivilService = 'CIVIL_SERVICE',
   Compensation = 'COMPENSATION',
   Funeral = 'FUNERAL',
+  MedicalAppointment = 'MEDICAL_APPOINTMENT',
   MilitaryService = 'MILITARY_SERVICE',
   Move = 'MOVE',
+  OfficialAppointment = 'OFFICIAL_APPOINTMENT',
   Other = 'OTHER',
   Sickness = 'SICKNESS',
+  TherapyAppointment = 'THERAPY_APPOINTMENT',
   Training = 'TRAINING',
   UnpaidLeave = 'UNPAID_LEAVE',
-  Vacation = 'VACATION'
+  Vacation = 'VACATION',
+  Wedding = 'WEDDING'
 }
 
 /** Supported System Roles */
@@ -6870,6 +6896,7 @@ export type UpdateEmployeeAbsenceCategoryInput = {
   countsAsWorkTime?: InputMaybe<Scalars['Boolean']['input']>;
   defaultIsVacationCapable?: InputMaybe<Scalars['Boolean']['input']>;
   defaultPercentage?: InputMaybe<Scalars['Int']['input']>;
+  entryPrecision?: InputMaybe<AbsenceEntryPrecision>;
   iconName?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
   isPaid?: InputMaybe<Scalars['Boolean']['input']>;
@@ -6887,13 +6914,16 @@ export type UpdateEmployeeAbsenceInput = {
   absenceCategoryId?: InputMaybe<Scalars['ID']['input']>;
   additionalDocuments?: InputMaybe<Array<AbsenceDocumentInput>>;
   certificates?: InputMaybe<Array<AbsenceDocumentInput>>;
+  dayPart?: InputMaybe<AbsenceDayPart>;
   endDate?: InputMaybe<Scalars['String']['input']>;
+  endTime?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
   isTeamInformed?: InputMaybe<Scalars['Boolean']['input']>;
   isVacationCapable?: InputMaybe<Scalars['Boolean']['input']>;
   note?: InputMaybe<Scalars['String']['input']>;
   percentage?: InputMaybe<Scalars['Int']['input']>;
   startDate?: InputMaybe<Scalars['String']['input']>;
+  startTime?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateEmployeeContractInput = {
