@@ -206,7 +206,9 @@ export default function AbsenceRequestModal() {
         rules,
       );
       if (issue) {
-        next[issue.field] = t(`Employees.absence.dateError.${issue.code}`);
+        next[issue.field] = t(`Employees.absence.dateError.${issue.code}`, {
+          days: rules.maxDaysAhead ?? 0,
+        });
       }
     }
     setErrors(next);
@@ -241,7 +243,9 @@ export default function AbsenceRequestModal() {
       const mapped = absenceNoticeErrorCode(message);
       if (mapped) {
         setErrors({
-          [mapped.field]: t(`Employees.absence.dateError.${mapped.code}`),
+          [mapped.field]: t(`Employees.absence.dateError.${mapped.code}`, {
+            days: rules.maxDaysAhead ?? 0,
+          }),
         });
       } else {
         Alert.alert(t("Common.error"), message);

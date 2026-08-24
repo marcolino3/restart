@@ -1892,14 +1892,15 @@
       "requestSubmitted": "Antrag eingereicht. Die Vorgesetzten wurden informiert.",
       "dateError": {
         "past": "Das Datum darf nicht in der Vergangenheit liegen.",
-        "tooFar": "Diese Kategorie kann nur für heute oder morgen gemeldet werden.",
+        "tooFar": "Diese Kategorie kann nur {days, plural, =0 {für heute} =1 {bis morgen} other {bis # Tage im Voraus}} gemeldet werden.",
         "endBeforeStart": "Das Enddatum darf nicht vor dem Startdatum liegen.",
         "singleDayOnly": "Diese Kategorie erlaubt nur einzelne Tage.",
         "tooManyDays": "Diese Kategorie erlaubt nicht so viele Tage pro Antrag.",
         "yearlyCap": "Das Jahreskontingent dieser Kategorie ist für den gewählten Zeitraum nicht ausreichend.",
         "timeRequired": "Bitte Von- und Bis-Zeit angeben.",
         "timeOrder": "Die Bis-Zeit muss nach der Von-Zeit liegen.",
-        "halfDaySingleDay": "Halbe Tage sind nur bei eintägigen Absenzen möglich."
+        "halfDaySingleDay": "Halbe Tage sind nur bei eintägigen Absenzen möglich.",
+        "overlap": "Für einen der gewählten Tage ist bereits eine Absenz erfasst."
       },
       "quotaHint": "Noch {remaining} von {max} Tagen bis {periodEnd}.",
       "quotaExhausted": "Kontingent von {max} Tagen bis {periodEnd} ausgeschöpft.",

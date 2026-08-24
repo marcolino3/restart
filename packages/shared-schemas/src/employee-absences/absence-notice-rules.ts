@@ -47,7 +47,8 @@ export type AbsenceNoticeDateErrorCode =
   | "yearlyCap"
   | "timeRequired"
   | "timeOrder"
-  | "halfDaySingleDay";
+  | "halfDaySingleDay"
+  | "overlap";
 
 export type AbsenceNoticeErrorField =
   "startDate" | "endDate" | "startTime" | "endTime";
@@ -208,6 +209,9 @@ export function absenceNoticeErrorCode(
   }
   if (message.includes("days ahead")) {
     return { field: "startDate", code: "tooFar" };
+  }
+  if (message.includes("already has an absence")) {
+    return { field: "startDate", code: "overlap" };
   }
   return null;
 }

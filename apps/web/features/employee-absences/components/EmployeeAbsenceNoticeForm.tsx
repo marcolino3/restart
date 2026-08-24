@@ -182,7 +182,9 @@ export const EmployeeAbsenceNoticeForm = ({ absenceCategories }: Props) => {
     const dateError = checkAbsenceNoticeDates(parsed, rules);
     if (dateError) {
       form.setError(dateError.field, {
-        message: tE(`absence.dateError.${dateError.code}`),
+        message: tE(`absence.dateError.${dateError.code}`, {
+          days: rules.maxDaysAhead ?? 0,
+        }),
       });
       return;
     }
@@ -199,7 +201,9 @@ export const EmployeeAbsenceNoticeForm = ({ absenceCategories }: Props) => {
         const mapped = absenceNoticeErrorCode(result.message);
         if (mapped) {
           form.setError(mapped.field, {
-            message: tE(`absence.dateError.${mapped.code}`),
+            message: tE(`absence.dateError.${mapped.code}`, {
+              days: rules.maxDaysAhead ?? 0,
+            }),
           });
           return;
         }

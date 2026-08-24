@@ -1892,14 +1892,15 @@
       "requestSubmitted": "Request submitted. Your supervisors have been notified.",
       "dateError": {
         "past": "The date must not be in the past.",
-        "tooFar": "This category can only be reported for today or tomorrow.",
+        "tooFar": "This category can only be reported {days, plural, =0 {for today} =1 {up to tomorrow} other {up to # days ahead}}.",
         "endBeforeStart": "The end date must not be before the start date.",
         "singleDayOnly": "This category only allows single days.",
         "tooManyDays": "This category does not allow that many days per request.",
         "yearlyCap": "The yearly allowance of this category is not sufficient for the selected period.",
         "timeRequired": "Please enter a start and end time.",
         "timeOrder": "The end time must be after the start time.",
-        "halfDaySingleDay": "Half days are only possible for single-day absences."
+        "halfDaySingleDay": "Half days are only possible for single-day absences.",
+        "overlap": "An absence is already recorded for one of the selected days."
       },
       "quotaHint": "{remaining} of {max} days left until {periodEnd}.",
       "quotaExhausted": "Allowance of {max} days until {periodEnd} used up.",
