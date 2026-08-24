@@ -263,17 +263,19 @@ function SortableTableRow({
       <TableCell>
         <div className="flex flex-wrap gap-1">
           {item.countsAsWorkTime && (
-            <Badge variant="secondary">{t("badgeCountsWork")}</Badge>
+            <Badge variant="sky">{t("badgeCountsWork")}</Badge>
           )}
-          {item.isPaid && <Badge variant="secondary">{t("badgePaid")}</Badge>}
+          {item.isPaid && <Badge variant="green">{t("badgePaid")}</Badge>}
           {!item.defaultIsVacationCapable && (
-            <Badge variant="outline">{t("badgeNotVacationCapable")}</Badge>
+            <Badge variant="slate">{t("badgeNotVacationCapable")}</Badge>
           )}
           {item.requiresCertificate && (
-            <Badge variant="outline">{t("badgeCertificate")}</Badge>
+            <Badge variant="amber">{t("badgeCertificate")}</Badge>
           )}
-          {item.requiresApproval && (
-            <Badge variant="outline">{t("badgeApproval")}</Badge>
+          {item.requiresApproval ? (
+            <Badge variant="rose">{t("badgeApproval")}</Badge>
+          ) : (
+            <Badge variant="outline">{t("badgeNoticeOnly")}</Badge>
           )}
         </div>
       </TableCell>
