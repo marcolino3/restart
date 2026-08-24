@@ -114,7 +114,24 @@
     "previewUnnamed": "New category",
     "previewUnpaid": "Unpaid",
     "previewSingleDay": "single day",
-    "previewNoCertificate": "no certificate"
+    "previewNoCertificate": "no certificate",
+    "entryPrecisionLabel": "Entry precision",
+    "entryPrecision": {
+      "DAY": {
+        "label": "Whole days",
+        "help": "Date or period; vacation, military service, training."
+      },
+      "HALF_DAY": {
+        "label": "Half days",
+        "help": "Also morning / afternoon; sickness, sick child."
+      },
+      "TIME": {
+        "label": "Time of day",
+        "help": "From–to on the same day; medical, therapy, official appointments."
+      }
+    },
+    "timeExcludesRange": "With time-of-day entry, absences are always single-day.",
+    "previewSampleTime": "Mon 14 July · 14:00–15:30"
   },
   "AccessReview": {
     "tab": "Access",
@@ -914,7 +931,9 @@
     "MEDICAL_APPOINTMENT": "Medical appointment",
     "THERAPY_APPOINTMENT": "Therapy appointment",
     "OFFICIAL_APPOINTMENT": "Official appointment",
-    "WEDDING": "Wedding"
+    "WEDDING": "Wedding",
+    "startTime": "From",
+    "endTime": "To"
   },
   "ConsentManagement": {
     "centerTitle": "Data Protection Center",
@@ -1875,7 +1894,10 @@
         "endBeforeStart": "The end date must not be before the start date.",
         "singleDayOnly": "This category only allows single days.",
         "tooManyDays": "This category does not allow that many days per request.",
-        "yearlyCap": "The yearly allowance of this category is not sufficient for the selected period."
+        "yearlyCap": "The yearly allowance of this category is not sufficient for the selected period.",
+        "timeRequired": "Please enter a start and end time.",
+        "timeOrder": "The end time must be after the start time.",
+        "halfDaySingleDay": "Half days are only possible for single-day absences."
       },
       "quotaHint": "{remaining} of {max} days left until {periodEnd}.",
       "quotaExhausted": "Allowance of {max} days until {periodEnd} used up.",
@@ -1895,7 +1917,16 @@
       "rejectError": "The request could not be rejected.",
       "requestsTitle": "Absence requests",
       "requestsDescription": "Review and decide open absence requests from your employees.",
-      "noPendingRequests": "No open requests."
+      "noPendingRequests": "No open requests.",
+      "singleDay": "One day",
+      "multiDay": "Several days",
+      "dayPartLabel": "Part of day",
+      "dayPart": {
+        "FULL": "Whole day",
+        "MORNING": "Morning",
+        "AFTERNOON": "Afternoon"
+      },
+      "timeRangeLabel": "Time"
     },
     "searchPlaceholder": "Search name or email...",
     "newEmployee": "New employee",

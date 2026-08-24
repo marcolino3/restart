@@ -17,7 +17,7 @@ interface RadioCardFormFieldProps {
   options: RadioCardOption[];
   className?: string;
   /** Grid columns on sm+ screens. Default 2. */
-  columns?: 1 | 2;
+  columns?: 1 | 2 | 3;
 }
 
 /**
@@ -44,7 +44,11 @@ export const RadioCardFormField = ({
             role="radiogroup"
             className={cn(
               "grid gap-2.5",
-              columns === 2 ? "sm:grid-cols-2" : "grid-cols-1",
+              columns === 3
+                ? "sm:grid-cols-3"
+                : columns === 2
+                  ? "sm:grid-cols-2"
+                  : "grid-cols-1",
               className,
             )}
           >

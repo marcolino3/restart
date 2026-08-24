@@ -1,7 +1,10 @@
 import {
+  AbsenceDayPart,
+  AbsenceEntryPrecision,
   absenceNoticeDayCount,
   absenceNoticeErrorCode,
   checkAbsenceNoticeDates,
+  type AbsenceDayPartType,
   type AbsenceNoticeCategoryRules,
 } from "@restart/shared-schemas/employee-absences/absence-notice-rules";
 import { useRouter } from "expo-router";
@@ -72,6 +75,12 @@ export default function AbsenceRequestModal() {
   const [categoryId, setCategoryId] = useState("");
   const [startDate, setStartDate] = useState<Date | null>(startOfToday());
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [multiDay, setMultiDay] = useState(false);
+  const [dayPart, setDayPart] = useState<AbsenceDayPartType>(
+    AbsenceDayPart.FULL,
+  );
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [endTime, setEndTime] = useState<Date | null>(null);
   const [note, setNote] = useState("");
   const [isTeamInformed, setIsTeamInformed] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -99,19 +108,33 @@ export default function AbsenceRequestModal() {
     () => categories?.find((c) => c.id === categoryId) ?? null,
     [categories, categoryId],
   );
+  const entryPrecision = selected?.entryPrecision ?? AbsenceEntryPrecision.DAY;
+  const isTimeRange = entryPrecision === AbsenceEntryPrecision.TIME;
   const rules: AbsenceNoticeCategoryRules = useMemo(
     () => ({
       requiresApproval: selected?.requiresApproval === true,
-      allowsDateRange: selected?.allowsDateRange === true,
+      allowsDateRange: selected?.allowsDateRange === true && !isTimeRange,
+      entryPrecision,
       maxDaysPerRequest: selected?.maxDaysPerRequest ?? null,
     }),
-    [selected],
+    [selected, entryPrecision, isTimeRange],
   );
+  // Several days are opt-in even for range categories: a single day is the
+  // common case and needs no end date.
+  const useRange = rules.allowsDateRange === true && multiDay;
+  const showDayPart =
+    entryPrecision === AbsenceEntryPrecision.HALF_DAY && !useRange;
 
-  // A single-day category never carries an end date.
+  // Clear whatever the active precision / mode does not use.
   useEffect(() => {
-    if (!rules.allowsDateRange) setEndDate(null);
-  }, [rules.allowsDateRange]);
+    if (!rules.allowsDateRange) setMultiDay(false);
+    if (!useRange) setEndDate(null);
+    if (!showDayPart) setDayPart(AbsenceDayPart.FULL);
+    if (!isTimeRange) {
+      setStartTime(null);
+      setEndTime(null);
+    }
+  }, [rules.allowsDateRange, useRange, showDayPart, isTimeRange]);
 
   // Remaining yearly allowance, only for capped categories.
   useEffect(() => {
@@ -157,7 +180,16 @@ export default function AbsenceRequestModal() {
     if (!startDate) {
       next.startDate = t("TimeTracking.invalidDate");
     } else {
-      const issue = checkAbsenceNoticeDates({ startDate, endDate }, rules);
+      const issue = checkAbsenceNoticeDates(
+        {
+          startDate,
+          endDate,
+          dayPart,
+          startTime: startTime ? toTimeStr(startTime) : null,
+          endTime: endTime ? toTimeStr(endTime) : null,
+        },
+        rules,
+      );
       if (issue) {
         next[issue.field] = t(`Employees.absence.dateError.${issue.code}`);
       }
@@ -172,10 +204,13 @@ export default function AbsenceRequestModal() {
     try {
       const result = await createAbsenceNotice({
         startDate: toDateStr(startDate),
-        endDate: endDate ? toDateStr(endDate) : null,
+        endDate: useRange && endDate ? toDateStr(endDate) : null,
         absenceCategoryId: categoryId,
         note: note.trim(),
         isTeamInformed,
+        dayPart: showDayPart ? dayPart : AbsenceDayPart.FULL,
+        startTime: isTimeRange && startTime ? toTimeStr(startTime) : null,
+        endTime: isTimeRange && endTime ? toTimeStr(endTime) : null,
       });
       if (result.status === "PENDING") {
         Alert.alert(
@@ -308,10 +343,19 @@ export default function AbsenceRequestModal() {
             ) : null}
           </View>
 
+          {rules.allowsDateRange ? (
+            <Segment
+              value={multiDay ? "multi" : "single"}
+              onChange={(v) => setMultiDay(v === "multi")}
+              options={[
+                { value: "single", label: t("Employees.absence.singleDay") },
+                { value: "multi", label: t("Employees.absence.multiDay") },
+              ]}
+            />
+          ) : null}
+
           <DateField
-            label={
-              rules.allowsDateRange ? t("Common.startDate") : t("Common.date")
-            }
+            label={useRange ? t("Common.startDate") : t("Common.date")}
             value={startDate}
             onChange={(d) => {
               setStartDate(d);
@@ -322,7 +366,7 @@ export default function AbsenceRequestModal() {
             error={errors.startDate}
           />
 
-          {rules.allowsDateRange ? (
+          {useRange ? (
             <DateField
               label={t("Common.endDate")}
               value={endDate}
@@ -332,6 +376,51 @@ export default function AbsenceRequestModal() {
               optional
               error={errors.endDate}
             />
+          ) : null}
+
+          {showDayPart ? (
+            <View className="gap-1.5">
+              <Text className="text-sm font-medium text-foreground">
+                {t("Employees.absence.dayPartLabel")}
+              </Text>
+              <Segment
+                value={dayPart}
+                onChange={setDayPart}
+                options={(
+                  [
+                    AbsenceDayPart.FULL,
+                    AbsenceDayPart.MORNING,
+                    AbsenceDayPart.AFTERNOON,
+                  ] as const
+                ).map((value) => ({
+                  value,
+                  label: t(`Employees.absence.dayPart.${value}`),
+                }))}
+              />
+            </View>
+          ) : null}
+
+          {isTimeRange ? (
+            <View className="flex-row gap-3">
+              <View className="flex-1">
+                <DateField
+                  mode="time"
+                  label={t("Common.startTime")}
+                  value={startTime}
+                  onChange={setStartTime}
+                  error={errors.startTime}
+                />
+              </View>
+              <View className="flex-1">
+                <DateField
+                  mode="time"
+                  label={t("Common.endTime")}
+                  value={endTime}
+                  onChange={setEndTime}
+                  error={errors.endTime}
+                />
+              </View>
+            </View>
           ) : null}
 
           <View className="gap-1.5">
@@ -369,5 +458,46 @@ export default function AbsenceRequestModal() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+const toTimeStr = (d: Date) =>
+  `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+
+/** Pill switch for 2–3 exclusive choices (single/several days, day part). */
+function Segment<T extends string>({
+  value,
+  onChange,
+  options,
+}: {
+  value: T;
+  onChange: (value: T) => void;
+  options: { value: T; label: string }[];
+}) {
+  return (
+    <View className="flex-row rounded-md bg-muted p-1">
+      {options.map((opt) => {
+        const active = opt.value === value;
+        return (
+          <Pressable
+            key={opt.value}
+            onPress={() => onChange(opt.value)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: active }}
+            className={`flex-1 items-center rounded-sm px-3 py-1.5 ${
+              active ? "bg-background" : ""
+            }`}
+          >
+            <Text
+              className={`text-sm font-medium ${
+                active ? "text-foreground" : "text-muted-foreground"
+              }`}
+            >
+              {opt.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }

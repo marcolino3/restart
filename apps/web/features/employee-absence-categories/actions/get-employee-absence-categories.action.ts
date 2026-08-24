@@ -20,6 +20,7 @@ const Document = gql`
       certificateRequiredFromDay
       maxDaysPerYear
       allowsDateRange
+      entryPrecision
       syncToCalendar
       calendarTitleTemplate
       maxDaysPerRequest

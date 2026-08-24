@@ -36,6 +36,7 @@ import { IconComboboxFormField } from "@/components/form/form-fields/IconCombobo
 import { isCuratedIconName } from "@/components/form/form-fields/IconComboboxFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
+import { RadioCardFormField } from "@/components/form/form-fields/RadioCardFormField";
 import { SwitchTileFormField } from "@/components/form/form-fields/SwitchTileFormField";
 import { ColorPickerFormField } from "@/components/form/form-fields/ColorPickerFormField";
 import { NumberFormField } from "@/components/form/form-fields/NumberFormField";
@@ -78,6 +79,7 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
       createAbsenceCategoryFormSchema({
         atLeastOneNameRequired: t("atLeastOneNameRequired"),
         maxDaysPerRequestNeedsRange: t("maxDaysPerRequestNeedsRange"),
+        timeExcludesRange: t("timeExcludesRange"),
       }),
     [t],
   );
@@ -93,7 +95,8 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
       : ABSENCE_CATEGORY_FORM_DEFAULTS,
   });
   const watched = form.watch();
-  const allowsDateRange = watched.allowsDateRange;
+  const isTimeRange = watched.entryPrecision === "TIME";
+  const allowsDateRange = watched.allowsDateRange && !isTimeRange;
   const requiresCertificate = watched.requiresCertificate;
   const syncToCalendar = watched.syncToCalendar;
   const filledLocales = LOCALES.filter((_, idx) =>
@@ -113,10 +116,13 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
       ? (values.certificateRequiredFromDay ?? null)
       : null,
     maxDaysPerYear: values.maxDaysPerYear ?? null,
-    allowsDateRange: values.allowsDateRange,
-    maxDaysPerRequest: values.allowsDateRange
-      ? (values.maxDaysPerRequest ?? null)
-      : null,
+    entryPrecision: values.entryPrecision,
+    allowsDateRange:
+      values.entryPrecision === "TIME" ? false : values.allowsDateRange,
+    maxDaysPerRequest:
+      values.allowsDateRange && values.entryPrecision !== "TIME"
+        ? (values.maxDaysPerRequest ?? null)
+        : null,
     defaultPercentage: values.defaultPercentage,
     requiresApproval: values.requiresApproval,
     color: values.color,
@@ -336,6 +342,20 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
                   />
                 </div>
                 <SectionLabel>{t("sectionRecording")}</SectionLabel>
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold">
+                    {t("entryPrecisionLabel")}
+                  </p>
+                  <RadioCardFormField
+                    name="entryPrecision"
+                    columns={3}
+                    options={ENTRY_PRECISIONS.map((value) => ({
+                      value,
+                      label: t(`entryPrecision.${value}.label`),
+                      description: t(`entryPrecision.${value}.help`),
+                    }))}
+                  />
+                </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   <SwitchTileFormField
                     name="requiresApproval"
@@ -347,8 +367,11 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
                   <SwitchTileFormField
                     name="allowsDateRange"
                     label="allowsDateRangeLabel"
-                    description="allowsDateRangeHelp"
+                    description={
+                      isTimeRange ? "timeExcludesRange" : "allowsDateRangeHelp"
+                    }
                     icon={<ArrowRight />}
+                    disabled={isTimeRange}
                     namespace="AbsenceCategories"
                   />
                   <SwitchTileFormField
@@ -500,6 +523,8 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
   );
 }
 
+const ENTRY_PRECISIONS = ["DAY", "HALF_DAY", "TIME"] as const;
+
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3">
@@ -537,7 +562,10 @@ function Preview({
 
   const summary = [
     values.requiresApproval ? t("badgeApproval") : t("badgeNoticeOnly"),
-    values.allowsDateRange ? t("limitDateRange") : t("previewSingleDay"),
+    t(`entryPrecision.${values.entryPrecision}.label`),
+    values.allowsDateRange && values.entryPrecision !== "TIME"
+      ? t("limitDateRange")
+      : t("previewSingleDay"),
     values.requiresCertificate
       ? t("badgeCertificate")
       : t("previewNoCertificate"),
@@ -586,7 +614,9 @@ function Preview({
             >
               <div className="text-sm font-medium">{calendarTitle}</div>
               <div className="text-muted-foreground text-xs">
-                {t("previewSampleDates")}
+                {values.entryPrecision === "TIME"
+                  ? t("previewSampleTime")
+                  : t("previewSampleDates")}
               </div>
             </div>
           </div>
@@ -652,6 +682,7 @@ function mapInitialToFormValues(
     certificateRequiredFromDay: item.certificateRequiredFromDay,
     maxDaysPerYear: item.maxDaysPerYear,
     allowsDateRange: item.allowsDateRange,
+    entryPrecision: item.entryPrecision ?? "DAY",
     maxDaysPerRequest: item.maxDaysPerRequest,
     defaultPercentage: item.defaultPercentage,
     requiresApproval: item.requiresApproval,

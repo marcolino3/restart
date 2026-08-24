@@ -16,6 +16,8 @@ type Props = {
   optional?: boolean;
   error?: string;
   disabled?: boolean;
+  /** `time` shows the platform time picker instead of the date picker. */
+  mode?: "date" | "time";
 };
 
 const formatDate = (d: Date) =>
@@ -23,6 +25,12 @@ const formatDate = (d: Date) =>
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+  });
+
+const formatTime = (d: Date) =>
+  d.toLocaleTimeString(i18n.locale === "de" ? "de-CH" : "en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
   });
 
 /**
@@ -39,6 +47,7 @@ export function DateField({
   optional = false,
   error,
   disabled = false,
+  mode = "date",
 }: Props) {
   const handleChange = (event: DateTimePickerEvent, date?: Date) => {
     if (event.type === "dismissed") return;
@@ -48,7 +57,8 @@ export function DateField({
   const openAndroid = () => {
     DateTimePickerAndroid.open({
       value: value ?? minimumDate ?? new Date(),
-      mode: "date",
+      mode,
+      is24Hour: true,
       minimumDate,
       maximumDate,
       onChange: handleChange,
@@ -66,7 +76,7 @@ export function DateField({
         {Platform.OS === "ios" && value ? (
           <DateTimePicker
             value={value}
-            mode="date"
+            mode={mode}
             display="compact"
             minimumDate={minimumDate}
             maximumDate={maximumDate}
@@ -90,7 +100,11 @@ export function DateField({
                 value ? "text-foreground" : "text-muted-foreground"
               }`}
             >
-              {value ? formatDate(value) : t("Common.selectDate")}
+              {value
+                ? mode === "time"
+                  ? formatTime(value)
+                  : formatDate(value)
+                : t("Common.selectDate")}
             </Text>
           </Pressable>
         )}

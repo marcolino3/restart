@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   absenceNoticeErrorCode,
   checkAbsenceNoticeDates,
+  checkAbsenceNoticeTiming,
 } from "./employee-absence-notice-form.schema";
 
 const dayOffset = (days: number) => {
@@ -110,5 +111,73 @@ describe("checkAbsenceNoticeDates", () => {
       ),
     ).toEqual({ field: "endDate", code: "tooManyDays" });
     expect(absenceNoticeErrorCode("boom")).toBeNull();
+  });
+});
+
+describe("checkAbsenceNoticeTiming", () => {
+  it("TIME category needs a valid, ordered start–end pair", () => {
+    const time = { entryPrecision: "TIME" as const };
+    expect(checkAbsenceNoticeTiming({}, time, 1)).toEqual({
+      field: "startTime",
+      code: "timeRequired",
+    });
+    expect(
+      checkAbsenceNoticeTiming(
+        { startTime: "14:00", endTime: "13:00" },
+        time,
+        1,
+      ),
+    ).toEqual({ field: "endTime", code: "timeOrder" });
+    expect(
+      checkAbsenceNoticeTiming(
+        { startTime: "14:00", endTime: "15:30" },
+        time,
+        1,
+      ),
+    ).toBeNull();
+  });
+
+  it("HALF_DAY: a day part is only valid on single days", () => {
+    const half = { entryPrecision: "HALF_DAY" as const };
+    expect(
+      checkAbsenceNoticeTiming({ dayPart: "MORNING" }, half, 1),
+    ).toBeNull();
+    expect(checkAbsenceNoticeTiming({ dayPart: "MORNING" }, half, 2)).toEqual({
+      field: "endDate",
+      code: "halfDaySingleDay",
+    });
+  });
+
+  it("DAY category ignores day part and times client-side", () => {
+    expect(
+      checkAbsenceNoticeTiming(
+        { dayPart: "AFTERNOON" },
+        { entryPrecision: "DAY" },
+        1,
+      ),
+    ).toBeNull();
+  });
+
+  it("is reached through checkAbsenceNoticeDates", () => {
+    expect(
+      checkAbsenceNoticeDates(
+        { startDate: dayOffset(1) },
+        { requiresApproval: false, entryPrecision: "TIME" },
+      ),
+    ).toEqual({ field: "startTime", code: "timeRequired" });
+  });
+
+  it("maps the backend time rejections", () => {
+    expect(
+      absenceNoticeErrorCode(
+        "This absence category requires a start and end time.",
+      ),
+    ).toEqual({ field: "startTime", code: "timeRequired" });
+    expect(
+      absenceNoticeErrorCode("End time must be after start time."),
+    ).toEqual({
+      field: "endTime",
+      code: "timeOrder",
+    });
   });
 });

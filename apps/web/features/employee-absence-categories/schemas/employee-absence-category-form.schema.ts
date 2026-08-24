@@ -23,6 +23,7 @@ const requiredInt = z.preprocess(
 export function createAbsenceCategoryFormSchema(messages: {
   atLeastOneNameRequired: string;
   maxDaysPerRequestNeedsRange: string;
+  timeExcludesRange: string;
 }) {
   return z
     .object({
@@ -38,6 +39,7 @@ export function createAbsenceCategoryFormSchema(messages: {
       certificateRequiredFromDay: nullableInt,
       maxDaysPerYear: nullableInt,
       allowsDateRange: z.boolean(),
+      entryPrecision: z.enum(["DAY", "HALF_DAY", "TIME"]),
       syncToCalendar: z.boolean(),
       calendarTitleTemplate: z.string().trim().max(200).nullable(),
       maxDaysPerRequest: nullableInt,
@@ -51,6 +53,13 @@ export function createAbsenceCategoryFormSchema(messages: {
       sortOrder: requiredInt.pipe(z.number().int().min(0)),
     })
     .superRefine((data, ctx) => {
+      if (data.entryPrecision === "TIME" && data.allowsDateRange) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["allowsDateRange"],
+          message: messages.timeExcludesRange,
+        });
+      }
       if (!data.allowsDateRange && data.maxDaysPerRequest != null) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -98,6 +107,7 @@ export const ABSENCE_CATEGORY_FORM_DEFAULTS: AbsenceCategoryFormInput = {
   certificateRequiredFromDay: null,
   maxDaysPerYear: null,
   allowsDateRange: false,
+  entryPrecision: "DAY",
   syncToCalendar: true,
   calendarTitleTemplate: null,
   maxDaysPerRequest: null,

@@ -13,6 +13,7 @@ export type AbsenceCategory = {
   systemCode?: string | null;
   requiresApproval: boolean;
   allowsDateRange: boolean;
+  entryPrecision?: "DAY" | "HALF_DAY" | "TIME" | null;
   maxDaysPerRequest?: number | null;
   maxDaysPerYear?: number | null;
   isActive: boolean;
@@ -49,6 +50,7 @@ const CategoriesDocument = gql`
       systemCode
       requiresApproval
       allowsDateRange
+      entryPrecision
       maxDaysPerRequest
       maxDaysPerYear
       isActive
@@ -134,6 +136,10 @@ export type CreateAbsenceNoticeInput = {
   absenceCategoryId: string;
   note: string;
   isTeamInformed: boolean;
+  dayPart?: "FULL" | "MORNING" | "AFTERNOON";
+  /** "HH:mm", TIME categories only. */
+  startTime?: string | null;
+  endTime?: string | null;
 };
 
 export async function createAbsenceNotice(

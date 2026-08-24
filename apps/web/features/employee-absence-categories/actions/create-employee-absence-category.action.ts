@@ -31,6 +31,7 @@ type CreateInput = {
   certificateRequiredFromDay?: number | null;
   maxDaysPerYear?: number | null;
   allowsDateRange?: boolean;
+  entryPrecision?: "DAY" | "HALF_DAY" | "TIME";
   syncToCalendar?: boolean;
   calendarTitleTemplate?: string | null;
   maxDaysPerRequest?: number | null;

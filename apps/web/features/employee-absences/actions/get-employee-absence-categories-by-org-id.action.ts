@@ -11,6 +11,7 @@ const GetEmployeeAbsenceCategoriesByOrgIdDocument = graphql(`
       systemCode
       requiresApproval
       allowsDateRange
+      entryPrecision
       maxDaysPerRequest
       maxDaysPerYear
       isActive

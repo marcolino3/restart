@@ -114,7 +114,24 @@
     "previewUnnamed": "Neue Kategorie",
     "previewUnpaid": "Unbezahlt",
     "previewSingleDay": "eintägig",
-    "previewNoCertificate": "ohne Nachweis"
+    "previewNoCertificate": "ohne Nachweis",
+    "entryPrecisionLabel": "Genauigkeit der Erfassung",
+    "entryPrecision": {
+      "DAY": {
+        "label": "Ganze Tage",
+        "help": "Datum bzw. Zeitraum; Ferien, Militär, Weiterbildung."
+      },
+      "HALF_DAY": {
+        "label": "Halbe Tage",
+        "help": "Zusätzlich Vormittag / Nachmittag; Krankheit, Kind krank."
+      },
+      "TIME": {
+        "label": "Uhrzeit",
+        "help": "Von–Bis am selben Tag; Arzt-, Therapie-, Behördentermine."
+      }
+    },
+    "timeExcludesRange": "Bei Uhrzeit-Erfassung sind Absenzen immer eintägig.",
+    "previewSampleTime": "Mo, 14. Juli · 14:00–15:30"
   },
   "AccessReview": {
     "tab": "Zugriffe",
@@ -914,7 +931,9 @@
     "MEDICAL_APPOINTMENT": "Arzttermin",
     "THERAPY_APPOINTMENT": "Therapietermin",
     "OFFICIAL_APPOINTMENT": "Behördentermin",
-    "WEDDING": "Hochzeit"
+    "WEDDING": "Hochzeit",
+    "startTime": "Von",
+    "endTime": "Bis"
   },
   "ConsentManagement": {
     "centerTitle": "Datenschutz-Center",
@@ -1875,7 +1894,10 @@
         "endBeforeStart": "Das Enddatum darf nicht vor dem Startdatum liegen.",
         "singleDayOnly": "Diese Kategorie erlaubt nur einzelne Tage.",
         "tooManyDays": "Diese Kategorie erlaubt nicht so viele Tage pro Antrag.",
-        "yearlyCap": "Das Jahreskontingent dieser Kategorie ist für den gewählten Zeitraum nicht ausreichend."
+        "yearlyCap": "Das Jahreskontingent dieser Kategorie ist für den gewählten Zeitraum nicht ausreichend.",
+        "timeRequired": "Bitte Von- und Bis-Zeit angeben.",
+        "timeOrder": "Die Bis-Zeit muss nach der Von-Zeit liegen.",
+        "halfDaySingleDay": "Halbe Tage sind nur bei eintägigen Absenzen möglich."
       },
       "quotaHint": "Noch {remaining} von {max} Tagen bis {periodEnd}.",
       "quotaExhausted": "Kontingent von {max} Tagen bis {periodEnd} ausgeschöpft.",
@@ -1895,7 +1917,16 @@
       "rejectError": "Der Antrag konnte nicht abgelehnt werden.",
       "requestsTitle": "Absenzanträge",
       "requestsDescription": "Offene Absenzanträge der Mitarbeitenden prüfen und entscheiden.",
-      "noPendingRequests": "Keine offenen Anträge."
+      "noPendingRequests": "Keine offenen Anträge.",
+      "singleDay": "Ein Tag",
+      "multiDay": "Mehrere Tage",
+      "dayPartLabel": "Tagesteil",
+      "dayPart": {
+        "FULL": "Ganzer Tag",
+        "MORNING": "Vormittag",
+        "AFTERNOON": "Nachmittag"
+      },
+      "timeRangeLabel": "Uhrzeit"
     },
     "searchPlaceholder": "Name oder E-Mail suchen...",
     "newEmployee": "Neue:r Mitarbeiter:in",
