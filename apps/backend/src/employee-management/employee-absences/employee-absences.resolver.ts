@@ -12,6 +12,7 @@ import { DecideEmployeeAbsenceInput } from './dto/decide-employee-absence.input'
 import { UpdateEmployeeAbsenceInput } from './dto/update-employee-absence.input';
 import { EmployeeAbsencesService } from './employee-absences.service';
 import { EmployeeAbsence } from './entities/employee-absence.entity';
+import { AbsenceCategoryQuota } from './entities/absence-category-quota.type';
 
 @Resolver(() => EmployeeAbsence)
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
@@ -36,6 +37,22 @@ export class EmployeeAbsencesResolver {
   @UseGuards(MembershipGuard)
   myEmployeeAbsences(@CurrentUser() user: TokenPayload) {
     return this.employeeAbsencesService.findAllForCaller(user);
+  }
+
+  // Self-service: remaining yearly allowance of a category for the caller.
+  @Query(() => AbsenceCategoryQuota, { name: 'myAbsenceCategoryQuota' })
+  @UseGuards(MembershipGuard)
+  myAbsenceCategoryQuota(
+    @Args('absenceCategoryId', { type: () => ID }) absenceCategoryId: string,
+    @Args('date', { type: () => String, nullable: true })
+    date: string | undefined,
+    @CurrentUser() user: TokenPayload,
+  ) {
+    return this.employeeAbsencesService.getMyCategoryQuota(
+      absenceCategoryId,
+      date ?? undefined,
+      user,
+    );
   }
 
   // Open requests within the caller's scope (all / led teams / none).

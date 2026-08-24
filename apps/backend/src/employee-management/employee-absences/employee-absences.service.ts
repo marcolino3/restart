@@ -19,6 +19,8 @@ import { EmployeeAbsenceStatus } from './entities/employee-absence-status.enum';
 import { AbsenceRequestNotificationService } from './absence-request-notification.service';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { daysInterval } from '@/common/utils/days-interval';
+import { periodBoundsFor } from '@/employee-management/time-tracking-periods/period-bounds';
+import { AbsenceCategoryQuota } from './entities/absence-category-quota.type';
 import { EmployeeAbsenceDay } from './entities/employee-absence-days.entity';
 import { DateTime } from 'luxon';
 import { AbsenceCalendarSyncService } from './absence-calendar-sync.service';
@@ -59,6 +61,8 @@ export const ABSENCE_CATEGORY_LABELS: Record<string, string> = {
   MOVE: 'Umzug',
   MILITARY_SERVICE: 'Militärdienst',
   CIVIL_SERVICE: 'Zivildienst',
+  COMPENSATION: 'Kompensation',
+  UNPAID_LEAVE: 'Unbezahlter Urlaub',
   OTHER: 'Sonstiges',
 };
 
@@ -168,6 +172,33 @@ export class EmployeeAbsencesService {
         'This absence category can only be reported for today or tomorrow.',
       );
     }
+    const end = utcDay(input.endDate ?? input.startDate);
+    if (end < start) {
+      throw new BadRequestException('End date must not be before start date.');
+    }
+    if (!category.allowsDateRange && end > start) {
+      throw new BadRequestException(
+        'This absence category only allows single-day absences.',
+      );
+    }
+    const requestedDays = Math.round(end.diff(start, 'days').days) + 1;
+    if (
+      category.maxDaysPerRequest != null &&
+      requestedDays > category.maxDaysPerRequest
+    ) {
+      throw new BadRequestException(
+        `This absence category allows at most ${category.maxDaysPerRequest} days per request.`,
+      );
+    }
+    // Yearly cap only guards self-service; admins may exceed it deliberately
+    // via createEmployeeAbsence.
+    await this.assertYearlyCap(
+      orgId as string,
+      membership.employee.id,
+      category,
+      start,
+      end,
+    );
 
     const absence = await this.createAbsenceForMembership({
       input,
@@ -401,6 +432,132 @@ export class EmployeeAbsencesService {
    * Open requests the caller may decide: every employee for ORG_ADMIN/HR,
    * the led teams for a TEAM_LEAD, nothing for everyone else.
    */
+  /**
+   * Approved + pending days of one category that fall inside the org period
+   * (anchor day, see TimeTrackingPeriodsService) containing `date`. Counts
+   * calendar days from the absence rows themselves because pending requests
+   * have no employee_absence_days yet.
+   */
+  private async computeYearlyUsage(
+    orgId: string,
+    employeeId: string,
+    absenceCategoryId: string,
+    date: DateTime,
+    excludeAbsenceId?: string,
+  ): Promise<{ usedDays: number; periodStart: DateTime; periodEnd: DateTime }> {
+    const anchor = await this.periods.getAnchor(orgId);
+    const { start: periodStart, end: periodEnd } = periodBoundsFor(
+      anchor,
+      date,
+    );
+    const qb = this.entityManager
+      .createQueryBuilder(EmployeeAbsence, 'absence')
+      .where('absence.organization_id = :orgId', { orgId })
+      .andWhere('absence.employee_id = :employeeId', { employeeId })
+      .andWhere('absence.absence_category_id = :absenceCategoryId', {
+        absenceCategoryId,
+      })
+      .andWhere('absence."isActive" = true')
+      .andWhere('absence.status IN (:...statuses)', {
+        statuses: [
+          EmployeeAbsenceStatus.APPROVED,
+          EmployeeAbsenceStatus.PENDING,
+        ],
+      })
+      .andWhere('absence."startDate" <= :periodEnd', {
+        periodEnd: periodEnd.endOf('day').toJSDate(),
+      })
+      .andWhere(
+        'COALESCE(absence."endDate", absence."startDate") >= :periodStart',
+        {
+          periodStart: periodStart.startOf('day').toJSDate(),
+        },
+      );
+    if (excludeAbsenceId) {
+      qb.andWhere('absence.id <> :excludeAbsenceId', { excludeAbsenceId });
+    }
+    const rows = await qb.getMany();
+    let usedDays = 0;
+    for (const row of rows) {
+      const s = DateTime.max(utcDay(row.startDate), periodStart);
+      const e = DateTime.min(utcDay(row.endDate ?? row.startDate), periodEnd);
+      if (e < s) continue;
+      usedDays += Math.round(e.diff(s, 'days').days) + 1;
+    }
+    return { usedDays, periodStart, periodEnd };
+  }
+
+  /**
+   * Hard cap of `maxDaysPerYear` per category and org period. A request that
+   * spans the anchor day is checked against both periods it touches.
+   */
+  private async assertYearlyCap(
+    orgId: string,
+    employeeId: string,
+    category: EmployeeAbsenceCategory,
+    start: DateTime,
+    end: DateTime,
+  ): Promise<void> {
+    if (category.maxDaysPerYear == null) return;
+    let cursor = start;
+    while (cursor <= end) {
+      const { usedDays, periodEnd } = await this.computeYearlyUsage(
+        orgId,
+        employeeId,
+        category.id,
+        cursor,
+      );
+      const sliceEnd = DateTime.min(end, periodEnd);
+      const requested = Math.round(sliceEnd.diff(cursor, 'days').days) + 1;
+      if (usedDays + requested > category.maxDaysPerYear) {
+        const remaining = Math.max(category.maxDaysPerYear - usedDays, 0);
+        throw new BadRequestException(
+          `ABSENCE_YEARLY_CAP: only ${remaining} of ${category.maxDaysPerYear} days left for this category in the current period.`,
+        );
+      }
+      cursor = periodEnd.plus({ days: 1 });
+    }
+  }
+
+  /** Self-service: remaining allowance of a category for the caller. */
+  async getMyCategoryQuota(
+    absenceCategoryId: string,
+    date: string | undefined,
+    user: TokenPayload,
+  ): Promise<AbsenceCategoryQuota> {
+    const { orgId, membershipId } = user;
+    const membership = await this.entityManager.findOne(Membership, {
+      where: { id: membershipId },
+      relations: ['employee'],
+    });
+    if (!membership?.employee) {
+      throw new NotFoundException('Membership not found.');
+    }
+    const category = await this.entityManager.findOne(EmployeeAbsenceCategory, {
+      where: { id: absenceCategoryId, organizationId: orgId as string },
+    });
+    if (!category) throw new NotFoundException('Absenzcategory not found!');
+
+    const reference = date ? utcDay(date) : DateTime.utc().startOf('day');
+    const { usedDays, periodStart, periodEnd } = await this.computeYearlyUsage(
+      orgId as string,
+      membership.employee.id,
+      category.id,
+      reference,
+    );
+    return {
+      absenceCategoryId: category.id,
+      maxDaysPerYear: category.maxDaysPerYear,
+      usedDays,
+      remainingDays:
+        category.maxDaysPerYear == null
+          ? null
+          : Math.max(category.maxDaysPerYear - usedDays, 0),
+      periodStart: periodStart.toISODate() as string,
+      periodEnd: periodEnd.toISODate() as string,
+    };
+  }
+
   async findPendingRequests(user: TokenPayload): Promise<EmployeeAbsence[]> {
     const orgId = user.orgId as string;
     const scope = await this.access.resolveOverviewScope(user, orgId);
