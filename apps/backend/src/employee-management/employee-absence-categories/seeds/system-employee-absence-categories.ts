@@ -24,6 +24,48 @@ export type SystemEmployeeAbsenceCategoryDefaults = {
 export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDefaults[] =
   [
     {
+      // OR 329a: at least 4 weeks per year (5 weeks under 20); planned in
+      // advance and approved by the employer, so it is a request.
+      code: SystemEmployeeAbsenceCategory.VACATION,
+      countsAsWorkTime: true,
+      isPaid: true,
+      affectsVacationBalance: true,
+      defaultIsVacationCapable: false,
+      reducesVacationEntitlementAfterDays: null,
+      requiresCertificate: false,
+      certificateRequiredFromDay: null,
+      maxDaysPerYear: null,
+      defaultPercentage: 100,
+      requiresApproval: true,
+      allowsDateRange: true,
+      maxDaysPerRequest: null,
+      color: '#22C55E',
+      iconName: 'sun',
+      sortOrder: 5,
+      translations: {
+        DE: {
+          name: 'Ferien',
+          description:
+            'Bezahlte Ferien gemaess Ferienanspruch (mind. 4 Wochen, Art. 329a OR); im Voraus zu beantragen.',
+        },
+        FR: {
+          name: 'Vacances',
+          description:
+            'Vacances payées selon le droit aux vacances (min. 4 semaines, art. 329a CO); à demander à l’avance.',
+        },
+        IT: {
+          name: 'Vacanze',
+          description:
+            'Vacanze pagate secondo il diritto alle vacanze (min. 4 settimane, art. 329a CO); da richiedere in anticipo.',
+        },
+        EN: {
+          name: 'Vacation',
+          description:
+            'Paid vacation per entitlement (min. 4 weeks, CO art. 329a); to be requested in advance.',
+        },
+      },
+    },
+    {
       code: SystemEmployeeAbsenceCategory.SICKNESS,
       countsAsWorkTime: true,
       isPaid: true,

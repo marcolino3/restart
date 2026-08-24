@@ -1,6 +1,7 @@
 import { registerEnumType } from '@nestjs/graphql';
 
 export enum SystemEmployeeAbsenceCategory {
+  VACATION = 'VACATION', // Ferien
   SICKNESS = 'SICKNESS',
   ACCIDENT = 'ACCIDENT',
   CHILDCARE_SICK = 'CHILDCARE_SICK',

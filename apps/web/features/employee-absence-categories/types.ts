@@ -15,6 +15,7 @@ export type AbsenceCategoryTranslation = {
 
 export type AbsenceCategorySystemCode =
   | "SICKNESS"
+  | "VACATION"
   | "ACCIDENT"
   | "CHILDCARE_SICK"
   | "TRAINING"
