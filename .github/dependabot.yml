@@ -58,11 +58,19 @@ updates:
       # 1.6.24 und 1.6.25 = 5 Fehler.
       #
       # Nur das Expo-Paket ist gesperrt, NICHT better-auth selbst — Backend
-      # und Web laufen gesund auf ^1.6.25 und sollen Updates bekommen.
+      # und Web laufen gesund auf ^1.7.1 und sollen Updates bekommen.
       #
       # Ein exakter Pin in apps/mobile/package.json reicht dafür NICHT:
       # Dependabot schlägt trotzdem vor (#233 kam trotz "1.6.23" und
       # "19.1.0"). Dieselbe Annahme war schon bei react falsch.
+      #
+      # Diese Sperre gilt NUR für den Root-Scan und damit für apps/mobile.
+      # apps/backend importiert aus demselben Paket ausschliesslich das
+      # Server-Plugin `expo()` (apps/backend/src/lib/auth.ts) und ist vom
+      # Client-Bruch nicht betroffen; der /apps/backend-Eintrag unten lässt
+      # 1.6.24+ deshalb bewusst durch (Stand: ^1.6.26). Die beiden
+      # Verzeichnisse laufen hier absichtlich auseinander — wer das
+      # angleichen will, muss zuerst den Mobile-Typecheck grün bekommen.
       - dependency-name: "@better-auth/expo"
         versions: [">=1.6.24"]
       # @types/node 26 typisiert Node-26-APIs; CI und Runtime laufen auf Node 22
@@ -161,6 +169,14 @@ updates:
           - "minor"
           - "patch"
     ignore:
+      # @better-auth/expo ist hier BEWUSST NICHT gesperrt, obwohl der
+      # Root-Eintrag ">=1.6.24" blockt. Der Bruch ab 1.6.24 liegt im
+      # Client-Teil des Pakets (getCookie(), BetterAuthClientPlugin) und
+      # trifft nur apps/mobile. apps/backend importiert daraus einzig das
+      # Server-Plugin `expo()` (src/lib/auth.ts) und soll Updates bekommen.
+      # Nicht "der Vollständigkeit halber" nachtragen — das würde das
+      # Backend ohne Grund auf 1.6.23 einfrieren.
+
       # Bewusste Pins (siehe MEMORY.md „Bekannte Issues")
       - dependency-name: "class-validator"
         versions: [">=0.15.0"]
@@ -256,6 +272,92 @@ updates:
       # @types/node 26 typisiert Node-26-APIs; CI und Runtime laufen auf Node 22
       # (siehe node-version in ci.yml/security.yml, engines: ">=20").
       # Erst nachziehen, wenn die Node-Baseline angehoben wird.
+      - dependency-name: "@types/node"
+        versions: [">=26.0.0"]
+
+  # Mobile (Expo SDK 54)
+  #
+  # Eigener Eintrag, damit apps/mobile seine Sperren nicht länger über den
+  # Root-Eintrag durchsetzen muss. Der Root-Scan kann nicht pro Verzeichnis
+  # unterscheiden, deshalb hat jede Mobile-Sperre dort bisher auch apps/web
+  # und apps/backend mit eingefroren (@better-auth/expo) oder war gar nicht
+  # durchsetzbar (react/react-dom: apps/web soll Updates bekommen,
+  # apps/mobile muss auf 19.1.0 bleiben).
+  #
+  # Der Root-Eintrag scannt das Monorepo weiterhin mit; die Sperren dort
+  # bleiben bestehen, solange sie Mobile schützen müssen. Sie hier zu
+  # wiederholen ist trotzdem richtig, damit dieser Eintrag für sich allein
+  # korrekt ist und die Regeln nicht verschwinden, wenn der Root-Eintrag
+  # gelockert wird.
+  - package-ecosystem: "npm"
+    directory: "/apps/mobile"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+      timezone: "Europe/Zurich"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "mobile"
+    commit-message:
+      prefix: "chore(deps,mobile)"
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # Expo koppelt ab SDK 55 die Paket-Major an die SDK-Nummer.
+      # apps/mobile steht auf SDK 54 — 55+ gehört zu einer fremden
+      # SDK-Generation. Upgrade nur gemeinsam via `npx expo install --fix`.
+      - dependency-name: "expo"
+        versions: [">=55.0.0"]
+      - dependency-name: "expo-*"
+        versions: [">=55.0.0"]
+      - dependency-name: "@expo/*"
+        versions: [">=55.0.0"]
+      - dependency-name: "eslint-config-expo"
+        versions: [">=55.0.0"]
+      # An die SDK-54-Matrix gebunden (PR#169) — 0.86.x bricht das Bundling.
+      - dependency-name: "react-native"
+        versions: [">=0.82.0"]
+      - dependency-name: "react-native-reanimated"
+        versions: [">=4.2.0"]
+      - dependency-name: "react-native-screens"
+        versions: [">=4.17.0"]
+      - dependency-name: "react-native-safe-area-context"
+        versions: [">=5.7.0"]
+      - dependency-name: "react-native-worklets"
+        versions: [">=0.6.0"]
+      # Expo SDK 54 verlangt react 19.1.0. Hier durchsetzbar, ohne apps/web
+      # von React-Updates abzuschneiden — das war im Root-Eintrag unmöglich.
+      - dependency-name: "react"
+        versions: [">=19.2.0"]
+      - dependency-name: "react-dom"
+        versions: [">=19.2.0"]
+      # @better-auth/expo bricht ab 1.6.24 den Mobile-Typecheck: der
+      # Expo-Client verliert getCookie() und das Plugin passt nicht mehr auf
+      # BetterAuthClientPlugin (5 Fehler in chats-api.ts, active-org.ts,
+      # auth-client.ts). Isoliert verifiziert 2026-07-31: 1.6.23 = 0 Fehler,
+      # 1.6.24 und 1.6.25 = 5 Fehler. Betrifft nur den Client — apps/backend
+      # nutzt aus demselben Paket nur das Server-Plugin und darf höher.
+      - dependency-name: "@better-auth/expo"
+        versions: [">=1.6.24"]
+      # NativeWind ist an Tailwind 3 gebunden — Tailwind 4 bricht die
+      # JS-Config-Auflösung.
+      - dependency-name: "tailwindcss"
+        versions: [">=4.0.0"]
+      # TypeScript wird im Monorepo gemeinsam angehoben, nicht paketweise.
+      - dependency-name: "typescript"
+        versions: [">=6.0.0"]
+      - dependency-name: "eslint"
+        versions: [">=10.0.0"]
+      - dependency-name: "@eslint/*"
+        versions: [">=10.0.0"]
+      # @types/node 26 typisiert Node-26-APIs; Runtime laeuft auf Node 22/24.
       - dependency-name: "@types/node"
         versions: [">=26.0.0"]
 
