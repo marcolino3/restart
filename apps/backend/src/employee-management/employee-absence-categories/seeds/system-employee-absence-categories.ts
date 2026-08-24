@@ -110,13 +110,13 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       affectsVacationBalance: false,
       defaultIsVacationCapable: false,
       reducesVacationEntitlementAfterDays: null,
-      requiresCertificate: false,
-      certificateRequiredFromDay: null,
-      maxDaysPerYear: 3,
+      requiresCertificate: true,
+      certificateRequiredFromDay: 1,
+      maxDaysPerYear: 10,
       defaultPercentage: 100,
       requiresApproval: false,
-      allowsDateRange: false,
-      maxDaysPerRequest: null,
+      allowsDateRange: true,
+      maxDaysPerRequest: 3,
       color: '#F59E0B',
       iconName: 'baby',
       sortOrder: 30,
@@ -124,22 +124,22 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
         DE: {
           name: 'Kind krank',
           description:
-            'Betreuung kranker Kinder: max. 3 Tage pro Ereignis (Art. 36 ArG).',
+            'Betreuung kranker Kinder: max. 3 Tage pro Ereignis, 10 Tage pro Jahr (Art. 329h OR, Art. 36 ArG); Arztzeugnis auf Verlangen.',
         },
         FR: {
           name: 'Enfant malade',
           description:
-            'Soins à un enfant malade: max. 3 jours par évènement (art. 36 LTr).',
+            'Soins à un enfant malade: max. 3 jours par évènement, 10 jours par an (art. 329h CO, art. 36 LTr); certificat médical sur demande.',
         },
         IT: {
           name: 'Figlio malato',
           description:
-            'Assistenza a un figlio malato: max. 3 giorni per evento (art. 36 LL).',
+            'Assistenza a un figlio malato: max. 3 giorni per evento, 10 giorni all’anno (art. 329h CO, art. 36 LL); certificato medico su richiesta.',
         },
         EN: {
           name: 'Sick child care',
           description:
-            'Care for a sick child: max. 3 days per event (Swiss Labor Act art. 36).',
+            'Care for a sick child: max. 3 days per event, 10 days per year (CO art. 329h, Labour Act art. 36); medical certificate on request.',
         },
       },
     },
@@ -230,28 +230,32 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       certificateRequiredFromDay: null,
       maxDaysPerYear: 1,
       defaultPercentage: 100,
-      requiresApproval: false,
-      allowsDateRange: true,
-      maxDaysPerRequest: 1,
+      requiresApproval: true,
+      allowsDateRange: false,
+      maxDaysPerRequest: null,
       color: '#8B5CF6',
       iconName: 'truck',
       sortOrder: 60,
       translations: {
         DE: {
           name: 'Umzug',
-          description: 'Tag des Wohnungsumzugs; 1 bezahlter Tag pro Jahr.',
+          description:
+            'Tag des Wohnungsumzugs; 1 bezahlter Tag pro Jahr, im Voraus zu beantragen.',
         },
         FR: {
           name: 'Déménagement',
-          description: 'Jour de déménagement; 1 jour rémunéré par an.',
+          description:
+            'Jour de déménagement; 1 jour rémunéré par an, à demander à l’avance.',
         },
         IT: {
           name: 'Trasloco',
-          description: 'Giorno del trasloco; 1 giorno retribuito all’anno.',
+          description:
+            'Giorno del trasloco; 1 giorno retribuito all’anno, da richiedere in anticipo.',
         },
         EN: {
           name: 'Moving day',
-          description: 'Day of residential move; 1 paid day per year.',
+          description:
+            'Day of residential move; 1 paid day per year, to be requested in advance.',
         },
       },
     },
