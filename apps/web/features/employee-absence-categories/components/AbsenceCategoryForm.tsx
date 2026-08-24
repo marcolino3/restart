@@ -1,28 +1,49 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { FormProvider, useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Lock } from "lucide-react";
+import {
+  ArrowRight,
+  BarChart3,
+  CalendarDays,
+  CalendarRange,
+  ChevronLeft,
+  Clock,
+  Layers,
+  Lock,
+  Paperclip,
+  ShieldCheck,
+} from "lucide-react";
+import { DynamicIcon } from "lucide-react/dynamic";
 import { toast } from "sonner";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ABSENCE_CALENDAR_TITLE_DEFAULT } from "../schemas/employee-absence-category-form.schema";
 import { IconComboboxFormField } from "@/components/form/form-fields/IconComboboxFormField";
+import { isCuratedIconName } from "@/components/form/form-fields/IconComboboxFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
-import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
+import { SwitchTileFormField } from "@/components/form/form-fields/SwitchTileFormField";
 import { ColorPickerFormField } from "@/components/form/form-fields/ColorPickerFormField";
 import { NumberFormField } from "@/components/form/form-fields/NumberFormField";
 import { handleAction } from "@/lib/actions/handle-action";
 import { ROUTES } from "@/constants/routes";
 
 import {
+  ABSENCE_CALENDAR_TITLE_DEFAULT,
   ABSENCE_CATEGORY_FORM_DEFAULTS,
   createAbsenceCategoryFormSchema,
   type AbsenceCategoryFormInput,
@@ -35,11 +56,14 @@ import { updateEmployeeAbsenceCategoryAction } from "../actions/update-employee-
 interface Props {
   mode: "create" | "edit";
   initial?: AbsenceCategoryItem;
+  /** Page heading, rendered next to the form actions. */
+  title: string;
 }
 
 const LOCALES: AbsenceCategoryLocale[] = ["DE", "FR", "IT", "EN"];
+const PLACEHOLDERS = ["{firstName}", "{lastName}", "{category}"] as const;
 
-export function AbsenceCategoryForm({ mode, initial }: Props) {
+export function AbsenceCategoryForm({ mode, initial, title }: Props) {
   const t = useTranslations("AbsenceCategories");
   const router = useRouter();
   const locale = useLocale();
@@ -47,6 +71,7 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
   const [activeTab, setActiveTab] = useState<AbsenceCategoryLocale>("DE");
 
   const isSystem = !!initial?.isSystem;
+  const listHref = ROUTES.admin.absenceCategories(locale);
 
   const schema = useMemo(
     () =>
@@ -67,8 +92,40 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
       ? mapInitialToFormValues(initial)
       : ABSENCE_CATEGORY_FORM_DEFAULTS,
   });
-  const allowsDateRange = form.watch("allowsDateRange");
-  const syncToCalendar = form.watch("syncToCalendar");
+  const watched = form.watch();
+  const allowsDateRange = watched.allowsDateRange;
+  const requiresCertificate = watched.requiresCertificate;
+  const syncToCalendar = watched.syncToCalendar;
+  const filledLocales = LOCALES.filter((_, idx) =>
+    translationHasContent(watched, idx),
+  ).length;
+
+  const toPayload = (values: AbsenceCategoryFormValues) => ({
+    translations: values.translations,
+    countsAsWorkTime: values.countsAsWorkTime,
+    isPaid: values.isPaid,
+    affectsVacationBalance: values.affectsVacationBalance,
+    defaultIsVacationCapable: values.defaultIsVacationCapable,
+    reducesVacationEntitlementAfterDays:
+      values.reducesVacationEntitlementAfterDays ?? null,
+    requiresCertificate: values.requiresCertificate,
+    certificateRequiredFromDay: values.requiresCertificate
+      ? (values.certificateRequiredFromDay ?? null)
+      : null,
+    maxDaysPerYear: values.maxDaysPerYear ?? null,
+    allowsDateRange: values.allowsDateRange,
+    maxDaysPerRequest: values.allowsDateRange
+      ? (values.maxDaysPerRequest ?? null)
+      : null,
+    defaultPercentage: values.defaultPercentage,
+    requiresApproval: values.requiresApproval,
+    color: values.color,
+    iconName: values.iconName,
+    syncToCalendar: values.syncToCalendar,
+    calendarTitleTemplate: values.syncToCalendar
+      ? values.calendarTitleTemplate || null
+      : null,
+  });
 
   const onSubmit = (values: AbsenceCategoryFormValues) => {
     startTransition(async () => {
@@ -76,79 +133,33 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
         await handleAction({
           action: () =>
             createEmployeeAbsenceCategoryAction({
-              translations: values.translations,
-              countsAsWorkTime: values.countsAsWorkTime,
-              isPaid: values.isPaid,
-              affectsVacationBalance: values.affectsVacationBalance,
-              defaultIsVacationCapable: values.defaultIsVacationCapable,
-              reducesVacationEntitlementAfterDays:
-                values.reducesVacationEntitlementAfterDays ?? null,
-              requiresCertificate: values.requiresCertificate,
-              certificateRequiredFromDay:
-                values.certificateRequiredFromDay ?? null,
-              maxDaysPerYear: values.maxDaysPerYear ?? null,
-              allowsDateRange: values.allowsDateRange,
-              maxDaysPerRequest: values.allowsDateRange
-                ? (values.maxDaysPerRequest ?? null)
-                : null,
-              defaultPercentage: values.defaultPercentage,
-              requiresApproval: values.requiresApproval,
-              color: values.color,
-              iconName: values.iconName,
-              syncToCalendar: values.syncToCalendar,
-              calendarTitleTemplate: values.syncToCalendar
-                ? values.calendarTitleTemplate || null
-                : null,
-              // sortOrder wird vom Backend automatisch ans Ende gesetzt;
-              // Reihenfolge wird per DnD in der Liste verwaltet.
+              ...toPayload(values),
+              // sortOrder is appended by the backend; order is managed by
+              // drag and drop in the list.
               sortOrder: 0,
             }),
           successMessage: t("createdToast"),
           errorMessage: t("createError"),
-          onSuccess: () => router.push(ROUTES.admin.absenceCategories(locale)),
+          onSuccess: () => router.push(listHref),
         });
       } else if (initial) {
         await handleAction({
           action: () =>
+            // System categories are only undeletable; behaviour and limits
+            // are editable like custom ones.
             updateEmployeeAbsenceCategoryAction({
               id: initial.id,
-              translations: values.translations,
-              // System-Kategorien sind nur nicht loeschbar; Behavior/Limits
-              // duerfen genauso wie bei Custom-Kategorien angepasst werden.
-              countsAsWorkTime: values.countsAsWorkTime,
-              isPaid: values.isPaid,
-              affectsVacationBalance: values.affectsVacationBalance,
-              defaultIsVacationCapable: values.defaultIsVacationCapable,
-              reducesVacationEntitlementAfterDays:
-                values.reducesVacationEntitlementAfterDays ?? null,
-              requiresCertificate: values.requiresCertificate,
-              certificateRequiredFromDay:
-                values.certificateRequiredFromDay ?? null,
-              maxDaysPerYear: values.maxDaysPerYear ?? null,
-              allowsDateRange: values.allowsDateRange,
-              maxDaysPerRequest: values.allowsDateRange
-                ? (values.maxDaysPerRequest ?? null)
-                : null,
-              defaultPercentage: values.defaultPercentage,
-              requiresApproval: values.requiresApproval,
-              color: values.color,
-              iconName: values.iconName,
-              syncToCalendar: values.syncToCalendar,
-              calendarTitleTemplate: values.syncToCalendar
-                ? values.calendarTitleTemplate || null
-                : null,
-              // Reihenfolge wird per DnD in der Liste verwaltet.
+              ...toPayload(values),
             }),
           successMessage: t("savedToast"),
           errorMessage: t("saveError"),
-          onSuccess: () => router.push(ROUTES.admin.absenceCategories(locale)),
+          onSuccess: () => router.push(listHref),
         });
       }
     });
   };
 
   const onInvalid = (errors: FieldErrors<AbsenceCategoryFormInput>) => {
-    // Translations-Fehler? -> zum richtigen Sprachen-Tab springen
     const translationErrors = errors.translations as
       | Array<
           | { name?: { message?: string }; description?: { message?: string } }
@@ -157,244 +168,432 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
       | undefined;
     if (Array.isArray(translationErrors)) {
       const idx = translationErrors.findIndex((e) => e?.name || e?.description);
-      if (idx >= 0) {
-        setActiveTab(LOCALES[idx]);
-      }
+      if (idx >= 0) setActiveTab(LOCALES[idx]);
     }
-
-    // Erste Fehlermeldung sammeln und in einem Toast zeigen
-    const firstMsg = collectFirstMessage(errors);
     toast.error(t("validationFailed"), {
-      description: firstMsg ?? t("checkFieldsBelow"),
+      description: collectFirstMessage(errors) ?? t("checkFieldsBelow"),
     });
+  };
+
+  const insertPlaceholder = (token: string) => {
+    const current = form.getValues("calendarTitleTemplate") ?? "";
+    form.setValue(
+      "calendarTitleTemplate",
+      current ? `${current.replace(/\s+$/, "")} ${token}` : token,
+      { shouldDirty: true },
+    );
   };
 
   return (
     <FormProvider {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit, onInvalid)}
-        className="flex flex-col gap-6"
+        className="flex flex-col gap-4"
       >
+        {/* Header */}
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            <Link
+              href={listHref}
+              className="text-muted-foreground hover:text-foreground flex w-fit items-center text-xs"
+            >
+              <ChevronLeft className="mr-0.5 h-3.5 w-3.5" />
+              {t("pageTitle")}
+            </Link>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold">{title}</h1>
+              {isSystem && (
+                <Badge variant="secondary" className="font-normal">
+                  {t("systemBadge")}
+                </Badge>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push(listHref)}
+            >
+              {t("cancel")}
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? t("saving") : t("save")}
+            </Button>
+          </div>
+        </div>
+
         {isSystem && (
           <Alert>
             <Lock className="h-4 w-4" />
-            <AlertDescription>{t("systemCategoryNote")}</AlertDescription>
+            <AlertDescription>
+              <span className="font-medium">{t("systemBadge")}</span>
+              {" — "}
+              {t("systemCategoryNote")}
+            </AlertDescription>
           </Alert>
         )}
 
-        {/* Translations */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("translationsTitle")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4 text-xs">
-              {t("localeHint")}
-            </p>
-            <Tabs
-              value={activeTab}
-              onValueChange={(v) => setActiveTab(v as AbsenceCategoryLocale)}
-            >
-              <TabsList>
-                {LOCALES.map((loc, idx) => (
-                  <TabsTrigger key={loc} value={loc}>
-                    {loc}
-                    {translationHasContent(form.getValues(), idx) && (
-                      <span
-                        className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-500"
-                        aria-hidden
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+          {/* Left column */}
+          <div className="flex flex-col gap-4 lg:col-span-2">
+            {/* Translations */}
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("translationsTitle")}</CardTitle>
+                <CardDescription>{t("localeHint")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs
+                  value={activeTab}
+                  onValueChange={(v) =>
+                    setActiveTab(v as AbsenceCategoryLocale)
+                  }
+                >
+                  <div className="flex flex-wrap items-center gap-3">
+                    <TabsList>
+                      {LOCALES.map((loc, idx) => (
+                        <TabsTrigger key={loc} value={loc}>
+                          {loc}
+                          <span
+                            className={
+                              translationHasContent(watched, idx)
+                                ? "ml-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-500"
+                                : "ml-1 inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/30"
+                            }
+                            aria-hidden
+                          />
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                    <span className="text-muted-foreground text-xs">
+                      {t("localesFilled", {
+                        n: filledLocales,
+                        total: LOCALES.length,
+                      })}
+                    </span>
+                  </div>
+                  {LOCALES.map((loc, idx) => (
+                    <TabsContent
+                      key={loc}
+                      value={loc}
+                      className="mt-4 space-y-4"
+                    >
+                      <InputFormField
+                        name={`translations.${idx}.name`}
+                        label={`nameLabel_${loc}`}
+                        namespace="AbsenceCategories"
                       />
-                    )}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              {LOCALES.map((loc, idx) => (
-                <TabsContent key={loc} value={loc} className="mt-4 space-y-4">
-                  <InputFormField
-                    name={`translations.${idx}.name`}
-                    label={`nameLabel_${loc}`}
+                      <TextareaFormField
+                        name={`translations.${idx}.description`}
+                        label={`descriptionLabel_${loc}`}
+                        description="descriptionHelp"
+                        rows={3}
+                        namespace="AbsenceCategories"
+                      />
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </CardContent>
+            </Card>
+
+            {/* Behaviour */}
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("behaviorTitle")}</CardTitle>
+                <CardDescription>{t("behaviorSubtitle")}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <SectionLabel>{t("sectionAccounting")}</SectionLabel>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <SwitchTileFormField
+                    name="countsAsWorkTime"
+                    label="countsAsWorkTimeLabel"
+                    description="countsAsWorkTimeHelp"
+                    icon={<Clock />}
                     namespace="AbsenceCategories"
                   />
-                  <TextareaFormField
-                    name={`translations.${idx}.description`}
-                    label={`descriptionLabel_${loc}`}
+                  <SwitchTileFormField
+                    name="isPaid"
+                    label="isPaidLabel"
+                    description="isPaidHelp"
+                    icon={<BarChart3 />}
                     namespace="AbsenceCategories"
                   />
-                </TabsContent>
-              ))}
-            </Tabs>
-          </CardContent>
-        </Card>
+                  <SwitchTileFormField
+                    name="affectsVacationBalance"
+                    label="affectsVacationBalanceLabel"
+                    description="affectsVacationBalanceHelp"
+                    icon={<Layers />}
+                    namespace="AbsenceCategories"
+                  />
+                  <SwitchTileFormField
+                    name="defaultIsVacationCapable"
+                    label="defaultIsVacationCapableLabel"
+                    description="defaultIsVacationCapableHelp"
+                    icon={<CalendarRange />}
+                    namespace="AbsenceCategories"
+                  />
+                </div>
+                <SectionLabel>{t("sectionRecording")}</SectionLabel>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <SwitchTileFormField
+                    name="requiresApproval"
+                    label="requiresApprovalLabel"
+                    description="requiresApprovalHelp"
+                    icon={<ShieldCheck />}
+                    namespace="AbsenceCategories"
+                  />
+                  <SwitchTileFormField
+                    name="allowsDateRange"
+                    label="allowsDateRangeLabel"
+                    description="allowsDateRangeHelp"
+                    icon={<ArrowRight />}
+                    namespace="AbsenceCategories"
+                  />
+                  <SwitchTileFormField
+                    name="requiresCertificate"
+                    label="requiresCertificateLabel"
+                    description="requiresCertificateHelp"
+                    icon={<Paperclip />}
+                    namespace="AbsenceCategories"
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Verhalten */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("behaviorTitle")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <SwitchFormField
-                name="countsAsWorkTime"
-                label="countsAsWorkTimeLabel"
-                description="countsAsWorkTimeHelp"
-                namespace="AbsenceCategories"
-              />
-              <SwitchFormField
-                name="isPaid"
-                label="isPaidLabel"
-                description="isPaidHelp"
-                namespace="AbsenceCategories"
-              />
-              <SwitchFormField
-                name="affectsVacationBalance"
-                label="affectsVacationBalanceLabel"
-                description="affectsVacationBalanceHelp"
-                namespace="AbsenceCategories"
-              />
-              <SwitchFormField
-                name="defaultIsVacationCapable"
-                label="defaultIsVacationCapableLabel"
-                description="defaultIsVacationCapableHelp"
-                namespace="AbsenceCategories"
-              />
-              <SwitchFormField
-                name="requiresApproval"
-                label="requiresApprovalLabel"
-                description="requiresApprovalHelp"
-                namespace="AbsenceCategories"
-              />
-              <SwitchFormField
-                name="allowsDateRange"
-                label="allowsDateRangeLabel"
-                description="allowsDateRangeHelp"
-                namespace="AbsenceCategories"
-              />
-              <SwitchFormField
-                name="requiresCertificate"
-                label="requiresCertificateLabel"
-                description="requiresCertificateHelp"
-                namespace="AbsenceCategories"
-              />
-            </div>
-          </CardContent>
-        </Card>
+            {/* Limits */}
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("limitsTitle")}</CardTitle>
+                <CardDescription>{t("limitsSubtitle")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                  <NumberFormField
+                    name="defaultPercentage"
+                    label="defaultPercentageLabel"
+                    description="defaultPercentageHelp"
+                    min={1}
+                    max={100}
+                    nullable={false}
+                    namespace="AbsenceCategories"
+                  />
+                  <NumberFormField
+                    name="maxDaysPerYear"
+                    label="maxDaysPerYearLabel"
+                    description="maxDaysPerYearHelp"
+                    placeholder={t("unlimited")}
+                    min={1}
+                    max={365}
+                    namespace="AbsenceCategories"
+                  />
+                  <NumberFormField
+                    name="maxDaysPerRequest"
+                    label="maxDaysPerRequestLabel"
+                    description="maxDaysPerRequestHelp"
+                    placeholder={t("unlimited")}
+                    min={1}
+                    max={365}
+                    disabled={!allowsDateRange}
+                    namespace="AbsenceCategories"
+                  />
+                  <NumberFormField
+                    name="certificateRequiredFromDay"
+                    label="certificateRequiredFromDayLabel"
+                    description="certificateRequiredFromDayHelp"
+                    placeholder="—"
+                    min={1}
+                    max={90}
+                    disabled={!requiresCertificate}
+                    namespace="AbsenceCategories"
+                  />
+                  <NumberFormField
+                    name="reducesVacationEntitlementAfterDays"
+                    label="reducesVacationEntitlementAfterDaysLabel"
+                    description="reducesVacationEntitlementAfterDaysHelp"
+                    placeholder={t("noReduction")}
+                    min={1}
+                    max={365}
+                    namespace="AbsenceCategories"
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Limits & Defaults */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("limitsTitle")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <NumberFormField
-                name="defaultPercentage"
-                label="defaultPercentageLabel"
-                description="defaultPercentageHelp"
-                min={1}
-                max={100}
-                nullable={false}
-                namespace="AbsenceCategories"
-              />
-              <NumberFormField
-                name="maxDaysPerYear"
-                label="maxDaysPerYearLabel"
-                description="maxDaysPerYearHelp"
-                min={1}
-                max={365}
-                namespace="AbsenceCategories"
-              />
-              <NumberFormField
-                name="maxDaysPerRequest"
-                label="maxDaysPerRequestLabel"
-                description="maxDaysPerRequestHelp"
-                min={1}
-                max={365}
-                disabled={!allowsDateRange}
-                namespace="AbsenceCategories"
-              />
-              <NumberFormField
-                name="certificateRequiredFromDay"
-                label="certificateRequiredFromDayLabel"
-                description="certificateRequiredFromDayHelp"
-                min={1}
-                max={90}
-                namespace="AbsenceCategories"
-              />
-              <NumberFormField
-                name="reducesVacationEntitlementAfterDays"
-                label="reducesVacationEntitlementAfterDaysLabel"
-                description="reducesVacationEntitlementAfterDaysHelp"
-                min={1}
-                max={365}
-                namespace="AbsenceCategories"
-              />
-            </div>
-          </CardContent>
-        </Card>
+            {/* Calendar */}
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("calendarTitle")}</CardTitle>
+                <CardDescription>{t("calendarSubtitle")}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <SwitchTileFormField
+                  name="syncToCalendar"
+                  label="syncToCalendarLabel"
+                  description="syncToCalendarHelp"
+                  icon={<CalendarDays />}
+                  namespace="AbsenceCategories"
+                />
+                {syncToCalendar && (
+                  <div className="space-y-2">
+                    <InputFormField
+                      name="calendarTitleTemplate"
+                      label="calendarTitleTemplateLabel"
+                      placeholder={ABSENCE_CALENDAR_TITLE_DEFAULT}
+                      namespace="AbsenceCategories"
+                    />
+                    <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                      <span className="text-muted-foreground">
+                        {t("insertPlaceholder")}
+                      </span>
+                      {PLACEHOLDERS.map((token) => (
+                        <button
+                          key={token}
+                          type="button"
+                          onClick={() => insertPlaceholder(token)}
+                          className="bg-primary/10 text-primary hover:bg-primary/20 rounded-md px-2 py-0.5 font-mono"
+                        >
+                          {token}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-muted-foreground text-xs">
+                      {t("calendarTitleTemplateHelp")}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* UI */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("uiTitle")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <ColorPickerFormField
-                name="color"
-                label="colorLabel"
-                namespace="AbsenceCategories"
-              />
-              <IconComboboxFormField
-                name="iconName"
-                label="iconNameLabel"
-                description="iconNameHelp"
-                namespace="AbsenceCategories"
-              />
-            </div>
-            <p className="text-muted-foreground mt-3 text-xs">
-              {t("sortOrderMovedToList")}
-            </p>
-          </CardContent>
-        </Card>
+          {/* Right column */}
+          <div className="flex flex-col gap-4 lg:sticky lg:top-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("uiTitle")}</CardTitle>
+                <CardDescription>{t("uiSubtitle")}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ColorPickerFormField
+                  name="color"
+                  label="colorLabel"
+                  namespace="AbsenceCategories"
+                />
+                <IconComboboxFormField
+                  name="iconName"
+                  label="iconNameLabel"
+                  description="iconNameHelp"
+                  namespace="AbsenceCategories"
+                />
+                <p className="text-muted-foreground text-xs">
+                  {t("sortOrderMovedToList")}
+                </p>
+              </CardContent>
+            </Card>
 
-        {/* Calendar */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("calendarTitle")}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <SwitchFormField
-              name="syncToCalendar"
-              label="syncToCalendarLabel"
-              description="syncToCalendarHelp"
-              namespace="AbsenceCategories"
-            />
-            {syncToCalendar && (
-              <InputFormField
-                name="calendarTitleTemplate"
-                label="calendarTitleTemplateLabel"
-                description="calendarTitleTemplateHelp"
-                placeholder={ABSENCE_CALENDAR_TITLE_DEFAULT}
-                namespace="AbsenceCategories"
-              />
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="flex justify-end gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.push(ROUTES.admin.absenceCategories(locale))}
-          >
-            {t("cancel")}
-          </Button>
-          <Button type="submit" disabled={isPending}>
-            {isPending ? t("saving") : t("save")}
-          </Button>
+            <Preview values={watched} locale={locale} />
+          </div>
         </div>
       </form>
     </FormProvider>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+        {children}
+      </span>
+      <span className="bg-border h-px flex-1" />
+    </div>
+  );
+}
+
+function Preview({
+  values,
+  locale,
+}: {
+  values: AbsenceCategoryFormInput;
+  locale: string;
+}) {
+  const t = useTranslations("AbsenceCategories");
+  const idx = LOCALES.indexOf(locale.toUpperCase() as AbsenceCategoryLocale);
+  const name =
+    values.translations[idx >= 0 ? idx : 0]?.name?.trim() ||
+    values.translations.find((tr) => tr.name?.trim())?.name ||
+    t("previewUnnamed");
+  const color = values.color ?? "#94A3B8";
+  const [firstName, lastName] = t("previewSampleName").split(" ");
+  const calendarTitle = (
+    values.calendarTitleTemplate?.trim() || ABSENCE_CALENDAR_TITLE_DEFAULT
+  )
+    .replace(/\{firstName\}/g, firstName ?? "")
+    .replace(/\{lastName\}/g, lastName ?? "")
+    .replace(/\{category\}/g, name)
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const summary = [
+    values.requiresApproval ? t("badgeApproval") : t("badgeNoticeOnly"),
+    values.allowsDateRange ? t("limitDateRange") : t("previewSingleDay"),
+    values.requiresCertificate
+      ? t("badgeCertificate")
+      : t("previewNoCertificate"),
+    values.affectsVacationBalance ? t("affectsVacationBalanceLabel") : null,
+    values.isPaid ? t("badgePaid") : t("previewUnpaid"),
+  ]
+    .filter(Boolean)
+    .join(" · ")
+    .toLowerCase();
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("previewTitle")}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <SectionLabel>{t("previewListLabel")}</SectionLabel>
+          <div className="bg-muted/40 flex items-center justify-between rounded-md px-3 py-2 text-sm">
+            <span className="flex items-center gap-2">
+              {isCuratedIconName(values.iconName) ? (
+                <DynamicIcon
+                  name={values.iconName}
+                  className="h-4 w-4"
+                  style={{ color }}
+                />
+              ) : (
+                <span
+                  className="inline-block h-2 w-2 rounded-full"
+                  style={{ backgroundColor: color }}
+                />
+              )}
+              <span className="font-medium">{name}</span>
+            </span>
+            <Badge variant="outline" className="font-normal">
+              {values.isPaid ? t("badgePaid") : t("previewUnpaid")}
+            </Badge>
+          </div>
+        </div>
+        {values.syncToCalendar && (
+          <div className="space-y-2">
+            <SectionLabel>{t("previewCalendarLabel")}</SectionLabel>
+            <div
+              className="bg-muted/40 rounded-md border-l-4 px-3 py-2"
+              style={{ borderLeftColor: color }}
+            >
+              <div className="text-sm font-medium">{calendarTitle}</div>
+              <div className="text-muted-foreground text-xs">
+                {t("previewSampleDates")}
+              </div>
+            </div>
+          </div>
+        )}
+        <p className="text-muted-foreground text-xs">{summary}</p>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -402,8 +601,8 @@ function translationHasContent(
   values: AbsenceCategoryFormInput,
   idx: number,
 ): boolean {
-  const t = values.translations[idx];
-  return !!(t?.name && t.name.trim().length > 0);
+  const tr = values.translations[idx];
+  return !!(tr?.name && tr.name.trim().length > 0);
 }
 
 function collectFirstMessage(
@@ -436,7 +635,7 @@ function collectFirstMessage(
 function mapInitialToFormValues(
   item: AbsenceCategoryItem,
 ): AbsenceCategoryFormInput {
-  const byLocale = new Map(item.translations.map((t) => [t.locale, t]));
+  const byLocale = new Map(item.translations.map((tr) => [tr.locale, tr]));
   return {
     translations: LOCALES.map((loc) => ({
       locale: loc,
