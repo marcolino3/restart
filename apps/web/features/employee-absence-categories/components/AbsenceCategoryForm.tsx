@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { IconComboboxFormField } from "@/components/form/form-fields/IconComboboxFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
 import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
@@ -333,11 +334,10 @@ export function AbsenceCategoryForm({ mode, initial }: Props) {
                 label="colorLabel"
                 namespace="AbsenceCategories"
               />
-              <InputFormField
+              <IconComboboxFormField
                 name="iconName"
                 label="iconNameLabel"
                 description="iconNameHelp"
-                placeholder="thermometer"
                 namespace="AbsenceCategories"
               />
             </div>

@@ -19,6 +19,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Lock, Pencil, Plus } from "lucide-react";
+import { DynamicIcon } from "lucide-react/dynamic";
+import { isCuratedIconName } from "@/components/form/form-fields/IconComboboxFormField";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -240,12 +242,21 @@ function SortableTableRow({
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-2">
-          {item.color && (
-            <span
+          {isCuratedIconName(item.iconName) ? (
+            <DynamicIcon
               aria-hidden
-              className="inline-block h-3 w-3 rounded-full"
-              style={{ backgroundColor: item.color }}
+              name={item.iconName}
+              className="h-4 w-4 shrink-0"
+              style={item.color ? { color: item.color } : undefined}
             />
+          ) : (
+            item.color && (
+              <span
+                aria-hidden
+                className="inline-block h-3 w-3 rounded-full"
+                style={{ backgroundColor: item.color }}
+              />
+            )
           )}
           <span className="font-medium">
             {pickAbsenceCategoryName(item, locale)}

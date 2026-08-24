@@ -23,6 +23,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { DateField } from "@/components/DateField";
 import {
   absenceCategoryName,
+  ABSENCE_CALENDAR_TITLE_DEFAULT,
   createAbsenceNotice,
   fetchAbsenceCategories,
   fetchMyAbsenceCategoryQuota,
@@ -74,6 +75,10 @@ export default function AbsenceRequestModal() {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [note, setNote] = useState("");
   const [isTeamInformed, setIsTeamInformed] = useState(true);
+  const [syncToCalendar, setSyncToCalendar] = useState(true);
+  const [calendarTitle, setCalendarTitle] = useState(
+    ABSENCE_CALENDAR_TITLE_DEFAULT,
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [quota, setQuota] = useState<AbsenceCategoryQuota | null>(null);
@@ -176,6 +181,8 @@ export default function AbsenceRequestModal() {
         absenceCategoryId: categoryId,
         note: note.trim(),
         isTeamInformed,
+        syncToCalendar,
+        calendarTitle: syncToCalendar ? calendarTitle.trim() || null : null,
       });
       if (result.status === "PENDING") {
         Alert.alert(
@@ -257,11 +264,36 @@ export default function AbsenceRequestModal() {
               </Text>
             ) : null}
             {selected ? (
-              <Text className="text-xs text-muted-foreground">
-                {rules.requiresApproval
-                  ? t("Employees.absence.requiresApprovalHint")
-                  : t("Employees.absence.noticeOnlyHint")}
-              </Text>
+              <View
+                className={`gap-0.5 rounded-md px-3 py-2 ${
+                  rules.requiresApproval
+                    ? "bg-status-amber-bg"
+                    : "bg-status-sky-bg"
+                }`}
+              >
+                <Text
+                  className={`text-sm font-medium ${
+                    rules.requiresApproval
+                      ? "text-status-amber-fg"
+                      : "text-status-sky-fg"
+                  }`}
+                >
+                  {rules.requiresApproval
+                    ? t("Employees.absence.requiresApprovalTitle")
+                    : t("Employees.absence.noticeOnlyTitle")}
+                </Text>
+                <Text
+                  className={`text-xs ${
+                    rules.requiresApproval
+                      ? "text-status-amber-fg"
+                      : "text-status-sky-fg"
+                  }`}
+                >
+                  {rules.requiresApproval
+                    ? t("Employees.absence.requiresApprovalHint")
+                    : t("Employees.absence.noticeOnlyHint")}
+                </Text>
+              </View>
             ) : null}
             {quota && quota.maxDaysPerYear != null ? (
               <Text
@@ -329,6 +361,35 @@ export default function AbsenceRequestModal() {
             </Text>
             <Switch value={isTeamInformed} onValueChange={setIsTeamInformed} />
           </View>
+
+          <View className="flex-row items-center justify-between rounded-md border border-border p-3">
+            <Text className="flex-1 pr-3 text-sm font-medium text-foreground">
+              {t("Common.syncToCalendar")}
+            </Text>
+            <Switch value={syncToCalendar} onValueChange={setSyncToCalendar} />
+          </View>
+
+          {syncToCalendar ? (
+            <View className="gap-1.5">
+              <Text className="text-sm font-medium text-foreground">
+                {t("Common.calendarTitle")}
+              </Text>
+              <TextInput
+                value={calendarTitle}
+                onChangeText={setCalendarTitle}
+                maxLength={200}
+                autoCapitalize="none"
+                autoCorrect={false}
+                placeholder={ABSENCE_CALENDAR_TITLE_DEFAULT}
+                className="rounded-md border border-border bg-background px-3 py-2.5 text-base text-foreground"
+                placeholderTextColor={colors.mutedForeground}
+              />
+              <Text className="text-xs text-muted-foreground">
+                {/* ICU quotes around the braces are for next-intl; i18n-js prints them verbatim. */}
+                {t("Common.calendarTitleDescription").replace(/'/g, "")}
+              </Text>
+            </View>
+          ) : null}
 
           <Pressable
             onPress={save}
