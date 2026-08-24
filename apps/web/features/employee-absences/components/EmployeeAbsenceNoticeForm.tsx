@@ -200,6 +200,7 @@ export const EmployeeAbsenceNoticeForm = ({ absenceCategories }: Props) => {
             name="absenceCategoryId"
             label="absenceCategory"
             options={absenceCategoryOptions}
+            translateOptions={false}
           />
           {selectedCategory && (
             <Alert variant={requiresApproval ? "warning" : "info"}>

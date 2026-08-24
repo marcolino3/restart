@@ -49,7 +49,7 @@ export const SwitchTileFormField = ({
       render={({ field }) => (
         <FormItem
           className={cn(
-            "flex flex-col gap-2 rounded-lg border bg-card p-3 transition-colors",
+            "flex min-w-0 flex-col gap-2 rounded-lg border bg-card p-3 transition-colors",
             field.value && "border-primary/30 bg-primary/[0.03]",
             disabled && "opacity-60",
             className,
@@ -61,11 +61,12 @@ export const SwitchTileFormField = ({
                 {icon}
               </span>
             )}
-            <FormLabel className="flex-1 text-sm font-semibold leading-tight">
+            <FormLabel className="min-w-0 flex-1 break-words text-sm font-semibold leading-tight">
               {t(label)}
             </FormLabel>
             <FormControl>
               <Switch
+                className="shrink-0"
                 checked={field.value}
                 onCheckedChange={field.onChange}
                 disabled={disabled}

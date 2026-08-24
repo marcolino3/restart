@@ -240,9 +240,9 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
           </Alert>
         )}
 
-        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-3">
           {/* Left column */}
-          <div className="flex flex-col gap-4 lg:col-span-2">
+          <div className="flex min-w-0 flex-col gap-4 xl:col-span-2">
             {/* Translations */}
             <Card>
               <CardHeader>
@@ -311,7 +311,7 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
               </CardHeader>
               <CardContent className="space-y-4">
                 <SectionLabel>{t("sectionAccounting")}</SectionLabel>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(14rem,1fr))] gap-3">
                   <SwitchTileFormField
                     name="countsAsWorkTime"
                     label="countsAsWorkTimeLabel"
@@ -356,7 +356,7 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
                     }))}
                   />
                 </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(14rem,1fr))] gap-3">
                   <SwitchTileFormField
                     name="requiresApproval"
                     label="requiresApprovalLabel"
@@ -392,7 +392,7 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
                 <CardDescription>{t("limitsSubtitle")}</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-4">
                   <NumberFormField
                     name="defaultPercentage"
                     label="defaultPercentageLabel"
@@ -491,7 +491,7 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
           </div>
 
           {/* Right column */}
-          <div className="flex flex-col gap-4 lg:sticky lg:top-4">
+          <div className="flex min-w-0 flex-col gap-4 xl:sticky xl:top-4">
             <Card>
               <CardHeader>
                 <CardTitle>{t("uiTitle")}</CardTitle>
