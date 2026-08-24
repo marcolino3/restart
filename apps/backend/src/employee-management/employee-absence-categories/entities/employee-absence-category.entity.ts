@@ -94,6 +94,17 @@ export class EmployeeAbsenceCategory extends AbstractEntity<EmployeeAbsenceCateg
   @Column('boolean', { name: 'requires_approval', default: false })
   requiresApproval!: boolean;
 
+  // Self-Service: darf ein Mitarbeiter mehrere Tage am Stueck erfassen?
+  // false = nur eintaegig (z. B. Krankmeldung fuer heute/morgen).
+  @Field(() => Boolean)
+  @Column('boolean', { name: 'allows_date_range', default: false })
+  allowsDateRange!: boolean;
+
+  // Max. Kalendertage pro Self-Service-Antrag (nur mit allowsDateRange).
+  @Field(() => Int, { nullable: true })
+  @Column('int', { name: 'max_days_per_request', nullable: true })
+  maxDaysPerRequest!: number | null;
+
   // UI-Hints
   @Field(() => String, { nullable: true })
   @Column('varchar', { length: 7, nullable: true })

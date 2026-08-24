@@ -98,6 +98,8 @@ function buildCategoryFromDefaults(
     maxDaysPerYear: def.maxDaysPerYear,
     defaultPercentage: def.defaultPercentage,
     requiresApproval: def.requiresApproval,
+    allowsDateRange: def.allowsDateRange,
+    maxDaysPerRequest: def.maxDaysPerRequest,
     color: def.color,
     iconName: def.iconName,
     sortOrder: def.sortOrder,

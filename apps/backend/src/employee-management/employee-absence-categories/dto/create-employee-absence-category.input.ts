@@ -79,6 +79,17 @@ export class CreateEmployeeAbsenceCategoryInput {
   @IsBoolean()
   requiresApproval?: boolean;
 
+  @Field(() => Boolean, { nullable: true, defaultValue: false })
+  @IsOptional()
+  @IsBoolean()
+  allowsDateRange?: boolean;
+
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  maxDaysPerRequest?: number | null;
+
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()

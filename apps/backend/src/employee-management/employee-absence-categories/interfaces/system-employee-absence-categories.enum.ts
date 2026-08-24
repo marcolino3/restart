@@ -9,6 +9,8 @@ export enum SystemEmployeeAbsenceCategory {
   MOVE = 'MOVE', // Umzug
   MILITARY_SERVICE = 'MILITARY_SERVICE', // Militärdienst
   CIVIL_SERVICE = 'CIVIL_SERVICE', // Ersatzdienst/Zivildienst
+  COMPENSATION = 'COMPENSATION', // Kompensation von Mehrstunden
+  UNPAID_LEAVE = 'UNPAID_LEAVE', // Unbezahlter Urlaub
   OTHER = 'OTHER',
 }
 

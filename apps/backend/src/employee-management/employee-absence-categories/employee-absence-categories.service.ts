@@ -118,6 +118,10 @@ export class EmployeeAbsenceCategoriesService {
     this.assertUniqueLocales(input.translations.map((t) => t.locale));
     this.assertAtLeastOneTranslation(input.translations);
     const translationsToSave = this.nonEmptyTranslations(input.translations);
+    this.assertRangeSettings({
+      allowsDateRange: input.allowsDateRange ?? false,
+      maxDaysPerRequest: input.maxDaysPerRequest ?? null,
+    });
 
     return this.dataSource.transaction(async (m) => {
       // Neue Kategorien landen am Ende der Liste
@@ -144,6 +148,8 @@ export class EmployeeAbsenceCategoriesService {
         maxDaysPerYear: input.maxDaysPerYear ?? null,
         defaultPercentage: input.defaultPercentage ?? 100,
         requiresApproval: input.requiresApproval ?? false,
+        allowsDateRange: input.allowsDateRange ?? false,
+        maxDaysPerRequest: input.maxDaysPerRequest ?? null,
         color: input.color ?? null,
         iconName: input.iconName ?? null,
         sortOrder: input.sortOrder ?? nextSortOrder,
@@ -201,6 +207,11 @@ export class EmployeeAbsenceCategoriesService {
       category.defaultPercentage = input.defaultPercentage;
     if (input.requiresApproval !== undefined)
       category.requiresApproval = input.requiresApproval;
+    if (input.allowsDateRange !== undefined)
+      category.allowsDateRange = input.allowsDateRange;
+    if (input.maxDaysPerRequest !== undefined)
+      category.maxDaysPerRequest = input.maxDaysPerRequest;
+    this.assertRangeSettings(category);
     if (input.color !== undefined) category.color = input.color;
     if (input.iconName !== undefined) category.iconName = input.iconName;
     // sortOrder wird ausschliesslich ueber reorderEmployeeAbsenceCategories
@@ -321,6 +332,18 @@ export class EmployeeAbsenceCategoriesService {
     const hasAny = translations.some((t) => t.name?.trim());
     if (!hasAny) {
       throw new BadRequestException('At least one translation is required');
+    }
+  }
+
+  /** A per-request day limit only makes sense for multi-day categories. */
+  private assertRangeSettings(c: {
+    allowsDateRange: boolean;
+    maxDaysPerRequest: number | null;
+  }): void {
+    if (!c.allowsDateRange && c.maxDaysPerRequest != null) {
+      throw new BadRequestException(
+        'maxDaysPerRequest requires allowsDateRange to be enabled.',
+      );
     }
   }
 

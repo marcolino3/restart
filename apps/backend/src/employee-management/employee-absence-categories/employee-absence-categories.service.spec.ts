@@ -132,6 +132,47 @@ describe('EmployeeAbsenceCategoriesService', () => {
       expect(translationsRepo.save).toHaveBeenCalled();
     });
 
+    it('persists the self-service range settings', async () => {
+      categoriesRepo.save.mockImplementation((v) =>
+        Promise.resolve({ id: 'cat-1', ...v }),
+      );
+      categoriesRepo.findOne.mockResolvedValue({
+        id: 'cat-1',
+        organizationId: ORG_ID,
+        translations: [{ locale: Locale.DE, name: 'Kompensation' }],
+      });
+
+      await service.create(
+        {
+          translations: [{ locale: Locale.DE, name: 'Kompensation' }],
+          allowsDateRange: true,
+          maxDaysPerRequest: 5,
+        },
+        ORG_ID,
+      );
+
+      expect(categoriesRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          allowsDateRange: true,
+          maxDaysPerRequest: 5,
+        }),
+      );
+    });
+
+    it('rejects maxDaysPerRequest without allowsDateRange', async () => {
+      await expect(
+        service.create(
+          {
+            translations: [{ locale: Locale.DE, name: 'Umzug' }],
+            allowsDateRange: false,
+            maxDaysPerRequest: 1,
+          },
+          ORG_ID,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(categoriesRepo.create).not.toHaveBeenCalled();
+    });
+
     it('rejects duplicate locales', async () => {
       await expect(
         service.create(
@@ -234,6 +275,42 @@ describe('EmployeeAbsenceCategoriesService', () => {
         expect.objectContaining({ isPaid: false }),
       );
       expect(result.isPaid).toBe(false);
+    });
+
+    it('updates the range settings', async () => {
+      categoriesRepo.findOne
+        .mockResolvedValueOnce({ ...existing, allowsDateRange: false })
+        .mockResolvedValueOnce({
+          ...existing,
+          allowsDateRange: true,
+          maxDaysPerRequest: 3,
+        });
+
+      const result = await service.update(
+        { id: 'cat-1', allowsDateRange: true, maxDaysPerRequest: 3 },
+        ORG_ID,
+      );
+
+      expect(categoriesRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          allowsDateRange: true,
+          maxDaysPerRequest: 3,
+        }),
+      );
+      expect(result.maxDaysPerRequest).toBe(3);
+    });
+
+    it('rejects turning off allowsDateRange while maxDaysPerRequest is set', async () => {
+      categoriesRepo.findOne.mockResolvedValueOnce({
+        ...existing,
+        allowsDateRange: true,
+        maxDaysPerRequest: 3,
+      });
+
+      await expect(
+        service.update({ id: 'cat-1', allowsDateRange: false }, ORG_ID),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(categoriesRepo.save).not.toHaveBeenCalled();
     });
 
     it('rejects when the category belongs to another org', async () => {
