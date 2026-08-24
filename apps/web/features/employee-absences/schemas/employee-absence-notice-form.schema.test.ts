@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { checkAbsenceNoticeDates } from "./employee-absence-notice-form.schema";
+import {
+  absenceNoticeErrorCode,
+  checkAbsenceNoticeDates,
+} from "./employee-absence-notice-form.schema";
 
 const dayOffset = (days: number) => {
   const d = new Date();
@@ -10,30 +13,42 @@ const dayOffset = (days: number) => {
 
 describe("checkAbsenceNoticeDates", () => {
   it("rejects a start date in the past for both category kinds", () => {
-    expect(checkAbsenceNoticeDates({ startDate: dayOffset(-1) }, false)).toEqual({
+    expect(
+      checkAbsenceNoticeDates({ startDate: dayOffset(-1) }, false),
+    ).toEqual({
       field: "startDate",
       code: "past",
     });
-    expect(checkAbsenceNoticeDates({ startDate: dayOffset(-1) }, true)).toEqual({
-      field: "startDate",
-      code: "past",
-    });
+    expect(checkAbsenceNoticeDates({ startDate: dayOffset(-1) }, true)).toEqual(
+      {
+        field: "startDate",
+        code: "past",
+      },
+    );
   });
 
   it("allows today and tomorrow for a notice category", () => {
-    expect(checkAbsenceNoticeDates({ startDate: dayOffset(0) }, false)).toBeNull();
-    expect(checkAbsenceNoticeDates({ startDate: dayOffset(1) }, false)).toBeNull();
+    expect(
+      checkAbsenceNoticeDates({ startDate: dayOffset(0) }, false),
+    ).toBeNull();
+    expect(
+      checkAbsenceNoticeDates({ startDate: dayOffset(1) }, false),
+    ).toBeNull();
   });
 
   it("rejects anything beyond tomorrow for a notice category", () => {
-    expect(checkAbsenceNoticeDates({ startDate: dayOffset(2) }, false)).toEqual({
-      field: "startDate",
-      code: "tooFar",
-    });
+    expect(checkAbsenceNoticeDates({ startDate: dayOffset(2) }, false)).toEqual(
+      {
+        field: "startDate",
+        code: "tooFar",
+      },
+    );
   });
 
   it("allows far future dates for a request category", () => {
-    expect(checkAbsenceNoticeDates({ startDate: dayOffset(90) }, true)).toBeNull();
+    expect(
+      checkAbsenceNoticeDates({ startDate: dayOffset(90) }, true),
+    ).toBeNull();
   });
 
   it("rejects an end date before the start date", () => {
@@ -43,5 +58,57 @@ describe("checkAbsenceNoticeDates", () => {
         true,
       ),
     ).toEqual({ field: "endDate", code: "endBeforeStart" });
+  });
+
+  it("rejects a range on a category without date ranges", () => {
+    expect(
+      checkAbsenceNoticeDates(
+        { startDate: dayOffset(10), endDate: dayOffset(11) },
+        { requiresApproval: true, allowsDateRange: false },
+      ),
+    ).toEqual({ field: "endDate", code: "singleDayOnly" });
+    expect(
+      checkAbsenceNoticeDates(
+        { startDate: dayOffset(10), endDate: dayOffset(10) },
+        { requiresApproval: true, allowsDateRange: false },
+      ),
+    ).toBeNull();
+  });
+
+  it("enforces maxDaysPerRequest inclusively", () => {
+    const rules = {
+      requiresApproval: true,
+      allowsDateRange: true,
+      maxDaysPerRequest: 2,
+    };
+    expect(
+      checkAbsenceNoticeDates(
+        { startDate: dayOffset(10), endDate: dayOffset(11) },
+        rules,
+      ),
+    ).toBeNull();
+    expect(
+      checkAbsenceNoticeDates(
+        { startDate: dayOffset(10), endDate: dayOffset(12) },
+        rules,
+      ),
+    ).toEqual({ field: "endDate", code: "tooManyDays" });
+  });
+
+  it("maps backend rejections to form error codes", () => {
+    expect(
+      absenceNoticeErrorCode("ABSENCE_YEARLY_CAP: only 0 of 3 days left"),
+    ).toEqual({ field: "endDate", code: "yearlyCap" });
+    expect(
+      absenceNoticeErrorCode(
+        "This absence category only allows single-day absences.",
+      ),
+    ).toEqual({ field: "endDate", code: "singleDayOnly" });
+    expect(
+      absenceNoticeErrorCode(
+        "This absence category allows at most 2 days per request.",
+      ),
+    ).toEqual({ field: "endDate", code: "tooManyDays" });
+    expect(absenceNoticeErrorCode("boom")).toBeNull();
   });
 });

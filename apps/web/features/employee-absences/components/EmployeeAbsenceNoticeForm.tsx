@@ -1,18 +1,26 @@
 "use client";
 import {
+  absenceNoticeDayCount,
+  absenceNoticeErrorCode,
   checkAbsenceNoticeDates,
   EmployeeAbsenceNoticeFormSchema,
   EmployeeAbsenceNoticeFormType,
 } from "../schemas/employee-absence-notice-form.schema";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
+import { DateRangePickerFormField } from "@/components/form/form-fields/DateRangePickerFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
 import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
 import { CreateButton } from "@/components/buttons/CreateButton";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
 import { createEmployeeAbsenceNoticeAction } from "../actions/create-employee-absence-notice.action";
+import {
+  getMyAbsenceCategoryQuotaAction,
+  MyAbsenceCategoryQuota,
+} from "../actions/get-my-absence-category-quota.action";
 import { toast } from "sonner";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
@@ -23,6 +31,9 @@ export interface NoticeAbsenceCategory {
   id: string;
   systemCode?: string | null;
   requiresApproval?: boolean | null;
+  allowsDateRange?: boolean | null;
+  maxDaysPerRequest?: number | null;
+  maxDaysPerYear?: number | null;
   isActive?: boolean | null;
   translations?: { locale: string; name: string }[] | null;
 }
@@ -67,7 +78,32 @@ export const EmployeeAbsenceNoticeForm = ({ absenceCategories }: Props) => {
   // Without a category the stricter rule applies, so nobody can slip a far
   // future date past the form before picking one.
   const requiresApproval = selectedCategory?.requiresApproval === true;
+  const allowsDateRange = selectedCategory?.allowsDateRange === true;
+  const rules = {
+    requiresApproval,
+    allowsDateRange,
+    maxDaysPerRequest: selectedCategory?.maxDaysPerRequest ?? null,
+  };
 
+  // Single-day categories never carry an end date.
+  useEffect(() => {
+    if (!allowsDateRange) form.setValue("endDate", undefined);
+  }, [allowsDateRange, form]);
+
+  const [quota, setQuota] = useState<MyAbsenceCategoryQuota | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setQuota(null);
+    if (!selectedCategory || selectedCategory.maxDaysPerYear == null) return;
+    getMyAbsenceCategoryQuotaAction(selectedCategory.id).then((res) => {
+      if (!cancelled && res.success) setQuota(res.data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCategory]);
+
+  const startDate = form.watch("startDate");
   const disabledDate = (date: Date) => {
     const today = startOfToday();
     if (date < today) return true;
@@ -78,10 +114,17 @@ export const EmployeeAbsenceNoticeForm = ({ absenceCategories }: Props) => {
     }
     return false;
   };
+  // Once a start is picked, days beyond the per-request maximum are blocked.
+  const disabledRangeDate = (date: Date) => {
+    if (disabledDate(date)) return true;
+    const max = rules.maxDaysPerRequest;
+    if (max == null || !startDate || date < startDate) return false;
+    return absenceNoticeDayCount(startDate, date) > max;
+  };
 
   const onSubmit = async (values: EmployeeAbsenceNoticeFormType) => {
     const parsed = EmployeeAbsenceNoticeFormSchema.parse(values);
-    const dateError = checkAbsenceNoticeDates(parsed, requiresApproval);
+    const dateError = checkAbsenceNoticeDates(parsed, rules);
     if (dateError) {
       form.setError(dateError.field, {
         message: tE(`absence.dateError.${dateError.code}`),
@@ -89,8 +132,18 @@ export const EmployeeAbsenceNoticeForm = ({ absenceCategories }: Props) => {
       return;
     }
     try {
-      const { success } = await createEmployeeAbsenceNoticeAction(values);
-      if (!success) {
+      const result = await createEmployeeAbsenceNoticeAction({
+        ...values,
+        endDate: allowsDateRange ? values.endDate : undefined,
+      });
+      if (!result.success) {
+        const mapped = absenceNoticeErrorCode(result.message);
+        if (mapped) {
+          form.setError(mapped.field, {
+            message: tE(`absence.dateError.${mapped.code}`),
+          });
+          return;
+        }
         throw new Error("createAbsenceNoticeFailed");
       }
       toast.success(
@@ -120,15 +173,41 @@ export const EmployeeAbsenceNoticeForm = ({ absenceCategories }: Props) => {
                 : tE("absence.noticeOnlyHint")}
             </p>
           )}
-          <DatePickerFormField
-            name="startDate"
-            label="startDate"
-            disabledDate={disabledDate}
-          />
-          {requiresApproval && (
+          {quota && quota.maxDaysPerYear != null && (
+            <p
+              className={
+                quota.remainingDays === 0
+                  ? "text-sm text-destructive"
+                  : "text-sm text-muted-foreground"
+              }
+            >
+              {quota.remainingDays === 0
+                ? tE("absence.quotaExhausted", {
+                    max: quota.maxDaysPerYear,
+                    periodEnd: new Date(quota.periodEnd).toLocaleDateString(
+                      locale,
+                    ),
+                  })
+                : tE("absence.quotaHint", {
+                    remaining: quota.remainingDays ?? 0,
+                    max: quota.maxDaysPerYear,
+                    periodEnd: new Date(quota.periodEnd).toLocaleDateString(
+                      locale,
+                    ),
+                  })}
+            </p>
+          )}
+          {allowsDateRange ? (
+            <DateRangePickerFormField
+              startName="startDate"
+              endName="endDate"
+              label="dateRange"
+              disabledDate={disabledRangeDate}
+            />
+          ) : (
             <DatePickerFormField
-              name="endDate"
-              label="endDate"
+              name="startDate"
+              label="startDate"
               disabledDate={disabledDate}
             />
           )}

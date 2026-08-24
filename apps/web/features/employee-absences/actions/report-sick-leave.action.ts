@@ -25,11 +25,11 @@ const ReportSickLeaveDocument = graphql(`
 /** `Date` to `YYYY-MM-DD` in local time — a sick day is a calendar day. */
 const toIsoDate = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
-    date.getDate()
+    date.getDate(),
   ).padStart(2, "0")}`;
 
 export const reportSickLeaveAction = async (
-  values: ReportSickLeaveFormType
+  values: ReportSickLeaveFormType,
 ) => {
   const client = await serverCookieGqlClient();
 
@@ -45,7 +45,7 @@ export const reportSickLeaveAction = async (
           startTime: parsed.hasStartTime ? parsed.startTime : null,
           comment: parsed.comment.trim() || null,
         },
-      }
+      },
     );
 
     return {

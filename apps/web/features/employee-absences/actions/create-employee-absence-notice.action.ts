@@ -21,7 +21,7 @@ const CreateEmployeeAbsenceNoticeDocument = graphql(`
 `);
 
 export const createEmployeeAbsenceNoticeAction = async (
-  values: EmployeeAbsenceNoticeFormType
+  values: EmployeeAbsenceNoticeFormType,
 ) => {
   const client = await serverCookieGqlClient();
 
@@ -40,12 +40,17 @@ export const createEmployeeAbsenceNoticeAction = async (
         CreateEmployeeAbsenceNoticeDocument,
         {
           createEmployeeAbsenceInput: parsedValues,
-        }
+        },
       );
 
     return { success: true, data: createEmployeeAbsenceNotice.id };
   } catch (error) {
     console.log(error);
-    return { success: false };
+    // Surface the backend rule that rejected the request so the form can map
+    // it to a field error (yearly cap, single-day category, per-request max).
+    const message =
+      (error as { response?: { errors?: { message?: string }[] } })?.response
+        ?.errors?.[0]?.message ?? null;
+    return { success: false, message };
   }
 };
