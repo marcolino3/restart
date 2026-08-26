@@ -57,7 +57,6 @@ export function createAbsenceCategoryFormSchema(messages: {
         .regex(/^#[0-9A-Fa-f]{6}$/, "Hex like #RRGGBB")
         .nullable(),
       iconName: z.string().trim().max(64).nullable(),
-      sortOrder: requiredInt.pipe(z.number().int().min(0)),
     })
     .superRefine((data, ctx) => {
       if (!data.allowsDateRange && data.maxDaysPerRequest != null) {
@@ -116,5 +115,4 @@ export const ABSENCE_CATEGORY_FORM_DEFAULTS: AbsenceCategoryFormInput = {
   requiresApproval: false,
   color: null,
   iconName: null,
-  sortOrder: 0,
 };

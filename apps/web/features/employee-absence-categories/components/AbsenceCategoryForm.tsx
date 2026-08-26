@@ -38,7 +38,7 @@ import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
 import { RadioCardFormField } from "@/components/form/form-fields/RadioCardFormField";
 import { SwitchTileFormField } from "@/components/form/form-fields/SwitchTileFormField";
-import { ColorPickerFormField } from "@/components/form/form-fields/ColorPickerFormField";
+import { NamedColorPickerFormField } from "@/components/form/form-fields/NamedColorPickerFormField";
 import { NumberFormField } from "@/components/form/form-fields/NumberFormField";
 import { handleAction } from "@/lib/actions/handle-action";
 import { ROUTES } from "@/constants/routes";
@@ -96,6 +96,7 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
   const watched = form.watch();
   const allowsDateRange = watched.allowsDateRange;
   const requiresCertificate = watched.requiresCertificate;
+  const requiresApproval = watched.requiresApproval;
   const syncToCalendar = watched.syncToCalendar;
   const filledLocales = LOCALES.filter((_, idx) =>
     translationHasContent(watched, idx),
@@ -307,8 +308,30 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
                 <CardDescription>{t("behaviorSubtitle")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <SectionLabel>{t("sectionBasics")}</SectionLabel>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <NumberFormField
+                    name="defaultPercentage"
+                    label="defaultPercentageLabel"
+                    description="defaultPercentageHelp"
+                    min={1}
+                    max={100}
+                    nullable={false}
+                    namespace="AbsenceCategories"
+                  />
+                  <NumberFormField
+                    name="maxDaysPerYear"
+                    label="maxDaysPerYearLabel"
+                    description="maxDaysPerYearHelp"
+                    placeholder={t("unlimited")}
+                    min={1}
+                    max={365}
+                    namespace="AbsenceCategories"
+                  />
+                </div>
+
                 <SectionLabel>{t("sectionAccounting")}</SectionLabel>
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(14rem,1fr))] gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <SwitchTileFormField
                     name="countsAsWorkTime"
                     label="countsAsWorkTimeLabel"
@@ -336,8 +359,19 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
                     description="defaultIsVacationCapableHelp"
                     icon={<CalendarRange />}
                     namespace="AbsenceCategories"
-                  />
+                  >
+                    <NumberFormField
+                      name="reducesVacationEntitlementAfterDays"
+                      label="reducesVacationEntitlementAfterDaysLabel"
+                      description="reducesVacationEntitlementAfterDaysHelp"
+                      placeholder={t("noReduction")}
+                      min={1}
+                      max={365}
+                      namespace="AbsenceCategories"
+                    />
+                  </SwitchTileFormField>
                 </div>
+
                 <SectionLabel>{t("sectionRecording")}</SectionLabel>
                 <div className="space-y-2">
                   <p className="text-sm font-semibold">
@@ -353,96 +387,64 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
                     }))}
                   />
                 </div>
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(14rem,1fr))] gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <SwitchTileFormField
                     name="requiresApproval"
                     label="requiresApprovalLabel"
                     description="requiresApprovalHelp"
                     icon={<ShieldCheck />}
                     namespace="AbsenceCategories"
-                  />
+                  >
+                    {!requiresApproval && (
+                      <NumberFormField
+                        name="maxDaysAhead"
+                        label="maxDaysAheadLabel"
+                        description="maxDaysAheadHelp"
+                        placeholder={t("unlimited")}
+                        min={0}
+                        max={365}
+                        namespace="AbsenceCategories"
+                      />
+                    )}
+                  </SwitchTileFormField>
                   <SwitchTileFormField
                     name="allowsDateRange"
                     label="allowsDateRangeLabel"
                     description="allowsDateRangeHelp"
                     icon={<ArrowRight />}
                     namespace="AbsenceCategories"
-                  />
+                  >
+                    {allowsDateRange && (
+                      <NumberFormField
+                        name="maxDaysPerRequest"
+                        label="maxDaysPerRequestLabel"
+                        description="maxDaysPerRequestHelp"
+                        placeholder={t("unlimited")}
+                        min={1}
+                        max={365}
+                        namespace="AbsenceCategories"
+                      />
+                    )}
+                  </SwitchTileFormField>
                   <SwitchTileFormField
                     name="requiresCertificate"
                     label="requiresCertificateLabel"
                     description="requiresCertificateHelp"
                     icon={<Paperclip />}
                     namespace="AbsenceCategories"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Limits */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("limitsTitle")}</CardTitle>
-                <CardDescription>{t("limitsSubtitle")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-4">
-                  <NumberFormField
-                    name="defaultPercentage"
-                    label="defaultPercentageLabel"
-                    description="defaultPercentageHelp"
-                    min={1}
-                    max={100}
-                    nullable={false}
-                    namespace="AbsenceCategories"
-                  />
-                  <NumberFormField
-                    name="maxDaysPerYear"
-                    label="maxDaysPerYearLabel"
-                    description="maxDaysPerYearHelp"
-                    placeholder={t("unlimited")}
-                    min={1}
-                    max={365}
-                    namespace="AbsenceCategories"
-                  />
-                  <NumberFormField
-                    name="maxDaysAhead"
-                    label="maxDaysAheadLabel"
-                    description="maxDaysAheadHelp"
-                    placeholder={t("unlimited")}
-                    min={0}
-                    max={365}
-                    namespace="AbsenceCategories"
-                  />
-                  <NumberFormField
-                    name="maxDaysPerRequest"
-                    label="maxDaysPerRequestLabel"
-                    description="maxDaysPerRequestHelp"
-                    placeholder={t("unlimited")}
-                    min={1}
-                    max={365}
-                    disabled={!allowsDateRange}
-                    namespace="AbsenceCategories"
-                  />
-                  <NumberFormField
-                    name="certificateRequiredFromDay"
-                    label="certificateRequiredFromDayLabel"
-                    description="certificateRequiredFromDayHelp"
-                    placeholder="—"
-                    min={1}
-                    max={90}
-                    disabled={!requiresCertificate}
-                    namespace="AbsenceCategories"
-                  />
-                  <NumberFormField
-                    name="reducesVacationEntitlementAfterDays"
-                    label="reducesVacationEntitlementAfterDaysLabel"
-                    description="reducesVacationEntitlementAfterDaysHelp"
-                    placeholder={t("noReduction")}
-                    min={1}
-                    max={365}
-                    namespace="AbsenceCategories"
-                  />
+                  >
+                    {requiresCertificate && (
+                      <NumberFormField
+                        name="certificateRequiredFromDay"
+                        label="certificateRequiredFromDayLabel"
+                        description="certificateRequiredFromDayHelp"
+                        placeholder="—"
+                        min={1}
+                        max={90}
+                        namespace="AbsenceCategories"
+                      />
+                    )}
+                  </SwitchTileFormField>
                 </div>
               </CardContent>
             </Card>
@@ -501,7 +503,7 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
                 <CardDescription>{t("uiSubtitle")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <ColorPickerFormField
+                <NamedColorPickerFormField
                   name="color"
                   label="colorLabel"
                   namespace="AbsenceCategories"
@@ -512,9 +514,6 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
                   description="iconNameHelp"
                   namespace="AbsenceCategories"
                 />
-                <p className="text-muted-foreground text-xs">
-                  {t("sortOrderMovedToList")}
-                </p>
               </CardContent>
             </Card>
 
@@ -692,6 +691,5 @@ function mapInitialToFormValues(
     iconName: item.iconName,
     syncToCalendar: item.syncToCalendar,
     calendarTitleTemplate: item.calendarTitleTemplate,
-    sortOrder: item.sortOrder,
   };
 }

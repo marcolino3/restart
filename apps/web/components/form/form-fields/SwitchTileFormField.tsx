@@ -22,6 +22,8 @@ interface Props {
   icon?: ReactNode;
   disabled?: boolean;
   className?: string;
+  /** Dependent fields rendered below the help text, separated by a rule. */
+  children?: ReactNode;
   /** i18n namespace for `label` + `description`. Default `"Common"`. */
   namespace?: string;
 }
@@ -38,6 +40,7 @@ export const SwitchTileFormField = ({
   disabled = false,
   className,
   namespace = "Common",
+  children,
 }: Props) => {
   const { control } = useFormContext();
   const t = useTranslations(namespace);
@@ -77,6 +80,9 @@ export const SwitchTileFormField = ({
             <FormDescription className="text-xs leading-snug">
               {t(description)}
             </FormDescription>
+          )}
+          {children && (
+            <div className="mt-1 space-y-2 border-t pt-3">{children}</div>
           )}
         </FormItem>
       )}
