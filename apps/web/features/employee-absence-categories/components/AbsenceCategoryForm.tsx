@@ -31,7 +31,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { IconComboboxFormField } from "@/components/form/form-fields/IconComboboxFormField";
 import { isCuratedIconName } from "@/components/form/form-fields/IconComboboxFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
@@ -230,11 +230,8 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
         {isSystem && (
           <Alert>
             <Lock className="h-4 w-4" />
-            <AlertDescription>
-              <span className="font-medium">{t("systemBadge")}</span>
-              {" — "}
-              {t("systemCategoryNote")}
-            </AlertDescription>
+            <AlertTitle>{t("systemLocked")}</AlertTitle>
+            <AlertDescription>{t("systemCategoryNote")}</AlertDescription>
           </Alert>
         )}
 

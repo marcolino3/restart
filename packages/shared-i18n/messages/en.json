@@ -13,7 +13,7 @@
     "colLimits": "Limits",
     "colActive": "Active",
     "systemLocked": "System category — cannot be deleted",
-    "systemCategoryNote": "cannot be deleted. Behaviour, limits, translations and display can be adjusted.",
+    "systemCategoryNote": "Behaviour, limits, translations and display can be adjusted.",
     "translationsTitle": "Translations",
     "localeHint": "At least one language is required. Additional languages are optional.",
     "atLeastOneNameRequired": "Please enter a label in at least one language.",

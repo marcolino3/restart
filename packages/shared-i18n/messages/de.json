@@ -13,7 +13,7 @@
     "colLimits": "Limits",
     "colActive": "Aktiv",
     "systemLocked": "System-Kategorie — nicht löschbar",
-    "systemCategoryNote": "nicht löschbar. Verhalten, Limits, Übersetzungen und Anzeige lassen sich anpassen.",
+    "systemCategoryNote": "Verhalten, Limits, Übersetzungen und Anzeige lassen sich anpassen.",
     "translationsTitle": "Übersetzungen",
     "localeHint": "Mindestens eine Sprache ist Pflicht. Weitere Sprachen sind optional.",
     "atLeastOneNameRequired": "Bitte mindestens eine Bezeichnung in einer Sprache eingeben.",
