@@ -51,8 +51,8 @@
     "limitDateRange": "multi-day",
     "certificateRequiredFromDayLabel": "Certificate required from day",
     "certificateRequiredFromDayHelp": "Swiss standard for sickness: from day 3.",
-    "reducesVacationEntitlementAfterDaysLabel": "Vacation reduction after days",
-    "reducesVacationEntitlementAfterDaysHelp": "CO Art. 329b — reduces the vacation entitlement from this absence duration on.",
+    "reducesVacationEntitlementAfterDaysLabel": "Grace period before vacation reduction (days)",
+    "reducesVacationEntitlementAfterDaysHelp": "CO Art. 329b: 30 for non-culpable absence (illness, accident), 60 for pregnancy, 0 for culpable absence. Empty = no reduction.",
     "uiTitle": "Display",
     "colorLabel": "Color",
     "iconNameLabel": "Icon",
@@ -128,7 +128,10 @@
     "previewSampleTime": "Mon 14 July · 14:00–15:30",
     "maxDaysAheadLabel": "Max. days ahead",
     "maxDaysAheadHelp": "How far in advance entries are allowed: 0 = today only, 1 = today or tomorrow. Empty = unlimited.",
-    "sectionBasics": "Basics"
+    "sectionBasics": "Basics",
+    "reductionRuleTitle": "How the reduction works (CO Art. 329b)",
+    "reductionRuleText": "Absence days of this category are accumulated per accounting year (partial absences pro rata). For every full month (30 days) beyond the grace period the annual entitlement is reduced by 1/12, rounded to half days. Maternity, paternity, care and adoption leave never reduce.",
+    "reductionRuleExample": "Example: 25 vacation days, 75 days ill, grace period 30: 45 days beyond the grace period = 1 full month = 25 / 12 ≈ 2.0 days reduction."
   },
   "AccessReview": {
     "tab": "Access",
@@ -3826,7 +3829,8 @@
     "noteOptional": "Note (optional)",
     "notePlaceholder": "What was this time for?",
     "discard": "Discard",
-    "notYetAvailable": "Not available yet"
+    "notYetAvailable": "Not available yet",
+    "vacationReduction": "of which reduction CO Art. 329b: −{days}"
   },
   "Timezones": {
     "Europe/Berlin": "Berlin (CET)",

@@ -49,7 +49,7 @@ export class CreateEmployeeAbsenceCategoryInput {
   @Field(() => Int, { nullable: true })
   @IsOptional()
   @IsInt()
-  @Min(1)
+  @Min(0)
   reducesVacationEntitlementAfterDays?: number;
 
   @Field(() => Boolean, { nullable: true })

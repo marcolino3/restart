@@ -51,8 +51,8 @@
     "limitDateRange": "mehrtägig",
     "certificateRequiredFromDayLabel": "Nachweis ab Tag",
     "certificateRequiredFromDayHelp": "CH-Standard bei Krankheit: ab Tag 3.",
-    "reducesVacationEntitlementAfterDaysLabel": "Ferienkürzung ab Tagen",
-    "reducesVacationEntitlementAfterDaysHelp": "OR Art. 329b — kürzt den Ferienanspruch ab dieser Abwesenheitsdauer.",
+    "reducesVacationEntitlementAfterDaysLabel": "Schonfrist vor Ferienkürzung (Tage)",
+    "reducesVacationEntitlementAfterDaysHelp": "OR Art. 329b: 30 bei unverschuldeter Verhinderung (Krankheit, Unfall), 60 bei Schwangerschaft, 0 bei verschuldeter Verhinderung. Leer = keine Kürzung.",
     "uiTitle": "Anzeige",
     "colorLabel": "Farbe",
     "iconNameLabel": "Icon",
@@ -128,7 +128,10 @@
     "previewSampleTime": "Mo, 14. Juli · 14:00–15:30",
     "maxDaysAheadLabel": "Vorlauf max. Tage",
     "maxDaysAheadHelp": "Wie weit im Voraus erfasst werden darf: 0 = nur heute, 1 = heute oder morgen. Leer = beliebig.",
-    "sectionBasics": "Grundwerte"
+    "sectionBasics": "Grundwerte",
+    "reductionRuleTitle": "So wird gekürzt (OR Art. 329b)",
+    "reductionRuleText": "Abwesenheitstage dieser Kategorie werden pro Abrechnungsjahr kumuliert (Teilabsenzen anteilig). Für jeden vollen Monat (30 Tage) über der Schonfrist wird der Jahresanspruch um 1/12 gekürzt, gerundet auf halbe Tage. Mutterschafts-, Vaterschafts-, Betreuungs- und Adoptionsurlaub kürzen nie.",
+    "reductionRuleExample": "Beispiel: 25 Ferientage, 75 Tage krank, Schonfrist 30: 45 Tage über der Schonfrist = 1 voller Monat = 25 / 12 ≈ 2.0 Tage Kürzung."
   },
   "AccessReview": {
     "tab": "Zugriffe",
@@ -3826,7 +3829,8 @@
     "noteOptional": "Notiz (optional)",
     "notePlaceholder": "Wofür war diese Zeit?",
     "discard": "Verwerfen",
-    "notYetAvailable": "Noch nicht verfügbar"
+    "notYetAvailable": "Noch nicht verfügbar",
+    "vacationReduction": "davon Kürzung OR Art. 329b: −{days}"
   },
   "Timezones": {
     "Europe/Berlin": "Berlin (MEZ)",

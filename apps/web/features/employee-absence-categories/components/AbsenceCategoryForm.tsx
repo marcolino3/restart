@@ -17,6 +17,7 @@ import {
   Lock,
   Paperclip,
   ShieldCheck,
+  Info,
 } from "lucide-react";
 import { DynamicIcon } from "lucide-react/dynamic";
 import { toast } from "sonner";
@@ -59,12 +60,20 @@ interface Props {
   initial?: AbsenceCategoryItem;
   /** Page heading, rendered next to the form actions. */
   title: string;
+  /** ISO country of the active organization; OR Art. 329b only applies to CH. */
+  orgCountry?: string | null;
 }
 
 const LOCALES: AbsenceCategoryLocale[] = ["DE", "FR", "IT", "EN"];
 const PLACEHOLDERS = ["{firstName}", "{lastName}", "{category}"] as const;
 
-export function AbsenceCategoryForm({ mode, initial, title }: Props) {
+export function AbsenceCategoryForm({
+  mode,
+  initial,
+  title,
+  orgCountry,
+}: Props) {
+  const showVacationReduction = orgCountry === "CH";
   const t = useTranslations("AbsenceCategories");
   const router = useRouter();
   const locale = useLocale();
@@ -357,15 +366,29 @@ export function AbsenceCategoryForm({ mode, initial, title }: Props) {
                     icon={<CalendarRange />}
                     namespace="AbsenceCategories"
                   >
-                    <NumberFormField
-                      name="reducesVacationEntitlementAfterDays"
-                      label="reducesVacationEntitlementAfterDaysLabel"
-                      description="reducesVacationEntitlementAfterDaysHelp"
-                      placeholder={t("noReduction")}
-                      min={1}
-                      max={365}
-                      namespace="AbsenceCategories"
-                    />
+                    {showVacationReduction && (
+                      <>
+                        <NumberFormField
+                          name="reducesVacationEntitlementAfterDays"
+                          label="reducesVacationEntitlementAfterDaysLabel"
+                          description="reducesVacationEntitlementAfterDaysHelp"
+                          placeholder={t("noReduction")}
+                          min={0}
+                          max={365}
+                          namespace="AbsenceCategories"
+                        />
+                        <div className="bg-muted/50 text-muted-foreground flex gap-2 rounded-md p-2 text-xs">
+                          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                          <div className="space-y-1">
+                            <p className="text-foreground font-medium">
+                              {t("reductionRuleTitle")}
+                            </p>
+                            <p>{t("reductionRuleText")}</p>
+                            <p>{t("reductionRuleExample")}</p>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </SwitchTileFormField>
                 </div>
 

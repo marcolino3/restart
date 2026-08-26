@@ -5,6 +5,8 @@ import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { EmployeeContract } from '@/employee-management/employee-contracts/entities/employee-contract.entity';
 import { EmployeePeriodOpeningBalance } from '@/employee-management/time-tracking-periods/entities/employee-period-opening-balance.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
+import { EmployeeAbsence } from '@/employee-management/employee-absences/entities/employee-absence.entity';
+import { Organization } from '@/organizations/entities/organization.entity';
 
 /**
  * Fokus-Test für getListNetBalanceMinutes: Access-Scoping (Admin/Lead/keiner)
@@ -30,6 +32,8 @@ describe('WorkTimeBalanceService.getListNetBalanceMinutes', () => {
       {} as Repository<EmployeeContract>,
       {} as Repository<EmployeePeriodOpeningBalance>,
       {} as Repository<Membership>,
+      {} as Repository<EmployeeAbsence>,
+      {} as Repository<Organization>,
       access,
     );
   });

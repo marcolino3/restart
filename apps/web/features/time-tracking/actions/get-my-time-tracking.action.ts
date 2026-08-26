@@ -44,6 +44,7 @@ const MyTimeTrackingDocument = gql`
       entitlementDays
       openingDays
       usedDays
+      reductionDays
       remainingDays
     }
     myMissingRecordDays(from: $from, to: $to)

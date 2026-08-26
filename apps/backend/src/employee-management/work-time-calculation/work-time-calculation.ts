@@ -144,6 +144,40 @@ export function proRataEntitlementDays(
   return Math.round(entitlement * 2) / 2;
 }
 
+/** Absenz, soweit für die Ferienkürzung (OR Art. 329b) relevant. */
+export interface VacationReductionAbsence {
+  /** Kalendertage der Verhinderung, bereits mit dem Abwesenheitsgrad gewichtet. */
+  days: number;
+  /** Schonfrist in Tagen (30 = unverschuldet, 60 = Schwangerschaft, 0 = verschuldet). */
+  gracePeriodDays: number;
+}
+
+const REDUCTION_MONTH_DAYS = 30;
+
+/**
+ * Ferienkürzung nach OR Art. 329b: Verhinderungstage werden pro Schonfrist
+ * kumuliert; für jeden vollen Monat (30 Tage) über der Schonfrist wird der
+ * Jahresanspruch um 1/12 gekürzt. Auf halbe Tage gerundet.
+ */
+export function vacationReductionDays(
+  entitlementDays: number,
+  absences: VacationReductionAbsence[],
+): number {
+  const byGrace = new Map<number, number>();
+  for (const a of absences) {
+    byGrace.set(
+      a.gracePeriodDays,
+      (byGrace.get(a.gracePeriodDays) ?? 0) + a.days,
+    );
+  }
+  let months = 0;
+  for (const [grace, days] of byGrace) {
+    months += Math.floor(Math.max(0, days - grace) / REDUCTION_MONTH_DAYS);
+  }
+  if (months === 0 || entitlementDays <= 0) return 0;
+  return Math.round(((months * entitlementDays) / 12) * 2) / 2;
+}
+
 /** Monat-Tag-Teil eines ISO-Datums (`MM-DD`). */
 export function monthDay(isoDate: string): string {
   return isoDate.slice(5, 10);
