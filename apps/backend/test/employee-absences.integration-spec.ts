@@ -632,7 +632,7 @@ describe('EmployeeAbsencesService (Integration)', () => {
 
     afterEach(() => {
       const periods = module.get(TimeTrackingPeriodsService);
-      periods.getAnchor.mockResolvedValue({ month: 1, day: 1 });
+      (periods.getAnchor as jest.Mock).mockResolvedValue({ month: 1, day: 1 });
     });
 
     it('rejects an end date on a single-day category', async () => {
@@ -697,7 +697,7 @@ describe('EmployeeAbsencesService (Integration)', () => {
 
     it('resets the cap at the org anchor day', async () => {
       const periods = module.get(TimeTrackingPeriodsService);
-      periods.getAnchor.mockResolvedValue({ month: 8, day: 1 });
+      (periods.getAnchor as jest.Mock).mockResolvedValue({ month: 8, day: 1 });
       const cat = await trainingCategory();
       await categoryRepo.update(cat.id, { maxDaysPerYear: 2 });
       const year = new Date().getUTCFullYear() + 1;
