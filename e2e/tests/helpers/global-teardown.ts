@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Client } from 'pg'
-import { E2E_ORG_PREFIX } from './fixture-naming'
+import { E2E_NAME_PREFIX, E2E_ORG_PREFIX } from './fixture-naming'
 
 /**
  * Deletes everything the E2E fixtures created, so a test run leaves the
@@ -22,12 +22,36 @@ import { E2E_ORG_PREFIX } from './fixture-naming'
  * Also removes the better-auth accounts + users the fixtures signed up
  * (`e2e.*@example.com`), which live outside the organization foreign-key
  * graph and would otherwise survive.
+ *
+ * Specs mostly create their data inside the seeded local organization rather
+ * than a fixture org (absence categories, school classes, teams, holidays,
+ * company vacations, …). Those rows are found by the `E2E` name prefix
+ * (fixture-naming.ts) in every table that has a `name`/`title`/`note`/`label`
+ * column, including the `*_translations` tables whose parent carries no name
+ * of its own.
  */
 const FIXTURE_EMAIL_PATTERN = 'e2e.%@example.com'
 // Absences the specs create carry an "E2E …" note. They usually live in the
 // seeded local organization (not a fixture org), and the app only soft-deletes
-// them (isActive=false), so they would pile up run after run.
-const FIXTURE_ABSENCE_NOTE_PATTERN = 'E2E%'
+// them (isActive=false), so they would pile up run after run. Matched anywhere
+// in the note, because `reportSickLeave` prefixes the comment with the date.
+const FIXTURE_ABSENCE_NOTE_PATTERN = '%E2E%'
+// Columns the generic prefix sweep looks at.
+const NAME_COLUMNS = ['name', 'title', 'note', 'label', 'firstName', 'first_name']
+// Tables the generic sweep must never touch: system/seed tables, and the ones
+// with their own, narrower cleanup (organizations, users).
+const SWEEP_EXCLUDED_TABLES = new Set([
+  'organizations',
+  'typeorm_migrations',
+  'permissions',
+  'country',
+  'user',
+  'users',
+  'session',
+  'account',
+  'verification',
+  'pubsub_payloads',
+])
 
 /**
  * Reads the DB_* connection settings from the backend's .env when they are
@@ -80,41 +104,162 @@ function dbConfig() {
  * at one of `ids`, whatever the constraint's delete rule is. Postgres only
  * cascades where a constraint says so, and most of this schema's foreign keys
  * are NO ACTION or RESTRICT, so the dependents have to be removed explicitly.
- * Repeats until a pass deletes nothing, which resolves chains where one
- * dependent references another.
+ *
+ * Recurses into the dependents first (a curriculum owns levels, which own
+ * nodes, which lesson records point at), including self-references such as
+ * `curriculum_nodes.parent_id`, so an arbitrarily deep chain is removed from
+ * the leaves upwards. Tables without a uuid `id` (pure join tables) are
+ * deleted directly — nothing can reference them.
  */
 async function deleteDependents(
   client: Client,
   parentTable: string,
   ids: string[],
+  depth = 0,
 ): Promise<number> {
-  const fks = await client.query<{ table_name: string; column_name: string }>(
-    `SELECT DISTINCT tc.table_name, kcu.column_name
+  if (ids.length === 0 || depth > 12) return 0
+
+  const fks = await client.query<{
+    table_name: string
+    column_name: string
+    has_uuid_id: boolean
+  }>(
+    `SELECT DISTINCT tc.table_name, kcu.column_name,
+            EXISTS (
+              SELECT 1 FROM information_schema.columns c
+               WHERE c.table_schema = 'public'
+                 AND c.table_name = tc.table_name
+                 AND c.column_name = 'id'
+                 AND c.data_type = 'uuid'
+            ) AS has_uuid_id
        FROM information_schema.table_constraints tc
        JOIN information_schema.key_column_usage kcu
          ON kcu.constraint_name = tc.constraint_name
        JOIN information_schema.constraint_column_usage ccu
          ON ccu.constraint_name = tc.constraint_name
       WHERE tc.constraint_type = 'FOREIGN KEY'
-        AND ccu.table_name = $1
-        AND tc.table_name <> $1`,
+        AND tc.table_schema = 'public'
+        AND ccu.table_name = $1`,
     [parentTable],
   )
 
   let deleted = 0
-  for (let pass = 0; pass < 10; pass++) {
-    let inPass = 0
-    for (const { table_name, column_name } of fks.rows) {
-      const res = await client.query(
-        `DELETE FROM "${table_name}" WHERE "${column_name}" = ANY($1::uuid[])`,
+  for (const { table_name, column_name, has_uuid_id } of fks.rows) {
+    if (has_uuid_id) {
+      const children = await client.query<{ id: string }>(
+        `SELECT id FROM "${table_name}"
+          WHERE "${column_name}" = ANY($1::uuid[])
+            AND NOT (id = ANY($1::uuid[]))`,
         [ids],
       )
-      inPass += res.rowCount ?? 0
+      const childIds = children.rows.map((r) => r.id)
+      if (childIds.length === 0) continue
+      deleted += await deleteDependents(client, table_name, childIds, depth + 1)
     }
-    deleted += inPass
-    if (inPass === 0) break
+    const res = await client.query(
+      `DELETE FROM "${table_name}" WHERE "${column_name}" = ANY($1::uuid[])`,
+      [ids],
+    )
+    deleted += res.rowCount ?? 0
   }
   return deleted
+}
+
+/**
+ * Deletes every row whose `name`/`title`/`note`/`label` starts with the E2E
+ * prefix, in whatever table that column lives. Rows in `*_translations`
+ * tables are resolved to their parent (the entity that actually owns the
+ * name) and the parent is deleted, which cascades to all translations.
+ * Dependents are removed through `deleteDependents`, so a spec-created
+ * category with absences attached, or a class with enrollments, goes as one.
+ */
+async function sweepByNamePrefix(
+  client: Client,
+): Promise<{ rows: number; tables: string[] }> {
+  const columns = await client.query<{ table_name: string; column_name: string }>(
+    `SELECT c.table_name, c.column_name
+       FROM information_schema.columns c
+      WHERE c.table_schema = 'public'
+        AND c.column_name = ANY($1::text[])
+        AND c.data_type IN ('character varying', 'text')
+        AND EXISTS (
+          SELECT 1 FROM information_schema.columns i
+           WHERE i.table_schema = 'public'
+             AND i.table_name = c.table_name
+             AND i.column_name = 'id'
+             AND i.data_type = 'uuid'
+        )
+      ORDER BY c.table_name, c.column_name`,
+    [NAME_COLUMNS],
+  )
+
+  const pattern = `${E2E_NAME_PREFIX}%`
+  // table -> ids to delete, aggregated across name columns and translations
+  const victims = new Map<string, Set<string>>()
+  const add = (table: string, ids: string[]) => {
+    if (ids.length === 0) return
+    const set = victims.get(table) ?? new Set<string>()
+    for (const id of ids) set.add(id)
+    victims.set(table, set)
+  }
+
+  for (const { table_name, column_name } of columns.rows) {
+    if (SWEEP_EXCLUDED_TABLES.has(table_name)) continue
+
+    if (table_name.endsWith('_translations')) {
+      // Resolve to the parent through the translation table's foreign key.
+      const fk = await client.query<{ column_name: string; parent: string }>(
+        `SELECT kcu.column_name, ccu.table_name AS parent
+           FROM information_schema.table_constraints tc
+           JOIN information_schema.key_column_usage kcu
+             ON kcu.constraint_name = tc.constraint_name
+           JOIN information_schema.constraint_column_usage ccu
+             ON ccu.constraint_name = tc.constraint_name
+          WHERE tc.constraint_type = 'FOREIGN KEY'
+            AND tc.table_name = $1
+            AND ccu.table_name NOT IN ('organizations')
+          LIMIT 1`,
+        [table_name],
+      )
+      const link = fk.rows[0]
+      if (!link || SWEEP_EXCLUDED_TABLES.has(link.parent)) continue
+      const parents = await client.query<{ id: string }>(
+        `SELECT DISTINCT "${link.column_name}" AS id FROM "${table_name}"
+          WHERE "${column_name}" LIKE $1`,
+        [pattern],
+      )
+      add(
+        link.parent,
+        parents.rows.map((r) => r.id),
+      )
+      continue
+    }
+
+    const rows = await client.query<{ id: string }>(
+      `SELECT id FROM "${table_name}" WHERE "${column_name}" LIKE $1`,
+      [pattern],
+    )
+    add(
+      table_name,
+      rows.rows.map((r) => r.id),
+    )
+  }
+
+  let rows = 0
+  const tables: string[] = []
+  for (const [table, idSet] of victims) {
+    const ids = [...idSet]
+    await deleteDependents(client, table, ids)
+    const res = await client.query(
+      `DELETE FROM "${table}" WHERE id = ANY($1::uuid[])`,
+      [ids],
+    )
+    if ((res.rowCount ?? 0) > 0) {
+      rows += res.rowCount ?? 0
+      tables.push(`${table}(${res.rowCount})`)
+    }
+  }
+  return { rows, tables }
 }
 
 export default async function globalTeardown(): Promise<void> {
@@ -162,6 +307,15 @@ export default async function globalTeardown(): Promise<void> {
       // eslint-disable-next-line no-console
       console.log(
         `[global-teardown] removed ${orgIds.length} fixture organization(s) and ${deletedRows} dependent row(s)`,
+      )
+    }
+
+    // Everything the specs named with the E2E prefix, in whatever table.
+    const swept = await sweepByNamePrefix(client)
+    if (swept.rows > 0) {
+      // eslint-disable-next-line no-console
+      console.log(
+        `[global-teardown] swept ${swept.rows} E2E row(s) across ${swept.tables.length} table(s): ${swept.tables.join(', ')}`,
       )
     }
 
@@ -213,6 +367,24 @@ export default async function globalTeardown(): Promise<void> {
       // eslint-disable-next-line no-console
       console.log(
         `[global-teardown] removed ${memberships.rowCount} fixture membership(s) from non-fixture organizations`,
+      )
+    }
+
+    // `employees` is a bare satellite of `memberships` (one-to-one, owned by
+    // the membership, no org/user of its own). Deleting a fixture membership
+    // — here or via the org sweep — leaves its employee row behind, unreachable
+    // by the app. Such orphans are never legitimate, so remove them all.
+    const orphanEmployees = await client.query<{ id: string }>(
+      `SELECT e.id FROM employees e
+        WHERE NOT EXISTS (SELECT 1 FROM memberships m WHERE m.employee_id = e.id)`,
+    )
+    if (orphanEmployees.rows.length > 0) {
+      const ids = orphanEmployees.rows.map((r) => r.id)
+      await deleteDependents(client, 'employees', ids)
+      await client.query('DELETE FROM employees WHERE id = ANY($1::uuid[])', [ids])
+      // eslint-disable-next-line no-console
+      console.log(
+        `[global-teardown] removed ${ids.length} orphaned employee row(s) without membership`,
       )
     }
 
