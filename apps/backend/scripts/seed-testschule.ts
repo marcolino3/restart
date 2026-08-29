@@ -54,6 +54,11 @@ function pickInRange(
   return Math.round(min + lessonRand(lessonId, salt) * (max - min));
 }
 import { hashPassword } from '@better-auth/utils/password';
+import {
+  ensureStaffUser,
+  seedCurriculaFromXlsx,
+  seedLargeSchool,
+} from './seed-testschule-large';
 
 const ORG_NAME = 'Testschule';
 const ORG_SUBDOMAIN = 'testschule';
@@ -1662,118 +1667,19 @@ async function main() {
   }
   console.log(`✓ School classes (+${NEW_CLASSES.length})`);
 
+  // -------- 5b. Curriculum import (Excel → CurriculaImportService) --------
+  // Must run before section 9 (lesson records) — the base install has no
+  // curriculum at all.
+  await seedCurriculaFromXlsx(app, c, ORG_ID);
+
   // -------- 6. Test users (better-auth + app users + membership + employee) --------
   const pwHash = await hashPassword(PW_PLAIN);
   const teacherEmployeeIds: string[] = [];
 
   for (const u of USERS) {
-    // Skip if email already exists in user_emails
-    const { rows: existingEmail } = await c.query<{
-      id: string;
-      user_id: string;
-    }>(`SELECT id, user_id FROM user_emails WHERE email = $1`, [u.email]);
-
-    let appUserId: string;
-    if (existingEmail[0]) {
-      appUserId = existingEmail[0].user_id;
-      console.log(`  · ${u.email} already exists — skipping`);
-      // still try to ensure membership / role / employee linkage below
-    } else {
-      // 6a. App users
-      appUserId = randomUUID();
-      await c.query(
-        `INSERT INTO users (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
-              first_name, last_name, is_super_admin)
-         VALUES ($1, 1, true, false, now(), now(), $2, $3, false)`,
-        [appUserId, u.firstName, u.lastName],
-      );
-      // 6b. App user_emails
-      await c.query(
-        `INSERT INTO user_emails (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
-              user_id, email, password_hash, is_primary, is_verified)
-         VALUES ($1, 1, true, false, now(), now(), $2, $3, $4, true, true)`,
-        [randomUUID(), appUserId, u.email, pwHash],
-      );
-    }
-
-    // 6c. better-auth user + account (idempotent)
-    const { rows: existingBa } = await c.query<{ id: string }>(
-      `SELECT id FROM "user" WHERE email = $1`,
-      [u.email],
-    );
-    let baUserId: string;
-    if (existingBa[0]) {
-      baUserId = existingBa[0].id;
-    } else {
-      baUserId = baId(32);
-      await c.query(
-        `INSERT INTO "user" (id, name, email, "emailVerified", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, true, now(), now())`,
-        [baUserId, `${u.firstName} ${u.lastName}`, u.email],
-      );
-    }
-    const { rows: existingAcct } = await c.query(
-      `SELECT id FROM account WHERE "userId" = $1 AND "providerId" = 'credential'`,
-      [baUserId],
-    );
-    if (!existingAcct[0]) {
-      await c.query(
-        `INSERT INTO account (id, "accountId", "providerId", "userId", password, "createdAt", "updatedAt")
-         VALUES ($1, $2, 'credential', $3, $4, now(), now())`,
-        [baId(32), baUserId, baUserId, pwHash],
-      );
-    }
-
-    // 6d. user_email link for membership
-    const { rows: ueRows } = await c.query<{ id: string }>(
-      `SELECT id FROM user_emails WHERE email = $1 AND user_id = $2`,
-      [u.email, appUserId],
-    );
-    const userEmailId = ueRows[0]?.id;
-
-    // 6e. Membership + Employee
-    const { rows: existingMs } = await c.query<{
-      id: string;
-      employee_id: string;
-    }>(
-      `SELECT id, employee_id FROM memberships WHERE organization_id = $1 AND user_id = $2`,
-      [ORG_ID, appUserId],
-    );
-    let membershipId: string;
-    let employeeId: string | null = null;
-    if (existingMs[0]) {
-      membershipId = existingMs[0].id;
-      employeeId = existingMs[0].employee_id;
-    } else {
-      // Create employee first
-      employeeId = randomUUID();
-      await c.query(
-        `INSERT INTO employees (id, version, "isActive", "isArchived", "createdAt", "updatedAt", time_tracking_enabled)
-         VALUES ($1, 1, true, false, now(), now(), false)`,
-        [employeeId],
-      );
-      membershipId = randomUUID();
-      await c.query(
-        `INSERT INTO memberships (id, version, "isActive", "isArchived", "createdAt", "updatedAt",
-              organization_id, user_id, persona, user_email_id, employee_id)
-         VALUES ($1, 1, true, false, now(), now(), $2, $3, $4, $5, $6)`,
-        [membershipId, ORG_ID, appUserId, u.persona, userEmailId, employeeId],
-      );
-    }
-
-    // 6f. Assign role
-    const { rows: roleRows } = await c.query<{ id: string }>(
-      `SELECT id FROM roles WHERE organization_id = $1 AND system_code = $2`,
-      [ORG_ID, u.roleCode],
-    );
-    if (roleRows[0]) {
-      await c.query(
-        `INSERT INTO membership_roles (membership_id, role_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-        [membershipId, roleRows[0].id],
-      );
-    }
-
-    if (u.isTeacher && employeeId) teacherEmployeeIds.push(employeeId);
+    const ids = await ensureStaffUser(c, ORG_ID, u, pwHash);
+    if (!ids.created) console.log(`  · ${u.email} already exists — skipping`);
+    if (u.isTeacher) teacherEmployeeIds.push(ids.employeeId);
   }
   console.log(`✓ Test users (${USERS.length})`);
 
@@ -2236,7 +2142,7 @@ async function main() {
       has_mastered: boolean;
     }>(
       `SELECT lesson_id,
-              MIN(recorded_at)::text AS earliest,
+              MIN(recorded_at)::date::text AS earliest,
               -- highest progression status reached so far
               CASE
                 WHEN bool_or(status = 'MASTERED')   THEN 'MASTERED'
@@ -2334,9 +2240,9 @@ async function main() {
     };
     const { rows: lessonHistories } = await c.query<LessonHistory>(
       `SELECT lesson_id AS "lessonId",
-              MIN(recorded_at) FILTER (WHERE status = 'INTRODUCED')::text AS "firstIntroduced",
-              MIN(recorded_at) FILTER (WHERE status = 'PRACTICED')::text  AS "firstPracticed",
-              MIN(recorded_at) FILTER (WHERE status = 'MASTERED')::text   AS "firstMastered"
+              MIN(recorded_at) FILTER (WHERE status = 'INTRODUCED')::date::text AS "firstIntroduced",
+              MIN(recorded_at) FILTER (WHERE status = 'PRACTICED')::date::text  AS "firstPracticed",
+              MIN(recorded_at) FILTER (WHERE status = 'MASTERED')::date::text   AS "firstMastered"
        FROM lesson_records
        WHERE student_id = $1
        GROUP BY lesson_id`,
@@ -2439,10 +2345,10 @@ async function main() {
       upperBound: string;
     }>(
       `SELECT lesson_id AS "lessonId",
-              MIN(recorded_at) FILTER (WHERE status = 'INTRODUCED')::text AS "firstIntroduced",
+              MIN(recorded_at) FILTER (WHERE status = 'INTRODUCED')::date::text AS "firstIntroduced",
               COALESCE(
-                MIN(recorded_at) FILTER (WHERE status = 'MASTERED')::text,
-                MAX(recorded_at)::text
+                MIN(recorded_at) FILTER (WHERE status = 'MASTERED')::date::text,
+                MAX(recorded_at)::date::text
               ) AS "upperBound"
        FROM lesson_records
        WHERE student_id = $1
@@ -2605,7 +2511,7 @@ async function main() {
         has_practiced: boolean;
       }>(
         `SELECT lesson_id,
-                MIN(recorded_at)::text AS earliest,
+                MIN(recorded_at)::date::text AS earliest,
                 CASE
                   WHEN bool_or(status = 'MASTERED')   THEN 'MASTERED'
                   WHEN bool_or(status = 'PRACTICED')  THEN 'PRACTICED'
@@ -2674,10 +2580,10 @@ async function main() {
         upperBound: string;
       }>(
         `SELECT lesson_id AS "lessonId",
-                MIN(recorded_at) FILTER (WHERE status = 'INTRODUCED')::text AS "firstIntroduced",
+                MIN(recorded_at) FILTER (WHERE status = 'INTRODUCED')::date::text AS "firstIntroduced",
                 COALESCE(
-                  MIN(recorded_at) FILTER (WHERE status = 'MASTERED')::text,
-                  MAX(recorded_at)::text
+                  MIN(recorded_at) FILTER (WHERE status = 'MASTERED')::date::text,
+                  MAX(recorded_at)::date::text
                 ) AS "upperBound"
          FROM lesson_records
          WHERE student_id = $1
@@ -3369,6 +3275,10 @@ async function main() {
 
   // -------- N. System Absenzkategorien (seed + Translations) --------
   await ensureSystemAbsenceCategories(c, ORG_ID);
+
+  // -------- L. Large-school extension (classes, 250 students, 50 staff,
+  //              lesson records, notes, admissions 2026/27, HR, protocols) --
+  await seedLargeSchool(c, ORG_ID, admissionsService, pwHash);
 
   // -------- 10. Employee-management: contracts, vacations, absences, teams,
   //              time tracking --------
@@ -4710,7 +4620,12 @@ async function seedChats(c: Client, ORG_ID: string) {
   );
 }
 
-main().catch((err) => {
-  console.error('\n❌ Seed failed:', err);
-  process.exit(1);
-});
+main()
+  .then(() => {
+    // The Nest app keeps handles open (schedulers, mailer); exit explicitly.
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error('\n❌ Seed failed:', err);
+    process.exit(1);
+  });
