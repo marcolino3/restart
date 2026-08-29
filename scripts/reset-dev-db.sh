@@ -56,6 +56,12 @@ echo "[reset-dev-db] running TypeORM migrations (includes the system seeds)"
 pnpm --filter @restart/backend migration:run
 
 echo "[reset-dev-db] applying the better-auth schema"
+# migrate-auth.ts imports src/lib/auth.ts, which reads its config straight from
+# process.env (no dotenv). Export the env file for this step only.
+set -a
+# shellcheck disable=SC1090
+. "$ENV_FILE"
+set +a
 pnpm --filter @restart/backend auth:migrate
 
 echo "[reset-dev-db] done — start the backend once to bootstrap the SuperAdmin"

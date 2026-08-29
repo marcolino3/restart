@@ -125,7 +125,10 @@ const reportSickLeave = async (
         absence { id startDate endDate }
       }
     }`,
-    { input },
+    // Always tag the note so the global teardown can hard-delete the absence
+    // (the app only soft-deletes; the service prefixes the comment with the
+    // date, which is why the teardown matches "E2E" anywhere in the note).
+    { input: { comment: 'E2E sick leave', ...input } },
   )
   return data.reportSickLeave
 }
