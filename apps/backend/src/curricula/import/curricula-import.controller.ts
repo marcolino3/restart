@@ -11,6 +11,7 @@ import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { BetterAuthGuard } from '@/auth/guard/better-auth.guard';
 import { CurriculaImportService } from './curricula-import.service';
 import { ImportPlanType } from './dto/import-plan.types';
+import { CurriculumImportError } from './import-issue';
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_EXTENSIONS = ['.xlsx', '.xls', '.csv'];
@@ -31,14 +32,27 @@ export class CurriculaImportController {
     const name = (file.originalname ?? '').toLowerCase();
     const ext = name.includes('.') ? `.${name.split('.').pop()}` : '';
     if (!ALLOWED_EXTENSIONS.includes(ext)) {
-      throw new BadRequestException(
-        `Unsupported file type "${ext || file.mimetype}". Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`,
-      );
+      throw new BadRequestException({
+        statusCode: 400,
+        code: 'UNSUPPORTED_EXTENSION',
+        params: { extension: ext || file.mimetype },
+        message: `Unsupported file type "${ext || file.mimetype}". Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`,
+      });
     }
 
     try {
       return this.importService.previewFromBuffer(file.buffer, name);
     } catch (err) {
+      if (err instanceof CurriculumImportError) {
+        // Structured so the frontend can render a localized, actionable
+        // message; `message` stays as English fallback.
+        throw new BadRequestException({
+          statusCode: 400,
+          code: err.code,
+          params: err.params,
+          message: err.message,
+        });
+      }
       throw new BadRequestException(
         err instanceof Error ? err.message : 'Failed to parse curriculum file',
       );
