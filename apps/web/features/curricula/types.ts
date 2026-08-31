@@ -98,11 +98,33 @@ export type ImportPlanStats = {
   lessonCount: number;
 };
 
+export type ImportIssueCode =
+  | "UNSUPPORTED_EXTENSION"
+  | "NO_SHEETS"
+  | "HEADER_NOT_FOUND"
+  | "NO_DATA_ROWS"
+  | "NO_MASTER_SHEET"
+  | "UNKNOWN_SHEET_NAME"
+  | "DUPLICATE_SHEET_LOCALE"
+  | "ROWS_WITHOUT_SEQUENCE"
+  | "DUPLICATE_SEQUENCE"
+  | "TRANSLATION_CONFLICT"
+  | "TRANSLATION_HIERARCHY_MISSING"
+  | "TRANSLATION_MISSING"
+  | "TRANSLATION_EXTRA_SEQUENCE";
+
+/** Structured issue from the import preview: stable code + params for i18n, English fallback message. */
+export type ImportIssue = {
+  code: ImportIssueCode;
+  params: Record<string, string | number>;
+  message: string;
+};
+
 export type ImportPlan = {
   sourceLocale: CurriculumLocale;
   levels: ImportPlanLevel[];
   stats: ImportPlanStats;
-  warnings: string[];
+  warnings: ImportIssue[];
 };
 
 export function pickTranslation<

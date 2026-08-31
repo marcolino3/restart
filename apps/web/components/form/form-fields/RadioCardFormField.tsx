@@ -17,7 +17,7 @@ interface RadioCardFormFieldProps {
   options: RadioCardOption[];
   className?: string;
   /** Grid columns on sm+ screens. Default 2. */
-  columns?: 1 | 2;
+  columns?: 1 | 2 | 3;
 }
 
 /**
@@ -44,7 +44,11 @@ export const RadioCardFormField = ({
             role="radiogroup"
             className={cn(
               "grid gap-2.5",
-              columns === 2 ? "sm:grid-cols-2" : "grid-cols-1",
+              columns === 3
+                ? "grid-cols-[repeat(auto-fit,minmax(12rem,1fr))]"
+                : columns === 2
+                  ? "sm:grid-cols-2"
+                  : "grid-cols-1",
               className,
             )}
           >
@@ -58,7 +62,7 @@ export const RadioCardFormField = ({
                   aria-checked={selected}
                   onClick={() => field.onChange(opt.value)}
                   className={cn(
-                    "flex flex-col gap-1 rounded-md border px-3.5 py-3 text-left transition-colors",
+                    "flex min-w-0 flex-col gap-1 rounded-md border px-3.5 py-3 text-left transition-colors",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     selected
                       ? "border-primary bg-accent"

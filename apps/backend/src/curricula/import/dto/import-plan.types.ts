@@ -1,6 +1,7 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { CurriculumLocale } from '../../enums/curriculum-locale.enum';
 import { CurriculumNodeType } from '../../enums/curriculum-node-type.enum';
+import { ImportIssue } from '../import-issue';
 
 @ObjectType('CurriculumImportPlanTranslation')
 export class ImportPlanTranslationType {
@@ -82,6 +83,8 @@ export class ImportPlanType {
   @Field(() => ImportPlanStatsType)
   stats: ImportPlanStatsType;
 
-  @Field(() => [String])
-  warnings: string[];
+  // Structured issues (code + params + English fallback). The plan is only
+  // ever delivered via the REST preview endpoint, never via GraphQL, so the
+  // field carries no @Field decorator.
+  warnings: ImportIssue[];
 }

@@ -29,8 +29,10 @@ export const setEmployeeAbsenceCategoryActiveAction = async (
   const locale = await getLocale();
   const client = await serverCookieGqlClient();
   try {
-    const { setEmployeeAbsenceCategoryActive } =
-      await client.request<Response>(Document, { id, isActive });
+    const { setEmployeeAbsenceCategoryActive } = await client.request<Response>(
+      Document,
+      { id, isActive },
+    );
     revalidatePath(`/${locale}/admin/absence-categories`);
     return { success: true as const, data: setEmployeeAbsenceCategoryActive };
   } catch (error) {

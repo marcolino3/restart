@@ -87,7 +87,10 @@ import { createTestingApp, cleanDatabase } from './test-utils';
     },
     {
       provide: TimeTrackingPeriodsService,
-      useValue: { assertRangeUnlocked: jest.fn().mockResolvedValue(undefined) },
+      useValue: {
+        assertRangeUnlocked: jest.fn().mockResolvedValue(undefined),
+        getAnchor: jest.fn().mockResolvedValue({ month: 1, day: 1 }),
+      },
     },
     {
       provide: StorageService,
@@ -575,6 +578,147 @@ describe('EmployeeAbsencesService (Integration)', () => {
       ).resolves.toBe(true);
       const stored = await absenceRepo.findOneByOrFail({ id: created.id });
       expect(stored.isActive).toBe(false);
+    });
+  });
+  describe('self-service limits', () => {
+    const employeeUser = (): TokenPayload =>
+      ({ orgId, membershipId, persona: Persona.EMPLOYEE }) as TokenPayload;
+    const isoPlus = (days: number) =>
+      new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+
+    const trainingCategory = async () =>
+      categoryRepo.findOneByOrFail({
+        organizationId: orgId,
+        systemCode: SystemEmployeeAbsenceCategory.TRAINING,
+      });
+
+    const notice = (
+      absenceCategoryId: string,
+      startDate: string,
+      endDate?: string,
+    ) =>
+      service.createEmployeeAbsenceNotice(
+        {
+          absenceCategoryId,
+          startDate,
+          endDate,
+          note: 'E2E',
+          isTeamInformed: true,
+        } as CreateEmployeeAbsenceNoticeInput,
+        employeeUser(),
+      );
+
+    const seedAbsence = (
+      absenceCategoryId: string,
+      startDate: string,
+      endDate: string,
+      status: EmployeeAbsenceStatus,
+      over: Partial<EmployeeAbsence> = {},
+    ) =>
+      absenceRepo.save(
+        absenceRepo.create({
+          organizationId: orgId,
+          membershipId,
+          employeeId,
+          absenceCategoryId,
+          startDate: new Date(startDate),
+          endDate: new Date(endDate),
+          note: 'E2E',
+          isTeamInformed: true,
+          status,
+          ...over,
+        }),
+      );
+
+    afterEach(() => {
+      const periods = module.get(TimeTrackingPeriodsService);
+      (periods.getAnchor as jest.Mock).mockResolvedValue({ month: 1, day: 1 });
+    });
+
+    it('rejects an end date on a single-day category', async () => {
+      // SICKNESS is seeded with allowsDateRange=false.
+      await expect(notice(categoryId, isoPlus(0), isoPlus(1))).rejects.toThrow(
+        'single-day',
+      );
+    });
+
+    it('enforces maxDaysPerRequest', async () => {
+      const cat = await trainingCategory();
+      await categoryRepo.update(cat.id, { maxDaysPerRequest: 2 });
+
+      await expect(notice(cat.id, isoPlus(30), isoPlus(32))).rejects.toThrow(
+        'at most 2 days',
+      );
+
+      const ok = await notice(cat.id, isoPlus(30), isoPlus(31));
+      expect(ok.status).toBe(EmployeeAbsenceStatus.PENDING);
+    });
+
+    it('enforces maxDaysPerYear counting approved and pending, not rejected', async () => {
+      const cat = await trainingCategory();
+      await categoryRepo.update(cat.id, { maxDaysPerYear: 3 });
+      const year = new Date().getUTCFullYear();
+      await seedAbsence(
+        cat.id,
+        `${year}-02-02`,
+        `${year}-02-03`,
+        EmployeeAbsenceStatus.APPROVED,
+      );
+      await seedAbsence(
+        cat.id,
+        `${year}-03-02`,
+        `${year}-03-02`,
+        EmployeeAbsenceStatus.PENDING,
+      );
+      await seedAbsence(
+        cat.id,
+        `${year}-04-02`,
+        `${year}-04-06`,
+        EmployeeAbsenceStatus.REJECTED,
+      );
+
+      const quota = await service.getMyCategoryQuota(
+        cat.id,
+        `${year}-06-01`,
+        employeeUser(),
+      );
+      expect(quota).toMatchObject({
+        maxDaysPerYear: 3,
+        usedDays: 3,
+        remainingDays: 0,
+        periodStart: `${year}-01-01`,
+        periodEnd: `${year}-12-31`,
+      });
+
+      await expect(
+        notice(cat.id, `${year}-12-20`, `${year}-12-20`),
+      ).rejects.toThrow('ABSENCE_YEARLY_CAP');
+    });
+
+    it('resets the cap at the org anchor day', async () => {
+      const periods = module.get(TimeTrackingPeriodsService);
+      (periods.getAnchor as jest.Mock).mockResolvedValue({ month: 8, day: 1 });
+      const cat = await trainingCategory();
+      await categoryRepo.update(cat.id, { maxDaysPerYear: 2 });
+      const year = new Date().getUTCFullYear() + 1;
+      await seedAbsence(
+        cat.id,
+        `${year}-07-30`,
+        `${year}-07-31`,
+        EmployeeAbsenceStatus.APPROVED,
+      );
+
+      await expect(
+        notice(cat.id, `${year}-07-29`, `${year}-07-29`),
+      ).rejects.toThrow('ABSENCE_YEARLY_CAP');
+      const created = await notice(cat.id, `${year}-08-01`, `${year}-08-02`);
+      expect(created.status).toBe(EmployeeAbsenceStatus.PENDING);
+    });
+
+    it('quota query rejects a foreign-org category', async () => {
+      await expect(
+        service.getMyCategoryQuota(otherCategoryId, undefined, employeeUser()),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 });

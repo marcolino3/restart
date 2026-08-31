@@ -16,9 +16,13 @@ import { UpdateEmployeeAbsenceInput } from './dto/update-employee-absence.input'
 import { AbsenceDocument } from './entities/absence-document.type';
 import { EmployeeAbsence } from './entities/employee-absence.entity';
 import { EmployeeAbsenceStatus } from './entities/employee-absence-status.enum';
+import { AbsenceDayPart } from './entities/absence-day-part.enum';
+import { AbsenceEntryPrecision } from '../employee-absence-categories/interfaces/absence-entry-precision.enum';
 import { AbsenceRequestNotificationService } from './absence-request-notification.service';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { daysInterval } from '@/common/utils/days-interval';
+import { periodBoundsFor } from '@/employee-management/time-tracking-periods/period-bounds';
+import { AbsenceCategoryQuota } from './entities/absence-category-quota.type';
 import { EmployeeAbsenceDay } from './entities/employee-absence-days.entity';
 import { DateTime } from 'luxon';
 import { AbsenceCalendarSyncService } from './absence-calendar-sync.service';
@@ -51,6 +55,7 @@ const APPROVAL_ADMIN_ROLES: ReadonlySet<string> = new Set([
 const ABSENCE_DOC_URL_RE = /^\/api\/absence-certificates\/[a-zA-Z0-9.-]+$/;
 
 export const ABSENCE_CATEGORY_LABELS: Record<string, string> = {
+  VACATION: 'Ferien',
   SICKNESS: 'Krankheit',
   ACCIDENT: 'Unfall',
   CHILDCARE_SICK: 'Kind krank',
@@ -59,6 +64,8 @@ export const ABSENCE_CATEGORY_LABELS: Record<string, string> = {
   MOVE: 'Umzug',
   MILITARY_SERVICE: 'Militärdienst',
   CIVIL_SERVICE: 'Zivildienst',
+  COMPENSATION: 'Kompensation',
+  UNPAID_LEAVE: 'Unbezahlter Urlaub',
   OTHER: 'Sonstiges',
 };
 
@@ -153,8 +160,8 @@ export class EmployeeAbsencesService {
     });
     if (!category) throw new NotFoundException('Absenzcategory not found!');
 
-    // Self-service rules: a plain notice only covers today or tomorrow and is
-    // definitive at once; a request may lie anywhere in the future but waits
+    // Self-service rules: the start may lie at most `maxDaysAhead` days ahead
+    // (null = open future); a notice is definitive at once, a request waits
     // for a decision.
     const start = utcDay(input.startDate);
     const today = DateTime.utc().startOf('day');
@@ -163,14 +170,45 @@ export class EmployeeAbsencesService {
         'Absences cannot be reported for days in the past.',
       );
     }
-    if (!category.requiresApproval && start > today.plus({ days: 1 })) {
+    if (
+      category.maxDaysAhead != null &&
+      start > today.plus({ days: category.maxDaysAhead })
+    ) {
       throw new BadRequestException(
-        'This absence category can only be reported for today or tomorrow.',
+        `This absence category can only be reported up to ${category.maxDaysAhead} days ahead.`,
       );
     }
+    const end = utcDay(input.endDate ?? input.startDate);
+    if (end < start) {
+      throw new BadRequestException('End date must not be before start date.');
+    }
+    if (!category.allowsDateRange && end > start) {
+      throw new BadRequestException(
+        'This absence category only allows single-day absences.',
+      );
+    }
+    const requestedDays = Math.round(end.diff(start, 'days').days) + 1;
+    if (
+      category.maxDaysPerRequest != null &&
+      requestedDays > category.maxDaysPerRequest
+    ) {
+      throw new BadRequestException(
+        `This absence category allows at most ${category.maxDaysPerRequest} days per request.`,
+      );
+    }
+    const timing = resolveEntryTiming(category, input, requestedDays);
+    // Yearly cap only guards self-service; admins may exceed it deliberately
+    // via createEmployeeAbsence.
+    await this.assertYearlyCap(
+      orgId as string,
+      membership.employee.id,
+      category,
+      start,
+      end,
+    );
 
     const absence = await this.createAbsenceForMembership({
-      input,
+      input: { ...input, ...timing },
       user,
       orgId: orgId as string,
       membership,
@@ -319,6 +357,9 @@ export class EmployeeAbsencesService {
           isVacationCapable:
             isVacationCapable ?? absenceCategory.defaultIsVacationCapable,
           percentage: input.percentage ?? absenceCategory.defaultPercentage,
+          dayPart: input.dayPart ?? AbsenceDayPart.FULL,
+          startTime: input.startTime ?? null,
+          endTime: input.endTime ?? null,
           certificates,
           additionalDocuments,
           status,
@@ -347,6 +388,9 @@ export class EmployeeAbsencesService {
       endDate ?? startDate,
     );
 
+    // Calendar mirroring is an admin setting on the category.
+    if (absenceCategory.syncToCalendar === false) return employeeAbsenceSaved;
+
     // Calendar sync runs AFTER the commit: it is an outbound HTTP call and must
     // never hold a database transaction open, nor fail the saved absence.
     await this.calendarSync.sync({
@@ -355,9 +399,11 @@ export class EmployeeAbsencesService {
       employeeName:
         `${membership.user?.firstName ?? ''} ${membership.user?.lastName ?? ''}`.trim(),
       absenceLabel: absenceCategoryLabel(absenceCategory.systemCode),
+      titleTemplate: absenceCategory.calendarTitleTemplate ?? null,
       startDate: employeeAbsenceSaved.startDate,
       endDate: employeeAbsenceSaved.endDate,
       startTime: employeeAbsenceSaved.startTime,
+      endTime: employeeAbsenceSaved.endTime,
       note: employeeAbsenceSaved.note,
     });
 
@@ -401,6 +447,132 @@ export class EmployeeAbsencesService {
    * Open requests the caller may decide: every employee for ORG_ADMIN/HR,
    * the led teams for a TEAM_LEAD, nothing for everyone else.
    */
+  /**
+   * Approved + pending days of one category that fall inside the org period
+   * (anchor day, see TimeTrackingPeriodsService) containing `date`. Counts
+   * calendar days from the absence rows themselves because pending requests
+   * have no employee_absence_days yet.
+   */
+  private async computeYearlyUsage(
+    orgId: string,
+    employeeId: string,
+    absenceCategoryId: string,
+    date: DateTime,
+    excludeAbsenceId?: string,
+  ): Promise<{ usedDays: number; periodStart: DateTime; periodEnd: DateTime }> {
+    const anchor = await this.periods.getAnchor(orgId);
+    const { start: periodStart, end: periodEnd } = periodBoundsFor(
+      anchor,
+      date,
+    );
+    const qb = this.entityManager
+      .createQueryBuilder(EmployeeAbsence, 'absence')
+      .where('absence.organization_id = :orgId', { orgId })
+      .andWhere('absence.employee_id = :employeeId', { employeeId })
+      .andWhere('absence.absence_category_id = :absenceCategoryId', {
+        absenceCategoryId,
+      })
+      .andWhere('absence."isActive" = true')
+      .andWhere('absence.status IN (:...statuses)', {
+        statuses: [
+          EmployeeAbsenceStatus.APPROVED,
+          EmployeeAbsenceStatus.PENDING,
+        ],
+      })
+      .andWhere('absence."startDate" <= :periodEnd', {
+        periodEnd: periodEnd.endOf('day').toJSDate(),
+      })
+      .andWhere(
+        'COALESCE(absence."endDate", absence."startDate") >= :periodStart',
+        {
+          periodStart: periodStart.startOf('day').toJSDate(),
+        },
+      );
+    if (excludeAbsenceId) {
+      qb.andWhere('absence.id <> :excludeAbsenceId', { excludeAbsenceId });
+    }
+    const rows = await qb.getMany();
+    let usedDays = 0;
+    for (const row of rows) {
+      const s = DateTime.max(utcDay(row.startDate), periodStart);
+      const e = DateTime.min(utcDay(row.endDate ?? row.startDate), periodEnd);
+      if (e < s) continue;
+      usedDays += Math.round(e.diff(s, 'days').days) + 1;
+    }
+    return { usedDays, periodStart, periodEnd };
+  }
+
+  /**
+   * Hard cap of `maxDaysPerYear` per category and org period. A request that
+   * spans the anchor day is checked against both periods it touches.
+   */
+  private async assertYearlyCap(
+    orgId: string,
+    employeeId: string,
+    category: EmployeeAbsenceCategory,
+    start: DateTime,
+    end: DateTime,
+  ): Promise<void> {
+    if (category.maxDaysPerYear == null) return;
+    let cursor = start;
+    while (cursor <= end) {
+      const { usedDays, periodEnd } = await this.computeYearlyUsage(
+        orgId,
+        employeeId,
+        category.id,
+        cursor,
+      );
+      const sliceEnd = DateTime.min(end, periodEnd);
+      const requested = Math.round(sliceEnd.diff(cursor, 'days').days) + 1;
+      if (usedDays + requested > category.maxDaysPerYear) {
+        const remaining = Math.max(category.maxDaysPerYear - usedDays, 0);
+        throw new BadRequestException(
+          `ABSENCE_YEARLY_CAP: only ${remaining} of ${category.maxDaysPerYear} days left for this category in the current period.`,
+        );
+      }
+      cursor = periodEnd.plus({ days: 1 });
+    }
+  }
+
+  /** Self-service: remaining allowance of a category for the caller. */
+  async getMyCategoryQuota(
+    absenceCategoryId: string,
+    date: string | undefined,
+    user: TokenPayload,
+  ): Promise<AbsenceCategoryQuota> {
+    const { orgId, membershipId } = user;
+    const membership = await this.entityManager.findOne(Membership, {
+      where: { id: membershipId },
+      relations: ['employee'],
+    });
+    if (!membership?.employee) {
+      throw new NotFoundException('Membership not found.');
+    }
+    const category = await this.entityManager.findOne(EmployeeAbsenceCategory, {
+      where: { id: absenceCategoryId, organizationId: orgId as string },
+    });
+    if (!category) throw new NotFoundException('Absenzcategory not found!');
+
+    const reference = date ? utcDay(date) : DateTime.utc().startOf('day');
+    const { usedDays, periodStart, periodEnd } = await this.computeYearlyUsage(
+      orgId as string,
+      membership.employee.id,
+      category.id,
+      reference,
+    );
+    return {
+      absenceCategoryId: category.id,
+      maxDaysPerYear: category.maxDaysPerYear,
+      usedDays,
+      remainingDays:
+        category.maxDaysPerYear == null
+          ? null
+          : Math.max(category.maxDaysPerYear - usedDays, 0),
+      periodStart: periodStart.toISODate() as string,
+      periodEnd: periodEnd.toISODate() as string,
+    };
+  }
+
   async findPendingRequests(user: TokenPayload): Promise<EmployeeAbsence[]> {
     const orgId = user.orgId as string;
     const scope = await this.access.resolveOverviewScope(user, orgId);
@@ -506,18 +678,22 @@ export class EmployeeAbsencesService {
         start,
         end,
       );
-      await this.safely('calendar sync', () =>
-        this.calendarSync.sync({
-          organizationId: orgId,
-          absenceId: saved.id,
-          employeeName,
-          absenceLabel: categoryLabel,
-          startDate: saved.startDate,
-          endDate: saved.endDate,
-          startTime: saved.startTime,
-          note: saved.note,
-        }),
-      );
+      if (saved.absenceCategory?.syncToCalendar !== false) {
+        await this.safely('calendar sync', () =>
+          this.calendarSync.sync({
+            organizationId: orgId,
+            absenceId: saved.id,
+            employeeName,
+            absenceLabel: categoryLabel,
+            titleTemplate: saved.absenceCategory?.calendarTitleTemplate ?? null,
+            startDate: saved.startDate,
+            endDate: saved.endDate,
+            startTime: saved.startTime,
+            endTime: saved.endTime,
+            note: saved.note,
+          }),
+        );
+      }
     }
 
     await this.safely('decision notification', () =>
@@ -741,4 +917,105 @@ export class EmployeeAbsencesService {
 
 function membershipName(membership: Membership): string {
   return `${membership.user?.firstName ?? ''} ${membership.user?.lastName ?? ''}`.trim();
+}
+
+/**
+ * Reference day used to express a timed absence as a percentage for the
+ * existing balance/report logic (42 h week, CH standard). The balance itself
+ * credits the exact minutes, see `CalcAbsenceDay.absenceMinutes`.
+ */
+export const STANDARD_DAY_MINUTES = 504;
+/** Assumed end of a working day for absences with an open end time. */
+export const STANDARD_DAY_END = '17:00';
+
+export interface EntryTiming {
+  dayPart: AbsenceDayPart;
+  startTime?: string;
+  endTime?: string;
+  percentage: number;
+}
+
+const toMinutes = (hhmm: string): number => {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+};
+
+/**
+ * Validates day part and times against the category's entry precision and
+ * derives the day part / percentage stored on the absence.
+ */
+export function resolveEntryTiming(
+  category: Pick<
+    EmployeeAbsenceCategory,
+    'entryPrecision' | 'defaultPercentage'
+  >,
+  input: Pick<
+    CreateEmployeeAbsenceNoticeInput,
+    'dayPart' | 'startTime' | 'endTime' | 'percentage'
+  >,
+  requestedDays: number,
+): EntryTiming {
+  const precision = category.entryPrecision ?? AbsenceEntryPrecision.DAY;
+  const dayPart = input.dayPart ?? AbsenceDayPart.FULL;
+  const hasTimes = input.startTime != null || input.endTime != null;
+
+  // The precision is an upper bound: TIME allows whole days, half days and a
+  // time of day; HALF_DAY allows whole and half days; DAY only whole days.
+  if (hasTimes) {
+    if (precision !== AbsenceEntryPrecision.TIME) {
+      throw new BadRequestException(
+        'This absence category does not allow a time range.',
+      );
+    }
+    if (!input.startTime) {
+      throw new BadRequestException(
+        'This absence category requires a start and end time.',
+      );
+    }
+    if (dayPart !== AbsenceDayPart.FULL) {
+      throw new BadRequestException(
+        'Half days cannot be combined with a time range.',
+      );
+    }
+    if (requestedDays > 1) {
+      throw new BadRequestException(
+        'A time of day is only possible for single-day absences.',
+      );
+    }
+    // An open end ("leaves at 15:00") runs until the end of the standard day.
+    const endMinutes = input.endTime
+      ? toMinutes(input.endTime)
+      : Math.max(toMinutes(STANDARD_DAY_END), toMinutes(input.startTime));
+    const minutes = endMinutes - toMinutes(input.startTime);
+    if (minutes <= 0) {
+      throw new BadRequestException('End time must be after start time.');
+    }
+    return {
+      dayPart: AbsenceDayPart.FULL,
+      startTime: input.startTime,
+      endTime: input.endTime ?? undefined,
+      percentage: Math.min(
+        100,
+        Math.max(1, Math.round((minutes / STANDARD_DAY_MINUTES) * 100)),
+      ),
+    };
+  }
+
+  if (dayPart !== AbsenceDayPart.FULL) {
+    if (precision === AbsenceEntryPrecision.DAY) {
+      throw new BadRequestException(
+        'This absence category only allows whole days.',
+      );
+    }
+    if (requestedDays > 1) {
+      throw new BadRequestException(
+        'Half days are only possible for single-day absences.',
+      );
+    }
+    return { dayPart, percentage: 50 };
+  }
+  return {
+    dayPart: AbsenceDayPart.FULL,
+    percentage: input.percentage ?? category.defaultPercentage,
+  };
 }

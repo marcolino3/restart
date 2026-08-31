@@ -120,6 +120,7 @@ export class BalanceInputLoaderService {
         absenceDays.push({
           date,
           percentage: a.percentage ?? 100,
+          absenceMinutes: timedAbsenceMinutes(a.startTime, a.endTime),
           countsAsWorkTime: a.absenceCategory?.countsAsWorkTime ?? false,
           isVacationCapable:
             a.isVacationCapable ??
@@ -176,4 +177,18 @@ export class BalanceInputLoaderService {
         .map((e) => ({ date: e.entryDate, workMinutes: e.workMinutes ?? 0 })),
     };
   }
+}
+
+/** Minutes between `HH:mm[:ss]` times, or undefined when not a timed absence. */
+function timedAbsenceMinutes(
+  start?: string | null,
+  end?: string | null,
+): number | undefined {
+  if (!start || !end) return undefined;
+  const toMin = (t: string) => {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  };
+  const minutes = toMin(end) - toMin(start);
+  return minutes > 0 ? minutes : undefined;
 }

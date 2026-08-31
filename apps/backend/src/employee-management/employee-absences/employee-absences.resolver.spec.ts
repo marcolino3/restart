@@ -19,6 +19,7 @@ describe('EmployeeAbsencesResolver', () => {
     findOne: jest.Mock;
     updateEmployeeAbsence: jest.Mock;
     deleteEmployeeAbsence: jest.Mock;
+    getMyCategoryQuota: jest.Mock;
   };
 
   const input = {
@@ -42,6 +43,7 @@ describe('EmployeeAbsencesResolver', () => {
       findOne: jest.fn(),
       updateEmployeeAbsence: jest.fn(),
       deleteEmployeeAbsence: jest.fn(),
+      getMyCategoryQuota: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -146,6 +148,41 @@ describe('EmployeeAbsencesResolver', () => {
         (call) => (call[0] as TokenPayload).orgId,
       );
       expect(orgs).toEqual(['org-1', 'org-2']);
+    });
+  });
+
+  describe('myAbsenceCategoryQuota', () => {
+    it('requires a verified org membership', () => {
+      const handler = Object.getOwnPropertyDescriptor(
+        EmployeeAbsencesResolver.prototype,
+        'myAbsenceCategoryQuota',
+      )?.value as object;
+      const guards: unknown[] =
+        Reflect.getMetadata('__guards__', handler) ?? [];
+      expect(guards).toContain(MembershipGuard);
+    });
+
+    it('forwards category, date and the session token (no employeeId argument)', async () => {
+      const quota = { absenceCategoryId: 'cat-1', usedDays: 2 };
+      employeeAbsencesService.getMyCategoryQuota.mockResolvedValue(quota);
+
+      await expect(
+        resolver.myAbsenceCategoryQuota('cat-1', '2026-08-01', user),
+      ).resolves.toBe(quota);
+      expect(employeeAbsencesService.getMyCategoryQuota).toHaveBeenCalledWith(
+        'cat-1',
+        '2026-08-01',
+        user,
+      );
+    });
+
+    it('propagates NotFoundException for a foreign-org category', async () => {
+      employeeAbsencesService.getMyCategoryQuota.mockRejectedValue(
+        new NotFoundException(),
+      );
+      await expect(
+        resolver.myAbsenceCategoryQuota('cat-foreign', undefined, user),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 

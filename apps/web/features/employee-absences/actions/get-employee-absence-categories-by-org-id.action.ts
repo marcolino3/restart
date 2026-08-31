@@ -10,6 +10,11 @@ const GetEmployeeAbsenceCategoriesByOrgIdDocument = graphql(`
       id
       systemCode
       requiresApproval
+      allowsDateRange
+      entryPrecision
+      maxDaysPerRequest
+      maxDaysAhead
+      maxDaysPerYear
       isActive
       translations {
         locale
@@ -25,7 +30,7 @@ export const getEmployeeAbsenceCategoriesByOrgIdAction = async () => {
     const {
       employeeAbsenceCategoriesByOrgId,
     }: GetEmployeeAbsenceCategoriesByOrgIdQuery = await client.request(
-      GetEmployeeAbsenceCategoriesByOrgIdDocument
+      GetEmployeeAbsenceCategoriesByOrgIdDocument,
     );
 
     return { success: true, data: employeeAbsenceCategoriesByOrgId };
