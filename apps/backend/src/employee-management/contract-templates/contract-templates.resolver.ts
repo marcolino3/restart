@@ -5,6 +5,7 @@ import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { UseGuards } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { ContractAiService } from './contract-ai.service';
 import { ContractTemplatesService } from './contract-templates.service';
 import { ContractDocumentPreview } from './dto/contract-document-preview.output';
 import { CreateContractTemplateInput } from './dto/create-contract-template.input';
@@ -14,7 +15,36 @@ import { ContractTemplate } from './entities/contract-template.entity';
 @Resolver(() => ContractTemplate)
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)
 export class ContractTemplatesResolver {
-  constructor(private readonly templates: ContractTemplatesService) {}
+  constructor(
+    private readonly templates: ContractTemplatesService,
+    private readonly ai: ContractAiService,
+  ) {}
+
+  @Query(() => Boolean, { name: 'contractAiConfigured' })
+  @Permissions('EMPLOYEE_READ')
+  contractAiConfigured(@CurrentOrgId() orgId: string) {
+    return this.ai.isConfigured(orgId);
+  }
+
+  @Mutation(() => String)
+  @Permissions('EMPLOYEE_WRITE')
+  async generateContractAiDraft(
+    @Args('contractId', { type: () => ID }) contractId: string,
+    @Args('instructions') instructions: string,
+    @CurrentOrgId() orgId: string,
+  ) {
+    const contract = await this.templates.loadContractForOrg(contractId, orgId);
+    return this.ai.draftContractBody(orgId, contract, instructions);
+  }
+
+  @Mutation(() => String)
+  @Permissions('EMPLOYEE_WRITE')
+  generateContractTemplateAiDraft(
+    @Args('instructions') instructions: string,
+    @CurrentOrgId() orgId: string,
+  ) {
+    return this.ai.draftTemplateBody(orgId, instructions);
+  }
 
   @Query(() => [ContractTemplate], { name: 'contractTemplates' })
   @Permissions('EMPLOYEE_READ')

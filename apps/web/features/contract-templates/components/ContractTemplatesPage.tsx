@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Eye, FileText, Pencil, Plus } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
-import { ContractTemplateDialog } from "./ContractTemplateDialog";
+import { ROUTES } from "@/constants/routes";
 import { deleteContractTemplateAction } from "../actions/mutate-contract-template.action";
 import type { ContractTemplate } from "../actions/get-contract-templates.action";
 import { CONTRACT_TEMPLATE_PLACEHOLDERS } from "../placeholders";
@@ -35,19 +35,16 @@ function bodyExcerpt(html: string): string {
 
 export function ContractTemplatesPage({ initialTemplates, canManage }: Props) {
   const t = useTranslations("ContractTemplates");
+  const locale = useLocale();
   const router = useRouter();
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<ContractTemplate | null>(null);
   const [preview, setPreview] = useState<ContractTemplate | null>(null);
 
-  const openCreate = () => {
-    setEditing(null);
-    setDialogOpen(true);
-  };
-  const openEdit = (template: ContractTemplate) => {
-    setEditing(template);
-    setDialogOpen(true);
-  };
+  const openCreate = () =>
+    router.push(ROUTES.admin.employeesContractTemplateCreate(locale));
+  const openEdit = (template: ContractTemplate) =>
+    router.push(
+      ROUTES.admin.employeesContractTemplateEdit(locale, template.id),
+    );
   const refresh = () => router.refresh();
 
   return (
@@ -182,16 +179,6 @@ export function ContractTemplatesPage({ initialTemplates, canManage }: Props) {
           )}
         </DialogContent>
       </Dialog>
-
-      {canManage && dialogOpen && (
-        <ContractTemplateDialog
-          key={editing?.id ?? "new"}
-          open
-          onOpenChange={setDialogOpen}
-          initial={editing}
-          onSaved={refresh}
-        />
-      )}
     </div>
   );
 }

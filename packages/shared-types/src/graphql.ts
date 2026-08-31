@@ -807,6 +807,34 @@ export type ContactPerson = {
   version: Scalars['Int']['output'];
 };
 
+export type ContractDocumentPreview = {
+  __typename?: 'ContractDocumentPreview';
+  bodyHtml: Scalars['String']['output'];
+  footerHtml?: Maybe<Scalars['String']['output']>;
+  headerHtml?: Maybe<Scalars['String']['output']>;
+  showLogo: Scalars['Boolean']['output'];
+};
+
+export type ContractTemplate = {
+  __typename?: 'ContractTemplate';
+  bodyHtml: Scalars['String']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  createdByMembership?: Maybe<Membership>;
+  createdByMembershipId?: Maybe<Scalars['ID']['output']>;
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  footerHtml?: Maybe<Scalars['String']['output']>;
+  headerHtml?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  name: Scalars['String']['output'];
+  organizationId: Scalars['String']['output'];
+  showLogo: Scalars['Boolean']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
 export type Conversation = {
   __typename?: 'Conversation';
   createdAt: Scalars['DateTime']['output'];
@@ -1029,6 +1057,15 @@ export type CreateContactPersonInput = {
   socialSecurityNumber?: InputMaybe<Scalars['String']['input']>;
   sortOrder?: InputMaybe<Scalars['Int']['input']>;
   title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type CreateContractTemplateInput = {
+  bodyHtml: Scalars['String']['input'];
+  description?: InputMaybe<Scalars['String']['input']>;
+  footerHtml?: InputMaybe<Scalars['String']['input']>;
+  headerHtml?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+  showLogo?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type CreateConversationInput = {
@@ -2845,6 +2882,7 @@ export type Mutation = {
   createCompanyVacation: CompanyVacation;
   createConsentPurpose: ConsentPurpose;
   createContactPerson: ContactPerson;
+  createContractTemplate: ContractTemplate;
   createConversation: Conversation;
   createCountry: Country;
   createCurriculum: Curriculum;
@@ -2897,6 +2935,7 @@ export type Mutation = {
   deleteAdmissionEmail: Scalars['Boolean']['output'];
   deleteAdmissionReminder: Scalars['Boolean']['output'];
   deleteCompanyVacation: Scalars['Boolean']['output'];
+  deleteContractTemplate: Scalars['Boolean']['output'];
   deleteCountryInputTemplate: Scalars['Boolean']['output'];
   deleteEmailTemplate: Scalars['Boolean']['output'];
   deleteEmployeeAbsence: Scalars['Boolean']['output'];
@@ -2931,6 +2970,8 @@ export type Mutation = {
   exportOrganizationData: ExportOrganizationDataResult;
   finalizeAdmissionEnrollment: FinalizeEnrollmentOutput;
   finalizeEmployeeOnboarding: Employee;
+  generateContractAiDraft: Scalars['String']['output'];
+  generateContractTemplateAiDraft: Scalars['String']['output'];
   hardDeleteCurriculum: Scalars['Boolean']['output'];
   importCurriculumFromPlan: Curriculum;
   linkContactPersonToStudent: StudentContactPerson;
@@ -3006,6 +3047,7 @@ export type Mutation = {
   updateCompanyVacation: CompanyVacation;
   updateConsentPurpose: ConsentPurpose;
   updateContactPerson: ContactPerson;
+  updateContractTemplate: ContractTemplate;
   updateCountry: Country;
   updateCurriculum: Curriculum;
   updateCurriculumLevel: CurriculumLevel;
@@ -3260,6 +3302,11 @@ export type MutationCreateConsentPurposeArgs = {
 
 export type MutationCreateContactPersonArgs = {
   input: CreateContactPersonInput;
+};
+
+
+export type MutationCreateContractTemplateArgs = {
+  input: CreateContractTemplateInput;
 };
 
 
@@ -3523,6 +3570,11 @@ export type MutationDeleteCompanyVacationArgs = {
 };
 
 
+export type MutationDeleteContractTemplateArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationDeleteCountryInputTemplateArgs = {
   id: Scalars['ID']['input'];
 };
@@ -3692,6 +3744,17 @@ export type MutationFinalizeAdmissionEnrollmentArgs = {
 
 export type MutationFinalizeEmployeeOnboardingArgs = {
   input: FinalizeEmployeeOnboardingInput;
+};
+
+
+export type MutationGenerateContractAiDraftArgs = {
+  contractId: Scalars['ID']['input'];
+  instructions: Scalars['String']['input'];
+};
+
+
+export type MutationGenerateContractTemplateAiDraftArgs = {
+  instructions: Scalars['String']['input'];
 };
 
 
@@ -4063,6 +4126,11 @@ export type MutationUpdateConsentPurposeArgs = {
 
 export type MutationUpdateContactPersonArgs = {
   input: UpdateContactPersonInput;
+};
+
+
+export type MutationUpdateContractTemplateArgs = {
+  input: UpdateContractTemplateInput;
 };
 
 
@@ -5006,6 +5074,8 @@ export type Query = {
   contactPersonsByOrgId: Array<ContactPerson>;
   contactPersonsByStudentId: Array<StudentContactPerson>;
   contactPersonsSharingAddress: Array<ContactPerson>;
+  contractAiConfigured: Scalars['Boolean']['output'];
+  contractTemplates: Array<ContractTemplate>;
   conversation: Conversation;
   conversationMessages: Array<Message>;
   countries: Array<Country>;
@@ -5095,6 +5165,7 @@ export type Query = {
   pendingAbsenceRequests: Array<EmployeeAbsence>;
   permissions: Array<Permission>;
   previewAdmissionEmail: AdmissionEmailPreview;
+  previewContractDocument: ContractDocumentPreview;
   processingActivities: Array<ProcessingActivity>;
   projectById: Project;
   projectMembers: Array<ProjectMember>;
@@ -5679,6 +5750,12 @@ export type QueryOrganizationUsageArgs = {
 
 export type QueryPreviewAdmissionEmailArgs = {
   applicationId: Scalars['ID']['input'];
+  templateId: Scalars['ID']['input'];
+};
+
+
+export type QueryPreviewContractDocumentArgs = {
+  contractId: Scalars['ID']['input'];
   templateId: Scalars['ID']['input'];
 };
 
@@ -6815,6 +6892,16 @@ export type UpdateContactPersonInput = {
   socialSecurityNumber?: InputMaybe<Scalars['String']['input']>;
   sortOrder?: InputMaybe<Scalars['Int']['input']>;
   title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateContractTemplateInput = {
+  bodyHtml?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  footerHtml?: InputMaybe<Scalars['String']['input']>;
+  headerHtml?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
+  showLogo?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type UpdateCountryInput = {
@@ -8108,6 +8195,60 @@ export type UpdateStudentContactPersonLinkMutationVariables = Exact<{
 
 
 export type UpdateStudentContactPersonLinkMutation = { __typename?: 'Mutation', updateStudentContactPersonLink: { __typename?: 'StudentContactPerson', id: string } };
+
+export type ContractAiConfiguredQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ContractAiConfiguredQuery = { __typename?: 'Query', contractAiConfigured: boolean };
+
+export type GenerateContractTemplateAiDraftMutationVariables = Exact<{
+  instructions: Scalars['String']['input'];
+}>;
+
+
+export type GenerateContractTemplateAiDraftMutation = { __typename?: 'Mutation', generateContractTemplateAiDraft: string };
+
+export type GenerateContractAiDraftMutationVariables = Exact<{
+  contractId: Scalars['ID']['input'];
+  instructions: Scalars['String']['input'];
+}>;
+
+
+export type GenerateContractAiDraftMutation = { __typename?: 'Mutation', generateContractAiDraft: string };
+
+export type ContractTemplatesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ContractTemplatesQuery = { __typename?: 'Query', contractTemplates: Array<{ __typename?: 'ContractTemplate', id: string, name: string, bodyHtml: string, headerHtml?: string | null, footerHtml?: string | null, showLogo: boolean, description?: string | null, createdAt: any, updatedAt: any }> };
+
+export type CreateContractTemplateMutationVariables = Exact<{
+  input: CreateContractTemplateInput;
+}>;
+
+
+export type CreateContractTemplateMutation = { __typename?: 'Mutation', createContractTemplate: { __typename?: 'ContractTemplate', id: string } };
+
+export type UpdateContractTemplateMutationVariables = Exact<{
+  input: UpdateContractTemplateInput;
+}>;
+
+
+export type UpdateContractTemplateMutation = { __typename?: 'Mutation', updateContractTemplate: { __typename?: 'ContractTemplate', id: string } };
+
+export type DeleteContractTemplateMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteContractTemplateMutation = { __typename?: 'Mutation', deleteContractTemplate: boolean };
+
+export type PreviewContractDocumentQueryVariables = Exact<{
+  contractId: Scalars['ID']['input'];
+  templateId: Scalars['ID']['input'];
+}>;
+
+
+export type PreviewContractDocumentQuery = { __typename?: 'Query', previewContractDocument: { __typename?: 'ContractDocumentPreview', bodyHtml: string, headerHtml?: string | null, footerHtml?: string | null, showLogo: boolean } };
 
 export type DeleteCountryInputTemplateMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -10002,6 +10143,14 @@ export const LinkContactPersonToStudentDocument = {"kind":"Document","definition
 export const UnlinkContactPersonFromStudentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UnlinkContactPersonFromStudent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"unlinkContactPersonFromStudent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<UnlinkContactPersonFromStudentMutation, UnlinkContactPersonFromStudentMutationVariables>;
 export const UpdateAddressDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateAddress"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateAddressInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateAddress"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateAddressMutation, UpdateAddressMutationVariables>;
 export const UpdateStudentContactPersonLinkDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateStudentContactPersonLink"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateStudentContactPersonInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateStudentContactPersonLink"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateStudentContactPersonLinkMutation, UpdateStudentContactPersonLinkMutationVariables>;
+export const ContractAiConfiguredDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ContractAiConfigured"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"contractAiConfigured"}}]}}]} as unknown as DocumentNode<ContractAiConfiguredQuery, ContractAiConfiguredQueryVariables>;
+export const GenerateContractTemplateAiDraftDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"GenerateContractTemplateAiDraft"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"instructions"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"generateContractTemplateAiDraft"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"instructions"},"value":{"kind":"Variable","name":{"kind":"Name","value":"instructions"}}}]}]}}]} as unknown as DocumentNode<GenerateContractTemplateAiDraftMutation, GenerateContractTemplateAiDraftMutationVariables>;
+export const GenerateContractAiDraftDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"GenerateContractAiDraft"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"contractId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"instructions"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"generateContractAiDraft"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"contractId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"contractId"}}},{"kind":"Argument","name":{"kind":"Name","value":"instructions"},"value":{"kind":"Variable","name":{"kind":"Name","value":"instructions"}}}]}]}}]} as unknown as DocumentNode<GenerateContractAiDraftMutation, GenerateContractAiDraftMutationVariables>;
+export const ContractTemplatesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ContractTemplates"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"contractTemplates"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"bodyHtml"}},{"kind":"Field","name":{"kind":"Name","value":"headerHtml"}},{"kind":"Field","name":{"kind":"Name","value":"footerHtml"}},{"kind":"Field","name":{"kind":"Name","value":"showLogo"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<ContractTemplatesQuery, ContractTemplatesQueryVariables>;
+export const CreateContractTemplateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateContractTemplate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateContractTemplateInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createContractTemplate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateContractTemplateMutation, CreateContractTemplateMutationVariables>;
+export const UpdateContractTemplateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateContractTemplate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateContractTemplateInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateContractTemplate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateContractTemplateMutation, UpdateContractTemplateMutationVariables>;
+export const DeleteContractTemplateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteContractTemplate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteContractTemplate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteContractTemplateMutation, DeleteContractTemplateMutationVariables>;
+export const PreviewContractDocumentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"PreviewContractDocument"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"contractId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"templateId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"previewContractDocument"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"contractId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"contractId"}}},{"kind":"Argument","name":{"kind":"Name","value":"templateId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"templateId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"bodyHtml"}},{"kind":"Field","name":{"kind":"Name","value":"headerHtml"}},{"kind":"Field","name":{"kind":"Name","value":"footerHtml"}},{"kind":"Field","name":{"kind":"Name","value":"showLogo"}}]}}]}}]} as unknown as DocumentNode<PreviewContractDocumentQuery, PreviewContractDocumentQueryVariables>;
 export const DeleteCountryInputTemplateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteCountryInputTemplate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteCountryInputTemplate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteCountryInputTemplateMutation, DeleteCountryInputTemplateMutationVariables>;
 export const CountryInputTemplatesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"CountryInputTemplates"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"countryInputTemplates"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"countryCode"}},{"kind":"Field","name":{"kind":"Name","value":"fieldType"}},{"kind":"Field","name":{"kind":"Name","value":"mask"}},{"kind":"Field","name":{"kind":"Name","value":"placeholder"}},{"kind":"Field","name":{"kind":"Name","value":"maxLength"}},{"kind":"Field","name":{"kind":"Name","value":"regex"}},{"kind":"Field","name":{"kind":"Name","value":"prefix"}},{"kind":"Field","name":{"kind":"Name","value":"validatorKind"}}]}}]}}]} as unknown as DocumentNode<CountryInputTemplatesQuery, CountryInputTemplatesQueryVariables>;
 export const UpsertCountryInputTemplateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpsertCountryInputTemplate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpsertCountryInputTemplateInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"upsertCountryInputTemplate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"countryCode"}},{"kind":"Field","name":{"kind":"Name","value":"fieldType"}},{"kind":"Field","name":{"kind":"Name","value":"mask"}},{"kind":"Field","name":{"kind":"Name","value":"placeholder"}},{"kind":"Field","name":{"kind":"Name","value":"maxLength"}},{"kind":"Field","name":{"kind":"Name","value":"regex"}},{"kind":"Field","name":{"kind":"Name","value":"prefix"}},{"kind":"Field","name":{"kind":"Name","value":"validatorKind"}}]}}]}}]} as unknown as DocumentNode<UpsertCountryInputTemplateMutation, UpsertCountryInputTemplateMutationVariables>;
