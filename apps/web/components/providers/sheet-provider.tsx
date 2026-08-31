@@ -35,7 +35,7 @@ export const SheetProvider = ({ children }: { children: React.ReactNode }) => {
   const [title, setTitle] = React.useState<string | undefined>();
   const [description, setDescription] = React.useState<string | undefined>();
   const [side, setSide] = React.useState<"left" | "right" | "top" | "bottom">(
-    "right"
+    "right",
   );
 
   const open = ({
@@ -69,12 +69,10 @@ export const SheetProvider = ({ children }: { children: React.ReactNode }) => {
     <SheetProviderContext.Provider value={{ open, close }}>
       {children}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent side={side}>
+        <SheetContent side={side} className="overflow-y-auto">
           {(title || description) && (
             <SheetHeader>
-              {title && (
-                <SheetTitle className="text-2xl">{title}</SheetTitle>
-              )}
+              {title && <SheetTitle className="text-2xl">{title}</SheetTitle>}
               {description && (
                 <SheetDescription>{description}</SheetDescription>
               )}

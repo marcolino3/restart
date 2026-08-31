@@ -1,9 +1,11 @@
+import { AbsenceEntryPrecision } from '../interfaces/absence-entry-precision.enum';
 import { Field, InputType, Int } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
   IsBoolean,
+  IsEnum,
   IsInt,
   IsOptional,
   IsString,
@@ -24,22 +26,22 @@ export class CreateEmployeeAbsenceCategoryInput {
   @Type(() => EmployeeAbsenceCategoryTranslationInput)
   translations: EmployeeAbsenceCategoryTranslationInput[];
 
-  @Field(() => Boolean, { nullable: true, defaultValue: true })
+  @Field(() => Boolean, { nullable: true })
   @IsOptional()
   @IsBoolean()
   countsAsWorkTime?: boolean;
 
-  @Field(() => Boolean, { nullable: true, defaultValue: true })
+  @Field(() => Boolean, { nullable: true })
   @IsOptional()
   @IsBoolean()
   isPaid?: boolean;
 
-  @Field(() => Boolean, { nullable: true, defaultValue: false })
+  @Field(() => Boolean, { nullable: true })
   @IsOptional()
   @IsBoolean()
   affectsVacationBalance?: boolean;
 
-  @Field(() => Boolean, { nullable: true, defaultValue: true })
+  @Field(() => Boolean, { nullable: true })
   @IsOptional()
   @IsBoolean()
   defaultIsVacationCapable?: boolean;
@@ -47,10 +49,10 @@ export class CreateEmployeeAbsenceCategoryInput {
   @Field(() => Int, { nullable: true })
   @IsOptional()
   @IsInt()
-  @Min(1)
+  @Min(0)
   reducesVacationEntitlementAfterDays?: number;
 
-  @Field(() => Boolean, { nullable: true, defaultValue: false })
+  @Field(() => Boolean, { nullable: true })
   @IsOptional()
   @IsBoolean()
   requiresCertificate?: boolean;
@@ -67,17 +69,51 @@ export class CreateEmployeeAbsenceCategoryInput {
   @Min(1)
   maxDaysPerYear?: number;
 
-  @Field(() => Int, { nullable: true, defaultValue: 100 })
+  @Field(() => Int, { nullable: true })
   @IsOptional()
   @IsInt()
   @Min(1)
   @Max(100)
   defaultPercentage?: number;
 
-  @Field(() => Boolean, { nullable: true, defaultValue: false })
+  @Field(() => Boolean, { nullable: true })
   @IsOptional()
   @IsBoolean()
   requiresApproval?: boolean;
+
+  @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  allowsDateRange?: boolean;
+
+  @Field(() => AbsenceEntryPrecision, { nullable: true })
+  @IsOptional()
+  @IsEnum(AbsenceEntryPrecision)
+  entryPrecision?: AbsenceEntryPrecision;
+
+  @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  syncToCalendar?: boolean;
+
+  // Calendar event title template ({firstName} {lastName} {category}).
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  calendarTitleTemplate?: string | null;
+
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  maxDaysPerRequest?: number | null;
+
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  maxDaysAhead?: number | null;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
@@ -93,7 +129,7 @@ export class CreateEmployeeAbsenceCategoryInput {
   @MaxLength(64)
   iconName?: string;
 
-  @Field(() => Int, { nullable: true, defaultValue: 0 })
+  @Field(() => Int, { nullable: true })
   @IsOptional()
   @IsInt()
   @Min(0)

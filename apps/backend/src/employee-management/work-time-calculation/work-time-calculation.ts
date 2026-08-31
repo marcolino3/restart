@@ -84,6 +84,17 @@ function activeContractFor(
   return chosen;
 }
 
+/** Angerechnete Minuten: exakte Dauer bei Von–Bis, sonst Anteil des Solls. */
+function creditedAbsenceMinutes(
+  plannedMinutes: number,
+  absence: CalcAbsenceDay,
+): number {
+  if (absence.absenceMinutes != null) {
+    return Math.min(absence.absenceMinutes, plannedMinutes);
+  }
+  return Math.round((plannedMinutes * absence.percentage) / 100);
+}
+
 /** Dominante Absenz eines Tages (höchster Abwesenheitsgrad). */
 function dominantAbsence(
   absences: CalcAbsenceDay[],
@@ -131,6 +142,40 @@ export function proRataEntitlementDays(
     entitlement += (Number(c.annualVacationDays) * overlapDays) / totalDays;
   }
   return Math.round(entitlement * 2) / 2;
+}
+
+/** Absenz, soweit für die Ferienkürzung (OR Art. 329b) relevant. */
+export interface VacationReductionAbsence {
+  /** Kalendertage der Verhinderung, bereits mit dem Abwesenheitsgrad gewichtet. */
+  days: number;
+  /** Schonfrist in Tagen (30 = unverschuldet, 60 = Schwangerschaft, 0 = verschuldet). */
+  gracePeriodDays: number;
+}
+
+const REDUCTION_MONTH_DAYS = 30;
+
+/**
+ * Ferienkürzung nach OR Art. 329b: Verhinderungstage werden pro Schonfrist
+ * kumuliert; für jeden vollen Monat (30 Tage) über der Schonfrist wird der
+ * Jahresanspruch um 1/12 gekürzt. Auf halbe Tage gerundet.
+ */
+export function vacationReductionDays(
+  entitlementDays: number,
+  absences: VacationReductionAbsence[],
+): number {
+  const byGrace = new Map<number, number>();
+  for (const a of absences) {
+    byGrace.set(
+      a.gracePeriodDays,
+      (byGrace.get(a.gracePeriodDays) ?? 0) + a.days,
+    );
+  }
+  let months = 0;
+  for (const [grace, days] of byGrace) {
+    months += Math.floor(Math.max(0, days - grace) / REDUCTION_MONTH_DAYS);
+  }
+  if (months === 0 || entitlementDays <= 0) return 0;
+  return Math.round(((months * entitlementDays) / 12) * 2) / 2;
 }
 
 /** Monat-Tag-Teil eines ISO-Datums (`MM-DD`). */
@@ -307,8 +352,9 @@ export function calculateDays(input: CalcInput): DayResult[] {
         // Krank/verunfallt in den Ferien und nicht ferienfähig: der Ferientag
         // wird gutgeschrieben (nicht konsumiert), die Absenz deckt den Tag.
         result.isAbsence = true;
-        result.absenceMinutes = Math.round(
-          (result.plannedMinutes * absence.percentage) / 100,
+        result.absenceMinutes = creditedAbsenceMinutes(
+          result.plannedMinutes,
+          absence,
         );
       } else if (isVacationDay) {
         // Ferien decken den Tag; eine gleichzeitige Absenz zählt nicht
@@ -319,8 +365,9 @@ export function calculateDays(input: CalcInput): DayResult[] {
         // Absenz: zählt nur als Arbeitszeit, wenn die Kategorie es vorsieht.
         result.isAbsence = true;
         if (absence.countsAsWorkTime) {
-          result.absenceMinutes = Math.round(
-            (result.plannedMinutes * absence.percentage) / 100,
+          result.absenceMinutes = creditedAbsenceMinutes(
+            result.plannedMinutes,
+            absence,
           );
         }
       }

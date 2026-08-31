@@ -103,10 +103,6 @@ function RootLayoutNav() {
           options={{ presentation: "modal", headerShown: false }}
         />
         <Stack.Screen
-          name="sick-leave"
-          options={{ presentation: "modal", headerShown: false }}
-        />
-        <Stack.Screen
           name="absence-request"
           options={{ presentation: "modal", headerShown: false }}
         />

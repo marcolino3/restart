@@ -1,4 +1,5 @@
 import { Locale } from '@/database/enums/locale.enum';
+import { AbsenceEntryPrecision } from '../interfaces/absence-entry-precision.enum';
 import { SystemEmployeeAbsenceCategory } from '../interfaces/system-employee-absence-categories.enum';
 
 export type SystemEmployeeAbsenceCategoryDefaults = {
@@ -13,6 +14,10 @@ export type SystemEmployeeAbsenceCategoryDefaults = {
   maxDaysPerYear: number | null;
   defaultPercentage: number;
   requiresApproval: boolean;
+  allowsDateRange: boolean;
+  entryPrecision: AbsenceEntryPrecision;
+  maxDaysPerRequest: number | null;
+  maxDaysAhead: number | null;
   color: string | null;
   iconName: string | null;
   sortOrder: number;
@@ -21,6 +26,50 @@ export type SystemEmployeeAbsenceCategoryDefaults = {
 
 export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDefaults[] =
   [
+    {
+      // OR 329a: at least 4 weeks per year (5 weeks under 20); planned in
+      // advance and approved by the employer, so it is a request.
+      code: SystemEmployeeAbsenceCategory.VACATION,
+      countsAsWorkTime: true,
+      isPaid: true,
+      affectsVacationBalance: true,
+      defaultIsVacationCapable: false,
+      reducesVacationEntitlementAfterDays: null,
+      requiresCertificate: false,
+      certificateRequiredFromDay: null,
+      maxDaysPerYear: null,
+      defaultPercentage: 100,
+      requiresApproval: true,
+      maxDaysAhead: null,
+      allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.HALF_DAY,
+      maxDaysPerRequest: null,
+      color: '#22C55E',
+      iconName: 'sun',
+      sortOrder: 5,
+      translations: {
+        DE: {
+          name: 'Ferien',
+          description:
+            'Bezahlte Ferien gemaess Ferienanspruch (mind. 4 Wochen, Art. 329a OR); im Voraus zu beantragen.',
+        },
+        FR: {
+          name: 'Vacances',
+          description:
+            'Vacances payées selon le droit aux vacances (min. 4 semaines, art. 329a CO); à demander à l’avance.',
+        },
+        IT: {
+          name: 'Vacanze',
+          description:
+            'Vacanze pagate secondo il diritto alle vacanze (min. 4 settimane, art. 329a CO); da richiedere in anticipo.',
+        },
+        EN: {
+          name: 'Vacation',
+          description:
+            'Paid vacation per entitlement (min. 4 weeks, CO art. 329a); to be requested in advance.',
+        },
+      },
+    },
     {
       code: SystemEmployeeAbsenceCategory.SICKNESS,
       countsAsWorkTime: true,
@@ -33,6 +82,10 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       maxDaysPerYear: null,
       defaultPercentage: 100,
       requiresApproval: false,
+      maxDaysAhead: 1,
+      allowsDateRange: false,
+      entryPrecision: AbsenceEntryPrecision.TIME,
+      maxDaysPerRequest: null,
       color: '#EF4444',
       iconName: 'thermometer',
       sortOrder: 10,
@@ -71,6 +124,10 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       maxDaysPerYear: null,
       defaultPercentage: 100,
       requiresApproval: false,
+      maxDaysAhead: 1,
+      allowsDateRange: false,
+      entryPrecision: AbsenceEntryPrecision.TIME,
+      maxDaysPerRequest: null,
       color: '#F97316',
       iconName: 'heart-pulse',
       sortOrder: 20,
@@ -104,11 +161,15 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       affectsVacationBalance: false,
       defaultIsVacationCapable: false,
       reducesVacationEntitlementAfterDays: null,
-      requiresCertificate: false,
-      certificateRequiredFromDay: null,
-      maxDaysPerYear: 3,
+      requiresCertificate: true,
+      certificateRequiredFromDay: 1,
+      maxDaysPerYear: 10,
       defaultPercentage: 100,
       requiresApproval: false,
+      maxDaysAhead: 1,
+      allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.TIME,
+      maxDaysPerRequest: 3,
       color: '#F59E0B',
       iconName: 'baby',
       sortOrder: 30,
@@ -116,22 +177,22 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
         DE: {
           name: 'Kind krank',
           description:
-            'Betreuung kranker Kinder: max. 3 Tage pro Ereignis (Art. 36 ArG).',
+            'Betreuung kranker Kinder: max. 3 Tage pro Ereignis, 10 Tage pro Jahr (Art. 329h OR, Art. 36 ArG); Arztzeugnis auf Verlangen.',
         },
         FR: {
           name: 'Enfant malade',
           description:
-            'Soins à un enfant malade: max. 3 jours par évènement (art. 36 LTr).',
+            'Soins à un enfant malade: max. 3 jours par évènement, 10 jours par an (art. 329h CO, art. 36 LTr); certificat médical sur demande.',
         },
         IT: {
           name: 'Figlio malato',
           description:
-            'Assistenza a un figlio malato: max. 3 giorni per evento (art. 36 LL).',
+            'Assistenza a un figlio malato: max. 3 giorni per evento, 10 giorni all’anno (art. 329h CO, art. 36 LL); certificato medico su richiesta.',
         },
         EN: {
           name: 'Sick child care',
           description:
-            'Care for a sick child: max. 3 days per event (Swiss Labor Act art. 36).',
+            'Care for a sick child: max. 3 days per event, 10 days per year (CO art. 329h, Labour Act art. 36); medical certificate on request.',
         },
       },
     },
@@ -147,6 +208,10 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       maxDaysPerYear: null,
       defaultPercentage: 100,
       requiresApproval: true,
+      maxDaysAhead: null,
+      allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.DAY,
+      maxDaysPerRequest: null,
       color: '#3B82F6',
       iconName: 'graduation-cap',
       sortOrder: 40,
@@ -181,6 +246,10 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       maxDaysPerYear: 3,
       defaultPercentage: 100,
       requiresApproval: false,
+      maxDaysAhead: 1,
+      allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.HALF_DAY,
+      maxDaysPerRequest: 3,
       color: '#6B7280',
       iconName: 'flower',
       sortOrder: 50,
@@ -218,26 +287,34 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       certificateRequiredFromDay: null,
       maxDaysPerYear: 1,
       defaultPercentage: 100,
-      requiresApproval: false,
+      requiresApproval: true,
+      maxDaysAhead: null,
+      allowsDateRange: false,
+      entryPrecision: AbsenceEntryPrecision.DAY,
+      maxDaysPerRequest: null,
       color: '#8B5CF6',
       iconName: 'truck',
       sortOrder: 60,
       translations: {
         DE: {
           name: 'Umzug',
-          description: 'Tag des Wohnungsumzugs; 1 bezahlter Tag pro Jahr.',
+          description:
+            'Tag des Wohnungsumzugs; 1 bezahlter Tag pro Jahr, im Voraus zu beantragen.',
         },
         FR: {
           name: 'Déménagement',
-          description: 'Jour de déménagement; 1 jour rémunéré par an.',
+          description:
+            'Jour de déménagement; 1 jour rémunéré par an, à demander à l’avance.',
         },
         IT: {
           name: 'Trasloco',
-          description: 'Giorno del trasloco; 1 giorno retribuito all’anno.',
+          description:
+            'Giorno del trasloco; 1 giorno retribuito all’anno, da richiedere in anticipo.',
         },
         EN: {
           name: 'Moving day',
-          description: 'Day of residential move; 1 paid day per year.',
+          description:
+            'Day of residential move; 1 paid day per year, to be requested in advance.',
         },
       },
     },
@@ -252,7 +329,11 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       certificateRequiredFromDay: 1,
       maxDaysPerYear: null,
       defaultPercentage: 100,
-      requiresApproval: false,
+      requiresApproval: true,
+      maxDaysAhead: null,
+      allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.DAY,
+      maxDaysPerRequest: null,
       color: '#10B981',
       iconName: 'shield',
       sortOrder: 70,
@@ -290,7 +371,11 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       certificateRequiredFromDay: 1,
       maxDaysPerYear: null,
       defaultPercentage: 100,
-      requiresApproval: false,
+      requiresApproval: true,
+      maxDaysAhead: null,
+      allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.DAY,
+      maxDaysPerRequest: null,
       color: '#14B8A6',
       iconName: 'shield-check',
       sortOrder: 80,
@@ -318,6 +403,252 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       },
     },
     {
+      code: SystemEmployeeAbsenceCategory.MEDICAL_APPOINTMENT,
+      countsAsWorkTime: true,
+      isPaid: true,
+      affectsVacationBalance: false,
+      defaultIsVacationCapable: true,
+      reducesVacationEntitlementAfterDays: null,
+      requiresCertificate: false,
+      certificateRequiredFromDay: null,
+      maxDaysPerYear: null,
+      defaultPercentage: 100,
+      requiresApproval: false,
+      maxDaysAhead: 1,
+      allowsDateRange: false,
+      entryPrecision: AbsenceEntryPrecision.TIME,
+      maxDaysPerRequest: null,
+      color: '#EC4899',
+      iconName: 'stethoscope',
+      sortOrder: 32,
+      translations: {
+        DE: {
+          name: 'Arzttermin',
+          description:
+            'Arzt- oder Zahnarzttermin waehrend der Arbeitszeit; nach Moeglichkeit an Randzeiten legen. Stundenweise als Anwesenheitsgrad erfassen.',
+        },
+        FR: {
+          name: 'Rendez-vous médical',
+          description:
+            'Rendez-vous chez le médecin ou le dentiste pendant les heures de travail; à placer si possible en début ou fin de journée.',
+        },
+        IT: {
+          name: 'Visita medica',
+          description:
+            'Visita medica o dentistica durante l’orario di lavoro; da fissare possibilmente a inizio o fine giornata.',
+        },
+        EN: {
+          name: 'Medical appointment',
+          description:
+            'Doctor or dentist appointment during working hours; schedule at the edges of the day where possible. Record hours via the attendance rate.',
+        },
+      },
+    },
+    {
+      code: SystemEmployeeAbsenceCategory.THERAPY_APPOINTMENT,
+      countsAsWorkTime: true,
+      isPaid: true,
+      affectsVacationBalance: false,
+      defaultIsVacationCapable: true,
+      reducesVacationEntitlementAfterDays: null,
+      requiresCertificate: false,
+      certificateRequiredFromDay: null,
+      maxDaysPerYear: null,
+      defaultPercentage: 100,
+      requiresApproval: false,
+      maxDaysAhead: 1,
+      allowsDateRange: false,
+      entryPrecision: AbsenceEntryPrecision.TIME,
+      maxDaysPerRequest: null,
+      color: '#D946EF',
+      iconName: 'hand-heart',
+      sortOrder: 34,
+      translations: {
+        DE: {
+          name: 'Therapietermin',
+          description:
+            'Physio-, Psycho- oder andere aerztlich verordnete Therapie waehrend der Arbeitszeit. Stundenweise als Anwesenheitsgrad erfassen.',
+        },
+        FR: {
+          name: 'Rendez-vous thérapeutique',
+          description:
+            'Physiothérapie, psychothérapie ou autre thérapie prescrite pendant les heures de travail.',
+        },
+        IT: {
+          name: 'Seduta terapeutica',
+          description:
+            'Fisioterapia, psicoterapia o altra terapia prescritta durante l’orario di lavoro.',
+        },
+        EN: {
+          name: 'Therapy appointment',
+          description:
+            'Physiotherapy, psychotherapy or other prescribed therapy during working hours. Record hours via the attendance rate.',
+        },
+      },
+    },
+    {
+      code: SystemEmployeeAbsenceCategory.OFFICIAL_APPOINTMENT,
+      countsAsWorkTime: true,
+      isPaid: true,
+      affectsVacationBalance: false,
+      defaultIsVacationCapable: true,
+      reducesVacationEntitlementAfterDays: null,
+      requiresCertificate: false,
+      certificateRequiredFromDay: null,
+      maxDaysPerYear: null,
+      defaultPercentage: 100,
+      requiresApproval: false,
+      maxDaysAhead: 1,
+      allowsDateRange: false,
+      entryPrecision: AbsenceEntryPrecision.TIME,
+      maxDaysPerRequest: null,
+      color: '#64748B',
+      iconName: 'landmark',
+      sortOrder: 36,
+      translations: {
+        DE: {
+          name: 'Behoerdentermin',
+          description:
+            'Amtlicher Termin, der nicht ausserhalb der Arbeitszeit moeglich ist (Behoerde, Gericht, Zeugenaussage).',
+        },
+        FR: {
+          name: 'Rendez-vous administratif',
+          description:
+            'Rendez-vous officiel impossible en dehors des heures de travail (administration, tribunal, témoignage).',
+        },
+        IT: {
+          name: 'Appuntamento ufficiale',
+          description:
+            'Appuntamento ufficiale non possibile fuori dall’orario di lavoro (autorità, tribunale, testimonianza).',
+        },
+        EN: {
+          name: 'Official appointment',
+          description:
+            'Official appointment that cannot take place outside working hours (authority, court, witness testimony).',
+        },
+      },
+    },
+    {
+      code: SystemEmployeeAbsenceCategory.WEDDING,
+      countsAsWorkTime: true,
+      isPaid: true,
+      affectsVacationBalance: false,
+      defaultIsVacationCapable: true,
+      reducesVacationEntitlementAfterDays: null,
+      requiresCertificate: false,
+      certificateRequiredFromDay: null,
+      maxDaysPerYear: 2,
+      defaultPercentage: 100,
+      requiresApproval: true,
+      maxDaysAhead: null,
+      allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.DAY,
+      maxDaysPerRequest: 2,
+      color: '#F43F5E',
+      iconName: 'gem',
+      sortOrder: 55,
+      translations: {
+        DE: {
+          name: 'Hochzeit',
+          description:
+            'Eigene Hochzeit oder eingetragene Partnerschaft; bis zu 2 bezahlte Tage, im Voraus zu beantragen.',
+        },
+        FR: {
+          name: 'Mariage',
+          description:
+            'Propre mariage ou partenariat enregistré; jusqu’à 2 jours rémunérés, à demander à l’avance.',
+        },
+        IT: {
+          name: 'Matrimonio',
+          description:
+            'Proprio matrimonio o unione registrata; fino a 2 giorni retribuiti, da richiedere in anticipo.',
+        },
+        EN: {
+          name: 'Wedding',
+          description:
+            'Own wedding or registered partnership; up to 2 paid days, to be requested in advance.',
+        },
+      },
+    },
+    {
+      code: SystemEmployeeAbsenceCategory.COMPENSATION,
+      countsAsWorkTime: false,
+      isPaid: true,
+      affectsVacationBalance: false,
+      defaultIsVacationCapable: true,
+      reducesVacationEntitlementAfterDays: null,
+      requiresCertificate: false,
+      certificateRequiredFromDay: null,
+      maxDaysPerYear: null,
+      defaultPercentage: 100,
+      requiresApproval: true,
+      maxDaysAhead: null,
+      allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.HALF_DAY,
+      maxDaysPerRequest: null,
+      color: '#0EA5E9',
+      iconName: 'clock',
+      sortOrder: 85,
+      translations: {
+        DE: {
+          name: 'Kompensation',
+          description:
+            'Abbau von Mehrstunden; auch mehrtaegig. Genehmigung erforderlich.',
+        },
+        FR: {
+          name: 'Compensation',
+          description:
+            "Récupération d'heures supplémentaires; approbation requise.",
+        },
+        IT: {
+          name: 'Compensazione',
+          description: 'Recupero di ore supplementari; approvazione richiesta.',
+        },
+        EN: {
+          name: 'Compensation',
+          description: 'Time off in lieu of overtime; requires approval.',
+        },
+      },
+    },
+    {
+      code: SystemEmployeeAbsenceCategory.UNPAID_LEAVE,
+      countsAsWorkTime: false,
+      isPaid: false,
+      affectsVacationBalance: false,
+      defaultIsVacationCapable: true,
+      reducesVacationEntitlementAfterDays: null,
+      requiresCertificate: false,
+      certificateRequiredFromDay: null,
+      maxDaysPerYear: null,
+      defaultPercentage: 100,
+      requiresApproval: true,
+      maxDaysAhead: null,
+      allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.DAY,
+      maxDaysPerRequest: null,
+      color: '#A78BFA',
+      iconName: 'plane',
+      sortOrder: 90,
+      translations: {
+        DE: {
+          name: 'Unbezahlter Urlaub',
+          description: 'Unbezahlte Abwesenheit; Genehmigung erforderlich.',
+        },
+        FR: {
+          name: 'Congé non payé',
+          description: 'Absence non rémunérée; approbation requise.',
+        },
+        IT: {
+          name: 'Congedo non retribuito',
+          description: 'Assenza non retribuita; approvazione richiesta.',
+        },
+        EN: {
+          name: 'Unpaid leave',
+          description: 'Unpaid absence; requires approval.',
+        },
+      },
+    },
+    {
       code: SystemEmployeeAbsenceCategory.OTHER,
       countsAsWorkTime: false,
       isPaid: false,
@@ -329,6 +660,10 @@ export const SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES: SystemEmployeeAbsenceCategoryDe
       maxDaysPerYear: null,
       defaultPercentage: 100,
       requiresApproval: true,
+      maxDaysAhead: null,
+      allowsDateRange: true,
+      entryPrecision: AbsenceEntryPrecision.HALF_DAY,
+      maxDaysPerRequest: null,
       color: '#9CA3AF',
       iconName: 'help-circle',
       sortOrder: 999,

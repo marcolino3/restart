@@ -16,7 +16,7 @@ export const ReportSickLeaveFormSchema = z
   })
   .refine(
     (values) => !values.hasStartTime || TIME_PATTERN.test(values.startTime),
-    { path: ["startTime"], message: "invalidTime" }
+    { path: ["startTime"], message: "invalidTime" },
   );
 
 export type ReportSickLeaveFormType = z.input<typeof ReportSickLeaveFormSchema>;

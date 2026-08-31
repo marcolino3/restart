@@ -15,6 +15,7 @@ export type AbsenceCategoryTranslation = {
 
 export type AbsenceCategorySystemCode =
   | "SICKNESS"
+  | "VACATION"
   | "ACCIDENT"
   | "CHILDCARE_SICK"
   | "TRAINING"
@@ -22,6 +23,12 @@ export type AbsenceCategorySystemCode =
   | "MOVE"
   | "MILITARY_SERVICE"
   | "CIVIL_SERVICE"
+  | "MEDICAL_APPOINTMENT"
+  | "THERAPY_APPOINTMENT"
+  | "OFFICIAL_APPOINTMENT"
+  | "WEDDING"
+  | "COMPENSATION"
+  | "UNPAID_LEAVE"
   | "OTHER";
 
 export type AbsenceCategoryItem = {
@@ -37,6 +44,12 @@ export type AbsenceCategoryItem = {
   requiresCertificate: boolean;
   certificateRequiredFromDay: number | null;
   maxDaysPerYear: number | null;
+  allowsDateRange: boolean;
+  entryPrecision: "DAY" | "HALF_DAY" | "TIME";
+  syncToCalendar: boolean;
+  calendarTitleTemplate: string | null;
+  maxDaysPerRequest: number | null;
+  maxDaysAhead: number | null;
   defaultPercentage: number;
   requiresApproval: boolean;
   color: string | null;
@@ -47,7 +60,10 @@ export type AbsenceCategoryItem = {
 
 /** Returns name in preferred locale, falling back DE → EN → first available. */
 export function pickAbsenceCategoryName(
-  item: { translations: AbsenceCategoryTranslation[]; systemCode: string | null },
+  item: {
+    translations: AbsenceCategoryTranslation[];
+    systemCode: string | null;
+  },
   preferred: string,
 ): string {
   const upper = preferred.toUpperCase() as AbsenceCategoryLocale;

@@ -6,8 +6,14 @@ import { In } from 'typeorm';
 import { EmployeeContract } from '@/employee-management/employee-contracts/entities/employee-contract.entity';
 import { EmployeePeriodOpeningBalance } from '@/employee-management/time-tracking-periods/entities/employee-period-opening-balance.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
+import { EmployeeAbsence } from '@/employee-management/employee-absences/entities/employee-absence.entity';
+import { EmployeeAbsenceStatus } from '@/employee-management/employee-absences/entities/employee-absence-status.enum';
+import { Organization } from '@/organizations/entities/organization.entity';
 import { TimeTrackingAccessService } from './time-tracking-access.service';
-import { proRataEntitlementDays } from './work-time-calculation';
+import {
+  proRataEntitlementDays,
+  vacationReductionDays,
+} from './work-time-calculation';
 import {
   AbsenceCategorySummary,
   DailyTimeTracking,
@@ -35,6 +41,16 @@ function todayIso(): string {
 function clampToToday(to: string): string {
   const today = todayIso();
   return to > today ? today : to;
+}
+
+/** Inklusive Kalendertage der Überlappung einer Absenz mit dem Bereich. */
+function overlapDays(start: Date, end: Date, from: string, to: string): number {
+  const s = start.toISOString().slice(0, 10);
+  const e = end.toISOString().slice(0, 10);
+  const a = s > from ? s : from;
+  const b = e < to ? e : to;
+  if (a > b) return 0;
+  return Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000) + 1;
 }
 
 interface LedgerSumRow {
@@ -67,6 +83,10 @@ export class WorkTimeBalanceService {
     private readonly openingBalanceRepo: Repository<EmployeePeriodOpeningBalance>,
     @InjectRepository(Membership)
     private readonly membershipRepo: Repository<Membership>,
+    @InjectRepository(EmployeeAbsence)
+    private readonly absenceRepo: Repository<EmployeeAbsence>,
+    @InjectRepository(Organization)
+    private readonly organizationRepo: Repository<Organization>,
     private readonly access: TimeTrackingAccessService,
   ) {}
 
@@ -275,12 +295,66 @@ export class WorkTimeBalanceService {
       to,
     );
     const usedDays = sum.vacation_days_used;
+    const reductionDays = await this.vacationReduction(
+      orgId,
+      employeeId,
+      from,
+      to,
+      entitlementDays,
+    );
     return {
       entitlementDays,
       openingDays,
       usedDays,
-      remainingDays: entitlementDays + openingDays - usedDays,
+      reductionDays,
+      remainingDays: entitlementDays + openingDays - usedDays - reductionDays,
     };
+  }
+
+  /**
+   * Ferienkürzung nach OR Art. 329b — nur für Schweizer Organisationen.
+   * Genehmigte Absenzen von Kategorien mit Schonfrist werden über den Bereich
+   * kumuliert (Kalendertage × Abwesenheitsgrad).
+   */
+  private async vacationReduction(
+    orgId: string,
+    employeeId: string,
+    from: string,
+    to: string,
+    entitlementDays: number,
+  ): Promise<number> {
+    const org = await this.organizationRepo.findOne({
+      where: { id: orgId },
+      select: { id: true, country: true },
+    });
+    if (org?.country !== 'CH') return 0;
+
+    const absences = await this.absenceRepo
+      .createQueryBuilder('a')
+      .innerJoinAndSelect('a.absenceCategory', 'c')
+      .where('a.organization_id = :orgId', { orgId })
+      .andWhere('a.employee_id = :employeeId', { employeeId })
+      .andWhere('a."isActive" = true')
+      .andWhere('a.status = :status', {
+        status: EmployeeAbsenceStatus.APPROVED,
+      })
+      .andWhere('c.reduces_vacation_entitlement_after_days IS NOT NULL')
+      .andWhere('a."startDate"::date <= :to', { to })
+      .andWhere('COALESCE(a."endDate", a."startDate")::date >= :from', {
+        from,
+      })
+      .getMany();
+
+    return vacationReductionDays(
+      entitlementDays,
+      absences.map((a) => ({
+        days:
+          overlapDays(a.startDate, a.endDate ?? a.startDate, from, to) *
+          (a.percentage / 100),
+        gracePeriodDays:
+          a.absenceCategory.reducesVacationEntitlementAfterDays ?? 0,
+      })),
+    );
   }
 
   /** Eigener Ferien-Saldo. */

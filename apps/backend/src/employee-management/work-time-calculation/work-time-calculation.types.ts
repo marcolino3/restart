@@ -80,6 +80,8 @@ export interface CalcAbsenceDay {
   date: string;
   /** 1–100; Abwesenheitsgrad an diesem Tag. */
   percentage: number;
+  /** Exakte Dauer bei zeitgenauen Absenzen (Von–Bis); hat Vorrang vor percentage. */
+  absenceMinutes?: number;
   /** Kategorie zählt als Arbeitszeit (Krankheit/Unfall) → keine Sollzeit-Lücke. */
   countsAsWorkTime: boolean;
   /**

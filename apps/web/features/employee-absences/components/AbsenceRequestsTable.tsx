@@ -106,7 +106,10 @@ export default function AbsenceRequestsTable({ requests }: Props) {
         id: "employee",
         accessorFn: (a) => employeeName(a),
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={tE("absence.employeeColumn")} />
+          <DataTableColumnHeader
+            column={column}
+            title={tE("absence.employeeColumn")}
+          />
         ),
         meta: { labelKey: "absence.employeeColumn" },
         cell: ({ getValue }) => getValue<string>(),

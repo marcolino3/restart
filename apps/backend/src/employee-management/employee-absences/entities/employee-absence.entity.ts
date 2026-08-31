@@ -1,3 +1,4 @@
+import { AbsenceDayPart } from './absence-day-part.enum';
 import { EmployeeAbsenceCategory } from '@/employee-management/employee-absence-categories/entities/employee-absence-category.entity';
 import { Employee } from '@/employee-management/employees/entities/employee.entity';
 import { ObjectType, Field, Int } from '@nestjs/graphql';
@@ -67,6 +68,16 @@ export class EmployeeAbsence extends AbstractEntity<EmployeeAbsence> {
   @Field(() => Date, { nullable: true })
   @Column('timestamptz', { nullable: true })
   endDate: Date;
+
+  // Tagesteil bei eintaegigen Absenzen (Halbtag). FULL bei Zeitraeumen und
+  // zeitgenauen Absenzen; dort zaehlen startTime/endTime.
+  @Field(() => AbsenceDayPart)
+  @Column('varchar', {
+    name: 'day_part',
+    length: 16,
+    default: AbsenceDayPart.FULL,
+  })
+  dayPart: AbsenceDayPart;
 
   // Uhrzeit ab der die Absenz am startDate gilt ('HH:mm:ss'). NULL = ab Tagesbeginn
   // (ganztaegig). Gesetzt z. B. bei einer Krankmeldung ab Mittag.
