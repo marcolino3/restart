@@ -6,6 +6,9 @@ namespace: restart-staging
 resources:
   - ../base
   - ingress.yaml
+  # Naechtlicher DB-Reset auf den Testschule-Seed. Bewusst NUR hier und nicht
+  # in ../base: das Production-Overlay darf diese Faehigkeit nicht besitzen.
+  - seed-reset-cronjob.yaml
   - sealed-secrets/backend-secrets.yaml
   - sealed-secrets/frontend-secrets.yaml
 
