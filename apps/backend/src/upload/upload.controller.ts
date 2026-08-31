@@ -3,8 +3,10 @@ import {
   Controller,
   Delete,
   ForbiddenException,
+  Logger,
   Post,
   Query,
+  ServiceUnavailableException,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -42,10 +44,18 @@ const ALLOWED_MIME_TYPES = new Set([
 // targets the caller actually owns.
 const ALLOWED_ENTITIES = new Set(['organizations', 'employees', 'students']);
 
+// Every upload target is keyed by a UUID. Anything else cannot match a row and
+// would make Postgres reject the parameter cast, turning a client mistake into
+// an opaque 500.
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 @Controller('upload')
 @UseGuards(BetterAuthGuard)
 @Roles(SystemRole.ORG_OWNER, SystemRole.ORG_ADMIN)
 export class UploadController {
+  private readonly logger = new Logger(UploadController.name);
+
   constructor(
     @InjectEntityManager()
     private readonly entityManager: EntityManager,
@@ -85,7 +95,19 @@ export class UploadController {
       throw new BadRequestException('File is not a valid image');
     }
 
-    await this.storage.put(this.key(safeEntity, safeId), webp, 'image/webp');
+    try {
+      await this.storage.put(this.key(safeEntity, safeId), webp, 'image/webp');
+    } catch (error) {
+      // See ContractDocumentsController: a storage outage is not a client
+      // error, and a bare 500 tells the user nothing about what to retry.
+      this.logger.error(
+        `Upload failed for ${safeEntity}/${safeId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new ServiceUnavailableException(
+        'File storage is unavailable. The file was not uploaded.',
+      );
+    }
 
     return {
       url: `/${safeEntity}/${safeId}.webp`,
@@ -101,7 +123,17 @@ export class UploadController {
     if (!entity || !id) throw new BadRequestException('entity and id required');
 
     const { safeEntity, safeId } = await this.resolveTarget(entity, id, user);
-    await this.storage.delete(this.key(safeEntity, safeId));
+    try {
+      await this.storage.delete(this.key(safeEntity, safeId));
+    } catch (error) {
+      this.logger.error(
+        `Delete failed for ${safeEntity}/${safeId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new ServiceUnavailableException(
+        'File storage is unavailable. The file was not removed.',
+      );
+    }
 
     return { success: true };
   }
@@ -119,6 +151,10 @@ export class UploadController {
       throw new BadRequestException(
         `Unsupported upload entity "${safeEntity}"`,
       );
+    }
+
+    if (!UUID_RE.test(safeId)) {
+      throw new BadRequestException('id must be a UUID');
     }
 
     await this.assertTargetInOrg(safeEntity, safeId, user);

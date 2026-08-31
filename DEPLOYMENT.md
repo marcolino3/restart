@@ -85,6 +85,46 @@ aktuell deaktiviert.
 - [Docker](https://docs.docker.com/get-docker/) installed
 - Infomaniak account with API token
 - GitHub repository with Actions enabled
+- Infomaniak Object Storage bucket (S3-compatible, Switzerland) — see
+  "Object Storage" below; the backend refuses to boot in production without it
+
+## Object Storage (required)
+
+All uploads — employee avatars, organization logos, contract PDFs, absence
+certificates — go through `StorageService`. It writes to an S3-compatible
+bucket when configured, and falls back to a local `private-uploads/` directory
+otherwise.
+
+**That fallback only works locally.** The backend container runs with
+`readOnlyRootFilesystem: true` (`k8s/base/backend/deployment.yaml`) and mounts
+only `/tmp` as an `emptyDir`, so there is nowhere durable to write: uploads
+would either fail per request or vanish on the next pod restart. The service
+therefore throws on boot when `NODE_ENV=production` and no bucket is
+configured, which surfaces the gap at deploy time instead of as a broken
+upload later.
+
+Required keys in `backend-secrets` (both staging and production):
+
+| Key | Value |
+|---|---|
+| `S3_BUCKET` | bucket name |
+| `S3_ACCESS_KEY_ID` | access key |
+| `S3_SECRET_ACCESS_KEY` | secret key |
+| `S3_ENDPOINT` | provider URL, e.g. `https://s3.pub1.infomaniak.cloud` |
+| `S3_REGION` | region label from the provider (optional, defaults to `ch-dk-2`) |
+
+Add them to `apps/backend/.env.staging` / `.env.production`, then re-seal:
+
+```bash
+./scripts/seal-secret.sh \
+    --name backend-secrets \
+    --namespace restart-staging \
+    --from-env ./apps/backend/.env.staging \
+    --output k8s/staging/sealed-secrets/backend-secrets.yaml
+```
+
+Data stays in Switzerland: the bucket location follows the endpoint, not the
+`S3_REGION` label (which the AWS SDK only requires cosmetically).
 
 ## Initial Setup
 
