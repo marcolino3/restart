@@ -2523,6 +2523,13 @@ export type ImportCurriculumPlanInput = {
   levels: Array<CurriculumImportPlanLevelInput>;
 };
 
+export type ImportStudentsInput = {
+  contacts: Array<StudentImportContactInput>;
+  families: Array<StudentImportFamilyInput>;
+  mode: StudentImportMode;
+  students: Array<StudentImportStudentInput>;
+};
+
 export enum InvitationTiming {
   Immediate = 'IMMEDIATE',
   Manual = 'MANUAL',
@@ -2933,6 +2940,7 @@ export type Mutation = {
   finalizeEmployeeOnboarding: Employee;
   hardDeleteCurriculum: Scalars['Boolean']['output'];
   importCurriculumFromPlan: Curriculum;
+  importStudents: StudentImportResult;
   linkContactPersonToStudent: StudentContactPerson;
   markConversationRead: ConversationParticipant;
   moveAdmissionApplication: AdmissionApplication;
@@ -3702,6 +3710,11 @@ export type MutationHardDeleteCurriculumArgs = {
 
 export type MutationImportCurriculumFromPlanArgs = {
   input: ImportCurriculumPlanInput;
+};
+
+
+export type MutationImportStudentsArgs = {
+  input: ImportStudentsInput;
 };
 
 
@@ -6273,6 +6286,211 @@ export type StudentContactPerson = {
   studentId: Scalars['ID']['output'];
   updatedAt: Scalars['DateTime']['output'];
   version: Scalars['Int']['output'];
+};
+
+export type StudentImportAddressInput = {
+  city?: InputMaybe<Scalars['String']['input']>;
+  countryId?: InputMaybe<Scalars['String']['input']>;
+  houseNumber?: InputMaybe<Scalars['String']['input']>;
+  postalCode?: InputMaybe<Scalars['String']['input']>;
+  street?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type StudentImportContactInput = {
+  email?: InputMaybe<Scalars['String']['input']>;
+  existingContactPersonId?: InputMaybe<Scalars['String']['input']>;
+  familyKey: Scalars['String']['input'];
+  firstName: Scalars['String']['input'];
+  lastName: Scalars['String']['input'];
+  mobile?: InputMaybe<Scalars['String']['input']>;
+  occupation?: InputMaybe<Scalars['String']['input']>;
+  phone?: InputMaybe<Scalars['String']['input']>;
+  preferredLanguages?: InputMaybe<Array<Scalars['String']['input']>>;
+  roles?: InputMaybe<Array<RelationshipType>>;
+  salutation?: InputMaybe<Salutation>;
+  tempId: Scalars['String']['input'];
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type StudentImportFamilyInput = {
+  address?: InputMaybe<StudentImportAddressInput>;
+  existingFamilyId?: InputMaybe<Scalars['String']['input']>;
+  key: Scalars['String']['input'];
+  name: Scalars['String']['input'];
+};
+
+export type StudentImportIssue = {
+  __typename?: 'StudentImportIssue';
+  code: StudentImportIssueCode;
+  column?: Maybe<Scalars['String']['output']>;
+  relatedRowNumbers?: Maybe<Array<Scalars['Int']['output']>>;
+  rowNumber?: Maybe<Scalars['Int']['output']>;
+  severity: StudentImportIssueSeverity;
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+export enum StudentImportIssueCode {
+  ContactDataConflict = 'CONTACT_DATA_CONFLICT',
+  ContactMissingName = 'CONTACT_MISSING_NAME',
+  ContactMissingRelationship = 'CONTACT_MISSING_RELATIONSHIP',
+  DuplicateStudentInFile = 'DUPLICATE_STUDENT_IN_FILE',
+  FamilyAddressConflict = 'FAMILY_ADDRESS_CONFLICT',
+  InvalidBoolean = 'INVALID_BOOLEAN',
+  InvalidDate = 'INVALID_DATE',
+  InvalidEmail = 'INVALID_EMAIL',
+  InvalidGender = 'INVALID_GENDER',
+  InvalidNumber = 'INVALID_NUMBER',
+  InvalidRelationship = 'INVALID_RELATIONSHIP',
+  InvalidSalutation = 'INVALID_SALUTATION',
+  MissingFirstName = 'MISSING_FIRST_NAME',
+  MissingLastName = 'MISSING_LAST_NAME',
+  PossibleDuplicateContact = 'POSSIBLE_DUPLICATE_CONTACT',
+  UnknownColumn = 'UNKNOWN_COLUMN',
+  UnknownCountry = 'UNKNOWN_COUNTRY',
+  UnknownGradeLevel = 'UNKNOWN_GRADE_LEVEL',
+  UnknownSchoolClass = 'UNKNOWN_SCHOOL_CLASS'
+}
+
+export enum StudentImportIssueSeverity {
+  Error = 'ERROR',
+  Warning = 'WARNING'
+}
+
+export type StudentImportLinkInput = {
+  contactTempId: Scalars['String']['input'];
+  emergencyPriority?: InputMaybe<Scalars['Int']['input']>;
+  hasCustody?: InputMaybe<Scalars['Boolean']['input']>;
+  isPickupAuthorized?: InputMaybe<Scalars['Boolean']['input']>;
+  isPrimaryContact?: InputMaybe<Scalars['Boolean']['input']>;
+  livesWithStudent?: InputMaybe<Scalars['Boolean']['input']>;
+  relationshipType: RelationshipType;
+};
+
+export enum StudentImportMode {
+  SkipExisting = 'SKIP_EXISTING',
+  UpdateExisting = 'UPDATE_EXISTING'
+}
+
+export type StudentImportPlanAddress = {
+  __typename?: 'StudentImportPlanAddress';
+  city?: Maybe<Scalars['String']['output']>;
+  countryId?: Maybe<Scalars['String']['output']>;
+  countryName?: Maybe<Scalars['String']['output']>;
+  houseNumber?: Maybe<Scalars['String']['output']>;
+  postalCode?: Maybe<Scalars['String']['output']>;
+  street?: Maybe<Scalars['String']['output']>;
+};
+
+export type StudentImportPlanContact = {
+  __typename?: 'StudentImportPlanContact';
+  email?: Maybe<Scalars['String']['output']>;
+  existingContactPersonId?: Maybe<Scalars['String']['output']>;
+  familyKey: Scalars['String']['output'];
+  firstName: Scalars['String']['output'];
+  lastName: Scalars['String']['output'];
+  mobile?: Maybe<Scalars['String']['output']>;
+  occupation?: Maybe<Scalars['String']['output']>;
+  phone?: Maybe<Scalars['String']['output']>;
+  preferredLanguages: Array<Scalars['String']['output']>;
+  roles: Array<RelationshipType>;
+  salutation?: Maybe<Salutation>;
+  sourceRowNumbers: Array<Scalars['Int']['output']>;
+  tempId: Scalars['String']['output'];
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type StudentImportPlanFamily = {
+  __typename?: 'StudentImportPlanFamily';
+  address?: Maybe<StudentImportPlanAddress>;
+  existingFamilyId?: Maybe<Scalars['String']['output']>;
+  key: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+};
+
+export type StudentImportPlanLink = {
+  __typename?: 'StudentImportPlanLink';
+  contactTempId: Scalars['String']['output'];
+  emergencyPriority?: Maybe<Scalars['Int']['output']>;
+  hasCustody: Scalars['Boolean']['output'];
+  isPickupAuthorized: Scalars['Boolean']['output'];
+  isPrimaryContact: Scalars['Boolean']['output'];
+  livesWithStudent: Scalars['Boolean']['output'];
+  relationshipType: RelationshipType;
+};
+
+export type StudentImportPlanStats = {
+  __typename?: 'StudentImportPlanStats';
+  errorCount: Scalars['Int']['output'];
+  existingContactCount: Scalars['Int']['output'];
+  existingStudentCount: Scalars['Int']['output'];
+  familyCount: Scalars['Int']['output'];
+  mergedContactCount: Scalars['Int']['output'];
+  newContactCount: Scalars['Int']['output'];
+  newStudentCount: Scalars['Int']['output'];
+  rowCount: Scalars['Int']['output'];
+  warningCount: Scalars['Int']['output'];
+};
+
+export type StudentImportPlanStudent = {
+  __typename?: 'StudentImportPlanStudent';
+  dateOfBirth?: Maybe<Scalars['String']['output']>;
+  enrollmentDate?: Maybe<Scalars['String']['output']>;
+  existingStudentId?: Maybe<Scalars['String']['output']>;
+  externalStudentId?: Maybe<Scalars['String']['output']>;
+  familyKey: Scalars['String']['output'];
+  familyLanguages: Array<Scalars['String']['output']>;
+  firstLanguages: Array<Scalars['String']['output']>;
+  firstName: Scalars['String']['output'];
+  gender?: Maybe<Gender>;
+  gradeLevelId?: Maybe<Scalars['String']['output']>;
+  gradeLevelName?: Maybe<Scalars['String']['output']>;
+  lastName: Scalars['String']['output'];
+  links: Array<StudentImportPlanLink>;
+  nationalities: Array<Scalars['String']['output']>;
+  notes?: Maybe<Scalars['String']['output']>;
+  placeOfBirth?: Maybe<Scalars['String']['output']>;
+  preferredName?: Maybe<Scalars['String']['output']>;
+  religion?: Maybe<Scalars['String']['output']>;
+  schoolClassId?: Maybe<Scalars['String']['output']>;
+  schoolClassName?: Maybe<Scalars['String']['output']>;
+  socialSecurityNumber?: Maybe<Scalars['String']['output']>;
+  sourceRowNumber: Scalars['Int']['output'];
+  tempId: Scalars['String']['output'];
+};
+
+export type StudentImportResult = {
+  __typename?: 'StudentImportResult';
+  createdContacts: Scalars['Int']['output'];
+  createdEnrollments: Scalars['Int']['output'];
+  createdFamilies: Scalars['Int']['output'];
+  createdLinks: Scalars['Int']['output'];
+  createdStudents: Scalars['Int']['output'];
+  skippedStudents: Scalars['Int']['output'];
+  updatedContacts: Scalars['Int']['output'];
+  updatedStudents: Scalars['Int']['output'];
+};
+
+export type StudentImportStudentInput = {
+  dateOfBirth?: InputMaybe<Scalars['String']['input']>;
+  enrollmentDate?: InputMaybe<Scalars['String']['input']>;
+  existingStudentId?: InputMaybe<Scalars['String']['input']>;
+  externalStudentId?: InputMaybe<Scalars['String']['input']>;
+  familyKey: Scalars['String']['input'];
+  familyLanguages?: InputMaybe<Array<Scalars['String']['input']>>;
+  firstLanguages?: InputMaybe<Array<Scalars['String']['input']>>;
+  firstName: Scalars['String']['input'];
+  gender?: InputMaybe<Gender>;
+  gradeLevelId?: InputMaybe<Scalars['String']['input']>;
+  lastName: Scalars['String']['input'];
+  links?: InputMaybe<Array<StudentImportLinkInput>>;
+  nationalities?: InputMaybe<Array<Scalars['String']['input']>>;
+  notes?: InputMaybe<Scalars['String']['input']>;
+  placeOfBirth?: InputMaybe<Scalars['String']['input']>;
+  preferredName?: InputMaybe<Scalars['String']['input']>;
+  religion?: InputMaybe<Scalars['String']['input']>;
+  schoolClassId?: InputMaybe<Scalars['String']['input']>;
+  socialSecurityNumber?: InputMaybe<Scalars['String']['input']>;
+  tempId: Scalars['String']['input'];
 };
 
 export type StudentNote = {
@@ -9450,6 +9668,13 @@ export type GetStudentsQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type GetStudentsQuery = { __typename?: 'Query', studentsByOrgId: Array<{ __typename?: 'Student', id: string, firstName: string, lastName: string, dateOfBirth?: string | null, gender?: Gender | null, exitDate?: string | null, photoUrl?: string | null, isActive: boolean, currentClass?: { __typename?: 'SchoolClass', id: string, name: string, color?: string | null, gradeLevels?: Array<{ __typename?: 'GradeLevel', id: string, name: string, color?: string | null, parentId?: string | null, parent?: { __typename?: 'GradeLevel', id: string, name: string } | null }> | null } | null }> };
 
+export type ImportStudentsMutationVariables = Exact<{
+  input: ImportStudentsInput;
+}>;
+
+
+export type ImportStudentsMutation = { __typename?: 'Mutation', importStudents: { __typename?: 'StudentImportResult', createdStudents: number, updatedStudents: number, skippedStudents: number, createdContacts: number, updatedContacts: number, createdFamilies: number, createdLinks: number, createdEnrollments: number } };
+
 export type UpdateEnrollmentMutationVariables = Exact<{
   input: UpdateSchoolClassEnrollmentInput;
 }>;
@@ -10200,6 +10425,7 @@ export const DeleteStudentDocument = {"kind":"Document","definitions":[{"kind":"
 export const GetStudentByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetStudentById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"studentById"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"dateOfBirth"}},{"kind":"Field","name":{"kind":"Name","value":"gender"}},{"kind":"Field","name":{"kind":"Name","value":"enrollmentDate"}},{"kind":"Field","name":{"kind":"Name","value":"exitDate"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"preferredName"}},{"kind":"Field","name":{"kind":"Name","value":"photoUrl"}},{"kind":"Field","name":{"kind":"Name","value":"placeOfBirth"}},{"kind":"Field","name":{"kind":"Name","value":"firstLanguages"}},{"kind":"Field","name":{"kind":"Name","value":"familyLanguages"}},{"kind":"Field","name":{"kind":"Name","value":"religion"}},{"kind":"Field","name":{"kind":"Name","value":"socialSecurityNumber"}},{"kind":"Field","name":{"kind":"Name","value":"externalStudentId"}},{"kind":"Field","name":{"kind":"Name","value":"nationalities"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}}]}}]}}]} as unknown as DocumentNode<GetStudentByIdQuery, GetStudentByIdQueryVariables>;
 export const GetEnrollmentsByStudentIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEnrollmentsByStudentId"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"studentId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"enrollmentsByStudentId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"studentId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"studentId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"enrolledAt"}},{"kind":"Field","name":{"kind":"Name","value":"leftAt"}},{"kind":"Field","name":{"kind":"Name","value":"schoolClass"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"gradeLevels"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetEnrollmentsByStudentIdQuery, GetEnrollmentsByStudentIdQueryVariables>;
 export const GetStudentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetStudents"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"studentsByOrgId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"dateOfBirth"}},{"kind":"Field","name":{"kind":"Name","value":"gender"}},{"kind":"Field","name":{"kind":"Name","value":"exitDate"}},{"kind":"Field","name":{"kind":"Name","value":"photoUrl"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"currentClass"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"gradeLevels"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"parentId"}},{"kind":"Field","name":{"kind":"Name","value":"parent"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetStudentsQuery, GetStudentsQueryVariables>;
+export const ImportStudentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ImportStudents"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ImportStudentsInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"importStudents"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createdStudents"}},{"kind":"Field","name":{"kind":"Name","value":"updatedStudents"}},{"kind":"Field","name":{"kind":"Name","value":"skippedStudents"}},{"kind":"Field","name":{"kind":"Name","value":"createdContacts"}},{"kind":"Field","name":{"kind":"Name","value":"updatedContacts"}},{"kind":"Field","name":{"kind":"Name","value":"createdFamilies"}},{"kind":"Field","name":{"kind":"Name","value":"createdLinks"}},{"kind":"Field","name":{"kind":"Name","value":"createdEnrollments"}}]}}]}}]} as unknown as DocumentNode<ImportStudentsMutation, ImportStudentsMutationVariables>;
 export const UpdateEnrollmentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateEnrollment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateSchoolClassEnrollmentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateEnrollment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateEnrollmentMutation, UpdateEnrollmentMutationVariables>;
 export const UpdateStudentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateStudent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateStudentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateStudent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateStudentMutation, UpdateStudentMutationVariables>;
 export const AddTeamMemberDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AddTeamMember"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateTeamMemberInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createTeamMember"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}}]}}]} as unknown as DocumentNode<AddTeamMemberMutation, AddTeamMemberMutationVariables>;

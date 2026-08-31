@@ -4,12 +4,19 @@ import { DatabaseModule } from '@/database/database.module';
 import { AdmissionStagesModule } from '../admission-stages/admission-stages.module';
 import { StudentsResolver } from './students.resolver';
 import { StudentsService } from './students.service';
-import { StudentsController } from './students.controller';
+import { StudentsImportController } from './import/students-import.controller';
+import { StudentsImportResolver } from './import/students-import.resolver';
+import { StudentsImportService } from './import/students-import.service';
 
 @Module({
   imports: [CommonModule, DatabaseModule, AdmissionStagesModule],
-  controllers: [StudentsController],
-  providers: [StudentsResolver, StudentsService],
-  exports: [StudentsService],
+  controllers: [StudentsImportController],
+  providers: [
+    StudentsResolver,
+    StudentsService,
+    StudentsImportResolver,
+    StudentsImportService,
+  ],
+  exports: [StudentsService, StudentsImportService],
 })
 export class StudentsModule {}
