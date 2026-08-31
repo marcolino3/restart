@@ -36,7 +36,17 @@ spec:
       containers:
         - name: migrate
           image: ghcr.io/${IMAGE_OWNER}/restart-backend:${IMAGE_TAG}
-          command: ["node", "dist/src/migrate.js"]
+          # Two schema sources, strictly in this order:
+          #  1. TypeORM migrations (src/migrations/) — the application tables.
+          #  2. better-auth (`user`, `session`, `account`, `verification`) —
+          #     manages its own schema outside TypeORM. Without this step the
+          #     auth tables never follow a better-auth upgrade and every login
+          #     fails with `column account.<new> does not exist`.
+          # `sh -c` with && : if step 1 fails, step 2 does not run.
+          command:
+            - sh
+            - -c
+            - node dist/src/migrate.js && node dist/src/migrate-auth.js
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
