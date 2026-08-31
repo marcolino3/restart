@@ -56,6 +56,9 @@ describe('AddBetterAuthAccountIssuer migration', () => {
     new DataSource({
       ...baseOptions,
       database: DB_NAME,
+      // The migrations include data seeders that go through the entity
+      // manager, so the metadata has to be loaded here as well.
+      entities: [join(__dirname, '..', 'src', '**', '*.entity.{ts,js}')],
       migrations: [join(__dirname, '..', 'src', 'migrations', '*.{ts,js}')],
       synchronize: false,
       migrationsTransactionMode: 'each',
