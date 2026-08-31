@@ -4,6 +4,7 @@ import type {
   CurriculumParseResult,
   CurriculumRawRow,
 } from './curriculum-file-parser';
+import { ImportIssue, importIssue } from './import-issue';
 
 export interface PlanTranslation {
   locale: CurriculumLocale;
@@ -38,7 +39,7 @@ export interface ImportPlan {
     groupCount: number;
     lessonCount: number;
   };
-  warnings: string[];
+  warnings: ImportIssue[];
 }
 
 function slugify(value: string): string {
@@ -216,7 +217,7 @@ function upsertTranslation(
   locale: CurriculumLocale,
   name: string | null | undefined,
   label: string,
-  warnings: string[],
+  warnings: ImportIssue[],
 ): void {
   const trimmed = (name ?? '').trim();
   if (!trimmed) return;
@@ -227,7 +228,11 @@ function upsertTranslation(
   }
   if (existing.name !== trimmed) {
     warnings.push(
-      `${label}: ${locale} translation has conflicting values ("${existing.name}" vs "${trimmed}") — first value kept`,
+      importIssue(
+        'TRANSLATION_CONFLICT',
+        { label, locale, first: existing.name, second: trimmed },
+        `${label}: ${locale} translation has conflicting values ("${existing.name}" vs "${trimmed}") — first value kept`,
+      ),
     );
   }
 }
@@ -242,7 +247,7 @@ function attachTranslationsFromRow(
   translatedRow: CurriculumRawRow,
   locale: CurriculumLocale,
   built: MasterBuildResult,
-  warnings: string[],
+  warnings: ImportIssue[],
 ): void {
   const levelKey = masterRow.level.trim();
   const levelNode = built.pathToNode.get(`L::${levelKey}`);
@@ -267,7 +272,11 @@ function attachTranslationsFromRow(
     const node = built.pathToNode.get(key);
     if (!node) {
       warnings.push(
-        `Sheet ${locale} row ${translatedRow.rowNumber}: master hierarchy not found, translation skipped`,
+        importIssue(
+          'TRANSLATION_HIERARCHY_MISSING',
+          { sheet: locale, row: translatedRow.rowNumber },
+          `Sheet ${locale} row ${translatedRow.rowNumber}: master hierarchy not found, translation skipped`,
+        ),
       );
       return;
     }
@@ -324,12 +333,20 @@ export function buildImportPlan(parsed: CurriculumParseResult): ImportPlan {
     }
     if (missing > 0) {
       warnings.push(
-        `Sheet ${localeStr}: ${missing} master row(s) without ${localeStr} translation`,
+        importIssue(
+          'TRANSLATION_MISSING',
+          { sheet: localeStr, count: missing },
+          `Sheet ${localeStr}: ${missing} master row(s) without ${localeStr} translation`,
+        ),
       );
     }
     if (extra > 0) {
       warnings.push(
-        `Sheet ${localeStr}: ${extra} row(s) reference a Sequence that does not exist in master — ignored`,
+        importIssue(
+          'TRANSLATION_EXTRA_SEQUENCE',
+          { sheet: localeStr, count: extra },
+          `Sheet ${localeStr}: ${extra} row(s) reference a Sequence that does not exist in master — ignored`,
+        ),
       );
     }
   }
