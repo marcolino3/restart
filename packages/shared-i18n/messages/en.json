@@ -1651,7 +1651,14 @@
     "contractDocument": "Contract document",
     "uploadContract": "Upload contract (PDF)",
     "contractUploaded": "View contract",
-    "contractHint": "PDF, max. 5 MB",
+    "contractHint": "PDF, max. 15 MB",
+    "docPdfOnly": "Only PDF files are allowed",
+    "docTooLarge": "File too large — 15 MB maximum",
+    "docForbidden": "Not allowed to upload a document for this person",
+    "docStorageUnavailable": "Document storage is unavailable. Please try again later.",
+    "docUploadNetworkError": "Could not reach the server",
+    "docRemoveError": "The document could not be removed",
+    "docUploadError": "Upload failed",
     "contractAfterSave": "You can upload the contract after the first save."
   },
   "Employees": {
@@ -1859,6 +1866,11 @@
       "docView": "View document",
       "docRemove": "Remove document",
       "docPdfOnly": "Only PDF files are allowed",
+      "docTooLarge": "File too large — 15 MB maximum",
+      "docForbidden": "Not allowed to upload a document for this person",
+      "docStorageUnavailable": "Document storage is unavailable. Please try again later.",
+      "docUploadNetworkError": "Could not reach the server",
+      "docRemoveError": "The document could not be removed",
       "docUploadError": "Upload failed"
     },
     "absence": {

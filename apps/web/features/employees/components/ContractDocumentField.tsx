@@ -15,6 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { API_URL } from "@/constants/api-url";
+import { contractUploadErrorKey } from "../lib/contract-upload-error";
 
 interface Props {
   /** RHF field name, e.g. "documentUrl". */
@@ -59,14 +60,14 @@ export function ContractDocumentField({
         `${API_URL}/contract-documents?employeeId=${employeeId}`,
         { method: "POST", body: fd, credentials: "include" },
       );
-      const result = await res.json();
+      const result = await res.json().catch(() => null);
       if (res.ok && result?.url) {
         field.onChange(result.url as string);
       } else {
-        toast.error(result?.message ?? t("contract.docUploadError"));
+        toast.error(t(`contract.${contractUploadErrorKey(res.status)}`));
       }
     } catch {
-      toast.error(t("contract.docUploadError"));
+      toast.error(t("contract.docUploadNetworkError"));
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -77,14 +78,13 @@ export function ContractDocumentField({
     const url = field.value as string | undefined;
     const fileId = url?.split("/").pop();
     if (fileId) {
-      try {
-        await fetch(`${API_URL}/contract-documents/${fileId}`, {
-          method: "DELETE",
-          credentials: "include",
-        });
-      } catch {
-        // Ignore — the form value is cleared regardless.
-      }
+      const res = await fetch(`${API_URL}/contract-documents/${fileId}`, {
+        method: "DELETE",
+        credentials: "include",
+      }).catch(() => null);
+      // The form value is cleared either way, but a stored file that survived
+      // the delete should not disappear from the UI without a word.
+      if (!res?.ok) toast.error(t("contract.docRemoveError"));
     }
     field.onChange("");
   };

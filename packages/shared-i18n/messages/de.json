@@ -1651,7 +1651,14 @@
     "contractDocument": "Vertragsdokument",
     "uploadContract": "Vertrag hochladen (PDF)",
     "contractUploaded": "Vertrag ansehen",
-    "contractHint": "PDF, max. 5 MB",
+    "contractHint": "PDF, max. 15 MB",
+    "docPdfOnly": "Nur PDF-Dateien erlaubt",
+    "docTooLarge": "Datei zu gross — maximal 15 MB",
+    "docForbidden": "Keine Berechtigung, für diese Person ein Dokument hochzuladen",
+    "docStorageUnavailable": "Dokumentenspeicher nicht erreichbar. Bitte später erneut versuchen.",
+    "docUploadNetworkError": "Verbindung zum Server fehlgeschlagen",
+    "docRemoveError": "Dokument konnte nicht entfernt werden",
+    "docUploadError": "Upload fehlgeschlagen",
     "contractAfterSave": "Vertrag kann nach dem ersten Speichern hochgeladen werden."
   },
   "Employees": {
@@ -1859,6 +1866,11 @@
       "docView": "Dokument ansehen",
       "docRemove": "Dokument entfernen",
       "docPdfOnly": "Nur PDF-Dateien erlaubt",
+      "docTooLarge": "Datei zu gross — maximal 15 MB",
+      "docForbidden": "Keine Berechtigung, für diese Person ein Dokument hochzuladen",
+      "docStorageUnavailable": "Dokumentenspeicher nicht erreichbar. Bitte später erneut versuchen.",
+      "docUploadNetworkError": "Verbindung zum Server fehlgeschlagen",
+      "docRemoveError": "Dokument konnte nicht entfernt werden",
       "docUploadError": "Upload fehlgeschlagen"
     },
     "absence": {

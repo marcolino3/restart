@@ -4,8 +4,10 @@ import { useState } from "react";
 import { useController, useFormContext } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import { FileText, Loader2, Upload, X } from "lucide-react";
+import { toast } from "sonner";
 
 import { API_URL } from "@/constants/api-url";
+import { contractUploadErrorKey } from "../../lib/contract-upload-error";
 
 interface Props {
   /** Draft employee id — the PDF is stored privately per employee. */
@@ -28,6 +30,11 @@ export function ContractDocumentUpload({ draftId }: Props) {
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !draftId) return;
+    if (file.type !== "application/pdf") {
+      toast.error(t("docPdfOnly"));
+      e.target.value = "";
+      return;
+    }
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
@@ -36,10 +43,16 @@ export function ContractDocumentUpload({ draftId }: Props) {
         `${API_URL}/contract-documents?employeeId=${draftId}`,
         { method: "POST", body: formData, credentials: "include" },
       );
-      const result = await res.json();
+      const result = await res.json().catch(() => null);
       if (res.ok && result?.url) {
         field.onChange(result.url as string);
+      } else {
+        // A silent failure here left the wizard looking like the upload had
+        // worked, so the contract was saved without its document.
+        toast.error(t(contractUploadErrorKey(res.status)));
       }
+    } catch {
+      toast.error(t("docUploadNetworkError"));
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -49,10 +62,13 @@ export function ContractDocumentUpload({ draftId }: Props) {
   const onRemove = async () => {
     // `value` is the authenticated document URL (/api/contract-documents/<fileId>).
     if (value) {
-      await fetch(value, {
+      const res = await fetch(value, {
         method: "DELETE",
         credentials: "include",
-      }).catch(() => undefined);
+      }).catch(() => null);
+      // The form value is cleared either way, but a stored file that survived
+      // the delete should not disappear from the UI without a word.
+      if (!res?.ok) toast.error(t("docRemoveError"));
     }
     field.onChange("");
   };

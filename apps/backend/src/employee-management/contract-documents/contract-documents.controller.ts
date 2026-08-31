@@ -4,10 +4,12 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  Logger,
   NotFoundException,
   Param,
   Post,
   Query,
+  ServiceUnavailableException,
   StreamableFile,
   UploadedFile,
   UseGuards,
@@ -28,6 +30,12 @@ import { StorageService } from '@/storage/storage.service';
 
 const MAX_BYTES = 15 * 1024 * 1024; // 15 MB
 
+// Employee ids are UUIDs. Handing anything else to TypeORM makes Postgres
+// reject the parameter cast ("invalid input syntax for type uuid"), which
+// surfaces to the client as an opaque 500 instead of a usable error.
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * Contract documents (PDF) are sensitive HR files: never public. Stored in
  * object storage under an org-scoped key (`contracts/<orgId>/<uuid>.pdf`) and
@@ -40,6 +48,8 @@ const MAX_BYTES = 15 * 1024 * 1024; // 15 MB
 @UseGuards(BetterAuthGuard)
 @Roles(SystemRole.ORG_OWNER, SystemRole.ORG_ADMIN)
 export class ContractDocumentsController {
+  private readonly logger = new Logger(ContractDocumentsController.name);
+
   constructor(
     @InjectEntityManager()
     private readonly entityManager: EntityManager,
@@ -70,6 +80,9 @@ export class ContractDocumentsController {
     const orgId = user.orgId;
     if (!orgId) throw new ForbiddenException('No active organization');
     if (!employeeId) throw new BadRequestException('employeeId required');
+    if (!UUID_RE.test(employeeId)) {
+      throw new BadRequestException('employeeId must be a UUID');
+    }
 
     // The target employee must belong to the caller's active organization.
     if (!user.isSuperAdmin) {
@@ -83,11 +96,25 @@ export class ContractDocumentsController {
     }
 
     const fileId = randomUUID();
-    await this.storage.put(
-      this.key(orgId, fileId),
-      file.buffer,
-      'application/pdf',
-    );
+    try {
+      await this.storage.put(
+        this.key(orgId, fileId),
+        file.buffer,
+        'application/pdf',
+      );
+    } catch (error) {
+      // Storage is an external dependency (S3 bucket, or the local filesystem
+      // fallback which is read-only inside the hardened container). Its
+      // failures are not the caller's fault, so report them as such instead of
+      // letting them bubble up as a bare 500 "Internal server error".
+      this.logger.error(
+        `Contract document upload failed for employee ${employeeId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new ServiceUnavailableException(
+        'Document storage is unavailable. The contract was not uploaded.',
+      );
+    }
 
     return { url: `/api/contract-documents/${fileId}`, fileId };
   }
@@ -106,7 +133,15 @@ export class ContractDocumentsController {
         type: 'application/pdf',
         disposition: 'inline; filename="vertrag.pdf"',
       });
-    } catch {
+    } catch (error) {
+      // A missing object and an unreachable bucket are indistinguishable to
+      // the caller (both mean "no document here"), but only the second is
+      // worth an operator's attention — so log it before answering 404.
+      this.logger.warn(
+        `Contract document ${fileId} could not be read: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
       throw new NotFoundException('Document not found');
     }
   }
@@ -119,7 +154,17 @@ export class ContractDocumentsController {
     const orgId = user.orgId;
     if (!orgId) throw new ForbiddenException('No active organization');
 
-    await this.storage.delete(this.key(orgId, fileId));
+    try {
+      await this.storage.delete(this.key(orgId, fileId));
+    } catch (error) {
+      this.logger.error(
+        `Contract document ${fileId} could not be deleted`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new ServiceUnavailableException(
+        'Document storage is unavailable. The contract was not removed.',
+      );
+    }
     return { success: true };
   }
 }
