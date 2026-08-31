@@ -28,8 +28,10 @@ export function AbsencePeriodDateFields() {
     const end = parseAbsenceDateTime(getValues("endDate"));
 
     if (!checked) {
-      if (start) setValue("startDate", startOfLocalDay(start), { shouldValidate: true });
-      if (end) setValue("endDate", startOfLocalDay(end), { shouldValidate: true });
+      if (start)
+        setValue("startDate", startOfLocalDay(start), { shouldValidate: true });
+      if (end)
+        setValue("endDate", startOfLocalDay(end), { shouldValidate: true });
       return;
     }
 

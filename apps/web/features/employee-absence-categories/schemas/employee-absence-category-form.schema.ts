@@ -15,6 +15,13 @@ const nullableInt = z.preprocess((v) => {
   return Number.isFinite(n) ? n : null;
 }, z.number().int().min(1).nullable());
 
+// Like nullableInt, but 0 is meaningful ("only today").
+const nullableNonNegativeInt = z.preprocess((v) => {
+  if (v === "" || v === null || v === undefined) return null;
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : null;
+}, z.number().int().min(0).nullable());
+
 const requiredInt = z.preprocess(
   (v) => (typeof v === "number" ? v : Number(v)),
   z.number().int(),
@@ -22,6 +29,7 @@ const requiredInt = z.preprocess(
 
 export function createAbsenceCategoryFormSchema(messages: {
   atLeastOneNameRequired: string;
+  maxDaysPerRequestNeedsRange: string;
 }) {
   return z
     .object({
@@ -36,6 +44,12 @@ export function createAbsenceCategoryFormSchema(messages: {
       requiresCertificate: z.boolean(),
       certificateRequiredFromDay: nullableInt,
       maxDaysPerYear: nullableInt,
+      allowsDateRange: z.boolean(),
+      entryPrecision: z.enum(["DAY", "HALF_DAY", "TIME"]),
+      syncToCalendar: z.boolean(),
+      calendarTitleTemplate: z.string().trim().max(200).nullable(),
+      maxDaysPerRequest: nullableInt,
+      maxDaysAhead: nullableNonNegativeInt,
       defaultPercentage: requiredInt.pipe(z.number().int().min(1).max(100)),
       requiresApproval: z.boolean(),
       color: z
@@ -43,9 +57,15 @@ export function createAbsenceCategoryFormSchema(messages: {
         .regex(/^#[0-9A-Fa-f]{6}$/, "Hex like #RRGGBB")
         .nullable(),
       iconName: z.string().trim().max(64).nullable(),
-      sortOrder: requiredInt.pipe(z.number().int().min(0)),
     })
     .superRefine((data, ctx) => {
+      if (!data.allowsDateRange && data.maxDaysPerRequest != null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["maxDaysPerRequest"],
+          message: messages.maxDaysPerRequestNeedsRange,
+        });
+      }
       const hasAny = data.translations.some((tr) => tr.name.trim());
       if (hasAny) return;
 
@@ -67,6 +87,9 @@ export type AbsenceCategoryFormValues = z.output<
   ReturnType<typeof createAbsenceCategoryFormSchema>
 >;
 
+export const ABSENCE_CALENDAR_TITLE_DEFAULT =
+  "{firstName} {lastName} {category}";
+
 export const ABSENCE_CATEGORY_FORM_DEFAULTS: AbsenceCategoryFormInput = {
   translations: [
     { locale: "DE", name: "", description: undefined },
@@ -82,9 +105,14 @@ export const ABSENCE_CATEGORY_FORM_DEFAULTS: AbsenceCategoryFormInput = {
   requiresCertificate: false,
   certificateRequiredFromDay: null,
   maxDaysPerYear: null,
+  allowsDateRange: false,
+  entryPrecision: "DAY",
+  syncToCalendar: true,
+  calendarTitleTemplate: null,
+  maxDaysPerRequest: null,
+  maxDaysAhead: null,
   defaultPercentage: 100,
   requiresApproval: false,
   color: null,
   iconName: null,
-  sortOrder: 0,
 };

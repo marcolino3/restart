@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { DateTime } from 'luxon';
 import { EntityManager } from 'typeorm';
 import { EmployeeContract } from '../employee-contracts/entities/employee-contract.entity';
-import { SICK_LEAVE_SETTING_KEYS } from '../sick-leave/sick-leave-setting-keys';
+import { SICK_LEAVE_SETTING_KEYS } from './absence-setting-keys';
 
 /** Mirrors `MAX_TEAM_DEPTH` in `TeamAccessService` — guards runaway recursion. */
 const MAX_TEAM_DEPTH = 10;

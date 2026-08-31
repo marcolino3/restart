@@ -48,10 +48,7 @@ export function hasAbsenceTime(value: unknown): boolean {
   return !(utcMidnight || localMidnight);
 }
 
-export function absenceIncludesTime(
-  start: unknown,
-  end?: unknown,
-): boolean {
+export function absenceIncludesTime(start: unknown, end?: unknown): boolean {
   return hasAbsenceTime(start) || hasAbsenceTime(end);
 }
 

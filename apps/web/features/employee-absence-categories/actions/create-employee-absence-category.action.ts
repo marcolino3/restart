@@ -30,6 +30,12 @@ type CreateInput = {
   requiresCertificate: boolean;
   certificateRequiredFromDay?: number | null;
   maxDaysPerYear?: number | null;
+  allowsDateRange?: boolean;
+  entryPrecision?: "DAY" | "HALF_DAY" | "TIME";
+  syncToCalendar?: boolean;
+  calendarTitleTemplate?: string | null;
+  maxDaysPerRequest?: number | null;
+  maxDaysAhead?: number | null;
   defaultPercentage: number;
   requiresApproval: boolean;
   color?: string | null;
@@ -64,6 +70,8 @@ function sanitize(input: CreateInput) {
     reducesVacationEntitlementAfterDays,
     certificateRequiredFromDay,
     maxDaysPerYear,
+    maxDaysPerRequest,
+    maxDaysAhead,
     color,
     iconName,
     translations,
@@ -83,6 +91,8 @@ function sanitize(input: CreateInput) {
       : {}),
     ...(certificateRequiredFromDay ? { certificateRequiredFromDay } : {}),
     ...(maxDaysPerYear ? { maxDaysPerYear } : {}),
+    ...(maxDaysPerRequest ? { maxDaysPerRequest } : {}),
+    ...(maxDaysAhead != null ? { maxDaysAhead } : {}),
     ...(color ? { color } : {}),
     ...(iconName ? { iconName } : {}),
   };

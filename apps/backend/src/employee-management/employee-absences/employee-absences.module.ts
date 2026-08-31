@@ -27,7 +27,7 @@ import { EmployeeAbsencesService } from './employee-absences.service';
     AbsenceCalendarSyncService,
     AbsenceRecipientsService,
     AbsenceRequestNotificationService,
-    // Same reasoning as in SickLeaveModule: stateless transport, no coupling
+    // SmtpService is a stateless transport, no coupling
     // to the admissions domain.
     SmtpService,
   ],

@@ -88,6 +88,14 @@ export class BetterAuthGuard implements CanActivate {
     if (!superAdminOnly && rolesReq.length === 0 && permsReq.length === 0) {
       return true;
     }
+    // Role/permission-gated handlers are org-scoped. Without an active
+    // organization the resolvers would run with `orgId = null`, and TypeORM
+    // silently drops null `where` conditions — i.e. the query would span every
+    // tenant. This must fail for SuperAdmins too; global access only via
+    // @SuperAdminOnly().
+    if (!superAdminOnly && !payload.orgId) {
+      throw new ForbiddenException('No active organization');
+    }
     if (payload.isSuperAdmin) return true;
     if (superAdminOnly) throw new ForbiddenException('SuperAdmin only');
 

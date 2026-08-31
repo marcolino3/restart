@@ -1,8 +1,5 @@
 import z from "zod";
-import {
-  parseAbsenceDateTime,
-  startOfLocalDay,
-} from "./absence-date";
+import { parseAbsenceDateTime, startOfLocalDay } from "./absence-date";
 import { AbsenceDocumentSchema } from "./absence-document";
 
 const dateRequired = z.preprocess((v) => {

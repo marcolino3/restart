@@ -31,6 +31,12 @@ type UpdateInput = {
   requiresCertificate?: boolean;
   certificateRequiredFromDay?: number | null;
   maxDaysPerYear?: number | null;
+  allowsDateRange?: boolean;
+  entryPrecision?: "DAY" | "HALF_DAY" | "TIME";
+  syncToCalendar?: boolean;
+  calendarTitleTemplate?: string | null;
+  maxDaysPerRequest?: number | null;
+  maxDaysAhead?: number | null;
   defaultPercentage?: number;
   requiresApproval?: boolean;
   color?: string | null;
@@ -79,6 +85,10 @@ function sanitize(input: UpdateInput) {
     "defaultIsVacationCapable",
     "requiresCertificate",
     "requiresApproval",
+    "allowsDateRange",
+    "entryPrecision",
+    "syncToCalendar",
+    "calendarTitleTemplate",
     "defaultPercentage",
     "sortOrder",
   ];
@@ -89,6 +99,8 @@ function sanitize(input: UpdateInput) {
     "reducesVacationEntitlementAfterDays",
     "certificateRequiredFromDay",
     "maxDaysPerYear",
+    "maxDaysPerRequest",
+    "maxDaysAhead",
   ];
   for (const k of nullableNumberKeys) {
     const v = input[k];

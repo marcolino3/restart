@@ -1,3 +1,4 @@
+import { AbsenceEntryPrecision } from '../interfaces/absence-entry-precision.enum';
 import { ObjectType, Field, ID, Int } from '@nestjs/graphql';
 import {
   Column,
@@ -93,6 +94,49 @@ export class EmployeeAbsenceCategory extends AbstractEntity<EmployeeAbsenceCateg
   @Field(() => Boolean)
   @Column('boolean', { name: 'requires_approval', default: false })
   requiresApproval!: boolean;
+
+  // Self-Service: darf ein Mitarbeiter mehrere Tage am Stueck erfassen?
+  // false = nur eintaegig (z. B. Krankmeldung fuer heute/morgen).
+  @Field(() => Boolean)
+  @Column('boolean', { name: 'allows_date_range', default: false })
+  allowsDateRange!: boolean;
+
+  // Finest unit for self-service entries: whole days, half days or a time
+  // range on one day. TIME excludes allowsDateRange.
+  @Field(() => AbsenceEntryPrecision)
+  @Column('varchar', {
+    name: 'entry_precision',
+    length: 16,
+    default: AbsenceEntryPrecision.DAY,
+  })
+  entryPrecision!: AbsenceEntryPrecision;
+
+  // Latest allowed start for self-service, in days from today (1 = today or
+  // tomorrow); null = open future.
+  @Field(() => Int, { nullable: true })
+  @Column('int', { name: 'max_days_ahead', nullable: true })
+  maxDaysAhead!: number | null;
+
+  // Max. Kalendertage pro Self-Service-Antrag (nur mit allowsDateRange).
+  @Field(() => Int, { nullable: true })
+  @Column('int', { name: 'max_days_per_request', nullable: true })
+  maxDaysPerRequest!: number | null;
+
+  // Whether absences of this category are mirrored onto the organization
+  // calendar (admin decision, not per absence).
+  @Field(() => Boolean)
+  @Column('boolean', { name: 'sync_to_calendar', default: true })
+  syncToCalendar!: boolean;
+
+  // Event title template; placeholders {firstName} {lastName} {category}
+  // are resolved at sync time. NULL = "{firstName} {lastName} {category}".
+  @Field(() => String, { nullable: true })
+  @Column('varchar', {
+    name: 'calendar_title_template',
+    length: 200,
+    nullable: true,
+  })
+  calendarTitleTemplate!: string | null;
 
   // UI-Hints
   @Field(() => String, { nullable: true })

@@ -35,6 +35,8 @@ type DatePickerFormFieldProps<TFormValues extends FieldValues> = {
   namespace?: string;
   /** When true, the weekday is shown alongside the date. */
   showWeekday?: boolean;
+  /** Render the validation message in flow (for long, wrapping messages). */
+  inlineMessage?: boolean;
 };
 
 export function DatePickerFormField<TFormValues extends FieldValues>({
@@ -46,6 +48,7 @@ export function DatePickerFormField<TFormValues extends FieldValues>({
   width = "w-full",
   namespace = "Common",
   showWeekday = false,
+  inlineMessage = false,
 }: DatePickerFormFieldProps<TFormValues>) {
   const t = useTranslations(namespace);
   const form = useFormContext<TFormValues>();
@@ -112,7 +115,7 @@ export function DatePickerFormField<TFormValues extends FieldValues>({
               </PopoverContent>
             </Popover>
             {description && <FormDescription>{description}</FormDescription>}
-            <FormMessage />
+            <FormMessage className={inlineMessage ? "static mt-1" : undefined} />
           </FormItem>
         );
       }}

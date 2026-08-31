@@ -12,8 +12,22 @@ export type AbsenceCategory = {
   id: string;
   systemCode?: string | null;
   requiresApproval: boolean;
+  allowsDateRange: boolean;
+  entryPrecision?: "DAY" | "HALF_DAY" | "TIME" | null;
+  maxDaysPerRequest?: number | null;
+  maxDaysAhead?: number | null;
+  maxDaysPerYear?: number | null;
   isActive: boolean;
   translations?: AbsenceCategoryTranslation[] | null;
+};
+
+export type AbsenceCategoryQuota = {
+  absenceCategoryId: string;
+  maxDaysPerYear?: number | null;
+  usedDays: number;
+  remainingDays?: number | null;
+  periodStart: string;
+  periodEnd: string;
 };
 
 export type MyAbsence = {
@@ -36,6 +50,11 @@ const CategoriesDocument = gql`
       id
       systemCode
       requiresApproval
+      allowsDateRange
+      entryPrecision
+      maxDaysPerRequest
+      maxDaysAhead
+      maxDaysPerYear
       isActive
       translations {
         locale
@@ -79,6 +98,19 @@ const CreateNoticeDocument = gql`
   }
 `;
 
+const QuotaDocument = gql`
+  query MobileMyAbsenceCategoryQuota($absenceCategoryId: ID!, $date: String) {
+    myAbsenceCategoryQuota(absenceCategoryId: $absenceCategoryId, date: $date) {
+      absenceCategoryId
+      maxDaysPerYear
+      usedDays
+      remainingDays
+      periodStart
+      periodEnd
+    }
+  }
+`;
+
 const WithdrawDocument = gql`
   mutation MobileWithdrawAbsenceRequest($id: ID!) {
     withdrawMyEmployeeAbsenceRequest(id: $id)
@@ -106,6 +138,10 @@ export type CreateAbsenceNoticeInput = {
   absenceCategoryId: string;
   note: string;
   isTeamInformed: boolean;
+  dayPart?: "FULL" | "MORNING" | "AFTERNOON";
+  /** "HH:mm", TIME categories only. */
+  startTime?: string | null;
+  endTime?: string | null;
 };
 
 export async function createAbsenceNotice(
@@ -115,6 +151,17 @@ export async function createAbsenceNotice(
     createEmployeeAbsenceNotice: { id: string; status: AbsenceStatus };
   }>(CreateNoticeDocument, { createEmployeeAbsenceInput: input });
   return createEmployeeAbsenceNotice;
+}
+
+/** Remaining yearly allowance of a category for the signed-in employee. */
+export async function fetchMyAbsenceCategoryQuota(
+  absenceCategoryId: string,
+  date?: string,
+): Promise<AbsenceCategoryQuota> {
+  const { myAbsenceCategoryQuota } = await gqlClient.request<{
+    myAbsenceCategoryQuota: AbsenceCategoryQuota;
+  }>(QuotaDocument, { absenceCategoryId, date });
+  return myAbsenceCategoryQuota;
 }
 
 export async function withdrawAbsenceRequest(id: string): Promise<boolean> {
@@ -127,7 +174,10 @@ export async function withdrawAbsenceRequest(id: string): Promise<boolean> {
 /** Category name in the requested locale, falling back to DE/EN and the code. */
 export function absenceCategoryName(
   category:
-    | { systemCode?: string | null; translations?: AbsenceCategoryTranslation[] | null }
+    | {
+        systemCode?: string | null;
+        translations?: AbsenceCategoryTranslation[] | null;
+      }
     | null
     | undefined,
   locale: string,

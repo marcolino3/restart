@@ -37,6 +37,7 @@ import { Client } from 'pg';
 import { createHash, randomUUID, randomBytes } from 'crypto';
 import { NestFactory } from '@nestjs/core';
 import { INestApplicationContext } from '@nestjs/common';
+import { SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES } from '@/employee-management/employee-absence-categories/seeds/system-employee-absence-categories';
 
 // Deterministic per-lesson pseudo-random in [0, 1). Seed reruns stay stable
 // while each lesson lands on a different point in the range.
@@ -3333,8 +3334,8 @@ async function main() {
 }
 
 /**
- * Stellt die 9 System-Absenzkategorien der Testschule sicher und synct
- * DE/FR/IT/EN-Translations auf die Code-Defaults. Entfernt zusaetzlich
+ * Stellt die System-Absenzkategorien der Testschule sicher und synct
+ * Behavior/Limits sowie DE/FR/IT/EN-Translations auf die Code-Defaults. Entfernt zusaetzlich
  * Custom-Kategorien aus E2E-Laeufen (Name beginnt mit "E2E "), sofern sie
  * von keiner Absenz referenziert werden.
  *
@@ -3342,360 +3343,7 @@ async function main() {
  *   seeds/system-employee-absence-categories.ts
  */
 async function ensureSystemAbsenceCategories(c: Client, ORG_ID: string) {
-  type T = { name: string; description: string | null };
-  type CatDef = {
-    code: string;
-    countsAsWorkTime: boolean;
-    isPaid: boolean;
-    affectsVacationBalance: boolean;
-    defaultIsVacationCapable: boolean;
-    reducesVacationEntitlementAfterDays: number | null;
-    requiresCertificate: boolean;
-    certificateRequiredFromDay: number | null;
-    maxDaysPerYear: number | null;
-    defaultPercentage: number;
-    requiresApproval: boolean;
-    color: string;
-    iconName: string;
-    sortOrder: number;
-    translations: { DE: T; FR: T; IT: T; EN: T };
-  };
-
-  const CATS: CatDef[] = [
-    {
-      code: 'SICKNESS',
-      countsAsWorkTime: true,
-      isPaid: true,
-      affectsVacationBalance: false,
-      defaultIsVacationCapable: false,
-      reducesVacationEntitlementAfterDays: 30,
-      requiresCertificate: true,
-      certificateRequiredFromDay: 3,
-      maxDaysPerYear: null,
-      defaultPercentage: 100,
-      requiresApproval: false,
-      color: '#EF4444',
-      iconName: 'thermometer',
-      sortOrder: 10,
-      translations: {
-        DE: {
-          name: 'Krankheit',
-          description:
-            'Ab dem 3. Tag ist ein Arztzeugnis erforderlich (Schweizer Standard).',
-        },
-        FR: {
-          name: 'Maladie',
-          description:
-            'Certificat médical requis dès le 3e jour (standard suisse).',
-        },
-        IT: {
-          name: 'Malattia',
-          description:
-            'Certificato medico richiesto dal 3° giorno (standard svizzero).',
-        },
-        EN: {
-          name: 'Sick leave',
-          description:
-            'Medical certificate required from day 3 (Swiss standard).',
-        },
-      },
-    },
-    {
-      code: 'ACCIDENT',
-      countsAsWorkTime: true,
-      isPaid: true,
-      affectsVacationBalance: false,
-      defaultIsVacationCapable: false,
-      reducesVacationEntitlementAfterDays: 30,
-      requiresCertificate: true,
-      certificateRequiredFromDay: 1,
-      maxDaysPerYear: null,
-      defaultPercentage: 100,
-      requiresApproval: false,
-      color: '#F97316',
-      iconName: 'heart-pulse',
-      sortOrder: 20,
-      translations: {
-        DE: {
-          name: 'Unfall',
-          description:
-            'Unfallmeldung erforderlich; Lohnfortzahlung gemäss UVG.',
-        },
-        FR: {
-          name: 'Accident',
-          description:
-            'Déclaration d’accident requise; maintien du salaire selon la LAA.',
-        },
-        IT: {
-          name: 'Infortunio',
-          description:
-            'Notifica d’infortunio richiesta; salario garantito secondo la LAINF.',
-        },
-        EN: {
-          name: 'Accident',
-          description:
-            'Accident report required; salary continuation per Swiss accident insurance (UVG/LAA/LAINF).',
-        },
-      },
-    },
-    {
-      code: 'CHILDCARE_SICK',
-      countsAsWorkTime: true,
-      isPaid: true,
-      affectsVacationBalance: false,
-      defaultIsVacationCapable: false,
-      reducesVacationEntitlementAfterDays: null,
-      requiresCertificate: false,
-      certificateRequiredFromDay: null,
-      maxDaysPerYear: 3,
-      defaultPercentage: 100,
-      requiresApproval: false,
-      color: '#F59E0B',
-      iconName: 'baby',
-      sortOrder: 30,
-      translations: {
-        DE: {
-          name: 'Kind krank',
-          description:
-            'Betreuung kranker Kinder: max. 3 Tage pro Ereignis (Art. 36 ArG).',
-        },
-        FR: {
-          name: 'Enfant malade',
-          description:
-            'Soins à un enfant malade: max. 3 jours par évènement (art. 36 LTr).',
-        },
-        IT: {
-          name: 'Figlio malato',
-          description:
-            'Assistenza a un figlio malato: max. 3 giorni per evento (art. 36 LL).',
-        },
-        EN: {
-          name: 'Sick child care',
-          description:
-            'Care for a sick child: max. 3 days per event (Swiss Labor Act art. 36).',
-        },
-      },
-    },
-    {
-      code: 'TRAINING',
-      countsAsWorkTime: true,
-      isPaid: true,
-      affectsVacationBalance: false,
-      defaultIsVacationCapable: true,
-      reducesVacationEntitlementAfterDays: null,
-      requiresCertificate: false,
-      certificateRequiredFromDay: null,
-      maxDaysPerYear: null,
-      defaultPercentage: 100,
-      requiresApproval: true,
-      color: '#3B82F6',
-      iconName: 'graduation-cap',
-      sortOrder: 40,
-      translations: {
-        DE: {
-          name: 'Weiterbildung',
-          description: 'Externe oder interne berufliche Weiterbildung.',
-        },
-        FR: {
-          name: 'Formation continue',
-          description: 'Formation continue interne ou externe.',
-        },
-        IT: {
-          name: 'Formazione continua',
-          description: 'Formazione continua interna o esterna.',
-        },
-        EN: {
-          name: 'Training',
-          description: 'Internal or external professional training.',
-        },
-      },
-    },
-    {
-      code: 'FUNERAL',
-      countsAsWorkTime: true,
-      isPaid: true,
-      affectsVacationBalance: false,
-      defaultIsVacationCapable: true,
-      reducesVacationEntitlementAfterDays: null,
-      requiresCertificate: false,
-      certificateRequiredFromDay: null,
-      maxDaysPerYear: 3,
-      defaultPercentage: 100,
-      requiresApproval: false,
-      color: '#6B7280',
-      iconName: 'flower',
-      sortOrder: 50,
-      translations: {
-        DE: {
-          name: 'Trauerfall',
-          description:
-            'Todesfall in der nahen Familie; bis zu 3 Tage bezahlte Absenz.',
-        },
-        FR: {
-          name: 'Décès',
-          description:
-            'Décès d’un proche; jusqu’à 3 jours d’absence rémunérée.',
-        },
-        IT: {
-          name: 'Lutto',
-          description:
-            'Decesso di un familiare prossimo; fino a 3 giorni di assenza retribuita.',
-        },
-        EN: {
-          name: 'Bereavement',
-          description:
-            'Death of a close family member; up to 3 days of paid leave.',
-        },
-      },
-    },
-    {
-      code: 'MOVE',
-      countsAsWorkTime: true,
-      isPaid: true,
-      affectsVacationBalance: false,
-      defaultIsVacationCapable: true,
-      reducesVacationEntitlementAfterDays: null,
-      requiresCertificate: false,
-      certificateRequiredFromDay: null,
-      maxDaysPerYear: 1,
-      defaultPercentage: 100,
-      requiresApproval: false,
-      color: '#8B5CF6',
-      iconName: 'truck',
-      sortOrder: 60,
-      translations: {
-        DE: {
-          name: 'Umzug',
-          description: 'Tag des Wohnungsumzugs; 1 bezahlter Tag pro Jahr.',
-        },
-        FR: {
-          name: 'Déménagement',
-          description: 'Jour de déménagement; 1 jour rémunéré par an.',
-        },
-        IT: {
-          name: 'Trasloco',
-          description: 'Giorno del trasloco; 1 giorno retribuito all’anno.',
-        },
-        EN: {
-          name: 'Moving day',
-          description: 'Day of residential move; 1 paid day per year.',
-        },
-      },
-    },
-    {
-      code: 'MILITARY_SERVICE',
-      countsAsWorkTime: true,
-      isPaid: true,
-      affectsVacationBalance: false,
-      defaultIsVacationCapable: false,
-      reducesVacationEntitlementAfterDays: null,
-      requiresCertificate: true,
-      certificateRequiredFromDay: 1,
-      maxDaysPerYear: null,
-      defaultPercentage: 100,
-      requiresApproval: false,
-      color: '#10B981',
-      iconName: 'shield',
-      sortOrder: 70,
-      translations: {
-        DE: {
-          name: 'Militärdienst',
-          description:
-            'Obligatorische Dienstpflicht; Lohnfortzahlung via Erwerbsersatzordnung (EO).',
-        },
-        FR: {
-          name: 'Service militaire',
-          description:
-            'Service militaire obligatoire; compensation via les Allocations pour perte de gain (APG).',
-        },
-        IT: {
-          name: 'Servizio militare',
-          description:
-            'Servizio militare obbligatorio; indennità tramite l’Indennità di perdita di guadagno (IPG).',
-        },
-        EN: {
-          name: 'Military service',
-          description:
-            'Mandatory Swiss military service; income compensation via EO/APG/IPG.',
-        },
-      },
-    },
-    {
-      code: 'CIVIL_SERVICE',
-      countsAsWorkTime: true,
-      isPaid: true,
-      affectsVacationBalance: false,
-      defaultIsVacationCapable: false,
-      reducesVacationEntitlementAfterDays: null,
-      requiresCertificate: true,
-      certificateRequiredFromDay: 1,
-      maxDaysPerYear: null,
-      defaultPercentage: 100,
-      requiresApproval: false,
-      color: '#14B8A6',
-      iconName: 'shield-check',
-      sortOrder: 80,
-      translations: {
-        DE: {
-          name: 'Zivildienst',
-          description:
-            'Ersatzdienst statt Militärdienst; Lohnfortzahlung via EO.',
-        },
-        FR: {
-          name: 'Service civil',
-          description:
-            'Service civil en remplacement du service militaire; compensation via APG.',
-        },
-        IT: {
-          name: 'Servizio civile',
-          description:
-            'Servizio civile in sostituzione del servizio militare; indennità tramite IPG.',
-        },
-        EN: {
-          name: 'Civil service',
-          description:
-            'Civil service in lieu of military duty; income compensation via EO/APG/IPG.',
-        },
-      },
-    },
-    {
-      code: 'OTHER',
-      countsAsWorkTime: false,
-      isPaid: false,
-      affectsVacationBalance: false,
-      defaultIsVacationCapable: true,
-      reducesVacationEntitlementAfterDays: null,
-      requiresCertificate: false,
-      certificateRequiredFromDay: null,
-      maxDaysPerYear: null,
-      defaultPercentage: 100,
-      requiresApproval: true,
-      color: '#9CA3AF',
-      iconName: 'help-circle',
-      sortOrder: 999,
-      translations: {
-        DE: {
-          name: 'Sonstiges',
-          description:
-            'Andere bezahlte oder unbezahlte Abwesenheit; Genehmigung erforderlich.',
-        },
-        FR: {
-          name: 'Autre',
-          description:
-            'Autre absence rémunérée ou non rémunérée; approbation requise.',
-        },
-        IT: {
-          name: 'Altro',
-          description:
-            'Altra assenza retribuita o non retribuita; approvazione richiesta.',
-        },
-        EN: {
-          name: 'Other',
-          description: 'Other paid or unpaid absence; requires approval.',
-        },
-      },
-    },
-  ];
+  const CATS = SYSTEM_EMPLOYEE_ABSENCE_CATEGORIES;
 
   // E2E-Leftovers entfernen (nur wenn keine Absenz darauf zeigt)
   const e2eDeleted = await c.query(
@@ -3748,14 +3396,16 @@ async function ensureSystemAbsenceCategories(c: Client, ORG_ID: string) {
            counts_as_work_time, is_paid, affects_vacation_balance,
            default_is_vacation_capable, reduces_vacation_entitlement_after_days,
            requires_certificate, certificate_required_from_day, max_days_per_year,
-           default_percentage, requires_approval, color, icon_name, sort_order
+           default_percentage, requires_approval, allows_date_range,
+           max_days_per_request, color, icon_name, sort_order
          ) VALUES (
            $1, 1, true, false, now(), now(),
            $2, $3, true,
            $4, $5, $6,
            $7, $8,
            $9, $10, $11,
-           $12, $13, $14, $15, $16
+           $12, $13, $14,
+           $15, $16, $17, $18
          )`,
         [
           categoryId,
@@ -3771,6 +3421,8 @@ async function ensureSystemAbsenceCategories(c: Client, ORG_ID: string) {
           def.maxDaysPerYear,
           def.defaultPercentage,
           def.requiresApproval,
+          def.allowsDateRange,
+          def.maxDaysPerRequest,
           def.color,
           def.iconName,
           def.sortOrder,
@@ -3779,6 +3431,36 @@ async function ensureSystemAbsenceCategories(c: Client, ORG_ID: string) {
       created++;
     } else {
       categoryId = (existing.rows[0] as { id: string }).id;
+      // Behavior/limits follow the code defaults on every rerun so the
+      // Testschule never drifts from the shipped Swiss-law configuration.
+      await c.query(
+        `UPDATE employee_absence_categories SET
+           counts_as_work_time = $2, is_paid = $3, affects_vacation_balance = $4,
+           default_is_vacation_capable = $5, reduces_vacation_entitlement_after_days = $6,
+           requires_certificate = $7, certificate_required_from_day = $8,
+           max_days_per_year = $9, default_percentage = $10, requires_approval = $11,
+           allows_date_range = $12, max_days_per_request = $13,
+           color = $14, icon_name = $15, sort_order = $16, "updatedAt" = now()
+         WHERE id = $1`,
+        [
+          categoryId,
+          def.countsAsWorkTime,
+          def.isPaid,
+          def.affectsVacationBalance,
+          def.defaultIsVacationCapable,
+          def.reducesVacationEntitlementAfterDays,
+          def.requiresCertificate,
+          def.certificateRequiredFromDay,
+          def.maxDaysPerYear,
+          def.defaultPercentage,
+          def.requiresApproval,
+          def.allowsDateRange,
+          def.maxDaysPerRequest,
+          def.color,
+          def.iconName,
+          def.sortOrder,
+        ],
+      );
     }
 
     for (const locale of ['DE', 'FR', 'IT', 'EN'] as const) {
@@ -3798,7 +3480,7 @@ async function ensureSystemAbsenceCategories(c: Client, ORG_ID: string) {
     }
   }
   console.log(
-    `✓ System absence categories: +${created} created, ${translations} translations synced`,
+    `✓ System absence categories: +${created} created, ${CATS.length - created} synced, ${translations} translations synced`,
   );
 }
 
