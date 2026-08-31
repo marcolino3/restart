@@ -65,6 +65,9 @@ importers:
       '@better-auth/expo':
         specifier: ^1.7.1
         version: 1.7.1(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.4.0(zod@4.4.3))(jose@6.2.9)(kysely@0.29.5)(nanostores@1.5.1))(better-auth@1.7.1(@opentelemetry/api@1.9.1)(next@16.3.2(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.62.1)(@types/node@25.9.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(pg@8.23.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11(@opentelemetry/api@1.9.1)(@types/node@25.9.5)(jsdom@30.0.1(@noble/hashes@2.3.0))(msw@2.15.0(@types/node@25.9.5)(typescript@5.9.3))(vite@8.2.2(@types/node@25.9.5)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))))(expo-constants@18.0.14)(expo-linking@8.0.12)(expo-network@55.0.14(expo@54.0.37)(react@19.2.8))(expo-secure-store@15.0.8(expo@54.0.37))(expo-web-browser@15.0.11(expo@54.0.37)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.8)))
+      '@better-auth/utils':
+        specifier: 0.4.2
+        version: 0.4.2
       '@googlemaps/google-maps-services-js':
         specifier: ^3.4.2
         version: 3.4.2
@@ -1803,9 +1806,6 @@ packages:
 
   '@better-auth/utils@0.4.2':
     resolution: {integrity: sha512-AUxrvu+HaaODsUyzDxFgwd/8RZ1yZaYo42LXKSrU2oGgR38pS1ij8nqQKNgtTWoYGpNevNXtCfgTy6loHveW9A==}
-
-  '@better-auth/utils@0.4.3':
-    resolution: {integrity: sha512-/X4gRYJBwRuLFjjANVpTDJJkAhLD6Sf8SIBypQ+Q2kDW1MnCsyxUujJzdKYsp59i4c41+AaMtpY/WQAQumqtOA==}
 
   '@better-auth/utils@0.5.0':
     resolution: {integrity: sha512-BL8W4EfIZFwlu0r54m3v1ztjDhu6dDe/amLTm0xybmbZaNgYUqhD3SjpAsnq0q8YD6/ki4iwIgxJNLP/N3TxiA==}
@@ -14704,10 +14704,6 @@ snapshots:
     dependencies:
       '@noble/hashes': 2.3.0
 
-  '@better-auth/utils@0.4.3':
-    dependencies:
-      '@noble/hashes': 2.3.0
-
   '@better-auth/utils@0.5.0':
     dependencies:
       '@noble/hashes': 2.3.0
@@ -20858,7 +20854,7 @@ snapshots:
 
   better-call@1.3.7(zod@4.4.3):
     dependencies:
-      '@better-auth/utils': 0.4.3
+      '@better-auth/utils': 0.4.2
       '@better-fetch/fetch': 1.3.1
       rou3: 0.7.12
       set-cookie-parser: 3.1.1

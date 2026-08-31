@@ -32,4 +32,5 @@ resources:
   - network-policies/frontend.yaml
   - network-policies/backend.yaml
   - network-policies/migrate-job.yaml
+  - network-policies/seed-reset-job.yaml
   - network-policies/acme-solver.yaml
