@@ -5,6 +5,7 @@ import type {
   CurriculumRawRow,
 } from './curriculum-file-parser';
 import { buildImportPlan, type PlanNode } from './curriculum-plan-builder';
+import type { ImportIssue } from './import-issue';
 
 function row(
   seq: number | null,
@@ -20,7 +21,7 @@ function row(
 
 function buildParsed(
   sheets: Partial<Record<CurriculumLocale, CurriculumRawRow[]>>,
-  warnings: string[] = [],
+  warnings: ImportIssue[] = [],
 ): CurriculumParseResult {
   return {
     master: CurriculumLocale.DE,
@@ -104,9 +105,12 @@ describe('buildImportPlan', () => {
         FR: [row(1, 'Inf.', 'Maths', 'Algèbre', 'Éq', 'Linéaire')],
       }),
     );
-    expect(
-      plan.warnings.some((w) => w.includes('FR') && w.includes('1 master row')),
-    ).toBe(true);
+    expect(plan.warnings).toContainEqual(
+      expect.objectContaining({
+        code: 'TRANSLATION_MISSING',
+        params: { sheet: 'FR', count: 1 },
+      }),
+    );
   });
 
   it('extra Sequence in FR (not in master) → warning + ignored', () => {
@@ -119,11 +123,12 @@ describe('buildImportPlan', () => {
         ],
       }),
     );
-    expect(
-      plan.warnings.some(
-        (w) => w.includes('FR') && w.toLowerCase().includes('not exist'),
-      ),
-    ).toBe(true);
+    expect(plan.warnings).toContainEqual(
+      expect.objectContaining({
+        code: 'TRANSLATION_EXTRA_SEQUENCE',
+        params: { sheet: 'FR', count: 1 },
+      }),
+    );
     expect(plan.stats.lessonCount).toBe(1);
   });
 
@@ -140,13 +145,12 @@ describe('buildImportPlan', () => {
         ],
       }),
     );
-    expect(
-      plan.warnings.some(
-        (w) =>
-          w.toLowerCase().includes('conflict') ||
-          w.toLowerCase().includes('algèbre'),
-      ),
-    ).toBe(true);
+    expect(plan.warnings).toContainEqual(
+      expect.objectContaining({
+        code: 'TRANSLATION_CONFLICT',
+        params: expect.objectContaining({ locale: 'FR', first: 'Algèbre' }),
+      }),
+    );
   });
 
   it('all four locales attach translations', () => {

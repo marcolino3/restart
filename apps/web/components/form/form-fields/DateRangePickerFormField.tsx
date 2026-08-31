@@ -33,6 +33,8 @@ type DateRangePickerFormFieldProps<TFormValues extends FieldValues> = {
   width?: string;
   /** i18n namespace for `label` and placeholder. Default `"Common"`. */
   namespace?: string;
+  /** Render the validation message in flow (for long, wrapping messages). */
+  inlineMessage?: boolean;
 };
 
 const preserveTime = (date: Date): Date => {
@@ -61,6 +63,7 @@ export function DateRangePickerFormField<TFormValues extends FieldValues>({
   disabledDate = (date) => date > new Date() || date < new Date("1900-01-01"),
   width = "w-full",
   namespace = "Common",
+  inlineMessage = false,
 }: DateRangePickerFormFieldProps<TFormValues>) {
   const t = useTranslations(namespace);
   const tCommon = useTranslations("Common");
@@ -145,7 +148,7 @@ export function DateRangePickerFormField<TFormValues extends FieldValues>({
             </PopoverContent>
           </Popover>
           {description && <FormDescription>{description}</FormDescription>}
-          <FormMessage />
+          <FormMessage className={inlineMessage ? "static mt-1" : undefined} />
         </FormItem>
       )}
     />

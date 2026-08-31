@@ -171,6 +171,7 @@ Go to your GitHub repository → Settings → Secrets → Actions, and add:
 | `ORG_SETTINGS_ENCRYPTION_KEY` | Organization settings encryption key |
 | `SUPERADMIN_EMAIL` | Super admin email |
 | `SUPERADMIN_PASSWORD` | Super admin password |
+| `SEED_USER_PASSWORD` | Password for every seeded Testschule user on staging (see [Staging reset](#staging-reset--testschule-seed)) |
 
 ### 6. DNS Configuration
 
@@ -212,6 +213,78 @@ kubectl get svc -n ingress-nginx
 # Deploy to production (with confirmation prompt)
 ./scripts/deploy-production.sh <image-tag>
 ```
+
+## Staging reset & Testschule seed
+
+Staging ist die Live-Test- und Demo-Umgebung. Die Datenbank gilt dort nicht als
+etwas, das erhalten bleibt, sondern als etwas, das jederzeit reproduzierbar aus
+dem Seed entsteht — so sammeln sich keine Reste aus manuellem Testen an.
+
+**Der Reset ist zerstörend: alle Daten in der Staging-DB gehen verloren.**
+
+### Was läuft
+
+`apps/backend/src/reset-staging.ts` führt vier Schritte aus, in dieser Reihenfolge:
+
+1. `DROP SCHEMA public CASCADE` / `CREATE SCHEMA public` — nicht `DROP DATABASE`,
+   weil der Job auf genau diese Datenbank verbunden ist und die Rolle kein
+   `CREATEDB` braucht.
+2. TypeORM-Migrationen (`dist/src/migrate.js`) — Schema inkl. System-Seeds.
+3. better-auth-Schema (`dist/src/migrate-auth.js`) — `user`/`session`/`account`
+   liegen ausserhalb von TypeORM.
+4. Testschule-Seed (`dist/scripts/seed-testschule.js`) — ~250 Schüler, 52
+   Mitarbeitende, Curricula, Admissions, Record Keeping.
+
+Schritt 4 schreibt better-auth-Accounts und muss deshalb nach Schritt 3 laufen.
+
+### Wann es läuft
+
+- **Nächtlich um 03:00 Europe/Zurich** via CronJob
+  (`k8s/staging/seed-reset-cronjob.yaml`).
+- **Manuell** über GitHub → Actions → **"Reset Staging"** → Run workflow. Zur
+  Bestätigung muss `reset staging` eingetippt werden.
+
+Beide nutzen das Image `:staging-current`, laufen also gegen denselben
+Code-Stand wie die App.
+
+### Warum kein Button in der App
+
+Ein Reset-Button im Dashboard müsste dem Backend erlauben, Jobs im Cluster zu
+erstellen — genau die Härtung, die `automountServiceAccountToken: false`
+bewusst zumacht. Ausserdem läge der Drop-Code dann im Production-Image und wäre
+nur durch eine Bedingung gehalten. Über den CronJob existiert die Fähigkeit in
+Production gar nicht: das Production-Overlay enthält weder CronJob noch
+Workflow.
+
+### Schutz gegen einen Lauf auf der falschen Datenbank
+
+`reset-staging.ts` bricht ab, wenn eine der drei Bedingungen nicht zutrifft:
+
+| Prüfung | Staging | Production |
+|---|---|---|
+| `NODE_ENV === 'staging'` | ✅ | `production` → Abbruch |
+| `DB_HOST` enthält `restart-staging` | ✅ `postgres-postgresql.restart-staging.svc…` | `172.21.2.249` → Abbruch |
+| `SEED_USER_PASSWORD` gesetzt | aus K8s-Secret | — |
+
+Die Regeln sind in `apps/backend/src/reset-staging.spec.ts` abgedeckt.
+
+### Seed-Logins
+
+`staging.colibri-app.ch` ist öffentlich erreichbar, deshalb bekommen die
+Seed-User **nicht** das im Repository stehende `test1234`, sondern das Passwort
+aus dem Repository-Secret `SEED_USER_PASSWORD`. Ohne diesen Secret bricht der
+Reset kontrolliert ab. Lokal bleibt der Default `test1234` unverändert.
+
+Der Deploy-Workflow legt das K8s-Secret `seed-user-password` bei jedem
+Staging-Deploy an; fehlt der Repository-Secret, warnt er nur und der nächtliche
+Reset bricht bis zur Konfiguration ab.
+
+### Curriculum-Dateien
+
+Der Seed importiert die Montessori-Sheets aus `apps/backend/seed-assets/curriculum/`
+(im Image enthalten, gesteuert über `SEED_CURRICULA_DIR`). Fehlen sie, wird der
+Curriculum-Import mit einer Warnung übersprungen; alle übrigen Daten entstehen
+trotzdem.
 
 ## Production Launch Runbook (einmalig)
 

@@ -24,7 +24,48 @@ import {
 } from "@/components/ui/dialog";
 import { ROUTES } from "@/constants/routes";
 import { importCurriculumFromPlanAction } from "../actions/import-curriculum-from-plan.action";
-import { pickTranslation, type CurriculumLocale, type ImportPlan } from "../types";
+import {
+  pickTranslation,
+  type CurriculumLocale,
+  type ImportIssue,
+  type ImportPlan,
+} from "../types";
+
+const IMPORT_ISSUE_CODES = new Set<string>([
+  "UNSUPPORTED_EXTENSION",
+  "NO_SHEETS",
+  "HEADER_NOT_FOUND",
+  "NO_DATA_ROWS",
+  "NO_MASTER_SHEET",
+  "UNKNOWN_SHEET_NAME",
+  "DUPLICATE_SHEET_LOCALE",
+  "ROWS_WITHOUT_SEQUENCE",
+  "DUPLICATE_SEQUENCE",
+  "TRANSLATION_CONFLICT",
+  "TRANSLATION_HIERARCHY_MISSING",
+  "TRANSLATION_MISSING",
+  "TRANSLATION_EXTRA_SEQUENCE",
+]);
+
+function isImportIssue(value: unknown): value is ImportIssue {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.code === "string" &&
+    IMPORT_ISSUE_CODES.has(v.code) &&
+    typeof v.params === "object" &&
+    v.params !== null
+  );
+}
+
+class ImportPreviewError extends Error {
+  constructor(
+    message: string,
+    readonly issue: ImportIssue | null,
+  ) {
+    super(message);
+  }
+}
 
 const NameSchema = z.object({ name: z.string() });
 
@@ -40,7 +81,17 @@ function slugify(value: string): string {
 
 export function CurriculumImportDialog() {
   const t = useTranslations("Curricula");
+  const tIssue = useTranslations("Curricula.importIssues");
   const tCommon = useTranslations("Common");
+
+  // ICU cannot branch on an empty string, so blank params render as a dash.
+  const describeIssue = (issue: ImportIssue): string =>
+    tIssue(
+      issue.code,
+      Object.fromEntries(
+        Object.entries(issue.params).map(([k, v]) => [k, v === "" ? "—" : v]),
+      ),
+    );
   const router = useRouter();
   const locale = useLocale();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -87,19 +138,28 @@ export function CurriculumImportDialog() {
         credentials: "include",
       });
       if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as
-          | { message?: string }
-          | null;
-        throw new Error(body?.message ?? `Upload failed: ${res.statusText}`);
+        const body: unknown = await res.json().catch(() => null);
+        const message =
+          body && typeof body === "object" && "message" in body
+            ? String((body as { message: unknown }).message)
+            : `Upload failed: ${res.statusText}`;
+        throw new ImportPreviewError(
+          message,
+          isImportIssue(body) ? { ...body, message } : null,
+        );
       }
       const data = (await res.json()) as ImportPlan;
       setPlan(data);
       const defaultName = file.name.replace(/\.[^.]+$/, "");
       nameForm.reset({ name: defaultName });
     } catch (err) {
-      toast.error(t("importPreviewError"), {
-        description: err instanceof Error ? err.message : String(err),
-      });
+      const description =
+        err instanceof ImportPreviewError && err.issue
+          ? describeIssue(err.issue)
+          : err instanceof Error
+            ? err.message
+            : String(err);
+      toast.error(t("importPreviewError"), { description, duration: 10000 });
     } finally {
       setIsUploading(false);
     }
@@ -213,7 +273,7 @@ export function CurriculumImportDialog() {
               <div className="bg-amber-50 dark:bg-amber-950/30 p-3 rounded text-sm">
                 <ul className="list-disc pl-5 space-y-1">
                   {plan.warnings.map((w, i) => (
-                    <li key={i}>{w}</li>
+                    <li key={i}>{describeIssue(w)}</li>
                   ))}
                 </ul>
               </div>

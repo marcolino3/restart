@@ -70,6 +70,13 @@ export const TimeBalanceCards = ({ balance, vacation }: Props) => {
               days: (vacation?.entitlementDays ?? 0).toFixed(0),
             })}
           </p>
+          {(vacation?.reductionDays ?? 0) > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {t("vacationReduction", {
+                days: (vacation?.reductionDays ?? 0).toFixed(1),
+              })}
+            </p>
+          )}
         </CardContent>
       </Card>
 

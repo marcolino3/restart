@@ -2,6 +2,7 @@ import {
   calculateDays,
   dailyPlannedMinutes,
   proRataEntitlementDays,
+  vacationReductionDays,
   timeWindowMinutes,
 } from './work-time-calculation';
 import { CalcContract, CalcInput } from './work-time-calculation.types';
@@ -166,6 +167,50 @@ describe('proRataEntitlementDays', () => {
       ...range,
     );
     expect(days).toBe(0);
+  });
+});
+
+describe('vacationReductionDays (OR Art. 329b)', () => {
+  it('does not reduce within the grace period', () => {
+    expect(vacationReductionDays(25, [{ days: 25, gracePeriodDays: 30 }])).toBe(
+      0,
+    );
+    expect(vacationReductionDays(25, [{ days: 45, gracePeriodDays: 30 }])).toBe(
+      0,
+    );
+  });
+
+  it('reduces by 1/12 per full month beyond the grace period, rounded to half days', () => {
+    expect(vacationReductionDays(25, [{ days: 75, gracePeriodDays: 30 }])).toBe(
+      2,
+    );
+    expect(vacationReductionDays(24, [{ days: 90, gracePeriodDays: 30 }])).toBe(
+      4,
+    );
+  });
+
+  it('cumulates absences sharing a grace period and weights partial incapacity', () => {
+    expect(
+      vacationReductionDays(25, [
+        { days: 60, gracePeriodDays: 30 },
+        { days: 40 * 0.5, gracePeriodDays: 30 },
+      ]),
+    ).toBe(2);
+  });
+
+  it('applies a longer grace period (pregnancy) and no grace for culpable absences', () => {
+    expect(
+      vacationReductionDays(25, [{ days: 100, gracePeriodDays: 60 }]),
+    ).toBe(2);
+    expect(vacationReductionDays(24, [{ days: 35, gracePeriodDays: 0 }])).toBe(
+      2,
+    );
+  });
+
+  it('returns 0 without entitlement', () => {
+    expect(vacationReductionDays(0, [{ days: 100, gracePeriodDays: 30 }])).toBe(
+      0,
+    );
   });
 });
 

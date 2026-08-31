@@ -88,6 +88,10 @@ export class VacationBalance {
   @Field(() => Float)
   usedDays: number;
 
+  /** Kürzung nach OR Art. 329b (nur CH-Organisationen, sonst 0). */
+  @Field(() => Float)
+  reductionDays: number;
+
   @Field(() => Float)
   remainingDays: number;
 }

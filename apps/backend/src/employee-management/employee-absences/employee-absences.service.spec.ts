@@ -472,7 +472,10 @@ describe('EmployeeAbsencesService', () => {
     const plusDays = (n: number) =>
       iso(new Date(today.getTime() + n * 86_400_000));
 
-    function mockNoticeContext(requiresApproval: boolean) {
+    function mockNoticeContext(
+      requiresApproval: boolean,
+      category: Record<string, unknown> = {},
+    ) {
       entityManager.findOne
         .mockResolvedValueOnce({
           id: 'mem-1',
@@ -483,12 +486,18 @@ describe('EmployeeAbsencesService', () => {
           id: 'cat-1',
           systemCode: 'VACATION',
           requiresApproval,
+          maxDaysAhead: requiresApproval ? null : 1,
+          ...category,
         });
       const tx = {
         findOne: jest
           .fn()
           .mockResolvedValueOnce({ id: 'org-1' })
-          .mockResolvedValueOnce({ id: 'cat-1', systemCode: 'VACATION' }),
+          .mockResolvedValueOnce({
+            id: 'cat-1',
+            systemCode: 'VACATION',
+            ...category,
+          }),
         createQueryBuilder: jest.fn().mockReturnValue({
           where: jest.fn().mockReturnThis(),
           andWhere: jest.fn().mockReturnThis(),
@@ -536,6 +545,168 @@ describe('EmployeeAbsencesService', () => {
       expect(notifications.notifyRequested).toHaveBeenCalledTimes(1);
     });
 
+    it('TIME-Kategorie: Bis ohne Von wird abgelehnt', async () => {
+      mockNoticeContext(false, { entryPrecision: 'TIME' });
+      await expect(
+        service.createEmployeeAbsenceNotice(
+          {
+            absenceCategoryId: 'cat-1',
+            startDate: plusDays(1),
+            endTime: '15:00',
+          } as CreateEmployeeAbsenceNoticeInput,
+          user,
+        ),
+      ).rejects.toThrow('requires a start and end time');
+    });
+
+    it('TIME-Kategorie erlaubt auch ganze Tage', async () => {
+      const tx = mockNoticeContext(false, {
+        entryPrecision: 'TIME',
+        defaultPercentage: 100,
+      });
+      await service.createEmployeeAbsenceNotice(
+        {
+          absenceCategoryId: 'cat-1',
+          startDate: plusDays(1),
+        } as CreateEmployeeAbsenceNoticeInput,
+        user,
+      );
+      const created = tx.create.mock.calls[0][1] as Record<string, unknown>;
+      expect(created.dayPart).toBe('FULL');
+      expect(created.percentage).toBe(100);
+    });
+
+    it('TIME-Kategorie: offenes Ende läuft bis Tagesende', async () => {
+      const tx = mockNoticeContext(false, {
+        entryPrecision: 'TIME',
+        defaultPercentage: 100,
+      });
+      await service.createEmployeeAbsenceNotice(
+        {
+          absenceCategoryId: 'cat-1',
+          startDate: plusDays(1),
+          startTime: '15:00',
+        } as CreateEmployeeAbsenceNoticeInput,
+        user,
+      );
+      const created = tx.create.mock.calls[0][1] as Record<string, unknown>;
+      expect(created.startTime).toBe('15:00');
+      expect(created.endTime).toBeNull();
+      expect(created.percentage).toBe(24);
+    });
+
+    it('HALF_DAY-Kategorie lehnt Uhrzeiten ab', async () => {
+      mockNoticeContext(false, { entryPrecision: 'HALF_DAY' });
+      await expect(
+        service.createEmployeeAbsenceNotice(
+          {
+            absenceCategoryId: 'cat-1',
+            startDate: plusDays(1),
+            startTime: '14:00',
+            endTime: '15:00',
+          } as CreateEmployeeAbsenceNoticeInput,
+          user,
+        ),
+      ).rejects.toThrow('does not allow a time range');
+    });
+
+    it('maxDaysAhead begrenzt den Vorlauf unabhängig von der Genehmigung', async () => {
+      mockNoticeContext(true, { maxDaysAhead: 2 });
+      await expect(
+        service.createEmployeeAbsenceNotice(
+          {
+            absenceCategoryId: 'cat-1',
+            startDate: plusDays(3),
+          } as CreateEmployeeAbsenceNoticeInput,
+          user,
+        ),
+      ).rejects.toThrow('up to 2 days ahead');
+    });
+
+    it('TIME-Kategorie speichert Zeiten und abgeleiteten Grad', async () => {
+      const tx = mockNoticeContext(false, {
+        entryPrecision: 'TIME',
+        defaultPercentage: 100,
+      });
+      await service.createEmployeeAbsenceNotice(
+        {
+          absenceCategoryId: 'cat-1',
+          startDate: plusDays(1),
+          startTime: '14:00',
+          endTime: '15:30',
+        } as CreateEmployeeAbsenceNoticeInput,
+        user,
+      );
+      const created = tx.create.mock.calls[0][1] as Record<string, unknown>;
+      expect(created.startTime).toBe('14:00');
+      expect(created.endTime).toBe('15:30');
+      expect(created.percentage).toBe(18);
+      expect(calendarSync.sync).toHaveBeenCalledWith(
+        expect.objectContaining({ startTime: '14:00', endTime: '15:30' }),
+      );
+    });
+
+    it('DAY-Kategorie lehnt Halbtag und Zeiten ab', async () => {
+      mockNoticeContext(false, { entryPrecision: 'DAY' });
+      await expect(
+        service.createEmployeeAbsenceNotice(
+          {
+            absenceCategoryId: 'cat-1',
+            startDate: plusDays(1),
+            dayPart: 'AFTERNOON',
+          } as CreateEmployeeAbsenceNoticeInput,
+          user,
+        ),
+      ).rejects.toThrow('only allows whole days');
+    });
+
+    it('HALF_DAY-Kategorie: Nachmittag ergibt 50 %', async () => {
+      const tx = mockNoticeContext(false, {
+        entryPrecision: 'HALF_DAY',
+        defaultPercentage: 100,
+      });
+      await service.createEmployeeAbsenceNotice(
+        {
+          absenceCategoryId: 'cat-1',
+          startDate: plusDays(1),
+          dayPart: 'AFTERNOON',
+        } as CreateEmployeeAbsenceNoticeInput,
+        user,
+      );
+      const created = tx.create.mock.calls[0][1] as Record<string, unknown>;
+      expect(created.dayPart).toBe('AFTERNOON');
+      expect(created.percentage).toBe(50);
+    });
+
+    it('Kategorie ohne Kalender-Sync ruft den Sync nicht auf', async () => {
+      mockNoticeContext(false, { syncToCalendar: false });
+      await service.createEmployeeAbsenceNotice(
+        {
+          absenceCategoryId: 'cat-1',
+          startDate: plusDays(1),
+        } as CreateEmployeeAbsenceNoticeInput,
+        user,
+      );
+      expect(calendarSync.sync).not.toHaveBeenCalled();
+    });
+
+    it('Titel-Template der Kategorie geht an den Kalender-Sync', async () => {
+      mockNoticeContext(false, { calendarTitleTemplate: '{lastName} krank' });
+      await service.createEmployeeAbsenceNotice(
+        {
+          absenceCategoryId: 'cat-1',
+          startDate: plusDays(1),
+        } as CreateEmployeeAbsenceNoticeInput,
+        user,
+      );
+      expect(calendarSync.sync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          employeeName: 'Anna Test',
+          titleTemplate: '{lastName} krank',
+        }),
+      );
+    });
+
     it('Mitteilungs-Kategorie morgen wird sofort APPROVED mit Recompute', async () => {
       mockNoticeContext(false);
       const result = await service.createEmployeeAbsenceNotice(
@@ -559,7 +730,7 @@ describe('EmployeeAbsencesService', () => {
         status: EmployeeAbsenceStatus.PENDING,
         startDate: new Date('2026-05-04'),
         endDate: new Date('2026-05-06'),
-        absenceCategory: { systemCode: 'VACATION' },
+        absenceCategory: { systemCode: 'VACATION', syncToCalendar: true },
       };
       entityManager.findOne
         .mockResolvedValueOnce(absence)

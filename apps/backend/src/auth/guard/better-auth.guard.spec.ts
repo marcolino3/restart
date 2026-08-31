@@ -139,6 +139,26 @@ describe('BetterAuthGuard', () => {
     expect(ok).toBe(true);
   });
 
+  it('rejects a SuperAdmin on org-scoped handlers without an active organization', async () => {
+    // Regression: SuperAdmin without active org reached org-scoped resolvers
+    // with orgId = null and TypeORM dropped the tenant filter entirely.
+    getSession.mockResolvedValue({
+      user: { email: 'user@example.com' },
+      activeOrganizationId: null,
+    });
+    usersService.findOneByEmail.mockResolvedValue({
+      id: 'user-1',
+      isSuperAdmin: true,
+    });
+
+    await expect(
+      guard.canActivate(
+        buildContext(handlerRequiring({ perms: ['TIMESHEET_WRITE'] })),
+      ),
+    ).rejects.toThrow(ForbiddenException);
+    expect(getAuthContextMock).not.toHaveBeenCalled();
+  });
+
   it('lets SuperAdmin bypass every check', async () => {
     usersService.findOneByEmail.mockResolvedValue({
       id: 'user-1',

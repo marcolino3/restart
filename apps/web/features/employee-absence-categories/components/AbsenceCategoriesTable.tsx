@@ -19,6 +19,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Lock, Pencil, Plus } from "lucide-react";
+import { DynamicIcon } from "lucide-react/dynamic";
+import { isCuratedIconName } from "@/components/form/form-fields/IconComboboxFormField";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -240,12 +242,21 @@ function SortableTableRow({
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-2">
-          {item.color && (
-            <span
+          {isCuratedIconName(item.iconName) ? (
+            <DynamicIcon
               aria-hidden
-              className="inline-block h-3 w-3 rounded-full"
-              style={{ backgroundColor: item.color }}
+              name={item.iconName}
+              className="h-4 w-4 shrink-0"
+              style={item.color ? { color: item.color } : undefined}
             />
+          ) : (
+            item.color && (
+              <span
+                aria-hidden
+                className="inline-block h-3 w-3 rounded-full"
+                style={{ backgroundColor: item.color }}
+              />
+            )
           )}
           <span className="font-medium">
             {pickAbsenceCategoryName(item, locale)}
@@ -263,23 +274,32 @@ function SortableTableRow({
       <TableCell>
         <div className="flex flex-wrap gap-1">
           {item.countsAsWorkTime && (
-            <Badge variant="secondary">{t("badgeCountsWork")}</Badge>
+            <Badge variant="sky">{t("badgeCountsWork")}</Badge>
           )}
-          {item.isPaid && <Badge variant="secondary">{t("badgePaid")}</Badge>}
+          {item.isPaid && <Badge variant="green">{t("badgePaid")}</Badge>}
           {!item.defaultIsVacationCapable && (
-            <Badge variant="outline">{t("badgeNotVacationCapable")}</Badge>
+            <Badge variant="slate">{t("badgeNotVacationCapable")}</Badge>
           )}
           {item.requiresCertificate && (
-            <Badge variant="outline">{t("badgeCertificate")}</Badge>
+            <Badge variant="amber">{t("badgeCertificate")}</Badge>
           )}
-          {item.requiresApproval && (
-            <Badge variant="outline">{t("badgeApproval")}</Badge>
+          {item.requiresApproval ? (
+            <Badge variant="rose">{t("badgeApproval")}</Badge>
+          ) : (
+            <Badge variant="outline">{t("badgeNoticeOnly")}</Badge>
           )}
         </div>
       </TableCell>
       <TableCell className="text-muted-foreground text-xs">
         {item.maxDaysPerYear && (
           <div>{t("limitMaxDays", { n: item.maxDaysPerYear })}</div>
+        )}
+        {item.allowsDateRange && (
+          <div>
+            {item.maxDaysPerRequest
+              ? t("limitMaxDaysPerRequest", { n: item.maxDaysPerRequest })
+              : t("limitDateRange")}
+          </div>
         )}
         {item.certificateRequiredFromDay && (
           <div>

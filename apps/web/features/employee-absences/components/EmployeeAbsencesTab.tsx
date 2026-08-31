@@ -104,7 +104,9 @@ export default function EmployeeAbsencesTab({
       : { success: false as const, error: tE("absence.deleteError") };
   };
 
-  const columns = useMemo<ColumnDef<AppTableFeatures, EmployeeAbsence, unknown>[]>(() => {
+  const columns = useMemo<
+    ColumnDef<AppTableFeatures, EmployeeAbsence, unknown>[]
+  >(() => {
     const cols: ColumnDef<AppTableFeatures, EmployeeAbsence, unknown>[] = [
       {
         id: "category",
@@ -132,8 +134,7 @@ export default function EmployeeAbsencesTab({
       },
       {
         id: "startDate",
-        accessorFn: (a) =>
-          a.startDate ? new Date(a.startDate).getTime() : 0,
+        accessorFn: (a) => (a.startDate ? new Date(a.startDate).getTime() : 0),
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title={t("startDate")} />
         ),
@@ -147,8 +148,7 @@ export default function EmployeeAbsencesTab({
       },
       {
         id: "endDate",
-        accessorFn: (a) =>
-          a.endDate ? new Date(a.endDate).getTime() : 0,
+        accessorFn: (a) => (a.endDate ? new Date(a.endDate).getTime() : 0),
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title={t("endDate")} />
         ),
@@ -194,9 +194,7 @@ export default function EmployeeAbsencesTab({
         filterFn: multiSelectFilter,
         cell: ({ row }) => (
           <Badge
-            variant={
-              row.original.isVacationCapable ? "secondary" : "outline"
-            }
+            variant={row.original.isVacationCapable ? "secondary" : "outline"}
           >
             {row.original.isVacationCapable
               ? tE("absence.vacationCapableYes")
@@ -208,9 +206,7 @@ export default function EmployeeAbsencesTab({
         id: "certificate",
         enableSorting: false,
         header: () => (
-          <div className="flex justify-center">
-            {tE("absence.certificate")}
-          </div>
+          <div className="flex justify-center">{tE("absence.certificate")}</div>
         ),
         meta: { labelKey: "absence.certificate" },
         cell: ({ row }) => {

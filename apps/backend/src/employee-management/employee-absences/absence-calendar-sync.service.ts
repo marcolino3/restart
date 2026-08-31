@@ -12,10 +12,17 @@ export interface AbsenceCalendarSyncInput {
   employeeName: string;
   /** Localised absence label, e.g. `krank`. */
   absenceLabel: string;
+  /**
+   * Title template chosen by the employee; `{firstName}`, `{lastName}` and
+   * `{category}` are resolved here. Null/blank = `employeeName absenceLabel`.
+   */
+  titleTemplate?: string | null;
   startDate: Date;
   endDate: Date;
   /** `HH:mm[:ss]` when the absence starts mid-day, otherwise null. */
   startTime?: string | null;
+  /** `HH:mm[:ss]` when the absence ends mid-day (timed appointment). */
+  endTime?: string | null;
   note?: string | null;
 }
 
@@ -160,9 +167,34 @@ export class AbsenceCalendarSyncService {
  * mid-day. The event stays all-day regardless — the time is informational.
  */
 function buildSummary(input: AbsenceCalendarSyncInput): string {
-  const base = `${input.employeeName} ${input.absenceLabel}`.trim();
-  const time = formatTime(input.startTime);
-  return time ? `${base} (ab ${time})` : base;
+  const template = input.titleTemplate?.trim();
+  const base = template
+    ? renderAbsenceCalendarTitle(template, input)
+    : `${input.employeeName} ${input.absenceLabel}`.trim();
+  const from = formatTime(input.startTime);
+  const to = formatTime(input.endTime);
+  if (from && to) return `${base} (${from}–${to})`;
+  return from ? `${base} (ab ${from})` : base;
+}
+
+/** Resolves `{firstName}`, `{lastName}` and `{category}` in a title template. */
+export function renderAbsenceCalendarTitle(
+  template: string,
+  input: Pick<AbsenceCalendarSyncInput, 'employeeName' | 'absenceLabel'>,
+): string {
+  const [firstName, ...rest] = input.employeeName.split(' ');
+  const values: Record<string, string> = {
+    firstName: firstName ?? '',
+    lastName: rest.join(' '),
+    category: input.absenceLabel,
+  };
+  return template
+    .replace(
+      /\{(firstName|lastName|category)\}/g,
+      (_, key: string) => values[key],
+    )
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function formatTime(value?: string | null): string | null {

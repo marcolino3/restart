@@ -135,6 +135,24 @@ describe('AbsenceCalendarSyncService', () => {
       );
     });
 
+    it('renders the title template with employee name and category', async () => {
+      await service.sync(
+        syncInput({ titleTemplate: '{lastName} {firstName} – {category}' }),
+      );
+
+      expect(googleCalendar.upsertAllDayEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ summary: 'Muster Anna – krank' }),
+      );
+    });
+
+    it('falls back to the default summary for a blank template', async () => {
+      await service.sync(syncInput({ titleTemplate: '   ' }));
+
+      expect(googleCalendar.upsertAllDayEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ summary: 'Anna Muster krank' }),
+      );
+    });
+
     it('writes no sync row when the organization has no calendar configured', async () => {
       googleCalendar.upsertAllDayEvent.mockResolvedValue(null);
 

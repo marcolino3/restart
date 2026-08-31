@@ -3,6 +3,11 @@ import {
   toScalarString,
 } from '@/common/spreadsheet/read-workbook';
 import { CurriculumLocale } from '../enums/curriculum-locale.enum';
+import {
+  CurriculumImportError,
+  ImportIssue,
+  importIssue,
+} from './import-issue';
 
 export interface CurriculumRawRow {
   sequence: number | null;
@@ -21,8 +26,11 @@ export type SheetsByLocale = Partial<
 export interface CurriculumParseResult {
   master: CurriculumLocale;
   sheetsByLocale: SheetsByLocale;
-  warnings: string[];
+  warnings: ImportIssue[];
 }
+
+const REQUIRED_COLUMNS: (keyof typeof COLUMN_ALIASES)[] = ['level', 'lesson'];
+const HEADER_SCAN_ROWS = 5;
 
 const COLUMN_ALIASES: Record<
   Exclude<keyof CurriculumRawRow, 'rowNumber'>,
@@ -63,7 +71,7 @@ function normalize(value: unknown): string {
   return toScalarString(value).toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
-function detectColumns(headerRow: unknown[]): Record<string, number> | null {
+function detectColumns(headerRow: unknown[]): Record<string, number> {
   const found: Record<string, number> = {};
   for (let i = 0; i < headerRow.length; i++) {
     const norm = normalize(headerRow[i]);
@@ -74,19 +82,57 @@ function detectColumns(headerRow: unknown[]): Record<string, number> | null {
       }
     }
   }
-  if (!('level' in found) || !('lesson' in found)) return null;
   return found;
 }
 
-function findHeaderRow(
-  sheet: unknown[][],
-  maxScan = 5,
-): { row: number; columns: Record<string, number> } | null {
-  for (let i = 0; i < Math.min(maxScan, sheet.length); i++) {
+function hasRequiredColumns(columns: Record<string, number>): boolean {
+  return REQUIRED_COLUMNS.every((key) => key in columns);
+}
+
+type HeaderSearch =
+  | { ok: true; row: number; columns: Record<string, number> }
+  | { ok: false; missing: string[]; found: string[] };
+
+/**
+ * Scans the first rows for a header. On failure reports which required
+ * columns are missing in the best candidate row (the one with the most
+ * recognised columns), so the user learns what to rename instead of a
+ * generic "no data".
+ */
+function findHeaderRow(sheet: unknown[][]): HeaderSearch {
+  let best: Record<string, number> = {};
+  for (let i = 0; i < Math.min(HEADER_SCAN_ROWS, sheet.length); i++) {
     const cols = detectColumns(sheet[i] ?? []);
-    if (cols) return { row: i, columns: cols };
+    if (hasRequiredColumns(cols)) return { ok: true, row: i, columns: cols };
+    if (Object.keys(cols).length > Object.keys(best).length) best = cols;
   }
-  return null;
+  return {
+    ok: false,
+    missing: REQUIRED_COLUMNS.filter((key) => !(key in best)),
+    found: Object.keys(best),
+  };
+}
+
+function headerNotFound(sheetName: string, search: HeaderSearch): ImportIssue {
+  const missing = search.ok ? [] : search.missing;
+  const found = search.ok ? [] : search.found;
+  const missingLabel = missing.map(capitalize).join(', ');
+  const foundLabel = found.map(capitalize).join(', ');
+  return importIssue(
+    'HEADER_NOT_FOUND',
+    {
+      sheet: sheetName,
+      missing: missingLabel,
+      found: foundLabel,
+      scanRows: HEADER_SCAN_ROWS,
+    },
+    `Sheet "${sheetName}": required column(s) ${missingLabel} not found in the first ${HEADER_SCAN_ROWS} rows` +
+      (foundLabel ? ` (recognised: ${foundLabel})` : ''),
+  );
+}
+
+function capitalize(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function pickCell(row: unknown[], index: number | undefined): string | null {
@@ -109,17 +155,13 @@ function detectSheetLocale(sheetName: string): CurriculumLocale | null {
   return null;
 }
 
-function parseSheet(
-  sheetName: string,
-  rows: unknown[][],
-  warnings: string[],
-): CurriculumRawRow[] {
+type SheetParse =
+  { ok: true; rows: CurriculumRawRow[] } | { ok: false; issue: ImportIssue };
+
+function parseSheet(sheetName: string, rows: unknown[][]): SheetParse {
   const headerInfo = findHeaderRow(rows);
-  if (!headerInfo) {
-    warnings.push(
-      `Sheet "${sheetName}": Header row not found (expected columns "Level" and "Lesson" within the first 5 rows)`,
-    );
-    return [];
+  if (!headerInfo.ok) {
+    return { ok: false, issue: headerNotFound(sheetName, headerInfo) };
   }
   const { row: headerRow, columns } = headerInfo;
   const out: CurriculumRawRow[] = [];
@@ -138,18 +180,49 @@ function parseSheet(
       rowNumber: i + 1,
     });
   }
-  return out;
+  if (out.length === 0) {
+    return {
+      ok: false,
+      issue: importIssue(
+        'NO_DATA_ROWS',
+        { sheet: sheetName, headerRow: headerRow + 1 },
+        `Sheet "${sheetName}": no data rows found below the header in row ${headerRow + 1}`,
+      ),
+    };
+  }
+  return { ok: true, rows: out };
+}
+
+function fail(issue: ImportIssue): never {
+  throw new CurriculumImportError(issue.code, issue.params, issue.message);
+}
+
+/**
+ * The shared workbook reader throws a plain `Error` for an unknown extension,
+ * which would reach the client as an untranslatable message. Check it here so
+ * the import keeps reporting a structured, localizable issue.
+ */
+function assertSupportedExtension(filename: string): void {
+  const ext = filename.toLowerCase().split('.').pop();
+  if (ext !== 'csv' && ext !== 'xlsx' && ext !== 'xls') {
+    throw new CurriculumImportError(
+      'UNSUPPORTED_EXTENSION',
+      { extension: `.${ext ?? ''}` },
+      `Unsupported file extension ".${ext}". Use .xlsx, .xls or .csv`,
+    );
+  }
 }
 
 export function parseCurriculumFile(
   buffer: Buffer,
   filename: string,
 ): CurriculumParseResult {
-  const warnings: string[] = [];
+  const warnings: ImportIssue[] = [];
+  assertSupportedExtension(filename);
   const sheetData = readWorkbook(buffer, filename);
 
   if (sheetData.length === 0) {
-    throw new Error('File has no sheets');
+    throw new CurriculumImportError('NO_SHEETS', {}, 'File has no sheets');
   }
 
   const sheetsByLocale: SheetsByLocale = {};
@@ -157,43 +230,56 @@ export function parseCurriculumFile(
   // Single-sheet (or CSV): treat as master = DE regardless of name.
   // Backwards-compat for legacy uploads.
   if (sheetData.length === 1) {
-    const rows = parseSheet(sheetData[0].name, sheetData[0].rows, warnings);
-    if (rows.length === 0) {
-      throw new Error(
-        `Sheet "${sheetData[0].name}" has no data rows after header`,
-      );
-    }
-    sheetsByLocale[CurriculumLocale.DE] = rows;
+    const parsed = parseSheet(sheetData[0].name, sheetData[0].rows);
+    if (!parsed.ok) fail(parsed.issue);
+    sheetsByLocale[CurriculumLocale.DE] = parsed.rows;
     return { master: CurriculumLocale.DE, sheetsByLocale, warnings };
   }
 
   // Multi-sheet: map each sheet name to a locale.
   const matched = new Set<CurriculumLocale>();
+  const expectedSheetNames = Object.keys(SHEET_NAME_ALIASES).join(', ');
   for (const sheet of sheetData) {
     const locale = detectSheetLocale(sheet.name);
     if (!locale) {
-      warnings.push(`Sheet "${sheet.name}": unknown locale name, ignored`);
+      warnings.push(
+        importIssue(
+          'UNKNOWN_SHEET_NAME',
+          { sheet: sheet.name, expected: expectedSheetNames },
+          `Sheet "${sheet.name}": name is not a language (${expectedSheetNames}), ignored`,
+        ),
+      );
       continue;
     }
     if (matched.has(locale)) {
       warnings.push(
-        `Sheet "${sheet.name}": locale ${locale} already imported from an earlier sheet, ignored`,
+        importIssue(
+          'DUPLICATE_SHEET_LOCALE',
+          { sheet: sheet.name, locale },
+          `Sheet "${sheet.name}": language ${locale} already imported from an earlier sheet, ignored`,
+        ),
       );
       continue;
     }
-    const rows = parseSheet(sheet.name, sheet.rows, warnings);
-    if (rows.length === 0) {
-      warnings.push(`Sheet "${sheet.name}" (${locale}) has no data rows`);
+    const parsed = parseSheet(sheet.name, sheet.rows);
+    if (!parsed.ok) {
+      // A broken master sheet makes the whole import impossible; a broken
+      // translation sheet only loses that language.
+      if (locale === CurriculumLocale.DE) fail(parsed.issue);
+      warnings.push(parsed.issue);
       continue;
     }
-    sheetsByLocale[locale] = rows;
+    sheetsByLocale[locale] = parsed.rows;
     matched.add(locale);
   }
 
   const masterRows = sheetsByLocale[CurriculumLocale.DE];
   if (!masterRows || masterRows.length === 0) {
-    throw new Error(
-      'No master sheet found. Provide a sheet named "DE" (or use a single sheet without a locale name).',
+    const sheetNames = sheetData.map((s) => s.name).join(', ');
+    throw new CurriculumImportError(
+      'NO_MASTER_SHEET',
+      { sheets: sheetNames },
+      `No master sheet "DE" found (sheets in file: ${sheetNames}). Name the master sheet "DE" or upload a single-sheet file.`,
     );
   }
 
@@ -207,18 +293,27 @@ export function parseCurriculumFile(
       const missing = rows.filter((r) => r.sequence === null);
       if (missing.length > 0) {
         warnings.push(
-          `Sheet ${locale}: ${missing.length} row(s) without "Sequence" — they cannot be joined across languages and will be ignored for translations`,
+          importIssue(
+            'ROWS_WITHOUT_SEQUENCE',
+            { sheet: locale, count: missing.length },
+            `Sheet ${locale}: ${missing.length} row(s) without "Sequence" — they cannot be joined across languages and will be ignored for translations`,
+          ),
         );
       }
     }
-    const masterSeqs = new Set(
-      masterRows.filter((r) => r.sequence !== null).map((r) => r.sequence),
-    );
-    if (
-      masterSeqs.size !== masterRows.filter((r) => r.sequence !== null).length
-    ) {
-      throw new Error(
-        'Master sheet (DE) has duplicate "Sequence" values — sequences must be globally unique',
+    const seen = new Set<number>();
+    const duplicates = new Set<number>();
+    for (const r of masterRows) {
+      if (r.sequence === null) continue;
+      if (seen.has(r.sequence)) duplicates.add(r.sequence);
+      seen.add(r.sequence);
+    }
+    if (duplicates.size > 0) {
+      const values = [...duplicates].slice(0, 10).join(', ');
+      throw new CurriculumImportError(
+        'DUPLICATE_SEQUENCE',
+        { sheet: CurriculumLocale.DE, values, count: duplicates.size },
+        `Master sheet (DE) has duplicate "Sequence" values (${values}) — sequences must be unique`,
       );
     }
   }

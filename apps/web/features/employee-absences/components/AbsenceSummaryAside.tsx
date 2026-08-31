@@ -44,11 +44,9 @@ export function AbsenceSummaryAside({
   const startDate = useWatch({ control, name: "startDate" });
   const endDate = useWatch({ control, name: "endDate" });
   const percentage = useWatch({ control, name: "percentage" }) as
-    | number
-    | undefined;
+    number | undefined;
   const isTeamInformed = useWatch({ control, name: "isTeamInformed" }) as
-    | boolean
-    | undefined;
+    boolean | undefined;
   const isVacationCapable = useWatch({
     control,
     name: "isVacationCapable",
@@ -146,9 +144,7 @@ export function AbsenceSummaryAside({
             label={t("absence.percentage")}
             muted={percentage == null || percentage <= 0}
           >
-            {percentage != null && percentage > 0
-              ? `${percentage}%`
-              : pending}
+            {percentage != null && percentage > 0 ? `${percentage}%` : pending}
           </DescriptionRow>
           <DescriptionRow
             label={tCommon("isTeamInformed")}

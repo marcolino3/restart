@@ -1,0 +1,88 @@
+# Naechtlicher Reset der Staging-DB auf den Testschule-Seed.
+#
+# Staging ist die Live-Test-/Demo-Umgebung: die Datenbank gilt nicht als etwas,
+# das erhalten bleibt, sondern als etwas, das jederzeit reproduzierbar aus dem
+# Seed entsteht. Dadurch sammeln sich keine Reste aus manuellem Testen an.
+#
+# NUR im Staging-Overlay — das Production-Overlay enthaelt diese Datei nicht,
+# die Faehigkeit existiert dort also gar nicht. Zusaetzlich prueft
+# src/reset-staging.ts zur Laufzeit NODE_ENV und DB_HOST.
+#
+# Manuell ausloesen: GitHub Actions -> "Reset Staging" (workflow_dispatch),
+# oder direkt:
+#   kubectl create job -n restart-staging --from=cronjob/seed-reset seed-reset-manual
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: seed-reset
+  labels:
+    app: backend
+    component: seed-reset
+spec:
+  # 03:00 Europe/Zurich.
+  schedule: "0 3 * * *"
+  timeZone: Europe/Zurich
+  # Ein laufender Reset darf nicht von einem zweiten ueberholt werden — die
+  # Schritte (Drop, Migrationen, Seed) wuerden sich gegenseitig zerlegen.
+  concurrencyPolicy: Forbid
+  # War der Cluster zur geplanten Zeit nicht bereit, den Lauf verfallen lassen
+  # statt ihn Stunden spaeter mitten am Arbeitstag nachzuholen.
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: backend
+        component: seed-reset
+    spec:
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app: backend
+            component: seed-reset
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          imagePullSecrets:
+            - name: ghcr-secret
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
+            fsGroup: 1001
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: seed-reset
+              # `staging-current` zeigt auf das Image, das gerade auf Staging
+              # laeuft (gesetzt am Ende von deploy-staging.yml). Der Reset
+              # laeuft damit immer gegen denselben Stand wie die App.
+              image: ghcr.io/marcolino3/restart-backend:staging-current
+              imagePullPolicy: Always
+              command: ["node", "dist/src/reset-staging.js"]
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                capabilities:
+                  drop: ["ALL"]
+              envFrom:
+                - configMapRef:
+                    name: backend-config
+                - secretRef:
+                    name: backend-secrets
+                # Passwort fuer alle Seed-User; wird vom Reset-Staging-Workflow
+                # aus dem Repository-Secret SEED_USER_PASSWORD angelegt. Fehlt
+                # es, bricht reset-staging.ts kontrolliert ab.
+                - secretRef:
+                    name: seed-user-password
+              resources:
+                requests:
+                  memory: "512Mi"
+                  cpu: "250m"
+                limits:
+                  memory: "1Gi"
+                  cpu: "1000m"

@@ -30,6 +30,7 @@ export type VacationBalance = {
   entitlementDays: number;
   openingDays: number;
   usedDays: number;
+  reductionDays: number;
   remainingDays: number;
 };
 
