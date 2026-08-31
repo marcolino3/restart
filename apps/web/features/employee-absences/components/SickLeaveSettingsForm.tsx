@@ -43,7 +43,9 @@ export function SickLeaveSettingsForm({
   const t = useTranslations("SickLeave");
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [calendarEnabled, setCalendarEnabled] = useState(initial.calendarEnabled);
+  const [calendarEnabled, setCalendarEnabled] = useState(
+    initial.calendarEnabled,
+  );
 
   const form = useForm<FormValues>({
     resolver: zodResolver(Schema),
@@ -89,7 +91,7 @@ export function SickLeaveSettingsForm({
       return;
     }
     toast.success(
-      t("testConnectionSuccess", { calendar: res.calendarSummary ?? "" })
+      t("testConnectionSuccess", { calendar: res.calendarSummary ?? "" }),
     );
   };
 

@@ -1,24 +1,18 @@
-import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 
-import { Button } from "@/components/ui/button";
-import { ROUTES } from "@/constants/routes";
+import { getActiveOrganizationAction } from "@/features/organizations/actions/get-active-organization.action";
 import { AbsenceCategoryForm } from "@/features/employee-absence-categories/components/AbsenceCategoryForm";
 
 const CreateAbsenceCategoryPage = async () => {
   const t = await getTranslations("AbsenceCategories");
-  const locale = await getLocale();
+  const orgRes = await getActiveOrganizationAction();
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <Button variant="ghost" size="sm" asChild className="-ml-2 w-fit">
-        <Link href={ROUTES.admin.absenceCategories(locale)}>
-          <ChevronLeft className="mr-1 h-4 w-4" />
-          {t("backToList")}
-        </Link>
-      </Button>
-      <h1 className="text-2xl font-bold">{t("createTitle")}</h1>
-      <AbsenceCategoryForm mode="create" />
+    <div className="p-4">
+      <AbsenceCategoryForm
+        mode="create"
+        title={t("createTitle")}
+        orgCountry={orgRes.success ? (orgRes.data?.country ?? null) : null}
+      />
     </div>
   );
 };

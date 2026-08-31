@@ -1,3 +1,4 @@
+import { AbsenceEntryPrecision } from './interfaces/absence-entry-precision.enum';
 import {
   BadRequestException,
   ConflictException,
@@ -118,6 +119,11 @@ export class EmployeeAbsenceCategoriesService {
     this.assertUniqueLocales(input.translations.map((t) => t.locale));
     this.assertAtLeastOneTranslation(input.translations);
     const translationsToSave = this.nonEmptyTranslations(input.translations);
+    this.assertRangeSettings({
+      allowsDateRange: input.allowsDateRange ?? false,
+      maxDaysPerRequest: input.maxDaysPerRequest ?? null,
+      entryPrecision: input.entryPrecision ?? AbsenceEntryPrecision.DAY,
+    });
 
     return this.dataSource.transaction(async (m) => {
       // Neue Kategorien landen am Ende der Liste
@@ -144,6 +150,12 @@ export class EmployeeAbsenceCategoriesService {
         maxDaysPerYear: input.maxDaysPerYear ?? null,
         defaultPercentage: input.defaultPercentage ?? 100,
         requiresApproval: input.requiresApproval ?? false,
+        allowsDateRange: input.allowsDateRange ?? false,
+        entryPrecision: input.entryPrecision ?? AbsenceEntryPrecision.DAY,
+        syncToCalendar: input.syncToCalendar ?? true,
+        calendarTitleTemplate: input.calendarTitleTemplate?.trim() || null,
+        maxDaysPerRequest: input.maxDaysPerRequest ?? null,
+        maxDaysAhead: input.maxDaysAhead ?? null,
         color: input.color ?? null,
         iconName: input.iconName ?? null,
         sortOrder: input.sortOrder ?? nextSortOrder,
@@ -201,6 +213,20 @@ export class EmployeeAbsenceCategoriesService {
       category.defaultPercentage = input.defaultPercentage;
     if (input.requiresApproval !== undefined)
       category.requiresApproval = input.requiresApproval;
+    if (input.allowsDateRange !== undefined)
+      category.allowsDateRange = input.allowsDateRange;
+    if (input.entryPrecision !== undefined)
+      category.entryPrecision = input.entryPrecision;
+    if (input.syncToCalendar !== undefined)
+      category.syncToCalendar = input.syncToCalendar;
+    if (input.calendarTitleTemplate !== undefined)
+      category.calendarTitleTemplate =
+        input.calendarTitleTemplate?.trim() || null;
+    if (input.maxDaysPerRequest !== undefined)
+      category.maxDaysPerRequest = input.maxDaysPerRequest;
+    if (input.maxDaysAhead !== undefined)
+      category.maxDaysAhead = input.maxDaysAhead;
+    this.assertRangeSettings(category);
     if (input.color !== undefined) category.color = input.color;
     if (input.iconName !== undefined) category.iconName = input.iconName;
     // sortOrder wird ausschliesslich ueber reorderEmployeeAbsenceCategories
@@ -321,6 +347,22 @@ export class EmployeeAbsenceCategoriesService {
     const hasAny = translations.some((t) => t.name?.trim());
     if (!hasAny) {
       throw new BadRequestException('At least one translation is required');
+    }
+  }
+
+  /**
+   * A per-request day limit only makes sense for multi-day categories, and a
+   * time-range category is by definition single-day.
+   */
+  private assertRangeSettings(c: {
+    allowsDateRange: boolean;
+    maxDaysPerRequest: number | null;
+    entryPrecision: AbsenceEntryPrecision;
+  }): void {
+    if (!c.allowsDateRange && c.maxDaysPerRequest != null) {
+      throw new BadRequestException(
+        'maxDaysPerRequest requires allowsDateRange to be enabled.',
+      );
     }
   }
 

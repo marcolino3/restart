@@ -179,10 +179,8 @@ const DeleteDocument = gql`
   }
 `;
 
-const toIsoDateTime = (
-  value: unknown,
-  includesTime = true,
-) => toAbsenceIsoDateTime(value, includesTime);
+const toIsoDateTime = (value: unknown, includesTime = true) =>
+  toAbsenceIsoDateTime(value, includesTime);
 
 export const getEmployeeAbsencesAction = async (employeeId: string) => {
   const client = await serverCookieGqlClient();
@@ -256,8 +254,7 @@ export const saveEmployeeAbsenceAction = async (
 
   const client = await serverCookieGqlClient();
   const base = {
-    startDate:
-      toIsoDateTime(parsed.startDate, parsed.includesTime) ?? "",
+    startDate: toIsoDateTime(parsed.startDate, parsed.includesTime) ?? "",
     endDate:
       toIsoDateTime(parsed.endDate, parsed.includesTime) ??
       toIsoDateTime(parsed.startDate, parsed.includesTime),
@@ -285,8 +282,7 @@ export const saveEmployeeAbsenceAction = async (
   } catch (error) {
     return {
       success: false as const,
-      error:
-        error instanceof Error ? error.message : "Failed to save absence",
+      error: error instanceof Error ? error.message : "Failed to save absence",
     };
   }
 };

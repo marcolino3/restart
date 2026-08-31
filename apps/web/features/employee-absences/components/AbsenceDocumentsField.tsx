@@ -183,9 +183,7 @@ export function AbsenceDocumentsField({
               </button>
             </div>
           </FormControl>
-          {description && (
-            <FormDescription>{t(description)}</FormDescription>
-          )}
+          {description && <FormDescription>{t(description)}</FormDescription>}
           <input
             ref={inputRef}
             type="file"

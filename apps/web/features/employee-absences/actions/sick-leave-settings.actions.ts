@@ -31,20 +31,21 @@ export interface SickLeaveSettings {
 }
 
 export async function getSickLeaveSettingsAction(
-  organizationId: string
+  organizationId: string,
 ): Promise<
-  { success: true; data: SickLeaveSettings } | { success: false; error?: string }
+  | { success: true; data: SickLeaveSettings }
+  | { success: false; error?: string }
 > {
   try {
     const list = await getOrganizationSettingsAction(organizationId);
     const have = new Set(
-      list.success && list.data ? list.data.map((s) => s.key) : []
+      list.success && list.data ? list.data.map((s) => s.key) : [],
     );
 
     const readValue = async (key: string): Promise<string> => {
       if (!have.has(key)) return "";
       const res = await getOrganizationSettingValueAction(organizationId, key);
-      return res.success && res.data ? res.data.value ?? "" : "";
+      return res.success && res.data ? (res.data.value ?? "") : "";
     };
 
     const [notificationEmail, calendarEnabled, impersonationUser, calendarId] =
@@ -86,12 +87,12 @@ export interface SaveSickLeaveSettingsInput {
 }
 
 export async function saveSickLeaveSettingsAction(
-  input: SaveSickLeaveSettingsInput
+  input: SaveSickLeaveSettingsInput,
 ): Promise<{ success: true } | { success: false; error?: string }> {
   try {
     const list = await getOrganizationSettingsAction(input.organizationId);
     const have = new Set(
-      list.success && list.data ? list.data.map((s) => s.key) : []
+      list.success && list.data ? list.data.map((s) => s.key) : [],
     );
 
     const upsert = async (key: string, value: string) => {
@@ -111,7 +112,10 @@ export async function saveSickLeaveSettingsAction(
     };
 
     await upsert(KEYS.notificationEmail, input.notificationEmail.trim());
-    await upsert(KEYS.calendarEnabled, input.calendarEnabled ? "true" : "false");
+    await upsert(
+      KEYS.calendarEnabled,
+      input.calendarEnabled ? "true" : "false",
+    );
     await upsert(KEYS.impersonationUser, input.impersonationUser.trim());
     await upsert(KEYS.calendarId, input.calendarId.trim());
     // Only touch the service account when a new key was actually entered.
@@ -148,7 +152,7 @@ export async function testCalendarConnectionAction(): Promise<
     const client = await serverCookieGqlClient();
     const { testCalendarConnection } =
       await client.request<TestCalendarConnectionMutation>(
-        TestCalendarConnectionDocument
+        TestCalendarConnectionDocument,
       );
 
     return {

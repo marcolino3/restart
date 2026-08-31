@@ -5,6 +5,7 @@ import {
   EmployeeAbsenceNoticeFormSchema,
   EmployeeAbsenceNoticeFormType,
 } from "../schemas/employee-absence-notice-form.schema";
+import { toAbsenceIsoDate } from "@restart/shared-schemas/employee-absences/absence-date";
 import { graphql } from "@restart/shared-types";
 import { CreateEmployeeAbsenceNoticeMutation } from "@restart/shared-types/graphql";
 
@@ -21,17 +22,21 @@ const CreateEmployeeAbsenceNoticeDocument = graphql(`
 `);
 
 export const createEmployeeAbsenceNoticeAction = async (
-  values: EmployeeAbsenceNoticeFormType
+  values: EmployeeAbsenceNoticeFormType,
 ) => {
   const client = await serverCookieGqlClient();
 
-  const parsed = EmployeeAbsenceNoticeFormSchema.parse(values);
-  // The backend validates ISO date strings, so Date objects are serialized here
-  // instead of relying on implicit JSON conversion.
+  // entryMode is a form-only switch; the API derives the mode from
+  // dayPart/startTime/endTime.
+  const { entryMode: _entryMode, ...parsed } =
+    EmployeeAbsenceNoticeFormSchema.parse(values);
+  // Send calendar dates only so the stored value carries no time of day
+  // (the table would otherwise show one).
   const parsedValues = {
     ...parsed,
-    startDate: parsed.startDate.toISOString(),
-    endDate: parsed.endDate ? parsed.endDate.toISOString() : null,
+    startDate:
+      toAbsenceIsoDate(parsed.startDate) ?? parsed.startDate.toISOString(),
+    endDate: parsed.endDate ? (toAbsenceIsoDate(parsed.endDate) ?? null) : null,
   };
 
   try {
@@ -40,12 +45,17 @@ export const createEmployeeAbsenceNoticeAction = async (
         CreateEmployeeAbsenceNoticeDocument,
         {
           createEmployeeAbsenceInput: parsedValues,
-        }
+        },
       );
 
     return { success: true, data: createEmployeeAbsenceNotice.id };
   } catch (error) {
     console.log(error);
-    return { success: false };
+    // Surface the backend rule that rejected the request so the form can map
+    // it to a field error (yearly cap, single-day category, per-request max).
+    const message =
+      (error as { response?: { errors?: { message?: string }[] } })?.response
+        ?.errors?.[0]?.message ?? null;
+    return { success: false, message };
   }
 };

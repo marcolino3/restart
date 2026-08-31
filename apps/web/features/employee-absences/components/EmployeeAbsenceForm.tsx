@@ -58,7 +58,9 @@ export function buildAbsenceFormDefaults(
     isVacationCapable: absence?.isVacationCapable ?? true,
     percentage: absence?.percentage ?? 100,
     certificates: normalizeAbsenceDocuments(absence?.certificates),
-    additionalDocuments: normalizeAbsenceDocuments(absence?.additionalDocuments),
+    additionalDocuments: normalizeAbsenceDocuments(
+      absence?.additionalDocuments,
+    ),
   };
 }
 
@@ -199,80 +201,77 @@ export function EmployeeAbsenceForm({
         <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr] lg:items-start">
           <div className="flex flex-col gap-4">
             <Card>
-            <CardHeader>
-              <CardTitle>{tE("absence.periodTitle")}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <SelectFormField
-                name="absenceCategoryId"
-                label="absence.category"
-                options={categoryOptions}
-                translateOptions={false}
-                namespace="Employees"
-              />
-              <AbsencePeriodDateFields />
-              <NumberFormField
-                name="percentage"
-                label="absence.percentage"
-                min={1}
-                max={100}
-                nullable={false}
-                namespace="Employees"
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{tE("absence.detailsTitle")}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <SwitchFormField
-                name="isTeamInformed"
-                label="isTeamInformed"
-              />
-              <TextareaFormField
-                name="note"
-                label="note"
-                description="absenceNoteDescription"
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{tE("absence.certificateTitle")}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <div className="grid items-start gap-4 lg:grid-cols-2">
-                <AbsenceDocumentsField
-                  name="certificates"
-                  employeeId={employeeId}
-                  label="absence.certificate"
-                  uploadLabel="absence.docUpload"
+              <CardHeader>
+                <CardTitle>{tE("absence.periodTitle")}</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <SelectFormField
+                  name="absenceCategoryId"
+                  label="absence.category"
+                  options={categoryOptions}
+                  translateOptions={false}
+                  namespace="Employees"
                 />
-                <AbsenceDocumentsField
-                  name="additionalDocuments"
-                  employeeId={employeeId}
-                  label="absence.additionalDocuments"
-                  description="absence.additionalDocumentsHint"
-                  uploadLabel="absence.additionalDocUpload"
+                <AbsencePeriodDateFields />
+                <NumberFormField
+                  name="percentage"
+                  label="absence.percentage"
+                  min={1}
+                  max={100}
+                  nullable={false}
+                  namespace="Employees"
                 />
-              </div>
-              <SwitchFormField
-                name="isVacationCapable"
-                label="absence.isVacationCapable"
-                description="absence.isVacationCapableHint"
-                namespace="Employees"
-              />
-              {certificateHint && (
-                <p className="text-sm text-amber-700 dark:text-amber-400">
-                  {tE("absence.certificateRequiredHint", {
-                    day: selectedCategory?.certificateRequiredFromDay ?? 1,
-                  })}
-                </p>
-              )}
-            </CardContent>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>{tE("absence.detailsTitle")}</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <SwitchFormField name="isTeamInformed" label="isTeamInformed" />
+                <TextareaFormField
+                  name="note"
+                  label="note"
+                  description="absenceNoteDescription"
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>{tE("absence.certificateTitle")}</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <div className="grid items-start gap-4 lg:grid-cols-2">
+                  <AbsenceDocumentsField
+                    name="certificates"
+                    employeeId={employeeId}
+                    label="absence.certificate"
+                    uploadLabel="absence.docUpload"
+                  />
+                  <AbsenceDocumentsField
+                    name="additionalDocuments"
+                    employeeId={employeeId}
+                    label="absence.additionalDocuments"
+                    description="absence.additionalDocumentsHint"
+                    uploadLabel="absence.additionalDocUpload"
+                  />
+                </div>
+                <SwitchFormField
+                  name="isVacationCapable"
+                  label="absence.isVacationCapable"
+                  description="absence.isVacationCapableHint"
+                  namespace="Employees"
+                />
+                {certificateHint && (
+                  <p className="text-sm text-amber-700 dark:text-amber-400">
+                    {tE("absence.certificateRequiredHint", {
+                      day: selectedCategory?.certificateRequiredFromDay ?? 1,
+                    })}
+                  </p>
+                )}
+              </CardContent>
             </Card>
           </div>
 

@@ -1,18 +1,36 @@
 "use client";
 import {
+  AbsenceDayPart,
+  AbsenceEntryPrecision,
+  allowedAbsenceEntryModes,
+  absenceNoticeDayCount,
+  absenceNoticeErrorCode,
   checkAbsenceNoticeDates,
   EmployeeAbsenceNoticeFormSchema,
   EmployeeAbsenceNoticeFormType,
+  type AbsenceDayPartType,
+  type AbsenceEntryModeType,
+  type AbsenceEntryPrecisionType,
 } from "../schemas/employee-absence-notice-form.schema";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
+import { DateRangePickerFormField } from "@/components/form/form-fields/DateRangePickerFormField";
 import { TextareaFormField } from "@/components/form/form-fields/TextareaFormField";
 import { SwitchFormField } from "@/components/form/form-fields/SwitchFormField";
+import { InputFormField } from "@/components/form/form-fields/InputFormField";
+import { SegmentedControl } from "@/components/form/form-fields/SegmentedControl";
 import { CreateButton } from "@/components/buttons/CreateButton";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { CalendarCheck, ClipboardCheck } from "lucide-react";
 import { createEmployeeAbsenceNoticeAction } from "../actions/create-employee-absence-notice.action";
+import {
+  getMyAbsenceCategoryQuotaAction,
+  MyAbsenceCategoryQuota,
+} from "../actions/get-my-absence-category-quota.action";
 import { toast } from "sonner";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
@@ -23,6 +41,11 @@ export interface NoticeAbsenceCategory {
   id: string;
   systemCode?: string | null;
   requiresApproval?: boolean | null;
+  allowsDateRange?: boolean | null;
+  entryPrecision?: AbsenceEntryPrecisionType | null;
+  maxDaysPerRequest?: number | null;
+  maxDaysAhead?: number | null;
+  maxDaysPerYear?: number | null;
   isActive?: boolean | null;
   translations?: { locale: string; name: string }[] | null;
 }
@@ -67,30 +90,123 @@ export const EmployeeAbsenceNoticeForm = ({ absenceCategories }: Props) => {
   // Without a category the stricter rule applies, so nobody can slip a far
   // future date past the form before picking one.
   const requiresApproval = selectedCategory?.requiresApproval === true;
+  const entryPrecision: AbsenceEntryPrecisionType =
+    selectedCategory?.entryPrecision ?? AbsenceEntryPrecision.DAY;
+  const allowsDateRange = selectedCategory?.allowsDateRange === true;
+  const rules = {
+    requiresApproval,
+    allowsDateRange,
+    entryPrecision,
+    maxDaysPerRequest: selectedCategory?.maxDaysPerRequest ?? null,
+    maxDaysAhead: selectedCategory?.maxDaysAhead ?? null,
+  };
 
+  // Multi-day categories default to a single day: a range picker for one
+  // day is clumsy, so the employee opts into "several days" explicitly.
+  const [multiDay, setMultiDay] = useState(false);
+  // The category's precision is the upper bound of what the employee may
+  // pick: whole day, half day or a time of day.
+  const entryModes = allowedAbsenceEntryModes(entryPrecision);
+  const entryMode = form.watch("entryMode") ?? AbsenceEntryPrecision.DAY;
+  const isHalfDay = entryMode === AbsenceEntryPrecision.HALF_DAY;
+  const isTimeRange = entryMode === AbsenceEntryPrecision.TIME;
+  // Several days only make sense for whole-day entries.
+  const canUseRange =
+    allowsDateRange && entryMode === AbsenceEntryPrecision.DAY;
+  const useRange = canUseRange && multiDay;
+  const dayPart = form.watch("dayPart") ?? AbsenceDayPart.MORNING;
+
+  // Fields that the active mode does not use are cleared so a category or
+  // mode switch never submits stale values.
+  useEffect(() => {
+    if (!entryModes.includes(entryMode)) {
+      form.setValue("entryMode", AbsenceEntryPrecision.DAY);
+    }
+    if (!canUseRange) setMultiDay(false);
+    if (!useRange) form.setValue("endDate", undefined);
+    if (isHalfDay) {
+      if (form.getValues("dayPart") === AbsenceDayPart.FULL) {
+        form.setValue("dayPart", AbsenceDayPart.MORNING);
+      }
+    } else {
+      form.setValue("dayPart", AbsenceDayPart.FULL);
+    }
+    if (!isTimeRange) {
+      form.setValue("startTime", undefined);
+      form.setValue("endTime", undefined);
+    }
+  }, [
+    entryModes,
+    entryMode,
+    canUseRange,
+    useRange,
+    isHalfDay,
+    isTimeRange,
+    form,
+  ]);
+
+  const [quota, setQuota] = useState<MyAbsenceCategoryQuota | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setQuota(null);
+    if (!selectedCategory || selectedCategory.maxDaysPerYear == null) return;
+    getMyAbsenceCategoryQuotaAction(selectedCategory.id).then((res) => {
+      if (!cancelled && res.success) setQuota(res.data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCategory]);
+
+  const startDate = form.watch("startDate");
   const disabledDate = (date: Date) => {
     const today = startOfToday();
     if (date < today) return true;
-    if (!requiresApproval) {
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      return date > tomorrow;
+    if (rules.maxDaysAhead != null) {
+      const last = new Date(today);
+      last.setDate(last.getDate() + rules.maxDaysAhead);
+      return date > last;
     }
     return false;
+  };
+  // Once a start is picked, days beyond the per-request maximum are blocked.
+  const disabledRangeDate = (date: Date) => {
+    if (disabledDate(date)) return true;
+    const max = rules.maxDaysPerRequest;
+    if (max == null || !startDate || date < startDate) return false;
+    return absenceNoticeDayCount(startDate, date) > max;
   };
 
   const onSubmit = async (values: EmployeeAbsenceNoticeFormType) => {
     const parsed = EmployeeAbsenceNoticeFormSchema.parse(values);
-    const dateError = checkAbsenceNoticeDates(parsed, requiresApproval);
+    const dateError = checkAbsenceNoticeDates(parsed, rules);
     if (dateError) {
       form.setError(dateError.field, {
-        message: tE(`absence.dateError.${dateError.code}`),
+        message: tE(`absence.dateError.${dateError.code}`, {
+          days: rules.maxDaysAhead ?? 0,
+        }),
       });
       return;
     }
     try {
-      const { success } = await createEmployeeAbsenceNoticeAction(values);
-      if (!success) {
+      const result = await createEmployeeAbsenceNoticeAction({
+        ...values,
+        endDate: useRange ? values.endDate : undefined,
+        entryMode: undefined,
+        dayPart: isHalfDay ? values.dayPart : AbsenceDayPart.FULL,
+        startTime: isTimeRange ? values.startTime : undefined,
+        endTime: isTimeRange ? values.endTime || undefined : undefined,
+      });
+      if (!result.success) {
+        const mapped = absenceNoticeErrorCode(result.message);
+        if (mapped) {
+          form.setError(mapped.field, {
+            message: tE(`absence.dateError.${mapped.code}`, {
+              days: rules.maxDaysAhead ?? 0,
+            }),
+          });
+          return;
+        }
         throw new Error("createAbsenceNoticeFailed");
       }
       toast.success(
@@ -110,27 +226,124 @@ export const EmployeeAbsenceNoticeForm = ({ absenceCategories }: Props) => {
         <form onSubmit={form.handleSubmit(onSubmit)} className="form-gap-y">
           <SelectFormField
             name="absenceCategoryId"
-            label="absenceCategories"
+            label="absenceCategory"
             options={absenceCategoryOptions}
+            translateOptions={false}
           />
           {selectedCategory && (
-            <p className="text-sm text-muted-foreground">
-              {requiresApproval
-                ? tE("absence.requiresApprovalHint")
-                : tE("absence.noticeOnlyHint")}
+            <Alert variant={requiresApproval ? "warning" : "info"}>
+              {requiresApproval ? <ClipboardCheck /> : <CalendarCheck />}
+              <AlertTitle>
+                {requiresApproval
+                  ? tE("absence.requiresApprovalTitle")
+                  : tE("absence.noticeOnlyTitle")}
+              </AlertTitle>
+              <AlertDescription>
+                {requiresApproval
+                  ? tE("absence.requiresApprovalHint")
+                  : tE("absence.noticeOnlyHint")}
+                {rules.maxDaysAhead != null && (
+                  <>
+                    {" "}
+                    {rules.maxDaysAhead <= 1
+                      ? tE("absence.daysAheadTomorrow")
+                      : tE("absence.daysAheadHint", {
+                          days: rules.maxDaysAhead,
+                        })}
+                  </>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+          {quota && quota.maxDaysPerYear != null && (
+            <p
+              className={
+                quota.remainingDays === 0
+                  ? "text-sm text-destructive"
+                  : "text-sm text-muted-foreground"
+              }
+            >
+              {quota.remainingDays === 0
+                ? tE("absence.quotaExhausted", {
+                    max: quota.maxDaysPerYear,
+                    periodEnd: new Date(quota.periodEnd).toLocaleDateString(
+                      locale,
+                    ),
+                  })
+                : tE("absence.quotaHint", {
+                    remaining: quota.remainingDays ?? 0,
+                    max: quota.maxDaysPerYear,
+                    periodEnd: new Date(quota.periodEnd).toLocaleDateString(
+                      locale,
+                    ),
+                  })}
             </p>
           )}
-          <DatePickerFormField
-            name="startDate"
-            label="startDate"
-            disabledDate={disabledDate}
-          />
-          {requiresApproval && (
-            <DatePickerFormField
-              name="endDate"
-              label="endDate"
-              disabledDate={disabledDate}
+          {entryModes.length > 1 && (
+            <SegmentedControl<AbsenceEntryModeType>
+              value={entryMode}
+              onChange={(v) =>
+                form.setValue("entryMode", v, { shouldDirty: true })
+              }
+              label={tE("absence.entryModeLabel")}
+              options={entryModes.map((value) => ({
+                value,
+                label: tE(`absence.entryMode.${value}`),
+              }))}
             />
+          )}
+          {canUseRange && (
+            <SegmentedControl
+              value={multiDay ? "multi" : "single"}
+              onChange={(v) => setMultiDay(v === "multi")}
+              label={t("dateRange")}
+              options={[
+                { value: "single", label: tE("absence.singleDay") },
+                { value: "multi", label: tE("absence.multiDay") },
+              ]}
+            />
+          )}
+          {useRange ? (
+            <DateRangePickerFormField
+              startName="startDate"
+              endName="endDate"
+              label="dateRange"
+              disabledDate={disabledRangeDate}
+              inlineMessage
+            />
+          ) : (
+            <DatePickerFormField
+              name="startDate"
+              label="startDate"
+              disabledDate={disabledDate}
+              inlineMessage
+            />
+          )}
+          {isHalfDay && (
+            <SegmentedControl<AbsenceDayPartType>
+              value={dayPart}
+              onChange={(v) =>
+                form.setValue("dayPart", v, { shouldDirty: true })
+              }
+              label={tE("absence.dayPartLabel")}
+              options={(
+                [AbsenceDayPart.MORNING, AbsenceDayPart.AFTERNOON] as const
+              ).map((value) => ({
+                value,
+                label: tE(`absence.dayPart.${value}`),
+              }))}
+            />
+          )}
+          {isTimeRange && (
+            <div className="grid grid-cols-2 gap-3">
+              <InputFormField name="startTime" label="startTime" type="time" />
+              <InputFormField
+                name="endTime"
+                label="endTime"
+                type="time"
+                description="endTimeOpenHint"
+              />
+            </div>
           )}
           <TextareaFormField
             name="note"

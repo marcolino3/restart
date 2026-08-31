@@ -85,6 +85,7 @@ const EmployeeReportDocument = gql`
       entitlementDays
       openingDays
       usedDays
+      reductionDays
       remainingDays
     }
     employeeMonthlyWorkTime(employeeId: $employeeId, from: $from, to: $to) {
