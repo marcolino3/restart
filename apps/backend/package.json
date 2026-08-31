@@ -42,6 +42,7 @@
     "@aws-sdk/client-s3": "^3.1120.0",
     "@aws-sdk/s3-request-presigner": "^3.1120.0",
     "@better-auth/expo": "^1.7.2",
+    "@better-auth/utils": "0.4.2",
     "@googlemaps/google-maps-services-js": "^3.4.2",
     "@nestjs/apollo": "^13.4.5",
     "@nestjs/common": "^11.2.1",
