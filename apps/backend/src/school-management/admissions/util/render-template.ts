@@ -1,32 +1,9 @@
-/**
- * Resolves `{{placeholder}}` tokens in a template string against a variable map.
- *
- * - Matching is case-insensitive and tolerant of surrounding whitespace
- *   (`{{ childFirstName }}` === `{{childfirstname}}`).
- * - Known variables that resolve to `null`/`undefined` and unknown tokens are
- *   replaced with an empty string, so no raw `{{token}}` ever leaks into a
- *   rendered email.
- */
-export type TemplateVariables = Record<string, string | null | undefined>;
-
-const PLACEHOLDER_RE = /\{\{\s*([\w.]+)\s*\}\}/g;
-
-export function renderTemplate(
-  template: string,
-  variables: TemplateVariables,
-): string {
-  if (!template) return template;
-
-  // Lower-cased lookup so the token casing in the template does not matter.
-  const lookup = new Map<string, string>();
-  for (const [key, value] of Object.entries(variables)) {
-    lookup.set(key.toLowerCase(), value ?? '');
-  }
-
-  return template.replace(PLACEHOLDER_RE, (_match, rawKey: string) => {
-    return lookup.get(rawKey.toLowerCase()) ?? '';
-  });
-}
+// The generic `{{placeholder}}` renderer lives in common/util so other
+// features (e.g. contract templates) can share it.
+export {
+  renderTemplate,
+  type TemplateVariables,
+} from '@/common/util/render-template';
 
 /**
  * The placeholder keys an admission email template may reference. Surfaced to
