@@ -1,4 +1,8 @@
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { UploadController } from './upload.controller';
 import { BetterAuthGuard } from '@/auth/guard/better-auth.guard';
@@ -13,8 +17,8 @@ jest.mock('sharp', () => {
   return { __esModule: true, default: jest.fn(() => ({ webp })) };
 });
 
-const ORG_ID = 'org-1';
-const OTHER_ORG_ID = 'org-2';
+const ORG_ID = '11111111-1111-4111-8111-111111111111';
+const OTHER_ORG_ID = '22222222-2222-4222-8222-222222222222';
 
 const orgAdmin = {
   sub: 'user-1',
@@ -124,7 +128,7 @@ describe('UploadController', () => {
   });
 
   describe('upload: students', () => {
-    const STUDENT_ID = 'student-1';
+    const STUDENT_ID = '33333333-3333-4333-8333-333333333333';
 
     it('multi-tenant isolation: rejects a student of a foreign organization', async () => {
       // The org-scoped lookup finds nothing -> the student is not ours.
@@ -172,6 +176,40 @@ describe('UploadController', () => {
         controller.remove('students', STUDENT_ID, orgAdmin),
       ).rejects.toThrow(ForbiddenException);
       expect(storage.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('regression: opaque 500s', () => {
+    it('rejects a non-UUID id instead of letting Postgres reject the cast', async () => {
+      // TypeORM passes the id straight through, so Postgres answers
+      // "invalid input syntax for type uuid" and the caller saw a bare 500.
+      await expect(
+        controller.upload(pngFile, 'students', 'not-a-uuid', orgAdmin),
+      ).rejects.toThrow(BadRequestException);
+      expect(entityManager.findOne).not.toHaveBeenCalled();
+      expect(storage.put).not.toHaveBeenCalled();
+    });
+
+    it('reports a storage outage as 503, not "Internal server error"', async () => {
+      // The container's root filesystem is read-only, so an unconfigured
+      // bucket makes the local fallback throw EROFS mid-request.
+      storage.put.mockRejectedValue(
+        Object.assign(new Error('EROFS: read-only file system'), {
+          code: 'EROFS',
+        }),
+      );
+
+      await expect(
+        controller.upload(pngFile, 'organizations', ORG_ID, orgAdmin),
+      ).rejects.toThrow(ServiceUnavailableException);
+    });
+
+    it('reports a storage outage on delete as 503', async () => {
+      storage.delete.mockRejectedValue(new Error('bucket unreachable'));
+
+      await expect(
+        controller.remove('organizations', ORG_ID, orgAdmin),
+      ).rejects.toThrow(ServiceUnavailableException);
     });
   });
 

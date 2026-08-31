@@ -49,6 +49,17 @@ export class StorageService {
         credentials: { accessKeyId, secretAccessKey },
       });
       this.logger.log(`Object storage: S3 bucket "${bucket}"`);
+    } else if (process.env.NODE_ENV === 'production') {
+      // The container runs with readOnlyRootFilesystem, so the local fallback
+      // cannot write anywhere but /tmp — and /tmp is an emptyDir that dies
+      // with the pod. Booting anyway would accept uploads that are lost on the
+      // next restart (or fail with an opaque 500 per request), so fail closed
+      // and make the missing configuration visible at deploy time instead.
+      throw new Error(
+        'Object storage is not configured: S3_BUCKET, S3_ACCESS_KEY_ID and ' +
+          'S3_SECRET_ACCESS_KEY are required in production (the local ' +
+          'filesystem fallback is not writable in the container).',
+      );
     } else {
       this.logger.log(
         `Object storage: local filesystem (${this.localRoot}) — set S3_* env for production`,
