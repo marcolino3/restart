@@ -1,5 +1,13 @@
 import * as XLSX from 'xlsx';
 
+/**
+ * Upper bound on the text a single spreadsheet may contribute, mirroring the
+ * 5 MB `FileInterceptor` limit the import controllers already enforce. Keeping
+ * it here as well means the parser stays bounded on its own, independent of
+ * which caller reaches it.
+ */
+const MAX_TEXT_LENGTH = 5 * 1024 * 1024;
+
 export interface WorkbookSheet {
   name: string;
   rows: unknown[][];
@@ -48,6 +56,9 @@ export function toScalarString(value: unknown): string {
 }
 
 export function parseCsvText(text: string): unknown[][] {
+  if (text.length > MAX_TEXT_LENGTH) {
+    throw new Error('Spreadsheet content exceeds the supported size limit');
+  }
   const lines = text.split(/\r?\n/);
   const separator = guessSeparator(lines[0] ?? '');
   return lines
