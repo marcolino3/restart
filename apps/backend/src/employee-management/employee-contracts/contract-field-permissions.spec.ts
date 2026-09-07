@@ -1,6 +1,6 @@
 import { protectedFieldKey } from '@restart/shared-schemas/rbac/field-catalog';
 import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
-import { hiddenByPermission } from './employee-contracts.resolver';
+import { hiddenByPermission } from './contract-field-permissions';
 
 describe('hiddenByPermission', () => {
   it('exempts a field the caller cannot read', () => {

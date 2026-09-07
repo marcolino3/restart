@@ -1,6 +1,5 @@
 import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
-import { protectedFieldKey } from '@restart/shared-schemas/rbac/field-catalog';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { FieldWriteGuard } from '@/auth/guard/field-write.guard';
@@ -13,34 +12,7 @@ import { EmployeeContractsService } from './employee-contracts.service';
 import { EmployeeContract } from './entities/employee-contract.entity';
 import { CreateEmployeeContractInput } from './dto/create-employee-contract.input';
 import { UpdateEmployeeContractInput } from './dto/update-employee-contract.input';
-import type { ContractTypeDependentField } from './contract-type-rules';
-
-/**
- * Contract-type-dependent fields the caller cannot read count as absent for
- * the "required" check too — they can never appear in the caller's input, so
- * the backend must not reject the contract for missing them (mirrors the
- * frontend exemption in buildEmployeeContractFormSchema).
- */
-const CONTRACT_FIELD_PERMISSION_KEYS: ContractTypeDependentField[] = [
-  'grossSalary',
-  'hourlyRate',
-  'paymentInterval',
-  'has13thSalary',
-];
-
-export function hiddenByPermission(
-  user: TokenPayload | undefined,
-): ReadonlySet<ContractTypeDependentField> | undefined {
-  if (user?.isSuperAdmin || !user?.fieldPermissions) return undefined;
-  const hidden = new Set<ContractTypeDependentField>();
-  for (const field of CONTRACT_FIELD_PERMISSION_KEYS) {
-    const key = protectedFieldKey('employeeContract', field);
-    if (!user.fieldPermissions.get(key)?.has('read')) {
-      hidden.add(field);
-    }
-  }
-  return hidden;
-}
+import { hiddenByPermission } from './contract-field-permissions';
 
 @Resolver(() => EmployeeContract)
 @UseGuards(GqlBetterAuthGuard, GraphQLAccessGuard)

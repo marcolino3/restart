@@ -1,110 +1,70 @@
 import {
   BadRequestException,
   Controller,
+  HttpException,
   Post,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { BetterAuthGuard } from '@/auth/guard/better-auth.guard';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
+import { Permissions } from '@/auth/decorators/permissions.decorator';
+import { BetterAuthGuard } from '@/auth/guard/better-auth.guard';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
-import { EmployeesService } from './employees.service';
-import { Persona } from '@/common/enums/persona.enum';
+import {
+  EmployeeImportResult,
+  EmployeeImportService,
+} from './employee-import.service';
 
-interface CsvRow {
-  email?: string;
-  firstName?: string;
-  lastName?: string;
-  title?: string;
-  persona?: string;
-  contactPhone?: string;
-  dateOfBirth?: string;
-}
-
-interface UploadResult {
-  created: { email: string }[];
-  failed: { email: string; reason: string }[];
-}
-
-const VALID_PERSONAS = new Set(Object.values(Persona));
-
-function parseCsv(text: string): CsvRow[] {
-  const lines = text.split(/\r?\n/).filter((l) => l.trim());
-  if (lines.length < 2) return [];
-
-  const headers = lines[0].split(';').map((h) => h.trim());
-  return lines.slice(1).map((line) => {
-    const values = line.split(';').map((v) => v.trim());
-    const row: Record<string, string> = {};
-    headers.forEach((header, i) => {
-      row[header] = values[i] ?? '';
-    });
-    return row;
-  });
-}
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 MB
+const ALLOWED_EXTENSIONS = ['.xlsx', '.xls', '.csv'];
 
 @Controller('employees')
+@UseGuards(BetterAuthGuard)
 export class EmployeesController {
-  constructor(private readonly employeesService: EmployeesService) {}
+  constructor(private readonly importService: EmployeeImportService) {}
 
+  /**
+   * Imports employees from a CSV/Excel file (one employee per row). Columns
+   * are matched against the catalog in employee-import-columns.ts; protected
+   * columns (salary, bank details, medical data) additionally require the
+   * matching field-level permission.
+   */
   @Post('upload')
-  @UseGuards(BetterAuthGuard)
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadCsv(
+  @Permissions('EMPLOYEE_WRITE')
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_UPLOAD_BYTES } }),
+  )
+  async upload(
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser() user: TokenPayload,
-  ): Promise<UploadResult> {
+  ): Promise<EmployeeImportResult> {
     if (!file) throw new BadRequestException('No file provided');
 
     const orgId = user.orgId;
     if (!orgId) throw new BadRequestException('No organization selected');
 
-    const text = file.buffer.toString('utf-8');
-    const rows = parseCsv(text);
-
-    if (rows.length === 0) {
-      throw new BadRequestException('CSV file is empty or has no data rows');
+    const name = (file.originalname ?? '').toLowerCase();
+    const ext = name.includes('.') ? `.${name.split('.').pop()}` : '';
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      throw new BadRequestException(
+        `Unsupported file type "${ext || file.mimetype}". Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`,
+      );
     }
 
-    const created: { email: string }[] = [];
-    const failed: { email: string; reason: string }[] = [];
-
-    for (const row of rows) {
-      const email = row.email?.trim();
-      if (!email) {
-        failed.push({ email: '(empty)', reason: 'Email is required' });
-        continue;
-      }
-
-      const personaRaw = row.persona?.trim().toUpperCase();
-      const persona = VALID_PERSONAS.has(personaRaw as Persona)
-        ? (personaRaw as Persona)
-        : Persona.EMPLOYEE;
-
-      try {
-        await this.employeesService.createEmployeeMinimal(
-          {
-            email,
-            firstName: row.firstName?.trim() || '',
-            lastName: row.lastName?.trim() || '',
-            persona,
-            title: row.title?.trim() || undefined,
-            contactPhone: row.contactPhone?.trim() || undefined,
-            dateOfBirth: row.dateOfBirth?.trim() || undefined,
-          },
-          orgId,
-        );
-        created.push({ email });
-      } catch (error) {
-        failed.push({
-          email,
-          reason: error instanceof Error ? error.message : String(error),
-        });
-      }
+    try {
+      return await this.importService.importFile(
+        file.buffer,
+        name,
+        orgId,
+        user,
+      );
+    } catch (err) {
+      if (err instanceof HttpException) throw err;
+      throw new BadRequestException(
+        err instanceof Error ? err.message : 'Failed to parse employee file',
+      );
     }
-
-    return { created, failed };
   }
 }
