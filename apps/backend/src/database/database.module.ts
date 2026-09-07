@@ -19,6 +19,8 @@ import { TeamMember } from '@/employee-management/team-members/entities/team-mem
 import { Team } from '@/employee-management/teams/entities/team.entity';
 import { TimeTracking } from '@/employee-management/time-tracking/entities/time-tracking.entity';
 import { Holiday } from '@/employee-management/holidays/entities/holiday.entity';
+import { Shift } from '@/employee-management/shifts/entities/shift.entity';
+import { TeamShift } from '@/employee-management/shifts/entities/team-shift.entity';
 import { CompanyVacation } from '@/employee-management/company-vacations/entities/company-vacation.entity';
 import { CompanyVacationAssignment } from '@/employee-management/company-vacation-assignments/entities/company-vacation-assignment.entity';
 import { EmployeeVacation } from '@/employee-management/employee-vacations/entities/employee-vacation.entity';
@@ -119,6 +121,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       EmployeeFunctionTranslation,
       TimeTracking,
       Holiday,
+      Shift,
+      TeamShift,
       CompanyVacation,
       CompanyVacationAssignment,
       EmployeeVacation,

@@ -31,6 +31,7 @@ const PERMISSION_CATALOG: Array<{
   },
   { code: PermissionCode.TIMESHEET_READ, name: 'Stundenzettel lesen' },
   { code: PermissionCode.TIMESHEET_WRITE, name: 'Stundenzettel schreiben' },
+  { code: PermissionCode.SHIFT_MANAGE, name: 'Schichten verwalten' },
   { code: PermissionCode.SCHOOL_CLASS_READ, name: 'Schulklasse lesen' },
   { code: PermissionCode.SCHOOL_CLASS_WRITE, name: 'Schulklasse schreiben' },
   { code: PermissionCode.SCHOOL_CLASS_DELETE, name: 'Schulklasse loeschen' },

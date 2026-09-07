@@ -19,6 +19,7 @@ export type FeatureKey =
   | "employee"
   | "absenceCategory"
   | "timesheet"
+  | "shift"
   | "schoolClass"
   | "contactPerson"
   | "family"
@@ -97,6 +98,7 @@ export const PERMISSION_CATALOG: Entry[] = [
   { code: "EMPLOYEE_ABSENCE_CATEGORY_MANAGE", category: "employees", feature: "absenceCategory", action: "manage", level: 3 },
   { code: "TIMESHEET_READ", category: "employees", feature: "timesheet", action: "read", level: 1 },
   { code: "TIMESHEET_WRITE", category: "employees", feature: "timesheet", action: "write", level: 2 },
+  { code: "SHIFT_MANAGE", category: "employees", feature: "shift", action: "manage", level: 3 },
 
   { code: "SCHOOL_CLASS_READ", category: "teacher", feature: "schoolClass", action: "read", level: 1 },
   { code: "SCHOOL_CLASS_WRITE", category: "teacher", feature: "schoolClass", action: "write", level: 2 },
