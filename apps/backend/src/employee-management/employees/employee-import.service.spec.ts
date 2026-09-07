@@ -7,6 +7,7 @@ import { protectedFieldKey } from '@restart/shared-schemas/rbac/field-catalog';
 
 import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { Persona } from '@/common/enums/persona.enum';
+import { EmployeeContract } from '@/employee-management/employee-contracts/entities/employee-contract.entity';
 import { TeamMemberRole } from '@/employee-management/team-members/entities/team-member-role.enum';
 import { TeamMember } from '@/employee-management/team-members/entities/team-member.entity';
 import { Team } from '@/employee-management/teams/entities/team.entity';
@@ -245,7 +246,10 @@ describe('mapEmployeeRow', () => {
 });
 
 describe('EmployeeImportService.importRows', () => {
-  const employeesService = { createEmployeeMinimal: jest.fn() };
+  const employeesService = {
+    createEmployeeMinimal: jest.fn(),
+    updateEmployeeMinimal: jest.fn(),
+  };
   const hrProfilesService = { upsert: jest.fn() };
   const emergencyService = { upsert: jest.fn() };
   const contractsService = { create: jest.fn() };
@@ -272,6 +276,7 @@ describe('EmployeeImportService.importRows', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     employeesService.createEmployeeMinimal.mockResolvedValue(createdEmployee);
+    employeesService.updateEmployeeMinimal.mockResolvedValue(createdEmployee);
     entityManager.findOne.mockResolvedValue(null);
     entityManager.update.mockResolvedValue(undefined);
     entityManager.save.mockResolvedValue(undefined);
@@ -295,7 +300,11 @@ describe('EmployeeImportService.importRows', () => {
       user,
     );
 
-    expect(result).toEqual({ created: [{ email: 'a@x.ch' }], failed: [] });
+    expect(result).toEqual({
+      created: [{ email: 'a@x.ch' }],
+      updated: [],
+      failed: [],
+    });
     expect(employeesService.createEmployeeMinimal).toHaveBeenCalledWith(
       expect.objectContaining({ email: 'a@x.ch' }),
       ORG_ID,
@@ -374,6 +383,134 @@ describe('EmployeeImportService.importRows', () => {
     expect(result.created).toEqual([
       { email: 'a@x.ch', warnings: ['hrProfile: IBAN invalid'] },
     ]);
+  });
+
+  describe('re-import of an existing employee', () => {
+    const EMPLOYEE_ID = 'emp-existing';
+    const existingInOrg = (
+      entity: unknown,
+      opts: { where: Record<string, unknown> },
+    ) => {
+      if (entity === UserEmail) return { id: 'ue-1', userId: USER_ID };
+      if (entity === Membership && opts.where.userId === USER_ID) {
+        return opts.where.organizationId === ORG_ID
+          ? { id: MEMBERSHIP_ID, employeeId: EMPLOYEE_ID, roles: [] }
+          : null;
+      }
+      return null;
+    };
+
+    beforeEach(() => {
+      entityManager.findOne.mockImplementation(existingInOrg);
+      employeesService.updateEmployeeMinimal.mockResolvedValue({
+        id: EMPLOYEE_ID,
+        membership: { id: MEMBERSHIP_ID, userId: USER_ID },
+      });
+    });
+
+    it('updates filled person fields and reports the row as updated', async () => {
+      const result = await service.importRows(
+        [{ email: 'a@x.ch', firstName: 'Anna', city: 'Bern' }],
+        ORG_ID,
+        superAdmin,
+      );
+      expect(result).toEqual({
+        created: [],
+        updated: [{ email: 'a@x.ch' }],
+        failed: [],
+      });
+      expect(employeesService.createEmployeeMinimal).not.toHaveBeenCalled();
+      expect(employeesService.updateEmployeeMinimal).toHaveBeenCalledWith(
+        { id: EMPLOYEE_ID, firstName: 'Anna', city: 'Bern' },
+        ORG_ID,
+        superAdmin.membershipId,
+      );
+    });
+
+    it('keeps the persona when the cell is empty', async () => {
+      await service.importRows([{ email: 'a@x.ch' }], ORG_ID, superAdmin);
+      const [input] = employeesService.updateEmployeeMinimal.mock.calls[0] as [
+        Record<string, unknown>,
+      ];
+      expect(input).not.toHaveProperty('persona');
+    });
+
+    it('upserts HR and emergency profiles on the existing employee', async () => {
+      await service.importRows(
+        [{ email: 'a@x.ch', iban: 'CH1', contact1Name: 'C' }],
+        ORG_ID,
+        superAdmin,
+      );
+      expect(hrProfilesService.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ employeeId: EMPLOYEE_ID, iban: 'CH1' }),
+        ORG_ID,
+        superAdmin.membershipId,
+      );
+      expect(emergencyService.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ employeeId: EMPLOYEE_ID }),
+        ORG_ID,
+        superAdmin.membershipId,
+      );
+    });
+
+    it('leaves a contract with the same start date untouched', async () => {
+      entityManager.findOne.mockImplementation(
+        (entity: unknown, opts: { where: Record<string, unknown> }) =>
+          entity === EmployeeContract
+            ? opts.where.organizationId === ORG_ID &&
+              opts.where.startDate === '2025-01-01'
+              ? { id: 'contract-1' }
+              : null
+            : existingInOrg(entity, opts),
+      );
+      const result = await service.importRows(
+        [{ email: 'a@x.ch', contractStartDate: '2025-01-01' }],
+        ORG_ID,
+        superAdmin,
+      );
+      expect(contractsService.create).not.toHaveBeenCalled();
+      expect(result.updated).toEqual([{ email: 'a@x.ch' }]);
+    });
+
+    it('creates a contract with a new start date', async () => {
+      await service.importRows(
+        [{ email: 'a@x.ch', contractStartDate: '2026-01-01' }],
+        ORG_ID,
+        superAdmin,
+      );
+      const [input, orgId] = contractsService.create.mock.calls[0] as [
+        Record<string, unknown>,
+        string,
+      ];
+      expect(input).toMatchObject({
+        employeeId: EMPLOYEE_ID,
+        startDate: '2026-01-01',
+      });
+      expect(orgId).toBe(ORG_ID);
+    });
+
+    it('does not duplicate an existing team membership', async () => {
+      entityManager.findOne.mockImplementation(
+        (entity: unknown, opts: { where: Record<string, unknown> }) => {
+          if (entity === Team) return { id: 'team-1' };
+          if (entity === TeamMember) {
+            return { id: 'tm-1', role: TeamMemberRole.MEMBER };
+          }
+          return existingInOrg(entity, opts);
+        },
+      );
+      await service.importRows(
+        [{ email: 'a@x.ch', teamName: 'Primar', teamRole: 'LEAD' }],
+        ORG_ID,
+        superAdmin,
+      );
+      expect(entityManager.save).not.toHaveBeenCalled();
+      expect(entityManager.update).toHaveBeenCalledWith(
+        TeamMember,
+        { id: 'tm-1' },
+        { role: TeamMemberRole.LEAD },
+      );
+    });
   });
 
   it('reports mapping errors per row without calling services', async () => {

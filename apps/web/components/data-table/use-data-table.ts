@@ -76,6 +76,12 @@ export interface UseDataTableOptions<TData extends Record<string, unknown>>
   initialVisibility?: ColumnVisibilityState;
   /** Enables the built-in search box wiring. */
   enableGlobalFilter?: boolean;
+  /**
+   * Extra text the global search matches per row, for data a cell renders
+   * but does not expose as its value (e.g. a person cell showing first name,
+   * last name and e-mail while its value is the sort key).
+   */
+  searchableText?: (row: TData) => string;
 }
 
 /**
@@ -98,6 +104,7 @@ export function useDataTable<TData extends Record<string, unknown>>({
   initialSorting = [],
   initialVisibility = {},
   enableGlobalFilter = true,
+  searchableText,
   ...options
 }: UseDataTableOptions<TData>) {
   const locale = useLocale();
@@ -134,11 +141,18 @@ export function useDataTable<TData extends Record<string, unknown>>({
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
-    // Searches every visible cell, ignoring case and diacritics.
+    // Searches every visible cell plus `searchableText`, ignoring case and
+    // diacritics.
     globalFilterFn: (row, _columnId, filterValue) => {
       const needle = normalizeForSearch(filterValue);
       if (!needle) return true;
 
+      if (
+        searchableText &&
+        normalizeForSearch(searchableText(row.original)).includes(needle)
+      ) {
+        return true;
+      }
       return row
         .getVisibleCells()
         .some((cell) =>

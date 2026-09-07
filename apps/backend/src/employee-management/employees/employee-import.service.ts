@@ -15,6 +15,7 @@ import {
 import { hiddenByPermission } from '@/employee-management/employee-contracts/contract-field-permissions';
 import { EmployeeContractsService } from '@/employee-management/employee-contracts/employee-contracts.service';
 import {
+  EmployeeContract,
   EmployeeContractType,
   EmployeePaymentInterval,
 } from '@/employee-management/employee-contracts/entities/employee-contract.entity';
@@ -40,6 +41,7 @@ import { Role } from '@/roles/entities/role.entity';
 import { User } from '@/users/entities/user.entity';
 import { UserEmail } from '@/user-emails/entities/user-email.entity';
 import type { CreateEmployeeInput } from './dto/create-employee.input';
+import type { UpdateEmployeeInput } from './dto/update-employee.input';
 import {
   EMPLOYEE_IMPORT_COLUMN_BY_KEY,
   EMPLOYEE_IMPORT_MAX_ROWS,
@@ -49,6 +51,8 @@ import { EmployeesService } from './employees.service';
 
 export interface EmployeeImportResult {
   created: { email: string; warnings?: string[] }[];
+  /** Rows whose employee already existed in the org: filled cells overwrote. */
+  updated: { email: string; warnings?: string[] }[];
   failed: { email: string; reason: string }[];
 }
 
@@ -57,6 +61,12 @@ export type EmployeeImportRow = Record<string, string>;
 
 export interface MappedEmployeeRow {
   employee: CreateEmployeeInput;
+  /**
+   * Same person fields for an employee that already exists in the org. Only
+   * filled cells are present, so `updateEmployeeMinimal` leaves the rest
+   * untouched (empty cell = keep, not clear).
+   */
+  personUpdate: Omit<UpdateEmployeeInput, 'id' | 'email'>;
   /** User/membership fields createEmployeeMinimal does not accept. */
   extras: { privateEmail?: string; contactPhone2?: string; language?: string };
   hr?: Omit<UpsertEmployeeHrProfileInput, 'employeeId'>;
@@ -315,8 +325,15 @@ export function mapEmployeeRow(row: EmployeeImportRow): MappedEmployeeRow {
     country: row.country,
   };
 
+  const { email: _email, persona: _persona, ...personFields } = employee;
   const mapped: MappedEmployeeRow = {
     employee,
+    // Persona only overwrites when the cell is filled; the create default
+    // (EMPLOYEE) must not downgrade an existing member.
+    personUpdate: {
+      ...personFields,
+      ...(row.persona ? { persona } : {}),
+    },
     extras: {
       privateEmail: row.privateEmail?.toLowerCase(),
       contactPhone2: row.contactPhone2,
@@ -461,7 +478,11 @@ export class EmployeeImportService {
     orgId: string,
     user: TokenPayload,
   ): Promise<EmployeeImportResult> {
-    const result: EmployeeImportResult = { created: [], failed: [] };
+    const result: EmployeeImportResult = {
+      created: [],
+      updated: [],
+      failed: [],
+    };
     const contractHidden = hiddenByPermission(user);
 
     for (const row of rows) {
@@ -475,18 +496,35 @@ export class EmployeeImportService {
       }
 
       // Step 1: person + address — the only step that fails the whole row.
+      // An employee that already exists in this org is updated in place;
+      // a known account without employee record in this org gets one.
       const existingUser = await this.entityManager.findOne(UserEmail, {
         where: { email: mapped.employee.email },
-        select: { id: true },
+        select: { id: true, userId: true },
       });
+      const existingMembership = existingUser
+        ? await this.entityManager.findOne(Membership, {
+            where: { organizationId: orgId, userId: existingUser.userId },
+            select: { id: true, employeeId: true },
+          })
+        : null;
+      const existingEmployeeId = existingMembership?.employeeId ?? null;
+      const isUpdate = existingEmployeeId !== null;
+
       let employeeId: string;
       let membershipId: string | undefined;
       let userId: string | undefined;
       try {
-        const employee = await this.employeesService.createEmployeeMinimal(
-          mapped.employee,
-          orgId,
-        );
+        const employee = existingEmployeeId
+          ? await this.employeesService.updateEmployeeMinimal(
+              { id: existingEmployeeId, ...mapped.personUpdate },
+              orgId,
+              user.membershipId,
+            )
+          : await this.employeesService.createEmployeeMinimal(
+              mapped.employee,
+              orgId,
+            );
         employeeId = employee.id;
         membershipId = employee.membership?.id;
         userId = employee.membership?.userId ?? employee.membership?.user?.id;
@@ -535,16 +573,32 @@ export class EmployeeImportService {
         );
       }
 
-      // Step 5: first contract.
+      // Step 5: first contract. On re-import a contract with the same start
+      // date already exists and stays as it is (contracts are not overwritten).
       if (mapped.contract) {
         const contract = mapped.contract;
-        await step('contract', () =>
-          this.contractsService.create(
+        await step('contract', async () => {
+          if (isUpdate) {
+            const existingContract = await this.entityManager.findOne(
+              EmployeeContract,
+              {
+                where: {
+                  employeeId,
+                  organizationId: orgId,
+                  startDate: contract.startDate,
+                  isActive: true,
+                },
+                select: { id: true },
+              },
+            );
+            if (existingContract) return;
+          }
+          await this.contractsService.create(
             { employeeId, ...contract },
             orgId,
             contractHidden,
-          ),
-        );
+          );
+        });
       }
 
       // Step 6: team + roles (looked up by name within the org only).
@@ -564,7 +618,7 @@ export class EmployeeImportService {
         );
       }
 
-      result.created.push(
+      (isUpdate ? result.updated : result.created).push(
         warnings.length > 0 ? { email, warnings } : { email },
       );
     }
@@ -605,19 +659,33 @@ export class EmployeeImportService {
     employeeId: string,
     orgId: string,
     teamName: string,
-    role: TeamMemberRole = TeamMemberRole.MEMBER,
+    role?: TeamMemberRole,
   ): Promise<void> {
     const team = await this.entityManager.findOne(Team, {
       where: { organizationId: orgId, name: teamName },
       select: { id: true },
     });
     if (!team) throw new Error(`team "${teamName}" not found`);
+    const existing = await this.entityManager.findOne(TeamMember, {
+      where: { teamId: team.id, employeeId },
+      select: { id: true, role: true },
+    });
+    if (existing) {
+      if (role && existing.role !== role) {
+        await this.entityManager.update(
+          TeamMember,
+          { id: existing.id },
+          { role },
+        );
+      }
+      return;
+    }
     await this.entityManager.save(
       this.entityManager.create(TeamMember, {
         organizationId: orgId,
         teamId: team.id,
         employeeId,
-        role,
+        role: role ?? TeamMemberRole.MEMBER,
       }),
     );
   }

@@ -11,6 +11,7 @@ import {
   FileText,
   Loader2,
   Lock,
+  RefreshCw,
   Upload,
   XCircle,
 } from "lucide-react";
@@ -38,12 +39,10 @@ import {
   EMPLOYEE_IMPORT_GROUPS,
   type EmployeeImportGroup,
 } from "../employee-import-columns";
-import { revalidateEmployeesAction } from "../actions/revalidate-employees.action";
-
-interface UploadResult {
-  created: { email: string; warnings?: string[] }[];
-  failed: { email: string; reason: string }[];
-}
+import {
+  importEmployeesAction,
+  type EmployeeImportResult,
+} from "../actions/import-employees.action";
 
 const ALLOWED_EXTENSIONS = [".csv", ".xlsx", ".xls"];
 
@@ -66,19 +65,6 @@ function downloadTemplate() {
   URL.revokeObjectURL(url);
 }
 
-async function readErrorMessage(response: Response): Promise<string> {
-  try {
-    const body = (await response.json()) as { message?: string | string[] };
-    const message = Array.isArray(body.message)
-      ? body.message.join(", ")
-      : body.message;
-    if (message) return message;
-  } catch {
-    // Not JSON — fall through to the status text.
-  }
-  return `${response.status} ${response.statusText}`;
-}
-
 interface EmployeesCsvUploadProps {
   /**
    * Controlled open state. When `onOpenChange` is provided the component drops
@@ -96,7 +82,7 @@ export const EmployeesCsvUpload = ({
   const tE = useTranslations("Employees");
   const router = useRouter();
   const [isUploading, setIsUploading] = useState(false);
-  const [result, setResult] = useState<UploadResult | null>(null);
+  const [result, setResult] = useState<EmployeeImportResult | null>(null);
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = onOpenChange !== undefined;
@@ -122,33 +108,30 @@ export const EmployeesCsvUpload = ({
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/employees/upload", {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        throw new Error(await readErrorMessage(response));
+      const response = await importEmployeesAction(formData);
+      if (!response.success) {
+        throw new Error(String(response.error));
       }
 
-      const data: UploadResult = await response.json();
+      const data = response.data;
       setResult(data);
 
-      const totalCreated = data.created.length;
-      const totalFailed = data.failed.length;
+      const counts = [
+        `${data.created.length} ${tE("csvCreated")}`,
+        data.updated.length > 0 &&
+          `${data.updated.length} ${tE("csvUpdated")}`,
+        data.failed.length > 0 && `${data.failed.length} ${tE("csvFailed")}`,
+      ]
+        .filter(Boolean)
+        .join(", ");
 
-      if (totalFailed === 0) {
-        toast.success(t("success"), {
-          description: `${totalCreated} ${tE("csvCreated")}`,
-        });
+      if (data.failed.length === 0) {
+        toast.success(t("success"), { description: counts });
       } else {
-        toast.warning(tE("csvPartialSuccess"), {
-          description: `${totalCreated} ${tE("csvCreated")}, ${totalFailed} ${tE("csvFailed")}`,
-        });
+        toast.warning(tE("csvPartialSuccess"), { description: counts });
       }
 
-      await revalidateEmployeesAction();
+      // The action already revalidated the list; refresh pulls the new RSC payload.
       router.refresh();
     } catch (error) {
       console.error("CSV upload error:", error);
@@ -163,9 +146,10 @@ export const EmployeesCsvUpload = ({
     }
   };
 
-  const withWarnings = result?.created.filter(
-    (item) => item.warnings && item.warnings.length > 0,
-  ) ?? [];
+  const withWarnings = [
+    ...(result?.created ?? []),
+    ...(result?.updated ?? []),
+  ].filter((item) => item.warnings && item.warnings.length > 0);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -298,6 +282,25 @@ export const EmployeesCsvUpload = ({
                         <li
                           key={idx}
                           className="text-green-600 dark:text-green-400"
+                        >
+                          {item.email}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {result.updated.length > 0 && (
+                  <div className="bg-sky-50 dark:bg-sky-950 p-3 rounded-lg">
+                    <h5 className="font-semibold text-sky-700 dark:text-sky-300 flex items-center gap-2">
+                      <RefreshCw className="h-4 w-4" />
+                      {tE("csvUpdatedTitle")} ({result.updated.length})
+                    </h5>
+                    <ul className="text-sm mt-1 max-h-32 overflow-y-auto">
+                      {result.updated.map((item) => (
+                        <li
+                          key={item.email}
+                          className="text-sky-600 dark:text-sky-400"
                         >
                           {item.email}
                         </li>

@@ -89,7 +89,7 @@ test.describe('Employee import — access control', () => {
 })
 
 test.describe('Employee import — happy path', () => {
-  test('imports an employee with profile and contract, skips it on re-upload', async ({
+  test('imports an employee with profile and contract, updates it on re-upload', async ({
     page,
   }) => {
     const stamp = Date.now()
@@ -105,10 +105,13 @@ test.describe('Employee import — happy path', () => {
     await expect(dialog.getByText(/created with warnings/i)).toHaveCount(0)
     await expect(dialog.getByRole('heading', { name: /^failed \(/i })).toHaveCount(0)
 
-    // Second upload of the same file: the existing employee is skipped.
+    // Second upload of the same file: the existing employee is updated, not
+    // rejected, and the contract with the same start date is kept as is.
     await uploadCsv(dialog, buildCsv(email, `Import${stamp}`))
-    await expect(dialog.getByRole('heading', { name: /^failed \(/i })).toBeVisible({ timeout: 30000 })
-    await expect(dialog.getByText(/already exists/i)).toBeVisible()
+    await expect(dialog.getByRole('heading', { name: /^updated \(1\)/i })).toBeVisible({ timeout: 30000 })
+    await expect(dialog.getByText(email, { exact: true })).toBeVisible()
+    await expect(dialog.getByRole('heading', { name: /^failed \(/i })).toHaveCount(0)
+    await expect(dialog.getByText(/with notes/i)).toHaveCount(0)
 
     // Closing the dialog shows the imported employee in the refreshed list.
     await dialog.getByRole('button', { name: /close/i }).click()
