@@ -15,9 +15,13 @@ export type Shift = Record<string, unknown> & {
   endTime: string;
   color: string | null;
   sortOrder: number;
+  /** Unpaid breaks inside the shift, `HH:MM`. */
+  breaks: ShiftBreak[];
   /** Teams (of the active org) this shift is assigned to. */
   teamIds: string[];
 };
+
+export type ShiftBreak = { startTime: string; endTime: string };
 
 export type ShiftInput = {
   name: string;
@@ -25,6 +29,7 @@ export type ShiftInput = {
   endTime: string;
   color?: string | null;
   sortOrder?: number;
+  breaks?: ShiftBreak[];
 };
 
 const ShiftsDocument = gql`
@@ -36,6 +41,10 @@ const ShiftsDocument = gql`
       endTime
       color
       sortOrder
+      breaks {
+        startTime
+        endTime
+      }
       teamIds
     }
   }
@@ -50,6 +59,10 @@ const TeamShiftsDocument = gql`
       endTime
       color
       sortOrder
+      breaks {
+        startTime
+        endTime
+      }
       teamIds
     }
   }
@@ -64,6 +77,10 @@ const CreateShiftDocument = gql`
       endTime
       color
       sortOrder
+      breaks {
+        startTime
+        endTime
+      }
       teamIds
     }
   }
@@ -78,6 +95,10 @@ const UpdateShiftDocument = gql`
       endTime
       color
       sortOrder
+      breaks {
+        startTime
+        endTime
+      }
       teamIds
     }
   }
@@ -98,6 +119,10 @@ const SetTeamShiftsDocument = gql`
       endTime
       color
       sortOrder
+      breaks {
+        startTime
+        endTime
+      }
       teamIds
     }
   }

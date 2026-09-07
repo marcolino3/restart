@@ -21,6 +21,7 @@ const shift = (over: Partial<Shift> = {}): Shift =>
     endTime: '12:00:00',
     color: null,
     sortOrder: 0,
+    breaks: [],
     isActive: true,
     ...over,
   }) as Shift;

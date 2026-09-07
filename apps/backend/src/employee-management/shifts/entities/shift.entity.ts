@@ -1,6 +1,7 @@
 import { AbstractEntity } from '@/database/abstract.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
+import { ShiftBreak } from '../dto/shift-break.input';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 /**
@@ -42,4 +43,9 @@ export class Shift extends AbstractEntity<Shift> {
   @Field(() => Int)
   @Column('integer', { name: 'sort_order', default: 0 })
   sortOrder!: number;
+
+  /** Unpaid breaks inside the shift (`HH:MM`), sorted by start. */
+  @Field(() => [ShiftBreak])
+  @Column('jsonb', { default: () => "'[]'" })
+  breaks!: ShiftBreak[];
 }

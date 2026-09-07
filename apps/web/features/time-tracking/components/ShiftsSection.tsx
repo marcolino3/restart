@@ -23,9 +23,12 @@ import {
 } from "@/components/data-table/use-data-table";
 import { normalizeForSearch } from "@/lib/table/locale-sorting";
 import { useSheet } from "@/components/providers/sheet-provider";
-import { ShiftForm } from "./ShiftForm";
+import { formatDuration, ShiftForm } from "./ShiftForm";
 import { deleteShiftAction, type Shift } from "../actions/shifts.action";
-import { shiftDurationMinutes } from "../schemas/shift-form.schema";
+import {
+  shiftDurationMinutes,
+  shiftNetMinutes,
+} from "../schemas/shift-form.schema";
 
 export type ShiftTeamOption = { id: string; name: string };
 
@@ -34,12 +37,6 @@ interface Props {
   /** All teams of the org — resolves `teamIds` to names in the table. */
   teams: ShiftTeamOption[];
 }
-
-const formatDuration = (minutes: number) => {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m === 0 ? `${h} h` : `${h} h ${m} min`;
-};
 
 /** Colour dot + name; neutral ring when the shift has no colour. */
 export const ShiftChip = ({ shift }: { shift: Pick<Shift, "name" | "color"> }) => (
@@ -88,19 +85,21 @@ export const ShiftsSection = ({ shifts, teams }: Props) => {
           <DataTableColumnHeader column={column} title={t("shiftTime")} />
         ),
         meta: { labelKey: "shiftTime" },
-        cell: ({ row }) => (
-          <span className="font-mono tabular-nums">
-            {row.original.startTime}–{row.original.endTime}
-            <span className="ml-2 text-xs text-muted-foreground">
-              {formatDuration(
-                shiftDurationMinutes(
-                  row.original.startTime,
-                  row.original.endTime,
-                ),
-              )}
+        cell: ({ row }) => {
+          const { startTime, endTime, breaks } = row.original;
+          const gross = shiftDurationMinutes(startTime, endTime);
+          const net = shiftNetMinutes(startTime, endTime, breaks);
+          return (
+            <span className="font-mono tabular-nums">
+              {startTime}–{endTime}
+              <span className="ml-2 text-xs text-muted-foreground">
+                {breaks.length > 0
+                  ? `${t("shiftNetDuration", { duration: formatDuration(net) })} · ${t("shiftBreakCount", { count: breaks.length })}`
+                  : formatDuration(gross)}
+              </span>
             </span>
-          </span>
-        ),
+          );
+        },
       },
       {
         id: "teams",

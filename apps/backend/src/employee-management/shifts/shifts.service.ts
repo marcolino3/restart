@@ -11,6 +11,7 @@ import { TeamShift } from './entities/team-shift.entity';
 import { CreateShiftInput } from './dto/create-shift.input';
 import { UpdateShiftInput } from './dto/update-shift.input';
 import { SetTeamShiftsInput } from './dto/set-team-shifts.input';
+import { normalizeShiftBreaks } from './shift-breaks.util';
 
 /** Postgres `time` comes back as `HH:MM:SS`; the API speaks `HH:MM`. */
 export const toHHMM = (value: string): string => value.slice(0, 5);
@@ -57,6 +58,11 @@ export class ShiftsService {
         Object.assign(existing, this.toColumns(input), {
           name,
           isActive: true,
+          breaks: normalizeShiftBreaks(
+            input.startTime,
+            input.endTime,
+            input.breaks,
+          ),
         });
         return this.normalize(await this.shiftsRepo.save(existing));
       }
@@ -65,6 +71,11 @@ export class ShiftsService {
 
     const shift = this.shiftsRepo.create({
       ...this.toColumns(input),
+      breaks: normalizeShiftBreaks(
+        input.startTime,
+        input.endTime,
+        input.breaks,
+      ),
       name,
       organizationId,
       sortOrder: input.sortOrder ?? (await this.nextSortOrder(organizationId)),
@@ -92,6 +103,11 @@ export class ShiftsService {
     }
     Object.assign(shift, this.toColumns(input));
     if (input.sortOrder !== undefined) shift.sortOrder = input.sortOrder;
+    shift.breaks = normalizeShiftBreaks(
+      shift.startTime,
+      shift.endTime,
+      input.breaks ?? shift.breaks,
+    );
 
     return this.normalize(await this.shiftsRepo.save(shift));
   }
@@ -215,6 +231,7 @@ export class ShiftsService {
   private normalize(shift: Shift): Shift {
     shift.startTime = toHHMM(shift.startTime);
     shift.endTime = toHHMM(shift.endTime);
+    shift.breaks ??= [];
     return shift;
   }
 }
