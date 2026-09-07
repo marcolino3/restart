@@ -115,6 +115,28 @@ export function useDataTable<TData extends Record<string, unknown>>({
     pageIndex: 0,
     pageSize: paginated ? initialPageSize : ALL_ROWS,
   });
+  // Jumping back to page 1 keeps a narrowed result set from landing the user
+  // on a now-empty page. Done in the change handlers rather than an effect on
+  // `table`: useTable returns a new object every render, so an effect keyed on
+  // it would reset the page after every page change.
+  const resetPage = React.useCallback(
+    () => setPagination((p) => (p.pageIndex === 0 ? p : { ...p, pageIndex: 0 })),
+    [],
+  );
+  const changeGlobalFilter = React.useCallback<typeof setGlobalFilter>(
+    (value) => {
+      setGlobalFilter(value);
+      resetPage();
+    },
+    [resetPage],
+  );
+  const changeColumnFilters = React.useCallback<typeof setColumnFilters>(
+    (value) => {
+      setColumnFilters(value);
+      resetPage();
+    },
+    [resetPage],
+  );
 
   const table = useTable<AppTableFeatures, TData>({
     features: appTableFeatures,
@@ -129,10 +151,10 @@ export function useDataTable<TData extends Record<string, unknown>>({
       ...(enableGlobalFilter ? { globalFilter } : {}),
     },
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    onColumnFiltersChange: changeColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
-    onGlobalFilterChange: setGlobalFilter,
+    onGlobalFilterChange: changeGlobalFilter,
     onPaginationChange: setPagination,
     // Searches every visible cell, ignoring case and diacritics.
     globalFilterFn: (row, _columnId, filterValue) => {
@@ -148,16 +170,11 @@ export function useDataTable<TData extends Record<string, unknown>>({
     ...options,
   });
 
-  // Jumping back to page 1 keeps a narrowed result set from landing the user
-  // on a now-empty page.
-  React.useEffect(() => {
-    table.setPageIndex(0);
-  }, [globalFilter, columnFilters, table]);
 
   return {
     table,
     globalFilter,
-    setGlobalFilter,
+    setGlobalFilter: changeGlobalFilter,
     sorting,
     columnFilters,
     rowSelection,
