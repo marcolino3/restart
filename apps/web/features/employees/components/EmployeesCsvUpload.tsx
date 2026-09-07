@@ -38,6 +38,7 @@ import {
   EMPLOYEE_IMPORT_GROUPS,
   type EmployeeImportGroup,
 } from "../employee-import-columns";
+import { revalidateEmployeesAction } from "../actions/revalidate-employees.action";
 
 interface UploadResult {
   created: { email: string; warnings?: string[] }[];
@@ -147,6 +148,7 @@ export const EmployeesCsvUpload = ({
         });
       }
 
+      await revalidateEmployeesAction();
       router.refresh();
     } catch (error) {
       console.error("CSV upload error:", error);

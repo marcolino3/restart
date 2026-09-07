@@ -109,6 +109,18 @@ test.describe('Employee import — happy path', () => {
     await uploadCsv(dialog, buildCsv(email, `Import${stamp}`))
     await expect(dialog.getByRole('heading', { name: /^failed \(/i })).toBeVisible({ timeout: 30000 })
     await expect(dialog.getByText(/already exists/i)).toBeVisible()
+
+    // Closing the dialog shows the imported employee in the refreshed list.
+    await dialog.getByRole('button', { name: /close/i }).click()
+    await expect(dialog).toBeHidden()
+    if (await page.getByRole('menu').count()) await page.keyboard.press('Escape')
+    await expect(page.getByRole('menu')).toHaveCount(0)
+    const search = page.getByPlaceholder(/search name or email/i)
+    await search.click()
+    await search.fill(`Import${stamp}`)
+    await expect(
+      page.getByRole('row').filter({ hasText: `Import${stamp}` }),
+    ).toHaveCount(1, { timeout: 15000 })
   })
 
   test('rejects a file with an unknown column', async ({ page }) => {

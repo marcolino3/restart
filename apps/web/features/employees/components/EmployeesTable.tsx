@@ -84,7 +84,13 @@ const useColumns = (): ColumnDef<
   return [
     {
       id: "person",
-      accessorFn: (row) => row.membership.user?.lastName ?? "",
+      // Last name first keeps the default sort by surname; first name and
+      // e-mail make the global search hit the whole person, not only the
+      // surname.
+      accessorFn: (row) =>
+        `${row.membership.user?.lastName ?? ""} ${
+          row.membership.user?.firstName ?? ""
+        } ${primaryEmail(row)}`.trim(),
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={t("person")} />
       ),
