@@ -20,6 +20,7 @@ export type FeatureKey =
   | "absenceCategory"
   | "timesheet"
   | "shift"
+  | "shiftPlan"
   | "schoolClass"
   | "contactPerson"
   | "family"
