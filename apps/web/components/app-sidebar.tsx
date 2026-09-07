@@ -5,6 +5,7 @@ import {
   IconBuilding,
   IconBuildingCommunity,
   IconBriefcase,
+  IconCalendarWeek,
   IconChartHistogram,
   IconClock,
   IconHeart,
@@ -121,6 +122,17 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
               title: t("timeTrackingReport"),
               url: ROUTES.admin.timeTrackingReport(locale),
               icon: IconChartHistogram,
+            },
+          ]
+        : []),
+      // Schichtplanung: alle mit SHIFT_PLAN_READ (Mitarbeitende sehen nur
+      // publizierte Plaene ihrer Teams, Leads/Admins planen).
+      ...(hasPermission("SHIFT_PLAN_READ")
+        ? [
+            {
+              title: t("shiftPlans"),
+              url: ROUTES.admin.shiftPlans(locale),
+              icon: IconCalendarWeek,
             },
           ]
         : []),

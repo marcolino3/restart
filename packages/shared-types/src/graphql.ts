@@ -1425,6 +1425,12 @@ export type CreateShiftInput = {
   startTime: Scalars['String']['input'];
 };
 
+export type CreateShiftPlanInput = {
+  endDate: Scalars['String']['input'];
+  startDate: Scalars['String']['input'];
+  teamId: Scalars['ID']['input'];
+};
+
 export type CreateStudentInput = {
   admissionStageId?: InputMaybe<Scalars['ID']['input']>;
   dateOfBirth?: InputMaybe<Scalars['String']['input']>;
@@ -2902,6 +2908,7 @@ export type Mutation = {
   createRole: Role;
   createSchoolClass: SchoolClass;
   createShift: Shift;
+  createShiftPlan: ShiftPlan;
   createStudent: Student;
   createStudentNote: StudentNote;
   createStudentRecordCategory: StudentRecordCategory;
@@ -2943,6 +2950,7 @@ export type Mutation = {
   deleteRole: Scalars['Boolean']['output'];
   deleteSchoolClass: Scalars['Boolean']['output'];
   deleteShift: Scalars['Boolean']['output'];
+  deleteShiftPlan: Scalars['Boolean']['output'];
   deleteStudent: Scalars['Boolean']['output'];
   deleteStudentRecordEntry: Scalars['Boolean']['output'];
   deleteTask: Scalars['Boolean']['output'];
@@ -2963,6 +2971,7 @@ export type Mutation = {
   moveAdmissionApplication: AdmissionApplication;
   moveStudentToStage: Student;
   moveTask: Task;
+  publishShiftPlan: ShiftPlan;
   reactivateOrganization: Organization;
   recertifyAccess: Scalars['Boolean']['output'];
   recordConsent: Consent;
@@ -3004,6 +3013,8 @@ export type Mutation = {
   setEmployeeAbsenceCategoryActive: EmployeeAbsenceCategory;
   setLessonPrerequisites: CurriculumNode;
   setPrimaryUserEmail: UserEmail;
+  setShiftAssignments: Array<ShiftAssignment>;
+  setShiftCoverage: Array<ShiftCoverageRequirement>;
   setTeamShifts: Array<Shift>;
   setTimeTrackingPeriodAnchor: Scalars['String']['output'];
   setTimeTrackingPeriodStatus: TimeTrackingPeriod;
@@ -3019,6 +3030,7 @@ export type Mutation = {
   unassignCompanyVacationFromEmployee: Scalars['Boolean']['output'];
   uncompleteAdmissionReminder: AdmissionReminder;
   unlinkContactPersonFromStudent: Scalars['Boolean']['output'];
+  unpublishShiftPlan: ShiftPlan;
   updateAddress: Address;
   updateAdmissionActivity: AdmissionActivity;
   updateAdmissionApplication: AdmissionApplication;
@@ -3465,6 +3477,11 @@ export type MutationCreateShiftArgs = {
 };
 
 
+export type MutationCreateShiftPlanArgs = {
+  input: CreateShiftPlanInput;
+};
+
+
 export type MutationCreateStudentArgs = {
   input: CreateStudentInput;
 };
@@ -3671,6 +3688,11 @@ export type MutationDeleteShiftArgs = {
 };
 
 
+export type MutationDeleteShiftPlanArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationDeleteStudentArgs = {
   id: Scalars['ID']['input'];
 };
@@ -3770,6 +3792,11 @@ export type MutationMoveStudentToStageArgs = {
 
 export type MutationMoveTaskArgs = {
   input: MoveTaskInput;
+};
+
+
+export type MutationPublishShiftPlanArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -3976,6 +4003,16 @@ export type MutationSetPrimaryUserEmailArgs = {
 };
 
 
+export type MutationSetShiftAssignmentsArgs = {
+  input: SetShiftAssignmentsInput;
+};
+
+
+export type MutationSetShiftCoverageArgs = {
+  input: SetShiftCoverageInput;
+};
+
+
 export type MutationSetTeamShiftsArgs = {
   input: SetTeamShiftsInput;
 };
@@ -4044,6 +4081,11 @@ export type MutationUncompleteAdmissionReminderArgs = {
 
 
 export type MutationUnlinkContactPersonFromStudentArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationUnpublishShiftPlanArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -4689,6 +4731,8 @@ export enum PermissionCode {
   SchoolClassRead = 'SCHOOL_CLASS_READ',
   SchoolClassWrite = 'SCHOOL_CLASS_WRITE',
   ShiftManage = 'SHIFT_MANAGE',
+  ShiftPlanRead = 'SHIFT_PLAN_READ',
+  ShiftPlanWrite = 'SHIFT_PLAN_WRITE',
   StudentDelete = 'STUDENT_DELETE',
   StudentRead = 'STUDENT_READ',
   StudentRecordCategoryWrite = 'STUDENT_RECORD_CATEGORY_WRITE',
@@ -5128,6 +5172,7 @@ export type Query = {
   myMissingRecordDays: Array<Scalars['String']['output']>;
   myMonthlyTimeTracking: Array<MonthlyTimeTrackingGroup>;
   myProjects: Array<Project>;
+  myShiftAssignments: Array<ShiftAssignment>;
   myTasks: Array<Task>;
   myTeachingSchoolClasses: Array<SchoolClass>;
   myTeams: Array<AccessibleTeam>;
@@ -5168,6 +5213,10 @@ export type Query = {
   schoolClassTeacherHistory: Array<SchoolClassTeacher>;
   schoolClassesByOrgId: Array<SchoolClass>;
   schoolYear: SchoolYear;
+  shiftCoverage: Array<ShiftCoverageRequirement>;
+  shiftPlan: ShiftPlanDetail;
+  shiftPlanTeams: Array<ShiftPlanTeam>;
+  shiftPlans: Array<ShiftPlan>;
   shifts: Array<Shift>;
   simulateEmployeeWorkTimeBalance: WorkTimeBalance;
   studentById: Student;
@@ -5670,6 +5719,12 @@ export type QueryMyMonthlyTimeTrackingArgs = {
 };
 
 
+export type QueryMyShiftAssignmentsArgs = {
+  from: Scalars['String']['input'];
+  to: Scalars['String']['input'];
+};
+
+
 export type QueryMyVacationBalanceArgs = {
   from: Scalars['String']['input'];
   to: Scalars['String']['input'];
@@ -5802,6 +5857,21 @@ export type QuerySchoolClassesByOrgIdArgs = {
 
 export type QuerySchoolYearArgs = {
   date?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryShiftCoverageArgs = {
+  teamId: Scalars['ID']['input'];
+};
+
+
+export type QueryShiftPlanArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryShiftPlansArgs = {
+  teamId?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
@@ -6253,6 +6323,18 @@ export type SetLessonPrerequisitesInput = {
   prerequisiteIds: Array<Scalars['ID']['input']>;
 };
 
+export type SetShiftAssignmentsInput = {
+  date: Scalars['String']['input'];
+  employeeIds: Array<Scalars['ID']['input']>;
+  planId: Scalars['ID']['input'];
+  shiftId: Scalars['ID']['input'];
+};
+
+export type SetShiftCoverageInput = {
+  rows: Array<ShiftCoverageRowInput>;
+  teamId: Scalars['ID']['input'];
+};
+
 export type SetTeamShiftsInput = {
   shiftIds: Array<Scalars['ID']['input']>;
   teamId: Scalars['ID']['input'];
@@ -6292,6 +6374,17 @@ export type Shift = {
   version: Scalars['Int']['output'];
 };
 
+export type ShiftAssignment = {
+  __typename?: 'ShiftAssignment';
+  date: Scalars['String']['output'];
+  employeeId: Scalars['ID']['output'];
+  id: Scalars['ID']['output'];
+  organizationId: Scalars['ID']['output'];
+  planId: Scalars['ID']['output'];
+  shift?: Maybe<Shift>;
+  shiftId: Scalars['ID']['output'];
+};
+
 export type ShiftBreak = {
   __typename?: 'ShiftBreak';
   endTime: Scalars['String']['output'];
@@ -6301,6 +6394,78 @@ export type ShiftBreak = {
 export type ShiftBreakInput = {
   endTime: Scalars['String']['input'];
   startTime: Scalars['String']['input'];
+};
+
+export type ShiftCoverageRequirement = {
+  __typename?: 'ShiftCoverageRequirement';
+  id: Scalars['ID']['output'];
+  organizationId: Scalars['ID']['output'];
+  requiredCount: Scalars['Int']['output'];
+  shiftId: Scalars['ID']['output'];
+  teamId: Scalars['ID']['output'];
+  weekday: Scalars['String']['output'];
+};
+
+export type ShiftCoverageRowInput = {
+  requiredCount: Scalars['Int']['input'];
+  shiftId: Scalars['ID']['input'];
+  weekday: Scalars['String']['input'];
+};
+
+export type ShiftPlan = {
+  __typename?: 'ShiftPlan';
+  createdAt: Scalars['DateTime']['output'];
+  endDate: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  organizationId: Scalars['ID']['output'];
+  source: ShiftPlanSource;
+  startDate: Scalars['String']['output'];
+  status: ShiftPlanStatus;
+  teamId: Scalars['ID']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export type ShiftPlanCandidate = {
+  __typename?: 'ShiftPlanCandidate';
+  availableDates: Array<Scalars['String']['output']>;
+  employeeId: Scalars['ID']['output'];
+  firstName?: Maybe<Scalars['String']['output']>;
+  lastName?: Maybe<Scalars['String']['output']>;
+  preferences: Array<ShiftPreference>;
+};
+
+export type ShiftPlanDetail = {
+  __typename?: 'ShiftPlanDetail';
+  assignments: Array<ShiftAssignment>;
+  candidates: Array<ShiftPlanCandidate>;
+  coverage: Array<ShiftCoverageRequirement>;
+  employees: Array<ShiftPlanEmployee>;
+  plan: ShiftPlan;
+  shifts: Array<Shift>;
+};
+
+export type ShiftPlanEmployee = {
+  __typename?: 'ShiftPlanEmployee';
+  employeeId: Scalars['ID']['output'];
+  firstName?: Maybe<Scalars['String']['output']>;
+  lastName?: Maybe<Scalars['String']['output']>;
+};
+
+export enum ShiftPlanSource {
+  Ai = 'AI',
+  Manual = 'MANUAL'
+}
+
+export enum ShiftPlanStatus {
+  Draft = 'DRAFT',
+  Published = 'PUBLISHED'
+}
+
+export type ShiftPlanTeam = {
+  __typename?: 'ShiftPlanTeam';
+  canWrite: Scalars['Boolean']['output'];
+  id: Scalars['ID']['output'];
+  name: Scalars['String']['output'];
 };
 
 export type ShiftPreference = {
