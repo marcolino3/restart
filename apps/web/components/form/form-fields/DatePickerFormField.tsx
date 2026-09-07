@@ -2,7 +2,7 @@
 
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { FieldPath, FieldValues, useFormContext } from "react-hook-form";
 
@@ -37,6 +37,8 @@ type DatePickerFormFieldProps<TFormValues extends FieldValues> = {
   showWeekday?: boolean;
   /** Render the validation message in flow (for long, wrapping messages). */
   inlineMessage?: boolean;
+  /** Shows a clear button when a date is set; clears to `null`. */
+  clearable?: boolean;
 };
 
 export function DatePickerFormField<TFormValues extends FieldValues>({
@@ -49,8 +51,10 @@ export function DatePickerFormField<TFormValues extends FieldValues>({
   namespace = "Common",
   showWeekday = false,
   inlineMessage = false,
+  clearable = false,
 }: DatePickerFormFieldProps<TFormValues>) {
   const t = useTranslations(namespace);
+  const tCommon = useTranslations("Common");
   const form = useFormContext<TFormValues>();
 
   return (
@@ -80,6 +84,7 @@ export function DatePickerFormField<TFormValues extends FieldValues>({
         return (
           <FormItem className={cn("flex flex-col", width)}>
             {label && <FormLabel>{t(label)}</FormLabel>}
+            <div className="relative">
             <Popover>
               <PopoverTrigger asChild>
                 <FormControl>
@@ -89,7 +94,8 @@ export function DatePickerFormField<TFormValues extends FieldValues>({
                       // Match the Input control background/border/radius so date
                       // fields read as the same control (component-based).
                       "h-[38px] w-full rounded-ctl! border-input bg-field pl-3 text-left font-normal hover:bg-field",
-                      !value && "text-muted-foreground"
+                      !value && "text-muted-foreground",
+                      clearable && value && "pr-16"
                     )}
                   >
                     {value ? (
@@ -114,6 +120,17 @@ export function DatePickerFormField<TFormValues extends FieldValues>({
                 />
               </PopoverContent>
             </Popover>
+            {clearable && value ? (
+              <button
+                type="button"
+                onClick={() => field.onChange(null)}
+                aria-label={tCommon("clearDate")}
+                className="absolute top-1/2 right-9 -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            ) : null}
+            </div>
             {description && <FormDescription>{description}</FormDescription>}
             <FormMessage className={inlineMessage ? "static mt-1" : undefined} />
           </FormItem>

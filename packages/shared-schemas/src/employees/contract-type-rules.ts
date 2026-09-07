@@ -181,6 +181,21 @@ export function isContractFieldRequired(
   return contractTypeRules(type)[field] === "required";
 }
 
+/**
+ * Contract type the end date suggests when it contradicts the chosen type:
+ * a permanent contract with an end date reads as temporary, a temporary one
+ * without an end date as permanent. `null` when type and end date agree or the
+ * type always carries an end date by nature (internship, apprenticeship, ...).
+ */
+export function suggestedContractTypeForEndDate(
+  type: string | null | undefined,
+  hasEndDate: boolean,
+): Extract<EmployeeContractTypeValue, "PERMANENT" | "TEMPORARY"> | null {
+  if (type === "PERMANENT" && hasEndDate) return "TEMPORARY";
+  if (type === "TEMPORARY" && !hasEndDate) return "PERMANENT";
+  return null;
+}
+
 const isBlank = (value: unknown): boolean =>
   value === null || value === undefined || value === "";
 
