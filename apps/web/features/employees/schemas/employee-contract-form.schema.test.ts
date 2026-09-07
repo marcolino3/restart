@@ -39,6 +39,49 @@ describe("EmployeeContractFormSchema", () => {
   });
 });
 
+describe("EmployeeContractFormSchema shift work", () => {
+  const values = { ...baseValues, grossSalary: 8000 };
+
+  it("defaults to no shift work", () => {
+    const result = EmployeeContractFormSchema.safeParse(values);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.worksShifts).toBe(false);
+      expect(result.data.shiftWeekdays).toEqual([]);
+      expect(result.data.shiftPreferences).toEqual([]);
+    }
+  });
+
+  it("accepts weekday keys and preference levels", () => {
+    const result = EmployeeContractFormSchema.safeParse({
+      ...values,
+      worksShifts: true,
+      shiftWeekdays: ["mon", "tue"],
+      shiftPreferences: [
+        { shiftId: "22222222-2222-4222-8222-222222222222", level: "PREFERRED" },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects unknown weekdays and preference levels", () => {
+    expect(
+      EmployeeContractFormSchema.safeParse({
+        ...values,
+        shiftWeekdays: ["monday"],
+      }).success,
+    ).toBe(false);
+    expect(
+      EmployeeContractFormSchema.safeParse({
+        ...values,
+        shiftPreferences: [
+          { shiftId: "22222222-2222-4222-8222-222222222222", level: "LOVE" },
+        ],
+      }).success,
+    ).toBe(false);
+  });
+});
+
 describe("buildEmployeeContractFormSchema", () => {
   it("does not require a field the user has no read permission for, even if the contract type would otherwise require it", () => {
     const schema = buildEmployeeContractFormSchema(new Set(["grossSalary"]));

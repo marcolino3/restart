@@ -51,6 +51,9 @@ function makeContract(
   return {
     employeeId: "emp-1",
     isActive: true,
+    worksShifts: false,
+    shiftWeekdays: [],
+    shiftPreferences: [],
     contractType: "PERMANENT",
     position: FUNCTION_ID,
     workloadPercent: 80,

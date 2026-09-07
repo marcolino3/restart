@@ -24,6 +24,8 @@ import { cn } from "@/lib/utils";
 import { WeeklyScheduleField } from "./wizard/WeeklyScheduleField";
 import { WorkloadPercentField } from "./wizard/WorkloadPercentField";
 import { WorkdayPickerField } from "./wizard/WorkdayPickerField";
+import { ContractShiftWorkFields } from "./ContractShiftWorkFields";
+import type { Shift } from "@/features/time-tracking/actions/shifts.action";
 import {
   QUICK_WORKLOAD_PERCENTS,
   hasWeekdayWorkloads,
@@ -72,6 +74,8 @@ export interface ContractFormFieldsProps {
   /** Notizen — Vertragsseite, nicht Onboarding. */
   showContractExtras?: boolean;
   documentSlot?: ReactNode;
+  /** Org shifts; when given, the shift-work section is rendered. */
+  shifts?: Shift[];
 }
 
 /**
@@ -86,6 +90,7 @@ export function ContractFormFields({
   showTimeTracking = false,
   showContractExtras = false,
   documentSlot,
+  shifts,
 }: ContractFormFieldsProps) {
   const t = useTranslations("EmployeeOnboarding");
   const { setValue, control, trigger, clearErrors } = useFormContext();
@@ -555,6 +560,17 @@ export function ContractFormFields({
           )}
         </CardContent>
       </Card>
+
+      {shifts !== undefined && (
+        <ContractShiftWorkFields
+          shifts={shifts}
+          workingDays={
+            selectedDaysFromWindows(weekdayTimeWindows).length > 0
+              ? selectedDaysFromWindows(weekdayTimeWindows)
+              : selectedDaysFromWorkloads(weekdayWorkloads)
+          }
+        />
+      )}
     </div>
   );
 }

@@ -15,9 +15,11 @@ import {
   formatExactTimesPlanLines,
   formatWorkdaysPlanLabel,
   hasWeekdayWorkloads,
+  WEEKDAY_SHORT_LABELS,
   type WeekdayWorkloads,
 } from "../lib/workday-schedule";
 import { scheduleWeeklyMinutes } from "../lib/workload-from-schedule";
+import type { WeekdayKey } from "@restart/shared-schemas/employees/employee-onboarding-form.schema";
 
 interface Props {
   firstName?: string | null;
@@ -83,6 +85,9 @@ export function ContractSummaryAside({
     control,
     name: "weekdayTimeWindows",
   });
+  const worksShifts = Boolean(useWatch({ control, name: "worksShifts" }));
+  const shiftWeekdays = (useWatch({ control, name: "shiftWeekdays" }) ??
+    []) as WeekdayKey[];
 
   const positionLabel = position
     ? (functionOptions?.find((o) => o.value === position)?.label ?? position)
@@ -199,6 +204,13 @@ export function ContractSummaryAside({
               {fmtDate(endDate) ?? t("contract.summaryPending")}
             </DescriptionRow>
           )}
+          <DescriptionRow label={tO("shiftWork")} muted={!worksShifts}>
+            {worksShifts
+              ? shiftWeekdays.length > 0
+                ? shiftWeekdays.map((d) => WEEKDAY_SHORT_LABELS[d]).join(", ")
+                : tO("shiftWeekdaysAll")
+              : t("contract.summaryNo")}
+          </DescriptionRow>
           {isContractFieldVisible(contractType, "annualVacationDays") && (
             <DescriptionRow
               label={t("hr.annualVacationDays")}
