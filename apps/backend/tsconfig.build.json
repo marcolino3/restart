@@ -1,10 +1,12 @@
 {
   "extends": "./tsconfig.json",
+  // `scripts` is NOT excluded: src/reset-staging.ts runs the Testschule seed
+  // inside the cluster, so scripts/seed-testschule*.ts must be compiled into
+  // the image (as dist/scripts/*.js).
   "exclude": [
     "node_modules",
     "test",
     "dist",
-    "scripts",
     "**/*spec.ts",
     "src/common/testing"
   ]

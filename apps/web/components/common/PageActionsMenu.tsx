@@ -28,6 +28,12 @@ export interface PageAction {
 
 interface PageActionsMenuProps {
   /**
+   * Overrides the generic "Open menu" trigger label. Set it where a page
+   * renders row-level menus with the same default label, so the header menu
+   * stays addressable for assistive tech and tests.
+   */
+  ariaLabel?: string;
+  /**
    * Secondary actions, moved out of the page header into this overflow menu.
    * Entries are rendered in the given order — the caller decides what belongs
    * behind the "…" and what stays a primary button.
@@ -49,6 +55,7 @@ export function PageActionsMenu({
   actions,
   align = "end",
   className,
+  ariaLabel,
 }: PageActionsMenuProps) {
   const t = useTranslations("Common");
 
@@ -61,7 +68,7 @@ export function PageActionsMenu({
         <Button
           variant="outline"
           size="icon"
-          aria-label={t("openMenu")}
+          aria-label={ariaLabel ?? t("openMenu")}
           className={className}
         >
           <MoreHorizontal className="size-4" />

@@ -224,6 +224,24 @@ jobs:
             --dry-run=client -o yaml | kubectl apply -n "$NAMESPACE" -f -
           echo "::notice::ghcr-secret ensured in $NAMESPACE"
 
+      # Passwort fuer die Seed-User des naechtlichen DB-Resets
+      # (k8s/staging/seed-reset-cronjob.yaml). Hier mit angelegt, damit der
+      # CronJob nicht auf einen manuellen Reset-Lauf angewiesen ist.
+      # Nur Staging: Production hat weder CronJob noch Reset-Workflow.
+      - name: Ensure seed password secret
+        env:
+          SEED_USER_PASSWORD: ${{ secrets.SEED_USER_PASSWORD }}
+        run: |
+          if [ -z "$SEED_USER_PASSWORD" ]; then
+            echo "::warning::SEED_USER_PASSWORD not set — the nightly seed-reset will abort until it is configured"
+            exit 0
+          fi
+          kubectl create secret generic seed-user-password \
+            --from-literal=SEED_USER_PASSWORD="$SEED_USER_PASSWORD" \
+            -n "$NAMESPACE" \
+            --dry-run=client -o yaml | kubectl apply -n "$NAMESPACE" -f -
+          echo "::notice::seed-user-password ensured in $NAMESPACE"
+
       # Wie in deploy-production.yml: der Migration-Job zieht `backend-config`
       # und `backend-secrets` per envFrom und muss sie im Cluster vorfinden.
       # Der Sync im deploy-Job weiter unten laeuft erst nach der Migration —

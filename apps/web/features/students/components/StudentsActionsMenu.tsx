@@ -6,7 +6,7 @@ import { useState } from "react";
 
 import { PageActionsMenu } from "@/components/common/PageActionsMenu";
 
-import { StudentsCsvUpload } from "./StudentsCsvUpload";
+import { StudentImportDialog } from "./StudentImportDialog";
 
 /**
  * Overflow ("…") menu for secondary student-list actions, keeping the page
@@ -15,21 +15,22 @@ import { StudentsCsvUpload } from "./StudentsCsvUpload";
  */
 export function StudentsActionsMenu() {
   const tS = useTranslations("Students");
-  const [csvOpen, setCsvOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   return (
     <>
       <PageActionsMenu
+        ariaLabel={tS("actionsMenu")}
         actions={[
           {
-            id: "csv-import",
-            label: tS("csvImport"),
+            id: "student-import",
+            label: tS("importTitle"),
             icon: <Upload className="mr-2 size-4" />,
-            onSelect: () => setCsvOpen(true),
+            onSelect: () => setImportOpen(true),
           },
         ]}
       />
-      <StudentsCsvUpload open={csvOpen} onOpenChange={setCsvOpen} />
+      <StudentImportDialog open={importOpen} onOpenChange={setImportOpen} />
     </>
   );
 }

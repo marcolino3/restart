@@ -54,7 +54,32 @@ function pickInRange(
 ): number {
   return Math.round(min + lessonRand(lessonId, salt) * (max - min));
 }
-import { hashPassword } from '@better-auth/utils/password';
+/**
+ * better-auth hashes passwords with scrypt from `@better-auth/utils`. The
+ * package is ESM-only and exposes `password` as an `exports` subpath, which
+ * this project's `moduleResolution: node` cannot resolve statically — so it is
+ * loaded dynamically, the same way migrate-auth.ts loads
+ * `better-auth/db/migration`.
+ *
+ * The dependency is pinned to the exact version better-auth itself depends on:
+ * a different scrypt implementation would produce hashes that no longer verify
+ * at login.
+ */
+async function hashPassword(password: string): Promise<string> {
+  // `new Function` keeps the import() out of TypeScript's reach: with
+  // `module: commonjs` tsc rewrites a plain `await import()` into `require()`,
+  // which throws ERR_REQUIRE_ESM on this ESM-only package.
+  const dynamicImport = new Function(
+    'specifier',
+    'return import(specifier)',
+  ) as (specifier: string) => Promise<{
+    hashPassword: (pw: string) => Promise<string>;
+  }>;
+  const { hashPassword: hash } = await dynamicImport(
+    '@better-auth/utils/password',
+  );
+  return hash(password);
+}
 import {
   ensureStaffUser,
   seedCurriculaFromXlsx,
@@ -63,7 +88,15 @@ import {
 
 const ORG_NAME = 'Testschule';
 const ORG_SUBDOMAIN = 'testschule';
-const PW_PLAIN = 'test1234';
+/**
+ * Password for every seeded user.
+ *
+ * Locally this stays `test1234` so the dev flow is unchanged. On a publicly
+ * reachable environment (staging) the seed MUST NOT hand out a password that
+ * anyone can read in this repository — `reset-staging.ts` therefore requires
+ * SEED_USER_PASSWORD to be set and passes it through the environment.
+ */
+const PW_PLAIN = process.env.SEED_USER_PASSWORD ?? 'test1234';
 
 const DB = {
   host: process.env.DB_HOST ?? 'localhost',
@@ -3293,7 +3326,8 @@ async function main() {
 
   await c.end();
   await app.close();
-  console.log('\n✨ Done. Login with any of these (password: test1234):');
+  const pwHint = PW_PLAIN === 'test1234' ? PW_PLAIN : '(SEED_USER_PASSWORD)';
+  console.log(`\n✨ Done. Login with any of these (password: ${pwHint}):`);
   USERS.forEach((u) =>
     console.log(`   ${u.email}  →  ${u.persona} / ${u.roleCode}`),
   );

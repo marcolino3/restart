@@ -341,6 +341,28 @@ export default async function globalTeardown(): Promise<void> {
       )
     }
 
+    // Families created by the student import: the app derives their name from
+    // the family surname ("Familie <Nachname>"), so it never starts with the
+    // E2E prefix and the generic sweep above cannot see them. Only families
+    // without contact persons are removed, so a family the sweep kept members
+    // for is never deleted out from under them.
+    const orphanFamilies = await client.query<{ id: string }>(
+      `SELECT f.id FROM families f
+        WHERE f.name LIKE $1
+          AND NOT EXISTS (
+            SELECT 1 FROM contact_persons c WHERE c.family_id = f.id
+          )`,
+      [`%${E2E_NAME_PREFIX}%`],
+    )
+    if (orphanFamilies.rows.length > 0) {
+      const ids = orphanFamilies.rows.map((r) => r.id)
+      await client.query('DELETE FROM families WHERE id = ANY($1::uuid[])', [
+        ids,
+      ])
+      // eslint-disable-next-line no-console
+      console.log(`[global-teardown] removed ${ids.length} E2E family/families`)
+    }
+
     // Memberships the fixtures created inside an org that is NOT itself a
     // fixture org — ensureTeacher/ensureEmployee add their employees to
     // whatever org the run was using, which locally is the seeded school.

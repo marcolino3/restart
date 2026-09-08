@@ -1,0 +1,66 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Wie migrate-job.yaml: Name + Image werden zur Laufzeit per `envsubst`
+  # ersetzt, weil Jobs immutable sind und jeder Lauf einen eigenen Namen
+  # braucht. JOB_NAME_SUFFIX ist kurz (k8s-Namen <= 63 chars), IMAGE_TAG voll.
+  name: seed-reset-${JOB_NAME_SUFFIX}
+  labels:
+    app: backend
+    component: seed-reset
+spec:
+  ttlSecondsAfterFinished: 21600
+  # Kein Retry: der Reset ist destruktiv und laeuft in Schritten (Drop,
+  # Migrationen, better-auth, Seed). Ein blinder Neuversuch nach einem Abbruch
+  # in der Mitte wuerde nur denselben Fehler auf einem halben Schema wiederholen
+  # — dann lieber sichtbar failen und den Job erneut ausloesen.
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: backend
+        component: seed-reset
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: ghcr-secret
+      # Identisch gehaertet wie das Backend-Deployment und der Migration-Job:
+      # derselbe Image, der Job spricht ausschliesslich mit Postgres (KSV-0118).
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: seed-reset
+          image: ghcr.io/${IMAGE_OWNER}/restart-backend:${IMAGE_TAG}
+          command: ["node", "dist/src/reset-staging.js"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secrets
+            # Passwort fuer alle Seed-User. Getrennt von backend-secrets, weil
+            # es nur der Seed braucht — und bewusst nicht im Seed-Code, weil
+            # staging.colibri-app.ch oeffentlich erreichbar ist.
+            - secretRef:
+                name: seed-user-password
+          # Deutlich hoeher als beim Migration-Job: der Seed bootet den ganzen
+          # Nest-Kontext, liest zwei Excel-Sheets und schreibt ~250 Schueler
+          # samt Lesson Records.
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"

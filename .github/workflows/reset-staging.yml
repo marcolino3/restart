@@ -1,0 +1,176 @@
+name: Reset Staging
+
+# Setzt die Staging-Datenbank auf den Testschule-Seed zurueck: Schema droppen,
+# Migrationen, better-auth-Schema, grosser Testschule-Seed.
+#
+# Derselbe Ablauf laeuft naechtlich als CronJob (k8s/staging/seed-reset-cronjob.yaml).
+# Dieser Workflow ist der manuelle Ausloeser dazwischen — mit GitHub-Auth und
+# Audit-Trail statt einem Knopf in der App.
+#
+# ZERSTOEREND: alle Daten in der Staging-DB gehen verloren. Production ist nicht
+# erreichbar — der Workflow ist auf den Staging-Namespace festgelegt und
+# src/reset-staging.ts bricht ab, wenn NODE_ENV/DB_HOST nicht auf Staging zeigen.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "reset staging" to confirm — this deletes ALL staging data'
+        required: true
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/restart-backend
+  NAMESPACE: restart-staging
+
+# Nie zwei Resets parallel, und auch keinen Reset waehrend eines laufenden
+# Staging-Deploys — der Migrate-Job und der Drop wuerden sich ins Gehege kommen.
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  reset:
+    name: Reset & Seed Staging DB
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Validate confirmation
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          if [ "$CONFIRM" != "reset staging" ]; then
+            echo "::error::Confirmation text did not match. Type exactly: reset staging"
+            exit 1
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5.1.0
+
+      - name: Configure kubeconfig
+        run: |
+          if [ -z "${{ secrets.KUBE_CONFIG }}" ]; then
+            echo "::error::KUBE_CONFIG secret is not configured"
+            exit 1
+          fi
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+
+      # Gleiche Absicherung wie in deploy-staging.yml: ohne diesen Secret kann
+      # der Cluster das private GHCR-Image nicht ziehen (ImagePullBackOff).
+      - name: Ensure GHCR image pull secret
+        env:
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_OWNER: ${{ github.repository_owner }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          if [ -n "$GHCR_PULL_TOKEN" ]; then
+            TOKEN="$GHCR_PULL_TOKEN"
+            USERNAME="$IMAGE_OWNER"
+          else
+            TOKEN="$GITHUB_TOKEN"
+            USERNAME="$ACTOR"
+          fi
+          OWNER_LC=$(echo "$USERNAME" | tr '[:upper:]' '[:lower:]')
+          kubectl create secret docker-registry ghcr-secret \
+            --docker-server=ghcr.io \
+            --docker-username="$OWNER_LC" \
+            --docker-password="$TOKEN" \
+            -n "$NAMESPACE" \
+            --dry-run=client -o yaml | kubectl apply -n "$NAMESPACE" -f -
+
+      # Der Job zieht backend-config/backend-secrets per envFrom und muss sie
+      # im Namespace vorfinden. Nur ConfigMaps/Secrets aus dem Overlay, nicht
+      # die Deployments (die tragen den Base-Image-Tag).
+      - name: Sync config & secrets
+        run: |
+          set -euo pipefail
+          kubectl kustomize k8s/staging > /tmp/staging-rendered.yaml
+          python3 - <<'PY' > /tmp/staging-config.yaml
+          import re
+          docs = open('/tmp/staging-rendered.yaml').read().split('\n---\n')
+          keep = [d for d in docs
+                  if re.search(r'^kind:\s*(ConfigMap|Secret|SealedSecret)\s*$', d, re.M)]
+          print('\n---\n'.join(keep))
+          PY
+          kubectl apply -n "$NAMESPACE" -f /tmp/staging-config.yaml
+
+          if ! kubectl get configmap backend-config -n "$NAMESPACE" >/dev/null 2>&1; then
+            echo "::error::configmap/backend-config missing in $NAMESPACE"
+            exit 1
+          fi
+
+      # SEED_USER_PASSWORD kommt aus den Repository-Secrets und wird dem Job
+      # als eigenes Secret mitgegeben. Es steht bewusst NICHT im Seed-Code:
+      # staging.colibri-app.ch ist oeffentlich erreichbar.
+      - name: Ensure seed password secret
+        env:
+          SEED_USER_PASSWORD: ${{ secrets.SEED_USER_PASSWORD }}
+        run: |
+          if [ -z "$SEED_USER_PASSWORD" ]; then
+            echo "::error::SEED_USER_PASSWORD repository secret is not set — refusing to seed a public environment with the password from the repository"
+            exit 1
+          fi
+          kubectl create secret generic seed-user-password \
+            --from-literal=SEED_USER_PASSWORD="$SEED_USER_PASSWORD" \
+            -n "$NAMESPACE" \
+            --dry-run=client -o yaml | kubectl apply -n "$NAMESPACE" -f -
+
+      - name: Run seed-reset job
+        env:
+          IMAGE_OWNER: ${{ github.repository_owner }}
+          # Das Image, das gerade auf Staging laeuft — der Reset laeuft damit
+          # gegen denselben Code-Stand wie die App.
+          IMAGE_TAG: staging-current
+        run: |
+          set -euo pipefail
+          IMAGE_OWNER=$(echo "$IMAGE_OWNER" | tr '[:upper:]' '[:lower:]')
+          export IMAGE_OWNER
+          JOB_NAME_SUFFIX="manual-${{ github.run_id }}"
+          JOB_NAME="seed-reset-${JOB_NAME_SUFFIX}"
+          export JOB_NAME_SUFFIX IMAGE_TAG
+
+          if kubectl get job "$JOB_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
+            kubectl delete job "$JOB_NAME" -n "$NAMESPACE" --wait=true --timeout=60s
+          fi
+
+          envsubst < k8s/base/jobs/seed-reset-job.yaml | kubectl apply -n "$NAMESPACE" -f -
+
+          echo "Waiting for $JOB_NAME to complete…"
+          # 40 x 30s = 20 min. Der Seed legt ~250 Schueler samt Lesson Records
+          # an und braucht deutlich laenger als eine Migration.
+          for i in $(seq 1 40); do
+            COMPLETE=$(kubectl get job "$JOB_NAME" -n "$NAMESPACE" \
+              -o 'jsonpath={.status.conditions[?(@.type=="Complete")].status}' 2>/dev/null || echo "")
+            FAILED=$(kubectl get job "$JOB_NAME" -n "$NAMESPACE" \
+              -o 'jsonpath={.status.conditions[?(@.type=="Failed")].status}' 2>/dev/null || echo "")
+            if [ "$COMPLETE" = "True" ]; then
+              echo "::notice::Staging reset complete"
+              kubectl logs -n "$NAMESPACE" "job/$JOB_NAME" --tail=40 || true
+              exit 0
+            fi
+            if [ "$FAILED" = "True" ]; then
+              echo "::error::Seed-reset job failed"
+              kubectl logs -n "$NAMESPACE" "job/$JOB_NAME" --tail=100 || true
+              exit 1
+            fi
+            sleep 30
+          done
+
+          echo "::error::Timeout waiting for the seed-reset job"
+          kubectl logs -n "$NAMESPACE" "job/$JOB_NAME" --tail=100 || true
+          exit 1
+
+      # Die App haelt Verbindungen auf das alte Schema und cached Org-Daten —
+      # nach dem Reset einmal durchstarten, damit sie den neuen Stand sieht.
+      - name: Restart backend
+        run: |
+          kubectl rollout restart deployment/backend -n "$NAMESPACE"
+          kubectl rollout status deployment/backend -n "$NAMESPACE" --timeout=5m

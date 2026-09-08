@@ -1,0 +1,23 @@
+# Seed-Reset-Job: wie der Migration-Job nur DB-Zugriff (PostgreSQL).
+# Kein Ingress — niemand spricht den Job an.
+#
+# Der Job existiert nur im Staging-Overlay; die Policy liegt trotzdem in der
+# Base, weil sie ohne passende Pods wirkungslos ist und `default-deny` sonst
+# jeden Lauf blockieren wuerde.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: seed-reset-job-policy
+spec:
+  podSelector:
+    matchLabels:
+      component: seed-reset
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 5432

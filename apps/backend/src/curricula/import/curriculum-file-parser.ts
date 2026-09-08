@@ -1,4 +1,7 @@
-import * as XLSX from 'xlsx';
+import {
+  readWorkbook,
+  toScalarString,
+} from '@/common/spreadsheet/read-workbook';
 import { CurriculumLocale } from '../enums/curriculum-locale.enum';
 import {
   CurriculumImportError,
@@ -66,15 +69,6 @@ const SHEET_NAME_ALIASES: Record<CurriculumLocale, string[]> = {
 
 function normalize(value: unknown): string {
   return toScalarString(value).toLowerCase().trim().replace(/\s+/g, ' ');
-}
-
-function toScalarString(value: unknown): string {
-  if (value === null || value === undefined) return '';
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return String(value);
-  }
-  return '';
 }
 
 function detectColumns(headerRow: unknown[]): Record<string, number> {
@@ -161,33 +155,6 @@ function detectSheetLocale(sheetName: string): CurriculumLocale | null {
   return null;
 }
 
-function readWorkbook(
-  buffer: Buffer,
-  filename: string,
-): { name: string; rows: unknown[][] }[] {
-  const ext = filename.toLowerCase().split('.').pop();
-  if (ext === 'csv') {
-    const text = buffer.toString('utf-8');
-    return [{ name: 'csv', rows: parseCsvText(text) }];
-  }
-  if (ext !== 'xlsx' && ext !== 'xls') {
-    throw new CurriculumImportError(
-      'UNSUPPORTED_EXTENSION',
-      { extension: `.${ext ?? ''}` },
-      `Unsupported file extension ".${ext}". Use .xlsx, .xls or .csv`,
-    );
-  }
-  const wb = XLSX.read(buffer, { type: 'buffer' });
-  return wb.SheetNames.map((name) => ({
-    name,
-    rows: XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[name], {
-      header: 1,
-      defval: null,
-      blankrows: false,
-    }),
-  }));
-}
-
 type SheetParse =
   { ok: true; rows: CurriculumRawRow[] } | { ok: false; issue: ImportIssue };
 
@@ -230,11 +197,28 @@ function fail(issue: ImportIssue): never {
   throw new CurriculumImportError(issue.code, issue.params, issue.message);
 }
 
+/**
+ * The shared workbook reader throws a plain `Error` for an unknown extension,
+ * which would reach the client as an untranslatable message. Check it here so
+ * the import keeps reporting a structured, localizable issue.
+ */
+function assertSupportedExtension(filename: string): void {
+  const ext = filename.toLowerCase().split('.').pop();
+  if (ext !== 'csv' && ext !== 'xlsx' && ext !== 'xls') {
+    throw new CurriculumImportError(
+      'UNSUPPORTED_EXTENSION',
+      { extension: `.${ext ?? ''}` },
+      `Unsupported file extension ".${ext}". Use .xlsx, .xls or .csv`,
+    );
+  }
+}
+
 export function parseCurriculumFile(
   buffer: Buffer,
   filename: string,
 ): CurriculumParseResult {
   const warnings: ImportIssue[] = [];
+  assertSupportedExtension(filename);
   const sheetData = readWorkbook(buffer, filename);
 
   if (sheetData.length === 0) {
@@ -335,46 +319,4 @@ export function parseCurriculumFile(
   }
 
   return { master: CurriculumLocale.DE, sheetsByLocale, warnings };
-}
-
-function parseCsvText(text: string): unknown[][] {
-  const lines = text.split(/\r?\n/);
-  const separator = guessSeparator(lines[0] ?? '');
-  return lines
-    .map((line) => parseCsvLine(line, separator))
-    .filter((row) => row.some((c) => c !== null && c !== ''));
-}
-
-function guessSeparator(headerLine: string): string {
-  const counts: Record<string, number> = {
-    ';': (headerLine.match(/;/g) ?? []).length,
-    ',': (headerLine.match(/,/g) ?? []).length,
-    '\t': (headerLine.match(/\t/g) ?? []).length,
-  };
-  const best = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-  return best?.[1] && best[1] > 0 ? best[0] : ';';
-}
-
-function parseCsvLine(line: string, separator: string): (string | null)[] {
-  const out: (string | null)[] = [];
-  let current = '';
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (ch === separator && !inQuotes) {
-      out.push(current.trim() || null);
-      current = '';
-    } else {
-      current += ch;
-    }
-  }
-  out.push(current.trim() || null);
-  return out;
 }
