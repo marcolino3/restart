@@ -84,7 +84,12 @@ const useColumns = (): ColumnDef<
   return [
     {
       id: "person",
-      accessorFn: (row) => row.membership.user?.lastName ?? "",
+      // Sort key: surname, then first name. Search covers name and e-mail
+      // via `searchableText` below.
+      accessorFn: (row) =>
+        `${row.membership.user?.lastName ?? ""} ${
+          row.membership.user?.firstName ?? ""
+        }`.trim(),
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={t("person")} />
       ),
@@ -237,6 +242,7 @@ export const EmployeesTable = ({ data }: Props) => {
     data,
     columns,
     initialPageSize: 10,
+    searchableText: (row) => `${fullName(row)} ${primaryEmail(row)}`,
   });
 
   // Persona groups and the active/inactive switch live in one filter dropdown

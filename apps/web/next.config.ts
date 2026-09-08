@@ -32,6 +32,11 @@ const swcHelpersEsm = (() => {
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Server actions forward file uploads (employee import, 5 MB backend limit);
+  // the default 1 MB body limit would reject them before the backend sees them.
+  experimental: {
+    serverActions: { bodySizeLimit: "6mb" },
+  },
   outputFileTracingRoot: workspaceRoot,
   outputFileTracingIncludes: {
     "**": swcHelpersEsm,

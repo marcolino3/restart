@@ -4,17 +4,26 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
-  Loader2,
-  Upload,
-  FileText,
+  AlertTriangle,
   CheckCircle,
-  XCircle,
+  ChevronDown,
   Download,
+  FileText,
+  Loader2,
+  Lock,
+  RefreshCw,
+  Upload,
+  XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   Dialog,
   DialogBody,
@@ -24,34 +33,30 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  buildEmployeeImportTemplate,
+  EMPLOYEE_IMPORT_COLUMNS,
+  EMPLOYEE_IMPORT_GROUPS,
+  type EmployeeImportGroup,
+} from "../employee-import-columns";
+import {
+  importEmployeesAction,
+  type EmployeeImportResult,
+} from "../actions/import-employees.action";
 
-interface UploadResult {
-  created: { email: string }[];
-  failed: { email: string; reason: string }[];
-}
+const ALLOWED_EXTENSIONS = [".csv", ".xlsx", ".xls"];
+
+const GROUP_LABEL_KEY: Record<EmployeeImportGroup, string> = {
+  person: "csvGroupPerson",
+  hr: "csvGroupHr",
+  emergency: "csvGroupEmergency",
+  contract: "csvGroupContract",
+  team: "csvGroupTeam",
+};
 
 function downloadTemplate() {
-  const headers = [
-    "email",
-    "firstName",
-    "lastName",
-    "title",
-    "persona",
-    "contactPhone",
-    "dateOfBirth",
-  ];
-  const example = [
-    "max@example.com",
-    "Max",
-    "Mustermann",
-    "Herr",
-    "EMPLOYEE",
-    "+41 79 123 45 67",
-    "1990-01-15",
-  ];
-
-  const csv = [headers.join(";"), example.join(";")].join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const csv = buildEmployeeImportTemplate();
+  const blob = new Blob(["﻿", csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -77,7 +82,8 @@ export const EmployeesCsvUpload = ({
   const tE = useTranslations("Employees");
   const router = useRouter();
   const [isUploading, setIsUploading] = useState(false);
-  const [result, setResult] = useState<UploadResult | null>(null);
+  const [result, setResult] = useState<EmployeeImportResult | null>(null);
+  const [columnsOpen, setColumnsOpen] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = onOpenChange !== undefined;
   const open = isControlled ? !!controlledOpen : internalOpen;
@@ -88,8 +94,10 @@ export const EmployeesCsvUpload = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.name.endsWith(".csv")) {
-      toast.error(t("error"), { description: tE("csvOnlyAllowed") });
+    const lowerName = file.name.toLowerCase();
+    if (!ALLOWED_EXTENSIONS.some((ext) => lowerName.endsWith(ext))) {
+      toast.error(t("error"), { description: tE("csvInvalidFormat") });
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
@@ -100,32 +108,30 @@ export const EmployeesCsvUpload = ({
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/employees/upload", {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
+      const response = await importEmployeesAction(formData);
+      if (!response.success) {
+        throw new Error(String(response.error));
       }
 
-      const data: UploadResult = await response.json();
+      const data = response.data;
       setResult(data);
 
-      const totalCreated = data.created.length;
-      const totalFailed = data.failed.length;
+      const counts = [
+        `${data.created.length} ${tE("csvCreated")}`,
+        data.updated.length > 0 &&
+          `${data.updated.length} ${tE("csvUpdated")}`,
+        data.failed.length > 0 && `${data.failed.length} ${tE("csvFailed")}`,
+      ]
+        .filter(Boolean)
+        .join(", ");
 
-      if (totalFailed === 0) {
-        toast.success(t("success"), {
-          description: `${totalCreated} ${tE("csvCreated")}`,
-        });
+      if (data.failed.length === 0) {
+        toast.success(t("success"), { description: counts });
       } else {
-        toast.warning(tE("csvPartialSuccess"), {
-          description: `${totalCreated} ${tE("csvCreated")}, ${totalFailed} ${tE("csvFailed")}`,
-        });
+        toast.warning(tE("csvPartialSuccess"), { description: counts });
       }
 
+      // The action already revalidated the list; refresh pulls the new RSC payload.
       router.refresh();
     } catch (error) {
       console.error("CSV upload error:", error);
@@ -139,6 +145,11 @@ export const EmployeesCsvUpload = ({
       }
     }
   };
+
+  const withWarnings = [
+    ...(result?.created ?? []),
+    ...(result?.updated ?? []),
+  ].filter((item) => item.warnings && item.warnings.length > 0);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -157,117 +168,187 @@ export const EmployeesCsvUpload = ({
         </DialogHeader>
 
         <DialogBody>
-        <div className="space-y-4">
-          {/* Format info */}
-          <div className="bg-muted p-4 rounded-lg">
-            <h4 className="font-semibold mb-2 flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              CSV Format
-            </h4>
-            <p className="text-sm text-muted-foreground mb-2">
-              {tE("csvFormatInfo")}
-            </p>
-            <code className="text-xs bg-background p-2 rounded block overflow-x-auto">
-              email;firstName;lastName;title;persona;contactPhone;dateOfBirth
-            </code>
-            <div className="text-xs text-muted-foreground mt-2 space-y-0.5">
-              <p>
-                <strong>email:</strong> {t("email")} ({tE("csvRequired")})
+          <div className="space-y-4">
+            {/* Format info */}
+            <div className="bg-muted p-4 rounded-lg space-y-2">
+              <h4 className="font-semibold flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                {tE("csvColumnsTitle")}
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                {tE("csvFormatInfo")}
               </p>
-              <p>
-                <strong>firstName:</strong> {t("firstName")} ({tE("csvOptional")}
-                )
+              <p className="text-xs text-muted-foreground">
+                {tE("csvColumnsHint")}
               </p>
-              <p>
-                <strong>lastName:</strong> {t("lastName")} ({tE("csvOptional")})
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Lock className="h-3 w-3" />
+                {tE("csvProtectedHint")}
               </p>
-              <p>
-                <strong>title:</strong> {t("title")} ({tE("csvOptional")})
+              <p className="text-xs text-muted-foreground">
+                {tE("csvFileAllowed")}
               </p>
-              <p>
-                <strong>persona:</strong> ADMIN, HR, OFFICE, TEACHER, EMPLOYEE (
-                {tE("csvOptional")})
-              </p>
-              <p>
-                <strong>contactPhone:</strong> {t("phone")} ({tE("csvOptional")}
-                )
-              </p>
-              <p>
-                <strong>dateOfBirth:</strong> YYYY-MM-DD ({tE("csvOptional")})
-              </p>
-            </div>
-          </div>
 
-          {/* File input */}
-          <div className="flex items-center gap-4">
-            <Input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv"
-              onChange={handleFileChange}
-              disabled={isUploading}
-              className="flex-1"
-            />
-            {isUploading && <Loader2 className="h-5 w-5 animate-spin" />}
-          </div>
-
-          {/* Template download */}
-          <Button
-            variant="outline"
-            onClick={() => {
-              downloadTemplate();
-              toast.success(t("success"), {
-                description: tE("csvTemplateDownloaded"),
-              });
-            }}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            {tE("csvDownloadTemplate")}
-          </Button>
-
-          {/* Results */}
-          {result && (
-            <div className="space-y-3">
-              {result.created.length > 0 && (
-                <div className="bg-green-50 dark:bg-green-950 p-3 rounded-lg">
-                  <h5 className="font-semibold text-green-700 dark:text-green-300 flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4" />
-                    {tE("csvCreatedTitle")} ({result.created.length})
-                  </h5>
-                  <ul className="text-sm mt-1 max-h-32 overflow-y-auto">
-                    {result.created.map((item, idx) => (
-                      <li
-                        key={idx}
-                        className="text-green-600 dark:text-green-400"
-                      >
-                        {item.email}
-                      </li>
+              <Collapsible open={columnsOpen} onOpenChange={setColumnsOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="px-2"
+                    aria-expanded={columnsOpen}
+                  >
+                    <ChevronDown
+                      className={`mr-1 h-4 w-4 transition-transform ${columnsOpen ? "rotate-180" : ""}`}
+                    />
+                    {tE("csvColumnsTitle")} ({EMPLOYEE_IMPORT_COLUMNS.length})
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="mt-2 space-y-3 max-h-64 overflow-y-auto pr-2">
+                    {EMPLOYEE_IMPORT_GROUPS.map((group) => (
+                      <div key={group}>
+                        <h5 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                          {tE(GROUP_LABEL_KEY[group])}
+                        </h5>
+                        <dl className="grid grid-cols-[minmax(0,12rem)_1fr] gap-x-3 gap-y-0.5 text-xs">
+                          {EMPLOYEE_IMPORT_COLUMNS.filter(
+                            (c) => c.group === group,
+                          ).map((c) => (
+                            <div key={c.key} className="contents">
+                              <dt className="font-mono truncate flex items-center gap-1">
+                                {c.key}
+                                {c.isProtected && (
+                                  <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
+                                )}
+                              </dt>
+                              <dd className="text-muted-foreground">
+                                {tE(`csvColumns.${c.key}`)}{" "}
+                                <span className="italic">
+                                  (
+                                  {c.required
+                                    ? tE("csvRequired")
+                                    : tE("csvOptional")}
+                                  )
+                                </span>
+                              </dd>
+                            </div>
+                          ))}
+                        </dl>
+                      </div>
                     ))}
-                  </ul>
-                </div>
-              )}
-
-              {result.failed.length > 0 && (
-                <div className="bg-red-50 dark:bg-red-950 p-3 rounded-lg">
-                  <h5 className="font-semibold text-red-700 dark:text-red-300 flex items-center gap-2">
-                    <XCircle className="h-4 w-4" />
-                    {tE("csvFailedTitle")} ({result.failed.length})
-                  </h5>
-                  <ul className="text-sm mt-1 max-h-32 overflow-y-auto">
-                    {result.failed.map((item, idx) => (
-                      <li
-                        key={idx}
-                        className="text-red-600 dark:text-red-400"
-                      >
-                        {item.email}: {item.reason}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
-          )}
-        </div>
+
+            {/* File input */}
+            <div className="flex items-center gap-4">
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept={ALLOWED_EXTENSIONS.join(",")}
+                onChange={handleFileChange}
+                disabled={isUploading}
+                className="flex-1"
+              />
+              {isUploading && <Loader2 className="h-5 w-5 animate-spin" />}
+            </div>
+
+            {/* Template download */}
+            <Button
+              variant="outline"
+              onClick={() => {
+                downloadTemplate();
+                toast.success(t("success"), {
+                  description: tE("csvTemplateDownloaded"),
+                });
+              }}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              {tE("csvDownloadTemplate")}
+            </Button>
+
+            {/* Results */}
+            {result && (
+              <div className="space-y-3">
+                {result.created.length > 0 && (
+                  <div className="bg-green-50 dark:bg-green-950 p-3 rounded-lg">
+                    <h5 className="font-semibold text-green-700 dark:text-green-300 flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      {tE("csvCreatedTitle")} ({result.created.length})
+                    </h5>
+                    <ul className="text-sm mt-1 max-h-32 overflow-y-auto">
+                      {result.created.map((item, idx) => (
+                        <li
+                          key={idx}
+                          className="text-green-600 dark:text-green-400"
+                        >
+                          {item.email}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {result.updated.length > 0 && (
+                  <div className="bg-sky-50 dark:bg-sky-950 p-3 rounded-lg">
+                    <h5 className="font-semibold text-sky-700 dark:text-sky-300 flex items-center gap-2">
+                      <RefreshCw className="h-4 w-4" />
+                      {tE("csvUpdatedTitle")} ({result.updated.length})
+                    </h5>
+                    <ul className="text-sm mt-1 max-h-32 overflow-y-auto">
+                      {result.updated.map((item) => (
+                        <li
+                          key={item.email}
+                          className="text-sky-600 dark:text-sky-400"
+                        >
+                          {item.email}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {withWarnings.length > 0 && (
+                  <div className="bg-amber-50 dark:bg-amber-950 p-3 rounded-lg">
+                    <h5 className="font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      {tE("csvWarningsTitle")} ({withWarnings.length})
+                    </h5>
+                    <ul className="text-sm mt-1 max-h-32 overflow-y-auto">
+                      {withWarnings.map((item) => (
+                        <li
+                          key={item.email}
+                          className="text-amber-700 dark:text-amber-300"
+                        >
+                          {item.email}: {item.warnings?.join("; ")}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {result.failed.length > 0 && (
+                  <div className="bg-red-50 dark:bg-red-950 p-3 rounded-lg">
+                    <h5 className="font-semibold text-red-700 dark:text-red-300 flex items-center gap-2">
+                      <XCircle className="h-4 w-4" />
+                      {tE("csvFailedTitle")} ({result.failed.length})
+                    </h5>
+                    <ul className="text-sm mt-1 max-h-32 overflow-y-auto">
+                      {result.failed.map((item, idx) => (
+                        <li
+                          key={idx}
+                          className="text-red-600 dark:text-red-400"
+                        >
+                          {item.email}: {item.reason}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </DialogBody>
       </DialogContent>
     </Dialog>
