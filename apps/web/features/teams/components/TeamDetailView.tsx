@@ -58,6 +58,8 @@ import { deleteTeamAction } from "../actions/delete-team.action";
 import { addTeamMemberAction } from "../actions/add-team-member.action";
 import { removeTeamMemberAction } from "../actions/remove-team-member.action";
 import { updateTeamMemberRoleAction } from "../actions/update-team-member-role.action";
+import type { Shift } from "@/features/time-tracking/actions/shifts.action";
+import { TeamShiftsCard } from "./TeamShiftsCard";
 
 const AddMemberSchema = z.object({
   employeeId: z.string().uuid(),
@@ -69,9 +71,19 @@ interface Props {
   team: TeamDetail;
   initialMembers: TeamMemberItem[];
   employees: EmployeeListItem[];
+  shifts: Shift[];
+  teamShiftIds: string[];
+  canManageShifts: boolean;
 }
 
-export function TeamDetailView({ team, initialMembers, employees }: Props) {
+export function TeamDetailView({
+  team,
+  initialMembers,
+  employees,
+  shifts,
+  teamShiftIds,
+  canManageShifts,
+}: Props) {
   const t = useTranslations("Teams");
   const tCommon = useTranslations("Common");
   const router = useRouter();
@@ -288,6 +300,13 @@ export function TeamDetailView({ team, initialMembers, employees }: Props) {
           )}
         </CardContent>
       </Card>
+
+      <TeamShiftsCard
+        teamId={team.id}
+        shifts={shifts}
+        initialShiftIds={teamShiftIds}
+        canManage={canManageShifts}
+      />
 
       <div className="flex justify-end">
         <DeleteConfirmationDialog

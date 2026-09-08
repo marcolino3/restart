@@ -47,6 +47,11 @@ export const ROUTES = {
     timeTrackingSettings: (locale: string) =>
       `/${locale}/admin/time-tracking-settings`,
 
+    // Shift planning (Admin/HR/Teamleiter; Mitarbeitende sehen publizierte Plaene)
+    shiftPlans: (locale: string) => `/${locale}/admin/shift-plans`,
+    shiftPlan: (locale: string, id: string) =>
+      `/${locale}/admin/shift-plans/${id}`,
+
     // School Classes
     schoolClasses: (locale: string) => `/${locale}/admin/school-classes`,
     schoolClassesCreate: (locale: string) =>

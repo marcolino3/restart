@@ -23,6 +23,7 @@ import {
   type EmployeeContractFormType,
 } from "../schemas/employee-contract-form.schema";
 import { ContractDocumentField } from "./ContractDocumentField";
+import type { Shift } from "@/features/time-tracking/actions/shifts.action";
 import { ContractFormFields } from "./ContractFormFields";
 import { ContractSummaryAside } from "./ContractSummaryAside";
 
@@ -66,6 +67,9 @@ export function buildContractFormDefaults(
     documentUrl: contract?.documentUrl ?? "",
     weekdayTimeWindows: mapWeekdayTimeWindows(contract?.weekdayTimeWindows),
     weekdayWorkloads: contract?.weekdayWorkloads ?? {},
+    worksShifts: contract?.worksShifts ?? false,
+    shiftWeekdays: contract?.shiftWeekdays ?? [],
+    shiftPreferences: contract?.shiftPreferences ?? [],
   };
 }
 
@@ -78,6 +82,8 @@ interface Props {
   title: string;
   /** Override redirect after save/cancel (defaults to employee contracts tab). */
   returnHref?: string;
+  /** Org shifts for the shift-work section; omit to hide the section. */
+  shifts?: Shift[];
 }
 
 export function EmployeeContractForm({
@@ -88,6 +94,7 @@ export function EmployeeContractForm({
   lastName,
   title,
   returnHref,
+  shifts,
 }: Props) {
   const t = useTranslations("Common");
   const tE = useTranslations("Employees");
@@ -171,6 +178,7 @@ export function EmployeeContractForm({
           <FieldResourceProvider resource="employeeContract" mode={contract ? "update" : "create"}>
             <ContractFormFields
               functionOptions={functionOptions}
+              shifts={shifts}
               showContractExtras
               documentSlot={
                 <ContractDocumentField

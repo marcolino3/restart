@@ -5,6 +5,7 @@ import {
   isContractFieldRequired,
   isContractFieldVisible,
   missingRequiredContractFields,
+  suggestedContractTypeForEndDate,
 } from "@restart/shared-schemas/employees/contract-type-rules";
 import {
   EmployeeContractFormSchema,
@@ -194,5 +195,23 @@ describe("clearHiddenContractFormFields", () => {
 
     expect(values.hourlyRate).toBeNull();
     expect(values.grossSalary).toBe(6000);
+  });
+});
+
+describe("suggestedContractTypeForEndDate", () => {
+  it("suggests TEMPORARY for a permanent contract with an end date", () => {
+    expect(suggestedContractTypeForEndDate("PERMANENT", true)).toBe("TEMPORARY");
+  });
+
+  it("suggests PERMANENT for a temporary contract without an end date", () => {
+    expect(suggestedContractTypeForEndDate("TEMPORARY", false)).toBe("PERMANENT");
+  });
+
+  it("stays quiet when type and end date agree or the type is unrelated", () => {
+    expect(suggestedContractTypeForEndDate("PERMANENT", false)).toBeNull();
+    expect(suggestedContractTypeForEndDate("TEMPORARY", true)).toBeNull();
+    expect(suggestedContractTypeForEndDate("INTERNSHIP", true)).toBeNull();
+    expect(suggestedContractTypeForEndDate("HOURLY", false)).toBeNull();
+    expect(suggestedContractTypeForEndDate(null, true)).toBeNull();
   });
 });

@@ -7,9 +7,19 @@ import {
   type ContractTypeDependentField,
 } from "./contract-type-rules";
 import {
+  WEEKDAY_KEYS,
   WeekdayTimeWindowsSchema,
   WeekdayWorkloadsSchema,
 } from "./weekday-schedule.schema";
+
+export const SHIFT_PREFERENCE_LEVELS = ["PREFERRED", "NEUTRAL", "AVOID"] as const;
+export type ShiftPreferenceLevel = (typeof SHIFT_PREFERENCE_LEVELS)[number];
+
+export const ShiftPreferenceSchema = z.object({
+  shiftId: z.string().uuid(),
+  level: z.enum(SHIFT_PREFERENCE_LEVELS),
+});
+export type ShiftPreference = z.infer<typeof ShiftPreferenceSchema>;
 import { refineEndDateNotBeforeStart } from "./contract-date-rules";
 
 export const EmployeeContractTypeEnum = z.enum(EMPLOYEE_CONTRACT_TYPES);
@@ -82,6 +92,11 @@ const BaseEmployeeContractFormSchema = z.object({
   documentUrl: z.string().optional().default(""),
   weekdayTimeWindows: WeekdayTimeWindowsSchema.optional(),
   weekdayWorkloads: WeekdayWorkloadsSchema.optional(),
+  // Shift work: opt-in, shift days (subset of the working days, enforced in
+  // the backend) and per-shift preferences.
+  worksShifts: z.boolean().optional().default(false),
+  shiftWeekdays: z.array(z.enum(WEEKDAY_KEYS)).max(7).optional().default([]),
+  shiftPreferences: z.array(ShiftPreferenceSchema).max(50).optional().default([]),
 });
 
 /**

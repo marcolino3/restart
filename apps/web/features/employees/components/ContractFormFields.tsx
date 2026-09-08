@@ -7,10 +7,12 @@ import { useFormContext, useWatch } from "react-hook-form";
 import {
   contractTypeRules,
   isContractFieldVisible,
+  suggestedContractTypeForEndDate,
   type ContractTypeDependentField,
 } from "@restart/shared-schemas/employees/contract-type-rules";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useFieldAccess } from "@/components/form/field-resource-context";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
 import { SelectFormField } from "@/components/form/form-fields/SelectFormField";
@@ -22,6 +24,8 @@ import { cn } from "@/lib/utils";
 import { WeeklyScheduleField } from "./wizard/WeeklyScheduleField";
 import { WorkloadPercentField } from "./wizard/WorkloadPercentField";
 import { WorkdayPickerField } from "./wizard/WorkdayPickerField";
+import { ContractShiftWorkFields } from "./ContractShiftWorkFields";
+import type { Shift } from "@/features/time-tracking/actions/shifts.action";
 import {
   QUICK_WORKLOAD_PERCENTS,
   hasWeekdayWorkloads,
@@ -70,6 +74,8 @@ export interface ContractFormFieldsProps {
   /** Notizen — Vertragsseite, nicht Onboarding. */
   showContractExtras?: boolean;
   documentSlot?: ReactNode;
+  /** Org shifts; when given, the shift-work section is rendered. */
+  shifts?: Shift[];
 }
 
 /**
@@ -84,6 +90,7 @@ export function ContractFormFields({
   showTimeTracking = false,
   showContractExtras = false,
   documentSlot,
+  shifts,
 }: ContractFormFieldsProps) {
   const t = useTranslations("EmployeeOnboarding");
   const { setValue, control, trigger, clearErrors } = useFormContext();
@@ -125,6 +132,17 @@ export function ContractFormFields({
     | Date
     | null
     | undefined;
+
+  // Option chosen with the product owner: never flip the type silently, only
+  // point out the contradiction and offer the switch (interns etc. untouched).
+  const suggestedType = suggestedContractTypeForEndDate(
+    selectedType,
+    endDate instanceof Date,
+  );
+  const switchContractType = (type: string) => {
+    setValue("contractType", type, { shouldDirty: true });
+    void trigger("endDate");
+  };
 
   const workloadPercent =
     Number(useWatch({ control, name: "workloadPercent" })) || 0;
@@ -315,6 +333,7 @@ export function ContractFormFields({
                 name="endDate"
                 label="exitDate"
                 namespace="EmployeeOnboarding"
+                clearable
                 disabledDate={(date) => {
                   if (startDate instanceof Date) {
                     const min = new Date(startDate);
@@ -325,6 +344,32 @@ export function ContractFormFields({
                 }}
               />
             )}
+            {suggestedType && shows("endDate") ? (
+              <div className="col-span-full flex flex-wrap items-center gap-x-3 gap-y-1 rounded-ctl border border-dashed px-3 py-2 text-sm text-muted-foreground">
+                <span>
+                  {t(
+                    suggestedType === "TEMPORARY"
+                      ? "contractTypeHintPermanentWithEnd"
+                      : "contractTypeHintTemporaryWithoutEnd",
+                  )}
+                </span>
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0"
+                  onClick={() => switchContractType(suggestedType)}
+                >
+                  {t("contractTypeSwitchTo", {
+                    type: t(
+                      suggestedType === "TEMPORARY"
+                        ? "contractTemporary"
+                        : "contractPermanent",
+                    ),
+                  })}
+                </Button>
+              </div>
+            ) : null}
             {shows("probationEndDate") && (
               <DatePickerFormField
                 name="probationEndDate"
@@ -515,6 +560,17 @@ export function ContractFormFields({
           )}
         </CardContent>
       </Card>
+
+      {shifts !== undefined && (
+        <ContractShiftWorkFields
+          shifts={shifts}
+          workingDays={
+            selectedDaysFromWindows(weekdayTimeWindows).length > 0
+              ? selectedDaysFromWindows(weekdayTimeWindows)
+              : selectedDaysFromWorkloads(weekdayWorkloads)
+          }
+        />
+      )}
     </div>
   );
 }

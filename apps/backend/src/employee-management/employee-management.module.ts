@@ -8,6 +8,8 @@ import { EmployeeEmergencyModule } from './employee-emergency/employee-emergency
 import { TeamsModule } from './teams/teams.module';
 import { TimeTrackingModule } from './time-tracking/time-tracking.module';
 import { TeamMembersModule } from './team-members/team-members.module';
+import { ShiftsModule } from './shifts/shifts.module';
+import { ShiftPlansModule } from './shift-plans/shift-plans.module';
 import { EmployeeAbsenceCategoriesModule } from './employee-absence-categories/employee-absence-categories.module';
 import { EmployeeFunctionsModule } from './employee-functions/employee-functions.module';
 import { EmployeeAbsencesModule } from './employee-absences/employee-absences.module';
@@ -29,6 +31,8 @@ import { TimeTrackingPeriodsModule } from './time-tracking-periods/time-tracking
     EmployeeEmergencyModule,
     TeamsModule,
     TeamMembersModule,
+    ShiftsModule,
+    ShiftPlansModule,
     TimeTrackingModule,
     EmployeeAbsenceCategoriesModule,
     EmployeeFunctionsModule,

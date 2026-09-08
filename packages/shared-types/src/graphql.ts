@@ -1160,12 +1160,15 @@ export type CreateEmployeeContractInput = {
   position?: InputMaybe<Scalars['String']['input']>;
   probationEndDate?: InputMaybe<Scalars['String']['input']>;
   remainingVacationDays?: InputMaybe<Scalars['String']['input']>;
+  shiftPreferences?: InputMaybe<Array<ShiftPreferenceInput>>;
+  shiftWeekdays?: InputMaybe<Array<Scalars['String']['input']>>;
   startDate: Scalars['String']['input'];
   supervisorMembershipId?: InputMaybe<Scalars['ID']['input']>;
   weekdayTimeWindows?: InputMaybe<WeekdayTimeWindowsInput>;
   weekdayWorkloads?: InputMaybe<WeekdayWorkloadsInput>;
   weeklyHours?: InputMaybe<Scalars['String']['input']>;
   workloadPercent?: InputMaybe<Scalars['Float']['input']>;
+  worksShifts?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type CreateEmployeeFunctionInput = {
@@ -1411,6 +1414,21 @@ export type CreateSchoolClassInput = {
   sortOrder?: InputMaybe<Scalars['Int']['input']>;
   teacherIds?: InputMaybe<Array<Scalars['ID']['input']>>;
   teachers?: InputMaybe<Array<SchoolClassTeacherInput>>;
+};
+
+export type CreateShiftInput = {
+  breaks?: InputMaybe<Array<ShiftBreakInput>>;
+  color?: InputMaybe<Scalars['String']['input']>;
+  endTime: Scalars['String']['input'];
+  name: Scalars['String']['input'];
+  sortOrder?: InputMaybe<Scalars['Int']['input']>;
+  startTime: Scalars['String']['input'];
+};
+
+export type CreateShiftPlanInput = {
+  endDate: Scalars['String']['input'];
+  startDate: Scalars['String']['input'];
+  teamId: Scalars['ID']['input'];
 };
 
 export type CreateStudentInput = {
@@ -2089,6 +2107,8 @@ export type EmployeeContract = {
   previousContractId?: Maybe<Scalars['ID']['output']>;
   probationEndDate?: Maybe<Scalars['String']['output']>;
   remainingVacationDays?: Maybe<Scalars['String']['output']>;
+  shiftPreferences: Array<ShiftPreference>;
+  shiftWeekdays: Array<Scalars['String']['output']>;
   startDate: Scalars['String']['output'];
   supervisor?: Maybe<Membership>;
   supervisorMembershipId?: Maybe<Scalars['ID']['output']>;
@@ -2098,6 +2118,7 @@ export type EmployeeContract = {
   weekdayWorkloads?: Maybe<WeekdayWorkloads>;
   weeklyHours?: Maybe<Scalars['String']['output']>;
   workloadPercent?: Maybe<Scalars['Float']['output']>;
+  worksShifts: Scalars['Boolean']['output'];
 };
 
 export enum EmployeeContractType {
@@ -2886,6 +2907,8 @@ export type Mutation = {
   createProtocolTemplate: ProtocolTemplate;
   createRole: Role;
   createSchoolClass: SchoolClass;
+  createShift: Shift;
+  createShiftPlan: ShiftPlan;
   createStudent: Student;
   createStudentNote: StudentNote;
   createStudentRecordCategory: StudentRecordCategory;
@@ -2926,6 +2949,8 @@ export type Mutation = {
   deleteRetentionPolicy: Scalars['Boolean']['output'];
   deleteRole: Scalars['Boolean']['output'];
   deleteSchoolClass: Scalars['Boolean']['output'];
+  deleteShift: Scalars['Boolean']['output'];
+  deleteShiftPlan: Scalars['Boolean']['output'];
   deleteStudent: Scalars['Boolean']['output'];
   deleteStudentRecordEntry: Scalars['Boolean']['output'];
   deleteTask: Scalars['Boolean']['output'];
@@ -2946,6 +2971,7 @@ export type Mutation = {
   moveAdmissionApplication: AdmissionApplication;
   moveStudentToStage: Student;
   moveTask: Task;
+  publishShiftPlan: ShiftPlan;
   reactivateOrganization: Organization;
   recertifyAccess: Scalars['Boolean']['output'];
   recordConsent: Consent;
@@ -2987,6 +3013,9 @@ export type Mutation = {
   setEmployeeAbsenceCategoryActive: EmployeeAbsenceCategory;
   setLessonPrerequisites: CurriculumNode;
   setPrimaryUserEmail: UserEmail;
+  setShiftAssignments: Array<ShiftAssignment>;
+  setShiftCoverage: Array<ShiftCoverageRequirement>;
+  setTeamShifts: Array<Shift>;
   setTimeTrackingPeriodAnchor: Scalars['String']['output'];
   setTimeTrackingPeriodStatus: TimeTrackingPeriod;
   softDeleteEmployeeNote: EmployeeNote;
@@ -3001,6 +3030,7 @@ export type Mutation = {
   unassignCompanyVacationFromEmployee: Scalars['Boolean']['output'];
   uncompleteAdmissionReminder: AdmissionReminder;
   unlinkContactPersonFromStudent: Scalars['Boolean']['output'];
+  unpublishShiftPlan: ShiftPlan;
   updateAddress: Address;
   updateAdmissionActivity: AdmissionActivity;
   updateAdmissionApplication: AdmissionApplication;
@@ -3052,6 +3082,7 @@ export type Mutation = {
   updateRoleMembers: Role;
   updateRolePermissions: Role;
   updateSchoolClass: SchoolClass;
+  updateShift: Shift;
   updateStudent: Student;
   updateStudentContactPersonLink: StudentContactPerson;
   updateStudentNote: StudentNote;
@@ -3441,6 +3472,16 @@ export type MutationCreateSchoolClassArgs = {
 };
 
 
+export type MutationCreateShiftArgs = {
+  input: CreateShiftInput;
+};
+
+
+export type MutationCreateShiftPlanArgs = {
+  input: CreateShiftPlanInput;
+};
+
+
 export type MutationCreateStudentArgs = {
   input: CreateStudentInput;
 };
@@ -3642,6 +3683,16 @@ export type MutationDeleteSchoolClassArgs = {
 };
 
 
+export type MutationDeleteShiftArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteShiftPlanArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationDeleteStudentArgs = {
   id: Scalars['ID']['input'];
 };
@@ -3741,6 +3792,11 @@ export type MutationMoveStudentToStageArgs = {
 
 export type MutationMoveTaskArgs = {
   input: MoveTaskInput;
+};
+
+
+export type MutationPublishShiftPlanArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -3947,6 +4003,21 @@ export type MutationSetPrimaryUserEmailArgs = {
 };
 
 
+export type MutationSetShiftAssignmentsArgs = {
+  input: SetShiftAssignmentsInput;
+};
+
+
+export type MutationSetShiftCoverageArgs = {
+  input: SetShiftCoverageInput;
+};
+
+
+export type MutationSetTeamShiftsArgs = {
+  input: SetTeamShiftsInput;
+};
+
+
 export type MutationSetTimeTrackingPeriodAnchorArgs = {
   anchor: Scalars['String']['input'];
 };
@@ -4010,6 +4081,11 @@ export type MutationUncompleteAdmissionReminderArgs = {
 
 
 export type MutationUnlinkContactPersonFromStudentArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationUnpublishShiftPlanArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -4266,6 +4342,11 @@ export type MutationUpdateRolePermissionsArgs = {
 
 export type MutationUpdateSchoolClassArgs = {
   input: UpdateSchoolClassInput;
+};
+
+
+export type MutationUpdateShiftArgs = {
+  input: UpdateShiftInput;
 };
 
 
@@ -4649,6 +4730,9 @@ export enum PermissionCode {
   SchoolClassDelete = 'SCHOOL_CLASS_DELETE',
   SchoolClassRead = 'SCHOOL_CLASS_READ',
   SchoolClassWrite = 'SCHOOL_CLASS_WRITE',
+  ShiftManage = 'SHIFT_MANAGE',
+  ShiftPlanRead = 'SHIFT_PLAN_READ',
+  ShiftPlanWrite = 'SHIFT_PLAN_WRITE',
   StudentDelete = 'STUDENT_DELETE',
   StudentRead = 'STUDENT_READ',
   StudentRecordCategoryWrite = 'STUDENT_RECORD_CATEGORY_WRITE',
@@ -5088,6 +5172,7 @@ export type Query = {
   myMissingRecordDays: Array<Scalars['String']['output']>;
   myMonthlyTimeTracking: Array<MonthlyTimeTrackingGroup>;
   myProjects: Array<Project>;
+  myShiftAssignments: Array<ShiftAssignment>;
   myTasks: Array<Task>;
   myTeachingSchoolClasses: Array<SchoolClass>;
   myTeams: Array<AccessibleTeam>;
@@ -5128,6 +5213,11 @@ export type Query = {
   schoolClassTeacherHistory: Array<SchoolClassTeacher>;
   schoolClassesByOrgId: Array<SchoolClass>;
   schoolYear: SchoolYear;
+  shiftCoverage: Array<ShiftCoverageRequirement>;
+  shiftPlan: ShiftPlanDetail;
+  shiftPlanTeams: Array<ShiftPlanTeam>;
+  shiftPlans: Array<ShiftPlan>;
+  shifts: Array<Shift>;
   simulateEmployeeWorkTimeBalance: WorkTimeBalance;
   studentById: Student;
   studentLessonRecordTimeline: StudentTimelineOutput;
@@ -5147,6 +5237,7 @@ export type Query = {
   teamMemberById: TeamMember;
   teamMembersByOrgId: Array<TeamMember>;
   teamMembersByTeamId: Array<TeamMember>;
+  teamShifts: Array<Shift>;
   teamWorkTimeOverview: Array<EmployeeWorkTimeOverviewRow>;
   teamsByOrgId: Array<Team>;
   timeTrackingByEmployeeId: Array<TimeTracking>;
@@ -5628,6 +5719,12 @@ export type QueryMyMonthlyTimeTrackingArgs = {
 };
 
 
+export type QueryMyShiftAssignmentsArgs = {
+  from: Scalars['String']['input'];
+  to: Scalars['String']['input'];
+};
+
+
 export type QueryMyVacationBalanceArgs = {
   from: Scalars['String']['input'];
   to: Scalars['String']['input'];
@@ -5763,6 +5860,21 @@ export type QuerySchoolYearArgs = {
 };
 
 
+export type QueryShiftCoverageArgs = {
+  teamId: Scalars['ID']['input'];
+};
+
+
+export type QueryShiftPlanArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryShiftPlansArgs = {
+  teamId?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
 export type QuerySimulateEmployeeWorkTimeBalanceArgs = {
   contractEndDateOverride?: InputMaybe<Scalars['String']['input']>;
   employeeId: Scalars['ID']['input'];
@@ -5840,6 +5952,11 @@ export type QueryTeamMemberByIdArgs = {
 
 
 export type QueryTeamMembersByTeamIdArgs = {
+  teamId: Scalars['ID']['input'];
+};
+
+
+export type QueryTeamShiftsArgs = {
   teamId: Scalars['ID']['input'];
 };
 
@@ -6206,6 +6323,23 @@ export type SetLessonPrerequisitesInput = {
   prerequisiteIds: Array<Scalars['ID']['input']>;
 };
 
+export type SetShiftAssignmentsInput = {
+  date: Scalars['String']['input'];
+  employeeIds: Array<Scalars['ID']['input']>;
+  planId: Scalars['ID']['input'];
+  shiftId: Scalars['ID']['input'];
+};
+
+export type SetShiftCoverageInput = {
+  rows: Array<ShiftCoverageRowInput>;
+  teamId: Scalars['ID']['input'];
+};
+
+export type SetTeamShiftsInput = {
+  shiftIds: Array<Scalars['ID']['input']>;
+  teamId: Scalars['ID']['input'];
+};
+
 export type SetupStatus = {
   __typename?: 'SetupStatus';
   complete: Scalars['Boolean']['output'];
@@ -6220,6 +6354,136 @@ export type SetupStep = {
   key: Scalars['String']['output'];
   required: Scalars['Boolean']['output'];
 };
+
+export type Shift = {
+  __typename?: 'Shift';
+  breaks: Array<ShiftBreak>;
+  color?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  endTime: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  name: Scalars['String']['output'];
+  organizationId: Scalars['ID']['output'];
+  sortOrder: Scalars['Int']['output'];
+  startTime: Scalars['String']['output'];
+  teamIds: Array<Scalars['ID']['output']>;
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type ShiftAssignment = {
+  __typename?: 'ShiftAssignment';
+  date: Scalars['String']['output'];
+  employeeId: Scalars['ID']['output'];
+  id: Scalars['ID']['output'];
+  organizationId: Scalars['ID']['output'];
+  planId: Scalars['ID']['output'];
+  shift?: Maybe<Shift>;
+  shiftId: Scalars['ID']['output'];
+};
+
+export type ShiftBreak = {
+  __typename?: 'ShiftBreak';
+  endTime: Scalars['String']['output'];
+  startTime: Scalars['String']['output'];
+};
+
+export type ShiftBreakInput = {
+  endTime: Scalars['String']['input'];
+  startTime: Scalars['String']['input'];
+};
+
+export type ShiftCoverageRequirement = {
+  __typename?: 'ShiftCoverageRequirement';
+  id: Scalars['ID']['output'];
+  organizationId: Scalars['ID']['output'];
+  requiredCount: Scalars['Int']['output'];
+  shiftId: Scalars['ID']['output'];
+  teamId: Scalars['ID']['output'];
+  weekday: Scalars['String']['output'];
+};
+
+export type ShiftCoverageRowInput = {
+  requiredCount: Scalars['Int']['input'];
+  shiftId: Scalars['ID']['input'];
+  weekday: Scalars['String']['input'];
+};
+
+export type ShiftPlan = {
+  __typename?: 'ShiftPlan';
+  createdAt: Scalars['DateTime']['output'];
+  endDate: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  organizationId: Scalars['ID']['output'];
+  source: ShiftPlanSource;
+  startDate: Scalars['String']['output'];
+  status: ShiftPlanStatus;
+  teamId: Scalars['ID']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export type ShiftPlanCandidate = {
+  __typename?: 'ShiftPlanCandidate';
+  availableDates: Array<Scalars['String']['output']>;
+  employeeId: Scalars['ID']['output'];
+  firstName?: Maybe<Scalars['String']['output']>;
+  lastName?: Maybe<Scalars['String']['output']>;
+  preferences: Array<ShiftPreference>;
+};
+
+export type ShiftPlanDetail = {
+  __typename?: 'ShiftPlanDetail';
+  assignments: Array<ShiftAssignment>;
+  candidates: Array<ShiftPlanCandidate>;
+  coverage: Array<ShiftCoverageRequirement>;
+  employees: Array<ShiftPlanEmployee>;
+  plan: ShiftPlan;
+  shifts: Array<Shift>;
+};
+
+export type ShiftPlanEmployee = {
+  __typename?: 'ShiftPlanEmployee';
+  employeeId: Scalars['ID']['output'];
+  firstName?: Maybe<Scalars['String']['output']>;
+  lastName?: Maybe<Scalars['String']['output']>;
+};
+
+export enum ShiftPlanSource {
+  Ai = 'AI',
+  Manual = 'MANUAL'
+}
+
+export enum ShiftPlanStatus {
+  Draft = 'DRAFT',
+  Published = 'PUBLISHED'
+}
+
+export type ShiftPlanTeam = {
+  __typename?: 'ShiftPlanTeam';
+  canWrite: Scalars['Boolean']['output'];
+  id: Scalars['ID']['output'];
+  name: Scalars['String']['output'];
+};
+
+export type ShiftPreference = {
+  __typename?: 'ShiftPreference';
+  level: ShiftPreferenceLevel;
+  shiftId: Scalars['ID']['output'];
+};
+
+export type ShiftPreferenceInput = {
+  level: ShiftPreferenceLevel;
+  shiftId: Scalars['ID']['input'];
+};
+
+export enum ShiftPreferenceLevel {
+  Avoid = 'AVOID',
+  Neutral = 'NEUTRAL',
+  Preferred = 'PREFERRED'
+}
 
 export type Student = {
   __typename?: 'Student';
@@ -7162,12 +7426,15 @@ export type UpdateEmployeeContractInput = {
   position?: InputMaybe<Scalars['String']['input']>;
   probationEndDate?: InputMaybe<Scalars['String']['input']>;
   remainingVacationDays?: InputMaybe<Scalars['String']['input']>;
+  shiftPreferences?: InputMaybe<Array<ShiftPreferenceInput>>;
+  shiftWeekdays?: InputMaybe<Array<Scalars['String']['input']>>;
   startDate?: InputMaybe<Scalars['String']['input']>;
   supervisorMembershipId?: InputMaybe<Scalars['ID']['input']>;
   weekdayTimeWindows?: InputMaybe<WeekdayTimeWindowsInput>;
   weekdayWorkloads?: InputMaybe<WeekdayWorkloadsInput>;
   weeklyHours?: InputMaybe<Scalars['String']['input']>;
   workloadPercent?: InputMaybe<Scalars['Float']['input']>;
+  worksShifts?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type UpdateEmployeeFunctionInput = {
@@ -7446,6 +7713,16 @@ export type UpdateSchoolClassInput = {
   sortOrder?: InputMaybe<Scalars['Int']['input']>;
   teacherIds?: InputMaybe<Array<Scalars['ID']['input']>>;
   teachers?: InputMaybe<Array<SchoolClassTeacherInput>>;
+};
+
+export type UpdateShiftInput = {
+  breaks?: InputMaybe<Array<ShiftBreakInput>>;
+  color?: InputMaybe<Scalars['String']['input']>;
+  endTime?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
+  sortOrder?: InputMaybe<Scalars['Int']['input']>;
+  startTime?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateStudentContactPersonInput = {
@@ -8685,7 +8962,7 @@ export type EmployeeContractsByEmployeeIdQueryVariables = Exact<{
 }>;
 
 
-export type EmployeeContractsByEmployeeIdQuery = { __typename?: 'Query', employeeContractsByEmployeeId: Array<{ __typename?: 'EmployeeContract', id: string, employeeId: string, startDate: string, endDate?: string | null, probationEndDate?: string | null, contractType?: EmployeeContractType | null, position?: string | null, supervisorMembershipId?: string | null, workloadPercent?: number | null, weeklyHours?: string | null, grossSalary?: number | null, hourlyRate?: number | null, paymentInterval?: EmployeePaymentInterval | null, has13thSalary?: boolean | null, annualVacationDays?: number | null, remainingVacationDays?: string | null, notes?: string | null, documentUrl?: string | null, isActive: boolean, weekdayWorkloads?: { __typename?: 'WeekdayWorkloads', mon?: number | null, tue?: number | null, wed?: number | null, thu?: number | null, fri?: number | null, sat?: number | null, sun?: number | null } | null, weekdayTimeWindows?: { __typename?: 'WeekdayTimeWindows', mon?: Array<{ __typename?: 'TimeWindow', start: string, end: string }> | null, tue?: Array<{ __typename?: 'TimeWindow', start: string, end: string }> | null, wed?: Array<{ __typename?: 'TimeWindow', start: string, end: string }> | null, thu?: Array<{ __typename?: 'TimeWindow', start: string, end: string }> | null, fri?: Array<{ __typename?: 'TimeWindow', start: string, end: string }> | null, sat?: Array<{ __typename?: 'TimeWindow', start: string, end: string }> | null, sun?: Array<{ __typename?: 'TimeWindow', start: string, end: string }> | null } | null }> };
+export type EmployeeContractsByEmployeeIdQuery = { __typename?: 'Query', employeeContractsByEmployeeId: Array<{ __typename?: 'EmployeeContract', id: string, employeeId: string, startDate: string, endDate?: string | null, probationEndDate?: string | null, contractType?: EmployeeContractType | null, position?: string | null, supervisorMembershipId?: string | null, workloadPercent?: number | null, weeklyHours?: string | null, grossSalary?: number | null, hourlyRate?: number | null, paymentInterval?: EmployeePaymentInterval | null, has13thSalary?: boolean | null, annualVacationDays?: number | null, remainingVacationDays?: string | null, notes?: string | null, documentUrl?: string | null, isActive: boolean, worksShifts: boolean, shiftWeekdays: Array<string>, shiftPreferences: Array<{ __typename?: 'ShiftPreference', shiftId: string, level: ShiftPreferenceLevel }>, weekdayWorkloads?: { __typename?: 'WeekdayWorkloads', mon?: number | null, tue?: number | null, wed?: number | null, thu?: number | null, fri?: number | null, sat?: number | null, sun?: number | null } | null, weekdayTimeWindows?: { __typename?: 'WeekdayTimeWindows', mon?: Array<{ __typename?: 'TimeWindow', start: string, end: string }> | null, tue?: Array<{ __typename?: 'TimeWindow', start: string, end: string }> | null, wed?: Array<{ __typename?: 'TimeWindow', start: string, end: string }> | null, thu?: Array<{ __typename?: 'TimeWindow', start: string, end: string }> | null, fri?: Array<{ __typename?: 'TimeWindow', start: string, end: string }> | null, sat?: Array<{ __typename?: 'TimeWindow', start: string, end: string }> | null, sun?: Array<{ __typename?: 'TimeWindow', start: string, end: string }> | null } | null }> };
 
 export type CreateEmployeeContractMutationVariables = Exact<{
   input: CreateEmployeeContractInput;
@@ -10019,6 +10296,46 @@ export type DeleteCompanyVacationMutationVariables = Exact<{
 
 export type DeleteCompanyVacationMutation = { __typename?: 'Mutation', deleteCompanyVacation: boolean };
 
+export type ShiftsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ShiftsQuery = { __typename?: 'Query', shifts: Array<{ __typename?: 'Shift', id: string, name: string, startTime: string, endTime: string, color?: string | null, sortOrder: number, teamIds: Array<string>, breaks: Array<{ __typename?: 'ShiftBreak', startTime: string, endTime: string }> }> };
+
+export type TeamShiftsQueryVariables = Exact<{
+  teamId: Scalars['ID']['input'];
+}>;
+
+
+export type TeamShiftsQuery = { __typename?: 'Query', teamShifts: Array<{ __typename?: 'Shift', id: string, name: string, startTime: string, endTime: string, color?: string | null, sortOrder: number, teamIds: Array<string>, breaks: Array<{ __typename?: 'ShiftBreak', startTime: string, endTime: string }> }> };
+
+export type CreateShiftMutationVariables = Exact<{
+  input: CreateShiftInput;
+}>;
+
+
+export type CreateShiftMutation = { __typename?: 'Mutation', createShift: { __typename?: 'Shift', id: string, name: string, startTime: string, endTime: string, color?: string | null, sortOrder: number, teamIds: Array<string>, breaks: Array<{ __typename?: 'ShiftBreak', startTime: string, endTime: string }> } };
+
+export type UpdateShiftMutationVariables = Exact<{
+  input: UpdateShiftInput;
+}>;
+
+
+export type UpdateShiftMutation = { __typename?: 'Mutation', updateShift: { __typename?: 'Shift', id: string, name: string, startTime: string, endTime: string, color?: string | null, sortOrder: number, teamIds: Array<string>, breaks: Array<{ __typename?: 'ShiftBreak', startTime: string, endTime: string }> } };
+
+export type DeleteShiftMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteShiftMutation = { __typename?: 'Mutation', deleteShift: boolean };
+
+export type SetTeamShiftsMutationVariables = Exact<{
+  input: SetTeamShiftsInput;
+}>;
+
+
+export type SetTeamShiftsMutation = { __typename?: 'Mutation', setTeamShifts: Array<{ __typename?: 'Shift', id: string, name: string, startTime: string, endTime: string, color?: string | null, sortOrder: number, teamIds: Array<string>, breaks: Array<{ __typename?: 'ShiftBreak', startTime: string, endTime: string }> }> };
+
 export type AddUserEmailMutationVariables = Exact<{
   userId: Scalars['ID']['input'];
   email: Scalars['String']['input'];
@@ -10278,7 +10595,7 @@ export const UpdateEmployeeFunctionDocument = {"kind":"Document","definitions":[
 export const CreateEmployeeNoteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateEmployeeNote"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"createEmployeeNoteInput"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateEmployeeNoteInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createEmployeeNote"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"createEmployeeNoteInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"createEmployeeNoteInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateEmployeeNoteMutation, CreateEmployeeNoteMutationVariables>;
 export const GetEmployeeNotesByEmployeeIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEmployeeNotesByEmployeeId"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeNotesByEmployeeId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isConfidential"}},{"kind":"Field","name":{"kind":"Name","value":"date"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"authorMembership"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetEmployeeNotesByEmployeeIdQuery, GetEmployeeNotesByEmployeeIdQueryVariables>;
 export const CreateEmployeeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateEmployee"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"createEmployeeInput"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateEmployeeInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createEmployee"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"createEmployeeInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"createEmployeeInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateEmployeeMutation, CreateEmployeeMutationVariables>;
-export const EmployeeContractsByEmployeeIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"EmployeeContractsByEmployeeId"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeContractsByEmployeeId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"employeeId"}},{"kind":"Field","name":{"kind":"Name","value":"startDate"}},{"kind":"Field","name":{"kind":"Name","value":"endDate"}},{"kind":"Field","name":{"kind":"Name","value":"probationEndDate"}},{"kind":"Field","name":{"kind":"Name","value":"contractType"}},{"kind":"Field","name":{"kind":"Name","value":"position"}},{"kind":"Field","name":{"kind":"Name","value":"supervisorMembershipId"}},{"kind":"Field","name":{"kind":"Name","value":"workloadPercent"}},{"kind":"Field","name":{"kind":"Name","value":"weeklyHours"}},{"kind":"Field","name":{"kind":"Name","value":"grossSalary"}},{"kind":"Field","name":{"kind":"Name","value":"hourlyRate"}},{"kind":"Field","name":{"kind":"Name","value":"paymentInterval"}},{"kind":"Field","name":{"kind":"Name","value":"has13thSalary"}},{"kind":"Field","name":{"kind":"Name","value":"annualVacationDays"}},{"kind":"Field","name":{"kind":"Name","value":"remainingVacationDays"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"documentUrl"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"weekdayWorkloads"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"mon"}},{"kind":"Field","name":{"kind":"Name","value":"tue"}},{"kind":"Field","name":{"kind":"Name","value":"wed"}},{"kind":"Field","name":{"kind":"Name","value":"thu"}},{"kind":"Field","name":{"kind":"Name","value":"fri"}},{"kind":"Field","name":{"kind":"Name","value":"sat"}},{"kind":"Field","name":{"kind":"Name","value":"sun"}}]}},{"kind":"Field","name":{"kind":"Name","value":"weekdayTimeWindows"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"mon"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"start"}},{"kind":"Field","name":{"kind":"Name","value":"end"}}]}},{"kind":"Field","name":{"kind":"Name","value":"tue"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"start"}},{"kind":"Field","name":{"kind":"Name","value":"end"}}]}},{"kind":"Field","name":{"kind":"Name","value":"wed"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"start"}},{"kind":"Field","name":{"kind":"Name","value":"end"}}]}},{"kind":"Field","name":{"kind":"Name","value":"thu"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"start"}},{"kind":"Field","name":{"kind":"Name","value":"end"}}]}},{"kind":"Field","name":{"kind":"Name","value":"fri"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"start"}},{"kind":"Field","name":{"kind":"Name","value":"end"}}]}},{"kind":"Field","name":{"kind":"Name","value":"sat"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"start"}},{"kind":"Field","name":{"kind":"Name","value":"end"}}]}},{"kind":"Field","name":{"kind":"Name","value":"sun"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"start"}},{"kind":"Field","name":{"kind":"Name","value":"end"}}]}}]}}]}}]}}]} as unknown as DocumentNode<EmployeeContractsByEmployeeIdQuery, EmployeeContractsByEmployeeIdQueryVariables>;
+export const EmployeeContractsByEmployeeIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"EmployeeContractsByEmployeeId"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"employeeContractsByEmployeeId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"employeeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"employeeId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"employeeId"}},{"kind":"Field","name":{"kind":"Name","value":"startDate"}},{"kind":"Field","name":{"kind":"Name","value":"endDate"}},{"kind":"Field","name":{"kind":"Name","value":"probationEndDate"}},{"kind":"Field","name":{"kind":"Name","value":"contractType"}},{"kind":"Field","name":{"kind":"Name","value":"position"}},{"kind":"Field","name":{"kind":"Name","value":"supervisorMembershipId"}},{"kind":"Field","name":{"kind":"Name","value":"workloadPercent"}},{"kind":"Field","name":{"kind":"Name","value":"weeklyHours"}},{"kind":"Field","name":{"kind":"Name","value":"grossSalary"}},{"kind":"Field","name":{"kind":"Name","value":"hourlyRate"}},{"kind":"Field","name":{"kind":"Name","value":"paymentInterval"}},{"kind":"Field","name":{"kind":"Name","value":"has13thSalary"}},{"kind":"Field","name":{"kind":"Name","value":"annualVacationDays"}},{"kind":"Field","name":{"kind":"Name","value":"remainingVacationDays"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"documentUrl"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"worksShifts"}},{"kind":"Field","name":{"kind":"Name","value":"shiftWeekdays"}},{"kind":"Field","name":{"kind":"Name","value":"shiftPreferences"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"shiftId"}},{"kind":"Field","name":{"kind":"Name","value":"level"}}]}},{"kind":"Field","name":{"kind":"Name","value":"weekdayWorkloads"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"mon"}},{"kind":"Field","name":{"kind":"Name","value":"tue"}},{"kind":"Field","name":{"kind":"Name","value":"wed"}},{"kind":"Field","name":{"kind":"Name","value":"thu"}},{"kind":"Field","name":{"kind":"Name","value":"fri"}},{"kind":"Field","name":{"kind":"Name","value":"sat"}},{"kind":"Field","name":{"kind":"Name","value":"sun"}}]}},{"kind":"Field","name":{"kind":"Name","value":"weekdayTimeWindows"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"mon"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"start"}},{"kind":"Field","name":{"kind":"Name","value":"end"}}]}},{"kind":"Field","name":{"kind":"Name","value":"tue"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"start"}},{"kind":"Field","name":{"kind":"Name","value":"end"}}]}},{"kind":"Field","name":{"kind":"Name","value":"wed"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"start"}},{"kind":"Field","name":{"kind":"Name","value":"end"}}]}},{"kind":"Field","name":{"kind":"Name","value":"thu"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"start"}},{"kind":"Field","name":{"kind":"Name","value":"end"}}]}},{"kind":"Field","name":{"kind":"Name","value":"fri"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"start"}},{"kind":"Field","name":{"kind":"Name","value":"end"}}]}},{"kind":"Field","name":{"kind":"Name","value":"sat"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"start"}},{"kind":"Field","name":{"kind":"Name","value":"end"}}]}},{"kind":"Field","name":{"kind":"Name","value":"sun"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"start"}},{"kind":"Field","name":{"kind":"Name","value":"end"}}]}}]}}]}}]}}]} as unknown as DocumentNode<EmployeeContractsByEmployeeIdQuery, EmployeeContractsByEmployeeIdQueryVariables>;
 export const CreateEmployeeContractDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateEmployeeContract"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateEmployeeContractInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createEmployeeContract"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateEmployeeContractMutation, CreateEmployeeContractMutationVariables>;
 export const UpdateEmployeeContractDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateEmployeeContract"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateEmployeeContractInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateEmployeeContract"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateEmployeeContractMutation, UpdateEmployeeContractMutationVariables>;
 export const DeleteEmployeeContractDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteEmployeeContract"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteEmployeeContract"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteEmployeeContractMutation, DeleteEmployeeContractMutationVariables>;
@@ -10475,6 +10792,12 @@ export const DeleteHolidayDocument = {"kind":"Document","definitions":[{"kind":"
 export const CreateCompanyVacationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateCompanyVacation"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateCompanyVacationInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createCompanyVacation"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateCompanyVacationMutation, CreateCompanyVacationMutationVariables>;
 export const UpdateCompanyVacationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateCompanyVacation"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateCompanyVacationInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateCompanyVacation"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateCompanyVacationMutation, UpdateCompanyVacationMutationVariables>;
 export const DeleteCompanyVacationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteCompanyVacation"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteCompanyVacation"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteCompanyVacationMutation, DeleteCompanyVacationMutationVariables>;
+export const ShiftsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Shifts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"shifts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"startTime"}},{"kind":"Field","name":{"kind":"Name","value":"endTime"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"breaks"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"startTime"}},{"kind":"Field","name":{"kind":"Name","value":"endTime"}}]}},{"kind":"Field","name":{"kind":"Name","value":"teamIds"}}]}}]}}]} as unknown as DocumentNode<ShiftsQuery, ShiftsQueryVariables>;
+export const TeamShiftsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TeamShifts"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"teamId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"teamShifts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"teamId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"teamId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"startTime"}},{"kind":"Field","name":{"kind":"Name","value":"endTime"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"breaks"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"startTime"}},{"kind":"Field","name":{"kind":"Name","value":"endTime"}}]}},{"kind":"Field","name":{"kind":"Name","value":"teamIds"}}]}}]}}]} as unknown as DocumentNode<TeamShiftsQuery, TeamShiftsQueryVariables>;
+export const CreateShiftDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateShift"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateShiftInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createShift"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"startTime"}},{"kind":"Field","name":{"kind":"Name","value":"endTime"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"breaks"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"startTime"}},{"kind":"Field","name":{"kind":"Name","value":"endTime"}}]}},{"kind":"Field","name":{"kind":"Name","value":"teamIds"}}]}}]}}]} as unknown as DocumentNode<CreateShiftMutation, CreateShiftMutationVariables>;
+export const UpdateShiftDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateShift"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateShiftInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateShift"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"startTime"}},{"kind":"Field","name":{"kind":"Name","value":"endTime"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"breaks"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"startTime"}},{"kind":"Field","name":{"kind":"Name","value":"endTime"}}]}},{"kind":"Field","name":{"kind":"Name","value":"teamIds"}}]}}]}}]} as unknown as DocumentNode<UpdateShiftMutation, UpdateShiftMutationVariables>;
+export const DeleteShiftDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteShift"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteShift"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteShiftMutation, DeleteShiftMutationVariables>;
+export const SetTeamShiftsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SetTeamShifts"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SetTeamShiftsInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"setTeamShifts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"startTime"}},{"kind":"Field","name":{"kind":"Name","value":"endTime"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"breaks"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"startTime"}},{"kind":"Field","name":{"kind":"Name","value":"endTime"}}]}},{"kind":"Field","name":{"kind":"Name","value":"teamIds"}}]}}]}}]} as unknown as DocumentNode<SetTeamShiftsMutation, SetTeamShiftsMutationVariables>;
 export const AddUserEmailDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AddUserEmail"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"userId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"email"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"addUserEmail"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"userId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"userId"}}},{"kind":"Argument","name":{"kind":"Name","value":"email"},"value":{"kind":"Variable","name":{"kind":"Name","value":"email"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"isPrimary"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}}]}}]}}]} as unknown as DocumentNode<AddUserEmailMutation, AddUserEmailMutationVariables>;
 export const ChangeUserEmailDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ChangeUserEmail"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ChangeUserEmailInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"changeUserEmail"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userEmails"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"isPrimary"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}}]}}]}}]}}]} as unknown as DocumentNode<ChangeUserEmailMutation, ChangeUserEmailMutationVariables>;
 export const CreateUserDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateUser"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"createUserInput"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateUserInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createUser"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"createUserInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"createUserInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateUserMutation, CreateUserMutationVariables>;

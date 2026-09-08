@@ -9,6 +9,11 @@ import { getTeamByIdAction } from "@/features/teams/actions/get-team-by-id.actio
 import { getTeamMembersAction } from "@/features/teams/actions/get-team-members.action";
 import { getEmployeesAction } from "@/features/employees/actions/get-employees.action";
 import { TeamDetailView } from "@/features/teams/components/TeamDetailView";
+import {
+  getShiftsAction,
+  getTeamShiftsAction,
+} from "@/features/time-tracking/actions/shifts.action";
+import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 
 interface Props {
   params: Promise<{ teamId: string }>;
@@ -19,11 +24,15 @@ const TeamDetailPage = async ({ params }: Props) => {
   const t = await getTranslations("Teams");
   const locale = await getLocale();
 
-  const [teamRes, membersRes, employeesRes] = await Promise.all([
-    getTeamByIdAction(teamId),
-    getTeamMembersAction(teamId),
-    getEmployeesAction(),
-  ]);
+  const [teamRes, membersRes, employeesRes, shiftsRes, teamShiftsRes, meRes] =
+    await Promise.all([
+      getTeamByIdAction(teamId),
+      getTeamMembersAction(teamId),
+      getEmployeesAction(),
+      getShiftsAction(),
+      getTeamShiftsAction(teamId),
+      getCurrentUserAction(),
+    ]);
 
   if (!teamRes.success || !teamRes.data) {
     notFound();
@@ -31,6 +40,14 @@ const TeamDetailPage = async ({ params }: Props) => {
 
   const members = membersRes.success ? (membersRes.data ?? []) : [];
   const employees = employeesRes.success ? (employeesRes.data ?? []) : [];
+  const shifts = shiftsRes.success ? shiftsRes.data : [];
+  const teamShiftIds = teamShiftsRes.success
+    ? teamShiftsRes.data.map((s) => s.id)
+    : [];
+  const canManageShifts =
+    !!meRes?.success &&
+    (meRes.data.isSuperAdmin ||
+      meRes.data.permissions.includes("SHIFT_MANAGE"));
 
   return (
     <div className="space-y-4">
@@ -45,6 +62,9 @@ const TeamDetailPage = async ({ params }: Props) => {
         team={teamRes.data}
         initialMembers={members}
         employees={employees}
+        shifts={shifts}
+        teamShiftIds={teamShiftIds}
+        canManageShifts={canManageShifts}
       />
     </div>
   );
