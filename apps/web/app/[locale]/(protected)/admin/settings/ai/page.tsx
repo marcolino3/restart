@@ -2,6 +2,8 @@ import { getTranslations } from "next-intl/server";
 
 import { getAiSettingsAction } from "@/features/organization-settings/actions/ai-settings-actions";
 import { AiSettingsForm } from "@/features/organization-settings/components/AiSettingsForm";
+import { ShiftAiSettingsForm } from "@/features/organization-settings/components/ShiftAiSettingsForm";
+import { Separator } from "@/components/ui/separator";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 
 export default async function AiSettingsRoute() {
@@ -34,10 +36,18 @@ export default async function AiSettingsRoute() {
   }
 
   return (
-    <AiSettingsForm
-      organizationId={orgId}
-      initial={settings.data}
-      canManage={canManage}
-    />
+    <div className="space-y-8">
+      <AiSettingsForm
+        organizationId={orgId}
+        initial={settings.data}
+        canManage={canManage}
+      />
+      <Separator className="max-w-xl" />
+      <ShiftAiSettingsForm
+        organizationId={orgId}
+        initial={settings.data.shiftPlanning}
+        canManage={canManage}
+      />
+    </div>
   );
 }

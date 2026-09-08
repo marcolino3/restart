@@ -2564,7 +2564,18 @@
     "save": "Save",
     "loadError": "Settings could not be loaded",
     "noOrg": "No active organization",
-    "notAuthenticated": "Not signed in"
+    "notAuthenticated": "Not signed in",
+    "shiftAiTitle": "AI shift planning",
+    "shiftAiSubtitle": "Provider for AI shift plan suggestions. Shift planning only sends anonymized data (pseudonyms, availability, preferences – no names, ids or salaries), so providers outside the EU can be selected here.",
+    "shiftAiProviderLabel": "Provider",
+    "shiftAiProviderHint": "«Same as contracts» uses the Mistral key and model stored above for contract drafts.",
+    "shiftAiProvider_contracts": "Same as contracts (Mistral, EU)",
+    "shiftAiProvider_mistral": "Mistral (EU) – own key",
+    "shiftAiProvider_openai": "OpenAI",
+    "shiftAiProvider_anthropic": "Anthropic",
+    "shiftAiProvider_google": "Google Gemini",
+    "shiftAiApiKeyLabel": "API key",
+    "shiftAiModelHint": "Model name at the provider; leave empty for the default."
   },
   "Projects": {
     "pageTitle": "Projects",

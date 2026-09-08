@@ -2564,7 +2564,18 @@
     "save": "Speichern",
     "loadError": "Einstellungen konnten nicht geladen werden",
     "noOrg": "Keine aktive Organisation",
-    "notAuthenticated": "Nicht angemeldet"
+    "notAuthenticated": "Nicht angemeldet",
+    "shiftAiTitle": "AI-Schichtplanung",
+    "shiftAiSubtitle": "Anbieter für AI-Schichtplanvorschläge. Die Schichtplanung sendet nur anonymisierte Daten (Pseudonyme, Verfügbarkeiten, Präferenzen – keine Namen, IDs oder Löhne), daher sind hier auch Anbieter ausserhalb der EU wählbar.",
+    "shiftAiProviderLabel": "Anbieter",
+    "shiftAiProviderHint": "«Wie Verträge» nutzt den oben hinterlegten Mistral-Key und das Modell der Vertragsentwürfe.",
+    "shiftAiProvider_contracts": "Wie Verträge (Mistral, EU)",
+    "shiftAiProvider_mistral": "Mistral (EU) – eigener Key",
+    "shiftAiProvider_openai": "OpenAI",
+    "shiftAiProvider_anthropic": "Anthropic",
+    "shiftAiProvider_google": "Google Gemini",
+    "shiftAiApiKeyLabel": "API-Key",
+    "shiftAiModelHint": "Modellname des Anbieters; leer lassen für den Standard."
   },
   "Projects": {
     "pageTitle": "Projekte",
