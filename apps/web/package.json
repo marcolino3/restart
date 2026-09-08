@@ -54,6 +54,7 @@
     "@tabler/icons-react": "^3.45.0",
     "@tanstack/react-table": "^9.2.3",
     "@tiptap/extension-link": "^2.27.2",
+    "@tiptap/extension-text-align": "^2.27.2",
     "@tiptap/pm": "^2.27.2",
     "@tiptap/react": "^2.27.2",
     "@tiptap/starter-kit": "^2.27.2",

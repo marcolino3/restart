@@ -9,15 +9,12 @@ const ConfiguredDocument = gql`
   }
 `;
 
-const TemplateDraftDocument = gql`
-  mutation GenerateContractTemplateAiDraft($instructions: String!) {
-    generateContractTemplateAiDraft(instructions: $instructions)
-  }
-`;
-
-const ContractDraftDocument = gql`
-  mutation GenerateContractAiDraft($contractId: ID!, $instructions: String!) {
-    generateContractAiDraft(contractId: $contractId, instructions: $instructions)
+const ChatDocument = gql`
+  mutation ContractAiChat($input: ContractAiChatInput!) {
+    contractAiChat(input: $input) {
+      reply
+      html
+    }
   }
 `;
 
@@ -34,44 +31,40 @@ export const getContractAiConfiguredAction = async (): Promise<boolean> => {
   }
 };
 
-type DraftResult =
-  | { success: true; html: string }
+export interface ContractAiChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export type ContractAiChatResult =
+  | { success: true; reply: string; html: string | null }
   | { success: false; error?: string };
 
-export const generateContractTemplateAiDraftAction = async (
-  instructions: string,
-): Promise<DraftResult> => {
+export const contractAiChatAction = async (
+  messages: ContractAiChatMessage[],
+  options?: { currentHtml?: string; contractId?: string },
+): Promise<ContractAiChatResult> => {
   const client = await serverCookieGqlClient();
   try {
     const resp = await client.request<{
-      generateContractTemplateAiDraft: string;
-    }>(TemplateDraftDocument, { instructions });
-    return { success: true, html: resp.generateContractTemplateAiDraft };
-  } catch (error) {
-    console.error(error);
+      contractAiChat: { reply: string; html: string | null };
+    }>(ChatDocument, {
+      input: {
+        messages,
+        currentHtml: options?.currentHtml || null,
+        contractId: options?.contractId || null,
+      },
+    });
     return {
-      success: false,
-      error: error instanceof Error ? error.message : "AI draft failed",
+      success: true,
+      reply: resp.contractAiChat.reply,
+      html: resp.contractAiChat.html,
     };
-  }
-};
-
-export const generateContractAiDraftAction = async (
-  contractId: string,
-  instructions: string,
-): Promise<DraftResult> => {
-  const client = await serverCookieGqlClient();
-  try {
-    const resp = await client.request<{ generateContractAiDraft: string }>(
-      ContractDraftDocument,
-      { contractId, instructions },
-    );
-    return { success: true, html: resp.generateContractAiDraft };
   } catch (error) {
     console.error(error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "AI draft failed",
+      error: error instanceof Error ? error.message : "AI chat failed",
     };
   }
 };

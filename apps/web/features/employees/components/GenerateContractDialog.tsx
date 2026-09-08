@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Download, FileCheck, Loader2, Sparkles } from "lucide-react";
+import { Download, FileCheck, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import Tiptap from "@/components/editor/tiptap";
 import { API_URL } from "@/constants/api-url";
 
@@ -33,10 +32,8 @@ import {
   previewContractDocumentAction,
   type ContractDocumentPreview,
 } from "@/features/contract-templates/actions/preview-contract-document.action";
-import {
-  generateContractAiDraftAction,
-  getContractAiConfiguredAction,
-} from "@/features/contract-templates/actions/contract-ai.action";
+import { getContractAiConfiguredAction } from "@/features/contract-templates/actions/contract-ai.action";
+import { ContractAiChat } from "@/features/contract-templates/components/ContractAiChat";
 
 interface Props {
   open: boolean;
@@ -67,8 +64,6 @@ export function GenerateContractDialog({
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [generating, setGenerating] = useState<"pdf" | "docx" | null>(null);
   const [aiConfigured, setAiConfigured] = useState(false);
-  const [aiInstructions, setAiInstructions] = useState("");
-  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -100,14 +95,7 @@ export function GenerateContractDialog({
     setHtml(res.data.bodyHtml);
   };
 
-  const runAiDraft = async () => {
-    setAiLoading(true);
-    const res = await generateContractAiDraftAction(contractId, aiInstructions);
-    setAiLoading(false);
-    if (!res.success) {
-      toast.error(res.error?.split("{")[0].trim() || t("aiDraftError"));
-      return;
-    }
+  const applyAiDraft = (draftHtml: string) => {
     // Without a chosen template the draft runs header-/footerless with logo.
     setPreview(
       (prev) =>
@@ -118,8 +106,7 @@ export function GenerateContractDialog({
           showLogo: true,
         },
     );
-    setHtml(res.html);
-    toast.success(t("aiDraftOk"));
+    setHtml(draftHtml);
   };
 
   const generate = async (format: "pdf" | "docx") => {
@@ -203,37 +190,12 @@ export function GenerateContractDialog({
           </div>
 
           {aiConfigured && (
-            <div className="space-y-2 rounded-md border p-3">
-              <Label className="flex items-center gap-1.5 text-sm font-medium">
-                <Sparkles className="h-4 w-4" />
-                {t("aiSectionTitle")}
-              </Label>
-              <Textarea
-                value={aiInstructions}
-                onChange={(e) => setAiInstructions(e.target.value)}
-                placeholder={t("aiContractInstructionsPlaceholder")}
-                rows={3}
-                disabled={aiLoading || generating !== null}
-              />
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="gap-1.5"
-                onClick={runAiDraft}
-                disabled={aiLoading || generating !== null}
-              >
-                {aiLoading ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Sparkles className="h-3.5 w-3.5" />
-                )}
-                {t(aiLoading ? "aiGenerating" : "aiGenerate")}
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                {t("aiContractHint")}
-              </p>
-            </div>
+            <ContractAiChat
+              contractId={contractId}
+              getCurrentHtml={() => html}
+              onDraft={applyAiDraft}
+              disabled={generating !== null}
+            />
           )}
 
           {loadingPreview && (

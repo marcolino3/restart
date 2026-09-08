@@ -96,8 +96,7 @@ type Documents = {
     "\n  mutation UpdateAddress($input: UpdateAddressInput!) {\n    updateAddress(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateAddressDocument,
     "\n  mutation UpdateStudentContactPersonLink(\n    $input: UpdateStudentContactPersonInput!\n  ) {\n    updateStudentContactPersonLink(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateStudentContactPersonLinkDocument,
     "\n  query ContractAiConfigured {\n    contractAiConfigured\n  }\n": typeof types.ContractAiConfiguredDocument,
-    "\n  mutation GenerateContractTemplateAiDraft($instructions: String!) {\n    generateContractTemplateAiDraft(instructions: $instructions)\n  }\n": typeof types.GenerateContractTemplateAiDraftDocument,
-    "\n  mutation GenerateContractAiDraft($contractId: ID!, $instructions: String!) {\n    generateContractAiDraft(contractId: $contractId, instructions: $instructions)\n  }\n": typeof types.GenerateContractAiDraftDocument,
+    "\n  mutation ContractAiChat($input: ContractAiChatInput!) {\n    contractAiChat(input: $input) {\n      reply\n      html\n    }\n  }\n": typeof types.ContractAiChatDocument,
     "\n  query ContractTemplates {\n    contractTemplates {\n      id\n      name\n      bodyHtml\n      headerHtml\n      footerHtml\n      showLogo\n      description\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.ContractTemplatesDocument,
     "\n  mutation CreateContractTemplate($input: CreateContractTemplateInput!) {\n    createContractTemplate(input: $input) {\n      id\n    }\n  }\n": typeof types.CreateContractTemplateDocument,
     "\n  mutation UpdateContractTemplate($input: UpdateContractTemplateInput!) {\n    updateContractTemplate(input: $input) {\n      id\n    }\n  }\n": typeof types.UpdateContractTemplateDocument,
@@ -453,8 +452,7 @@ const documents: Documents = {
     "\n  mutation UpdateAddress($input: UpdateAddressInput!) {\n    updateAddress(input: $input) {\n      id\n    }\n  }\n": types.UpdateAddressDocument,
     "\n  mutation UpdateStudentContactPersonLink(\n    $input: UpdateStudentContactPersonInput!\n  ) {\n    updateStudentContactPersonLink(input: $input) {\n      id\n    }\n  }\n": types.UpdateStudentContactPersonLinkDocument,
     "\n  query ContractAiConfigured {\n    contractAiConfigured\n  }\n": types.ContractAiConfiguredDocument,
-    "\n  mutation GenerateContractTemplateAiDraft($instructions: String!) {\n    generateContractTemplateAiDraft(instructions: $instructions)\n  }\n": types.GenerateContractTemplateAiDraftDocument,
-    "\n  mutation GenerateContractAiDraft($contractId: ID!, $instructions: String!) {\n    generateContractAiDraft(contractId: $contractId, instructions: $instructions)\n  }\n": types.GenerateContractAiDraftDocument,
+    "\n  mutation ContractAiChat($input: ContractAiChatInput!) {\n    contractAiChat(input: $input) {\n      reply\n      html\n    }\n  }\n": types.ContractAiChatDocument,
     "\n  query ContractTemplates {\n    contractTemplates {\n      id\n      name\n      bodyHtml\n      headerHtml\n      footerHtml\n      showLogo\n      description\n      createdAt\n      updatedAt\n    }\n  }\n": types.ContractTemplatesDocument,
     "\n  mutation CreateContractTemplate($input: CreateContractTemplateInput!) {\n    createContractTemplate(input: $input) {\n      id\n    }\n  }\n": types.CreateContractTemplateDocument,
     "\n  mutation UpdateContractTemplate($input: UpdateContractTemplateInput!) {\n    updateContractTemplate(input: $input) {\n      id\n    }\n  }\n": types.UpdateContractTemplateDocument,
@@ -1073,11 +1071,7 @@ export function graphql(source: "\n  query ContractAiConfigured {\n    contractA
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  mutation GenerateContractTemplateAiDraft($instructions: String!) {\n    generateContractTemplateAiDraft(instructions: $instructions)\n  }\n"): (typeof documents)["\n  mutation GenerateContractTemplateAiDraft($instructions: String!) {\n    generateContractTemplateAiDraft(instructions: $instructions)\n  }\n"];
-/**
- * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
- */
-export function graphql(source: "\n  mutation GenerateContractAiDraft($contractId: ID!, $instructions: String!) {\n    generateContractAiDraft(contractId: $contractId, instructions: $instructions)\n  }\n"): (typeof documents)["\n  mutation GenerateContractAiDraft($contractId: ID!, $instructions: String!) {\n    generateContractAiDraft(contractId: $contractId, instructions: $instructions)\n  }\n"];
+export function graphql(source: "\n  mutation ContractAiChat($input: ContractAiChatInput!) {\n    contractAiChat(input: $input) {\n      reply\n      html\n    }\n  }\n"): (typeof documents)["\n  mutation ContractAiChat($input: ContractAiChatInput!) {\n    contractAiChat(input: $input) {\n      reply\n      html\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

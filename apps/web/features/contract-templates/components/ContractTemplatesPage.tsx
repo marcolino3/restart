@@ -17,7 +17,7 @@ import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmation
 import { ROUTES } from "@/constants/routes";
 import { deleteContractTemplateAction } from "../actions/mutate-contract-template.action";
 import type { ContractTemplate } from "../actions/get-contract-templates.action";
-import { CONTRACT_TEMPLATE_PLACEHOLDERS } from "../placeholders";
+import { buildA4PreviewDoc } from "../a4-preview";
 
 interface Props {
   initialTemplates: ContractTemplate[];
@@ -60,21 +60,6 @@ export function ContractTemplatesPage({ initialTemplates, canManage }: Props) {
             {t("newTemplate")}
           </Button>
         )}
-      </div>
-
-      {/* Available placeholders */}
-      <div className="flex flex-wrap items-center gap-1.5 rounded-md border bg-muted/30 px-3 py-2 text-xs">
-        <span className="font-medium text-muted-foreground">
-          {t("variablesLabel")}:
-        </span>
-        {CONTRACT_TEMPLATE_PLACEHOLDERS.map((p) => (
-          <code
-            key={p.token}
-            className="rounded bg-background px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground ring-1 ring-border"
-          >
-            {`{${p.token}}`}
-          </code>
-        ))}
       </div>
 
       {initialTemplates.length === 0 ? (
@@ -168,13 +153,13 @@ export function ContractTemplatesPage({ initialTemplates, canManage }: Props) {
           {preview && (
             <iframe
               title={preview.name}
-              sandbox=""
-              srcDoc={[
-                preview.headerHtml ?? "",
-                preview.bodyHtml,
-                preview.footerHtml ?? "",
-              ].join("<hr/>")}
-              className="h-[55vh] w-full rounded-md border bg-white"
+              sandbox="allow-scripts"
+              srcDoc={buildA4PreviewDoc({
+                headerHtml: preview.headerHtml ?? "",
+                bodyHtml: preview.bodyHtml,
+                footerHtml: preview.footerHtml ?? "",
+              })}
+              className="h-[65vh] w-full rounded-md border bg-muted"
             />
           )}
         </DialogContent>

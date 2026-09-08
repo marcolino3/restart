@@ -807,6 +807,23 @@ export type ContactPerson = {
   version: Scalars['Int']['output'];
 };
 
+export type ContractAiChatInput = {
+  contractId?: InputMaybe<Scalars['ID']['input']>;
+  currentHtml?: InputMaybe<Scalars['String']['input']>;
+  messages: Array<ContractAiChatMessageInput>;
+};
+
+export type ContractAiChatMessageInput = {
+  content: Scalars['String']['input'];
+  role: Scalars['String']['input'];
+};
+
+export type ContractAiChatResult = {
+  __typename?: 'ContractAiChatResult';
+  html?: Maybe<Scalars['String']['output']>;
+  reply: Scalars['String']['output'];
+};
+
 export type ContractDocumentPreview = {
   __typename?: 'ContractDocumentPreview';
   bodyHtml: Scalars['String']['output'];
@@ -2870,6 +2887,7 @@ export type Mutation = {
   changeOrganizationPlan: Organization;
   changeUserEmail: User;
   completeAdmissionReminder: AdmissionReminder;
+  contractAiChat: ContractAiChatResult;
   createAddress: Address;
   createAdmissionActivity: AdmissionActivity;
   createAdmissionApplication: AdmissionApplication;
@@ -2970,8 +2988,6 @@ export type Mutation = {
   exportOrganizationData: ExportOrganizationDataResult;
   finalizeAdmissionEnrollment: FinalizeEnrollmentOutput;
   finalizeEmployeeOnboarding: Employee;
-  generateContractAiDraft: Scalars['String']['output'];
-  generateContractTemplateAiDraft: Scalars['String']['output'];
   hardDeleteCurriculum: Scalars['Boolean']['output'];
   importCurriculumFromPlan: Curriculum;
   linkContactPersonToStudent: StudentContactPerson;
@@ -3242,6 +3258,11 @@ export type MutationChangeUserEmailArgs = {
 
 export type MutationCompleteAdmissionReminderArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationContractAiChatArgs = {
+  input: ContractAiChatInput;
 };
 
 
@@ -3744,17 +3765,6 @@ export type MutationFinalizeAdmissionEnrollmentArgs = {
 
 export type MutationFinalizeEmployeeOnboardingArgs = {
   input: FinalizeEmployeeOnboardingInput;
-};
-
-
-export type MutationGenerateContractAiDraftArgs = {
-  contractId: Scalars['ID']['input'];
-  instructions: Scalars['String']['input'];
-};
-
-
-export type MutationGenerateContractTemplateAiDraftArgs = {
-  instructions: Scalars['String']['input'];
 };
 
 
@@ -8201,20 +8211,12 @@ export type ContractAiConfiguredQueryVariables = Exact<{ [key: string]: never; }
 
 export type ContractAiConfiguredQuery = { __typename?: 'Query', contractAiConfigured: boolean };
 
-export type GenerateContractTemplateAiDraftMutationVariables = Exact<{
-  instructions: Scalars['String']['input'];
+export type ContractAiChatMutationVariables = Exact<{
+  input: ContractAiChatInput;
 }>;
 
 
-export type GenerateContractTemplateAiDraftMutation = { __typename?: 'Mutation', generateContractTemplateAiDraft: string };
-
-export type GenerateContractAiDraftMutationVariables = Exact<{
-  contractId: Scalars['ID']['input'];
-  instructions: Scalars['String']['input'];
-}>;
-
-
-export type GenerateContractAiDraftMutation = { __typename?: 'Mutation', generateContractAiDraft: string };
+export type ContractAiChatMutation = { __typename?: 'Mutation', contractAiChat: { __typename?: 'ContractAiChatResult', reply: string, html?: string | null } };
 
 export type ContractTemplatesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -10144,8 +10146,7 @@ export const UnlinkContactPersonFromStudentDocument = {"kind":"Document","defini
 export const UpdateAddressDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateAddress"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateAddressInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateAddress"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateAddressMutation, UpdateAddressMutationVariables>;
 export const UpdateStudentContactPersonLinkDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateStudentContactPersonLink"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateStudentContactPersonInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateStudentContactPersonLink"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateStudentContactPersonLinkMutation, UpdateStudentContactPersonLinkMutationVariables>;
 export const ContractAiConfiguredDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ContractAiConfigured"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"contractAiConfigured"}}]}}]} as unknown as DocumentNode<ContractAiConfiguredQuery, ContractAiConfiguredQueryVariables>;
-export const GenerateContractTemplateAiDraftDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"GenerateContractTemplateAiDraft"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"instructions"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"generateContractTemplateAiDraft"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"instructions"},"value":{"kind":"Variable","name":{"kind":"Name","value":"instructions"}}}]}]}}]} as unknown as DocumentNode<GenerateContractTemplateAiDraftMutation, GenerateContractTemplateAiDraftMutationVariables>;
-export const GenerateContractAiDraftDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"GenerateContractAiDraft"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"contractId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"instructions"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"generateContractAiDraft"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"contractId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"contractId"}}},{"kind":"Argument","name":{"kind":"Name","value":"instructions"},"value":{"kind":"Variable","name":{"kind":"Name","value":"instructions"}}}]}]}}]} as unknown as DocumentNode<GenerateContractAiDraftMutation, GenerateContractAiDraftMutationVariables>;
+export const ContractAiChatDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ContractAiChat"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ContractAiChatInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"contractAiChat"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"reply"}},{"kind":"Field","name":{"kind":"Name","value":"html"}}]}}]}}]} as unknown as DocumentNode<ContractAiChatMutation, ContractAiChatMutationVariables>;
 export const ContractTemplatesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ContractTemplates"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"contractTemplates"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"bodyHtml"}},{"kind":"Field","name":{"kind":"Name","value":"headerHtml"}},{"kind":"Field","name":{"kind":"Name","value":"footerHtml"}},{"kind":"Field","name":{"kind":"Name","value":"showLogo"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<ContractTemplatesQuery, ContractTemplatesQueryVariables>;
 export const CreateContractTemplateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateContractTemplate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateContractTemplateInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createContractTemplate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateContractTemplateMutation, CreateContractTemplateMutationVariables>;
 export const UpdateContractTemplateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateContractTemplate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateContractTemplateInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateContractTemplate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateContractTemplateMutation, UpdateContractTemplateMutationVariables>;

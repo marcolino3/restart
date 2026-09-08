@@ -7,6 +7,8 @@ import { UseGuards } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { ContractAiService } from './contract-ai.service';
 import { ContractTemplatesService } from './contract-templates.service';
+import { ContractAiChatInput } from './dto/contract-ai-chat.input';
+import { ContractAiChatResult } from './dto/contract-ai-chat.output';
 import { ContractDocumentPreview } from './dto/contract-document-preview.output';
 import { CreateContractTemplateInput } from './dto/create-contract-template.input';
 import { UpdateContractTemplateInput } from './dto/update-contract-template.input';
@@ -26,24 +28,22 @@ export class ContractTemplatesResolver {
     return this.ai.isConfigured(orgId);
   }
 
-  @Mutation(() => String)
+  @Mutation(() => ContractAiChatResult)
   @Permissions('EMPLOYEE_WRITE')
-  async generateContractAiDraft(
-    @Args('contractId', { type: () => ID }) contractId: string,
-    @Args('instructions') instructions: string,
+  async contractAiChat(
+    @Args('input') input: ContractAiChatInput,
     @CurrentOrgId() orgId: string,
   ) {
-    const contract = await this.templates.loadContractForOrg(contractId, orgId);
-    return this.ai.draftContractBody(orgId, contract, instructions);
-  }
-
-  @Mutation(() => String)
-  @Permissions('EMPLOYEE_WRITE')
-  generateContractTemplateAiDraft(
-    @Args('instructions') instructions: string,
-    @CurrentOrgId() orgId: string,
-  ) {
-    return this.ai.draftTemplateBody(orgId, instructions);
+    // Org-scoped load — a foreign-org contract id must fail before any AI call.
+    const contract = input.contractId
+      ? await this.templates.loadContractForOrg(input.contractId, orgId)
+      : null;
+    return this.ai.chatDialog(
+      orgId,
+      input.messages,
+      input.currentHtml ?? null,
+      contract,
+    );
   }
 
   @Query(() => [ContractTemplate], { name: 'contractTemplates' })
