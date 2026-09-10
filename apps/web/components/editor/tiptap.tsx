@@ -4,12 +4,18 @@ import { useEffect } from "react";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
+import TextAlign from "@tiptap/extension-text-align";
 import {
+  AlignCenter,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
   Bold,
   Italic,
   List,
   ListOrdered,
   Heading2,
+  Minus,
   Quote,
   Link as LinkIcon,
   Undo2,
@@ -24,6 +30,10 @@ interface TiptapProps {
   description?: string;
   onChange: (richText: string) => void;
   className?: string;
+  /** Render the editing surface as a white A4 sheet (contract documents). */
+  a4?: boolean;
+  /** Low editing surface for short snippets (e.g. header/footer lines). */
+  compact?: boolean;
 }
 
 /**
@@ -31,7 +41,7 @@ interface TiptapProps {
  * pattern (StarterKit + Link + toolbar) trimmed to the formatting an email
  * needs — no CMS shortcodes, media uploads or entity cards.
  */
-const Tiptap = ({ description, onChange, className }: TiptapProps) => {
+const Tiptap = ({ description, onChange, className, a4, compact }: TiptapProps) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -42,12 +52,28 @@ const Tiptap = ({ description, onChange, className }: TiptapProps) => {
         autolink: true,
         HTMLAttributes: { rel: "noopener noreferrer" },
       }),
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
     ],
     content: description ?? "",
     editorProps: {
       attributes: {
-        class:
-          "prose prose-sm dark:prose-invert max-w-none min-h-[220px] w-full rounded-b-md border border-t-0 border-input bg-background px-3 py-2 text-sm focus-visible:outline-none",
+        class: a4
+          ? // White sheet with A4 proportions and print-like margins. Typography
+            // mirrors the a4-preview stylesheet so editor and preview line up.
+            "mx-auto min-h-[297mm] w-[210mm] max-w-full bg-white text-black shadow-md px-[20mm] py-[15mm] font-[Helvetica,Arial,sans-serif] text-[10pt] leading-[1.45] focus-visible:outline-none " +
+            "[&_p]:mt-0 [&_p]:mb-[0.6em] " +
+            "[&_h1]:mt-[0.8em] [&_h1]:mb-[0.4em] [&_h1]:text-[2em] [&_h1]:font-bold " +
+            "[&_h2]:mt-[0.8em] [&_h2]:mb-[0.4em] [&_h2]:text-[1.5em] [&_h2]:font-bold " +
+            "[&_h3]:mt-[0.8em] [&_h3]:mb-[0.4em] [&_h3]:text-[1.17em] [&_h3]:font-bold " +
+            "[&_h4]:mt-[0.8em] [&_h4]:mb-[0.4em] [&_h4]:font-bold " +
+            "[&_ul]:mt-0 [&_ul]:mb-[0.6em] [&_ul]:list-disc [&_ul]:pl-[1.4em] " +
+            "[&_ol]:mt-0 [&_ol]:mb-[0.6em] [&_ol]:list-decimal [&_ol]:pl-[1.4em] " +
+            "[&_blockquote]:my-[0.6em] [&_blockquote]:border-l-2 [&_blockquote]:border-[#ccc] [&_blockquote]:pl-[0.8em] [&_blockquote]:text-[#444] " +
+            "[&_hr]:my-[0.8em] [&_hr]:border-0 [&_hr]:border-t [&_hr]:border-[#bbb]"
+          : cn(
+              "prose prose-sm dark:prose-invert max-w-none w-full rounded-b-md border border-t-0 border-input bg-background px-3 py-2 text-sm focus-visible:outline-none",
+              compact ? "min-h-[72px]" : "min-h-[220px]",
+            ),
       },
     },
     onUpdate({ editor }) {
@@ -67,7 +93,13 @@ const Tiptap = ({ description, onChange, className }: TiptapProps) => {
   return (
     <div className={cn("flex flex-col", className)}>
       <Toolbar editor={editor} />
-      <EditorContent editor={editor} />
+      {a4 ? (
+        <div className="overflow-auto rounded-b-md border border-t-0 border-input bg-muted/60 p-4">
+          <EditorContent editor={editor} />
+        </div>
+      ) : (
+        <EditorContent editor={editor} />
+      )}
     </div>
   );
 };
@@ -139,6 +171,40 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
       label: "Zitat",
       onClick: () => editor.chain().focus().toggleBlockquote().run(),
       isActive: editor.isActive("blockquote"),
+    },
+    {
+      key: "hr",
+      icon: Minus,
+      label: "Trennlinie",
+      onClick: () => editor.chain().focus().setHorizontalRule().run(),
+    },
+    {
+      key: "align-left",
+      icon: AlignLeft,
+      label: "Linksbündig",
+      onClick: () => editor.chain().focus().setTextAlign("left").run(),
+      isActive: editor.isActive({ textAlign: "left" }),
+    },
+    {
+      key: "align-center",
+      icon: AlignCenter,
+      label: "Zentriert",
+      onClick: () => editor.chain().focus().setTextAlign("center").run(),
+      isActive: editor.isActive({ textAlign: "center" }),
+    },
+    {
+      key: "align-right",
+      icon: AlignRight,
+      label: "Rechtsbündig",
+      onClick: () => editor.chain().focus().setTextAlign("right").run(),
+      isActive: editor.isActive({ textAlign: "right" }),
+    },
+    {
+      key: "align-justify",
+      icon: AlignJustify,
+      label: "Blocksatz",
+      onClick: () => editor.chain().focus().setTextAlign("justify").run(),
+      isActive: editor.isActive({ textAlign: "justify" }),
     },
     {
       key: "link",
