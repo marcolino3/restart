@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   NotFoundException,
   ServiceUnavailableException,
+  StreamableFile,
 } from '@nestjs/common';
 import { Readable } from 'stream';
 import { EntityManager } from 'typeorm';
@@ -12,6 +13,7 @@ import { BetterAuthGuard } from '@/auth/guard/better-auth.guard';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { SystemRole } from '@/roles/entities/system-role.enum';
 import { StorageService } from '@/storage/storage.service';
+import { ContractGenerationService } from './contract-generation.service';
 import { ContractDocumentsController } from './contract-documents.controller';
 
 const ORG_ID = '11111111-1111-4111-8111-111111111111';
@@ -43,7 +45,12 @@ const pdfFile = {
 describe('ContractDocumentsController', () => {
   let controller: ContractDocumentsController;
   let storage: { put: jest.Mock; getStream: jest.Mock; delete: jest.Mock };
-  let entityManager: { findOne: jest.Mock };
+  let entityManager: { findOne: jest.Mock; update: jest.Mock };
+  let generation: {
+    loadLogoDataUrl: jest.Mock;
+    generatePdf: jest.Mock;
+    generateDocx: jest.Mock;
+  };
 
   beforeEach(() => {
     storage = {
@@ -53,10 +60,19 @@ describe('ContractDocumentsController', () => {
         .mockResolvedValue({ stream: Readable.from(['%PDF']) }),
       delete: jest.fn().mockResolvedValue(undefined),
     };
-    entityManager = { findOne: jest.fn() };
+    entityManager = {
+      findOne: jest.fn(),
+      update: jest.fn().mockResolvedValue(undefined),
+    };
+    generation = {
+      loadLogoDataUrl: jest.fn().mockResolvedValue(null),
+      generatePdf: jest.fn().mockResolvedValue(Buffer.from('%PDF-1.4')),
+      generateDocx: jest.fn().mockResolvedValue(Buffer.from('docx')),
+    };
     controller = new ContractDocumentsController(
       entityManager as unknown as EntityManager,
       storage as unknown as StorageService,
+      generation as unknown as ContractGenerationService,
     );
     jest.clearAllMocks();
   });
@@ -243,6 +259,107 @@ describe('ContractDocumentsController', () => {
         ForbiddenException,
       );
       expect(storage.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('generate', () => {
+    const CONTRACT_ID = '7b6f5c1e-2222-4b1b-9c3d-aaaaaaaaaaaa';
+    const dto = {
+      contractId: CONTRACT_ID,
+      html: '<p>Vertrag</p>',
+      showLogo: false,
+      format: 'pdf' as const,
+    };
+
+    it('multi-tenant isolation: rejects a contract of a foreign organization', async () => {
+      entityManager.findOne.mockResolvedValue(null);
+
+      await expect(controller.generate(dto, orgAdmin)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(entityManager.findOne.mock.calls[0][1].where).toEqual({
+        id: CONTRACT_ID,
+        organizationId: ORG_ID,
+      });
+      expect(storage.put).not.toHaveBeenCalled();
+    });
+
+    it('stores a generated PDF org-scoped and links it on the contract', async () => {
+      entityManager.findOne.mockResolvedValue({
+        id: CONTRACT_ID,
+        organizationId: ORG_ID,
+        documentUrl: null,
+      });
+
+      const result = (await controller.generate(dto, orgAdmin)) as {
+        url: string;
+        fileId: string;
+      };
+      expect(result.url).toBe(`/api/contract-documents/${result.fileId}`);
+      expect(storage.put).toHaveBeenCalledWith(
+        `contracts/${ORG_ID}/${result.fileId}.pdf`,
+        expect.any(Buffer),
+        'application/pdf',
+      );
+      expect(entityManager.update.mock.calls[0][1]).toEqual({
+        id: CONTRACT_ID,
+        organizationId: ORG_ID,
+      });
+      expect(entityManager.update.mock.calls[0][2]).toEqual({
+        documentUrl: result.url,
+      });
+    });
+
+    it('replaces the previous generated document (best effort)', async () => {
+      entityManager.findOne.mockResolvedValue({
+        id: CONTRACT_ID,
+        organizationId: ORG_ID,
+        documentUrl: `/api/contract-documents/${FILE_ID}`,
+      });
+
+      await controller.generate(dto, orgAdmin);
+      expect(storage.delete).toHaveBeenCalledWith(
+        `contracts/${ORG_ID}/${FILE_ID}.pdf`,
+      );
+    });
+
+    it('streams a DOCX without storing anything', async () => {
+      entityManager.findOne.mockResolvedValue({
+        id: CONTRACT_ID,
+        organizationId: ORG_ID,
+        documentUrl: null,
+      });
+
+      const result = await controller.generate(
+        { ...dto, format: 'docx' as const },
+        orgAdmin,
+      );
+      expect(result).toBeInstanceOf(StreamableFile);
+      expect(storage.put).not.toHaveBeenCalled();
+      expect(entityManager.update).not.toHaveBeenCalled();
+    });
+
+    it('reports a storage outage as 503 and does not link the document', async () => {
+      entityManager.findOne.mockResolvedValue({
+        id: CONTRACT_ID,
+        organizationId: ORG_ID,
+        documentUrl: null,
+      });
+      storage.put.mockRejectedValue(new Error('bucket down'));
+
+      await expect(controller.generate(dto, orgAdmin)).rejects.toThrow(
+        ServiceUnavailableException,
+      );
+      expect(entityManager.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects a caller without an active organization', async () => {
+      const noOrg = { ...orgAdmin, orgId: undefined } as TokenPayload;
+
+      await expect(controller.generate(dto, noOrg)).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(storage.put).not.toHaveBeenCalled();
     });
   });
 });

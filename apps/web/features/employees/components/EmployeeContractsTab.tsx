@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FileText, Plus, Pencil, Trash2 } from "lucide-react";
+import { FileText, Plus, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import { ROUTES } from "@/constants/routes";
 
 import type { EmployeeContract } from "../actions/employee-contracts.actions";
 import { deleteEmployeeContractAction } from "../actions/employee-contracts.actions";
+import { GenerateContractDialog } from "./GenerateContractDialog";
 
 interface Props {
   employeeId: string;
@@ -41,6 +42,9 @@ export default function EmployeeContractsTab({
   const tE = useTranslations("Employees");
   const locale = useLocale();
   const router = useRouter();
+  const [generateFor, setGenerateFor] = useState<EmployeeContract | null>(
+    null,
+  );
 
   const positionLabelById = useMemo(() => {
     const map = new Map<string, string>();
@@ -180,6 +184,15 @@ export default function EmployeeContractsTab({
         header: () => <span className="sr-only">{t("actions")}</span>,
         cell: ({ row }) => (
           <div className="text-right">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setGenerateFor(row.original)}
+              aria-label={tE("contract.generate")}
+              title={tE("contract.generate")}
+            >
+              <Sparkles className="h-4 w-4" />
+            </Button>
             <Button variant="ghost" size="icon" asChild>
               <Link
                 href={ROUTES.admin.employeesContractEdit(
@@ -274,6 +287,17 @@ export default function EmployeeContractsTab({
           </span>
         }
       />
+
+      {generateFor && (
+        <GenerateContractDialog
+          key={generateFor.id}
+          open
+          onOpenChange={(open) => !open && setGenerateFor(null)}
+          contractId={generateFor.id}
+          hasDocument={!!generateFor.documentUrl}
+          onGenerated={() => router.refresh()}
+        />
+      )}
     </>
   );
 }

@@ -1,8 +1,11 @@
 "use client";
 
-import { Upload } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { FileText, Upload } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+
+import { ROUTES } from "@/constants/routes";
 
 import { PageActionsMenu } from "@/components/common/PageActionsMenu";
 
@@ -14,6 +17,8 @@ import { EmployeesCsvUpload } from "./EmployeesCsvUpload";
  */
 export function EmployeesActionsMenu() {
   const tE = useTranslations("Employees");
+  const locale = useLocale();
+  const router = useRouter();
   const [csvOpen, setCsvOpen] = useState(false);
 
   return (
@@ -25,6 +30,13 @@ export function EmployeesActionsMenu() {
             label: tE("csvImport"),
             icon: <Upload className="mr-2 size-4" />,
             onSelect: () => setCsvOpen(true),
+          },
+          {
+            id: "contract-templates",
+            label: tE("contractTemplates"),
+            icon: <FileText className="mr-2 size-4" />,
+            onSelect: () =>
+              router.push(ROUTES.admin.employeesContractTemplates(locale)),
           },
         ]}
       />

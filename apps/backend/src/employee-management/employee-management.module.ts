@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { EmployeeContractsModule } from './employee-contracts/employee-contracts.module';
+import { ContractTemplatesModule } from './contract-templates/contract-templates.module';
 import { EmployeesModule } from './employees/employees.module';
 import { EmployeeNotesModule } from './employee-notes/employee-notes.module';
 import { EmployeeAuditLogModule } from './employee-audit-log/employee-audit-log.module';
@@ -23,6 +24,7 @@ import { TimeTrackingPeriodsModule } from './time-tracking-periods/time-tracking
   imports: [
     EmployeesModule,
     EmployeeContractsModule,
+    ContractTemplatesModule,
     EmployeeNotesModule,
     EmployeeAuditLogModule,
     EmployeeHrProfilesModule,
