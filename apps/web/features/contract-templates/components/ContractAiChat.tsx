@@ -190,9 +190,11 @@ export function ContractAiChat({
 
   // Untouched editor + no dialog yet: offer a start button instead of a
   // bare textarea; the kick-off message makes the AI ask its questions first.
-  const htmlEmpty = !getCurrentHtml()
-    .replace(/<[^>]*>/g, "")
-    .trim();
+  // Parse instead of regex-stripping tags: the browser parser is the only
+  // reliable way to get the visible text of arbitrary editor HTML.
+  const htmlEmpty = !new DOMParser()
+    .parseFromString(getCurrentHtml(), "text/html")
+    .body.textContent?.trim();
   const showStart =
     messages.length === 0 && !wizardStep && !loading && htmlEmpty;
 
