@@ -104,8 +104,8 @@ importers:
         specifier: ^6.1.3
         version: 6.1.3(@nestjs/common@11.2.1(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1)
       '@nestjs/serve-static':
-        specifier: ^5.0.4
-        version: 5.0.5(@nestjs/common@11.2.1(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1)(express@5.2.1)
+        specifier: ^12.0.0
+        version: 12.0.0(@nestjs/common@11.2.1(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1)(express@5.2.1)
       '@nestjs/terminus':
         specifier: ^11.1.1
         version: 11.1.1(@nestjs/common@11.2.1(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1)(@nestjs/typeorm@11.0.3(@nestjs/common@11.2.1(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(pg@8.23.0)(ts-node@10.9.2(@swc/core@1.16.1(@swc/helpers@0.5.23))(@types/node@25.9.5)(typescript@5.9.3))))(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(pg@8.23.0)(ts-node@10.9.2(@swc/core@1.16.1(@swc/helpers@0.5.23))(@types/node@25.9.5)(typescript@5.9.3)))
@@ -692,7 +692,7 @@ importers:
         version: 4.12.3(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       recharts:
         specifier: ^3.10.1
-        version: 3.10.1(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react-is@19.2.8)(react@19.2.8)(redux@5.0.1)
+        version: 3.10.1(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react-is@19.3.0)(react@19.2.8)(redux@5.0.1)
       sonner:
         specifier: ^2.0.8
         version: 2.0.8(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -3657,12 +3657,13 @@ packages:
       prettier:
         optional: true
 
-  '@nestjs/serve-static@5.0.5':
-    resolution: {integrity: sha512-AhYx3N9aMwR2cb0w5Nlb5nHNYiAcF74ea/D/xna+PxlXwjmwGN/PpC/5fuMtOwmPBMgOTxNPOnB8C9LDZBSgyw==}
+  '@nestjs/serve-static@12.0.0':
+    resolution: {integrity: sha512-3YsDpylQN90o5r7rIN2M5LQ3uK8WUJ8oSo0wH0SRrBb7X/FKD31vNY4J7cOlbRDZiX1kxDWyI8wSlygqj/57Yg==}
+    engines: {node: ^20.19.0 || ^22.12.0 || >=23.0.0}
     peerDependencies:
-      '@fastify/static': ^8.0.4 || ^9.0.0
-      '@nestjs/common': ^11.0.2
-      '@nestjs/core': ^11.0.2
+      '@fastify/static': ^10.0.0
+      '@nestjs/common': ^12.0.0
+      '@nestjs/core': ^12.0.0
       express: ^5.0.1
       fastify: ^5.2.1
     peerDependenciesMeta:
@@ -5910,6 +5911,9 @@ packages:
 
   '@types/node@25.9.5':
     resolution: {integrity: sha512-OScDchr2fwuUmWdf4kZ9h7PcJiYDVInhJizG/biAq3cAvqwYktuy/TYGGdZNMtNTFUP7rnb0NU4TUdm82kt4Rg==}
+
+  '@types/node@25.9.6':
+    resolution: {integrity: sha512-JR6Q/PV5DKFvjrGFVqQJdeG0qvsqQQLDa3TzFrqVwhqRXqwNaxPo2KYCtCQXpOdIulCouKwT7a6in9nFthBAzw==}
 
   '@types/node@26.2.0':
     resolution: {integrity: sha512-5IviulTZeRNp2vAJ514cc/HUlY5nZ9fCbq9DMyC52BrhFZACo3nI0R7qBxhQmo/d27NFe96ur/b7Wwxklda+kg==}
@@ -10807,6 +10811,10 @@ packages:
     resolution: {integrity: sha512-4a+OsYv9UktOJKE+l1A4OufDgdRF9PifWj+tJnHURo/P+WOxpG4GzUFL9qCalmWauao6ogiG+QvnCovwPoyAWA==}
     engines: {node: '>=12.20.0'}
 
+  obug@2.2.1:
+    resolution: {integrity: sha512-XrsrhT5sybtKI6wakr2SPOlGZWWYbUXZ7a0jT8/QOeAPau+1X/bSegNe5YR75oJmEZQbKningirmGOEJCIk61Q==}
+    engines: {node: '>=12.20.0'}
+
   on-exit-leak-free@2.1.2:
     resolution: {integrity: sha512-0eJJY6hXLGf1udHwfNftBqH+g73EU4B504nZeKpz1sYRKafAghwxEJunB2O7rDZkL4PGfsMVnTXZ2EjibbqcsA==}
     engines: {node: '>=14.0.0'}
@@ -11511,6 +11519,9 @@ packages:
 
   react-is@19.2.8:
     resolution: {integrity: sha512-s5un28nYxKJw5gvUHyW5PCC28CvBqLu9r3cWgzHT4Vo/5fqqkFcdRYsGcKf50WMPpjjFZS5d76fn3YCo2njKwQ==}
+
+  react-is@19.3.0:
+    resolution: {integrity: sha512-UpMYezM4v5/18F28aC66AEsjXIgE02kyEMH6yLdgLXu/UTfa1Ntwck/nNLrbqJsEXW7gPb0coNO9FQse9WTovA==}
 
   react-native-css-interop@0.2.6:
     resolution: {integrity: sha512-uXad6EWqufupnRjrba2De30tiAx26kLEcwSV3eSLVBwpfYeOnrpDc9k6kHk6SBNbmHHlE5sc9vsfKdVRS9msYg==}
@@ -17553,7 +17564,7 @@ snapshots:
     transitivePeerDependencies:
       - chokidar
 
-  '@nestjs/serve-static@5.0.5(@nestjs/common@11.2.1(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1)(express@5.2.1)':
+  '@nestjs/serve-static@12.0.0(@nestjs/common@11.2.1(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1)(express@5.2.1)':
     dependencies:
       '@nestjs/common': 11.2.1(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/core': 11.2.1(@nestjs/common@11.2.1(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -19818,6 +19829,10 @@ snapshots:
     dependencies:
       undici-types: 7.24.6
 
+  '@types/node@25.9.6':
+    dependencies:
+      undici-types: 7.24.6
+
   '@types/node@26.2.0':
     dependencies:
       undici-types: 8.3.0
@@ -21428,7 +21443,7 @@ snapshots:
 
   chromium-edge-launcher@0.3.0:
     dependencies:
-      '@types/node': 25.9.5
+      '@types/node': 25.9.6
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2
@@ -22245,7 +22260,7 @@ snapshots:
       eslint: 9.39.4(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))
-      eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0))
+      eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.39.4(jiti@2.7.0))
       eslint-plugin-react: 7.37.5(eslint@9.39.4(jiti@2.7.0))
       eslint-plugin-react-hooks: 7.1.1(eslint@9.39.4(jiti@2.7.0))
@@ -22282,7 +22297,7 @@ snapshots:
       tinyglobby: 0.2.17
       unrs-resolver: 1.11.1
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0))
+      eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))
     transitivePeerDependencies:
       - supports-color
 
@@ -22360,7 +22375,7 @@ snapshots:
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-plugin-import@2.32.0(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0)):
+  eslint-plugin-import@2.32.0(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9
@@ -26234,6 +26249,9 @@ snapshots:
 
   obug@2.1.4: {}
 
+  obug@2.2.1:
+    optional: true
+
   on-exit-leak-free@2.1.2: {}
 
   on-finished@2.3.0:
@@ -26695,7 +26713,7 @@ snapshots:
       '@jest/schemas': 30.4.1
       ansi-styles: 5.2.0
       react-is-18: react-is@18.3.1
-      react-is-19: react-is@19.2.8
+      react-is-19: react-is@19.3.0
 
   pretty-ms@9.3.0:
     dependencies:
@@ -26935,6 +26953,8 @@ snapshots:
   react-is@18.3.1: {}
 
   react-is@19.2.8: {}
+
+  react-is@19.3.0: {}
 
   react-native-css-interop@0.2.6(react-native-reanimated@4.1.7(react-native-worklets@0.5.2(@babel/core@7.29.7)(react-native@0.81.6(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.8))(react@19.2.8))(react-native@0.81.6(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.8))(react@19.2.8))(react-native-safe-area-context@5.6.2(react-native@0.81.6(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.8))(react@19.2.8))(react-native-svg@15.15.5(react-native@0.81.6(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.8))(react@19.2.8))(react-native@0.81.6(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)(tailwindcss@3.4.19(yaml@2.9.0)):
     dependencies:
@@ -27241,7 +27261,7 @@ snapshots:
 
   real-require@1.0.0: {}
 
-  recharts@3.10.1(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react-is@19.2.8)(react@19.2.8)(redux@5.0.1):
+  recharts@3.10.1(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react-is@19.3.0)(react@19.2.8)(redux@5.0.1):
     dependencies:
       '@reduxjs/toolkit': 2.11.2(react-redux@9.2.0(@types/react@19.2.18)(react@19.2.8)(redux@5.0.1))(react@19.2.8)
       clsx: 2.1.1
@@ -27251,7 +27271,7 @@ snapshots:
       immer: 11.1.8
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
-      react-is: 19.2.8
+      react-is: 19.3.0
       react-redux: 9.2.0(@types/react@19.2.18)(react@19.2.8)(redux@5.0.1)
       reselect: 5.2.0
       tiny-invariant: 1.3.3
@@ -28856,7 +28876,7 @@ snapshots:
       es-module-lexer: 2.3.2
       expect-type: 1.4.0
       magic-string: 0.30.21
-      obug: 2.1.4
+      obug: 2.2.1
       pathe: 2.0.3
       picomatch: 4.0.7
       std-env: 4.2.0
@@ -28886,7 +28906,7 @@ snapshots:
       es-module-lexer: 2.3.2
       expect-type: 1.4.0
       magic-string: 0.30.21
-      obug: 2.1.4
+      obug: 2.2.1
       pathe: 2.0.3
       picomatch: 4.0.7
       std-env: 4.2.0
