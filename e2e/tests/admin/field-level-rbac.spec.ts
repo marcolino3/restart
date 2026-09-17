@@ -1,3 +1,4 @@
+import { linkFixtureAccount } from '../helpers/link-fixture-account'
 import { test, expect, type Page } from '@playwright/test'
 import {
   signInAsSuperAdmin,
@@ -48,7 +49,7 @@ test.describe('Field-level RBAC — grossSalary read gate', () => {
     const employee = await gql(
       owner.page,
       `mutation Create($input: CreateEmployeeInput!) {
-         createEmployee(createEmployeeInput: $input) { id }
+         createEmployee(createEmployeeInput: $input) { id version }
        }`,
       {
         input: {
@@ -125,7 +126,7 @@ test.describe('Field-level RBAC — grossSalary read gate', () => {
     const restrictedEmployee = await gql(
       owner.page,
       `mutation Create($input: CreateEmployeeInput!) {
-         createEmployee(createEmployeeInput: $input) { id }
+         createEmployee(createEmployeeInput: $input) { id version }
        }`,
       {
         input: {
@@ -147,6 +148,7 @@ test.describe('Field-level RBAC — grossSalary read gate', () => {
       {
         input: {
           id: restrictedEmployeeId,
+          expectedVersion: restrictedEmployee.data?.createEmployee?.version,
           firstName: 'E2E',
           lastName: `Restricted${stamp}`,
           roleIds: [restrictedRoleId],
@@ -170,6 +172,7 @@ test.describe('Field-level RBAC — grossSalary read gate', () => {
       },
     )
     expect(signUp.ok()).toBe(true)
+    await linkFixtureAccount(restrictedEmployeeId, orgId, restrictedEmail)
     await context.clearCookies()
 
     await restrictedPage.goto('/en/sign-in', { waitUntil: 'networkidle' })
@@ -248,7 +251,7 @@ test.describe('Field-level RBAC — grossSalary read gate', () => {
     const employee = await gql(
       owner.page,
       `mutation Create($input: CreateEmployeeInput!) {
-         createEmployee(createEmployeeInput: $input) { id }
+         createEmployee(createEmployeeInput: $input) { id version }
        }`,
       {
         input: {
@@ -328,7 +331,7 @@ test.describe('Field-level RBAC — grossSalary read gate', () => {
     const restrictedEmployee = await gql(
       owner.page,
       `mutation Create($input: CreateEmployeeInput!) {
-         createEmployee(createEmployeeInput: $input) { id }
+         createEmployee(createEmployeeInput: $input) { id version }
        }`,
       {
         input: {
@@ -365,6 +368,7 @@ test.describe('Field-level RBAC — grossSalary read gate', () => {
       {
         input: {
           id: restrictedEmployeeId,
+          expectedVersion: restrictedEmployee.data?.createEmployee?.version,
           firstName: 'E2E',
           lastName: `RestrictedForm${stamp}`,
           roleIds: [restrictedRoleId, officeRoleId],
@@ -388,6 +392,7 @@ test.describe('Field-level RBAC — grossSalary read gate', () => {
       },
     )
     expect(signUp.ok()).toBe(true)
+    await linkFixtureAccount(restrictedEmployeeId, orgId, restrictedEmail)
     await context.clearCookies()
 
     await restrictedPage.goto('/en/sign-in', { waitUntil: 'networkidle' })

@@ -88,3 +88,27 @@ Foto-Löschaufträge werden zusammen mit der Draft-Löschung committed und bleib
 ## Vorliegende Nachweise und Grenzen
 
 Die PostgreSQL-Sicherheitssuite prüft die echte Profilmigration auf leerem und repräsentativem Altbestand einschließlich zweier Organisationen mit gemeinsamem User. Browser-E2E starten mit echten Migrationen, echten Sessions und isolierten Mail-/Dateispeichern. Diese Tests ersetzen keine Probe auf einer aktuellen Produktionskopie. Die lokalen Test-, Build- und Coverage-Nachweise einschließlich verbleibender Lücken stehen im [Abschlussbericht](./mitarbeiter-basis-abschluss-2026-09-16.md). Ein produktiver Cutover und externer CI-Lauf wurden nicht ausgeführt.
+
+## Release-Nachprüfung PR #404 (17.09.2026)
+
+Die Probe auf einer wiederhergestellten Staging-Kopie fand eine ältere, noch
+nicht ausgeführte Kategorien-Migration: Sie importierte den aktuellen
+Anwendungs-Seeder und griff dadurch vorzeitig auf spätere Enumwerte und
+Spalten zu. Die drei betroffenen Seed-Migrationen verwenden nun eingefrorene
+Migrationsdaten und nur die damals vorhandenen Spalten. Bereits angepasste
+Kategorien und Übersetzungen bleiben erhalten. Ein neuer PostgreSQL-Test
+führt die Kette mit einer vorab angelegten Organisation aus und prüft auch
+idempotente Wiederholung sowie den Erhalt individueller Werte. Eine neue
+Vorwärtsmigration allein könnte diesen Fehler nicht beheben, weil die Kette
+bereits vorher abbricht.
+
+Die allgemeine Browser-CI enthielt außerdem Fixtures, die noch automatische
+Kontoverknüpfung anhand gleicher E-Mail-Adressen voraussetzten. Diese werden
+explizit und ausschließlich in einer lokalen E2E-Datenbank provisioniert;
+die produktive Zustimmungspflicht bleibt bestehen. Die Klassenansichten
+lesen Lehrpersonennamen aus dem Organisationsprofil. Die in CI sichtbaren
+SQL-Spaltenfehler der Absenzempfänger werden gegen das migrierte Schema
+regressionsgeprüft.
+
+Der vollständige erneute CI-Lauf und die abschließende Staging-Migrationsprobe
+sind vor Merge/Deployment noch erforderlich.
