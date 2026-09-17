@@ -112,3 +112,12 @@ regressionsgeprüft.
 
 Der vollständige erneute CI-Lauf und die abschließende Staging-Migrationsprobe
 sind vor Merge/Deployment noch erforderlich.
+
+Für den ersten Staging-Cutover wird nach erfolgreicher Backup-/Migrationsprobe
+`restart.colibri-app.ch/profile-cutover=true` auf dem Backend-Deployment
+gesetzt und das Backend vor dem abschließenden Backup auf null skaliert.
+Der Deployment-Workflow hält diese Sperre bis zum erfolgreichen Smoke-Test.
+Bei Rollout-/Smoke-Fehlern bleibt das Backend gestoppt; ein automatisches
+Zurückrollen auf alte globale Writer ist in diesem Modus ausgeschlossen.
+Die Sperre bleibt bei Fehlern auch für erneute Workflow-Läufe erhalten.
+Die Manifeste erhalten vor `apply` die exakten Release-Images.
