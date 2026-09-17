@@ -31,6 +31,7 @@ test.describe('Absence categories — CRUD', () => {
 
   const openCreateForm = async (page: Page) => {
     await page.getByRole('button', { name: /^new category$/i }).click()
+    await expect(page).toHaveURL(/\/absence-categories\/edit$/, { timeout: 15000 })
     await expect(
       page.getByRole('heading', { name: /^new absence category$/i, level: 1 }),
     ).toBeVisible()
@@ -68,6 +69,7 @@ test.describe('Absence categories — CRUD', () => {
 
       const row = page.getByRole('row', { name: new RegExp(unique) })
       await row.getByRole('button').filter({ has: page.locator('.lucide-pencil') }).click()
+      await expect(page).toHaveURL(/\/absence-categories\/edit\/[^/]+$/, { timeout: 15000 })
       await expect(
         page.getByRole('heading', { name: new RegExp(unique, 'i'), level: 1 }),
       ).toBeVisible()
