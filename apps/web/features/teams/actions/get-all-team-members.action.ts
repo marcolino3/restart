@@ -15,6 +15,8 @@ export type OrgTeamMemberItem = {
   employee: {
     id: string;
     isActive: boolean;
+    firstName: string;
+    lastName: string;
     membership: {
       user: {
         id: string;
@@ -39,6 +41,8 @@ const Document = gql`
       employee {
         id
         isActive
+        firstName
+        lastName
         membership {
           user {
             id

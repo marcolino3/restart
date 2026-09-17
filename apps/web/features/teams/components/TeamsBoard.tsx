@@ -75,7 +75,7 @@ type MemberDragData = {
 };
 
 function memberName(m: OrgTeamMemberItem, unknown: string) {
-  const user = m.employee.membership?.user;
+  const user = m.employee;
   return user ? `${user.firstName} ${user.lastName}`.trim() : unknown;
 }
 
@@ -439,8 +439,8 @@ export function TeamsBoard({ initialTeams, initialMembers, employees }: Props) {
             {activeMember ? (
               <div className="flex items-center gap-3 rounded-ctl border bg-card px-2 py-1.5 shadow-lg">
                 <EmployeeAvatar
-                  firstName={activeMember.employee.membership?.user?.firstName}
-                  lastName={activeMember.employee.membership?.user?.lastName}
+                  firstName={activeMember.employee.firstName}
+                  lastName={activeMember.employee.lastName}
                   className="h-[30px] w-[30px]"
                   fallbackClassName="text-[10.5px]"
                 />
@@ -660,7 +660,7 @@ interface MemberRowProps {
 
 function MemberRow({ member, teamId, subtitle, onRemove }: MemberRowProps) {
   const t = useTranslations("Teams");
-  const user = member.employee.membership?.user;
+  const user = member.employee;
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: member.id,
     data: {
@@ -854,6 +854,8 @@ function AddMemberDialog({
             team: { id: team.id },
             employee: {
               id: values.employeeId,
+              firstName: selected.profile.firstName ?? "",
+              lastName: selected.profile.lastName ?? "",
               isActive: selected.membership.employee?.isActive ?? true,
               membership: { user: selected.membership.user ?? null },
             },

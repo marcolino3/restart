@@ -2,6 +2,8 @@ import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
   testDir: './tests',
+  // These suites own isolated servers/DB and run in the employee-security job.
+  testIgnore: ['**/employee-basics*.spec.ts', '**/employee-account-link.spec.ts', '**/employee-onboarding.spec.ts'],
   // Seeds a better-auth credential account for the superadmin so the
   // authenticated suites can sign in via the UI (see helpers/global-setup).
   globalSetup: './tests/helpers/global-setup.ts',

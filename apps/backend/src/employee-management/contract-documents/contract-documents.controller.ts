@@ -167,7 +167,7 @@ export class ContractDocumentsController {
 
     if (dto.format === 'docx') {
       const buffer = await this.generation.generateDocx(input);
-      const user_ = contract.employee?.membership?.user;
+      const user_ = contract.employee?.profile;
       const base =
         [user_?.firstName, user_?.lastName].filter(Boolean).join('_') ||
         'vertrag';

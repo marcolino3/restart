@@ -2,6 +2,7 @@
 
 import { useFormContext } from "react-hook-form";
 import { useTranslations } from "next-intl";
+import { usePermissions } from '@/features/users/context/current-user.context';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -20,6 +21,7 @@ export function StepRoles({
   showInvitationTiming = true,
 }: Props) {
   const t = useTranslations("EmployeeOnboarding");
+  const { hasPermission } = usePermissions();
   const { watch } = useFormContext();
   const email = watch("email") as string | undefined;
 
@@ -38,7 +40,9 @@ export function StepRoles({
         <CardContent className="flex flex-col gap-3">
           <p className="text-xs text-muted-foreground">{t("roleHint")}</p>
           {roleOptions.length ? (
-            <RadioCardFormField name="roleId" options={roleOptions} />
+            <fieldset disabled={!hasPermission('ROLE_ASSIGN')}>
+              <RadioCardFormField name="roleId" options={roleOptions} />
+            </fieldset>
           ) : (
             <p className="text-sm text-muted-foreground">{t("noRoles")}</p>
           )}

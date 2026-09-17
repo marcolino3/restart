@@ -1,3 +1,6 @@
+import { EmployeeAccountInvitation } from '@/employee-management/employees/entities/employee-account-invitation.entity';
+import { EmployeeStorageCleanup } from '@/employee-management/employees/entities/employee-storage-cleanup.entity';
+import { AccountEmailChange } from '@/employee-management/employees/entities/account-email-change.entity';
 import { Address } from '@/addresses/entities/address.entity';
 import { AuthAccount } from '@/auth-accounts/entities/auth-account.entity';
 import { Country } from '@/countries/entities/country.entity';
@@ -115,6 +118,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       Team,
       TeamMember,
       Employee,
+      EmployeeAccountInvitation,
+      EmployeeStorageCleanup,
+      AccountEmailChange,
       EmployeeContract,
       EmployeeFunction,
       EmployeeFunctionTranslation,

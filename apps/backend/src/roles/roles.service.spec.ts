@@ -30,7 +30,18 @@ describe('RolesService', () => {
     save: jest.Mock;
   };
   let permissionsService: { findByCodes: jest.Mock };
-  let membershipRepo: { find: jest.Mock; save: jest.Mock };
+  let membershipRepo: {
+    find: jest.Mock;
+    save: jest.Mock;
+    manager: { transaction: jest.Mock };
+  };
+  let manager: {
+    getRepository: jest.Mock;
+    find: jest.Mock;
+    findOne: jest.Mock;
+    findOneOrFail: jest.Mock;
+    save: jest.Mock;
+  };
   let qb: {
     innerJoin: jest.Mock;
     where: jest.Mock;
@@ -68,7 +79,26 @@ describe('RolesService', () => {
       findByCodes: jest.fn().mockResolvedValue([]),
     };
 
+    manager = {
+      getRepository: jest.fn((entity) =>
+        entity === RoleFieldPermission ? roleFieldPermissionRepo : roleRepo,
+      ),
+      find: jest.fn((entity) =>
+        entity === Membership
+          ? membershipRepo.find()
+          : entity === Role
+            ? Promise.resolve([{ id: 'role-1', permissions: [] }])
+            : Promise.resolve([]),
+      ),
+      findOne: jest.fn().mockResolvedValue({ id: 'role-1' }),
+      findOneOrFail: jest.fn().mockResolvedValue({ id: orgId }),
+      save: jest.fn((_entity, value) => {
+        membershipRepo.save(value);
+        return Promise.resolve(value);
+      }),
+    };
     membershipRepo = {
+      manager: { transaction: jest.fn((cb) => cb(manager)) },
       find: jest.fn().mockResolvedValue([]),
       save: jest.fn((x) => Promise.resolve(x)),
     };
@@ -142,6 +172,52 @@ describe('RolesService', () => {
   });
 
   describe('privilege escalation - field level', () => {
+    it('does not allow role duplication to bypass protected-field escalation checks', async () => {
+      roleRepo.findOne.mockResolvedValue({
+        id: 'source',
+        organizationId: orgId,
+        permissions: [],
+      });
+      roleFieldPermissionRepo.find.mockResolvedValue([
+        {
+          resource: 'employeeContract',
+          field: 'grossSalary',
+          actions: ['read'],
+        },
+      ]);
+      await expect(
+        service.duplicateRole(orgId, 'source', 'Copy', ['ROLE_CREATE']),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(roleRepo.save).not.toHaveBeenCalled();
+      expect(roleFieldPermissionRepo.delete).not.toHaveBeenCalled();
+    });
+
+    it('propagates a failed field replacement out of the transaction', async () => {
+      roleRepo.findOne.mockResolvedValue({
+        id: 'role-1',
+        organizationId: orgId,
+        permissions: [],
+      });
+      roleFieldPermissionRepo.save.mockRejectedValue(
+        new Error('storage failed'),
+      );
+      await expect(
+        service.updateRoleFieldPermissions(
+          orgId,
+          'role-1',
+          [
+            {
+              resource: 'employeeContract',
+              field: 'grossSalary',
+              actions: ['read'],
+            },
+          ],
+          new Map([['employeeContract.grossSalary', new Set(['read'])]]),
+        ),
+      ).rejects.toThrow('storage failed');
+      expect(membershipRepo.manager.transaction).toHaveBeenCalledTimes(1);
+    });
+
     it('rejects field-level over-grant beyond actor field permissions', async () => {
       roleRepo.findOne.mockResolvedValue({
         id: 'role-1',
@@ -463,123 +539,66 @@ describe('RolesService', () => {
     });
   });
 
-  describe('assignMembers - multi-tenant isolation', () => {
-    it('assigns role to in-org memberships without duplicating existing roles', async () => {
-      membershipRepo.find.mockResolvedValue([
-        { id: 'mem-1', organizationId: orgId, roles: [] },
-        { id: 'mem-2', organizationId: orgId, roles: [{ id: 'role-1' }] },
-      ]);
-
-      await service.assignMembers(orgId, 'role-1', ['mem-1', 'mem-2']);
-
-      expect(membershipRepo.find).toHaveBeenCalledWith({
-        where: { id: expect.anything(), organizationId: orgId },
-        relations: ['roles'],
-      });
-      const saved = membershipRepo.save.mock.calls[0][0];
-      expect(saved[0].roles).toEqual([{ id: 'role-1' }]);
-      expect(saved[1].roles).toEqual([{ id: 'role-1' }]);
-    });
-
-    it('rejects when a membershipId belongs to a foreign org', async () => {
-      // find() filters by organizationId, so a foreign-org id is silently
-      // dropped - simulate that by returning fewer rows than requested.
-      membershipRepo.find.mockResolvedValue([
-        { id: 'mem-1', organizationId: orgId, roles: [] },
-      ]);
-
-      await expect(
-        service.assignMembers(orgId, 'role-1', ['mem-1', 'mem-foreign']),
-      ).rejects.toBeInstanceOf(NotFoundException);
-      expect(membershipRepo.save).not.toHaveBeenCalled();
-    });
-
-    it('createRole assigns membershipIds after saving the new role', async () => {
-      roleRepo.findOne.mockResolvedValue({
-        id: 'role-new',
-        organizationId: orgId,
-        isSystem: false,
-        permissions: [],
-      });
-      membershipRepo.find.mockResolvedValue([
-        { id: 'mem-1', organizationId: orgId, roles: [] },
-      ]);
-
-      await service.createRole(
-        orgId,
-        { name: 'New Role', membershipIds: ['mem-1'] },
-        [],
-      );
-
-      expect(membershipRepo.save).toHaveBeenCalled();
-    });
-
-    it('createRole rejects when a membershipId belongs to a foreign org', async () => {
-      membershipRepo.find.mockResolvedValue([]);
-
-      await expect(
-        service.createRole(
-          orgId,
-          { name: 'New Role', membershipIds: ['mem-foreign'] },
-          [],
-        ),
-      ).rejects.toBeInstanceOf(NotFoundException);
-      expect(roleRepo.save).toHaveBeenCalled();
-      expect(membershipRepo.save).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('updateRoleMembers - multi-tenant isolation', () => {
-    beforeEach(() => {
+  describe('membership assignments', () => {
+    beforeEach(() =>
       roleRepo.findOne.mockResolvedValue({
         id: 'role-1',
         organizationId: orgId,
-        isSystem: false,
-        permissions: [],
+      }),
+    );
+    const actor = { sub: 'actor', orgId, permissions: ['ROLE_ASSIGN'] };
+    it('requires ROLE_ASSIGN before creating a role with members', async () => {
+      await expect(
+        service.createRole(orgId, { name: 'X', membershipIds: ['mem'] }, []),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(roleRepo.save).not.toHaveBeenCalled();
+    });
+    it('requires an actor for both membership entry points', async () => {
+      await expect(
+        service.assignMembers(orgId, 'role-1', ['mem']),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(
+        service.updateRoleMembers(orgId, 'role-1', ['mem']),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(manager.save).not.toHaveBeenCalled();
+    });
+    it('rejects foreign membership ids in either entry point', async () => {
+      await expect(
+        service.assignMembers(orgId, 'role-1', ['foreign'], actor),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(
+        service.updateRoleMembers(orgId, 'role-1', ['foreign'], actor),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(manager.save).not.toHaveBeenCalled();
+    });
+    it('adds roles through the shared authorization without duplicates', async () => {
+      membershipRepo.find.mockResolvedValue([
+        { id: 'mem', organizationId: orgId, roles: [{ id: 'role-1' }] },
+      ]);
+      await service.assignMembers(orgId, 'role-1', ['mem'], actor);
+      expect(manager.save).toHaveBeenCalledWith(Membership, {
+        id: 'mem',
+        roles: [{ id: 'role-1', permissions: [] }],
       });
     });
-
-    it('adds the role to newly selected members and removes it from deselected ones', async () => {
-      membershipRepo.find
-        .mockResolvedValueOnce([
-          { id: 'mem-2', organizationId: orgId, roles: [] },
-        ])
-        .mockResolvedValueOnce([
-          { id: 'mem-1', organizationId: orgId, roles: [{ id: 'role-1' }] },
-          { id: 'mem-2', organizationId: orgId, roles: [] },
-        ]);
-
-      await service.updateRoleMembers(orgId, 'role-1', ['mem-2']);
-
-      const saved = membershipRepo.save.mock.calls[0][0];
-      const savedMem1 = saved.find((m: { id: string }) => m.id === 'mem-1');
-      const savedMem2 = saved.find((m: { id: string }) => m.id === 'mem-2');
-      expect(savedMem1.roles).toEqual([]);
-      expect(savedMem2.roles).toEqual([{ id: 'role-1' }]);
+    it('replaces role membership and leaves unrelated assignments untouched', async () => {
+      membershipRepo.find.mockResolvedValue([
+        { id: 'old', organizationId: orgId, roles: [{ id: 'role-1' }] },
+        { id: 'new', organizationId: orgId, roles: [] },
+        { id: 'unrelated', organizationId: orgId, roles: [] },
+      ]);
+      await service.updateRoleMembers(orgId, 'role-1', ['new'], actor);
+      expect(manager.save.mock.calls.map((call) => call[1])).toEqual([
+        { id: 'new', roles: [{ id: 'role-1', permissions: [] }] },
+        { id: 'old', roles: [] },
+      ]);
     });
-
-    it('leaves unrelated memberships untouched', async () => {
-      membershipRepo.find
-        .mockResolvedValueOnce([
-          { id: 'mem-1', organizationId: orgId, roles: [{ id: 'role-1' }] },
-        ])
-        .mockResolvedValueOnce([
-          { id: 'mem-1', organizationId: orgId, roles: [{ id: 'role-1' }] },
-          { id: 'mem-3', organizationId: orgId, roles: [{ id: 'role-other' }] },
-        ]);
-
-      await service.updateRoleMembers(orgId, 'role-1', ['mem-1']);
-
-      expect(membershipRepo.save).not.toHaveBeenCalled();
-    });
-
-    it('rejects when a membershipId belongs to a foreign org', async () => {
-      membershipRepo.find.mockResolvedValueOnce([]);
-
-      await expect(
-        service.updateRoleMembers(orgId, 'role-1', ['mem-foreign']),
-      ).rejects.toBeInstanceOf(NotFoundException);
-      expect(membershipRepo.save).not.toHaveBeenCalled();
+    it('does not save unchanged assignments', async () => {
+      membershipRepo.find.mockResolvedValue([
+        { id: 'mem', organizationId: orgId, roles: [{ id: 'role-1' }] },
+      ]);
+      await service.updateRoleMembers(orgId, 'role-1', ['mem'], actor);
+      expect(manager.save).not.toHaveBeenCalled();
     });
   });
 });

@@ -32,6 +32,8 @@ export type EmployeeAbsence = Record<string, unknown> & {
   decisionNote?: string | null;
   employee?: {
     id: string;
+    firstName?: string | null;
+    lastName?: string | null;
     membership?: {
       id: string;
       user?: { firstName?: string | null; lastName?: string | null } | null;
@@ -137,13 +139,8 @@ const PendingRequestsDocument = gql`
       ${AbsenceFields}
       employee {
         id
-        membership {
-          id
-          user {
-            firstName
-            lastName
-          }
-        }
+        firstName
+        lastName
       }
     }
   }

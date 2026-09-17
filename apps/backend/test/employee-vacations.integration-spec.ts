@@ -100,7 +100,13 @@ describe('EmployeeVacationsService (Integration)', () => {
     const user = await userRepo.save(
       userRepo.create({ firstName: 'Max', lastName: 'Muster' }),
     );
-    const employee = await employeeRepo.save(employeeRepo.create({}));
+    const employee = await employeeRepo.save(
+      employeeRepo.create({
+        organizationId: organizationId,
+        profile: { firstName: user.firstName, lastName: user.lastName },
+        accountLinkStatus: 'LEGACY',
+      }),
+    );
     await membershipRepo.save(
       membershipRepo.create({
         organizationId,
@@ -177,7 +183,12 @@ describe('EmployeeVacationsService (Integration)', () => {
     });
 
     it('throws when the employee has no membership in the org', async () => {
-      const orphan = await employeeRepo.save(employeeRepo.create({}));
+      const orphan = await employeeRepo.save(
+        employeeRepo.create({
+          organizationId: orgId,
+          profile: { firstName: 'Orphan', lastName: 'Test' },
+        }),
+      );
 
       await expect(
         service.create(createInput({ employeeId: orphan.id }), adminUser()),

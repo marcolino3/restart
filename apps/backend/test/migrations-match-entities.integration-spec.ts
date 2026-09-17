@@ -22,7 +22,10 @@
  */
 import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
+import { Client } from 'pg';
+import { ensureStaffUser } from '../scripts/seed-testschule-large';
 import { join } from 'path';
+import { assertTestDatabase } from './database-safety';
 
 // This suite builds its own DataSource instead of going through test-utils,
 // which is where every other suite picks up .env.test as an import side
@@ -45,6 +48,10 @@ describe('Migrations match the entities', () => {
   };
 
   beforeAll(async () => {
+    assertTestDatabase({
+      host: baseOptions.host,
+      database: process.env.DB_NAME,
+    });
     // A throwaway database so the run cannot disturb the other suites.
     admin = new DataSource({
       ...baseOptions,
@@ -131,9 +138,10 @@ describe('Migrations match the entities', () => {
       [org[0].id],
     );
     const emp: Array<{ id: string }> = await migrated.query(
-      `INSERT INTO employees (id, status, invitation_status, time_tracking_enabled, "isActive", "isArchived", version, "createdAt", "updatedAt")
-       VALUES (gen_random_uuid(), 'ACTIVE', 'PENDING', false, true, false, 1, now(), now())
+      `INSERT INTO employees (id, organization_id, status, invitation_status, time_tracking_enabled, "isActive", "isArchived", version, "createdAt", "updatedAt")
+       VALUES (gen_random_uuid(), $1, 'ACTIVE', 'PENDING', false, true, false, 1, now(), now())
        RETURNING id`,
+      [org[0].id],
     );
 
     const assign = (opts: {
@@ -206,5 +214,58 @@ describe('Migrations match the entities', () => {
       [schoolClass[0].id],
     );
     expect(assignments).toEqual([]);
+  });
+  it('seeds linked staff profiles idempotently against the migrated schema', async () => {
+    const [{ id: orgId }] = await migrated.query(
+      `INSERT INTO organizations (name, subdomain) VALUES ('Seed Check', 'seedcheck') RETURNING id`,
+    );
+    const client = new Client({
+      ...baseOptions,
+      user: baseOptions.username,
+      database: DB_NAME,
+    });
+    await client.connect();
+    try {
+      const staff = {
+        email: 'seed-profile@example.test',
+        firstName: 'Seed',
+        lastName: 'Profile',
+        persona: 'EMPLOYEE',
+        roleCode: 'EMPLOYEE',
+      };
+      const first = await ensureStaffUser(
+        client,
+        orgId,
+        staff,
+        'test-only-password-hash',
+      );
+      const second = await ensureStaffUser(
+        client,
+        orgId,
+        staff,
+        'test-only-password-hash',
+      );
+      expect(second.employeeId).toBe(first.employeeId);
+      expect(second.membershipId).toBe(first.membershipId);
+      const { rows } = await client.query(
+        `SELECT e.organization_id, e.profile_first_name, e.profile_last_name, e.profile_email,
+                e.account_link_status, m.user_id, m."isActive"
+         FROM employees e JOIN memberships m ON m.employee_id=e.id WHERE e.id=$1`,
+        [first.employeeId],
+      );
+      expect(rows).toEqual([
+        {
+          organization_id: orgId,
+          profile_first_name: 'Seed',
+          profile_last_name: 'Profile',
+          profile_email: staff.email,
+          account_link_status: 'LEGACY',
+          user_id: first.appUserId,
+          isActive: true,
+        },
+      ]);
+    } finally {
+      await client.end();
+    }
   });
 });

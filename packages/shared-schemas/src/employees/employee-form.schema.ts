@@ -3,12 +3,13 @@ import { Persona } from "@restart/shared-types/graphql";
 
 export const EmployeeFormSchema = z.object({
   id: z.string().uuid().optional(),
+  expectedVersion: z.number().int().positive().optional(),
   title: z.string().optional().default(""),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   email: z.string().email().optional(),
   persona: z.nativeEnum(Persona).default(Persona.Employee),
-  dateOfBirth: z.date().nullable().optional(),
+  dateOfBirth: z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.date()]).nullable().optional(),
   socialSecurityNumber: z.string().optional().default(""),
   contactPhone: z.string().optional().default(""),
   timeTrackingEnabled: z.boolean().default(false),

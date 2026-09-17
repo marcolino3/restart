@@ -129,7 +129,7 @@ describe('ContractTemplatesService', () => {
         organizationId: ORG_ID,
         startDate: '2026-09-01',
         employee: {
-          membership: { user: { firstName: 'Anna', lastName: 'Muster' } },
+          profile: { firstName: 'Anna', lastName: 'Muster' },
         },
       });
       orgsRepo.findOne.mockResolvedValue({ id: ORG_ID, name: 'Schule X' });

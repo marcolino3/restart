@@ -1,5 +1,7 @@
 import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
-import { UseGuards } from '@nestjs/common';
+import { ForbiddenException, UseGuards } from '@nestjs/common';
+import { CurrentUser } from '@/auth/decorators/current-user.decorator';
+import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { SuperAdminOnly } from '@/auth/decorators/super-admin.decorator';
@@ -12,13 +14,28 @@ export class UserEmailsResolver {
   constructor(private readonly userEmailsService: UserEmailsService) {}
 
   @Query(() => [UserEmail], { name: 'userEmailsByUserId' })
-  findByUserId(@Args('userId', { type: () => ID }) userId: string) {
+  findByUserId(
+    @Args('userId', { type: () => ID }) userId: string,
+    @CurrentUser() actor: TokenPayload,
+  ) {
+    this.assertOwner(userId, actor);
     return this.userEmailsService.findByUserId(userId);
   }
 
   @Query(() => UserEmail, { name: 'userEmail' })
-  findOne(@Args('id', { type: () => ID }) id: string) {
-    return this.userEmailsService.findOne(id);
+  async findOne(
+    @Args('id', { type: () => ID }) id: string,
+    @CurrentUser() actor: TokenPayload,
+  ) {
+    const email = await this.userEmailsService.findOne(id);
+    this.assertOwner(email.userId, actor);
+    return email;
+  }
+
+  private assertOwner(userId: string, actor: TokenPayload) {
+    if (!actor?.isSuperAdmin && (!actor?.sub || actor.sub !== userId)) {
+      throw new ForbiddenException('Access denied');
+    }
   }
 
   @Mutation(() => UserEmail, { name: 'addUserEmail' })

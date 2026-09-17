@@ -127,11 +127,14 @@ describe('EmployeesResolver', () => {
       employeesService.upsertEmployeeOnboardingDraft.mockResolvedValue(draft);
 
       await expect(
-        resolver.upsertEmployeeOnboardingDraft(input, 'org-1'),
+        resolver.upsertEmployeeOnboardingDraft(input, 'org-1', {
+          sub: 'actor',
+          orgId: 'org-1',
+        }),
       ).resolves.toBe(draft);
       expect(
         employeesService.upsertEmployeeOnboardingDraft,
-      ).toHaveBeenCalledWith(input, 'org-1');
+      ).toHaveBeenCalledWith(input, 'org-1', { sub: 'actor', orgId: 'org-1' });
     });
   });
 

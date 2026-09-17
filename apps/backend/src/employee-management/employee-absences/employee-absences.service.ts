@@ -397,7 +397,7 @@ export class EmployeeAbsencesService {
       organizationId: orgId,
       absenceId: employeeAbsenceSaved.id,
       employeeName:
-        `${membership.user?.firstName ?? ''} ${membership.user?.lastName ?? ''}`.trim(),
+        `${employee.profile.firstName ?? ''} ${employee.profile.lastName ?? ''}`.trim(),
       absenceLabel: absenceCategoryLabel(absenceCategory.systemCode),
       titleTemplate: absenceCategory.calendarTitleTemplate ?? null,
       startDate: employeeAbsenceSaved.startDate,
@@ -633,7 +633,7 @@ export class EmployeeAbsencesService {
     // A lead must not approve their own request; admins/HR may.
     const callerMembership = await this.entityManager.findOne(Membership, {
       where: { id: user.membershipId, organizationId: orgId },
-      relations: ['user'],
+      relations: ['user', 'employee'],
     });
     const isApprovalAdmin =
       user.isSuperAdmin ||
@@ -664,7 +664,7 @@ export class EmployeeAbsencesService {
 
     const requester = await this.entityManager.findOne(Membership, {
       where: { id: saved.membershipId, organizationId: orgId },
-      relations: ['user'],
+      relations: ['user', 'employee'],
     });
     const employeeName = requester ? membershipName(requester) : '';
     const categoryLabel = absenceCategoryLabel(
@@ -916,6 +916,8 @@ export class EmployeeAbsencesService {
 }
 
 function membershipName(membership: Membership): string {
+  if (membership.employeeId)
+    return `${membership.employee?.profile?.firstName ?? ''} ${membership.employee?.profile?.lastName ?? ''}`.trim();
   return `${membership.user?.firstName ?? ''} ${membership.user?.lastName ?? ''}`.trim();
 }
 

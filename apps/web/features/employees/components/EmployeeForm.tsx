@@ -34,18 +34,19 @@ export default function EmployeeForm({ employee, orgCountry }: Props) {
   const router = useRouter();
   const isEdit = Boolean(employee);
 
-  const user = employee?.membership?.user;
+  const user = employee?.profile;
 
   const form = useForm({
     resolver: zodResolver(EmployeeFormSchema),
     defaultValues: {
       id: employee?.id,
+      expectedVersion: employee?.version,
       title: user?.title ?? "",
       firstName: user?.firstName ?? "",
       lastName: user?.lastName ?? "",
       email: undefined,
       persona: (employee?.membership?.persona as Persona) ?? Persona.Employee,
-      dateOfBirth: user?.dateOfBirth ? new Date(user.dateOfBirth) : null,
+      dateOfBirth: user?.dateOfBirth ?? null,
       socialSecurityNumber: user?.socialSecurityNumber ?? "",
       contactPhone: employee?.membership?.contactPhone ?? "",
       timeTrackingEnabled: employee?.timeTrackingEnabled ?? false,

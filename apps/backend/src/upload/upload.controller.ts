@@ -17,10 +17,10 @@ import { EntityManager } from 'typeorm';
 import sharp from 'sharp';
 
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
-import { Roles } from '@/auth/decorators/roles.decorator';
 import { BetterAuthGuard } from '@/auth/guard/better-auth.guard';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { Employee } from '@/employee-management/employees/entities/employee.entity';
+import { Organization } from '@/organizations/entities/organization.entity';
 import { SystemRole } from '@/roles/entities/system-role.enum';
 import { Student } from '@/school-management/students/entities/student.entity';
 import { StorageService } from '@/storage/storage.service';
@@ -52,7 +52,6 @@ const UUID_RE =
 
 @Controller('upload')
 @UseGuards(BetterAuthGuard)
-@Roles(SystemRole.ORG_OWNER, SystemRole.ORG_ADMIN)
 export class UploadController {
   private readonly logger = new Logger(UploadController.name);
 
@@ -95,19 +94,25 @@ export class UploadController {
       throw new BadRequestException('File is not a valid image');
     }
 
-    try {
-      await this.storage.put(this.key(safeEntity, safeId), webp, 'image/webp');
-    } catch (error) {
-      // See ContractDocumentsController: a storage outage is not a client
-      // error, and a bare 500 tells the user nothing about what to retry.
-      this.logger.error(
-        `Upload failed for ${safeEntity}/${safeId}`,
-        error instanceof Error ? error.stack : String(error),
-      );
-      throw new ServiceUnavailableException(
-        'File storage is unavailable. The file was not uploaded.',
-      );
-    }
+    await this.withTargetLock(safeEntity, safeId, user, async () => {
+      try {
+        await this.storage.put(
+          this.key(safeEntity, safeId),
+          webp,
+          'image/webp',
+        );
+      } catch (error) {
+        // See ContractDocumentsController: a storage outage is not a client
+        // error, and a bare 500 tells the user nothing about what to retry.
+        this.logger.error(
+          `Upload failed for ${safeEntity}/${safeId}`,
+          error instanceof Error ? error.stack : String(error),
+        );
+        throw new ServiceUnavailableException(
+          'File storage is unavailable. The file was not uploaded.',
+        );
+      }
+    });
 
     return {
       url: `/${safeEntity}/${safeId}.webp`,
@@ -123,19 +128,46 @@ export class UploadController {
     if (!entity || !id) throw new BadRequestException('entity and id required');
 
     const { safeEntity, safeId } = await this.resolveTarget(entity, id, user);
-    try {
-      await this.storage.delete(this.key(safeEntity, safeId));
-    } catch (error) {
-      this.logger.error(
-        `Delete failed for ${safeEntity}/${safeId}`,
-        error instanceof Error ? error.stack : String(error),
-      );
-      throw new ServiceUnavailableException(
-        'File storage is unavailable. The file was not removed.',
-      );
-    }
+    await this.withTargetLock(safeEntity, safeId, user, async () => {
+      try {
+        await this.storage.delete(this.key(safeEntity, safeId));
+      } catch (error) {
+        this.logger.error(
+          `Delete failed for ${safeEntity}/${safeId}`,
+          error instanceof Error ? error.stack : String(error),
+        );
+        throw new ServiceUnavailableException(
+          'File storage is unavailable. The file was not removed.',
+        );
+      }
+    });
 
     return { success: true };
+  }
+
+  /** Finish storage writes before a concurrent draft deletion can queue cleanup. */
+  private async withTargetLock(
+    entity: string,
+    id: string,
+    user: TokenPayload,
+    operation: () => Promise<void>,
+  ) {
+    if (entity !== 'employees') return operation();
+    await this.entityManager.transaction(async (manager) => {
+      await manager.findOneOrFail(Organization, {
+        where: { id: user.orgId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const employee = await manager.findOne(Employee, {
+        where: { id, organizationId: user.orgId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!employee)
+        throw new ForbiddenException(
+          'Upload target outside active organization',
+        );
+      await operation();
+    });
   }
 
   private async resolveTarget(
@@ -167,34 +199,39 @@ export class UploadController {
     safeId: string,
     user: TokenPayload,
   ): Promise<void> {
-    if (user.isSuperAdmin) return;
-
-    // organizations: the target must be the caller's active organization
-    if (safeEntity === 'organizations') {
-      if (!user.orgId || safeId !== user.orgId) {
-        throw new ForbiddenException(
-          'Upload target outside active organization',
-        );
-      }
-      return;
-    }
-
-    // employees: the target employee must belong to the caller's active org
-    // (verified via the employee's membership). Avatar uploads run during the
-    // onboarding wizard, so the DRAFT employee already exists at this point.
     if (safeEntity === 'employees') {
-      if (!user.orgId) {
-        throw new ForbiddenException('No active organization');
+      if (
+        !user.orgId ||
+        (!user.isSuperAdmin && !user.permissions?.includes('EMPLOYEE_WRITE'))
+      ) {
+        throw new ForbiddenException(
+          'Employee write permission in an active organization is required',
+        );
       }
       const employee = await this.entityManager.findOne(Employee, {
-        where: { id: safeId, membership: { organizationId: user.orgId } },
-        relations: { membership: true },
+        where: { id: safeId, organizationId: user.orgId },
       });
-      if (!employee) {
+      if (!employee)
         throw new ForbiddenException(
           'Upload target outside active organization',
         );
-      }
+      return;
+    }
+    if (user.isSuperAdmin) return;
+    if (
+      !user.roles?.some(
+        (role) =>
+          role === String(SystemRole.ORG_OWNER) ||
+          role === String(SystemRole.ORG_ADMIN),
+      )
+    ) {
+      throw new ForbiddenException('Organization administrator role required');
+    }
+    if (safeEntity === 'organizations') {
+      if (!user.orgId || safeId !== user.orgId)
+        throw new ForbiddenException(
+          'Upload target outside active organization',
+        );
       return;
     }
 

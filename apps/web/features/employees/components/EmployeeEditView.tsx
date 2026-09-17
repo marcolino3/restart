@@ -101,7 +101,7 @@ export default function EmployeeEditView({
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
-  const user = employee.membership?.user;
+  const user = employee.profile;
   const membership = employee.membership;
 
   const form = useForm({
@@ -113,7 +113,7 @@ export default function EmployeeEditView({
       lastName: user?.lastName ?? "",
       email: undefined,
       persona: (membership?.persona as Persona) ?? Persona.Employee,
-      dateOfBirth: user?.dateOfBirth ? new Date(user.dateOfBirth) : null,
+      dateOfBirth: user?.dateOfBirth ?? null,
       socialSecurityNumber: user?.socialSecurityNumber ?? "",
       contactPhone: membership?.contactPhone ?? "",
       timeTrackingEnabled: employee.timeTrackingEnabled ?? false,
@@ -163,7 +163,7 @@ export default function EmployeeEditView({
             <div className="shrink-0">
               <Avatar className="h-16 w-16">
                 <AvatarFallback className="bg-primary text-primary-foreground text-xl font-semibold">
-                  {getInitials(user?.firstName, user?.lastName)}
+                  {getInitials(user?.firstName ?? undefined, user?.lastName ?? undefined)}
                 </AvatarFallback>
               </Avatar>
             </div>

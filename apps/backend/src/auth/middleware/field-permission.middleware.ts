@@ -11,6 +11,18 @@ import {
 } from '@restart/shared-schemas/rbac/field-catalog';
 import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 
+const PRIVATE_USER_FIELDS = new Set([
+  'dateOfBirth',
+  'socialSecurityNumber',
+  'privateEmail',
+  'street',
+  'houseNumber',
+  'addressLine2',
+  'postalCode',
+  'city',
+  'country',
+]);
+
 function resourceNameFromGraphQLType(typeName: string): string {
   return typeName.charAt(0).toLowerCase() + typeName.slice(1);
 }
@@ -23,6 +35,28 @@ export const fieldPermissionMiddleware = async (
   const fieldName = ctx.info.fieldName;
   const resource = resourceNameFromGraphQLType(parentTypeName);
   const key = protectedFieldKey(resource, fieldName);
+
+  const caller = ctx.context?.req?.user as TokenPayload | undefined;
+  if (
+    parentTypeName === 'Employee' &&
+    fieldName === 'profile' &&
+    (!caller?.orgId ||
+      ctx.source?.organizationId !== caller.orgId ||
+      (!caller.isSuperAdmin && !caller.permissions?.includes('EMPLOYEE_READ')))
+  )
+    return null;
+  if (
+    parentTypeName === 'User' &&
+    fieldName === 'userEmails' &&
+    !caller?.isSuperAdmin &&
+    caller?.sub !== ctx.source?.id
+  )
+    return [];
+  if (parentTypeName === 'User' && PRIVATE_USER_FIELDS.has(fieldName)) {
+    if (!caller || (!caller.isSuperAdmin && caller.sub !== ctx.source?.id)) {
+      return null;
+    }
+  }
 
   if (!PROTECTED_FIELD_KEYS.has(key)) {
     return next();

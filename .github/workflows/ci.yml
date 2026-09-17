@@ -27,6 +27,61 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  employee-security:
+    name: Employee security and browser regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: restart_employee_e2e
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5435:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter './packages/*' build
+      - name: Employee basis and security coverage
+        run: pnpm --filter @restart/backend test:employee:coverage
+      - name: Employee frontend save coverage
+        run: pnpm --filter @restart/web test:employee:coverage
+      - run: pnpm --filter @restart/e2e exec playwright install --with-deps chromium firefox webkit
+      - name: Employee browser and real-session API tests
+        run: pnpm --filter @restart/e2e exec playwright test --config playwright.employee.config.ts
+      - name: Repeat concurrency regression without retries
+        run: pnpm --filter @restart/e2e exec playwright test --config playwright.employee.config.ts --grep 'parallel confirmation|writer saves|injected slow|stale browser|final save failure' --repeat-each 3 --retries 0
+      - name: Employee coverage artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: employee-coverage
+          path: |
+            apps/backend/coverage/employee/
+            apps/web/coverage/employee/
+          retention-days: 7
+      - name: Employee test artifacts
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: employee-playwright-artifacts
+          path: |
+            e2e/playwright-report/employee/
+            e2e/test-results/
+          retention-days: 7
+
   build:
     name: Lint, Test, Build
     runs-on: ubuntu-latest
@@ -134,6 +189,7 @@ jobs:
           DB_HOST: localhost
           DB_PORT: 5432
           DB_NAME: restart_integration
+          ALLOW_TEST_DATABASE_RESET: 'true'
           DB_USERNAME: test
           DB_PASSWORD: test
           NODE_ENV: test

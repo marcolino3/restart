@@ -1,3 +1,6 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
 // Standalone nodemailer transport for better-auth callbacks (magic-link).
 // Kept separate from the Nest MailService because better-auth's plugin
 // callbacks run outside the Nest DI container.
@@ -21,6 +24,51 @@ function getTransporter(): nodemailer.Transporter {
 }
 
 export const mailer = {
+  sendAccountEmailVerification: async (
+    to: string,
+    url: string,
+  ): Promise<void> => {
+    if (process.env.NODE_ENV === 'test') {
+      if (process.env.E2E_MAIL_DIR) {
+        await mkdir(process.env.E2E_MAIL_DIR, { recursive: true });
+        await writeFile(
+          join(process.env.E2E_MAIL_DIR, `${randomUUID()}.json`),
+          JSON.stringify({ kind: 'account-email', to, url }),
+          { mode: 0o600 },
+        );
+      }
+      return;
+    }
+    await getTransporter().sendMail({
+      from: process.env.SMTP_USER ?? '',
+      to,
+      subject: 'Restart – E-Mail-Wechsel bestätigen',
+      text: `Du hast einen Wechsel deiner Login-E-Mail angefordert. Bestätige innerhalb von 24 Stunden mit deinem angemeldeten Konto: ${url}\nDie Änderung wird erst nach Bestätigung der alten und der neuen Adresse durchgeführt. Falls du dies nicht angefordert hast, bestätige den Link nicht.`,
+    });
+  },
+  sendEmployeeInvitation: async (
+    to: string,
+    url: string,
+    organization: string,
+  ): Promise<void> => {
+    if (process.env.NODE_ENV === 'test') {
+      if (process.env.E2E_MAIL_DIR) {
+        await mkdir(process.env.E2E_MAIL_DIR, { recursive: true });
+        await writeFile(
+          join(process.env.E2E_MAIL_DIR, `${randomUUID()}.json`),
+          JSON.stringify({ to, url, organization }),
+          { mode: 0o600 },
+        );
+      }
+      return;
+    }
+    await getTransporter().sendMail({
+      from: process.env.SMTP_USER ?? '',
+      to,
+      subject: 'Einladung zu Restart',
+      text: `Du wurdest zu ${organization} eingeladen. Melde dich mit dieser E-Mail-Adresse an und bestätige die Verknüpfung ausdrücklich: ${url}\nDer Link ist 48 Stunden gültig. Ohne Bestätigung wird dein Konto nicht verknüpft.`,
+    });
+  },
   sendMagicLink: async (to: string, magicLinkUrl: string): Promise<void> => {
     if (process.env.NODE_ENV === 'test') return;
     await getTransporter().sendMail({

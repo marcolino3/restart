@@ -98,12 +98,15 @@ export class WorkTimeBalanceService {
     if (!employeeIds.length) return new Map();
     const memberships = await this.membershipRepo.find({
       where: { organizationId: orgId, employeeId: In(employeeIds) },
-      relations: ['user'],
+      relations: ['employee'],
     });
     const map = new Map<string, string>();
     for (const m of memberships) {
-      if (m.employeeId && m.user) {
-        map.set(m.employeeId, `${m.user.firstName} ${m.user.lastName}`.trim());
+      if (m.employeeId && m.employee) {
+        map.set(
+          m.employeeId,
+          `${m.employee.profile?.firstName ?? ''} ${m.employee.profile?.lastName ?? ''}`.trim(),
+        );
       }
     }
     return map;

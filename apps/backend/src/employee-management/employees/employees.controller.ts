@@ -8,42 +8,22 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { BetterAuthGuard } from '@/auth/guard/better-auth.guard';
+import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { EmployeesService } from './employees.service';
+import { parseEmployeeCsv, EMPLOYEE_CSV_MAX_BYTES } from './employee-csv';
+import { plainToInstance } from 'class-transformer';
+import { validateSync } from 'class-validator';
+import { CreateEmployeeInput } from './dto/create-employee.input';
 import { Persona } from '@/common/enums/persona.enum';
-
-interface CsvRow {
-  email?: string;
-  firstName?: string;
-  lastName?: string;
-  title?: string;
-  persona?: string;
-  contactPhone?: string;
-  dateOfBirth?: string;
-}
 
 interface UploadResult {
   created: { email: string }[];
-  failed: { email: string; reason: string }[];
+  failed: { row: number; email: string; reason: string }[];
 }
 
 const VALID_PERSONAS = new Set(Object.values(Persona));
-
-function parseCsv(text: string): CsvRow[] {
-  const lines = text.split(/\r?\n/).filter((l) => l.trim());
-  if (lines.length < 2) return [];
-
-  const headers = lines[0].split(';').map((h) => h.trim());
-  return lines.slice(1).map((line) => {
-    const values = line.split(';').map((v) => v.trim());
-    const row: Record<string, string> = {};
-    headers.forEach((header, i) => {
-      row[header] = values[i] ?? '';
-    });
-    return row;
-  });
-}
 
 @Controller('employees')
 export class EmployeesController {
@@ -51,7 +31,12 @@ export class EmployeesController {
 
   @Post('upload')
   @UseGuards(BetterAuthGuard)
-  @UseInterceptors(FileInterceptor('file'))
+  @Permissions('EMPLOYEE_WRITE')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: EMPLOYEE_CSV_MAX_BYTES, files: 1, fields: 0 },
+    }),
+  )
   async uploadCsv(
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser() user: TokenPayload,
@@ -62,21 +47,37 @@ export class EmployeesController {
     if (!orgId) throw new BadRequestException('No organization selected');
 
     const text = file.buffer.toString('utf-8');
-    const rows = parseCsv(text);
+    const rows = parseEmployeeCsv(text);
 
     if (rows.length === 0) {
       throw new BadRequestException('CSV file is empty or has no data rows');
     }
 
     const created: { email: string }[] = [];
-    const failed: { email: string; reason: string }[] = [];
+    const failed: { row: number; email: string; reason: string }[] = [];
 
-    for (const row of rows) {
-      const email = row.email?.trim();
+    const seen = new Set<string>();
+    for (const [index, row] of rows.entries()) {
+      const rowNumber = index + 2;
+      const email = row.email?.trim().toLowerCase();
       if (!email) {
-        failed.push({ email: '(empty)', reason: 'Email is required' });
+        failed.push({
+          row: rowNumber,
+          email: '(empty)',
+          reason: 'Email is required',
+        });
         continue;
       }
+
+      if (seen.has(email)) {
+        failed.push({
+          row: rowNumber,
+          email,
+          reason: 'Duplicate email in CSV',
+        });
+        continue;
+      }
+      seen.add(email);
 
       const personaRaw = row.persona?.trim().toUpperCase();
       const persona = VALID_PERSONAS.has(personaRaw as Persona)
@@ -84,23 +85,35 @@ export class EmployeesController {
         : Persona.EMPLOYEE;
 
       try {
-        await this.employeesService.createEmployeeMinimal(
-          {
-            email,
-            firstName: row.firstName?.trim() || '',
-            lastName: row.lastName?.trim() || '',
-            persona,
-            title: row.title?.trim() || undefined,
-            contactPhone: row.contactPhone?.trim() || undefined,
-            dateOfBirth: row.dateOfBirth?.trim() || undefined,
-          },
-          orgId,
-        );
-        created.push({ email });
-      } catch (error) {
-        failed.push({
+        const input = plainToInstance(CreateEmployeeInput, {
           email,
-          reason: error instanceof Error ? error.message : String(error),
+          firstName: row.firstName?.trim() || '',
+          lastName: row.lastName?.trim() || '',
+          persona,
+          title: row.title?.trim() || undefined,
+          contactPhone: row.contactPhone?.trim() || undefined,
+          dateOfBirth: row.dateOfBirth?.trim() || undefined,
+        });
+        if (personaRaw && !VALID_PERSONAS.has(personaRaw as Persona)) {
+          failed.push({ row: rowNumber, email, reason: 'Invalid persona' });
+          continue;
+        }
+        const errors = validateSync(input);
+        if (errors.length) {
+          failed.push({
+            row: rowNumber,
+            email,
+            reason: `Invalid fields: ${errors.map((e) => e.property).join(', ')}`,
+          });
+          continue;
+        }
+        await this.employeesService.createEmployeeMinimal(input, orgId);
+        created.push({ email });
+      } catch {
+        failed.push({
+          row: rowNumber,
+          email,
+          reason: 'Employee could not be created',
         });
       }
     }
