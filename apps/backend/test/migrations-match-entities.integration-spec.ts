@@ -217,7 +217,7 @@ describe('Migrations match the entities', () => {
   });
   it('seeds linked staff profiles idempotently against the migrated schema', async () => {
     const [{ id: orgId }] = await migrated.query(
-      `INSERT INTO organizations (name, subdomain) VALUES ('Seed Check', 'seedcheck') RETURNING id`,
+      `INSERT INTO organizations (id, name, subdomain, "isActive", "isArchived", version, "createdAt", "updatedAt") VALUES (gen_random_uuid(), 'Seed Check', 'seedcheck', true, false, 1, now(), now()) RETURNING id`,
     );
     const client = new Client({
       ...baseOptions,

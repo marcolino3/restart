@@ -5,6 +5,14 @@ import { resolve } from 'node:path';
 const environment = {
   DB_HOST: '127.0.0.1', DB_PORT: '5435', DB_USERNAME: 'test', DB_PASSWORD: 'test', DB_NAME: 'restart_employee_e2e',
   DB_SYNCHRONIZE: 'false', NODE_ENV: 'test',
+  // Explicit test-only configuration: clean checkouts must not need a developer .env.
+  SMTP_USER: 'employee-tests@example.test', GOOGLE_MAIL_REFRESH_TOKEN: 'employee-test-mail-token',
+  GOOGLE_AUTH_CLIENT_ID: 'employee-test-client', GOOGLE_AUTH_CLIENT_SECRET: 'employee-test-client-secret',
+  GOOGLE_AUTH_REDIRECT_URI: 'http://localhost:4101/api/auth/google/redirect',
+  GOOGLE_CALENDAR_ID: 'employee-test-calendar', AUTH_UI_REDIRECT: 'http://localhost:4100',
+  JWT_ACCESS_TOKEN_SECRET: 'employee-test-access-secret', JWT_ACCESS_TOKEN_EXPIRATION_MS: '900000',
+  JWT_REFRESH_TOKEN_SECRET: 'employee-test-refresh-secret', JWT_REFRESH_TOKEN_EXPIRATION_MS: '604800000',
+  ORG_SETTINGS_ENCRYPTION_KEY: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
   S3_BUCKET: '', S3_ACCESS_KEY_ID: '', S3_SECRET_ACCESS_KEY: '',
   E2E_STORAGE_DIR: resolve(__dirname, '.employee-storage'),
   BACKEND_URL: 'http://localhost:4101', BETTER_AUTH_URL: 'http://localhost:4101',
