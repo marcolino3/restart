@@ -360,8 +360,10 @@ test.describe('Field-level RBAC — grossSalary read gate', () => {
     )?.id
     expect(officeRoleId).toBeTruthy()
 
+    // This role contains a field grant the owner does not hold. Assign it as
+    // superadmin too; the production anti-escalation guard must remain active.
     const roleAssign = await gql(
-      owner.page,
+      page,
       `mutation AssignRole($input: EmployeeOnboardingInput!) {
          upsertEmployeeOnboardingDraft(input: $input) { id }
        }`,
