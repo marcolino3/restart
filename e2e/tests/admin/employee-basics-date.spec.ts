@@ -22,7 +22,10 @@ for (const scenario of [
       await writer.page.getByLabel(/date of birth/i).click();
       await writer.page.locator(`[data-day="${Number(scenario.month)}/1/2026"]`).click();
       await writer.page.keyboard.press('Escape');
+      await expect(writer.page.locator('[data-slot="popover-content"]')).toBeHidden();
+      const savedResponse = writer.page.waitForResponse(response => response.request().method() === 'POST' && Boolean(response.request().headers()['next-action']));
       await writer.page.getByRole('button',{ name:/save.*draft|draft.*close/i }).click();
+      expect((await savedResponse).ok()).toBe(true);
       await expect(writer.page).toHaveURL(/\/admin\/employees$/);
       const list = await employeeGql(writer.page,'{ employeesByOrgId { id profile { email dateOfBirth } } }');
       expect(list.errors).toBeUndefined();
