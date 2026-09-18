@@ -222,25 +222,27 @@ test.describe('Class budgets', () => {
     })
 
     await page.getByRole('button', { name: /^record expense$/i }).click()
-    const dialog = page.getByRole('dialog')
-    await expect(dialog).toBeVisible()
+    // Recording happens on its own page: receipt on the left, form on the right.
+    await page.waitForURL(/\/class-budgets\/expenses\/new/, { timeout: 15000 })
+    await expect(page.getByTestId('receipt-dropzone')).toBeVisible()
 
-    await dialog.getByTestId('receipt-input').setInputFiles({
+    await page.getByTestId('receipt-input').setInputFiles({
       name: 'receipt.pdf',
       mimeType: 'application/pdf',
       buffer: PDF_BYTES,
     })
-    await expect(dialog.getByRole('link', { name: /view receipt/i })).toBeVisible({
+    await expect(page.getByRole('link', { name: /view receipt/i })).toBeVisible({
       timeout: 15000,
     })
+    await expect(page.getByTestId('receipt-preview')).toBeVisible()
 
-    await dialog.getByLabel('Amount').fill('120.50')
-    await dialog.getByLabel('Category').click()
+    await page.getByLabel('Amount').fill('120.50')
+    await page.getByLabel('Category').click()
     await page.getByRole('option', { name: category.name }).click()
-    await dialog.getByLabel('Vendor').fill('E2E Papeterie')
-    await dialog.getByRole('button', { name: /^save$/i }).click()
+    await page.getByLabel('Vendor').fill('E2E Papeterie')
+    await page.getByRole('button', { name: /^save$/i }).click()
 
-    await expect(dialog).toBeHidden({ timeout: 15000 })
+    await page.waitForURL(/\/class-budgets\?classId=/, { timeout: 15000 })
     await expect(page.getByRole('cell', { name: 'E2E Papeterie' })).toBeVisible({
       timeout: 15000,
     })
@@ -383,7 +385,7 @@ test.describe('Class budgets', () => {
       { c: schoolClass.id, f: fileId },
     )
     expect(analysis.data?.analyzeExpenseReceipt ?? null).toBeNull()
-    expect(analysis.errors?.[0]?.message).toMatch(/not configured/i)
+    expect(analysis.errors?.[0]?.message).toBe('EXPENSE_AI_NOT_CONFIGURED')
     await page.request.delete(
       `${BACKEND_URL}/api/expense-receipts/${fileId}?schoolClassId=${schoolClass.id}`,
     )
@@ -392,19 +394,20 @@ test.describe('Class budgets', () => {
       waitUntil: 'networkidle',
     })
     await page.getByRole('button', { name: /^record expense$/i }).click()
-    const dialog = page.getByRole('dialog')
-    await dialog.getByTestId('receipt-input').setInputFiles({
+    await page.waitForURL(/\/class-budgets\/expenses\/new/, { timeout: 15000 })
+    await page.getByTestId('receipt-input').setInputFiles({
       name: 'receipt.pdf',
       mimeType: 'application/pdf',
       buffer: PDF_BYTES,
     })
-    await expect(dialog.getByRole('link', { name: /view receipt/i })).toBeVisible({
+    await expect(page.getByRole('link', { name: /view receipt/i })).toBeVisible({
       timeout: 15000,
     })
-    await expect(dialog.getByRole('button', { name: /analyse with ai/i })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: /analyse with ai/i })).toHaveCount(0)
 
-    // Cancelling discards the uploaded, never attached receipt.
-    await dialog.getByRole('button', { name: /^cancel$/i }).click()
-    await expect(dialog).toBeHidden()
+    // Cancelling discards the uploaded, never attached receipt and returns
+    // to the overview.
+    await page.getByRole('button', { name: /^cancel$/i }).click()
+    await page.waitForURL(/\/class-budgets\?classId=/, { timeout: 15000 })
   })
 })

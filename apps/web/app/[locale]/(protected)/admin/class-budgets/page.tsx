@@ -5,14 +5,10 @@ import {
   getClassBudgetSummaryAction,
 } from "@/features/class-budgets/actions/class-budgets-actions";
 import { getClassExpensesAction } from "@/features/class-budgets/actions/class-expenses-actions";
-import { getExpenseAiConfiguredAction } from "@/features/class-budgets/actions/expense-receipt-ai-actions";
 import { getExpenseCategoriesAction } from "@/features/class-budgets/actions/expense-categories-actions";
 import { ClassBudgetsOverview } from "@/features/class-budgets/components/ClassBudgetsOverview";
 import { userHasPermission } from "@/features/class-budgets/lib/permissions";
-import {
-  defaultExpenseDateFor,
-  pickSchoolYear,
-} from "@/features/class-budgets/lib/school-year";
+import { pickSchoolYear } from "@/features/class-budgets/lib/school-year";
 import { getMyTeachingSchoolClassesAction } from "@/features/school-classes/actions/get-my-teaching-school-classes.action";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 
@@ -61,14 +57,13 @@ const ClassBudgetsPage = async ({ searchParams }: Props) => {
     categories.find((c) => c.id === categoryId)?.id ?? null;
 
   const canWrite = userHasPermission(userRes.data, "CLASS_EXPENSE_WRITE");
-  const [summaryRes, expensesRes, aiConfigured] = await Promise.all([
+  const [summaryRes, expensesRes] = await Promise.all([
     getClassBudgetSummaryAction(selectedClass.id, selectedYear.startYear),
     getClassExpensesAction({
       schoolYearStart: selectedYear.startYear,
       schoolClassId: selectedClass.id,
       categoryId: selectedCategoryId,
     }),
-    canWrite ? getExpenseAiConfiguredAction() : false,
   ]);
 
   return (
@@ -79,9 +74,7 @@ const ClassBudgetsPage = async ({ searchParams }: Props) => {
       selectedSchoolClassId={selectedClass.id}
       selectedSchoolYear={selectedYear}
       selectedCategoryId={selectedCategoryId}
-      defaultExpenseDate={defaultExpenseDateFor(selectedYear)}
       canWrite={canWrite}
-      aiConfigured={aiConfigured}
       summary={summaryRes.success ? summaryRes.data : null}
       expenses={expensesRes.success ? expensesRes.data : []}
     />

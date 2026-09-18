@@ -19,6 +19,7 @@ const ROUTE_TITLE_MAP: Record<string, string> = {
   "/admin/admissions": "admissions",
   "/admin/chats": "chats",
   "/admin/class-budgets/categories": "expenseCategories",
+  "/admin/class-budgets/expenses": "classExpense",
   "/admin/class-budgets/manage": "classBudgetsManage",
   "/admin/class-budgets": "classBudgets",
   "/admin/contact-persons": "contactPersons",

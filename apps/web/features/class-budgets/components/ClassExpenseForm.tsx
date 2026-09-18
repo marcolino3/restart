@@ -6,17 +6,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { DatePickerFormField } from "@/components/form/form-fields/DatePickerFormField";
 import { InputFormField } from "@/components/form/form-fields/InputFormField";
@@ -41,7 +34,7 @@ import {
   type ClassExpenseFormValues,
 } from "../schemas/class-expense-form.schema";
 import type { ClassExpense, ExpenseCategory } from "../types";
-import { ReceiptField } from "./ReceiptField";
+import { ReceiptPanel } from "./ReceiptPanel";
 
 const NAMESPACE = "ClassBudgets";
 
@@ -56,10 +49,11 @@ interface Props {
   currency: string;
   /** Offers "analyse with AI" when the org has a provider configured. */
   aiConfigured: boolean;
-  onClose: () => void;
+  /** Overview URL (with class and year) to go back to. */
+  returnHref: string;
 }
 
-export function ClassExpenseDialog({
+export function ClassExpenseForm({
   expense,
   schoolClasses,
   categories,
@@ -67,7 +61,7 @@ export function ClassExpenseDialog({
   defaultExpenseDate,
   currency,
   aiConfigured,
-  onClose,
+  returnHref,
 }: Props) {
   const t = useTranslations(NAMESPACE);
   const tC = useTranslations("Common");
@@ -150,6 +144,11 @@ export function ClassExpenseDialog({
     }
   };
 
+  const leave = () => {
+    router.push(returnHref);
+    router.refresh();
+  };
+
   const onCancel = async () => {
     const current = form.getValues("receiptFileId");
     if (current && current !== (expense?.receiptFileId ?? null)) {
@@ -157,7 +156,7 @@ export function ClassExpenseDialog({
         () => undefined,
       );
     }
-    onClose();
+    leave();
   };
 
   const onSubmit = async (values: ClassExpenseFormValues) => {
@@ -168,115 +167,129 @@ export function ClassExpenseDialog({
 
     if (result.success) {
       toast.success(t(expense ? "expenseUpdated" : "expenseCreated"));
-      router.refresh();
-      onClose();
+      leave();
     } else {
       toast.error(t("expenseSaveError"), { description: result.error });
     }
   };
 
+  const busy = form.formState.isSubmitting || analyzing;
+
   return (
-    <Dialog open onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent className="sm:max-w-[560px]">
-        <DialogHeader>
-          <DialogTitle>{t(expense ? "editExpense" : "newExpense")}</DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <DialogBody className="space-y-4">
-              <SelectFormField
-                name="schoolClassId"
-                label="schoolClass"
-                namespace={NAMESPACE}
-                options={classOptions}
-                translateOptions={false}
-                // The receipt is stored under the class it was uploaded for.
-                disabled={Boolean(receiptFileId)}
-              />
-              <ReceiptField
-                schoolClassId={schoolClassId}
-                value={receiptFileId}
-                onChange={(fileId) =>
-                  form.setValue("receiptFileId", fileId, { shouldDirty: true })
-                }
-                disabled={form.formState.isSubmitting || analyzing}
-              />
-              {aiConfigured && receiptFileId && (
-                <div className="space-y-1">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={onAnalyze}
-                    disabled={analyzing || form.formState.isSubmitting}
-                  >
-                    {analyzing ? (
-                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="mr-1 h-4 w-4" />
-                    )}
-                    {t("aiAnalyze")}
-                  </Button>
-                  <p className="text-xs text-muted-foreground">
-                    {t("aiAnalyzeHint")}
-                  </p>
+    <div className="space-y-4">
+      <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+        <ArrowLeft className="mr-1 h-4 w-4" />
+        {tC("back")}
+      </Button>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        {/* Sticky and viewport-high so the receipt stays readable while the
+            form on the right is filled in. */}
+        <div className="lg:sticky lg:top-4 lg:h-[calc(100vh-9rem)]">
+          <ReceiptPanel
+            schoolClassId={schoolClassId}
+            value={receiptFileId}
+            onChange={(fileId) =>
+              form.setValue("receiptFileId", fileId, { shouldDirty: true })
+            }
+            disabled={busy}
+          />
+        </div>
+        <Card className="self-start">
+          <CardHeader>
+            <CardTitle>{t(expense ? "editExpense" : "newExpense")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
+                <SelectFormField
+                  name="schoolClassId"
+                  label="schoolClass"
+                  namespace={NAMESPACE}
+                  options={classOptions}
+                  translateOptions={false}
+                  // The receipt is stored under the class it was uploaded for.
+                  disabled={Boolean(receiptFileId)}
+                />
+                {aiConfigured && receiptFileId && (
+                  <div className="space-y-1">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={onAnalyze}
+                      disabled={busy}
+                    >
+                      {analyzing ? (
+                        <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="mr-1 h-4 w-4" />
+                      )}
+                      {t("aiAnalyze")}
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      {t("aiAnalyzeHint")}
+                    </p>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <DatePickerFormField
+                    name="expenseDate"
+                    label="expenseDate"
+                    namespace={NAMESPACE}
+                    dateOnly
+                  />
+                  <NumberFormField
+                    name="amount"
+                    label="amount"
+                    namespace={NAMESPACE}
+                    min={0.01}
+                    // Must divide every valid amount from `min` on, otherwise the
+                    // browser's native step validation silently blocks the submit.
+                    step={0.01}
+                  />
                 </div>
-              )}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <DatePickerFormField
-                  name="expenseDate"
-                  label="expenseDate"
+                <SelectFormField
+                  key={`category-${prefillRound}`}
+                  name="categoryId"
+                  label="category"
                   namespace={NAMESPACE}
-                  dateOnly
+                  options={categoryOptions}
+                  translateOptions={false}
                 />
-                <NumberFormField
-                  name="amount"
-                  label="amount"
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <InputFormField
+                    name="vendor"
+                    label="vendor"
+                    namespace={NAMESPACE}
+                  />
+                  <InputFormField
+                    name="invoiceNumber"
+                    label="invoiceNumber"
+                    namespace={NAMESPACE}
+                  />
+                </div>
+                <TextareaFormField
+                  name="description"
+                  label="description"
                   namespace={NAMESPACE}
-                  min={0.01}
-                  // Must divide every valid amount from `min` on, otherwise the
-                  // browser's native step validation silently blocks the submit.
-                  step={0.01}
+                  rows={3}
                 />
-              </div>
-              <SelectFormField
-                key={`category-${prefillRound}`}
-                name="categoryId"
-                label="category"
-                namespace={NAMESPACE}
-                options={categoryOptions}
-                translateOptions={false}
-              />
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <InputFormField
-                  name="vendor"
-                  label="vendor"
-                  namespace={NAMESPACE}
-                />
-                <InputFormField
-                  name="invoiceNumber"
-                  label="invoiceNumber"
-                  namespace={NAMESPACE}
-                />
-              </div>
-              <TextareaFormField
-                name="description"
-                label="description"
-                namespace={NAMESPACE}
-                rows={3}
-              />
-            </DialogBody>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onCancel}>
-                {tC("cancel")}
-              </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {tC("save")}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button type="button" variant="outline" onClick={onCancel}>
+                    {tC("cancel")}
+                  </Button>
+                  <Button type="submit" disabled={form.formState.isSubmitting}>
+                    {tC("save")}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }

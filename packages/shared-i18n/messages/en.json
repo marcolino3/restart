@@ -3592,7 +3592,8 @@
     "absenceRequests": "Absence requests",
     "classBudgets": "Class budgets",
     "classBudgetsManage": "Manage budgets",
-    "expenseCategories": "Expense categories"
+    "expenseCategories": "Expense categories",
+    "classExpense": "Expense"
   },
   "StudentNotes": {
     "logbook": "Notes",
@@ -4304,7 +4305,10 @@
     "aiErrorTooManyRequests": "Too many analyses in a short time. Please wait a minute.",
     "aiErrorReceiptMissing": "The receipt was not found. Please upload it again.",
     "aiErrorNoAccess": "No permission for this class.",
-    "aiErrorNoAllowance": "The stored API key has no request allowance at the AI provider (limit 0). Waiting does not help: an admin has to check plan and billing of the provider account, or set another provider under Settings > AI."
+    "aiErrorNoAllowance": "The stored API key has no request allowance at the AI provider (limit 0). Waiting does not help: an admin has to check plan and billing of the provider account, or set another provider under Settings > AI.",
+    "receiptDropTitle": "Drop the receipt here or click",
+    "receiptPreviewError": "The preview could not be loaded. Open the receipt via \"View receipt\".",
+    "expenseNotFound": "This expense was not found or cannot be edited."
   },
   "ExpenseCategories": {
     "noAccess": "You do not have permission for this area.",

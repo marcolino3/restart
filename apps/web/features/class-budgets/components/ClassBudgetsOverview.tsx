@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ROUTES } from "@/constants/routes";
 import {
   Select,
   SelectContent,
@@ -21,7 +21,6 @@ import type {
   ExpenseCategory,
 } from "../types";
 import { ClassBudgetSummaryCards } from "./ClassBudgetSummaryCards";
-import { ClassExpenseDialog } from "./ClassExpenseDialog";
 import { ClassExpensesTable } from "./ClassExpensesTable";
 import { ExpenseCategoryPie } from "./ExpenseCategoryPie";
 
@@ -34,15 +33,10 @@ interface Props {
   selectedSchoolClassId: string;
   selectedSchoolYear: BudgetSchoolYear;
   selectedCategoryId: string | null;
-  /** Today when it lies in the selected year, otherwise the year's last day. */
-  defaultExpenseDate: string;
   canWrite: boolean;
-  aiConfigured: boolean;
   summary: ClassBudgetSummary | null;
   expenses: ClassExpense[];
 }
-
-type DialogState = { mode: "create" } | { mode: "edit"; expense: ClassExpense };
 
 export function ClassBudgetsOverview({
   schoolClasses,
@@ -51,17 +45,18 @@ export function ClassBudgetsOverview({
   selectedSchoolClassId,
   selectedSchoolYear,
   selectedCategoryId,
-  defaultExpenseDate,
   canWrite,
-  aiConfigured,
   summary,
   expenses,
 }: Props) {
   const t = useTranslations("ClassBudgets");
+  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [dialog, setDialog] = useState<DialogState | null>(null);
+  // Recording and editing happen on their own page, which returns to the
+  // same class and year.
+  const expenseQuery = `classId=${selectedSchoolClassId}&year=${selectedSchoolYear.startYear}`;
 
   // The selection lives in the URL so the server component loads the data
   // and a reload or shared link keeps class, year and filter.
@@ -126,7 +121,11 @@ export function ClassBudgetsOverview({
         {canWrite && (
           <Button
             className="ml-auto"
-            onClick={() => setDialog({ mode: "create" })}
+            onClick={() =>
+              router.push(
+                `${ROUTES.admin.classExpenseNew(locale)}?${expenseQuery}`,
+              )
+            }
           >
             <Plus className="mr-1 h-4 w-4" />
             {t("newExpense")}
@@ -147,23 +146,14 @@ export function ClassBudgetsOverview({
         </h2>
         <ClassExpensesTable
           expenses={expenses}
-          onEdit={(expense) => setDialog({ mode: "edit", expense })}
+          onEdit={(expense) =>
+            router.push(
+              `${ROUTES.admin.classExpenseEdit(locale, expense.id)}?${expenseQuery}`,
+            )
+          }
           onDeleted={() => router.refresh()}
         />
       </section>
-
-      {dialog && (
-        <ClassExpenseDialog
-          expense={dialog.mode === "edit" ? dialog.expense : undefined}
-          schoolClasses={schoolClasses}
-          categories={categories}
-          defaultSchoolClassId={selectedSchoolClassId}
-          defaultExpenseDate={defaultExpenseDate}
-          currency={summary?.currency ?? "CHF"}
-          aiConfigured={aiConfigured}
-          onClose={() => setDialog(null)}
-        />
-      )}
     </div>
   );
 }

@@ -3592,7 +3592,8 @@
     "absenceRequests": "Absenzanträge",
     "classBudgets": "Klassenbudgets",
     "classBudgetsManage": "Budgets verwalten",
-    "expenseCategories": "Ausgabenkategorien"
+    "expenseCategories": "Ausgabenkategorien",
+    "classExpense": "Ausgabe"
   },
   "StudentNotes": {
     "logbook": "Notizen",
@@ -4304,7 +4305,10 @@
     "aiErrorTooManyRequests": "Zu viele Analysen in kurzer Zeit. Bitte eine Minute warten.",
     "aiErrorReceiptMissing": "Der Beleg wurde nicht gefunden. Bitte nochmals hochladen.",
     "aiErrorNoAccess": "Keine Berechtigung für diese Klasse.",
-    "aiErrorNoAllowance": "Der hinterlegte API-Key hat beim KI-Anbieter kein Anfragekontingent (Limit 0). Warten hilft nicht: Ein Admin muss Tarif und Abrechnung des Anbieter-Kontos prüfen oder unter Einstellungen > KI einen anderen Anbieter hinterlegen."
+    "aiErrorNoAllowance": "Der hinterlegte API-Key hat beim KI-Anbieter kein Anfragekontingent (Limit 0). Warten hilft nicht: Ein Admin muss Tarif und Abrechnung des Anbieter-Kontos prüfen oder unter Einstellungen > KI einen anderen Anbieter hinterlegen.",
+    "receiptDropTitle": "Beleg hierher ziehen oder klicken",
+    "receiptPreviewError": "Die Vorschau konnte nicht geladen werden. Der Beleg lässt sich über «Beleg anzeigen» öffnen.",
+    "expenseNotFound": "Diese Ausgabe wurde nicht gefunden oder kann nicht bearbeitet werden."
   },
   "ExpenseCategories": {
     "noAccess": "Für diesen Bereich fehlt die Berechtigung.",

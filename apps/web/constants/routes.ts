@@ -66,6 +66,10 @@ export const ROUTES = {
       `/${locale}/admin/class-budgets/manage`,
     expenseCategories: (locale: string) =>
       `/${locale}/admin/class-budgets/categories`,
+    classExpenseNew: (locale: string) =>
+      `/${locale}/admin/class-budgets/expenses/new`,
+    classExpenseEdit: (locale: string, id: string) =>
+      `/${locale}/admin/class-budgets/expenses/${id}`,
 
     // Grade Levels
     gradeLevels: (locale: string) => `/${locale}/admin/grade-levels`,
