@@ -217,11 +217,11 @@ test.describe('Class budgets', () => {
     await page.goto(`/en/admin/class-budgets?classId=${schoolClass.id}`, {
       waitUntil: 'networkidle',
     })
-    await expect(page.getByText('No expenses recorded yet.').first()).toBeVisible({
+    await expect(page.getByText('No expenses in this school year yet.')).toBeVisible({
       timeout: 15000,
     })
 
-    await page.getByRole('button', { name: /^record expense$/i }).click()
+    await page.getByRole('button', { name: /^record expense$/i }).first().click()
     // Recording happens on its own page: receipt on the left, form on the right.
     await page.waitForURL(/\/class-budgets\/expenses\/new/, { timeout: 15000 })
     await expect(page.getByTestId('receipt-dropzone')).toBeVisible()
@@ -247,6 +247,15 @@ test.describe('Class budgets', () => {
       timeout: 15000,
     })
     await expect(page.getByTestId('budget-remaining')).toContainText('379.50')
+    await expect(page.getByTestId('expenses-count')).toHaveText('1')
+    await expect(page.getByTestId('expenses-total')).toContainText('120.50')
+    await expect(page.getByText(/1 booking/)).toBeVisible()
+
+    // The search narrows the list without a round trip.
+    await page.getByPlaceholder('Search vendor or description').fill('nothing like this')
+    await expect(page.getByText('No expenses match this selection.')).toBeVisible()
+    await page.getByPlaceholder('Search vendor or description').fill('papeterie')
+    await expect(page.getByRole('cell', { name: 'E2E Papeterie' })).toBeVisible()
 
     // The pie chart must really take up space — it once rendered at 0×0.
     const pie = page.locator('.recharts-surface').first()
@@ -405,7 +414,7 @@ test.describe('Class budgets', () => {
     await page.goto(`/en/admin/class-budgets?classId=${schoolClass.id}`, {
       waitUntil: 'networkidle',
     })
-    await page.getByRole('button', { name: /^record expense$/i }).click()
+    await page.getByRole('button', { name: /^record expense$/i }).first().click()
     await page.waitForURL(/\/class-budgets\/expenses\/new/, { timeout: 15000 })
     await page.getByTestId('receipt-input').setInputFiles({
       name: 'receipt.pdf',

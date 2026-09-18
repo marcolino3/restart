@@ -22,6 +22,8 @@ const summary = (
   remaining: 0,
   isOverBudget: false,
   currency: "CHF",
+  expenseCount: 0,
+  studentCount: 0,
   byCategory: [],
   ...overrides,
 });
@@ -59,6 +61,14 @@ describe("combineSummaries", () => {
       { category: material, total: 150.3 },
       { category: trips, total: 50 },
     ]);
+  });
+
+  it("adds up the bookings and the children of all classes", () => {
+    const result = combineSummaries([
+      summary({ expenseCount: 4, studentCount: 18 }),
+      summary({ schoolClassId: "k2", expenseCount: 2, studentCount: 21 }),
+    ]);
+    expect(result).toMatchObject({ expenseCount: 6, studentCount: 39 });
   });
 
   it("keeps the budget empty when no class has one", () => {

@@ -21,6 +21,8 @@ import { TestingModule } from '@nestjs/testing';
 
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { Persona } from '@/common/enums/persona.enum';
+import { SchoolClassEnrollment } from '@/school-management/school-class-enrollments/entities/school-class-enrollment.entity';
+import { Student } from '@/school-management/students/entities/student.entity';
 import { SchoolClassTeacherRole } from '@/database/enums/school-class-teacher-role.enum';
 import { Employee } from '@/employee-management/employees/entities/employee.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
@@ -74,6 +76,7 @@ const memoryStorage: Pick<StorageService, 'put' | 'getStream' | 'delete'> = {
       ExpenseCategory,
       SchoolClass,
       SchoolClassTeacher,
+      SchoolClassEnrollment,
       GradeLevel,
       Employee,
       Organization,
@@ -491,6 +494,62 @@ describe('Class budgets (Integration)', () => {
   });
 
   describe('summary', () => {
+    it('counts the expenses and the children enrolled today', async () => {
+      const classA = await createClass('Klasse A');
+      const classB = await createClass('Klasse B');
+      const material = await createCategory('Material');
+      const studentRepo = dataSource.getRepository(Student);
+      const enrollmentRepo = dataSource.getRepository(SchoolClassEnrollment);
+      const enrol = async (
+        schoolClassId: string,
+        enrolledAt: string,
+        leftAt: string | null,
+      ) => {
+        const student = await studentRepo.save(
+          studentRepo.create({
+            firstName: 'Mia',
+            lastName: 'Keller',
+            organizationId: orgId,
+          }),
+        );
+        await enrollmentRepo.save(
+          enrollmentRepo.create({
+            studentId: student.id,
+            schoolClassId,
+            organizationId: orgId,
+            enrolledAt,
+            leftAt,
+          }),
+        );
+      };
+      await enrol(classA.id, '2020-08-01', null);
+      await enrol(classA.id, '2020-08-01', null);
+      await enrol(classA.id, '2020-08-01', addDays(today(), -1)); // left
+      await enrol(classB.id, '2020-08-01', null); // other class
+      for (const amount of [10, 20]) {
+        await expenses.create(
+          {
+            schoolClassId: classA.id,
+            categoryId: material.id,
+            expenseDate: current.start,
+            amount,
+          },
+          orgId,
+          admin(orgId),
+        );
+      }
+
+      const summary = await budgets.summary(
+        classA.id,
+        YEAR,
+        orgId,
+        admin(orgId),
+      );
+
+      expect(summary.expenseCount).toBe(2);
+      expect(summary.studentCount).toBe(2);
+    });
+
     it('sums per category inside the school year boundaries only', async () => {
       const classA = await createClass('Klasse A');
       const material = await createCategory('Material');

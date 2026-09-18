@@ -654,11 +654,13 @@ export type ClassBudgetSummary = {
   budget?: Maybe<Scalars['Float']['output']>;
   byCategory: Array<ClassBudgetCategoryTotal>;
   currency: Scalars['String']['output'];
+  expenseCount: Scalars['Int']['output'];
   isOverBudget: Scalars['Boolean']['output'];
   remaining: Scalars['Float']['output'];
   schoolClassId: Scalars['ID']['output'];
   schoolYear: SchoolYear;
   spent: Scalars['Float']['output'];
+  studentCount: Scalars['Int']['output'];
 };
 
 export type ClassExpense = {

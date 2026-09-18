@@ -47,6 +47,8 @@ export function combineSummaries(
     remaining: remainingCents / 100,
     isOverBudget: budgetCents !== null && remainingCents < 0,
     currency: first.currency,
+    expenseCount: summaries.reduce((sum, s) => sum + s.expenseCount, 0),
+    studentCount: summaries.reduce((sum, s) => sum + s.studentCount, 0),
     byCategory: [...categories.values()]
       .map((entry) => ({ category: entry.category, total: entry.cents / 100 }))
       .sort((a, b) => b.total - a.total),

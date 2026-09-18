@@ -47,6 +47,10 @@ export type ClassBudgetSummary = {
   remaining: number;
   isOverBudget: boolean;
   currency: string;
+  /** Expenses booked in the school year. */
+  expenseCount: number;
+  /** Children enrolled in the class, basis for the per-child figures. */
+  studentCount: number;
   byCategory: {
     category: Pick<ExpenseCategory, "id" | "name" | "color">;
     total: number;

@@ -1,8 +1,10 @@
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
+import { SchoolClassEnrollment } from '@/school-management/school-class-enrollments/entities/school-class-enrollment.entity';
 import { SchoolClass } from '@/school-management/school-classes/entities/school-class.entity';
 import {
   SchoolYearRange,
   schoolYearFor,
+  today,
 } from '@/school-management/school-classes/lib/school-year';
 import { Organization } from '@/organizations/entities/organization.entity';
 import { Injectable, NotFoundException } from '@nestjs/common';
@@ -32,6 +34,8 @@ export class ClassBudgetsService {
     private readonly categoriesRepo: Repository<ExpenseCategory>,
     @InjectRepository(SchoolClass)
     private readonly schoolClassRepo: Repository<SchoolClass>,
+    @InjectRepository(SchoolClassEnrollment)
+    private readonly enrollmentsRepo: Repository<SchoolClassEnrollment>,
     @InjectRepository(Organization)
     private readonly organizationRepo: Repository<Organization>,
     private readonly access: ClassBudgetAccessService,
@@ -145,7 +149,16 @@ export class ClassBudgetsService {
       schoolYearStart,
     );
 
-    const [budget, totals] = await Promise.all([
+    // Head count on the day closest to today that lies in the school year.
+    const now = today();
+    const countDate =
+      now < schoolYear.start
+        ? schoolYear.start
+        : now > schoolYear.end
+          ? schoolYear.end
+          : now;
+
+    const [budget, totals, studentCount] = await Promise.all([
       this.budgetsRepo.findOne({
         where: { organizationId, schoolClassId, schoolYearStart },
       }),
@@ -153,6 +166,7 @@ export class ClassBudgetsService {
         .createQueryBuilder('e')
         .select('e.category_id', 'categoryId')
         .addSelect('SUM(e.amount)', 'total')
+        .addSelect('COUNT(*)', 'count')
         .where('e.organization_id = :organizationId', { organizationId })
         .andWhere('e.school_class_id = :schoolClassId', { schoolClassId })
         .andWhere('e.expense_date BETWEEN :start AND :end', {
@@ -160,7 +174,16 @@ export class ClassBudgetsService {
           end: schoolYear.end,
         })
         .groupBy('e.category_id')
-        .getRawMany<{ categoryId: string; total: string }>(),
+        .getRawMany<{ categoryId: string; total: string; count: string }>(),
+      this.enrollmentsRepo
+        .createQueryBuilder('en')
+        .where('en.organization_id = :organizationId', { organizationId })
+        .andWhere('en.school_class_id = :schoolClassId', { schoolClassId })
+        .andWhere('en.enrolled_at <= :countDate', { countDate })
+        .andWhere('(en.left_at IS NULL OR en.left_at >= :countDate)', {
+          countDate,
+        })
+        .getCount(),
     ]);
 
     const categories = totals.length
@@ -195,6 +218,8 @@ export class ClassBudgetsService {
       remaining: fromMinorUnits((budgetMinor ?? 0) - spentMinor),
       isOverBudget: budgetMinor !== null && spentMinor > budgetMinor,
       currency: budget?.currency ?? DEFAULT_CURRENCY,
+      expenseCount: totals.reduce((sum, row) => sum + Number(row.count), 0),
+      studentCount,
       byCategory,
     };
   }

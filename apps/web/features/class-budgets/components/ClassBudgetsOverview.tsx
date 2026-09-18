@@ -1,9 +1,12 @@
 "use client";
 
+import { useDeferredValue, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Download, Plus } from "lucide-react";
 
+import { PageHead } from "@/components/common/PageHead";
+import { SearchInput } from "@/components/common/SearchInput";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
 import {
@@ -23,8 +26,17 @@ import type {
 import { ClassBudgetSummaryCards } from "./ClassBudgetSummaryCards";
 import { ClassExpensesTable } from "./ClassExpensesTable";
 import { ExpenseCategoryPie } from "./ExpenseCategoryPie";
+import { expensesToCsv, filterExpenses } from "../lib/expenses-csv";
+import { cn } from "@/lib/utils";
 
 const ALL_CATEGORIES = "all";
+
+// Filter pill from the design handoff; `on` marks a filter that narrows the list.
+const pill = (on = false) =>
+  cn(
+    "h-[34px] w-auto gap-2 rounded-full bg-card px-3.5 text-[13px] font-medium",
+    on && "border-primary bg-accent text-accent-foreground",
+  );
 
 interface Props {
   schoolClasses: { id: string; name: string }[];
@@ -67,14 +79,71 @@ export function ClassBudgetsOverview({
     router.push(`${pathname}?${params.toString()}`);
   };
 
+  const [query, setQuery] = useState("");
+  const visibleExpenses = filterExpenses(expenses, useDeferredValue(query));
+  const newExpenseHref = `${ROUTES.admin.classExpenseNew(locale)}?${expenseQuery}`;
+  const selectedClassName =
+    schoolClasses.find((c) => c.id === selectedSchoolClassId)?.name ?? "";
+
+  const exportCsv = () => {
+    const csv = expensesToCsv(visibleExpenses, {
+      expenseDate: t("expenseDate"),
+      category: t("category"),
+      vendor: t("vendor"),
+      invoiceNumber: t("invoiceNumber"),
+      description: t("description"),
+      amount: t("amount"),
+      currency: t("currency"),
+    });
+    const url = URL.createObjectURL(
+      new Blob([csv], { type: "text/csv;charset=utf-8" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${t("exportFileName")}-${selectedClassName}-${selectedSchoolYear.label}.csv`
+      .replaceAll("/", "-")
+      .replaceAll(" ", "_");
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const newExpenseButton = canWrite && (
+    <Button onClick={() => router.push(newExpenseHref)}>
+      <Plus className="mr-1 h-4 w-4" />
+      {t("newExpense")}
+    </Button>
+  );
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-3">
+      <PageHead
+        className="mb-0"
+        title={t("pageTitle")}
+        subtitle={t("pageSubtitle", {
+          name: selectedClassName,
+          label: selectedSchoolYear.label,
+        })}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="ghost"
+              onClick={exportCsv}
+              disabled={visibleExpenses.length === 0}
+            >
+              <Download className="mr-1 h-4 w-4" />
+              {t("export")}
+            </Button>
+            {newExpenseButton}
+          </div>
+        }
+      />
+
+      <div className="flex flex-wrap items-center gap-2.5">
         <Select
           value={selectedSchoolClassId}
           onValueChange={(value) => select("classId", value)}
         >
-          <SelectTrigger className="w-[220px]" aria-label={t("schoolClass")}>
+          <SelectTrigger className={pill()} aria-label={t("schoolClass")}>
             <SelectValue placeholder={t("schoolClass")} />
           </SelectTrigger>
           <SelectContent>
@@ -89,7 +158,7 @@ export function ClassBudgetsOverview({
           value={String(selectedSchoolYear.startYear)}
           onValueChange={(value) => select("year", value)}
         >
-          <SelectTrigger className="w-[160px]" aria-label={t("schoolYear")}>
+          <SelectTrigger className={pill()} aria-label={t("schoolYear")}>
             <SelectValue placeholder={t("schoolYear")} />
           </SelectTrigger>
           <SelectContent>
@@ -106,7 +175,10 @@ export function ClassBudgetsOverview({
             select("categoryId", value === ALL_CATEGORIES ? null : value)
           }
         >
-          <SelectTrigger className="w-[200px]" aria-label={t("category")}>
+          <SelectTrigger
+            className={pill(selectedCategoryId !== null)}
+            aria-label={t("category")}
+          >
             <SelectValue placeholder={t("category")} />
           </SelectTrigger>
           <SelectContent>
@@ -118,34 +190,43 @@ export function ClassBudgetsOverview({
             ))}
           </SelectContent>
         </Select>
-        {canWrite && (
-          <Button
-            className="ml-auto"
-            onClick={() =>
-              router.push(
-                `${ROUTES.admin.classExpenseNew(locale)}?${expenseQuery}`,
-              )
-            }
-          >
-            <Plus className="mr-1 h-4 w-4" />
-            {t("newExpense")}
-          </Button>
-        )}
+        <SearchInput
+          value={query}
+          onValueChange={setQuery}
+          placeholder={t("searchPlaceholder")}
+          containerClassName="ml-auto w-[240px]"
+        />
       </div>
 
       {summary && (
         <>
           <ClassBudgetSummaryCards summary={summary} />
-          <ExpenseCategoryPie summary={summary} />
+          {summary.spent > 0 && <ExpenseCategoryPie summary={summary} />}
         </>
       )}
 
       <section className="space-y-3">
-        <h2 className="text-base font-semibold">
+        <h2 className="flex items-center gap-2 text-[15px] font-[650]">
           {t("expensesTitle", { label: selectedSchoolYear.label })}
+          <span
+            className="rounded-full bg-accent px-2 py-0.5 font-mono text-[11px] font-semibold text-accent-foreground"
+            data-testid="expenses-count"
+          >
+            {visibleExpenses.length}
+          </span>
         </h2>
         <ClassExpensesTable
-          expenses={expenses}
+          expenses={visibleExpenses}
+          empty={
+            expenses.length > 0 || selectedCategoryId !== null ? (
+              <p>{t("noExpensesMatch")}</p>
+            ) : (
+              <>
+                <p>{t("noExpensesInYear")}</p>
+                {newExpenseButton}
+              </>
+            )
+          }
           onEdit={(expense) =>
             router.push(
               `${ROUTES.admin.classExpenseEdit(locale, expense.id)}?${expenseQuery}`,

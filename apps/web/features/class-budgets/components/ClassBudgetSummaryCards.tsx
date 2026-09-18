@@ -5,9 +5,22 @@ import { AlertTriangle } from "lucide-react";
 
 import { StatCard, StatCardEm } from "@/components/common/StatCard";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 
+import {
+  budgetTone,
+  monthsLeft,
+  perHead,
+  type BudgetTone,
+} from "../lib/budget-kpis";
 import { formatMoney, spentPercent } from "../lib/format-money";
 import type { ClassBudgetSummary } from "../types";
+
+const TONE_CLASS: Record<BudgetTone, string> = {
+  green: "bg-status-green-foreground",
+  amber: "bg-status-amber-foreground",
+  rose: "bg-status-rose-foreground",
+};
 
 interface Props {
   summary: ClassBudgetSummary;
@@ -19,6 +32,13 @@ export function ClassBudgetSummaryCards({ summary }: Props) {
   const money = (amount: number) =>
     formatMoney(amount, summary.currency, locale);
   const percent = spentPercent(summary.spent, summary.budget);
+  const months = monthsLeft(summary.schoolYear, new Date());
+  const spentPerChild = perHead(summary.spent, summary.studentCount);
+  const budgetPerChild =
+    summary.budget === null
+      ? null
+      : perHead(summary.budget, summary.studentCount);
+  const bookings = t("bookings", { count: summary.expenseCount });
 
   return (
     <div className="space-y-4">
@@ -31,7 +51,7 @@ export function ClassBudgetSummaryCards({ summary }: Props) {
           </AlertDescription>
         </Alert>
       )}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 min-[1240px]:grid-cols-4">
         <StatCard
           label={t("budget")}
           value={summary.budget === null ? "—" : money(summary.budget)}
@@ -45,9 +65,29 @@ export function ClassBudgetSummaryCards({ summary }: Props) {
           label={t("spent")}
           value={money(summary.spent)}
           sub={
-            percent === null ? undefined : (
+            percent === null ? (
+              bookings
+            ) : (
               <>
-                <StatCardEm>{percent}%</StatCardEm> {t("ofBudget")}
+                <span
+                  className="mb-2 block h-2 overflow-hidden rounded-full bg-field"
+                  role="progressbar"
+                  aria-label={t("spent")}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.min(percent, 100)}
+                  data-testid="budget-progress"
+                  data-tone={budgetTone(percent)}
+                >
+                  <span
+                    className={cn(
+                      "block h-full rounded-full",
+                      TONE_CLASS[budgetTone(percent)],
+                    )}
+                    style={{ width: `${Math.min(percent, 100)}%` }}
+                  />
+                </span>
+                <StatCardEm>{percent}%</StatCardEm> {t("ofBudget")} · {bookings}
               </>
             )
           }
@@ -66,7 +106,30 @@ export function ClassBudgetSummaryCards({ summary }: Props) {
               </span>
             )
           }
-          sub={summary.isOverBudget ? t("overBudgetTitle") : undefined}
+          sub={
+            summary.isOverBudget
+              ? t("overBudgetTitle")
+              : summary.budget !== null && months !== null
+                ? t("remainingPerMonth", {
+                    count: months,
+                    amount: money(perHead(summary.remaining, months) ?? 0),
+                  })
+                : undefined
+          }
+        />
+        <StatCard
+          label={t("perChild")}
+          value={spentPerChild === null ? "—" : money(spentPerChild)}
+          sub={
+            summary.studentCount === 0
+              ? t("noChildren")
+              : budgetPerChild === null
+                ? t("children", { count: summary.studentCount })
+                : `${t("children", { count: summary.studentCount })} · ${t(
+                    "budgetPerChild",
+                    { amount: money(budgetPerChild) },
+                  )}`
+          }
         />
       </div>
     </div>

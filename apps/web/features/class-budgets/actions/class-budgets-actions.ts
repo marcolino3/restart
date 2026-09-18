@@ -48,6 +48,8 @@ const SummaryDocument = gql`
       remaining
       isOverBudget
       currency
+      expenseCount
+      studentCount
       byCategory {
         total
         category {
