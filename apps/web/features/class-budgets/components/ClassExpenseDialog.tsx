@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Loader2, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +28,11 @@ import {
   createClassExpenseAction,
   updateClassExpenseAction,
 } from "../actions/class-expenses-actions";
+import { analyzeExpenseReceiptAction } from "../actions/expense-receipt-ai-actions";
+import {
+  receiptSuggestionPatch,
+  type SuggestedField,
+} from "../lib/apply-receipt-suggestion";
 import { discardReceipt } from "../lib/receipts";
 import {
   createClassExpenseFormSchema,
@@ -45,6 +51,10 @@ interface Props {
   categories: ExpenseCategory[];
   defaultSchoolClassId: string;
   defaultExpenseDate: string;
+  /** Currency expenses are booked in; a receipt in another one is flagged. */
+  currency: string;
+  /** Offers "analyse with AI" when the org has a provider configured. */
+  aiConfigured: boolean;
   onClose: () => void;
 }
 
@@ -54,6 +64,8 @@ export function ClassExpenseDialog({
   categories,
   defaultSchoolClassId,
   defaultExpenseDate,
+  currency,
+  aiConfigured,
   onClose,
 }: Props) {
   const t = useTranslations(NAMESPACE);
@@ -86,6 +98,54 @@ export function ClassExpenseDialog({
     value: c.id,
     label: c.name,
   }));
+
+  const [analyzing, setAnalyzing] = useState(false);
+  // Bumped after an AI prefill: the select keeps its value internally and
+  // only picks up a programmatic change when it remounts.
+  const [prefillRound, setPrefillRound] = useState(0);
+
+  const onAnalyze = async () => {
+    const fileId = form.getValues("receiptFileId");
+    if (!fileId) return;
+    setAnalyzing(true);
+    const result = await analyzeExpenseReceiptAction(
+      form.getValues("schoolClassId"),
+      fileId,
+    );
+    setAnalyzing(false);
+    if (!result.success) {
+      toast.error(t("aiAnalyzeError"), { description: result.error });
+      return;
+    }
+
+    const patch = receiptSuggestionPatch(
+      result.data,
+      categoryOptions.map((option) => option.value),
+      new Date().toLocaleDateString("sv-SE"),
+    );
+    const fields = Object.keys(patch) as SuggestedField[];
+    if (fields.length === 0) {
+      toast.warning(t("aiNothingFound"));
+      return;
+    }
+    fields.forEach((field) =>
+      form.setValue(field, patch[field] as never, {
+        shouldDirty: true,
+        shouldValidate: true,
+      }),
+    );
+    setPrefillRound((round) => round + 1);
+    if (result.data.currency && result.data.currency !== currency) {
+      toast.warning(
+        t("aiCurrencyMismatch", {
+          found: result.data.currency,
+          expected: currency,
+        }),
+      );
+    } else {
+      toast.success(t("aiPrefilled"));
+    }
+  };
 
   const onCancel = async () => {
     const current = form.getValues("receiptFileId");
@@ -136,8 +196,29 @@ export function ClassExpenseDialog({
                 onChange={(fileId) =>
                   form.setValue("receiptFileId", fileId, { shouldDirty: true })
                 }
-                disabled={form.formState.isSubmitting}
+                disabled={form.formState.isSubmitting || analyzing}
               />
+              {aiConfigured && receiptFileId && (
+                <div className="space-y-1">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={onAnalyze}
+                    disabled={analyzing || form.formState.isSubmitting}
+                  >
+                    {analyzing ? (
+                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="mr-1 h-4 w-4" />
+                    )}
+                    {t("aiAnalyze")}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    {t("aiAnalyzeHint")}
+                  </p>
+                </div>
+              )}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <DatePickerFormField
                   name="expenseDate"
@@ -154,6 +235,7 @@ export function ClassExpenseDialog({
                 />
               </div>
               <SelectFormField
+                key={`category-${prefillRound}`}
                 name="categoryId"
                 label="category"
                 namespace={NAMESPACE}

@@ -12,6 +12,14 @@ import {
   SHIFT_AI_SETTING_KEYS,
   type ShiftAiProvider,
 } from "../shift-ai-providers";
+import {
+  defaultExpenseAiModel,
+  EXPENSE_AI_DEFAULT_PROVIDER,
+  EXPENSE_AI_KEY_REQUIRED,
+  EXPENSE_AI_SETTING_KEYS,
+  isExpenseAiProvider,
+  type ExpenseAiProvider,
+} from "../expense-ai-providers";
 
 const SETTINGS_PATH = "/admin/settings/ai";
 
@@ -30,11 +38,19 @@ export interface ShiftAiSettings {
   apiKeySet: boolean;
 }
 
+export interface ExpenseAiSettings {
+  provider: ExpenseAiProvider;
+  model: string;
+  /** Whether an own API key is stored (the value itself is never returned). */
+  apiKeySet: boolean;
+}
+
 export interface AiSettings {
   model: string;
   /** Whether an API key is stored (the value itself is never returned). */
   apiKeySet: boolean;
   shiftPlanning: ShiftAiSettings;
+  expenseReceipts: ExpenseAiSettings;
 }
 
 const readValue = async (organizationId: string, key: string) => {
@@ -67,6 +83,16 @@ export async function getAiSettingsAction(
       ? await readValue(organizationId, SHIFT_AI_SETTING_KEYS.model)
       : "";
 
+    const storedExpenseProvider = have.has(EXPENSE_AI_SETTING_KEYS.provider)
+      ? await readValue(organizationId, EXPENSE_AI_SETTING_KEYS.provider)
+      : "";
+    const expenseProvider = isExpenseAiProvider(storedExpenseProvider)
+      ? storedExpenseProvider
+      : EXPENSE_AI_DEFAULT_PROVIDER;
+    const expenseModel = have.has(EXPENSE_AI_SETTING_KEYS.model)
+      ? await readValue(organizationId, EXPENSE_AI_SETTING_KEYS.model)
+      : "";
+
     return {
       success: true,
       data: {
@@ -76,6 +102,11 @@ export async function getAiSettingsAction(
           provider,
           model: shiftModel || defaultShiftAiModel(provider),
           apiKeySet: have.has(SHIFT_AI_SETTING_KEYS.apiKey),
+        },
+        expenseReceipts: {
+          provider: expenseProvider,
+          model: expenseModel || defaultExpenseAiModel(expenseProvider),
+          apiKeySet: have.has(EXPENSE_AI_SETTING_KEYS.apiKey),
         },
       },
     };
@@ -165,6 +196,66 @@ export async function saveShiftAiSettingsAction(
     // Only touch the key when the user actually entered a new one.
     if (input.apiKey && input.apiKey.trim().length > 0) {
       await upsert(SHIFT_AI_SETTING_KEYS.apiKey, input.apiKey.trim());
+    }
+
+    revalidatePath(SETTINGS_PATH);
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Save failed",
+    };
+  }
+}
+
+export interface SaveExpenseAiSettingsInput {
+  organizationId: string;
+  provider: ExpenseAiProvider;
+  model: string;
+  /** Empty string = keep the stored key unchanged. */
+  apiKey?: string;
+}
+
+export async function saveExpenseAiSettingsAction(
+  input: SaveExpenseAiSettingsInput,
+): Promise<{ success: true } | { success: false; error?: string }> {
+  try {
+    if (!isExpenseAiProvider(input.provider)) {
+      return { success: false, error: "Unknown provider" };
+    }
+    const have = await storedKeys(input.organizationId);
+    const upsert = (key: string, value: string) =>
+      upsertSetting(input.organizationId, have, key, value);
+
+    // One key slot serves all vendors. Switching vendor without a new key
+    // would send the previous vendor's secret to the new one.
+    const newKey = input.apiKey?.trim() ?? "";
+    if (input.provider !== "contracts" && newKey.length === 0) {
+      const storedProvider = have.has(EXPENSE_AI_SETTING_KEYS.provider)
+        ? await readValue(
+            input.organizationId,
+            EXPENSE_AI_SETTING_KEYS.provider,
+          )
+        : "";
+      const keyBelongsToProvider =
+        have.has(EXPENSE_AI_SETTING_KEYS.apiKey) &&
+        storedProvider === input.provider;
+      if (!keyBelongsToProvider) {
+        return { success: false, error: EXPENSE_AI_KEY_REQUIRED };
+      }
+    }
+
+    await upsert(EXPENSE_AI_SETTING_KEYS.provider, input.provider);
+    if (input.provider !== "contracts") {
+      await upsert(
+        EXPENSE_AI_SETTING_KEYS.model,
+        input.model.trim() || defaultExpenseAiModel(input.provider),
+      );
+    }
+    // Only touch the key when the user actually entered a new one.
+    if (input.apiKey && input.apiKey.trim().length > 0) {
+      await upsert(EXPENSE_AI_SETTING_KEYS.apiKey, input.apiKey.trim());
     }
 
     revalidatePath(SETTINGS_PATH);

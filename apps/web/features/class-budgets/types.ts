@@ -53,6 +53,18 @@ export type ClassBudgetSummary = {
   }[];
 };
 
+/** What the AI read from a receipt — a proposal, never saved by itself. */
+export type ExpenseReceiptSuggestion = {
+  vendor: string | null;
+  invoiceNumber: string | null;
+  expenseDate: string | null;
+  amount: number | null;
+  currency: string | null;
+  description: string | null;
+  suggestedCategoryId: string | null;
+  confidence: number | null;
+};
+
 export type ActionResult<T> =
   | { success: true; data: T }
   | { success: false; error: string };

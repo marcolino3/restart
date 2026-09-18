@@ -37,6 +37,7 @@ interface Props {
   /** Today when it lies in the selected year, otherwise the year's last day. */
   defaultExpenseDate: string;
   canWrite: boolean;
+  aiConfigured: boolean;
   summary: ClassBudgetSummary | null;
   expenses: ClassExpense[];
 }
@@ -52,6 +53,7 @@ export function ClassBudgetsOverview({
   selectedCategoryId,
   defaultExpenseDate,
   canWrite,
+  aiConfigured,
   summary,
   expenses,
 }: Props) {
@@ -157,6 +159,8 @@ export function ClassBudgetsOverview({
           categories={categories}
           defaultSchoolClassId={selectedSchoolClassId}
           defaultExpenseDate={defaultExpenseDate}
+          currency={summary?.currency ?? "CHF"}
+          aiConfigured={aiConfigured}
           onClose={() => setDialog(null)}
         />
       )}

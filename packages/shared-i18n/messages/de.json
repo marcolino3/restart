@@ -2575,7 +2575,14 @@
     "shiftAiProvider_anthropic": "Anthropic",
     "shiftAiProvider_google": "Google Gemini",
     "shiftAiApiKeyLabel": "API-Key",
-    "shiftAiModelHint": "Modellname des Anbieters; leer lassen für den Standard."
+    "shiftAiModelHint": "Modellname des Anbieters; leer lassen für den Standard.",
+    "expenseAiTitle": "KI für Beleganalyse (Klassenbudgets)",
+    "expenseAiSubtitle": "Liest hochgeladene Rechnungen und füllt das Ausgabenformular vor. An den Anbieter gehen nur der Beleg und die Namen der Ausgabenkategorien.",
+    "expenseAiProviderHint": "Standard ist der Mistral-Zugang der Vertrags-KI (EU). Andere Anbieter müssen bewusst gewählt werden.",
+    "expenseAiNonEuTitle": "Anbieter ausserhalb der EU",
+    "expenseAiNonEuText": "Belege können Personendaten enthalten (Namen, Adressen). Bei diesem Anbieter werden sie ausserhalb der EU/Schweiz verarbeitet. Nur verwenden, wenn das mit den Datenschutzvorgaben der Schule vereinbar ist.",
+    "expenseAiModelHint": "Das Modell muss Bilder und PDFs lesen können.",
+    "expenseAiKeyRequired": "Bitte den API-Schlüssel dieses Anbieters eingeben. Der gespeicherte Schlüssel gehört zu einem anderen Anbieter."
   },
   "Projects": {
     "pageTitle": "Projekte",
@@ -4277,7 +4284,13 @@
       "amount": "Bitte einen gültigen Betrag eingeben.",
       "decimals": "Höchstens zwei Nachkommastellen.",
       "tooLong": "Der Text ist zu lang."
-    }
+    },
+    "aiAnalyze": "Mit KI analysieren",
+    "aiAnalyzeHint": "Die KI liest den Beleg und füllt die Felder vor. Bitte vor dem Speichern prüfen – gespeichert wird nichts automatisch.",
+    "aiAnalyzeError": "Der Beleg konnte nicht analysiert werden.",
+    "aiNothingFound": "Die KI konnte auf dem Beleg keine Angaben erkennen.",
+    "aiPrefilled": "Felder vorbefüllt. Bitte Angaben prüfen.",
+    "aiCurrencyMismatch": "Der Beleg lautet auf {found}, gebucht wird in {expected}. Bitte den Betrag umrechnen und prüfen."
   },
   "ExpenseCategories": {
     "noAccess": "Für diesen Bereich fehlt die Berechtigung.",

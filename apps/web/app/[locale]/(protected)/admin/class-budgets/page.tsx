@@ -5,6 +5,7 @@ import {
   getClassBudgetSummaryAction,
 } from "@/features/class-budgets/actions/class-budgets-actions";
 import { getClassExpensesAction } from "@/features/class-budgets/actions/class-expenses-actions";
+import { getExpenseAiConfiguredAction } from "@/features/class-budgets/actions/expense-receipt-ai-actions";
 import { getExpenseCategoriesAction } from "@/features/class-budgets/actions/expense-categories-actions";
 import { ClassBudgetsOverview } from "@/features/class-budgets/components/ClassBudgetsOverview";
 import {
@@ -59,13 +60,15 @@ const ClassBudgetsPage = async ({ searchParams }: Props) => {
   const selectedCategoryId =
     categories.find((c) => c.id === categoryId)?.id ?? null;
 
-  const [summaryRes, expensesRes] = await Promise.all([
+  const canWrite = permissions.includes("CLASS_EXPENSE_WRITE");
+  const [summaryRes, expensesRes, aiConfigured] = await Promise.all([
     getClassBudgetSummaryAction(selectedClass.id, selectedYear.startYear),
     getClassExpensesAction({
       schoolYearStart: selectedYear.startYear,
       schoolClassId: selectedClass.id,
       categoryId: selectedCategoryId,
     }),
+    canWrite ? getExpenseAiConfiguredAction() : false,
   ]);
 
   return (
@@ -77,7 +80,8 @@ const ClassBudgetsPage = async ({ searchParams }: Props) => {
       selectedSchoolYear={selectedYear}
       selectedCategoryId={selectedCategoryId}
       defaultExpenseDate={defaultExpenseDateFor(selectedYear)}
-      canWrite={permissions.includes("CLASS_EXPENSE_WRITE")}
+      canWrite={canWrite}
+      aiConfigured={aiConfigured}
       summary={summaryRes.success ? summaryRes.data : null}
       expenses={expensesRes.success ? expensesRes.data : []}
     />

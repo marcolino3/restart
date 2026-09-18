@@ -2575,7 +2575,14 @@
     "shiftAiProvider_anthropic": "Anthropic",
     "shiftAiProvider_google": "Google Gemini",
     "shiftAiApiKeyLabel": "API key",
-    "shiftAiModelHint": "Model name at the provider; leave empty for the default."
+    "shiftAiModelHint": "Model name at the provider; leave empty for the default.",
+    "expenseAiTitle": "AI for receipt analysis (class budgets)",
+    "expenseAiSubtitle": "Reads uploaded invoices and prefills the expense form. Only the receipt and the names of the expense categories are sent to the provider.",
+    "expenseAiProviderHint": "The default is the Mistral access of the contract AI (EU). Other providers must be chosen deliberately.",
+    "expenseAiNonEuTitle": "Provider outside the EU",
+    "expenseAiNonEuText": "Receipts can contain personal data (names, addresses). This provider processes them outside the EU/Switzerland. Only use it if that is compatible with the school's data protection rules.",
+    "expenseAiModelHint": "The model must be able to read images and PDFs.",
+    "expenseAiKeyRequired": "Please enter the API key of this provider. The stored key belongs to another provider."
   },
   "Projects": {
     "pageTitle": "Projects",
@@ -4277,7 +4284,13 @@
       "amount": "Please enter a valid amount.",
       "decimals": "At most two decimal places.",
       "tooLong": "The text is too long."
-    }
+    },
+    "aiAnalyze": "Analyse with AI",
+    "aiAnalyzeHint": "The AI reads the receipt and prefills the fields. Please check before saving – nothing is saved automatically.",
+    "aiAnalyzeError": "The receipt could not be analysed.",
+    "aiNothingFound": "The AI could not find any details on the receipt.",
+    "aiPrefilled": "Fields prefilled. Please check the details.",
+    "aiCurrencyMismatch": "The receipt is in {found}, expenses are booked in {expected}. Please convert and check the amount."
   },
   "ExpenseCategories": {
     "noAccess": "You do not have permission for this area.",

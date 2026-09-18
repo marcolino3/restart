@@ -4,6 +4,7 @@ import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { ClassBudgetsResolver } from './class-budgets.resolver';
 import { ClassExpensesResolver } from './class-expenses.resolver';
 import { ExpenseCategoriesResolver } from './expense-categories.resolver';
+import { ExpenseReceiptAiResolver } from './expense-receipt-ai.resolver';
 
 type ResolverClass = { prototype: object; name: string };
 
@@ -41,6 +42,13 @@ const MATRIX: [ResolverClass, Record<string, string>][] = [
       createClassExpense: 'CLASS_EXPENSE_WRITE',
       updateClassExpense: 'CLASS_EXPENSE_WRITE',
       deleteClassExpense: 'CLASS_EXPENSE_WRITE',
+    },
+  ],
+  [
+    ExpenseReceiptAiResolver,
+    {
+      isConfigured: 'CLASS_EXPENSE_READ',
+      analyzeExpenseReceipt: 'CLASS_EXPENSE_WRITE',
     },
   ],
 ];

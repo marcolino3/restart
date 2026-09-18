@@ -1,0 +1,204 @@
+import {
+  BadGatewayException,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { Repository } from 'typeorm';
+import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
+import { OrganizationSettingsService } from '@/organization-settings/organization-settings.service';
+import { ClassBudgetAccessService } from './class-budget-access.service';
+import { ExpenseCategory } from './entities/expense-category.entity';
+import { ExpenseReceiptAiService } from './expense-receipt-ai.service';
+import { ExpenseReceiptsService } from './expense-receipts.service';
+
+const ORG = '11111111-1111-4111-8111-111111111111';
+const CLASS = '22222222-2222-4222-8222-222222222222';
+const FILE = '33333333-3333-4333-8333-333333333333.pdf';
+
+describe('ExpenseReceiptAiService', () => {
+  let service: ExpenseReceiptAiService;
+  let settings: Record<string, string>;
+  let getDecryptedValue: jest.Mock;
+  let categoriesRepo: { find: jest.Mock };
+  let receipts: { read: jest.Mock; mimeOf: jest.Mock };
+  let access: { assertSchoolClassAccessible: jest.Mock };
+  let fetchMock: jest.Mock;
+  const realFetch = global.fetch;
+
+  const user: TokenPayload = { sub: 'user-1', orgId: ORG, roles: ['EMPLOYEE'] };
+
+  const answer = (content: unknown, status = 200) =>
+    Promise.resolve({
+      ok: status >= 200 && status < 300,
+      status,
+      json: () => Promise.resolve(content),
+    } as Response);
+  const mistralAnswer = (payload: object) =>
+    answer({ choices: [{ message: { content: JSON.stringify(payload) } }] });
+
+  beforeEach(() => {
+    settings = { CONTRACT_AI_MISTRAL_API_KEY: 'mistral-key' };
+    getDecryptedValue = jest.fn((orgId: string, key: string) =>
+      Promise.resolve(orgId === ORG ? (settings[key] ?? null) : null),
+    );
+    categoriesRepo = {
+      find: jest.fn().mockResolvedValue([{ id: 'cat-1', name: 'Material' }]),
+    };
+    receipts = {
+      read: jest.fn().mockResolvedValue(Buffer.from('%PDF')),
+      mimeOf: jest.fn().mockReturnValue('application/pdf'),
+    };
+    access = {
+      assertSchoolClassAccessible: jest.fn().mockResolvedValue(undefined),
+    };
+    fetchMock = jest.fn();
+    global.fetch = fetchMock;
+
+    service = new ExpenseReceiptAiService(
+      { getDecryptedValue } as unknown as OrganizationSettingsService,
+      categoriesRepo as unknown as Repository<ExpenseCategory>,
+      receipts as unknown as ExpenseReceiptsService,
+      access as unknown as ClassBudgetAccessService,
+    );
+  });
+
+  afterEach(() => {
+    global.fetch = realFetch;
+  });
+
+  it('defaults to the contract Mistral key with a vision model', async () => {
+    // Left over from a previously selected vendor — must not reach Mistral.
+    settings.EXPENSE_AI_MODEL = 'gpt-5';
+    fetchMock.mockReturnValue(
+      mistralAnswer({
+        vendor: 'Migros',
+        amount: 12.5,
+        categoryName: 'Material',
+      }),
+    );
+
+    const result = await service.analyze(CLASS, FILE, ORG, user);
+
+    expect(result).toMatchObject({
+      vendor: 'Migros',
+      amount: 12.5,
+      suggestedCategoryId: 'cat-1',
+    });
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('https://api.mistral.ai/v1/chat/completions');
+    expect((init.headers as Record<string, string>).Authorization).toBe(
+      'Bearer mistral-key',
+    );
+    expect(JSON.parse(init.body as string)).toMatchObject({
+      model: 'mistral-small-latest',
+    });
+  });
+
+  it('uses the opted-in provider with its own key and model', async () => {
+    settings.EXPENSE_AI_PROVIDER = 'anthropic';
+    settings.EXPENSE_AI_API_KEY = 'anthropic-key';
+    settings.EXPENSE_AI_MODEL = 'claude-custom';
+    fetchMock.mockReturnValue(
+      answer({ content: [{ type: 'text', text: '{"vendor":"Coop"}' }] }),
+    );
+
+    await expect(
+      service.analyze(CLASS, FILE, ORG, user),
+    ).resolves.toMatchObject({ vendor: 'Coop' });
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('https://api.anthropic.com/v1/messages');
+    expect((init.headers as Record<string, string>)['x-api-key']).toBe(
+      'anthropic-key',
+    );
+    expect(JSON.parse(init.body as string)).toMatchObject({
+      model: 'claude-custom',
+    });
+  });
+
+  it('does not fall back to the contract key for an opted-in provider', async () => {
+    settings.EXPENSE_AI_PROVIDER = 'openai';
+
+    await expect(service.isConfigured(ORG)).resolves.toBe(false);
+    await expect(
+      service.analyze(CLASS, FILE, ORG, user),
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('treats an unknown stored provider as the default', async () => {
+    settings.EXPENSE_AI_PROVIDER = 'something-else';
+    await expect(service.isConfigured(ORG)).resolves.toBe(true);
+  });
+
+  it('reads settings of the given organization only', async () => {
+    await expect(
+      service.isConfigured('99999999-9999-4999-8999-999999999999'),
+    ).resolves.toBe(false);
+  });
+
+  it('checks class access before anything is read or sent', async () => {
+    access.assertSchoolClassAccessible.mockRejectedValue(
+      new NotFoundException(),
+    );
+
+    await expect(
+      service.analyze(CLASS, FILE, ORG, user),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(access.assertSchoolClassAccessible).toHaveBeenCalledWith(
+      CLASS,
+      ORG,
+      user,
+    );
+    expect(receipts.read).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('reads the receipt under the session org and class', async () => {
+    fetchMock.mockReturnValue(mistralAnswer({ vendor: 'x' }));
+    await service.analyze(CLASS, FILE, ORG, user);
+
+    expect(receipts.read).toHaveBeenCalledWith(ORG, CLASS, FILE);
+    expect(categoriesRepo.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { organizationId: ORG, isArchived: false },
+      }),
+    );
+  });
+
+  it('maps a missing receipt to NotFound without calling the provider', async () => {
+    receipts.read.mockRejectedValue(new Error('ENOENT'));
+    await expect(
+      service.analyze(CLASS, FILE, ORG, user),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('sends the file and category names, but no ids of the org', async () => {
+    fetchMock.mockReturnValue(mistralAnswer({ vendor: 'x' }));
+    await service.analyze(CLASS, FILE, ORG, user);
+
+    const body = (fetchMock.mock.calls[0] as [string, RequestInit])[1]
+      .body as string;
+    expect(body).toContain('Material');
+    expect(body).toContain(Buffer.from('%PDF').toString('base64'));
+    for (const secret of ['cat-1', ORG, CLASS, FILE, 'user-1']) {
+      expect(body).not.toContain(secret);
+    }
+  });
+
+  it.each([
+    ['provider error', () => answer({ error: 'boom' }, 500)],
+    ['rejected key', () => answer({}, 401)],
+    ['network failure', () => Promise.reject(new Error('ECONNRESET'))],
+    ['empty answer', () => answer({ choices: [] })],
+    [
+      'answer that is not JSON',
+      () => answer({ choices: [{ message: { content: 'no idea' } }] }),
+    ],
+  ])('turns a %s into BadGateway', async (_label, respond) => {
+    fetchMock.mockImplementation(respond);
+    await expect(
+      service.analyze(CLASS, FILE, ORG, user),
+    ).rejects.toBeInstanceOf(BadGatewayException);
+  });
+});
