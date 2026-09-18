@@ -19,6 +19,7 @@ import {
 } from "@/components/data-table/use-data-table";
 import { multiSelectFilter } from "@/lib/table/locale-sorting";
 import { ROUTES } from "@/constants/routes";
+import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 
 import type { EmployeeContract } from "../actions/employee-contracts.actions";
 import { deleteEmployeeContractAction } from "../actions/employee-contracts.actions";
@@ -65,17 +66,6 @@ export default function EmployeeContractsTab({
       locale === "de" ? "de-CH" : "en-GB",
       { day: "2-digit", month: "short", year: "numeric" },
     );
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm(tE("contract.deleteConfirm"))) return;
-    const res = await deleteEmployeeContractAction(id);
-    if (res.success) {
-      toast.success(tE("contract.deleted"));
-      router.refresh();
-    } else {
-      toast.error(tE("contract.deleteError"));
-    }
   };
 
   const columns = useMemo<
@@ -205,21 +195,21 @@ export default function EmployeeContractsTab({
                 <Pencil className="h-4 w-4" />
               </Link>
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleDelete(row.original.id)}
-              aria-label={t("delete")}
-            >
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
+            <ContractDeleteButton
+              contractId={row.original.id}
+              label={t("delete")}
+              onDeleted={() => {
+                toast.success(tE("contract.deleted"));
+                router.refresh();
+              }}
+            />
           </div>
         ),
       });
     }
 
     return cols;
-    // `formatDate`/`handleDelete` are recreated each render by design.
+    // `formatDate` is recreated each render by design.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [t, tE, editable, locale, employeeId, positionLabelById]);
 
@@ -298,6 +288,39 @@ export default function EmployeeContractsTab({
           onGenerated={() => router.refresh()}
         />
       )}
+    </>
+  );
+}
+
+function ContractDeleteButton({
+  contractId,
+  label,
+  onDeleted,
+}: {
+  contractId: string;
+  label: string;
+  onDeleted: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setOpen(true)}
+        aria-label={label}
+      >
+        <Trash2 className="h-4 w-4 text-destructive" />
+      </Button>
+      <DeleteConfirmationDialog
+        open={open}
+        onOpenChange={setOpen}
+        onConfirm={async () => {
+          const r = await deleteEmployeeContractAction(contractId);
+          return { success: r.success, error: r.success ? undefined : r.error };
+        }}
+        onSuccess={onDeleted}
+      />
     </>
   );
 }

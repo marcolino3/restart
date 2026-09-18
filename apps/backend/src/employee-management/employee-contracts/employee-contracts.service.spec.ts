@@ -7,7 +7,9 @@ import { EmployeeContractsService } from './employee-contracts.service';
 import {
   EmployeeContract,
   EmployeeContractType,
+  ShiftPreferenceLevel,
 } from './entities/employee-contract.entity';
+import { Shift } from '@/employee-management/shifts/entities/shift.entity';
 
 const ORG_ID = 'org-1';
 const EMPLOYEE_ID = 'emp-1';
@@ -20,6 +22,7 @@ describe('EmployeeContractsService', () => {
     create: jest.Mock;
     save: jest.Mock;
   };
+  let shiftRepo: { find: jest.Mock };
   let dataSource: { transaction: jest.Mock };
 
   beforeEach(async () => {
@@ -29,6 +32,7 @@ describe('EmployeeContractsService', () => {
       create: jest.fn((v) => v),
       save: jest.fn((v) => Promise.resolve({ id: 'c-new', ...v })),
     };
+    shiftRepo = { find: jest.fn().mockResolvedValue([]) };
     dataSource = {
       transaction: jest.fn((cb) => cb({ getRepository: () => repo })),
     };
@@ -40,6 +44,7 @@ describe('EmployeeContractsService', () => {
           provide: getRepositoryToken(EmployeeContract),
           useValue: repo,
         },
+        { provide: getRepositoryToken(Shift), useValue: shiftRepo },
         { provide: DataSource, useValue: dataSource },
       ],
     }).compile();
@@ -166,6 +171,99 @@ describe('EmployeeContractsService', () => {
             mon: [{ start: '08:00', end: '12:00' }],
           },
           weekdayWorkloads: null,
+        }),
+      );
+    });
+  });
+
+  describe('shift work', () => {
+    const baseInput = {
+      employeeId: EMPLOYEE_ID,
+      startDate: '2026-08-01',
+      contractType: EmployeeContractType.PERMANENT,
+      grossSalary: 8000,
+      weekdayWorkloads: { mon: 30, tue: 30 },
+    };
+
+    it('stores shift weekdays and preferences scoped to the org shifts', async () => {
+      shiftRepo.find.mockResolvedValue([{ id: 's-1' }]);
+
+      const created = await service.create(
+        {
+          ...baseInput,
+          worksShifts: true,
+          shiftWeekdays: ['tue'],
+          shiftPreferences: [
+            { shiftId: 's-1', level: ShiftPreferenceLevel.PREFERRED },
+          ],
+        },
+        ORG_ID,
+      );
+
+      expect(shiftRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ organizationId: ORG_ID }),
+        }),
+      );
+      expect(created.shiftWeekdays).toEqual(['tue']);
+      expect(created.shiftPreferences).toEqual([
+        { shiftId: 's-1', level: ShiftPreferenceLevel.PREFERRED },
+      ]);
+    });
+
+    it('rejects a preference for a shift of another organisation', async () => {
+      shiftRepo.find.mockResolvedValue([]);
+
+      await expect(
+        service.create(
+          {
+            ...baseInput,
+            worksShifts: true,
+            shiftPreferences: [
+              { shiftId: 's-foreign', level: ShiftPreferenceLevel.AVOID },
+            ],
+          },
+          ORG_ID,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects shift weekdays that are not working days', async () => {
+      await expect(
+        service.create(
+          { ...baseInput, worksShifts: true, shiftWeekdays: ['fri'] },
+          ORG_ID,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('clears shift fields when shift work is switched off on update', async () => {
+      repo.findOne.mockResolvedValue({
+        id: 'c-old',
+        employeeId: EMPLOYEE_ID,
+        organizationId: ORG_ID,
+        startDate: '2025-01-01',
+        endDate: null,
+        contractType: EmployeeContractType.PERMANENT,
+        grossSalary: 8000,
+        worksShifts: true,
+        shiftWeekdays: ['mon'],
+        shiftPreferences: [
+          { shiftId: 's-1', level: ShiftPreferenceLevel.PREFERRED },
+        ],
+        isActive: true,
+      });
+
+      await service.update(
+        { id: 'c-old', startDate: '2025-01-01', worksShifts: false },
+        ORG_ID,
+      );
+
+      expect(repo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          worksShifts: false,
+          shiftWeekdays: [],
+          shiftPreferences: [],
         }),
       );
     });

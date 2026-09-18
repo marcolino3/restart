@@ -46,6 +46,12 @@ export type EmployeeContract = Record<string, unknown> & {
   weekdayWorkloads?: Partial<
     Record<"mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun", number | null>
   > | null;
+  worksShifts: boolean;
+  shiftWeekdays: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[];
+  shiftPreferences: {
+    shiftId: string;
+    level: "PREFERRED" | "NEUTRAL" | "AVOID";
+  }[];
 };
 
 const ListByEmployeeDocument = gql`
@@ -70,6 +76,12 @@ const ListByEmployeeDocument = gql`
       notes
       documentUrl
       isActive
+      worksShifts
+      shiftWeekdays
+      shiftPreferences {
+        shiftId
+        level
+      }
       weekdayWorkloads {
         mon
         tue
@@ -195,6 +207,9 @@ export const saveEmployeeContractAction = async (
     documentUrl: parsed.documentUrl || undefined,
     weekdayTimeWindows: schedule.weekdayTimeWindows,
     weekdayWorkloads: schedule.weekdayWorkloads,
+    worksShifts: parsed.worksShifts ?? false,
+    shiftWeekdays: parsed.worksShifts ? parsed.shiftWeekdays ?? [] : [],
+    shiftPreferences: parsed.worksShifts ? parsed.shiftPreferences ?? [] : [],
   };
 
   try {

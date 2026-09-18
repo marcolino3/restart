@@ -7,6 +7,7 @@ import { getEmployeeByIdAction } from "@/features/employees/actions/get-employee
 import { getEmployeeContractsAction } from "@/features/employees/actions/employee-contracts.actions";
 import { EmployeeContractForm } from "@/features/employees/components/EmployeeContractForm";
 import { getEmployeeFunctionsAction } from "@/features/employee-functions/actions/get-employee-functions.action";
+import { getShiftsAction } from "@/features/time-tracking/actions/shifts.action";
 import { mapEmployeeFunctionsToOptions } from "@/features/employee-functions/lib/map-employee-functions-to-options";
 import { requireAdminRole } from "@/features/users/guards/require-admin-role";
 
@@ -20,10 +21,12 @@ const EditEmployeeContractPage = async ({ params }: Props) => {
   const t = await getTranslations("Employees");
   const locale = await getLocale();
 
-  const [employeeResult, contractsResult, functionsResult] = await Promise.all([
+  const [employeeResult, contractsResult, functionsResult, shiftsResult] =
+    await Promise.all([
     getEmployeeByIdAction(employeeId),
     getEmployeeContractsAction(employeeId),
     getEmployeeFunctionsAction(),
+    getShiftsAction(),
   ]);
 
   if (!employeeResult.success || !employeeResult.data) {
@@ -57,6 +60,7 @@ const EditEmployeeContractPage = async ({ params }: Props) => {
         functionOptions={functionOptions}
         firstName={firstName}
         lastName={lastName}
+        shifts={shiftsResult.success ? shiftsResult.data : []}
         title={t("contract.edit")}
         returnHref={contractsHref}
       />

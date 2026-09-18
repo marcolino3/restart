@@ -4,8 +4,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { EmployeeContract } from './entities/employee-contract.entity';
+import { Shift } from '@/employee-management/shifts/entities/shift.entity';
+import { normalizeContractShiftFields } from './contract-shifts';
 import { CreateEmployeeContractInput } from './dto/create-employee-contract.input';
 import { UpdateEmployeeContractInput } from './dto/update-employee-contract.input';
 import {
@@ -20,6 +22,8 @@ export class EmployeeContractsService {
   constructor(
     @InjectRepository(EmployeeContract)
     private readonly contractRepo: Repository<EmployeeContract>,
+    @InjectRepository(Shift)
+    private readonly shiftRepo: Repository<Shift>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -51,6 +55,7 @@ export class EmployeeContractsService {
       });
       applyExclusiveScheduleFields(contract);
       clearHiddenContractFields(contract, contract.contractType);
+      await this.applyShiftFields(contract, organizationId);
       return repo.save(contract);
     });
   }
@@ -138,6 +143,15 @@ export class EmployeeContractsService {
         incoming.weekdayWorkloads !== undefined
           ? incoming.weekdayWorkloads
           : previous.weekdayWorkloads,
+      worksShifts: incoming.worksShifts ?? previous.worksShifts ?? false,
+      shiftWeekdays:
+        incoming.shiftWeekdays !== undefined
+          ? incoming.shiftWeekdays
+          : previous.shiftWeekdays,
+      shiftPreferences:
+        incoming.shiftPreferences !== undefined
+          ? incoming.shiftPreferences
+          : previous.shiftPreferences,
     };
 
     // Exact clock times take precedence — keep the two schedule modes exclusive.
@@ -146,6 +160,7 @@ export class EmployeeContractsService {
 
     assertContractTypeFields(merged, merged.contractType, hiddenByPermission);
     clearHiddenContractFields(merged, merged.contractType);
+    await this.applyShiftFields(merged, organizationId);
 
     // Same effective date → correct the current row in place. A later start
     // date versions the contract (end previous day before, insert successor).
@@ -199,6 +214,31 @@ export class EmployeeContractsService {
     }
 
     return previous;
+  }
+
+  /**
+   * Validates the shift-work fields against the org's shifts. Only queries
+   * the shifts actually referenced, so contracts without preferences cost no
+   * extra round trip.
+   */
+  private async applyShiftFields(
+    contract: Partial<EmployeeContract>,
+    organizationId: string,
+  ): Promise<void> {
+    const ids = [
+      ...new Set((contract.shiftPreferences ?? []).map((p) => p.shiftId)),
+    ];
+    const known =
+      contract.worksShifts && ids.length > 0
+        ? await this.shiftRepo.find({
+            select: { id: true },
+            where: { id: In(ids), organizationId },
+          })
+        : [];
+    normalizeContractShiftFields(
+      contract as Parameters<typeof normalizeContractShiftFields>[0],
+      new Set(known.map((s) => s.id)),
+    );
   }
 
   private dayBefore(isoDate: string): string {

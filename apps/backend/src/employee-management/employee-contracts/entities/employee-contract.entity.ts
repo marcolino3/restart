@@ -31,6 +31,24 @@ export enum EmployeePaymentInterval {
 
 registerEnumType(EmployeePaymentInterval, { name: 'EmployeePaymentInterval' });
 
+export enum ShiftPreferenceLevel {
+  PREFERRED = 'PREFERRED',
+  NEUTRAL = 'NEUTRAL',
+  AVOID = 'AVOID',
+}
+
+registerEnumType(ShiftPreferenceLevel, { name: 'ShiftPreferenceLevel' });
+
+// Per-shift preference of the employee; only PREFERRED / AVOID are stored,
+// a missing entry means neutral.
+@ObjectType()
+export class ShiftPreference {
+  @Field(() => ID)
+  shiftId: string;
+  @Field(() => ShiftPreferenceLevel)
+  level: ShiftPreferenceLevel;
+}
+
 @ObjectType()
 export class WeekdayWorkloads {
   @Field(() => Float, { nullable: true })
@@ -228,6 +246,20 @@ export class EmployeeContract extends AbstractEntity<EmployeeContract> {
   @Field(() => String, { nullable: true })
   @Column({ name: 'document_url', type: 'varchar', nullable: true })
   documentUrl?: string | null;
+
+  // Shift work: whether the employee is scheduled in shifts, on which weekdays
+  // (subset of the working days) and which shifts they prefer or avoid.
+  @Field(() => Boolean)
+  @Column({ name: 'works_shifts', type: 'boolean', default: false })
+  worksShifts: boolean;
+
+  @Field(() => [String])
+  @Column('jsonb', { name: 'shift_weekdays', default: () => "'[]'" })
+  shiftWeekdays: string[];
+
+  @Field(() => [ShiftPreference])
+  @Column('jsonb', { name: 'shift_preferences', default: () => "'[]'" })
+  shiftPreferences: ShiftPreference[];
 
   @Field(() => ID, { nullable: true })
   @Column('uuid', { name: 'previous_contract_id', nullable: true })

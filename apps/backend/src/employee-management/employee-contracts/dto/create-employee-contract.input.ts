@@ -1,8 +1,10 @@
 import { Field, Float, ID, InputType, Int } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsBoolean,
   IsDateString,
+  IsIn,
   IsEnum,
   IsNumber,
   IsOptional,
@@ -20,6 +22,8 @@ import {
   WeekdayTimeWindowsInput,
   WeekdayWorkloadsInput,
 } from '@/employee-management/employees/dto/employee-onboarding.input';
+import { ShiftPreferenceInput } from './shift-preference.input';
+import { WEEKDAY_KEYS } from '../contract-shifts';
 
 @InputType()
 export class CreateEmployeeContractInput {
@@ -122,4 +126,22 @@ export class CreateEmployeeContractInput {
   @ValidateNested()
   @Type(() => WeekdayWorkloadsInput)
   weekdayWorkloads?: WeekdayWorkloadsInput | null;
+
+  @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  worksShifts?: boolean;
+
+  @Field(() => [String], { nullable: true })
+  @IsOptional()
+  @ArrayMaxSize(7)
+  @IsIn(WEEKDAY_KEYS, { each: true })
+  shiftWeekdays?: string[];
+
+  @Field(() => [ShiftPreferenceInput], { nullable: true })
+  @IsOptional()
+  @ArrayMaxSize(50)
+  @ValidateNested({ each: true })
+  @Type(() => ShiftPreferenceInput)
+  shiftPreferences?: ShiftPreferenceInput[];
 }

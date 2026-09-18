@@ -17,6 +17,9 @@ import { PeriodsSection } from "@/features/time-tracking/components/PeriodsSecti
 import { PeriodAnchorSection } from "@/features/time-tracking/components/PeriodAnchorSection";
 import { PaidOvertimeSection } from "@/features/time-tracking/components/PaidOvertimeSection";
 import { OpeningBalancesSection } from "@/features/time-tracking/components/OpeningBalancesSection";
+import { ShiftsSection } from "@/features/time-tracking/components/ShiftsSection";
+import { getShiftsAction } from "@/features/time-tracking/actions/shifts.action";
+import { getTeamsAction } from "@/features/teams/actions/get-teams.action";
 import {
   Tabs,
   TabsContent,
@@ -35,12 +38,16 @@ const TimeTrackingSettingsPage = async () => {
     periodAnchor,
     employeesRes,
     absenceCategoriesRes,
+    shiftsRes,
+    teamsRes,
   ] = await Promise.all([
     getTimeTrackingSettingsAction(),
     getTimeTrackingPeriodsAction(),
     getTimeTrackingPeriodAnchorAction(),
     getEmployeesAction(),
     getEmployeeAbsenceCategoriesAction(),
+    getShiftsAction(),
+    getTeamsAction(),
   ]);
 
   const employees: EmployeeOption[] = (
@@ -70,6 +77,7 @@ const TimeTrackingSettingsPage = async () => {
           <TabsTrigger value="openingBalances">
             {t("openingBalances")}
           </TabsTrigger>
+          <TabsTrigger value="shifts">{t("shifts")}</TabsTrigger>
         </TabsList>
         <TabsContent value="holidays" className="mt-6">
           <HolidaysSection holidays={holidays} />
@@ -95,6 +103,12 @@ const TimeTrackingSettingsPage = async () => {
         </TabsContent>
         <TabsContent value="openingBalances" className="mt-6">
           <OpeningBalancesSection employees={employees} periods={periods} />
+        </TabsContent>
+        <TabsContent value="shifts" className="mt-6">
+          <ShiftsSection
+            shifts={shiftsRes.success ? shiftsRes.data : []}
+            teams={teamsRes.success ? (teamsRes.data ?? []) : []}
+          />
         </TabsContent>
       </Tabs>
     </div>

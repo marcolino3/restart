@@ -5,6 +5,7 @@ import { getEmployeeAbsenceCategoriesByOrgIdAction } from "@/features/employee-a
 import { EmployeeAbsenceNoticeForm } from "@/features/employee-absences/components/EmployeeAbsenceNoticeForm";
 import { getMyTimeTrackingAction } from "@/features/time-tracking/actions/get-my-time-tracking.action";
 import { MyTimeTrackingView } from "@/features/time-tracking/components/MyTimeTrackingView";
+import { MyShiftsSection } from "@/features/time-tracking/components/shift-plans/MyShiftsSection";
 import { getCurrentUserAction } from "@/features/users/actions/get-current-user.action";
 import { canSeeTimeTracking } from "@/lib/navigation/nav-visibility";
 import { PlusIcon } from "lucide-react";
@@ -46,6 +47,9 @@ const MyTimeTracking = async () => {
       />
 
       <MyTimeTrackingView data={data} />
+      {(userRes?.data?.permissions ?? []).includes("SHIFT_PLAN_READ") && (
+        <MyShiftsSection />
+      )}
     </div>
   );
 };
