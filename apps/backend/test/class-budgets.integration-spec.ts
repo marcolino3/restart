@@ -431,6 +431,34 @@ describe('Class budgets (Integration)', () => {
         anna.token,
       );
 
+      // The list flags per row what the caller may change — the UI relies on
+      // it to show edit/delete, the mutations below enforce the same rule.
+      const flagsFor = async (user: TokenPayload) =>
+        Object.fromEntries(
+          [
+            ...(await expenses.findAll(
+              { schoolYearStart: current.startYear },
+              orgId,
+              user,
+            )),
+            ...(await expenses.findAll(
+              { schoolYearStart: current.startYear - 1 },
+              orgId,
+              user,
+            )),
+          ].map((e) => [e.id, e.canModify]),
+        );
+      expect(await flagsFor(anna.token)).toEqual({
+        [bens.id]: false,
+        [annasClosedYear.id]: false,
+        [annasCurrent.id]: true,
+      });
+      expect(await flagsFor(admin(orgId))).toEqual({
+        [bens.id]: true,
+        [annasClosedYear.id]: true,
+        [annasCurrent.id]: true,
+      });
+
       await expect(
         expenses.update({ id: bens.id, amount: 1 }, orgId, anna.token),
       ).rejects.toBeInstanceOf(ForbiddenException);

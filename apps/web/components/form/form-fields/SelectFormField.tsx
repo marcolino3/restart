@@ -37,6 +37,7 @@ interface Props {
   translateOptions?: boolean;
   /** i18n namespace for `label`, `description`, `placeholder` und option-labels. Default `"Common"`. */
   namespace?: string;
+  disabled?: boolean;
 }
 
 export const SelectFormField = ({
@@ -48,6 +49,7 @@ export const SelectFormField = ({
   width = "w-full",
   translateOptions = true,
   namespace = "Common",
+  disabled,
 }: Props) => {
   const t = useTranslations(namespace);
   const { control } = useFormContext();
@@ -60,7 +62,11 @@ export const SelectFormField = ({
         <FormItem className={width}>
           {label && <FormLabel htmlFor={name}>{t(label)}</FormLabel>}
           <FormControl>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <Select
+              onValueChange={field.onChange}
+              defaultValue={field.value}
+              disabled={disabled}
+            >
               <SelectTrigger id={name}>
                 <SelectValue placeholder={t(placeholder || label || "")} />
               </SelectTrigger>

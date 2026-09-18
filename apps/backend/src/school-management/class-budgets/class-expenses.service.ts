@@ -60,11 +60,16 @@ export class ClassExpensesService {
       expenseDate: Between(schoolYear.start, schoolYear.end),
       ...(filter.categoryId ? { categoryId: filter.categoryId } : {}),
     };
-    return this.expensesRepo.find({
+    const expenses = await this.expensesRepo.find({
       where,
       relations: { category: true, schoolClass: true },
       order: { expenseDate: 'DESC', createdAt: 'DESC' },
     });
+    const denial = await this.modifyDenial(organizationId, user);
+    for (const expense of expenses) {
+      expense.canModify = denial(expense) === null;
+    }
+    return expenses;
   }
 
   async findOne(
@@ -84,6 +89,8 @@ export class ClassExpensesService {
       organizationId,
       user,
     );
+    const denial = await this.modifyDenial(organizationId, user);
+    expense.canModify = denial(expense) === null;
     return expense;
   }
 
@@ -205,25 +212,36 @@ export class ClassExpensesService {
     organizationId: string,
     user: TokenPayload,
   ): Promise<void> {
-    if (this.access.canManage(user)) return;
+    const denial = (await this.modifyDenial(organizationId, user))(expense);
+    if (denial) throw new ForbiddenException(denial);
+  }
 
-    if (
-      !user.membershipId ||
-      expense.createdByMembershipId !== user.membershipId
-    ) {
-      throw new ForbiddenException(
-        'Only the author or a budget manager may change this expense',
-      );
-    }
+  /**
+   * Resolves the rule once per request so lists can flag every row
+   * (`canModify`) without a query per expense.
+   */
+  private async modifyDenial(
+    organizationId: string,
+    user: TokenPayload,
+  ): Promise<(expense: ClassExpense) => string | null> {
+    if (this.access.canManage(user)) return () => null;
+
     const current = await this.access.currentSchoolYear(organizationId);
-    if (
-      expense.expenseDate < current.start ||
-      expense.expenseDate > current.end
-    ) {
-      throw new ForbiddenException(
-        'Expenses of a closed school year can only be changed by a budget manager',
-      );
-    }
+    return (expense) => {
+      if (
+        !user.membershipId ||
+        expense.createdByMembershipId !== user.membershipId
+      ) {
+        return 'Only the author or a budget manager may change this expense';
+      }
+      if (
+        expense.expenseDate < current.start ||
+        expense.expenseDate > current.end
+      ) {
+        return 'Expenses of a closed school year can only be changed by a budget manager';
+      }
+      return null;
+    };
   }
 
   /**

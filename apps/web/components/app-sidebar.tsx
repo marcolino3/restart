@@ -7,6 +7,7 @@ import {
   IconBriefcase,
   IconChartHistogram,
   IconClock,
+  IconCoins,
   IconHeart,
   IconFileText,
   IconLayoutDashboard,
@@ -156,6 +157,15 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
             },
           ]
         : []),
+      ...(hasPermission("CLASS_EXPENSE_READ")
+        ? [
+            {
+              title: t("classBudgets"),
+              url: ROUTES.admin.classBudgets(locale),
+              icon: IconCoins,
+            },
+          ]
+        : []),
       ...(canSeeOrgAdmin && hasPermission("ADMISSION_APPLICATION_READ")
         ? [
             {
@@ -227,6 +237,20 @@ export function AppSidebar({ organizations, ...props }: AppSidebarProps) {
                   title: t("gradeLevels"),
                   url: ROUTES.admin.gradeLevels(locale),
                   icon: IconStack2,
+                },
+              ]
+            : []),
+          ...(hasPermission("CLASS_BUDGET_MANAGE")
+            ? [
+                {
+                  title: t("classBudgetsManage"),
+                  url: ROUTES.admin.classBudgetsManage(locale),
+                  icon: IconCoins,
+                },
+                {
+                  title: t("expenseCategories"),
+                  url: ROUTES.admin.expenseCategories(locale),
+                  icon: IconSettings,
                 },
               ]
             : []),

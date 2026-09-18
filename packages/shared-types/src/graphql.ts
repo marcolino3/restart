@@ -664,6 +664,7 @@ export type ClassBudgetSummary = {
 export type ClassExpense = {
   __typename?: 'ClassExpense';
   amount: Scalars['Float']['output'];
+  canModify: Scalars['Boolean']['output'];
   category?: Maybe<ExpenseCategory>;
   categoryId: Scalars['String']['output'];
   createdAt: Scalars['DateTime']['output'];

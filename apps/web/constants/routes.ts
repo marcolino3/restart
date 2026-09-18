@@ -60,6 +60,13 @@ export const ROUTES = {
     schoolClassesEdit: (locale: string, id: string) =>
       `/${locale}/admin/school-classes/edit/${id}`,
 
+    // Class Budgets
+    classBudgets: (locale: string) => `/${locale}/admin/class-budgets`,
+    classBudgetsManage: (locale: string) =>
+      `/${locale}/admin/class-budgets/manage`,
+    expenseCategories: (locale: string) =>
+      `/${locale}/admin/class-budgets/categories`,
+
     // Grade Levels
     gradeLevels: (locale: string) => `/${locale}/admin/grade-levels`,
 

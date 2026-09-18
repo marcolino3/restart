@@ -85,4 +85,8 @@ export class ClassExpense extends AbstractEntity<ClassExpense> {
   @Field(() => String, { nullable: true })
   @Column('uuid', { name: 'created_by_membership_id', nullable: true })
   createdByMembershipId?: string | null;
+
+  /** Not persisted — whether the requesting user may edit or delete it. */
+  @Field(() => Boolean)
+  canModify?: boolean;
 }
