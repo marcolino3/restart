@@ -51,7 +51,7 @@ export function ClassBudgetSummaryCards({ summary }: Props) {
           </AlertDescription>
         </Alert>
       )}
-      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 min-[1240px]:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label={t("budget")}
           value={summary.budget === null ? "—" : money(summary.budget)}
