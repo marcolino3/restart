@@ -45,7 +45,7 @@ export function ExpenseCategoryPie({ summary }: Props) {
           <p className="text-sm text-muted-foreground">{t("noExpenses")}</p>
         ) : (
           <div className="grid grid-cols-1 items-center gap-4 sm:grid-cols-2">
-            <ChartContainer config={config} className="mx-auto aspect-square max-h-[220px]">
+            <ChartContainer config={config} className="mx-auto aspect-square w-full max-w-[220px]">
               <PieChart>
                 <ChartTooltip
                   formatter={(value, name) => [

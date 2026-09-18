@@ -11,6 +11,9 @@
  * - Section roots (`/de/admin`) are the exception: every other item lives
  *   below them, so the subpath rule would keep the dashboard highlighted on
  *   every page. They only match exactly.
+ * - A page that has its own menu item but lives below another item's URL
+ *   (`/admin/class-budgets/manage` below `/admin/class-budgets`) only
+ *   highlights its own item, never the parent as well.
  */
 
 /**
@@ -19,10 +22,32 @@
  */
 const SECTION_ROOTS = ["/admin"];
 
-const isSectionRoot = (target: string): boolean => {
-  // "/de/admin" -> "/admin"; a locale is always the first segment.
-  const withoutLocale = target.replace(/^\/[^/]+/, "");
-  return SECTION_ROOTS.includes(withoutLocale);
+/**
+ * Menu items whose URL lies below another menu item's URL. On these pages
+ * the parent item stays unhighlighted.
+ */
+const NESTED_NAV_ITEMS = [
+  "/admin/class-budgets/manage",
+  "/admin/class-budgets/categories",
+];
+
+// "/de/admin" -> "/admin"; a locale is always the first segment.
+const stripLocale = (path: string): string => path.replace(/^\/[^/]+/, "");
+
+const isSectionRoot = (target: string): boolean =>
+  SECTION_ROOTS.includes(stripLocale(target));
+
+const isWithin = (path: string, base: string): boolean =>
+  path === base || path.startsWith(base + "/");
+
+/** True when the page belongs to a nested menu item other than `target`. */
+const belongsToNestedItem = (pathname: string, target: string): boolean => {
+  const page = stripLocale(pathname);
+  const item = stripLocale(target);
+  return NESTED_NAV_ITEMS.some(
+    (nested) =>
+      isWithin(page, nested) && nested !== item && isWithin(nested, item),
+  );
 };
 
 export function isNavItemActive(
@@ -37,6 +62,7 @@ export function isNavItemActive(
 
   if (normalized === target) return true;
   if (isSectionRoot(target)) return false;
+  if (belongsToNestedItem(normalized, target)) return false;
   if (normalized.startsWith(target + "/")) return true;
   return false;
 }

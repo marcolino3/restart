@@ -34,6 +34,19 @@ describe("isNavItemActive", () => {
     expect(isNavItemActive("/en/admin", "/en/admin")).toBe(true);
   });
 
+  it("highlights only the nested item on a page with its own menu entry", () => {
+    const budgets = "/de/admin/class-budgets";
+    const manage = "/de/admin/class-budgets/manage";
+    expect(isNavItemActive(manage, budgets)).toBe(false);
+    expect(isNavItemActive(manage, manage)).toBe(true);
+    expect(
+      isNavItemActive("/de/admin/class-budgets/categories", budgets),
+    ).toBe(false);
+    // Pages without an own entry still keep the parent highlighted.
+    expect(isNavItemActive(`${budgets}/expenses/new`, budgets)).toBe(true);
+    expect(isNavItemActive(budgets, manage)).toBe(false);
+  });
+
   it("never highlights a placeholder url", () => {
     expect(isNavItemActive(CLASSES, "#")).toBe(false);
   });

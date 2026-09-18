@@ -248,6 +248,13 @@ test.describe('Class budgets', () => {
     })
     await expect(page.getByTestId('budget-remaining')).toContainText('379.50')
 
+    // The pie chart must really take up space — it once rendered at 0×0.
+    const pie = page.locator('.recharts-surface').first()
+    await expect(pie).toBeVisible()
+    const box = await pie.boundingBox()
+    expect(box?.width ?? 0).toBeGreaterThan(100)
+    expect(box?.height ?? 0).toBeGreaterThan(100)
+
     // The receipt is attached and readable by the owner org.
     const [expense] = await trackExpenses(page, schoolClass.id)
     expect(expense.receiptFileId).toBeTruthy()
