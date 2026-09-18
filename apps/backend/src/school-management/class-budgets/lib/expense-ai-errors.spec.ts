@@ -75,6 +75,21 @@ describe('classifyProviderError', () => {
     ).toBe(EXPENSE_AI_ERRORS.quotaExceeded);
   });
 
+  it('tells a model outside the plan from a rejected key', () => {
+    expect(
+      classifyProviderError(403, {
+        code: '1910/tier_not_allowed',
+        message: 'This model is not available in your subscription tier',
+      }),
+    ).toBe(EXPENSE_AI_ERRORS.modelNotAllowed);
+    expect(
+      classifyProviderError(401, {
+        code: '1910/tier_not_allowed',
+        message: '',
+      }),
+    ).toBe(EXPENSE_AI_ERRORS.keyRejected);
+  });
+
   it('maps the remaining statuses', () => {
     expect(classifyProviderError(401, none)).toBe(
       EXPENSE_AI_ERRORS.keyRejected,

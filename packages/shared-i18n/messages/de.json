@@ -4318,7 +4318,7 @@
     "aiErrorTooManyRequests": "Zu viele Analysen in kurzer Zeit. Bitte eine Minute warten.",
     "aiErrorReceiptMissing": "Der Beleg wurde nicht gefunden. Bitte nochmals hochladen.",
     "aiErrorNoAccess": "Keine Berechtigung für diese Klasse.",
-    "aiErrorNoAllowance": "Der hinterlegte API-Key hat beim KI-Anbieter kein Anfragekontingent (Limit 0). Warten hilft nicht: Ein Admin muss Tarif und Abrechnung des Anbieter-Kontos prüfen oder unter Einstellungen > KI einen anderen Anbieter hinterlegen.",
+    "aiErrorNoAllowance": "Der API-Key ist gültig, hat beim KI-Anbieter für das gewählte Modell aber kein Anfragekontingent (Limit 0). Warten hilft nicht: Ein Admin muss unter Einstellungen > KI ein anderes Modell wählen oder Tarif und Abrechnung des Anbieter-Kontos prüfen.",
     "receiptDropTitle": "Beleg hierher ziehen oder klicken",
     "receiptPreviewError": "Die Vorschau konnte nicht geladen werden. Der Beleg lässt sich über «Beleg anzeigen» öffnen.",
     "expenseNotFound": "Diese Ausgabe wurde nicht gefunden oder kann nicht bearbeitet werden.",
@@ -4340,7 +4340,8 @@
     "receiptMissing": "fehlt",
     "noExpensesInYear": "Noch keine Ausgaben in diesem Schuljahr.",
     "noExpensesMatch": "Keine Ausgaben für diese Auswahl.",
-    "searchCategory": "Kategorie suchen"
+    "searchCategory": "Kategorie suchen",
+    "aiErrorModelNotAllowed": "Der API-Key ist gültig, aber das gewählte Modell ist im Tarif des Anbieter-Kontos nicht enthalten. Ein Admin muss unter Einstellungen > KI ein anderes Modell wählen oder den Tarif beim Anbieter anpassen."
   },
   "ExpenseCategories": {
     "noAccess": "Für diesen Bereich fehlt die Berechtigung.",

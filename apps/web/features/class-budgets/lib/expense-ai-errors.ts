@@ -7,6 +7,7 @@ export const EXPENSE_AI_ERROR_KEYS = {
   EXPENSE_AI_UNREACHABLE: "aiErrorUnreachable",
   EXPENSE_AI_TIMEOUT: "aiErrorTimeout",
   EXPENSE_AI_KEY_REJECTED: "aiErrorKeyRejected",
+  EXPENSE_AI_MODEL_NOT_ALLOWED: "aiErrorModelNotAllowed",
   EXPENSE_AI_RATE_LIMITED: "aiErrorRateLimited",
   EXPENSE_AI_CAPACITY: "aiErrorCapacity",
   EXPENSE_AI_QUOTA_EXCEEDED: "aiErrorQuotaExceeded",

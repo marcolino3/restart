@@ -4318,7 +4318,7 @@
     "aiErrorTooManyRequests": "Too many analyses in a short time. Please wait a minute.",
     "aiErrorReceiptMissing": "The receipt was not found. Please upload it again.",
     "aiErrorNoAccess": "No permission for this class.",
-    "aiErrorNoAllowance": "The stored API key has no request allowance at the AI provider (limit 0). Waiting does not help: an admin has to check plan and billing of the provider account, or set another provider under Settings > AI.",
+    "aiErrorNoAllowance": "The API key is valid, but the AI provider grants it no requests for the selected model (limit 0). Waiting does not help: an admin has to pick another model under Settings > AI or check plan and billing of the provider account.",
     "receiptDropTitle": "Drop the receipt here or click",
     "receiptPreviewError": "The preview could not be loaded. Open the receipt via \"View receipt\".",
     "expenseNotFound": "This expense was not found or cannot be edited.",
@@ -4340,7 +4340,8 @@
     "receiptMissing": "missing",
     "noExpensesInYear": "No expenses in this school year yet.",
     "noExpensesMatch": "No expenses match this selection.",
-    "searchCategory": "Search category"
+    "searchCategory": "Search category",
+    "aiErrorModelNotAllowed": "The API key is valid, but the selected model is not part of the provider account's plan. An admin has to pick another model under Settings > AI or change the plan with the provider."
   },
   "ExpenseCategories": {
     "noAccess": "You do not have permission for this area.",

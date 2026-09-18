@@ -8,6 +8,7 @@ export const EXPENSE_AI_ERRORS = {
   unreachable: 'EXPENSE_AI_UNREACHABLE',
   timeout: 'EXPENSE_AI_TIMEOUT',
   keyRejected: 'EXPENSE_AI_KEY_REJECTED',
+  modelNotAllowed: 'EXPENSE_AI_MODEL_NOT_ALLOWED',
   rateLimited: 'EXPENSE_AI_RATE_LIMITED',
   capacity: 'EXPENSE_AI_CAPACITY',
   quotaExceeded: 'EXPENSE_AI_QUOTA_EXCEEDED',
@@ -79,6 +80,16 @@ export const classifyProviderError = (
   info: ProviderErrorInfo,
 ): ExpenseAiErrorCode => {
   const haystack = `${info.code} ${info.message}`.toLowerCase();
+  // A valid key whose plan does not include the model also answers 403
+  // (Mistral: `1910/tier_not_allowed`) — the key is fine, the model is not.
+  if (
+    status === 403 &&
+    /tier_not_allowed|1910|subscription tier|not available in your/.test(
+      haystack,
+    )
+  ) {
+    return EXPENSE_AI_ERRORS.modelNotAllowed;
+  }
   if (status === 401 || status === 403) return EXPENSE_AI_ERRORS.keyRejected;
   if (
     status === 402 ||
