@@ -51,9 +51,15 @@ export const analyzeExpenseReceiptAction = async (
     return { success: true, data: analyzeExpenseReceipt };
   } catch (error) {
     console.error(error);
+    // The backend answers with a stable code as message; the dialog turns it
+    // into a translated text, so only that code leaves the server.
+    const gqlMessage = (
+      error as { response?: { errors?: { message?: string }[] } }
+    ).response?.errors?.[0]?.message;
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Analysis failed",
+      error:
+        gqlMessage ?? (error instanceof Error ? error.message : "unknown"),
     };
   }
 };

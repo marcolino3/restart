@@ -29,6 +29,7 @@ import {
   updateClassExpenseAction,
 } from "../actions/class-expenses-actions";
 import { analyzeExpenseReceiptAction } from "../actions/expense-receipt-ai-actions";
+import { expenseAiErrorKey } from "../lib/expense-ai-errors";
 import {
   receiptSuggestionPatch,
   type SuggestedField,
@@ -114,7 +115,9 @@ export function ClassExpenseDialog({
     );
     setAnalyzing(false);
     if (!result.success) {
-      toast.error(t("aiAnalyzeError"), { description: result.error });
+      toast.error(t("aiAnalyzeError"), {
+        description: t(expenseAiErrorKey(result.error)),
+      });
       return;
     }
 

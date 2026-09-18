@@ -15,6 +15,14 @@ import { ExpenseReceiptSuggestion } from './dto/expense-receipt-suggestion.objec
 import { ExpenseCategory } from './entities/expense-category.entity';
 import { ExpenseReceiptsService } from './expense-receipts.service';
 import {
+  classifyProviderError,
+  EXPENSE_AI_ERRORS,
+  ExpenseAiErrorCode,
+  ProviderErrorInfo,
+  readProviderError,
+  retryDelayMs,
+} from './lib/expense-ai-errors';
+import {
   buildExpenseAiRequest,
   EXPENSE_AI_DEFAULT_MODELS,
   EXPENSE_AI_DEFAULT_PROVIDER,
@@ -40,6 +48,8 @@ export const EXPENSE_AI_SETTING_KEYS = {
 } as const;
 
 const REQUEST_TIMEOUT_MS = 60_000;
+const RETRY_FALLBACK_MS = 2_000;
+const MAX_RETRY_DELAY_MS = 5_000;
 
 interface ResolvedAiConfig {
   vendor: ExpenseAiVendor;
@@ -50,6 +60,8 @@ interface ResolvedAiConfig {
 @Injectable()
 export class ExpenseReceiptAiService {
   private readonly logger = new Logger(ExpenseReceiptAiService.name);
+  /** Wait before the single retry when the provider names no delay. */
+  retryFallbackMs = RETRY_FALLBACK_MS;
 
   constructor(
     private readonly organizationSettings: OrganizationSettingsService,
@@ -80,9 +92,7 @@ export class ExpenseReceiptAiService {
     );
     const config = await this.resolveConfig(organizationId);
     if (!config) {
-      throw new ServiceUnavailableException(
-        'AI is not configured for this organization',
-      );
+      throw new ServiceUnavailableException(EXPENSE_AI_ERRORS.notConfigured);
     }
 
     let file: Buffer;
@@ -107,7 +117,7 @@ export class ExpenseReceiptAiService {
     });
     const suggestion = parseReceiptSuggestion(text, categories);
     if (!suggestion) {
-      throw new BadGatewayException('AI provider returned an unusable answer');
+      throw new BadGatewayException(EXPENSE_AI_ERRORS.unusableAnswer);
     }
     return suggestion;
   }
@@ -160,46 +170,84 @@ export class ExpenseReceiptAiService {
     payload: { prompt: string; file: { base64: string; mimeType: string } },
   ): Promise<string> {
     const request = buildExpenseAiRequest({ ...config, ...payload });
+    const send = async (): Promise<Response> => {
+      try {
+        return await fetch(request.url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...request.headers },
+          body: JSON.stringify(request.body),
+          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        });
+      } catch (error) {
+        const name = (error as Error).name;
+        this.logger.warn(
+          `Receipt AI (${config.vendor}) not reachable: ${name}`,
+        );
+        throw new BadGatewayException(
+          name === 'TimeoutError' || name === 'AbortError'
+            ? EXPENSE_AI_ERRORS.timeout
+            : EXPENSE_AI_ERRORS.unreachable,
+        );
+      }
+    };
 
-    let response: Response;
-    try {
-      response = await fetch(request.url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...request.headers },
-        body: JSON.stringify(request.body),
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      });
-    } catch (error) {
-      this.logger.warn(
-        `Receipt AI (${config.vendor}) not reachable: ${(error as Error).name}`,
+    let response = await send();
+    let failure = response.ok ? null : await this.describeFailure(response);
+    // A plain request rate limit (e.g. one request per second on small tiers)
+    // is gone a moment later; quota and capacity problems are not, so only
+    // that one case is worth a single second attempt.
+    if (failure?.code === EXPENSE_AI_ERRORS.rateLimited) {
+      await new Promise((resolve) =>
+        setTimeout(
+          resolve,
+          retryDelayMs(
+            response.headers.get('retry-after'),
+            this.retryFallbackMs,
+            MAX_RETRY_DELAY_MS,
+          ),
+        ),
       );
-      throw new BadGatewayException('AI provider is not reachable');
+      response = await send();
+      failure = response.ok ? null : await this.describeFailure(response);
     }
 
-    if (!response.ok) {
-      // Status only — provider error bodies can echo parts of the request.
+    if (failure) {
+      // Never the full body: only the provider's type/code, plus its short
+      // reason where it cannot describe the uploaded document.
       this.logger.warn(
-        `Receipt AI (${config.vendor}) answered ${response.status}`,
+        `Receipt AI (${config.vendor}, ${config.model}) answered ${response.status}` +
+          ` → ${failure.code}` +
+          (failure.info.code ? ` [${failure.info.code}]` : '') +
+          (failure.logMessage ? `: ${failure.info.message}` : ''),
       );
-      if (response.status === 401 || response.status === 403) {
-        throw new BadGatewayException('AI provider rejected the API key');
-      }
-      if (response.status === 429) {
-        throw new BadGatewayException('AI provider rate limit reached');
-      }
-      throw new BadGatewayException('AI provider request failed');
+      throw new BadGatewayException(failure.code);
     }
 
     let json: unknown;
     try {
       json = await response.json();
     } catch {
-      throw new BadGatewayException('AI provider returned an unusable answer');
+      throw new BadGatewayException(EXPENSE_AI_ERRORS.unusableAnswer);
     }
     const text = readExpenseAiText(config.vendor, json);
     if (!text) {
-      throw new BadGatewayException('AI provider returned an empty answer');
+      throw new BadGatewayException(EXPENSE_AI_ERRORS.unusableAnswer);
     }
     return text;
+  }
+
+  private async describeFailure(response: Response): Promise<{
+    code: ExpenseAiErrorCode;
+    info: ProviderErrorInfo;
+    logMessage: boolean;
+  }> {
+    const body: unknown = await response.json().catch(() => null);
+    const info = readProviderError(body);
+    const code = classifyProviderError(response.status, info);
+    return {
+      code,
+      info,
+      logMessage: code !== EXPENSE_AI_ERRORS.fileRejected && !!info.message,
+    };
   }
 }

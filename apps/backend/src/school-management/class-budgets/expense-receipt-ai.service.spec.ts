@@ -1,5 +1,6 @@
 import {
   BadGatewayException,
+  Logger,
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
@@ -27,10 +28,15 @@ describe('ExpenseReceiptAiService', () => {
 
   const user: TokenPayload = { sub: 'user-1', orgId: ORG, roles: ['EMPLOYEE'] };
 
-  const answer = (content: unknown, status = 200) =>
+  const answer = (
+    content: unknown,
+    status = 200,
+    headers: Record<string, string> = {},
+  ) =>
     Promise.resolve({
       ok: status >= 200 && status < 300,
       status,
+      headers: new Headers(headers),
       json: () => Promise.resolve(content),
     } as Response);
   const mistralAnswer = (payload: object) =>
@@ -60,6 +66,7 @@ describe('ExpenseReceiptAiService', () => {
       receipts as unknown as ExpenseReceiptsService,
       access as unknown as ClassBudgetAccessService,
     );
+    service.retryFallbackMs = 0;
   });
 
   afterEach(() => {
@@ -200,5 +207,99 @@ describe('ExpenseReceiptAiService', () => {
     await expect(
       service.analyze(CLASS, FILE, ORG, user),
     ).rejects.toBeInstanceOf(BadGatewayException);
+  });
+
+  it.each([
+    ['a rejected key', () => answer({}, 401), 'EXPENSE_AI_KEY_REJECTED'],
+    [
+      'a used-up quota',
+      () => answer({ error: { type: 'insufficient_quota' } }, 429),
+      'EXPENSE_AI_QUOTA_EXCEEDED',
+    ],
+    [
+      'a model without capacity on the tier',
+      () =>
+        answer(
+          { message: 'Service tier capacity exceeded for this model.' },
+          429,
+        ),
+      'EXPENSE_AI_CAPACITY',
+    ],
+    [
+      'a document the provider refuses',
+      () => answer({ message: 'invalid document' }, 422),
+      'EXPENSE_AI_FILE_REJECTED',
+    ],
+    [
+      'a network failure',
+      () => Promise.reject(new Error('ECONNRESET')),
+      'EXPENSE_AI_UNREACHABLE',
+    ],
+    [
+      'a timeout',
+      () =>
+        Promise.reject(
+          Object.assign(new Error('timed out'), { name: 'TimeoutError' }),
+        ),
+      'EXPENSE_AI_TIMEOUT',
+    ],
+    [
+      'an empty answer',
+      () => answer({ choices: [] }),
+      'EXPENSE_AI_UNUSABLE_ANSWER',
+    ],
+  ])('reports %s as a stable code', async (_label, respond, code) => {
+    fetchMock.mockImplementation(respond);
+    await expect(service.analyze(CLASS, FILE, ORG, user)).rejects.toThrow(code);
+  });
+
+  it('retries a plain rate limit once and then succeeds', async () => {
+    fetchMock
+      .mockReturnValueOnce(
+        answer({ message: 'Requests rate limit exceeded' }, 429, {
+          'retry-after': '0',
+        }),
+      )
+      .mockReturnValueOnce(mistralAnswer({ vendor: 'Migros' }));
+
+    const suggestion = await service.analyze(CLASS, FILE, ORG, user);
+
+    expect(suggestion.vendor).toBe('Migros');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('gives up after one retry and does not retry quota or capacity', async () => {
+    fetchMock.mockImplementation(() =>
+      answer({ message: 'Requests rate limit exceeded' }, 429),
+    );
+    await expect(service.analyze(CLASS, FILE, ORG, user)).rejects.toThrow(
+      'EXPENSE_AI_RATE_LIMITED',
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    fetchMock.mockClear();
+    fetchMock.mockImplementation(() =>
+      answer({ error: { code: 'insufficient_quota' } }, 429),
+    );
+    await expect(service.analyze(CLASS, FILE, ORG, user)).rejects.toThrow(
+      'EXPENSE_AI_QUOTA_EXCEEDED',
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('never logs the provider message of a rejected document', async () => {
+    const warn = jest
+      .spyOn(Logger.prototype, 'warn')
+      .mockImplementation(() => undefined);
+    fetchMock.mockImplementation(() =>
+      answer({ message: 'IBAN CH93 0076 2011 6238 5295 7 unreadable' }, 422),
+    );
+
+    await expect(service.analyze(CLASS, FILE, ORG, user)).rejects.toThrow(
+      'EXPENSE_AI_FILE_REJECTED',
+    );
+
+    expect(JSON.stringify(warn.mock.calls)).not.toContain('IBAN');
+    warn.mockRestore();
   });
 });
