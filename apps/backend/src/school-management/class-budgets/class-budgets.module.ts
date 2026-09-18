@@ -9,10 +9,14 @@ import { ClassExpensesResolver } from './class-expenses.resolver';
 import { ClassExpensesService } from './class-expenses.service';
 import { ExpenseCategoriesResolver } from './expense-categories.resolver';
 import { ExpenseCategoriesService } from './expense-categories.service';
+import { ExpenseReceiptsController } from './expense-receipts.controller';
+import { ExpenseReceiptsService } from './expense-receipts.service';
 
 @Module({
   imports: [CommonModule, DatabaseModule, SchoolClassesModule],
+  controllers: [ExpenseReceiptsController],
   providers: [
+    ExpenseReceiptsService,
     ClassBudgetAccessService,
     ClassBudgetsResolver,
     ClassBudgetsService,
@@ -26,6 +30,7 @@ import { ExpenseCategoriesService } from './expense-categories.service';
     ClassBudgetsService,
     ClassExpensesService,
     ExpenseCategoriesService,
+    ExpenseReceiptsService,
   ],
 })
 export class ClassBudgetsModule {}

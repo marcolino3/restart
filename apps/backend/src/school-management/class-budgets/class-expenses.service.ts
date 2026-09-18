@@ -12,6 +12,7 @@ import { CreateClassExpenseInput } from './dto/create-class-expense.input';
 import { UpdateClassExpenseInput } from './dto/update-class-expense.input';
 import { ClassExpense } from './entities/class-expense.entity';
 import { ExpenseCategory } from './entities/expense-category.entity';
+import { ExpenseReceiptsService } from './expense-receipts.service';
 
 export interface ClassExpenseFilter {
   schoolYearStart: number;
@@ -27,6 +28,7 @@ export class ClassExpensesService {
     @InjectRepository(ExpenseCategory)
     private readonly categoriesRepo: Repository<ExpenseCategory>,
     private readonly access: ClassBudgetAccessService,
+    private readonly receipts: ExpenseReceiptsService,
   ) {}
 
   async findAll(
@@ -96,6 +98,11 @@ export class ClassExpensesService {
       user,
     );
     await this.assertCategoryUsable(input.categoryId, organizationId);
+    await this.assertReceiptUsable(
+      input.receiptFileId,
+      input.schoolClassId,
+      organizationId,
+    );
 
     const expense = this.expensesRepo.create({
       ...input,
@@ -118,6 +125,12 @@ export class ClassExpensesService {
       input.schoolClassId !== undefined &&
       input.schoolClassId !== expense.schoolClassId
     ) {
+      // Receipts are stored per class; re-homing the file is not supported.
+      if (expense.receiptFileId || input.receiptFileId) {
+        throw new BadRequestException(
+          'An expense with a receipt cannot be moved to another class',
+        );
+      }
       await this.access.assertSchoolClassAccessible(
         input.schoolClassId,
         organizationId,
@@ -131,6 +144,18 @@ export class ClassExpensesService {
       await this.assertCategoryUsable(input.categoryId, organizationId);
     }
 
+    const previousReceipt = expense.receiptFileId ?? null;
+    if (
+      input.receiptFileId !== undefined &&
+      input.receiptFileId !== previousReceipt
+    ) {
+      await this.assertReceiptUsable(
+        input.receiptFileId,
+        expense.schoolClassId,
+        organizationId,
+      );
+    }
+
     const { id: _id, ...rest } = input;
     // Assign FK columns only and drop the loaded relations — saving an entity
     // whose relation object still points at the old row would silently win
@@ -139,6 +164,16 @@ export class ClassExpensesService {
     delete expense.schoolClass;
     Object.assign(expense, rest);
     await this.expensesRepo.save(expense);
+    if (
+      previousReceipt &&
+      previousReceipt !== (expense.receiptFileId ?? null)
+    ) {
+      await this.receipts.deleteQuietly(
+        organizationId,
+        expense.schoolClassId,
+        previousReceipt,
+      );
+    }
     return this.findOne(expense.id, organizationId, user);
   }
 
@@ -150,6 +185,13 @@ export class ClassExpensesService {
     const expense = await this.findOne(id, organizationId, user);
     await this.assertMayModify(expense, organizationId, user);
     await this.expensesRepo.delete({ id: expense.id, organizationId });
+    if (expense.receiptFileId) {
+      await this.receipts.deleteQuietly(
+        organizationId,
+        expense.schoolClassId,
+        expense.receiptFileId,
+      );
+    }
     return expense;
   }
 
@@ -180,6 +222,35 @@ export class ClassExpensesService {
     ) {
       throw new ForbiddenException(
         'Expenses of a closed school year can only be changed by a budget manager',
+      );
+    }
+  }
+
+  /**
+   * A receipt id is only accepted when the file really sits under this org
+   * and class, and no other expense already points at it.
+   */
+  private async assertReceiptUsable(
+    receiptFileId: string | null | undefined,
+    schoolClassId: string,
+    organizationId: string,
+  ): Promise<void> {
+    if (!receiptFileId) return;
+    if (
+      !(await this.receipts.exists(
+        organizationId,
+        schoolClassId,
+        receiptFileId,
+      ))
+    ) {
+      throw new BadRequestException(`Receipt ${receiptFileId} not found`);
+    }
+    const taken = await this.expensesRepo.exists({
+      where: { organizationId, receiptFileId },
+    });
+    if (taken) {
+      throw new BadRequestException(
+        `Receipt ${receiptFileId} is already attached to an expense`,
       );
     }
   }

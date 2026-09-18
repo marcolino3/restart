@@ -32,6 +32,7 @@ import { ClassBudget } from '@/school-management/class-budgets/entities/class-bu
 import { ClassExpense } from '@/school-management/class-budgets/entities/class-expense.entity';
 import { ExpenseCategory } from '@/school-management/class-budgets/entities/expense-category.entity';
 import { ExpenseCategoriesService } from '@/school-management/class-budgets/expense-categories.service';
+import { ExpenseReceiptsService } from '@/school-management/class-budgets/expense-receipts.service';
 import { GradeLevel } from '@/school-management/grade-levels/entities/grade-level.entity';
 import { SchoolClassTeacher } from '@/school-management/school-classes/entities/school-class-teacher.entity';
 import { SchoolClass } from '@/school-management/school-classes/entities/school-class.entity';
@@ -41,8 +42,29 @@ import {
   today,
 } from '@/school-management/school-classes/lib/school-year';
 import { SchoolClassesService } from '@/school-management/school-classes/school-classes.service';
+import { StorageService } from '@/storage/storage.service';
 import { User } from '@/users/entities/user.entity';
+import { Readable } from 'stream';
 import { cleanDatabase, createTestingApp } from './test-utils';
+
+/** In-memory stand-in for the object storage — no files touch the disk. */
+const storedObjects = new Map<string, Buffer>();
+const memoryStorage: Pick<StorageService, 'put' | 'getStream' | 'delete'> = {
+  put: (key, body) => {
+    storedObjects.set(key, body);
+    return Promise.resolve();
+  },
+  getStream: (key) => {
+    const body = storedObjects.get(key);
+    return body
+      ? Promise.resolve({ stream: Readable.from(body) })
+      : Promise.reject(new Error(`No object at ${key}`));
+  },
+  delete: (key) => {
+    storedObjects.delete(key);
+    return Promise.resolve();
+  },
+};
 
 @Module({
   imports: [
@@ -63,6 +85,8 @@ import { cleanDatabase, createTestingApp } from './test-utils';
     ClassBudgetsService,
     ClassExpensesService,
     ExpenseCategoriesService,
+    ExpenseReceiptsService,
+    { provide: StorageService, useValue: memoryStorage },
   ],
 })
 class ClassBudgetsTestModule {}
@@ -73,6 +97,7 @@ describe('Class budgets (Integration)', () => {
   let budgets: ClassBudgetsService;
   let expenses: ClassExpensesService;
   let categories: ExpenseCategoriesService;
+  let receipts: ExpenseReceiptsService;
 
   let orgRepo: Repository<Organization>;
   let userRepo: Repository<User>;
@@ -170,6 +195,7 @@ describe('Class budgets (Integration)', () => {
     budgets = module.get(ClassBudgetsService);
     expenses = module.get(ClassExpensesService);
     categories = module.get(ExpenseCategoriesService);
+    receipts = module.get(ExpenseReceiptsService);
 
     orgRepo = dataSource.getRepository(Organization);
     userRepo = dataSource.getRepository(User);
@@ -188,6 +214,7 @@ describe('Class budgets (Integration)', () => {
 
   beforeEach(async () => {
     await cleanDatabase(dataSource);
+    storedObjects.clear();
     const org = await orgRepo.save(
       orgRepo.create({ name: 'Testschule', subdomain: `t${Date.now()}` }),
     );
@@ -634,6 +661,137 @@ describe('Class budgets (Integration)', () => {
         YEAR - 1,
         YEAR - 3,
       ]);
+    });
+  });
+
+  describe('receipts', () => {
+    const pdf = {
+      buffer: Buffer.from('%PDF-1.4 test'),
+      mimetype: 'application/pdf',
+    };
+
+    it('stores receipts per org and class and removes them with the expense', async () => {
+      const classA = await createClass('Klasse A');
+      const material = await createCategory('Material');
+      const fileId = await receipts.put(orgId, classA.id, pdf);
+      expect([...storedObjects.keys()]).toEqual([
+        `expense-receipts/${orgId}/${classA.id}/${fileId}`,
+      ]);
+
+      const expense = await expenses.create(
+        {
+          schoolClassId: classA.id,
+          categoryId: material.id,
+          expenseDate: current.start,
+          amount: 5,
+          receiptFileId: fileId,
+        },
+        orgId,
+        admin(orgId),
+      );
+      expect(expense.receiptFileId).toBe(fileId);
+
+      await expenses.remove(expense.id, orgId, admin(orgId));
+      expect(storedObjects.size).toBe(0);
+    });
+
+    it('rejects a receipt id of another class or organization', async () => {
+      const classA = await createClass('Klasse A');
+      const classB = await createClass('Klasse B');
+      const foreignClass = await createClass('Fremdklasse', otherOrgId);
+      const material = await createCategory('Material');
+      const ofClassB = await receipts.put(orgId, classB.id, pdf);
+      const ofForeignOrg = await receipts.put(otherOrgId, foreignClass.id, pdf);
+
+      for (const receiptFileId of [ofClassB, ofForeignOrg]) {
+        await expect(
+          expenses.create(
+            {
+              schoolClassId: classA.id,
+              categoryId: material.id,
+              expenseDate: current.start,
+              amount: 5,
+              receiptFileId,
+            },
+            orgId,
+            admin(orgId),
+          ),
+        ).rejects.toBeInstanceOf(BadRequestException);
+      }
+      await expect(
+        receipts.stream(orgId, classA.id, ofForeignOrg),
+      ).rejects.toThrow();
+      expect(storedObjects.size).toBe(2);
+    });
+
+    it('does not attach one receipt to two expenses and drops a replaced one', async () => {
+      const classA = await createClass('Klasse A');
+      const material = await createCategory('Material');
+      const first = await receipts.put(orgId, classA.id, pdf);
+      const second = await receipts.put(orgId, classA.id, pdf);
+      const base = {
+        schoolClassId: classA.id,
+        categoryId: material.id,
+        expenseDate: current.start,
+        amount: 5,
+      };
+      const expense = await expenses.create(
+        { ...base, receiptFileId: first },
+        orgId,
+        admin(orgId),
+      );
+
+      await expect(
+        expenses.create({ ...base, receiptFileId: first }, orgId, admin(orgId)),
+      ).rejects.toBeInstanceOf(BadRequestException);
+
+      await expenses.update(
+        { id: expense.id, receiptFileId: second },
+        orgId,
+        admin(orgId),
+      );
+      expect([...storedObjects.keys()]).toEqual([
+        `expense-receipts/${orgId}/${classA.id}/${second}`,
+      ]);
+    });
+
+    it('refuses to move an expense with a receipt into another class', async () => {
+      const classA = await createClass('Klasse A');
+      const classB = await createClass('Klasse B');
+      const material = await createCategory('Material');
+      const fileId = await receipts.put(orgId, classA.id, pdf);
+      const expense = await expenses.create(
+        {
+          schoolClassId: classA.id,
+          categoryId: material.id,
+          expenseDate: current.start,
+          amount: 5,
+          receiptFileId: fileId,
+        },
+        orgId,
+        admin(orgId),
+      );
+
+      await expect(
+        expenses.update(
+          { id: expense.id, schoolClassId: classB.id },
+          orgId,
+          admin(orgId),
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects disallowed file types and malformed references', async () => {
+      const classA = await createClass('Klasse A');
+      await expect(
+        receipts.put(orgId, classA.id, {
+          buffer: Buffer.from('<svg/>'),
+          mimetype: 'image/svg+xml',
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      await expect(
+        receipts.stream(orgId, classA.id, '../../secrets.pdf'),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
   });
 
