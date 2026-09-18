@@ -56,6 +56,9 @@ import { Student } from '@/school-management/students/entities/student.entity';
 import { StudentRecordCategory } from '@/school-management/student-records/entities/student-record-category.entity';
 import { StudentRecordEntry } from '@/school-management/student-records/entities/student-record-entry.entity';
 import { StudentRecordDocument } from '@/school-management/student-records/entities/student-record-document.entity';
+import { ClassBudget } from '@/school-management/class-budgets/entities/class-budget.entity';
+import { ClassExpense } from '@/school-management/class-budgets/entities/class-expense.entity';
+import { ExpenseCategory } from '@/school-management/class-budgets/entities/expense-category.entity';
 import { CurriculumLevel } from '@/curricula/entities/curriculum-level.entity';
 import { CurriculumLevelTranslation } from '@/curricula/entities/curriculum-level-translation.entity';
 import { Curriculum } from '@/curricula/entities/curriculum.entity';
@@ -151,6 +154,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       StudentRecordCategory,
       StudentRecordEntry,
       StudentRecordDocument,
+      ClassBudget,
+      ClassExpense,
+      ExpenseCategory,
       StudentNote,
       AdmissionStage,
       AdmissionRejectionReason,

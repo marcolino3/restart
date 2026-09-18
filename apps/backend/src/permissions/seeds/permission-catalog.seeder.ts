@@ -53,6 +53,15 @@ const PERMISSION_CATALOG: Array<{
     code: PermissionCode.STUDENT_RECORD_CATEGORY_WRITE,
     name: 'Foerderkategorien verwalten',
   },
+  {
+    code: PermissionCode.CLASS_BUDGET_MANAGE,
+    name: 'Klassenbudgets und Ausgabenkategorien verwalten',
+  },
+  { code: PermissionCode.CLASS_EXPENSE_READ, name: 'Klassenausgaben lesen' },
+  {
+    code: PermissionCode.CLASS_EXPENSE_WRITE,
+    name: 'Klassenausgaben erfassen',
+  },
   { code: PermissionCode.ADMISSION_STAGE_READ, name: 'Aufnahmestufe lesen' },
   {
     code: PermissionCode.ADMISSION_STAGE_MANAGE,

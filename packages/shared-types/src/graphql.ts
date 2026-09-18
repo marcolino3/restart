@@ -625,6 +625,66 @@ export type ChangeUserEmailInput = {
   userId: Scalars['ID']['input'];
 };
 
+export type ClassBudget = {
+  __typename?: 'ClassBudget';
+  amount: Scalars['Float']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  currency: Scalars['String']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  note?: Maybe<Scalars['String']['output']>;
+  organizationId: Scalars['String']['output'];
+  schoolClass?: Maybe<SchoolClass>;
+  schoolClassId: Scalars['String']['output'];
+  schoolYearStart: Scalars['Int']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type ClassBudgetCategoryTotal = {
+  __typename?: 'ClassBudgetCategoryTotal';
+  category: ExpenseCategory;
+  total: Scalars['Float']['output'];
+};
+
+export type ClassBudgetSummary = {
+  __typename?: 'ClassBudgetSummary';
+  budget?: Maybe<Scalars['Float']['output']>;
+  byCategory: Array<ClassBudgetCategoryTotal>;
+  currency: Scalars['String']['output'];
+  isOverBudget: Scalars['Boolean']['output'];
+  remaining: Scalars['Float']['output'];
+  schoolClassId: Scalars['ID']['output'];
+  schoolYear: SchoolYear;
+  spent: Scalars['Float']['output'];
+};
+
+export type ClassExpense = {
+  __typename?: 'ClassExpense';
+  amount: Scalars['Float']['output'];
+  category?: Maybe<ExpenseCategory>;
+  categoryId: Scalars['String']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  createdByMembershipId?: Maybe<Scalars['String']['output']>;
+  currency: Scalars['String']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  expenseDate: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  invoiceNumber?: Maybe<Scalars['String']['output']>;
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  organizationId: Scalars['String']['output'];
+  receiptFileId?: Maybe<Scalars['String']['output']>;
+  schoolClass?: Maybe<SchoolClass>;
+  schoolClassId: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  vendor?: Maybe<Scalars['String']['output']>;
+  version: Scalars['Int']['output'];
+};
+
 export type ClassroomHeatmapDataOutput = {
   __typename?: 'ClassroomHeatmapDataOutput';
   areas: Array<HeatmapAreaOutput>;
@@ -1037,6 +1097,17 @@ export type CreateAdmissionStageInput = {
   stageType?: InputMaybe<AdmissionStageType>;
 };
 
+export type CreateClassExpenseInput = {
+  amount: Scalars['Float']['input'];
+  categoryId: Scalars['ID']['input'];
+  description?: InputMaybe<Scalars['String']['input']>;
+  expenseDate: Scalars['String']['input'];
+  invoiceNumber?: InputMaybe<Scalars['String']['input']>;
+  receiptFileId?: InputMaybe<Scalars['String']['input']>;
+  schoolClassId: Scalars['ID']['input'];
+  vendor?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type CreateCompanyVacationInput = {
   endDate: Scalars['String']['input'];
   name: Scalars['String']['input'];
@@ -1268,6 +1339,12 @@ export type CreateEmployeeVacationInput = {
   name?: InputMaybe<Scalars['String']['input']>;
   remark?: InputMaybe<Scalars['String']['input']>;
   startDate: Scalars['String']['input'];
+};
+
+export type CreateExpenseCategoryInput = {
+  color?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+  position?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type CreateFamilyInput = {
@@ -2480,6 +2557,21 @@ export type EngagementTimelineOutput = {
   totalObserved: Scalars['Int']['output'];
 };
 
+export type ExpenseCategory = {
+  __typename?: 'ExpenseCategory';
+  color?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  name: Scalars['String']['output'];
+  organizationId: Scalars['String']['output'];
+  position: Scalars['Int']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
 export type ExportOrganizationDataResult = {
   __typename?: 'ExportOrganizationDataResult';
   jobId: Scalars['ID']['output'];
@@ -2910,6 +3002,7 @@ export type Mutation = {
   archiveCurriculumNode: Scalars['Boolean']['output'];
   archiveEmployeeAbsenceCategory: Scalars['Boolean']['output'];
   archiveEmployeeFunction: Scalars['Boolean']['output'];
+  archiveExpenseCategory: Scalars['Boolean']['output'];
   archiveFamily: Scalars['Boolean']['output'];
   archiveProcessingActivity: Scalars['Boolean']['output'];
   archiveProject: Project;
@@ -2921,6 +3014,7 @@ export type Mutation = {
   changeUserEmail: User;
   completeAdmissionReminder: AdmissionReminder;
   contractAiChat: ContractAiChatResult;
+  copyClassBudgetsFromPreviousYear: Array<ClassBudget>;
   createAddress: Address;
   createAdmissionActivity: AdmissionActivity;
   createAdmissionApplication: AdmissionApplication;
@@ -2930,6 +3024,7 @@ export type Mutation = {
   createAdmissionReminder: AdmissionReminder;
   createAdmissionSource: AdmissionSource;
   createAdmissionStage: AdmissionStage;
+  createClassExpense: ClassExpense;
   createCompanyVacation: CompanyVacation;
   createConsentPurpose: ConsentPurpose;
   createContactPerson: ContactPerson;
@@ -2952,6 +3047,7 @@ export type Mutation = {
   createEmployeePaidOvertime: EmployeePaidOvertime;
   createEmployeeVacation: EmployeeVacation;
   createEnrollment: SchoolClassEnrollment;
+  createExpenseCategory: ExpenseCategory;
   createFamily: Family;
   createGradeLevel: GradeLevel;
   createHoliday: Holiday;
@@ -2985,6 +3081,7 @@ export type Mutation = {
   deleteAdmissionAppointment: Scalars['Boolean']['output'];
   deleteAdmissionEmail: Scalars['Boolean']['output'];
   deleteAdmissionReminder: Scalars['Boolean']['output'];
+  deleteClassExpense: ClassExpense;
   deleteCompanyVacation: Scalars['Boolean']['output'];
   deleteContractTemplate: Scalars['Boolean']['output'];
   deleteCountryInputTemplate: Scalars['Boolean']['output'];
@@ -3051,6 +3148,7 @@ export type Mutation = {
   reorderCurriculumNodes: Array<CurriculumNode>;
   reorderEmployeeAbsenceCategories: Array<EmployeeAbsenceCategory>;
   reorderEmployeeFunctions: Array<EmployeeFunction>;
+  reorderExpenseCategories: Array<ExpenseCategory>;
   reorderGradeLevels: Array<GradeLevel>;
   reorderMyTasks: Scalars['Boolean']['output'];
   reorderSchoolClasses: Array<SchoolClass>;
@@ -3094,6 +3192,7 @@ export type Mutation = {
   updateAdmissionReminder: AdmissionReminder;
   updateAdmissionSource: AdmissionSource;
   updateAdmissionStage: AdmissionStage;
+  updateClassExpense: ClassExpense;
   updateCompanyVacation: CompanyVacation;
   updateConsentPurpose: ConsentPurpose;
   updateContactPerson: ContactPerson;
@@ -3114,6 +3213,7 @@ export type Mutation = {
   updateEmployeePaidOvertime: EmployeePaidOvertime;
   updateEmployeeVacation: EmployeeVacation;
   updateEnrollment: SchoolClassEnrollment;
+  updateExpenseCategory: ExpenseCategory;
   updateFamily: Family;
   updateGradeLevel: GradeLevel;
   updateHoliday: Holiday;
@@ -3147,6 +3247,7 @@ export type Mutation = {
   updateTeamMember: TeamMember;
   updateTimeTracking: TimeTracking;
   updateUser: User;
+  upsertClassBudget: ClassBudget;
   upsertCountryInputTemplate: CountryInputTemplate;
   upsertCurriculumLevelTranslation: CurriculumLevelTranslation;
   upsertCurriculumNodeTranslation: CurriculumNodeTranslation;
@@ -3243,6 +3344,11 @@ export type MutationArchiveEmployeeFunctionArgs = {
 };
 
 
+export type MutationArchiveExpenseCategoryArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationArchiveFamilyArgs = {
   id: Scalars['ID']['input'];
 };
@@ -3300,6 +3406,11 @@ export type MutationContractAiChatArgs = {
 };
 
 
+export type MutationCopyClassBudgetsFromPreviousYearArgs = {
+  schoolYearStart: Scalars['Int']['input'];
+};
+
+
 export type MutationCreateAddressArgs = {
   input: CreateAddressInput;
 };
@@ -3342,6 +3453,11 @@ export type MutationCreateAdmissionSourceArgs = {
 
 export type MutationCreateAdmissionStageArgs = {
   input: CreateAdmissionStageInput;
+};
+
+
+export type MutationCreateClassExpenseArgs = {
+  input: CreateClassExpenseInput;
 };
 
 
@@ -3452,6 +3568,11 @@ export type MutationCreateEmployeeVacationArgs = {
 
 export type MutationCreateEnrollmentArgs = {
   input: CreateSchoolClassEnrollmentInput;
+};
+
+
+export type MutationCreateExpenseCategoryArgs = {
+  input: CreateExpenseCategoryInput;
 };
 
 
@@ -3616,6 +3737,11 @@ export type MutationDeleteAdmissionEmailArgs = {
 
 
 export type MutationDeleteAdmissionReminderArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteClassExpenseArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -3954,6 +4080,11 @@ export type MutationReorderEmployeeFunctionsArgs = {
 };
 
 
+export type MutationReorderExpenseCategoriesArgs = {
+  input: ReorderExpenseCategoriesInput;
+};
+
+
 export type MutationReorderGradeLevelsArgs = {
   input: ReorderGradeLevelsInput;
 };
@@ -4163,6 +4294,11 @@ export type MutationUpdateAdmissionStageArgs = {
 };
 
 
+export type MutationUpdateClassExpenseArgs = {
+  input: UpdateClassExpenseInput;
+};
+
+
 export type MutationUpdateCompanyVacationArgs = {
   input: UpdateCompanyVacationInput;
 };
@@ -4260,6 +4396,11 @@ export type MutationUpdateEmployeeVacationArgs = {
 
 export type MutationUpdateEnrollmentArgs = {
   input: UpdateSchoolClassEnrollmentInput;
+};
+
+
+export type MutationUpdateExpenseCategoryArgs = {
+  input: UpdateExpenseCategoryInput;
 };
 
 
@@ -4425,6 +4566,11 @@ export type MutationUpdateTimeTrackingArgs = {
 
 export type MutationUpdateUserArgs = {
   updateUserInput: UpdateUserInput;
+};
+
+
+export type MutationUpsertClassBudgetArgs = {
+  input: UpsertClassBudgetInput;
 };
 
 
@@ -4713,6 +4859,9 @@ export enum PermissionCode {
   BillingManage = 'BILLING_MANAGE',
   ChatRead = 'CHAT_READ',
   ChatWrite = 'CHAT_WRITE',
+  ClassBudgetManage = 'CLASS_BUDGET_MANAGE',
+  ClassExpenseRead = 'CLASS_EXPENSE_READ',
+  ClassExpenseWrite = 'CLASS_EXPENSE_WRITE',
   ConsentManage = 'CONSENT_MANAGE',
   ConsentRead = 'CONSENT_READ',
   ConsentSettingsManage = 'CONSENT_SETTINGS_MANAGE',
@@ -5110,6 +5259,11 @@ export type Query = {
   authContext: AuthContextOutput;
   authUserIdByUserId?: Maybe<Scalars['String']['output']>;
   chatContacts: Array<Membership>;
+  classBudgetSchoolYears: Array<SchoolYear>;
+  classBudgetSummary: ClassBudgetSummary;
+  classBudgets: Array<ClassBudget>;
+  classExpenseById: ClassExpense;
+  classExpenses: Array<ClassExpense>;
   classroomAttentionSummaries: Array<StudentAttentionSummaryOutput>;
   classroomEngagementTimeline: EngagementTimelineOutput;
   classroomHeatmapData: ClassroomHeatmapDataOutput;
@@ -5172,6 +5326,7 @@ export type Query = {
   employeeWorkTimeBalance: WorkTimeBalance;
   employeesByOrgId: Array<Employee>;
   enrollmentsByStudentId: Array<SchoolClassEnrollment>;
+  expenseCategories: Array<ExpenseCategory>;
   families: Array<Family>;
   familyById: Family;
   gradeLevelById: GradeLevel;
@@ -5365,6 +5520,29 @@ export type QueryAuthAccountsByUserEmailIdArgs = {
 
 export type QueryAuthUserIdByUserIdArgs = {
   userId: Scalars['ID']['input'];
+};
+
+
+export type QueryClassBudgetSummaryArgs = {
+  schoolClassId: Scalars['ID']['input'];
+  schoolYearStart: Scalars['Int']['input'];
+};
+
+
+export type QueryClassBudgetsArgs = {
+  schoolYearStart: Scalars['Int']['input'];
+};
+
+
+export type QueryClassExpenseByIdArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryClassExpensesArgs = {
+  categoryId?: InputMaybe<Scalars['ID']['input']>;
+  schoolClassId?: InputMaybe<Scalars['ID']['input']>;
+  schoolYearStart: Scalars['Int']['input'];
 };
 
 
@@ -5655,6 +5833,11 @@ export type QueryEmployeeWorkTimeBalanceArgs = {
 
 export type QueryEnrollmentsByStudentIdArgs = {
   studentId: Scalars['ID']['input'];
+};
+
+
+export type QueryExpenseCategoriesArgs = {
+  includeArchived?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 
@@ -6091,6 +6274,10 @@ export type ReorderCurriculumNodesInput = {
 };
 
 export type ReorderEmployeeFunctionsInput = {
+  ids: Array<Scalars['ID']['input']>;
+};
+
+export type ReorderExpenseCategoriesInput = {
   ids: Array<Scalars['ID']['input']>;
 };
 
@@ -7115,6 +7302,18 @@ export type UpdateAdmissionStageInput = {
   stageType?: InputMaybe<AdmissionStageType>;
 };
 
+export type UpdateClassExpenseInput = {
+  amount?: InputMaybe<Scalars['Float']['input']>;
+  categoryId?: InputMaybe<Scalars['ID']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  expenseDate?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  invoiceNumber?: InputMaybe<Scalars['String']['input']>;
+  receiptFileId?: InputMaybe<Scalars['String']['input']>;
+  schoolClassId?: InputMaybe<Scalars['ID']['input']>;
+  vendor?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type UpdateCompanyVacationInput = {
   endDate?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
@@ -7353,6 +7552,14 @@ export type UpdateEmployeeVacationInput = {
   name?: InputMaybe<Scalars['String']['input']>;
   remark?: InputMaybe<Scalars['String']['input']>;
   startDate?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateExpenseCategoryInput = {
+  color?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  isArchived?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  position?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type UpdateFamilyInput = {
@@ -7692,6 +7899,13 @@ export type UpdateUserInput = {
   street?: InputMaybe<Scalars['String']['input']>;
   title?: InputMaybe<Scalars['String']['input']>;
   username?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpsertClassBudgetInput = {
+  amount: Scalars['Float']['input'];
+  note?: InputMaybe<Scalars['String']['input']>;
+  schoolClassId: Scalars['ID']['input'];
+  schoolYearStart: Scalars['Int']['input'];
 };
 
 export type UpsertCountryInputTemplateInput = {
