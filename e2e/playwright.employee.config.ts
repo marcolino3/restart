@@ -30,7 +30,7 @@ export default defineConfig({
   reporter: [['list'], ['html', { outputFolder: 'playwright-report/employee', open: 'never' }]],
   use: { baseURL: 'http://localhost:4100', trace: 'retain-on-failure', screenshot: 'only-on-failure' },
   webServer: [
-    { command: 'pnpm --filter @restart/backend exec ts-node --transpile-only -r tsconfig-paths/register src/main.ts', cwd: '..', port: 4101, reuseExistingServer: false, timeout: 180000,
+    { command: 'pnpm --filter @restart/backend migration:run && pnpm --filter @restart/backend auth:migrate && pnpm --filter @restart/backend exec ts-node --transpile-only -r tsconfig-paths/register src/main.ts', cwd: '..', port: 4101, reuseExistingServer: false, timeout: 180000,
       env: { ...environment, PORT: '4101', E2E_MAIL_DIR: process.cwd() + '/.employee-mail' } },
     { command: 'pnpm --filter @restart/web exec next dev --port 4100', cwd: '..', port: 4100, reuseExistingServer: false, timeout: 180000,
       env: { ...environment, NODE_ENV: 'development', NEXT_DIST_DIR: '.next-employee-e2e', NEXT_FONT_GOOGLE_MOCKED_RESPONSES: resolve(__dirname, 'tests/helpers/font-responses.cjs') } },
