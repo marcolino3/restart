@@ -85,7 +85,9 @@ jobs:
   build:
     name: Lint, Test, Build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # The full backend suite takes about 20 minutes with isolated ESM workers.
+    # Leave room for installation, frontend tests, and production builds.
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -102,7 +104,7 @@ jobs:
       # Explicit typecheck for packages whose build doesn't run tsc (e.g. the
       # Expo mobile app — `expo start` never typechecks in CI).
       - run: pnpm turbo run typecheck
-      - run: pnpm turbo run test
+      - run: pnpm turbo run test --log-order=stream
       - run: pnpm turbo run build
 
   e2e:
@@ -174,17 +176,14 @@ jobs:
           PGPASSWORD=test psql -h localhost -U test -d colibri_test \
             -c 'CREATE DATABASE restart_integration'
 
-      # --runInBand ist Pflicht: createTestingApp läuft mit `dropSchema: true`,
+      # Ein einzelner Jest-Worker ist Pflicht: createTestingApp läuft mit `dropSchema: true`,
       # parallele Suiten würden einander das Schema wegziehen.
       # app.e2e-spec.ts ist seit dem Initial-Import kaputt (supertest-Import
       # lässt sich nicht aufrufen) und daher ausgeklammert — sonst wäre der
       # Schritt von Beginn an rot und würde ignoriert.
       - name: Run Backend Integration Tests
         run: >-
-          pnpm --filter @restart/backend exec jest
-          --config ./test/jest-e2e.json
-          --runInBand
-          --testPathIgnorePatterns "test/app.e2e-spec.ts"
+          pnpm --filter @restart/backend test:e2e
         env:
           DB_HOST: localhost
           DB_PORT: 5432

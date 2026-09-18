@@ -79,7 +79,7 @@ export async function switchOrg(orgId: string): Promise<void> {
     credentials: authCredentials,
     headers: {
       "Content-Type": "application/json",
-      ...authHeaders(),
+      ...(await authHeaders()),
     },
     body: JSON.stringify({ orgId }),
   });

@@ -8,6 +8,8 @@
  *  2. better-auth 1.7 makes `account.issuer` NOT NULL, which its own schema
  *     runner refuses to add to a populated table (`UnsafeMigrationError`) —
  *     so the column needs a real expand/backfill/enforce migration.
+ * Better Auth >=1.7.3 stopped writing issuer; the follow-up migration keeps
+ * historical values but allows new accounts to omit it.
  *
  * This suite runs the migrations against a throwaway database and checks the
  * migration on both paths it has to survive: an `account` table that does not
@@ -22,6 +24,11 @@
 import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
 import { join } from 'path';
+import { Pool } from 'pg';
+import { RelaxBetterAuthAccountIssuer1789720000000 } from '../src/migrations/1789720000000-RelaxBetterAuthAccountIssuer';
+
+// Use the installed library, not the manual stub for unrelated service tests.
+jest.unmock('better-auth');
 
 config({ path: join(__dirname, '.env.test') });
 
@@ -81,7 +88,7 @@ describe('AddBetterAuthAccountIssuer migration', () => {
     }
   });
 
-  it('leaves a fresh database with the 1.7 account shape', async () => {
+  it('leaves a fresh database compatible with Better Auth >=1.7.3', async () => {
     await recreateDatabase();
     const ds = freshDataSource();
     await ds.initialize();
@@ -90,14 +97,14 @@ describe('AddBetterAuthAccountIssuer migration', () => {
       expect(applied.map((m) => m.name)).toContain(MIGRATION);
 
       // `CreateBetterAuthTables` creates `account` without `issuer` (the
-      // pre-1.7 shape); this migration then brings it up to 1.7. A fresh DB
+      // pre-1.7 shape); later migrations retain issuer as nullable. A fresh DB
       // must end up identical to a migrated one, so `auth:migrate` finds
       // nothing left to apply.
       const rows: Array<{ is_nullable: string }> = await ds.query(
         `SELECT is_nullable FROM information_schema.columns
          WHERE table_name = 'account' AND column_name = 'issuer'`,
       );
-      expect(rows[0]?.is_nullable).toBe('NO');
+      expect(rows[0]?.is_nullable).toBe('YES');
 
       const indexes: Array<{ indexname: string }> = await ds.query(
         `SELECT indexname FROM pg_indexes WHERE tablename = 'account'`,
@@ -105,6 +112,36 @@ describe('AddBetterAuthAccountIssuer migration', () => {
       expect(indexes.map((i) => i.indexname)).toContain(
         'account_issuer_account_id_uidx',
       );
+
+      // Exercise the installed auth version against the migrated schema.
+      const { betterAuth } = await import('better-auth');
+      const pool = new Pool({
+        host: baseOptions.host,
+        port: baseOptions.port,
+        user: baseOptions.username,
+        password: baseOptions.password,
+        database: DB_NAME,
+      });
+      try {
+        const auth = betterAuth({
+          database: pool,
+          baseURL: 'http://localhost:4101',
+          secret: 'migration-regression-test-secret-at-least-32-chars',
+          emailAndPassword: { enabled: true },
+        });
+        const credentials = {
+          email: 'migration-test@example.test',
+          password: 'Migration-Test-Password-2026',
+        };
+        const signup = await auth.api.signUpEmail({
+          body: { ...credentials, name: 'Migration Test' },
+        });
+        const signin = await auth.api.signInEmail({ body: credentials });
+        expect(signin.user.id).toBe(signup.user.id);
+        expect(signin.token).toBeTruthy();
+      } finally {
+        await pool.end();
+      }
     } finally {
       await ds.destroy();
     }
@@ -125,6 +162,12 @@ describe('AddBetterAuthAccountIssuer migration', () => {
       // Must not throw even though `account` is gone.
       const applied = await ds.runMigrations();
       expect(applied.map((m) => m.name)).toContain(MIGRATION);
+      const runner = ds.createQueryRunner();
+      try {
+        await new RelaxBetterAuthAccountIssuer1789720000000().up(runner);
+      } finally {
+        await runner.release();
+      }
     } finally {
       await ds.destroy();
     }
@@ -158,7 +201,7 @@ describe('AddBetterAuthAccountIssuer migration', () => {
       if (ds?.isInitialized) await ds.destroy();
     });
 
-    it('backfills the issuer values better-auth writes at runtime', async () => {
+    it('preserves the historical issuer backfill', async () => {
       const rows: Array<{ id: string; issuer: string }> = await ds.query(
         `SELECT "id", "issuer" FROM "account" ORDER BY "id"`,
       );
@@ -172,12 +215,20 @@ describe('AddBetterAuthAccountIssuer migration', () => {
       ]);
     });
 
-    it('makes `issuer` NOT NULL so better-auth 1.7 can query the table', async () => {
+    it('allows omitted issuer after upgrading to Better Auth >=1.7.3', async () => {
       const rows: Array<{ is_nullable: string }> = await ds.query(
         `SELECT is_nullable FROM information_schema.columns
          WHERE table_name = 'account' AND column_name = 'issuer'`,
       );
-      expect(rows[0]?.is_nullable).toBe('NO');
+      expect(rows[0]?.is_nullable).toBe('YES');
+      await ds.query(
+        `INSERT INTO "account" ("id", "accountId", "providerId", "userId", "password")
+         VALUES ('acc-new', 'user-new', 'credential', 'user-new', 'new-hash')`,
+      );
+      const [account] = await ds.query(
+        `SELECT "issuer", "password" FROM "account" WHERE "id" = 'acc-new'`,
+      );
+      expect(account).toEqual({ issuer: null, password: 'new-hash' });
     });
 
     it('enforces one account per (issuer, accountId)', async () => {
