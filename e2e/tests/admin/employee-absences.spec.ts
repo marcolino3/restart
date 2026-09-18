@@ -100,7 +100,15 @@ test.describe('Employee absences — CRUD', () => {
     await page.getByRole('button', { name: fieldLabel }).click()
     // Accessible names can be just the number or a full date, so match by
     // substring and take the first (outside-month days repeat the number).
-    await page.getByRole('gridcell', { name: day }).first().click()
+    const dayButton = page.getByRole('gridcell', { name: day }).first().getByRole('button')
+    // Clicking a selected day clears it. Selecting a fixture date must be
+    // idempotent, including when it is today's prefilled start date.
+    if (await dayButton.getAttribute('data-selected-single') !== 'true') {
+      await dayButton.click()
+    }
+    await expect(dayButton).toHaveAttribute('data-selected-single', 'true')
+    await page.keyboard.press('Escape')
+    await expect(page.locator('[data-slot="popover-content"]')).toBeHidden()
   }
 
   test('creates, edits and deletes an absence', async ({ page }) => {
@@ -161,6 +169,8 @@ test.describe('Employee absences — CRUD', () => {
     await page.getByRole('link', { name: /^record absence$/i }).click()
     await page.getByRole('combobox', { name: /^category$/i }).click()
     await page.getByRole('option', { name: /sick leave/i }).click()
+    await pickCalendarDay(page, /^start date$/i, '18')
+    // Exercise the already-selected case on every date, not only the 18th.
     await pickCalendarDay(page, /^start date$/i, '18')
     await pickCalendarDay(page, /^end date$/i, '18')
     await page.getByLabel(/^note$/i).fill(note)
