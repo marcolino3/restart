@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { FileText, Pencil, Trash2 } from "lucide-react";
 
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
+import { TableCard } from "@/components/common/TableCard";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -35,14 +36,14 @@ export function ClassExpensesTable({ expenses, onEdit, onDeleted }: Props) {
 
   if (expenses.length === 0) {
     return (
-      <p className="rounded-md border p-6 text-center text-sm text-muted-foreground">
+      <TableCard className="p-6 text-center text-sm text-muted-foreground">
         {t("noExpenses")}
-      </p>
+      </TableCard>
     );
   }
 
   return (
-    <div className="rounded-md border">
+    <TableCard>
       <Table>
         <TableHeader>
           <TableRow>
@@ -142,6 +143,6 @@ export function ClassExpensesTable({ expenses, onEdit, onDeleted }: Props) {
           ))}
         </TableBody>
       </Table>
-    </div>
+    </TableCard>
   );
 }

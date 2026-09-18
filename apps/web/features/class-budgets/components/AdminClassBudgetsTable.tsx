@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Copy } from "lucide-react";
 
+import { TableCard } from "@/components/common/TableCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -105,7 +106,7 @@ export function AdminClassBudgetsTable({
       </div>
       <p className="text-sm text-muted-foreground">{t("copyHint")}</p>
 
-      <div className="rounded-md border">
+      <TableCard>
         <Table>
           <TableHeader>
             <TableRow>
@@ -140,7 +141,7 @@ export function AdminClassBudgetsTable({
             </TableRow>
           </TableFooter>
         </Table>
-      </div>
+      </TableCard>
     </div>
   );
 }

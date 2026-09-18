@@ -20,6 +20,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
+import { TableCard } from "@/components/common/TableCard";
 import { Button } from "@/components/ui/button";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { Input } from "@/components/ui/input";
@@ -147,7 +148,7 @@ export function ExpenseCategoriesManager({ categories: initial }: Props) {
 
   return (
     <div className="max-w-2xl space-y-4">
-          <section className="space-y-2 rounded-md border p-3">
+          <section className="space-y-2 rounded-card border bg-card p-3 shadow-card">
             <h3 className="text-sm font-semibold">{t("newCategory")}</h3>
             <p className="text-xs text-muted-foreground">
               {t("categoriesHint")}
@@ -200,7 +201,7 @@ export function ExpenseCategoriesManager({ categories: initial }: Props) {
                   items={categories.map((c) => c.id)}
                   strategy={verticalListSortingStrategy}
                 >
-                  <div className="divide-y rounded-md border">
+                  <TableCard className="divide-y">
                     {categories.map((c) => (
                       <SortableCategoryRow
                         key={c.id}
@@ -211,7 +212,7 @@ export function ExpenseCategoriesManager({ categories: initial }: Props) {
                         onArchive={onArchive}
                       />
                     ))}
-                  </div>
+                  </TableCard>
                 </SortableContext>
               </DndContext>
             )}
