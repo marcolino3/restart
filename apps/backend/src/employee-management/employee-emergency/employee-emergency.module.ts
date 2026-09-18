@@ -7,5 +7,6 @@ import { EmployeeAuditLogModule } from '../employee-audit-log/employee-audit-log
 @Module({
   imports: [DatabaseModule, EmployeeAuditLogModule],
   providers: [EmployeeEmergencyResolver, EmployeeEmergencyService],
+  exports: [EmployeeEmergencyService],
 })
 export class EmployeeEmergencyModule {}

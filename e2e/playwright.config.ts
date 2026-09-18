@@ -1,5 +1,10 @@
 import { defineConfig } from '@playwright/test'
 
+// Ports follow the URLs so a run against a second worktree (e.g. web on 4100,
+// backend on 4101) reuses those servers instead of starting new ones on 4000/4001.
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:4000'
+const backendURL = process.env.BACKEND_URL ?? 'http://localhost:4001'
+
 export default defineConfig({
   testDir: './tests',
   // These suites own isolated servers/DB and run in the employee-security job.
@@ -17,7 +22,7 @@ export default defineConfig({
     ? [['github'], ['html', { open: 'never' }]]
     : 'list',
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:4000',
+    baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     actionTimeout: 15000,
@@ -25,13 +30,13 @@ export default defineConfig({
   webServer: [
     {
       command: 'cd ../apps/backend && npm run start:dev',
-      port: 4001,
+      port: Number(new URL(backendURL).port),
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
     },
     {
       command: 'cd ../apps/web && npm run dev',
-      port: 4000,
+      port: Number(new URL(baseURL).port),
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
     },

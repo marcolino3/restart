@@ -7,5 +7,6 @@ import { DatabaseModule } from '@/database/database.module';
 @Module({
   imports: [CommonModule, DatabaseModule],
   providers: [EmployeeContractsResolver, EmployeeContractsService],
+  exports: [EmployeeContractsService],
 })
 export class EmployeeContractsModule {}

@@ -33,6 +33,11 @@ const swcHelpersEsm = (() => {
 const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
   output: "standalone",
+  // Server actions forward file uploads (employee import, 5 MB backend limit);
+  // the default 1 MB body limit would reject them before the backend sees them.
+  experimental: {
+    serverActions: { bodySizeLimit: "6mb" },
+  },
   // These workspaces publish TypeScript sources, including pnpm peer variants.
   transpilePackages: [
     "@restart/shared-schemas",
