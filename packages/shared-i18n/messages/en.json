@@ -4303,7 +4303,8 @@
     "aiErrorUnusableAnswer": "The AI could not find anything usable on the receipt. Please fill in the fields by hand.",
     "aiErrorTooManyRequests": "Too many analyses in a short time. Please wait a minute.",
     "aiErrorReceiptMissing": "The receipt was not found. Please upload it again.",
-    "aiErrorNoAccess": "No permission for this class."
+    "aiErrorNoAccess": "No permission for this class.",
+    "aiErrorNoAllowance": "The stored API key has no request allowance at the AI provider (limit 0). Waiting does not help: an admin has to check plan and billing of the provider account, or set another provider under Settings > AI."
   },
   "ExpenseCategories": {
     "noAccess": "You do not have permission for this area.",

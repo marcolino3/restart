@@ -287,6 +287,20 @@ describe('ExpenseReceiptAiService', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('reports a key without any allowance and does not retry it', async () => {
+    fetchMock.mockImplementation(() =>
+      answer({ type: 'rate_limited', message: 'Rate limit exceeded' }, 429, {
+        'x-ratelimit-limit-req-minute': '0',
+        'x-ratelimit-remaining-req-minute': '0',
+      }),
+    );
+
+    await expect(service.analyze(CLASS, FILE, ORG, user)).rejects.toThrow(
+      'EXPENSE_AI_NO_ALLOWANCE',
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('never logs the provider message of a rejected document', async () => {
     const warn = jest
       .spyOn(Logger.prototype, 'warn')

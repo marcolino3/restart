@@ -51,6 +51,34 @@ const REQUEST_TIMEOUT_MS = 60_000;
 const RETRY_FALLBACK_MS = 2_000;
 const MAX_RETRY_DELAY_MS = 5_000;
 
+/**
+ * The provider's rate-limit headers tell which limit was hit (requests or
+ * tokens, per minute or per month) — numbers only, nothing of the request.
+ */
+const rateLimitHeaders = (headers: Headers): string => {
+  const parts: string[] = [];
+  headers.forEach((value, name) => {
+    if (/ratelimit|retry-after/i.test(name)) {
+      parts.push(`${name}=${value.slice(0, 40)}`);
+    }
+  });
+  return parts.length ? ` {${parts.join(', ')}}` : '';
+};
+
+/**
+ * A 429 whose advertised limit is zero is not a rate limit: the key's
+ * workspace has no API allowance at all (no active plan or billing), so
+ * waiting or retrying never helps.
+ */
+const hasZeroAllowance = (response: Response): boolean => {
+  if (response.status !== 429) return false;
+  let zero = false;
+  response.headers.forEach((value, name) => {
+    if (/ratelimit-limit/i.test(name) && value.trim() === '0') zero = true;
+  });
+  return zero;
+};
+
 interface ResolvedAiConfig {
   vendor: ExpenseAiVendor;
   apiKey: string;
@@ -218,7 +246,8 @@ export class ExpenseReceiptAiService {
         `Receipt AI (${config.vendor}, ${config.model}) answered ${response.status}` +
           ` → ${failure.code}` +
           (failure.info.code ? ` [${failure.info.code}]` : '') +
-          (failure.logMessage ? `: ${failure.info.message}` : ''),
+          (failure.logMessage ? `: ${failure.info.message}` : '') +
+          rateLimitHeaders(response.headers),
       );
       throw new BadGatewayException(failure.code);
     }
@@ -243,7 +272,9 @@ export class ExpenseReceiptAiService {
   }> {
     const body: unknown = await response.json().catch(() => null);
     const info = readProviderError(body);
-    const code = classifyProviderError(response.status, info);
+    const code = hasZeroAllowance(response)
+      ? EXPENSE_AI_ERRORS.noAllowance
+      : classifyProviderError(response.status, info);
     return {
       code,
       info,

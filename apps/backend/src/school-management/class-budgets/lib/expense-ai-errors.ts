@@ -11,6 +11,7 @@ export const EXPENSE_AI_ERRORS = {
   rateLimited: 'EXPENSE_AI_RATE_LIMITED',
   capacity: 'EXPENSE_AI_CAPACITY',
   quotaExceeded: 'EXPENSE_AI_QUOTA_EXCEEDED',
+  noAllowance: 'EXPENSE_AI_NO_ALLOWANCE',
   fileRejected: 'EXPENSE_AI_FILE_REJECTED',
   failed: 'EXPENSE_AI_FAILED',
   unusableAnswer: 'EXPENSE_AI_UNUSABLE_ANSWER',

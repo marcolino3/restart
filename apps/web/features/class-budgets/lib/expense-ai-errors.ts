@@ -10,6 +10,7 @@ export const EXPENSE_AI_ERROR_KEYS = {
   EXPENSE_AI_RATE_LIMITED: "aiErrorRateLimited",
   EXPENSE_AI_CAPACITY: "aiErrorCapacity",
   EXPENSE_AI_QUOTA_EXCEEDED: "aiErrorQuotaExceeded",
+  EXPENSE_AI_NO_ALLOWANCE: "aiErrorNoAllowance",
   EXPENSE_AI_FILE_REJECTED: "aiErrorFileRejected",
   EXPENSE_AI_FAILED: "aiErrorFailed",
   EXPENSE_AI_UNUSABLE_ANSWER: "aiErrorUnusableAnswer",
