@@ -117,7 +117,6 @@ export function ClassBudgetsOverview({
   return (
     <div className="space-y-6">
       <PageHead
-        className="mb-0"
         title={t("pageTitle")}
         subtitle={t("pageSubtitle", {
           name: selectedClassName,
