@@ -49,6 +49,16 @@ export const expensesToCsv = (
   return `${BOM}${lines.map((line) => line.map(cell).join(";")).join("\r\n")}\r\n`;
 };
 
+/** Keeps the expenses of the given categories; no selection keeps all. */
+export const filterByCategories = (
+  expenses: ClassExpense[],
+  categoryIds: string[],
+): ClassExpense[] => {
+  if (categoryIds.length === 0) return expenses;
+  const wanted = new Set(categoryIds);
+  return expenses.filter((expense) => wanted.has(expense.categoryId));
+};
+
 /** Search over the free-text columns; an empty query keeps everything. */
 export const filterExpenses = (
   expenses: ClassExpense[],

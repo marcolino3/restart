@@ -4241,7 +4241,6 @@
     "schoolClass": "Class",
     "schoolYear": "School year",
     "category": "Category",
-    "allCategories": "All categories",
     "newExpense": "Record expense",
     "editExpense": "Edit expense",
     "deleteExpense": "Delete expense",
@@ -4326,7 +4325,8 @@
     "receiptAttached": "Receipt",
     "receiptMissing": "missing",
     "noExpensesInYear": "No expenses in this school year yet.",
-    "noExpensesMatch": "No expenses match this selection."
+    "noExpensesMatch": "No expenses match this selection.",
+    "searchCategory": "Search category"
   },
   "ExpenseCategories": {
     "noAccess": "You do not have permission for this area.",

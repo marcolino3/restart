@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import type { ClassExpense } from "../types";
-import { expensesToCsv, filterExpenses } from "./expenses-csv";
+import {
+  expensesToCsv,
+  filterByCategories,
+  filterExpenses,
+} from "./expenses-csv";
 
 const headers = {
   expenseDate: "Datum",
@@ -48,6 +52,25 @@ describe("expensesToCsv", () => {
       headers,
     );
     expect(csv).toContain(`"'=HYPERLINK(""http://x"")"`);
+  });
+});
+
+describe("filterByCategories", () => {
+  const expenses = [
+    expense({ categoryId: "c1" }),
+    expense({ id: "e2", categoryId: "c2" }),
+    expense({ id: "e3", categoryId: "c3" }),
+  ];
+
+  it("keeps the expenses of every selected category", () => {
+    expect(filterByCategories(expenses, ["c1", "c3"]).map((e) => e.id)).toEqual([
+      "e1",
+      "e3",
+    ]);
+  });
+
+  it("keeps everything without a selection", () => {
+    expect(filterByCategories(expenses, [])).toHaveLength(3);
   });
 });
 

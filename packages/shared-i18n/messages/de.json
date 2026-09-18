@@ -4241,7 +4241,6 @@
     "schoolClass": "Klasse",
     "schoolYear": "Schuljahr",
     "category": "Kategorie",
-    "allCategories": "Alle Kategorien",
     "newExpense": "Ausgabe erfassen",
     "editExpense": "Ausgabe bearbeiten",
     "deleteExpense": "Ausgabe löschen",
@@ -4326,7 +4325,8 @@
     "receiptAttached": "Beleg",
     "receiptMissing": "fehlt",
     "noExpensesInYear": "Noch keine Ausgaben in diesem Schuljahr.",
-    "noExpensesMatch": "Keine Ausgaben für diese Auswahl."
+    "noExpensesMatch": "Keine Ausgaben für diese Auswahl.",
+    "searchCategory": "Kategorie suchen"
   },
   "ExpenseCategories": {
     "noAccess": "Für diesen Bereich fehlt die Berechtigung.",

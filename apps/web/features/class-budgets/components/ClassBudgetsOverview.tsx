@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Download, Plus } from "lucide-react";
 
+import { DataTableFacetedFilter } from "@/components/common/DataTableFacetedFilter";
 import { PageHead } from "@/components/common/PageHead";
 import { SearchInput } from "@/components/common/SearchInput";
 import { Button } from "@/components/ui/button";
@@ -26,17 +27,11 @@ import type {
 import { ClassBudgetSummaryCards } from "./ClassBudgetSummaryCards";
 import { ClassExpensesTable } from "./ClassExpensesTable";
 import { ExpenseCategoryPie } from "./ExpenseCategoryPie";
-import { expensesToCsv, filterExpenses } from "../lib/expenses-csv";
-import { cn } from "@/lib/utils";
-
-const ALL_CATEGORIES = "all";
-
-// Filter pill from the design handoff; `on` marks a filter that narrows the list.
-const pill = (on = false) =>
-  cn(
-    "h-[34px] w-auto gap-2 rounded-full bg-card px-3.5 text-[13px] font-medium",
-    on && "border-primary bg-accent text-accent-foreground",
-  );
+import {
+  expensesToCsv,
+  filterByCategories,
+  filterExpenses,
+} from "../lib/expenses-csv";
 
 interface Props {
   schoolClasses: { id: string; name: string }[];
@@ -44,7 +39,6 @@ interface Props {
   categories: ExpenseCategory[];
   selectedSchoolClassId: string;
   selectedSchoolYear: BudgetSchoolYear;
-  selectedCategoryId: string | null;
   canWrite: boolean;
   summary: ClassBudgetSummary | null;
   expenses: ClassExpense[];
@@ -56,7 +50,6 @@ export function ClassBudgetsOverview({
   categories,
   selectedSchoolClassId,
   selectedSchoolYear,
-  selectedCategoryId,
   canWrite,
   summary,
   expenses,
@@ -71,7 +64,7 @@ export function ClassBudgetsOverview({
   const expenseQuery = `classId=${selectedSchoolClassId}&year=${selectedSchoolYear.startYear}`;
 
   // The selection lives in the URL so the server component loads the data
-  // and a reload or shared link keeps class, year and filter.
+  // and a reload or shared link keeps class and year.
   const select = (key: string, value: string | null) => {
     const params = new URLSearchParams(searchParams.toString());
     if (value === null) params.delete(key);
@@ -80,7 +73,13 @@ export function ClassBudgetsOverview({
   };
 
   const [query, setQuery] = useState("");
-  const visibleExpenses = filterExpenses(expenses, useDeferredValue(query));
+  // Search and category facet narrow the loaded list on the client, like
+  // the filters of the other tables.
+  const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
+  const visibleExpenses = filterExpenses(
+    filterByCategories(expenses, categoryFilter),
+    useDeferredValue(query),
+  );
   const newExpenseHref = `${ROUTES.admin.classExpenseNew(locale)}?${expenseQuery}`;
   const selectedClassName =
     schoolClasses.find((c) => c.id === selectedSchoolClassId)?.name ?? "";
@@ -137,12 +136,19 @@ export function ClassBudgetsOverview({
         }
       />
 
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <SearchInput
+          value={query}
+          onValueChange={setQuery}
+          placeholder={t("searchPlaceholder")}
+          aria-label={t("searchPlaceholder")}
+          containerClassName="max-w-xs"
+        />
         <Select
           value={selectedSchoolClassId}
           onValueChange={(value) => select("classId", value)}
         >
-          <SelectTrigger className={pill()} aria-label={t("schoolClass")}>
+          <SelectTrigger className="w-auto" aria-label={t("schoolClass")}>
             <SelectValue placeholder={t("schoolClass")} />
           </SelectTrigger>
           <SelectContent>
@@ -157,7 +163,7 @@ export function ClassBudgetsOverview({
           value={String(selectedSchoolYear.startYear)}
           onValueChange={(value) => select("year", value)}
         >
-          <SelectTrigger className={pill()} aria-label={t("schoolYear")}>
+          <SelectTrigger className="w-auto" aria-label={t("schoolYear")}>
             <SelectValue placeholder={t("schoolYear")} />
           </SelectTrigger>
           <SelectContent>
@@ -168,33 +174,19 @@ export function ClassBudgetsOverview({
             ))}
           </SelectContent>
         </Select>
-        <Select
-          value={selectedCategoryId ?? ALL_CATEGORIES}
-          onValueChange={(value) =>
-            select("categoryId", value === ALL_CATEGORIES ? null : value)
-          }
-        >
-          <SelectTrigger
-            className={pill(selectedCategoryId !== null)}
-            aria-label={t("category")}
-          >
-            <SelectValue placeholder={t("category")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL_CATEGORIES}>{t("allCategories")}</SelectItem>
-            {categories.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <SearchInput
-          value={query}
-          onValueChange={setQuery}
-          placeholder={t("searchPlaceholder")}
-          containerClassName="ml-auto w-[240px]"
-        />
+        {categories.length > 0 && (
+          <DataTableFacetedFilter
+            title={t("category")}
+            options={categories.map((category) => ({
+              value: category.id,
+              label: category.name,
+              searchValue: category.name,
+            }))}
+            selected={categoryFilter}
+            onChange={setCategoryFilter}
+            searchPlaceholder={t("searchCategory")}
+          />
+        )}
       </div>
 
       {summary && (
@@ -217,7 +209,7 @@ export function ClassBudgetsOverview({
         <ClassExpensesTable
           expenses={visibleExpenses}
           empty={
-            expenses.length > 0 || selectedCategoryId !== null ? (
+            expenses.length > 0 ? (
               <p>{t("noExpensesMatch")}</p>
             ) : (
               <>

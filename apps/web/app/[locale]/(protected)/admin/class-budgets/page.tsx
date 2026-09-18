@@ -28,7 +28,7 @@ const Notice = ({ text }: { text: string }) => (
 
 const ClassBudgetsPage = async ({ searchParams }: Props) => {
   const t = await getTranslations("ClassBudgets");
-  const { classId, year, categoryId } = await searchParams;
+  const { classId, year } = await searchParams;
   const userRes = await getCurrentUserAction();
 
   if (!userRes?.data?.orgId) return <Notice text={t("selectOrganizationFirst")} />;
@@ -53,8 +53,6 @@ const ClassBudgetsPage = async ({ searchParams }: Props) => {
   const selectedClass =
     schoolClasses.find((c) => c.id === classId) ?? schoolClasses[0];
   const selectedYear = pickSchoolYear(schoolYears, year) ?? schoolYears[0];
-  const selectedCategoryId =
-    categories.find((c) => c.id === categoryId)?.id ?? null;
 
   const canWrite = userHasPermission(userRes.data, "CLASS_EXPENSE_WRITE");
   const [summaryRes, expensesRes] = await Promise.all([
@@ -62,7 +60,6 @@ const ClassBudgetsPage = async ({ searchParams }: Props) => {
     getClassExpensesAction({
       schoolYearStart: selectedYear.startYear,
       schoolClassId: selectedClass.id,
-      categoryId: selectedCategoryId,
     }),
   ]);
 
@@ -73,7 +70,6 @@ const ClassBudgetsPage = async ({ searchParams }: Props) => {
       categories={categories}
       selectedSchoolClassId={selectedClass.id}
       selectedSchoolYear={selectedYear}
-      selectedCategoryId={selectedCategoryId}
       canWrite={canWrite}
       summary={summaryRes.success ? summaryRes.data : null}
       expenses={expensesRes.success ? expensesRes.data : []}
