@@ -3,6 +3,9 @@ import { EmployeesService } from './employees.service';
 import { EmployeeInvitationService } from './employee-invitation.service';
 import { EmployeesResolver } from './employees.resolver';
 import { EmployeesController } from './employees.controller';
+import { EmployeeAccountController } from './employee-account.controller';
+import { EmployeeStorageCleanupService } from './employee-storage-cleanup.service';
+import { AccountEmailController } from './account-email.controller';
 import { CommonModule } from '@/common/common.module';
 import { DatabaseModule } from '@/database/database.module';
 import { UsersModule } from '@/users/users.module';
@@ -17,7 +20,16 @@ import { WorkTimeCalculationModule } from '../work-time-calculation/work-time-ca
     EmployeeAuditLogModule,
     WorkTimeCalculationModule,
   ],
-  controllers: [EmployeesController],
-  providers: [EmployeesResolver, EmployeesService, EmployeeInvitationService],
+  controllers: [
+    EmployeesController,
+    EmployeeAccountController,
+    AccountEmailController,
+  ],
+  providers: [
+    EmployeesResolver,
+    EmployeesService,
+    EmployeeInvitationService,
+    EmployeeStorageCleanupService,
+  ],
 })
 export class EmployeesModule {}

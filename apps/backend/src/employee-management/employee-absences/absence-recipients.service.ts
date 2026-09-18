@@ -103,7 +103,7 @@ export class AbsenceRecipientsService {
          AND p."isActive" = true
         WHERE a.lvl < ${MAX_TEAM_DEPTH}
       )
-      SELECT DISTINCT ue.email, u."firstName" AS first_name, u."lastName" AS last_name
+      SELECT DISTINCT ue.email, u.first_name AS first_name, u.last_name AS last_name
       FROM (SELECT DISTINCT team_id FROM ancestors) scope
       JOIN team_members lead
         ON lead.team_id = scope.team_id
@@ -143,14 +143,11 @@ export class AbsenceRecipientsService {
       .andWhere('contract.employee_id = :employeeId', { employeeId })
       .andWhere('contract."isActive" = true')
       .andWhere('contract.supervisor_membership_id IS NOT NULL')
-      .andWhere('contract."startDate" <= :today', { today })
-      .andWhere(
-        '(contract."endDate" IS NULL OR contract."endDate" >= :today)',
-        {
-          today,
-        },
-      )
-      .orderBy('contract."startDate"', 'DESC')
+      .andWhere('contract.start_date <= :today', { today })
+      .andWhere('(contract.end_date IS NULL OR contract.end_date >= :today)', {
+        today,
+      })
+      .orderBy('contract.start_date', 'DESC')
       .getOne();
 
     const supervisor = contract?.supervisor;

@@ -17,7 +17,7 @@ interface Props {
 }
 
 function getPrimaryEmail(item: EmployeeListItem) {
-  const emails = item.membership.user?.userEmails ?? [];
+  const emails = item.profile?.email ? [{ email: item.profile.email, isPrimary: true }] : [];
   return emails.find((e) => e.isPrimary)?.email ?? emails[0]?.email ?? null;
 }
 
@@ -30,8 +30,8 @@ export const EmployeesCardGrid = ({ data }: Props) => {
   const filtered = React.useMemo(() => {
     if (!normalized) return data;
     return data.filter((item) => {
-      const first = item.membership.user?.firstName?.toLowerCase() ?? "";
-      const last = item.membership.user?.lastName?.toLowerCase() ?? "";
+      const first = item.profile?.firstName?.toLowerCase() ?? "";
+      const last = item.profile?.lastName?.toLowerCase() ?? "";
       const full = `${first} ${last}`.trim();
       return (
         first.includes(normalized) ||
@@ -75,7 +75,7 @@ export const EmployeesCardGrid = ({ data }: Props) => {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((item) => {
-            const user = item.membership.user;
+            const user = item.profile;
             const empId = item.membership.employee?.id;
             const email = getPrimaryEmail(item);
             const phone = item.membership.contactPhone;
@@ -89,7 +89,7 @@ export const EmployeesCardGrid = ({ data }: Props) => {
 
             return (
               <Card
-                key={user?.id ?? empId ?? fullName}
+                key={empId ?? fullName}
                 className="h-full"
               >
                 <CardContent className="flex flex-col items-center gap-3 p-6 text-center">

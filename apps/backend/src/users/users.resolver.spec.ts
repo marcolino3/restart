@@ -8,6 +8,7 @@ import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
 import { Persona } from '@/common/enums/persona.enum';
 import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
+import { SUPER_ADMIN_KEY } from '@/auth/decorators/super-admin.decorator';
 
 describe('UsersResolver', () => {
   let resolver: UsersResolver;
@@ -202,6 +203,16 @@ describe('UsersResolver', () => {
   });
 
   describe('CRUD delegation', () => {
+    it.each(['updateUser', 'changeUserEmail'] as const)(
+      '%s requires global administration, not organization employee permissions',
+      (method) => {
+        expect(
+          // Decorator metadata belongs to the unbound prototype method.
+          // eslint-disable-next-line @typescript-eslint/unbound-method
+          Reflect.getMetadata(SUPER_ADMIN_KEY, UsersResolver.prototype[method]),
+        ).toBe(true);
+      },
+    );
     it('createUser delegates to the service', async () => {
       const input = {
         firstName: 'Max',

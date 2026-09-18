@@ -1,4 +1,15 @@
+import { plainToInstance } from 'class-transformer';
+import { validateSync } from 'class-validator';
+import { EmployeeProfile } from './entities/employee-profile';
+import { applyEmployeeBasisPatch } from './employee-basis-patch';
+import { EmployeeAccountInvitation } from './entities/employee-account-invitation.entity';
+import { EmployeeStorageCleanup } from './entities/employee-storage-cleanup.entity';
 import { Persona } from '@/common/enums/persona.enum';
+import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
+import {
+  assignMembershipRoles,
+  assertRoleAssignmentActor,
+} from '@/roles/membership-role-assignment';
 import { EmployeeContract } from '@/employee-management/employee-contracts/entities/employee-contract.entity';
 import {
   assertContractTypeFields,
@@ -10,18 +21,16 @@ import { Team } from '@/employee-management/teams/entities/team.entity';
 import { TeamMember } from '@/employee-management/team-members/entities/team-member.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { Organization } from '@/organizations/entities/organization.entity';
-import { Role } from '@/roles/entities/role.entity';
-import { User } from '@/users/entities/user.entity';
-import { UserEmail } from '@/user-emails/entities/user-email.entity';
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, In, Repository } from 'typeorm';
+import { EntityManager, Repository, Not } from 'typeorm';
 import { CreateEmployeeInput } from './dto/create-employee.input';
 import { UpdateEmployeeInput } from './dto/update-employee.input';
 import { EmployeeOnboardingInput } from './dto/employee-onboarding.input';
@@ -36,11 +45,7 @@ import {
 } from './entities/employee.entity';
 import { EmployeeInvitationService } from './employee-invitation.service';
 import { PasswordService } from '@/users/password.service';
-import {
-  AuditLogChange,
-  EmployeeAuditLogService,
-} from '../employee-audit-log/employee-audit-log.service';
-import { EmployeeAuditLogEntityType } from '../employee-audit-log/entities/employee-audit-log.entity';
+import { EmployeeAuditLogService } from '../employee-audit-log/employee-audit-log.service';
 
 @Injectable()
 export class EmployeesService {
@@ -56,127 +61,14 @@ export class EmployeesService {
 
   async createEmployeeMinimal(
     input: CreateEmployeeInput,
-    currentOrganizationId: string,
+    organizationId: string,
   ): Promise<Employee> {
-    const {
-      email,
-      firstName,
-      lastName,
-      persona,
-      title,
-      dateOfBirth,
-      socialSecurityNumber,
-      contactPhone,
-      timeTrackingEnabled,
-      street,
-      houseNumber,
-      addressLine2,
-      postalCode,
-      city,
-      country,
-    } = input;
-
-    return this.entityManager.transaction(async (manager) => {
-      // 1) Org pruefen
-      const organization = await manager.findOne(Organization, {
-        where: { id: currentOrganizationId },
-      });
-      if (!organization) {
-        throw new NotFoundException('Organization not found');
-      }
-
-      // 2) User pruefen via UserEmail (ggf. anlegen)
-      const normalizedEmail = email.toLowerCase().trim();
-      let userEmail = await manager.findOne(UserEmail, {
-        where: { email: normalizedEmail },
-      });
-
-      let user: User;
-      if (userEmail) {
-        const existingUser = await manager.findOneBy(User, {
-          id: userEmail.userId,
-        });
-        if (!existingUser) {
-          throw new NotFoundException('User for email not found');
-        }
-        user = existingUser;
-      } else {
-        // Neuen User + UserEmail anlegen
-        user = manager.create(User, {
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          title: title?.trim() || undefined,
-          dateOfBirth: dateOfBirth || undefined,
-          socialSecurityNumber: socialSecurityNumber?.trim() || undefined,
-          street: street?.trim() || undefined,
-          houseNumber: houseNumber?.trim() || undefined,
-          addressLine2: addressLine2?.trim() || undefined,
-          postalCode: postalCode?.trim() || undefined,
-          city: city?.trim() || undefined,
-          country: country?.trim() || undefined,
-          isActive: true,
-        });
-        user = await manager.save(User, user);
-
-        userEmail = manager.create(UserEmail, {
-          userId: user.id,
-          email: normalizedEmail,
-          passwordHash:
-            await this.passwordService.generateRandomPasswordHash(10),
-          isPrimary: true,
-          isVerified: false,
-        });
-        await manager.save(UserEmail, userEmail);
-      }
-
-      // 3) Membership pruefen oder anlegen
-      let membership = await manager.findOne(Membership, {
-        where: {
-          organizationId: organization.id,
-          userId: user.id,
-        },
-      });
-
-      if (membership?.employeeId) {
-        throw new ConflictException(
-          'Employee already exists for this membership',
-        );
-      }
-
-      if (!membership) {
-        membership = manager.create(Membership, {
-          organizationId: organization.id,
-          userId: user.id,
-          persona,
-          userEmailId: userEmail.id,
-          contactPhone: contactPhone?.trim() || undefined,
-          isActive: true,
-          isArchived: false,
-        });
-        membership = await manager.save(Membership, membership);
-      }
-
-      // 4) Employee anlegen
-      let employee = manager.create(Employee, {
-        membership,
-        timeTrackingEnabled: timeTrackingEnabled ?? false,
-        isActive: true,
-        isArchived: false,
-      });
-      employee = await manager.save(Employee, employee);
-
-      // 5) Membership mit employeeId aktualisieren
-      membership.employeeId = employee.id;
-      await manager.save(Membership, membership);
-
-      // 6) Employee zurueckgeben
-      return manager.findOneOrFail(Employee, {
-        where: { id: employee.id },
-        relations: {
-          membership: { user: true, organization: true, roles: true },
-        },
-      });
-    });
+    return this.upsertEmployeeOnboardingDraft(
+      input,
+      organizationId,
+      undefined,
+      EmployeeStatus.ACTIVE,
+    );
   }
 
   async updateEmployeeMinimal(
@@ -184,176 +76,39 @@ export class EmployeesService {
     organizationId: string,
     actorMembershipId?: string | null,
   ): Promise<Employee> {
-    const {
-      id,
-      firstName,
-      lastName,
-      persona,
-      title,
-      dateOfBirth,
-      socialSecurityNumber,
-      contactPhone,
-      timeTrackingEnabled,
-      street,
-      houseNumber,
-      addressLine2,
-      postalCode,
-      city,
-      country,
-    } = input;
-
-    return this.entityManager.transaction(async (manager) => {
-      // 1) Employee laden (inkl. Membership + User)
-      const employee = await manager.findOne(Employee, {
-        where: { id },
-        relations: {
-          membership: { user: true, organization: true },
-        },
-      });
-
-      if (!employee) {
-        throw new NotFoundException('Employee not found');
-      }
-
-      const membership = employee.membership;
-
-      // Org-Isolation pruefen
-      if (membership.organizationId !== organizationId) {
-        throw new NotFoundException('Employee not found');
-      }
-
-      const user = membership.user;
-      const changes: AuditLogChange[] = [];
-
-      const trackUser = (
-        field: keyof User,
-        next: string | null | undefined,
-      ) => {
-        if (!user) return;
-        const normalized = next?.trim() || null;
-        const current = (user[field] as string | null | undefined) ?? null;
-        if (current !== normalized) {
-          changes.push({
-            entityType: EmployeeAuditLogEntityType.USER,
-            fieldName: field,
-            oldValue: current,
-            newValue: normalized,
-          });
-          (user[field] as unknown) = normalized;
-        }
-      };
-
-      // 2) User-Daten aktualisieren (falls geaendert)
-      if (firstName !== undefined) trackUser('firstName', firstName);
-      if (lastName !== undefined) trackUser('lastName', lastName);
-      if (title !== undefined) trackUser('title', title);
-      if (dateOfBirth !== undefined) trackUser('dateOfBirth', dateOfBirth);
-      if (socialSecurityNumber !== undefined)
-        trackUser('socialSecurityNumber', socialSecurityNumber);
-      if (street !== undefined) trackUser('street', street);
-      if (houseNumber !== undefined) trackUser('houseNumber', houseNumber);
-      if (addressLine2 !== undefined) trackUser('addressLine2', addressLine2);
-      if (postalCode !== undefined) trackUser('postalCode', postalCode);
-      if (city !== undefined) trackUser('city', city);
-      if (country !== undefined) trackUser('country', country);
-
-      if (
-        user &&
-        changes.some((c) => c.entityType === EmployeeAuditLogEntityType.USER)
-      ) {
-        await manager.save(User, user);
-      }
-
-      // 3) Membership aktualisieren (Persona, ContactPhone)
-      if (persona !== undefined && membership.persona !== persona) {
-        changes.push({
-          entityType: EmployeeAuditLogEntityType.MEMBERSHIP,
-          fieldName: 'persona',
-          oldValue: membership.persona,
-          newValue: persona,
-        });
-        membership.persona = persona;
-      }
-
-      if (contactPhone !== undefined) {
-        const next = contactPhone?.trim() || null;
-        const current = membership.contactPhone ?? null;
-        if (current !== next) {
-          changes.push({
-            entityType: EmployeeAuditLogEntityType.MEMBERSHIP,
-            fieldName: 'contactPhone',
-            oldValue: current,
-            newValue: next,
-          });
-          membership.contactPhone = next ?? undefined;
-        }
-      }
-
-      if (
-        changes.some(
-          (c) => c.entityType === EmployeeAuditLogEntityType.MEMBERSHIP,
-        )
-      ) {
-        await manager.save(Membership, membership);
-      }
-
-      // 4) Employee aktualisieren (TimeTracking)
-      if (
-        timeTrackingEnabled !== undefined &&
-        employee.timeTrackingEnabled !== timeTrackingEnabled
-      ) {
-        changes.push({
-          entityType: EmployeeAuditLogEntityType.EMPLOYEE,
-          fieldName: 'timeTrackingEnabled',
-          oldValue: String(employee.timeTrackingEnabled),
-          newValue: String(timeTrackingEnabled),
-        });
-        employee.timeTrackingEnabled = timeTrackingEnabled;
-        await manager.save(Employee, employee);
-      }
-
-      // 5) Audit-Log schreiben
-      if (changes.length > 0) {
-        await this.auditLogService.logChanges(
-          employee.id,
-          organizationId,
-          actorMembershipId ?? null,
-          changes,
-          manager,
-        );
-      }
-
-      // 5) Employee mit geladenen Relationen zurueckgeben
-      return manager.findOneOrFail(Employee, {
-        where: { id: employee.id },
-        relations: {
-          membership: {
-            user: { userEmails: true },
-            organization: true,
-            roles: true,
-          },
-        },
-      });
-    });
+    if (input.firstName === null || input.lastName === null)
+      throw new BadRequestException('Employee names cannot be cleared');
+    const existing = await this.findEmployeeById(input.id, organizationId);
+    return this.upsertEmployeeOnboardingDraft(
+      {
+        ...input,
+        firstName: input.firstName ?? existing.profile.firstName ?? '',
+        lastName: input.lastName ?? existing.profile.lastName ?? '',
+      },
+      organizationId,
+      {
+        sub: '',
+        orgId: organizationId,
+        membershipId: actorMembershipId ?? undefined,
+      },
+    );
   }
 
   async findEmployeesByOrgId(organizationId: string) {
+    if (!organizationId) throw new ForbiddenException('No active organization');
     const employees = await this.employeesService.find({
       relations: {
         membership: {
           organization: true,
           employee: true,
+          roles: true,
           user: { userEmails: true },
         },
         teamMembers: {
           team: true,
         },
       },
-      where: {
-        membership: {
-          organizationId,
-        },
-      },
+      where: { organizationId },
     });
 
     if (!employees)
@@ -363,7 +118,9 @@ export class EmployeesService {
   }
 
   async findTeachersByOrgId(organizationId: string) {
-    return this.employeesService.find({
+    if (!organizationId)
+      throw new BadRequestException('No active organization');
+    const employees = await this.employeesService.find({
       relations: {
         membership: {
           user: true,
@@ -371,21 +128,29 @@ export class EmployeesService {
       },
       where: {
         isActive: true,
+        status: EmployeeStatus.ACTIVE,
+        organizationId,
         membership: {
           organizationId,
           persona: Persona.TEACHER,
-          isActive: true,
         },
       },
     });
+    return employees.map((employee) => ({
+      id: employee.id,
+      firstName: employee.profile.firstName ?? '',
+      lastName: employee.profile.lastName ?? '',
+      userId: employee.membership.user?.id ?? null,
+    }));
   }
 
   async findEmployeeById(
     employeeId: string,
     organizationId: string,
   ): Promise<Employee> {
+    if (!organizationId) throw new ForbiddenException('No active organization');
     const employee = await this.employeesService.findOne({
-      where: { id: employeeId },
+      where: { id: employeeId, organizationId },
       relations: {
         membership: {
           user: { userEmails: true },
@@ -402,50 +167,70 @@ export class EmployeesService {
     }
 
     // Org-Isolation pruefen
-    if (employee.membership?.organizationId !== organizationId) {
+    if (employee.organizationId !== organizationId) {
       throw new NotFoundException('Employee not found');
     }
 
     return employee;
   }
 
-  /**
-   * Hard-deletes an unfinished onboarding draft (status DRAFT, never
-   * invited) and its User + Membership. Scoped to DRAFT so a finalized
-   * employee can never be removed this way — those go through offboarding.
-   */
+  /** Delete only an unlinked, uninvited draft and its inactive placeholder. */
   async removeEmployeeOnboardingDraft(
     employeeId: string,
     organizationId: string,
   ): Promise<boolean> {
-    const employee = await this.employeesService.findOne({
-      where: { id: employeeId },
-      relations: { membership: { user: true } },
-    });
-    if (!employee || employee.membership?.organizationId !== organizationId) {
-      throw new NotFoundException('Employee not found');
-    }
-    if (employee.status !== EmployeeStatus.DRAFT) {
-      throw new BadRequestException(
-        'Only unfinished onboarding drafts can be removed this way',
-      );
-    }
-
-    const membership = employee.membership;
-    const user = membership.user;
-
+    if (!organizationId) throw new NotFoundException('Employee not found');
     return this.entityManager.transaction(async (manager) => {
-      await manager.delete(EmployeeContract, { employeeId });
+      await manager.findOneOrFail(Organization, {
+        where: { id: organizationId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const employee = await manager.findOne(Employee, {
+        where: { id: employeeId, organizationId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const membership = await manager.findOne(Membership, {
+        where: { employeeId, organizationId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (
+        !employee ||
+        employee.organizationId !== organizationId ||
+        !membership
+      )
+        throw new NotFoundException('Employee not found');
+      if (
+        employee.status !== EmployeeStatus.DRAFT ||
+        employee.invitedAt ||
+        employee.accountLinkStatus !== 'UNLINKED' ||
+        membership.userId ||
+        membership.isActive ||
+        employee.invitationStatus !== EmployeeInvitationStatus.PENDING
+      ) {
+        throw new BadRequestException(
+          'Only unfinished, uninvited onboarding drafts can be removed this way',
+        );
+      }
+      await manager.delete(TeamMember, { employeeId, organizationId });
+      await manager.delete(EmployeeContract, { employeeId, organizationId });
+      await manager.save(EmployeeStorageCleanup, {
+        employeeId,
+        organizationId,
+      });
+      await manager.update(
+        Membership,
+        { id: membership.id, organizationId },
+        { employeeId: null },
+      );
       await manager.remove(Membership, membership);
       await manager.remove(Employee, employee);
-      if (user) await manager.remove(User, user);
       return true;
     });
   }
 
   /**
    * Auto-saving upsert for the onboarding wizard. Without `id` a new DRAFT
-   * employee (User + UserEmail + Membership + Employee) is created; with `id`
+   * employee with an inactive, unlinked membership is created; with `id`
    * the existing draft is patched. Roles, team and the contract are applied in
    * the same transaction, each validated against the caller's organization
    * (multi-tenant isolation). Only fields that are present in the input are
@@ -454,153 +239,128 @@ export class EmployeesService {
   async upsertEmployeeOnboardingDraft(
     input: EmployeeOnboardingInput,
     organizationId: string,
+    actor?: TokenPayload,
+    initialStatus: EmployeeStatus = EmployeeStatus.DRAFT,
   ): Promise<Employee> {
+    if (!organizationId) throw new ForbiddenException('No active organization');
+    if (input.email === null)
+      throw new BadRequestException('Employee email cannot be cleared');
+    const validation = validateSync(
+      plainToInstance(EmployeeOnboardingInput, {
+        ...input,
+        id: undefined,
+        roleIds: undefined,
+        teamId: undefined,
+        contract: undefined,
+      }),
+    );
+    if (validation.length)
+      throw new BadRequestException(
+        `Invalid employee fields: ${validation.map((v) => v.property).join(', ')}`,
+      );
+    if (input.roleIds !== undefined)
+      assertRoleAssignmentActor(actor, organizationId);
     return this.entityManager.transaction(async (manager) => {
+      // All employee/role/link mutations acquire organization before employee
+      // before invitation locks, preventing inversion during concurrent saves.
       const organization = await manager.findOne(Organization, {
         where: { id: organizationId },
+        lock: { mode: 'pessimistic_write' },
       });
       if (!organization) throw new NotFoundException('Organization not found');
-
       let employee: Employee;
       let membership: Membership;
-
       if (input.id) {
         const existing = await manager.findOne(Employee, {
-          where: { id: input.id },
-          relations: { membership: { user: true } },
+          where: { id: input.id, organizationId },
+          lock: { mode: 'pessimistic_write' },
         });
-        if (
-          !existing ||
-          existing.membership?.organizationId !== organizationId
-        ) {
+        if (!existing || existing.organizationId !== organizationId)
           throw new NotFoundException('Employee not found');
-        }
-        employee = existing;
-        membership = existing.membership;
-        const user = membership.user;
-
-        // Patch person fields (only provided ones).
-        if (user) {
-          this.assignIfPresent(user, {
-            firstName: input.firstName?.trim(),
-            lastName: input.lastName?.trim(),
-            title: input.title,
-            dateOfBirth: input.dateOfBirth,
-            socialSecurityNumber: input.socialSecurityNumber,
-            privateEmail: input.privateEmail,
-            street: input.street,
-            houseNumber: input.houseNumber,
-            addressLine2: input.addressLine2,
-            postalCode: input.postalCode,
-            city: input.city,
-            country: input.country,
-            avatarUrl: input.avatarUrl,
-            language: input.language,
-          });
-          await manager.save(User, user);
-        }
-
-        if (input.persona !== undefined) membership.persona = input.persona;
-        if (input.contactPhone !== undefined)
-          membership.contactPhone = input.contactPhone?.trim() || undefined;
-        if (input.contactPhone2 !== undefined)
-          membership.contactPhone2 = input.contactPhone2?.trim() || undefined;
-        if (input.language !== undefined) membership.language = input.language;
-        await manager.save(Membership, membership);
-
-        if (input.timeTrackingEnabled !== undefined) {
-          employee.timeTrackingEnabled = input.timeTrackingEnabled;
-          await manager.save(Employee, employee);
-        }
-      } else {
-        const email = input.email?.toLowerCase().trim();
-        if (!email) {
-          throw new BadRequestException('E-mail is required to start a draft');
-        }
-        let userEmail = await manager.findOne(UserEmail, {
-          where: { email },
-        });
-        let user: User;
-        if (userEmail) {
-          const existingUser = await manager.findOneBy(User, {
-            id: userEmail.userId,
-          });
-          if (!existingUser) {
-            throw new NotFoundException('User for email not found');
-          }
-          user = existingUser;
-        } else {
-          user = manager.create(User, {
-            firstName: input.firstName.trim(),
-            lastName: input.lastName.trim(),
-            title: input.title?.trim() || undefined,
-            dateOfBirth: input.dateOfBirth || undefined,
-            socialSecurityNumber:
-              input.socialSecurityNumber?.trim() || undefined,
-            privateEmail: input.privateEmail?.trim() || undefined,
-            street: input.street?.trim() || undefined,
-            houseNumber: input.houseNumber?.trim() || undefined,
-            addressLine2: input.addressLine2?.trim() || undefined,
-            postalCode: input.postalCode?.trim() || undefined,
-            city: input.city?.trim() || undefined,
-            country: input.country?.trim() || undefined,
-            avatarUrl: input.avatarUrl?.trim() || undefined,
-            language: input.language || undefined,
-            isActive: true,
-          });
-          user = await manager.save(User, user);
-
-          userEmail = manager.create(UserEmail, {
-            userId: user.id,
-            email,
-            passwordHash:
-              await this.passwordService.generateRandomPasswordHash(10),
-            isPrimary: true,
-            isVerified: false,
-          });
-          await manager.save(UserEmail, userEmail);
-        }
-
-        const existingMembership = await manager.findOne(Membership, {
-          where: { organizationId, userId: user.id },
-        });
-        if (existingMembership?.employeeId) {
+        if (!existing.profile?.firstName || !existing.profile?.lastName)
+          throw new ConflictException('Employee profile migration is required');
+        if (input.expectedVersion !== existing.version)
           throw new ConflictException(
-            'Employee already exists for this membership',
+            'Employee was changed; reload before saving',
           );
-        }
-        membership =
-          existingMembership ??
-          manager.create(Membership, {
-            organizationId,
-            userId: user.id,
-            persona: input.persona ?? Persona.EMPLOYEE,
-            userEmailId: userEmail.id,
-            contactPhone: input.contactPhone?.trim() || undefined,
-            contactPhone2: input.contactPhone2?.trim() || undefined,
-            language: input.language || undefined,
-            isActive: true,
-            isArchived: false,
-          });
-        membership = await manager.save(Membership, membership);
-
+        employee = existing;
+        membership = await manager.findOneOrFail(Membership, {
+          where: { employeeId: input.id, organizationId },
+        });
+      } else {
+        if (!input.email)
+          throw new BadRequestException('E-mail is required to start a draft');
         employee = manager.create(Employee, {
-          membership,
-          status: EmployeeStatus.DRAFT,
+          organizationId,
+          profile: {},
+          accountLinkStatus: 'UNLINKED',
+          status: initialStatus,
           timeTrackingEnabled: input.timeTrackingEnabled ?? false,
           isActive: true,
           isArchived: false,
         });
-        employee = await manager.save(Employee, employee);
-        membership.employeeId = employee.id;
-        await manager.save(Membership, membership);
+        employee.profile = new EmployeeProfile();
+        membership = manager.create(Membership, {
+          organizationId,
+          persona: input.persona ?? Persona.EMPLOYEE,
+          userId: null,
+          isActive: false,
+          isArchived: false,
+        });
       }
+      const normalizedEmail = input.email?.trim().toLowerCase();
+      if (
+        input.email !== undefined &&
+        employee.accountLinkStatus !== 'UNLINKED' &&
+        normalizedEmail !== employee.profile.email
+      ) {
+        throw new BadRequestException(
+          'Linked account email can only be changed by the account owner',
+        );
+      }
+      if (normalizedEmail) {
+        if (employee.id && normalizedEmail !== employee.profile.email) {
+          await manager.delete(EmployeeAccountInvitation, {
+            employeeId: employee.id,
+            organizationId,
+          });
+          employee.invitationStatus = EmployeeInvitationStatus.PENDING;
+          employee.invitedAt = null;
+          employee.invitationScheduledSendAt = null;
+        }
+        const duplicate = await manager.findOne(Employee, {
+          where: {
+            organizationId,
+            profile: { email: normalizedEmail },
+            ...(employee.id ? { id: Not(employee.id) } : {}),
+          },
+        });
+        if (duplicate)
+          throw new ConflictException(
+            'Employee email already exists in this organization',
+          );
+      }
+      const changes = applyEmployeeBasisPatch(employee, membership, input);
+      employee.version = (employee.version ?? 0) + 1;
+      employee = await manager.save(Employee, employee);
+      membership.employeeId = employee.id;
+      membership = await manager.save(Membership, membership);
+      if (input.id && changes.length)
+        await this.auditLogService.logChanges(
+          employee.id,
+          organizationId,
+          actor?.membershipId ?? null,
+          changes,
+          manager,
+        );
 
+      employee.membership = membership;
       await this.applyOnboardingRoles(
         manager,
         membership,
         input,
         organizationId,
+        actor,
       );
       await this.applyOnboardingTeam(manager, employee, input, organizationId);
       await this.upsertOnboardingContract(
@@ -619,38 +379,21 @@ export class EmployeesService {
     });
   }
 
-  /** Assigns only defined values from `patch` onto `target`. */
-  private assignIfPresent<T extends object>(
-    target: T,
-    patch: Partial<Record<keyof T, unknown>>,
-  ): void {
-    for (const [key, value] of Object.entries(patch)) {
-      if (value !== undefined) {
-        (target as Record<string, unknown>)[key] =
-          typeof value === 'string' ? value.trim() || null : value;
-      }
-    }
-  }
-
   private async applyOnboardingRoles(
     manager: EntityManager,
     membership: Membership,
     input: EmployeeOnboardingInput,
     organizationId: string,
+    actor?: TokenPayload,
   ): Promise<void> {
     if (input.roleIds === undefined) return;
-    const roles = input.roleIds.length
-      ? await manager.find(Role, {
-          where: { id: In(input.roleIds), organizationId },
-        })
-      : [];
-    if (roles.length !== input.roleIds.length) {
-      throw new BadRequestException(
-        'One or more roles do not belong to this organization',
-      );
-    }
-    membership.roles = roles;
-    await manager.save(Membership, membership);
+    await assignMembershipRoles(
+      manager,
+      membership,
+      input.roleIds,
+      organizationId,
+      actor,
+    );
   }
 
   private async applyOnboardingTeam(
@@ -1050,8 +793,24 @@ export class EmployeesService {
     organizationId: string,
   ): Promise<Employee> {
     return this.entityManager.transaction(async (manager) => {
+      await manager.findOneOrFail(Organization, {
+        where: { id: organizationId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const locked = await manager.findOne(Employee, {
+        where: { id: input.id, organizationId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!locked || locked.organizationId !== organizationId)
+        throw new NotFoundException('Employee not found');
+      if (locked.status !== EmployeeStatus.DRAFT)
+        throw new ConflictException('Employee is already finalized');
+      if (locked.version !== input.expectedVersion)
+        throw new ConflictException(
+          'Employee was changed; reload before finalizing',
+        );
       const employee = await manager.findOne(Employee, {
-        where: { id: input.id },
+        where: { id: input.id, organizationId },
         relations: { membership: { roles: true } },
       });
       if (!employee || employee.membership?.organizationId !== organizationId) {

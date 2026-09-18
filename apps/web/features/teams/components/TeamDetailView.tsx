@@ -202,13 +202,12 @@ export function TeamDetailView({ team, initialMembers, employees }: Props) {
                 </TableHeader>
                 <TableBody>
                   {members.map((m) => {
-                    const user = m.employee.membership?.user;
+                    const user = m.employee;
                     const fullName = user
                       ? `${user.firstName} ${user.lastName}`.trim()
                       : t("unknownMember");
                     const email =
-                      user?.userEmails?.find((e) => e.isPrimary)?.email ??
-                      user?.userEmails?.[0]?.email ??
+                      m.employee.membership?.user?.userEmails?.find((e) => e.isPrimary)?.email ??
                       "";
                     const initials = user
                       ? `${user.firstName[0] ?? ""}${user.lastName[0] ?? ""}`.toUpperCase()
@@ -335,7 +334,7 @@ function AddMemberDialog({
 
   const options = availableEmployees
     .map((e) => {
-      const user = e.membership.user;
+      const user = e.profile;
       const empId = e.membership.employee?.id;
       if (!user || !empId) return null;
       return {
@@ -370,6 +369,8 @@ function AddMemberDialog({
             role: data.role,
             employee: {
               id: values.employeeId,
+              firstName: selected.profile.firstName ?? "",
+              lastName: selected.profile.lastName ?? "",
               isActive: selected.membership.employee?.isActive ?? true,
               membership: { user: selected.membership.user ?? null },
             },

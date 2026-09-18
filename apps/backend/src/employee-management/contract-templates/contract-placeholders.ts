@@ -72,14 +72,14 @@ function fmtNumber(value?: number | string | null): string {
 
 /**
  * Builds the variable map for one contract. The contract must be loaded with
- * `employee.membership.user` (name, address, SSN); the organization supplies
+ * `employee.profile` (name, address, SSN); the organization supplies
  * the letterhead data.
  */
 export function buildContractVariables(
   contract: EmployeeContract,
   organization: Organization | null,
 ): TemplateVariables {
-  const user = contract.employee?.membership?.user;
+  const user = contract.employee?.profile;
 
   const employeeAddress = user
     ? [

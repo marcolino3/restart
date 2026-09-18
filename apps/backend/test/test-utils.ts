@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { join } from 'path';
 import { config } from 'dotenv';
+import { assertTestDatabase } from './database-safety';
 
 // Load test environment variables
 config({ path: join(__dirname, '.env.test') });
@@ -28,6 +29,10 @@ export async function createTestingApp(
     extraProviders?: any[];
   } = {},
 ) {
+  assertTestDatabase({
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+  });
   const module: TestingModule = await Test.createTestingModule({
     providers: options.extraProviders ?? [],
     imports: [
@@ -71,6 +76,11 @@ export async function createTestingApp(
  * table list, and CASCADE covers the FK dependencies between them.
  */
 export async function cleanDatabase(dataSource: DataSource) {
+  const target = dataSource.options;
+  assertTestDatabase({
+    host: 'host' in target ? target.host : undefined,
+    database: target.database,
+  });
   const tables = dataSource.entityMetadatas.map(
     (entity) => `"${entity.tableName}"`,
   );

@@ -22,6 +22,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
+    "test:employee:coverage": "jest --config test/jest-employee-coverage.cjs --runInBand",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json --runInBand --testPathIgnorePatterns \"test/app.e2e-spec.ts\"",
     "clean": "rm -rf dist coverage",

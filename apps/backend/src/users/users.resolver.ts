@@ -169,17 +169,19 @@ export class UsersResolver {
   }
 
   @Mutation(() => User)
-  @Permissions('EMPLOYEE_WRITE')
+  @SuperAdminOnly()
   updateUser(@Args('updateUserInput') updateUserInput: UpdateUserInput) {
     return this.usersService.update(updateUserInput);
   }
 
   /**
    * Ändert die primäre E-Mail eines Users synchron in TypeORM `user_emails`
-   * UND better-auth `user.email` (Login). Admin/HR only.
+   * UND better-auth `user.email` (Login). Global account administration only.
+   * Organization employee permissions never authorize global identity changes.
+   * Account holders use the separate dual-mailbox verification flow.
    */
   @Mutation(() => User)
-  @Permissions('EMPLOYEE_WRITE')
+  @SuperAdminOnly()
   changeUserEmail(@Args('input') input: ChangeUserEmailInput) {
     return this.usersService.changeUserEmail(input.userId, input.newEmail);
   }

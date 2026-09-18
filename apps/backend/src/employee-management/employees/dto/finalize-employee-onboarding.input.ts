@@ -1,5 +1,5 @@
-import { Field, ID, InputType, registerEnumType } from '@nestjs/graphql';
-import { IsEnum, IsUUID } from 'class-validator';
+import { Field, ID, Int, InputType, registerEnumType } from '@nestjs/graphql';
+import { IsEnum, IsUUID, IsInt, Min } from 'class-validator';
 
 /** When the first-login invitation is dispatched after finalizing. */
 export enum InvitationTiming {
@@ -18,6 +18,11 @@ export class FinalizeEmployeeOnboardingInput {
   @Field(() => ID)
   @IsUUID()
   id: string;
+
+  @Field(() => Int)
+  @IsInt()
+  @Min(1)
+  expectedVersion!: number;
 
   @Field(() => InvitationTiming)
   @IsEnum(InvitationTiming)

@@ -14,9 +14,8 @@ export type SchoolClassListItem = {
   }[];
   teachers?: {
     id: string;
-    membership: {
-      user?: { firstName: string; lastName: string } | null;
-    };
+    firstName?: string | null;
+    lastName?: string | null;
   }[];
   /** Assignments in force today, carrying role and workload. */
   teacherAssignments?: {
@@ -26,9 +25,8 @@ export type SchoolClassListItem = {
     workloadPercent?: number | null;
     employee?: {
       id: string;
-      membership?: {
-        user?: { firstName: string; lastName: string } | null;
-      } | null;
+      firstName?: string | null;
+      lastName?: string | null;
     } | null;
   }[];
   color?: string | null;
@@ -57,12 +55,8 @@ const GetSchoolClassesDocument = gql`
       }
       teachers {
         id
-        membership {
-          user {
-            firstName
-            lastName
-          }
-        }
+        firstName
+        lastName
       }
       teacherAssignments {
         id
@@ -71,12 +65,8 @@ const GetSchoolClassesDocument = gql`
         workloadPercent
         employee {
           id
-          membership {
-            user {
-              firstName
-              lastName
-            }
-          }
+          firstName
+          lastName
         }
       }
       color

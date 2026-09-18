@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "codegen": "graphql-codegen --config codegen.ts",
-    "clean": "rm -rf .next coverage"
+    "clean": "rm -rf .next coverage",
+    "test:employee:coverage": "vitest run --config vitest.employee.config.ts"
   },
   "dependencies": {
     "@dnd-kit/accessibility": "^3.1.1",
@@ -100,6 +101,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "@vitejs/plugin-react": "^6.1.1",
+    "@vitest/coverage-v8": "5.0.0",
     "concurrently": "^10.0.5",
     "eslint": "^9",
     "eslint-config-next": "^16.3.3",

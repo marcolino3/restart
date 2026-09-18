@@ -28,6 +28,7 @@ import { FinalizeEmployeeOnboardingInput } from './dto/finalize-employee-onboard
 import { EmployeesService } from './employees.service';
 import { Employee } from './entities/employee.entity';
 import { UpdateEmployeeInput } from './dto/update-employee.input';
+import { TeacherOption } from './dto/teacher-option';
 
 /** 'YYYY-MM-DD' von heute (Serverzeit). */
 function todayIso(): string {
@@ -172,8 +173,13 @@ export class EmployeesResolver {
   upsertEmployeeOnboardingDraft(
     @Args('input') input: EmployeeOnboardingInput,
     @CurrentOrgId() orgId: string,
+    @CurrentUser() actor?: TokenPayload,
   ) {
-    return this.employeesService.upsertEmployeeOnboardingDraft(input, orgId);
+    return this.employeesService.upsertEmployeeOnboardingDraft(
+      input,
+      orgId,
+      actor,
+    );
   }
 
   @Mutation(() => Boolean, { name: 'removeEmployeeOnboardingDraft' })
@@ -212,7 +218,7 @@ export class EmployeesResolver {
     return this.employeesService.findEmployeesByOrgId(organizationId);
   }
 
-  @Query(() => [Employee], { name: 'teachersByOrgId' })
+  @Query(() => [TeacherOption], { name: 'teachersByOrgId' })
   @Permissions('SCHOOL_CLASS_READ')
   async findTeachersByOrgId(@CurrentOrgId() organizationId: string) {
     return this.employeesService.findTeachersByOrgId(organizationId);

@@ -59,28 +59,31 @@ const numericOrNull = z
  */
 export const EmployeeOnboardingFormSchema = z.object({
   id: z.string().uuid().optional(),
+  version: z.number().int().positive().optional(),
+  accountLinkStatus: z.enum(["UNLINKED", "LEGACY", "CONFIRMED"]).optional(),
+  loginEmail: z.string().optional(),
 
   // --- Step 1: Person ---
-  title: z.string().optional().default(""),
-  firstName: z.string().min(1, { message: "Vorname ist erforderlich" }),
-  lastName: z.string().min(1, { message: "Nachname ist erforderlich" }),
+  title: z.string().trim().max(20).optional().default(""),
+  firstName: z.string().trim().max(120).min(1, { message: "Vorname ist erforderlich" }),
+  lastName: z.string().trim().max(120).min(1, { message: "Nachname ist erforderlich" }),
   email: z
     .string()
     .email({ message: "Ungültige E-Mail-Adresse" })
     .optional(),
   persona: z.nativeEnum(Persona).default(Persona.Employee),
-  dateOfBirth: z.date().nullable().optional(),
-  socialSecurityNumber: z.string().optional().default(""),
-  privateEmail: z.union([z.string().email(), z.literal("")]).optional(),
-  contactPhone: z.string().optional().default(""),
-  contactPhone2: z.string().optional().default(""),
-  street: z.string().optional().default(""),
-  houseNumber: z.string().optional().default(""),
-  addressLine2: z.string().optional().default(""),
-  postalCode: z.string().optional().default(""),
-  city: z.string().optional().default(""),
-  country: z.string().optional().default(""),
-  avatarUrl: z.string().optional().default(""),
+  dateOfBirth: z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => { const date = new Date(`${value}T00:00:00Z`); return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value; }, "Ungültiges Kalenderdatum"), z.date()]).nullable().optional(),
+  socialSecurityNumber: z.string().trim().max(30).optional().default(""),
+  privateEmail: z.union([z.string().trim().max(320).email(), z.literal("")]).optional(),
+  contactPhone: z.string().trim().max(40).optional().default(""),
+  contactPhone2: z.string().trim().max(40).optional().default(""),
+  street: z.string().trim().max(200).optional().default(""),
+  houseNumber: z.string().trim().max(30).optional().default(""),
+  addressLine2: z.string().trim().max(200).optional().default(""),
+  postalCode: z.string().trim().max(20).optional().default(""),
+  city: z.string().trim().max(120).optional().default(""),
+  country: z.string().trim().max(80).optional().default(""),
+  avatarUrl: z.string().trim().max(500).optional().default(""),
 
   // --- Step 2: Vertrag & Pensum ---
   timeTrackingEnabled: z.boolean().default(true),
@@ -131,7 +134,7 @@ export const EmployeeOnboardingFormSchema = z.object({
   // The wizard assigns a single primary role (design); mapped to the backend's
   // roleIds array in the action.
   roleId: z.string().uuid().optional(),
-  language: z.string().optional().default("de"),
+  language: z.string().trim().max(10).optional().default("de"),
   invitationTiming: InvitationTimingEnum.default("IMMEDIATE"),
 }).superRefine((values, ctx) => {
   refineEndDateNotBeforeStart(values, ctx);

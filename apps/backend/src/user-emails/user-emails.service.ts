@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, ILike, Repository } from 'typeorm';
+import { EntityManager, Raw, Repository } from 'typeorm';
 import { UserEmail } from './entities/user-email.entity';
 
 @Injectable()
@@ -18,9 +18,13 @@ export class UserEmailsService {
 
   async findByEmail(email: string): Promise<UserEmail> {
     const norm = email.trim().toLowerCase();
-    const ue = await this.repo.findOne({ where: { email: ILike(norm) } });
-    if (!ue) throw new NotFoundException('Email not found');
-    return ue;
+    const matches = await this.repo.find({
+      where: {
+        email: Raw((column) => `LOWER(${column}) = :email`, { email: norm }),
+      },
+    });
+    if (matches.length !== 1) throw new NotFoundException('Email not found');
+    return matches[0];
   }
 
   async findByEmailWithPassword(email: string): Promise<UserEmail> {
@@ -53,7 +57,11 @@ export class UserEmailsService {
   ): Promise<UserEmail> {
     const norm = email.trim().toLowerCase();
 
-    const exists = await this.repo.findOne({ where: { email: ILike(norm) } });
+    const exists = await this.repo.findOne({
+      where: {
+        email: Raw((column) => `LOWER(${column}) = :email`, { email: norm }),
+      },
+    });
     if (exists) {
       throw new ConflictException('Email already in use');
     }

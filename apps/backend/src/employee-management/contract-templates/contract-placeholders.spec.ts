@@ -20,17 +20,15 @@ describe('buildContractVariables', () => {
         contractType: 'PERMANENT' as EmployeeContract['contractType'],
         position: 'Lehrperson',
         employee: {
-          membership: {
-            user: {
-              firstName: 'Anna',
-              lastName: 'Muster',
-              street: 'Bahnhofstrasse',
-              houseNumber: '12',
-              postalCode: '8000',
-              city: 'Zürich',
-              dateOfBirth: '1990-05-04',
-              socialSecurityNumber: '756.1234.5678.97',
-            },
+          profile: {
+            firstName: 'Anna',
+            lastName: 'Muster',
+            street: 'Bahnhofstrasse',
+            houseNumber: '12',
+            postalCode: '8000',
+            city: 'Zürich',
+            dateOfBirth: '1990-05-04',
+            socialSecurityNumber: '756.1234.5678.97',
           },
         },
       } as unknown as Partial<EmployeeContract>),

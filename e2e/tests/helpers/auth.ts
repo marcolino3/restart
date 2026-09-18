@@ -1,5 +1,6 @@
 import { expect, type Browser, type Page } from '@playwright/test'
 import { e2eOrgName } from './fixture-naming'
+import { linkFixtureAccount } from './link-fixture-account'
 
 /**
  * Shared auth fixture for happy-path E2E tests.
@@ -96,12 +97,10 @@ export async function ensureTeacher(page: Page): Promise<string> {
   }
 
   const existing = await gql(
-    '{ teachersByOrgId { id membership { user { firstName lastName } } } }',
+    '{ teachersByOrgId { id firstName lastName } }',
   )
-  const teachers = (existing.data?.teachersByOrgId ?? []) as {
-    membership?: { user?: { firstName: string; lastName: string } | null }
-  }[]
-  const first = teachers[0]?.membership?.user
+  const teachers = (existing.data?.teachersByOrgId ?? []) as { firstName: string; lastName: string }[]
+  const first = teachers[0]
   if (first) return `${first.firstName} ${first.lastName}`.trim()
 
   const stamp = Date.now()
@@ -109,7 +108,7 @@ export async function ensureTeacher(page: Page): Promise<string> {
   const lastName = `Teacher${stamp}`
   const created = await gql(
     `mutation Create($input: CreateEmployeeInput!) {
-       createEmployee(createEmployeeInput: $input) { id }
+       createEmployee(createEmployeeInput: $input) { id version }
      }`,
     {
       input: {
@@ -147,15 +146,16 @@ export async function ensureEmployee(
   }
 
   const existing = await gql(
-    '{ employeesByOrgId { id membership { user { firstName lastName } } } }',
+    '{ employeesByOrgId { id firstName lastName } }',
   )
   const employees = (existing.data?.employeesByOrgId ?? []) as {
     id: string
-    membership?: { user?: { firstName: string; lastName: string } | null }
+    firstName: string
+    lastName: string
   }[]
   const first = employees[0]
   if (first?.id) {
-    const user = first.membership?.user
+    const user = first
     const displayName = user
       ? `${user.firstName} ${user.lastName}`.trim()
       : first.id
@@ -250,7 +250,7 @@ export async function setupSecondOrgUser(
 
   const employee = await gql(
     `mutation Create($input: CreateEmployeeInput!) {
-       createEmployee(createEmployeeInput: $input) { id }
+       createEmployee(createEmployeeInput: $input) { id version }
      }`,
     { input: { firstName, lastName, email, persona: 'ADMIN' } },
   )
@@ -282,7 +282,7 @@ export async function setupSecondOrgUser(
     `mutation AssignRole($input: EmployeeOnboardingInput!) {
        upsertEmployeeOnboardingDraft(input: $input) { id }
      }`,
-    { input: { id: employeeId, firstName, lastName, roleIds: [orgOwnerRoleId] } },
+    { input: { id: employeeId, expectedVersion: employee.data?.createEmployee?.version, firstName, lastName, roleIds: [orgOwnerRoleId] } },
   )
   if (roleAssign.errors?.length) {
     throw new Error(
@@ -308,6 +308,9 @@ export async function setupSecondOrgUser(
     )
   }
   // sign-up already authenticates the new user's session in this context;
+  // The employee API deliberately no longer links accounts by known email.
+  // Provision this test identity explicitly in the guarded fixture database.
+  await linkFixtureAccount(employeeId, orgId, email)
   // clear that session cookie so the explicit sign-in below starts clean.
   await context.clearCookies()
 

@@ -1,5 +1,5 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
-import { backfillEmployeeAbsenceCategoriesForAllOrgs } from '@/employee-management/employee-absence-categories/seeds/backfill-system-employee-absence-categories';
+import { seedHistoricalAbsenceCategories } from './helpers/seed-historical-absence-categories';
 
 /**
  * Seeds the appointment system categories (MEDICAL_APPOINTMENT,
@@ -11,7 +11,12 @@ export class SeedAppointmentAbsenceCategories1786900500000 implements MigrationI
   name = 'SeedAppointmentAbsenceCategories1786900500000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await backfillEmployeeAbsenceCategoriesForAllOrgs(queryRunner.manager);
+    await seedHistoricalAbsenceCategories(queryRunner, [
+      'MEDICAL_APPOINTMENT',
+      'THERAPY_APPOINTMENT',
+      'OFFICIAL_APPOINTMENT',
+      'WEDDING',
+    ]);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

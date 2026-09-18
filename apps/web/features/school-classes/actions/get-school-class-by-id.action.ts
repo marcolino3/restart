@@ -12,9 +12,8 @@ export type SchoolClassTeacherAssignmentDetail = {
   validTo?: string | null;
   employee?: {
     id: string;
-    membership?: {
-      user?: { firstName: string; lastName: string } | null;
-    } | null;
+    firstName?: string | null;
+    lastName?: string | null;
   } | null;
 };
 
@@ -27,9 +26,8 @@ export type SchoolClassDetail = {
   gradeLevels?: { id: string; name: string }[];
   teachers?: {
     id: string;
-    membership: {
-      user?: { firstName: string; lastName: string } | null;
-    };
+    firstName?: string | null;
+    lastName?: string | null;
   }[];
   color?: string | null;
   description?: string | null;
@@ -59,12 +57,8 @@ const GetSchoolClassByIdDocument = gql`
         validTo
         employee {
           id
-          membership {
-            user {
-              firstName
-              lastName
-            }
-          }
+          firstName
+          lastName
         }
       }
       gradeLevels {
@@ -73,12 +67,8 @@ const GetSchoolClassByIdDocument = gql`
       }
       teachers {
         id
-        membership {
-          user {
-            firstName
-            lastName
-          }
-        }
+        firstName
+        lastName
       }
       color
       description

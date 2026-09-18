@@ -38,7 +38,7 @@ export const createEmployeeAction = async (values: EmployeeFormOutput) => {
     persona: parsed.persona,
     ...(parsed.title ? { title: parsed.title } : {}),
     ...(parsed.dateOfBirth
-      ? { dateOfBirth: parsed.dateOfBirth.toISOString().split("T")[0] }
+      ? { dateOfBirth: typeof parsed.dateOfBirth === "string" ? parsed.dateOfBirth : `${parsed.dateOfBirth.getFullYear()}-${String(parsed.dateOfBirth.getMonth()+1).padStart(2,"0")}-${String(parsed.dateOfBirth.getDate()).padStart(2,"0")}` }
       : {}),
     ...(parsed.socialSecurityNumber
       ? { socialSecurityNumber: parsed.socialSecurityNumber }

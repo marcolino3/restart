@@ -860,9 +860,16 @@ export async function ensureStaffUser(
   } else {
     employeeId = randomUUID();
     await c.query(
-      `INSERT INTO employees (id, version, "isActive", "isArchived", "createdAt", "updatedAt", time_tracking_enabled)
-       VALUES ($1, 1, true, false, now(), now(), false)`,
-      [employeeId],
+      `INSERT INTO employees (id, version, "isActive", "isArchived", "createdAt", "updatedAt", time_tracking_enabled,
+            organization_id, account_link_status, profile_first_name, profile_last_name, profile_email)
+       VALUES ($1, 1, true, false, now(), now(), false, $2, 'LEGACY', $3, $4, $5)`,
+      [
+        employeeId,
+        ORG_ID,
+        u.firstName,
+        u.lastName,
+        u.email.trim().toLowerCase(),
+      ],
     );
     membershipId = randomUUID();
     await c.query(

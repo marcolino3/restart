@@ -181,6 +181,9 @@ jobs:
       contents: read
       packages: read # GITHUB_TOKEN darf die privaten GHCR-Images pullen (Fallback)
 
+    outputs:
+      profile_cutover: ${{ steps.cutover.outputs.active }}
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -283,6 +286,19 @@ jobs:
             sleep 2
           done
 
+      # Operator sets this only after a verified backup and upgrade rehearsal.
+      # Retained on failure so a retry cannot silently restore incompatible writers.
+      - name: Honor employee profile cutover lock
+        id: cutover
+        run: |
+          set -euo pipefail
+          ACTIVE=$(kubectl get deployment backend -n "$NAMESPACE" --ignore-not-found -o 'jsonpath={.metadata.annotations.restart\.colibri-app\.ch/profile-cutover}')
+          echo "active=$ACTIVE" >> "$GITHUB_OUTPUT"
+          if [ "$ACTIVE" = "true" ]; then
+            kubectl scale deployment/backend -n "$NAMESPACE" --replicas=0
+            kubectl wait --for=delete pod -n "$NAMESPACE" -l 'app=backend,!component' --timeout=180s
+          fi
+
       - name: Apply migration job
         env:
           IMAGE_OWNER: ${{ github.repository_owner }}
@@ -348,6 +364,8 @@ jobs:
     needs: migrate
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      PROFILE_CUTOVER: ${{ needs.migrate.outputs.profile_cutover }}
     permissions:
       contents: read
       packages: write
@@ -363,24 +381,22 @@ jobs:
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
 
-      # GitOps-Sync: ConfigMaps/Secrets/Manifeste auf den Repo-Stand bringen,
-      # BEVOR das Image gepinnt wird. Bisher deployte der Workflow nur das Image
-      # (set image), wodurch Config-/Secret-Änderungen nie ankamen — genau so
-      # blieb DB_SYNCHRONIZE=true im Cluster und liess jeden neuen Pod im Boot
-      # crashen. `apply -k` ist idempotent; das Deployment erhält hier kurz den
-      # Base-:latest-Tag, der direkt danach von `set image` auf den exakten SHA
-      # überschrieben wird.
-      - name: Sync manifests (kustomize)
-        run: kubectl apply -k k8s/staging
-
-      - name: Deploy to staging
+      # Pin images before apply: applying :latest first can briefly start a
+      # different binary against the newly migrated database.
+      - name: Sync manifests with release images
         run: |
-          kubectl set image deployment/backend \
-            backend=${{ env.BACKEND_IMAGE }}:${{ github.sha }} \
-            -n "$NAMESPACE"
-          kubectl set image deployment/frontend \
-            frontend=${{ env.FRONTEND_IMAGE }}:${{ github.sha }} \
-            -n "$NAMESPACE"
+          set -euo pipefail
+          cat >> k8s/staging/kustomization.yaml <<EOF
+
+          images:
+            - name: ghcr.io/marcolino3/restart-backend
+              newName: $BACKEND_IMAGE
+              newTag: "${{ github.sha }}"
+            - name: ghcr.io/marcolino3/restart-frontend
+              newName: $FRONTEND_IMAGE
+              newTag: "${{ github.sha }}"
+          EOF
+          kubectl apply -k k8s/staging
 
       - name: Wait for rollout
         id: rollout
@@ -443,7 +459,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Rollback on rollout failure
-        if: failure() && steps.rollout.outcome == 'failure'
+        if: failure() && steps.rollout.outcome == 'failure' && env.PROFILE_CUTOVER != 'true'
         run: |
           echo "::warning::Rollout failed — rolling back deployments"
           kubectl rollout undo deployment/backend -n "$NAMESPACE" || true
@@ -463,12 +479,22 @@ jobs:
           echo "::notice::Staging smoke test passed (HTTP $STATUS)"
 
       - name: Rollback on smoke test failure
-        if: failure() && steps.smoke.outcome == 'failure'
+        if: failure() && steps.smoke.outcome == 'failure' && env.PROFILE_CUTOVER != 'true'
         run: |
           echo "::error::Smoke test failed — rolling back"
           kubectl rollout undo deployment/backend -n "$NAMESPACE" || true
           kubectl rollout undo deployment/frontend -n "$NAMESPACE" || true
           exit 1
+
+      - name: Keep backend stopped after failed profile cutover
+        if: ${{ !success() && env.PROFILE_CUTOVER == 'true' }}
+        run: |
+          echo "::error::Profile cutover failed: forward repair or verified full restore required"
+          kubectl scale deployment/backend -n "$NAMESPACE" --replicas=0
+
+      - name: Clear completed profile cutover lock
+        if: steps.smoke.outcome == 'success' && env.PROFILE_CUTOVER == 'true'
+        run: kubectl annotate deployment/backend -n "$NAMESPACE" restart.colibri-app.ch/profile-cutover-
 
       # Promotion-Anker: das jetzt auf Staging laufende Image-Paar zusätzlich
       # als ':staging-current' taggen. deploy-production.yml liest diesen Tag,
