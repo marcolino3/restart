@@ -1,3 +1,9 @@
+import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
+import {
+  assignMembershipRoles,
+  assertRoleAssignmentActor,
+} from './membership-role-assignment';
+import { Organization } from '@/organizations/entities/organization.entity';
 import {
   BadRequestException,
   ConflictException,
@@ -69,113 +75,164 @@ export class RolesService {
       membershipIds?: string[];
     },
     actorPermissions: string[],
+    actor?: TokenPayload,
   ): Promise<Role> {
     if (!orgId) throw new ForbiddenException('No active organization');
-    let permissionCodes = input.permissionCodes ?? [];
-    let fieldPermissions: RoleFieldPermissionEntryInput[] = [];
-
-    if (input.duplicateFromRoleId) {
-      const source = await this.findOne(input.duplicateFromRoleId, orgId);
-      permissionCodes = (source.permissions ?? []).map((p) => p.code);
-      const sourceFieldPermissions = await this.roleFieldPermissionRepo.find({
-        where: { roleId: source.id },
+    if (input.membershipIds?.length) assertRoleAssignmentActor(actor, orgId);
+    return this.membershipRepo.manager.transaction(async (manager) => {
+      await manager.findOneOrFail(Organization, {
+        where: { id: orgId },
+        lock: { mode: 'pessimistic_write' },
       });
-      fieldPermissions = sourceFieldPermissions.map((fp) => ({
-        resource: fp.resource,
-        field: fp.field,
-        actions: fp.actions,
-      }));
-    }
+      const roleRepo = manager.getRepository(Role);
+      const fieldRepo = manager.getRepository(RoleFieldPermission);
+      let permissionCodes = input.permissionCodes ?? [];
+      let fieldPermissions: RoleFieldPermissionEntryInput[] = [];
 
-    this.assertNoEscalation(actorPermissions, permissionCodes);
+      if (input.duplicateFromRoleId) {
+        const source = await roleRepo.findOne({
+          where: { id: input.duplicateFromRoleId, organizationId: orgId },
+          relations: ['permissions'],
+        });
+        if (!source) throw new NotFoundException('Role not found');
+        permissionCodes = (source.permissions ?? []).map((p) => p.code);
+        const sourceFieldPermissions = await fieldRepo.find({
+          where: { roleId: source.id },
+        });
+        fieldPermissions = sourceFieldPermissions.map((fp) => ({
+          resource: fp.resource,
+          field: fp.field,
+          actions: fp.actions,
+        }));
+      }
 
-    const permissions =
-      await this.permissionsService.findByCodes(permissionCodes);
+      if (!actor?.isSuperAdmin) {
+        this.assertNoEscalation(actorPermissions, permissionCodes);
+        this.assertNoFieldEscalation(
+          actor?.fieldPermissions ?? new Map<string, Set<string>>(),
+          fieldPermissions,
+        );
+      }
 
-    const role = this.roleRepo.create({
-      organizationId: orgId,
-      name: input.name,
-      description: input.description ?? null,
-      systemCode: null,
-      isSystem: false,
-      permissions,
+      const permissions =
+        await this.permissionsService.findByCodes(permissionCodes);
+
+      const role = roleRepo.create({
+        organizationId: orgId,
+        name: input.name,
+        description: input.description ?? null,
+        systemCode: null,
+        isSystem: false,
+        permissions,
+      });
+      const saved = await roleRepo.save(role);
+
+      if (fieldPermissions.length > 0) {
+        await this.replaceFieldPermissions(
+          saved.id,
+          fieldPermissions,
+          fieldRepo,
+        );
+      }
+
+      if (input.membershipIds?.length) {
+        const ids = [...new Set(input.membershipIds)];
+        const memberships = await manager.find(Membership, {
+          where: { id: In(ids), organizationId: orgId },
+          relations: ['roles'],
+        });
+        if (memberships.length !== ids.length)
+          throw new NotFoundException('One or more memberships not found');
+        for (const membership of memberships) {
+          await assignMembershipRoles(
+            manager,
+            membership,
+            [...(membership.roles ?? []).map((r) => r.id), saved.id],
+            orgId,
+            actor,
+          );
+        }
+      }
+
+      return saved;
     });
-    const saved = await this.roleRepo.save(role);
-
-    if (fieldPermissions.length > 0) {
-      await this.replaceFieldPermissions(saved.id, fieldPermissions);
-    }
-
-    if (input.membershipIds?.length) {
-      await this.assignMembers(orgId, saved.id, input.membershipIds);
-    }
-
-    return this.findOne(saved.id, orgId);
   }
 
   async assignMembers(
     orgId: string,
     roleId: string,
     membershipIds: string[],
+    actor?: TokenPayload,
   ): Promise<void> {
-    const memberships = await this.membershipRepo.find({
-      where: { id: In(membershipIds), organizationId: orgId },
-      relations: ['roles'],
-    });
-    if (memberships.length !== membershipIds.length) {
-      throw new NotFoundException('One or more memberships not found');
-    }
-
-    for (const membership of memberships) {
-      const existingIds = new Set((membership.roles ?? []).map((r) => r.id));
-      if (!existingIds.has(roleId)) {
-        membership.roles = [
-          ...(membership.roles ?? []),
-          { id: roleId } as Role,
-        ];
+    assertRoleAssignmentActor(actor, orgId);
+    await this.membershipRepo.manager.transaction(async (manager) => {
+      await manager.findOneOrFail(Organization, {
+        where: { id: orgId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const ids = [...new Set(membershipIds)];
+      const memberships = ids.length
+        ? await manager.find(Membership, {
+            where: { id: In(ids), organizationId: orgId },
+            relations: ['roles'],
+          })
+        : [];
+      if (memberships.length !== ids.length)
+        throw new NotFoundException('One or more memberships not found');
+      for (const membership of memberships) {
+        await assignMembershipRoles(
+          manager,
+          membership,
+          [...(membership.roles ?? []).map((r) => r.id), roleId],
+          orgId,
+          actor,
+        );
       }
-    }
-    await this.membershipRepo.save(memberships);
+    });
   }
 
   async updateRoleMembers(
     orgId: string,
     roleId: string,
     membershipIds: string[],
+    actor?: TokenPayload,
   ): Promise<Role> {
-    const role = await this.findOne(roleId, orgId);
-
-    const memberships = await this.membershipRepo.find({
-      where: { id: In(membershipIds), organizationId: orgId },
-      relations: ['roles'],
+    assertRoleAssignmentActor(actor, orgId);
+    await this.membershipRepo.manager.transaction(async (manager) => {
+      await manager.findOneOrFail(Organization, {
+        where: { id: orgId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const role = await manager.findOne(Role, {
+        where: { id: roleId, organizationId: orgId },
+      });
+      if (!role) throw new NotFoundException('Role not found');
+      const members = await manager.find(Membership, {
+        where: { organizationId: orgId },
+        relations: ['roles'],
+      });
+      const targets = new Set(membershipIds);
+      if ([...targets].some((id) => !members.some((m) => m.id === id)))
+        throw new NotFoundException('One or more memberships not found');
+      // Add owners before removing old assignments, permitting atomic transfers.
+      members.sort(
+        (a, b) => Number(targets.has(b.id)) - Number(targets.has(a.id)),
+      );
+      for (const membership of members) {
+        const ids = (membership.roles ?? []).map((r) => r.id);
+        if (ids.includes(roleId) === targets.has(membership.id)) continue;
+        await assignMembershipRoles(
+          manager,
+          membership,
+          targets.has(membership.id)
+            ? [...ids, roleId]
+            : ids.filter((id) => id !== roleId),
+          orgId,
+          actor,
+        );
+      }
     });
-    if (memberships.length !== membershipIds.length) {
-      throw new NotFoundException('One or more memberships not found');
-    }
-
-    const targetIds = new Set(membershipIds);
-    const currentMembers = await this.membershipRepo.find({
-      where: { organizationId: orgId },
-      relations: ['roles'],
-    });
-
-    const toUpdate: Membership[] = [];
-    for (const membership of currentMembers) {
-      const hasRole = (membership.roles ?? []).some((r) => r.id === roleId);
-      const shouldHaveRole = targetIds.has(membership.id);
-      if (hasRole === shouldHaveRole) continue;
-
-      membership.roles = shouldHaveRole
-        ? [...(membership.roles ?? []), { id: roleId } as Role]
-        : (membership.roles ?? []).filter((r) => r.id !== roleId);
-      toUpdate.push(membership);
-    }
-
-    if (toUpdate.length > 0) {
-      await this.membershipRepo.save(toUpdate);
-    }
-
-    return this.findOne(role.id, orgId);
+    return this.findOne(roleId, orgId);
   }
 
   async duplicateRole(
@@ -183,11 +240,13 @@ export class RolesService {
     sourceRoleId: string,
     name: string,
     actorPermissions: string[],
+    actor?: TokenPayload,
   ): Promise<Role> {
     return this.createRole(
       orgId,
       { name, duplicateFromRoleId: sourceRoleId },
       actorPermissions,
+      actor,
     );
   }
 
@@ -202,26 +261,39 @@ export class RolesService {
     actorPermissions: string[],
     actorIsSuperAdmin = false,
   ): Promise<Role> {
-    const role = await this.findOne(input.id, orgId);
-    this.assertSystemRoleIdentityUnchanged(role, input);
+    if (!orgId) throw new NotFoundException('Role not found');
+    return this.membershipRepo.manager.transaction(async (manager) => {
+      await manager.findOneOrFail(Organization, {
+        where: { id: orgId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const roleRepo = manager.getRepository(Role);
+      const role = await roleRepo.findOne({
+        where: { id: input.id, organizationId: orgId },
+        relations: ['permissions'],
+      });
+      if (!role) throw new NotFoundException('Role not found');
+      this.assertSystemRoleIdentityUnchanged(role, input);
 
-    if (input.permissionCodes) {
-      if (!actorIsSuperAdmin) {
-        this.assertNoEscalation(actorPermissions, input.permissionCodes);
+      if (input.permissionCodes) {
+        if (!actorIsSuperAdmin) {
+          this.assertNoEscalation(actorPermissions, input.permissionCodes);
+        }
+        await this.assertNotStrippingLastOwnerRole(
+          orgId,
+          role,
+          input.permissionCodes,
+          roleRepo,
+        );
+        role.permissions = await this.permissionsService.findByCodes(
+          input.permissionCodes,
+        );
       }
-      await this.assertNotStrippingLastOwnerRole(
-        orgId,
-        role,
-        input.permissionCodes,
-      );
-      role.permissions = await this.permissionsService.findByCodes(
-        input.permissionCodes,
-      );
-    }
-    if (input.name !== undefined) role.name = input.name;
-    if (input.description !== undefined) role.description = input.description;
+      if (input.name !== undefined) role.name = input.name;
+      if (input.description !== undefined) role.description = input.description;
 
-    return this.roleRepo.save(role);
+      return roleRepo.save(role);
+    });
   }
 
   async updateRolePermissions(
@@ -246,23 +318,48 @@ export class RolesService {
     actorFieldPermissions: Map<string, Set<string>>,
     actorIsSuperAdmin = false,
   ): Promise<Role> {
-    // Multi-tenant guard: throws when the role does not belong to this org.
-    await this.findOne(roleId, orgId);
-    if (!actorIsSuperAdmin) {
-      this.assertNoFieldEscalation(actorFieldPermissions, entries);
-    }
+    if (!orgId) throw new NotFoundException('Role not found');
+    return this.membershipRepo.manager.transaction(async (manager) => {
+      await manager.findOneOrFail(Organization, {
+        where: { id: orgId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const role = await manager.getRepository(Role).findOne({
+        where: { id: roleId, organizationId: orgId },
+        relations: ['permissions'],
+      });
+      if (!role) throw new NotFoundException('Role not found');
+      if (!actorIsSuperAdmin) {
+        this.assertNoFieldEscalation(actorFieldPermissions, entries);
+      }
 
-    await this.replaceFieldPermissions(roleId, entries);
-    return this.findOne(roleId, orgId);
+      await this.replaceFieldPermissions(
+        roleId,
+        entries,
+        manager.getRepository(RoleFieldPermission),
+      );
+      return role;
+    });
   }
 
   async deleteRole(orgId: string, roleId: string): Promise<boolean> {
-    const role = await this.findOne(roleId, orgId);
-    this.assertSystemRoleNotDeleted(role);
-    await this.assertNotDeletingLastOwnerRole(orgId, role);
-
-    await this.roleRepo.remove(role);
-    return true;
+    if (!orgId) throw new NotFoundException('Role not found');
+    return this.membershipRepo.manager.transaction(async (manager) => {
+      await manager.findOneOrFail(Organization, {
+        where: { id: orgId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const roleRepo = manager.getRepository(Role);
+      const role = await roleRepo.findOne({
+        where: { id: roleId, organizationId: orgId },
+        relations: ['permissions'],
+      });
+      if (!role) throw new NotFoundException('Role not found');
+      this.assertSystemRoleNotDeleted(role);
+      await this.assertNotDeletingLastOwnerRole(orgId, role, roleRepo);
+      await roleRepo.remove(role);
+      return true;
+    });
   }
 
   // System roles keep their identity (name/description) so seeding and
@@ -337,6 +434,7 @@ export class RolesService {
     orgId: string,
     role: Role,
     newPermissionCodes: string[],
+    roleRepo: Repository<Role>,
   ): Promise<void> {
     const currentlyGrants = (role.permissions ?? []).some(
       (p) => p.code === LAST_OWNER_GUARD_PERMISSION,
@@ -348,6 +446,7 @@ export class RolesService {
       orgId,
       LAST_OWNER_GUARD_PERMISSION,
       role.id,
+      roleRepo,
     );
     if (otherOwnerRoleCount === 0) {
       throw new ConflictException(
@@ -359,6 +458,7 @@ export class RolesService {
   private async assertNotDeletingLastOwnerRole(
     orgId: string,
     role: Role,
+    roleRepo: Repository<Role>,
   ): Promise<void> {
     const grantsOwnerTransfer = (role.permissions ?? []).some(
       (p) => p.code === LAST_OWNER_GUARD_PERMISSION,
@@ -369,6 +469,7 @@ export class RolesService {
       orgId,
       LAST_OWNER_GUARD_PERMISSION,
       role.id,
+      roleRepo,
     );
     if (otherOwnerRoleCount === 0) {
       throw new ConflictException(
@@ -381,12 +482,18 @@ export class RolesService {
     orgId: string,
     permissionCode: string,
     excludeRoleId: string,
+    roleRepo: Repository<Role>,
   ): Promise<number> {
-    return this.roleRepo
+    return roleRepo
       .createQueryBuilder('r')
       .innerJoin('r.permissions', 'p')
+      .innerJoin('r.memberships', 'm')
       .where('r.organization_id = :orgId', { orgId })
       .andWhere('r.id != :excludeRoleId', { excludeRoleId })
+      .andWhere(
+        'm.organization_id = :orgId AND m."isActive" = true AND m."isArchived" = false',
+        { orgId },
+      )
       .andWhere('p.code = :permissionCode', { permissionCode })
       .getCount();
   }
@@ -394,6 +501,7 @@ export class RolesService {
   private async replaceFieldPermissions(
     roleId: string,
     entries: RoleFieldPermissionEntryInput[],
+    fieldRepo: Repository<RoleFieldPermission>,
   ): Promise<void> {
     for (const entry of entries) {
       if (!PROTECTED_FIELD_KEYS.has(`${entry.resource}.${entry.field}`)) {
@@ -403,17 +511,17 @@ export class RolesService {
       }
     }
 
-    await this.roleFieldPermissionRepo.delete({ roleId });
+    await fieldRepo.delete({ roleId });
     if (entries.length === 0) return;
 
     const rows = entries.map((entry) =>
-      this.roleFieldPermissionRepo.create({
+      fieldRepo.create({
         roleId,
         resource: entry.resource,
         field: entry.field,
         actions: entry.actions,
       }),
     );
-    await this.roleFieldPermissionRepo.save(rows);
+    await fieldRepo.save(rows);
   }
 }

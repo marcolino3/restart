@@ -41,7 +41,7 @@ export function OnboardingSummaryAside({
   const firstName = watch("firstName") as string;
   const lastName = watch("lastName") as string;
   const email = watch("email") as string | undefined;
-  const dateOfBirth = watch("dateOfBirth") as Date | null | undefined;
+  const dateOfBirth = watch("dateOfBirth") as Date | string | null | undefined;
   const position = watch("position") as string | undefined;
   const workloadPercent = watch("workloadPercent") as number | undefined;
   const contractType = watch("contractType") as string | undefined;
@@ -67,8 +67,11 @@ export function OnboardingSummaryAside({
   const positionLabel = position
     ? resolveEmployeeFunctionPosition(position, employeeFunctions, locale)
     : undefined;
-  const fmtDate = (d?: Date | null) =>
-    d ? new Intl.DateTimeFormat("de-CH").format(d) : undefined;
+  const fmtDate = (value?: Date | string | null) => {
+    if (!value) return undefined;
+    const date = typeof value === 'string' ? new Date(`${value.slice(0, 10)}T12:00:00`) : value;
+    return Number.isNaN(date.getTime()) ? undefined : new Intl.DateTimeFormat('de-CH').format(date);
+  };
 
   const invitationLabel = invitationTiming
     ? t(

@@ -310,10 +310,10 @@ export class WorkTimeReportService {
   ): Promise<string> {
     const membership = await this.membershipRepo.findOne({
       where: { organizationId: orgId, employeeId },
-      relations: ['user'],
+      relations: ['employee'],
     });
-    if (!membership?.user) return '';
-    return `${membership.user.firstName} ${membership.user.lastName}`.trim();
+    if (!membership?.employee?.profile) return '';
+    return `${membership.employee.profile.firstName ?? ''} ${membership.employee.profile.lastName ?? ''}`.trim();
   }
 
   private formatSegment(e: TimeTracking, t: Record<string, string>): string {

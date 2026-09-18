@@ -1,328 +1,342 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import {
-  BadRequestException,
-  ConflictException,
-  NotFoundException,
-} from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { EmployeesService } from './employees.service';
-import { EmployeeInvitationService } from './employee-invitation.service';
-import { Employee, EmployeeStatus } from './entities/employee.entity';
-import { EmployeeContract } from '@/employee-management/employee-contracts/entities/employee-contract.entity';
-import { PasswordService } from '@/users/password.service';
-import { EmployeeAuditLogService } from '../employee-audit-log/employee-audit-log.service';
-import { EmployeeAuditLogEntityType } from '../employee-audit-log/entities/employee-audit-log.entity';
-import { Organization } from '@/organizations/entities/organization.entity';
-import { UserEmail } from '@/user-emails/entities/user-email.entity';
+import {
+  Employee,
+  EmployeeStatus,
+  EmployeeInvitationStatus,
+} from './entities/employee.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { User } from '@/users/entities/user.entity';
-import { Persona } from '@/common/enums/persona.enum';
-import { CreateEmployeeInput } from './dto/create-employee.input';
+import { UserEmail } from '@/user-emails/entities/user-email.entity';
+import { Organization } from '@/organizations/entities/organization.entity';
+import { EmployeeContract } from '../employee-contracts/entities/employee-contract.entity';
 
-type MockManager = {
-  findOne: jest.Mock;
-  findOneBy: jest.Mock;
-  findOneOrFail: jest.Mock;
-  create: jest.Mock;
-  save: jest.Mock;
-  remove: jest.Mock;
-  delete: jest.Mock;
-};
-
-describe('EmployeesService', () => {
-  let service: EmployeesService;
-  let entityManager: { transaction: jest.Mock };
-  let auditLogService: { logChanges: jest.Mock };
-  let employeeRepo: { find: jest.Mock; findOne: jest.Mock };
-  let manager: MockManager;
-
-  beforeEach(async () => {
-    manager = {
-      findOne: jest.fn(),
-      findOneBy: jest.fn(),
-      findOneOrFail: jest.fn(),
-      create: jest.fn((_entity: unknown, data: unknown) => data),
-      save: jest.fn((_entity: unknown, data: unknown) => Promise.resolve(data)),
-      remove: jest.fn((_entity: unknown, data: unknown) =>
-        Promise.resolve(data),
+describe('employee organization profiles', () => {
+  let employee: Employee;
+  let membership: Membership;
+  const audit = { logChanges: jest.fn() };
+  const manager = {
+    findOne: jest.fn(),
+    findOneOrFail: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+    find: jest.fn(),
+    delete: jest.fn(),
+    update: jest.fn(),
+    remove: jest.fn(),
+  };
+  const repo = { find: jest.fn(), findOne: jest.fn() };
+  const service = new EmployeesService(
+    {
+      transaction: (fn: (m: unknown) => unknown) => fn(manager),
+    } as unknown as EntityManager,
+    {} as never,
+    audit as never,
+    {} as never,
+    repo as never,
+  );
+  const patch = (values: Record<string, unknown> = {}) =>
+    service.upsertEmployeeOnboardingDraft(
+      {
+        id: 'employee',
+        expectedVersion: 1,
+        firstName: 'Anna',
+        lastName: 'Test',
+        ...values,
+      },
+      'org',
+      { sub: 'actor', orgId: 'org', membershipId: 'actor-member' },
+    );
+  beforeEach(() => {
+    jest.clearAllMocks();
+    employee = {
+      id: 'employee',
+      organizationId: 'org',
+      version: 1,
+      profile: {
+        firstName: 'Anna',
+        lastName: 'Test',
+        email: 'anna@example.test',
+      },
+      accountLinkStatus: 'UNLINKED',
+      status: EmployeeStatus.DRAFT,
+      invitationStatus: EmployeeInvitationStatus.PENDING,
+    } as Employee;
+    membership = {
+      id: 'member',
+      employeeId: 'employee',
+      organizationId: 'org',
+      userId: null,
+      isActive: false,
+      roles: [],
+    } as unknown as Membership;
+    manager.findOne.mockImplementation((entity, opts) =>
+      Promise.resolve(
+        entity === Organization
+          ? { id: 'org' }
+          : entity === Employee
+            ? opts.where.profile
+              ? null
+              : employee
+            : entity === Membership
+              ? membership
+              : null,
       ),
-      delete: jest.fn().mockResolvedValue({ affected: 0 }),
-    };
-    entityManager = {
-      transaction: jest.fn(
-        (cb: (m: EntityManager) => Promise<unknown>): Promise<unknown> =>
-          cb(manager as unknown as EntityManager),
-      ),
-    };
-    auditLogService = { logChanges: jest.fn().mockResolvedValue(undefined) };
-    employeeRepo = { find: jest.fn(), findOne: jest.fn() };
-
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        EmployeesService,
-        { provide: EntityManager, useValue: entityManager },
-        { provide: PasswordService, useValue: {} },
-        { provide: EmployeeAuditLogService, useValue: auditLogService },
-        {
-          provide: EmployeeInvitationService,
-          useValue: { sendInvite: jest.fn(), scheduleInvite: jest.fn() },
-        },
-        { provide: getRepositoryToken(Employee), useValue: employeeRepo },
-      ],
-    }).compile();
-
-    service = module.get<EmployeesService>(EmployeesService);
+    );
+    manager.findOneOrFail.mockImplementation((entity) =>
+      Promise.resolve(entity === Membership ? membership : employee),
+    );
+    manager.create.mockImplementation((_entity, value) => value);
+    manager.save.mockImplementation((_entity, value) =>
+      Promise.resolve({ id: 'employee', ...value }),
+    );
+    manager.find.mockResolvedValue([]);
+    manager.update.mockResolvedValue({ affected: 1 });
+    repo.find.mockResolvedValue([]);
+    repo.findOne.mockImplementation(() =>
+      Promise.resolve({ ...employee, membership }),
+    );
   });
-
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
-
-  describe('findEmployeesByOrgId', () => {
-    it('filters employees by the given organization id (multi-tenant isolation)', async () => {
-      const employees = [{ id: 'emp-1' }];
-      employeeRepo.find.mockResolvedValue(employees);
-
-      const result = await service.findEmployeesByOrgId('org-1');
-
-      expect(result).toBe(employees);
-      expect(employeeRepo.find).toHaveBeenCalledWith(
+  it('writes the org profile and audit with the session actor, never global account data', async () => {
+    await patch({ firstName: 'Updated' });
+    expect(employee.profile.firstName).toBe('Updated');
+    expect(employee.version).toBe(2);
+    expect(audit.logChanges).toHaveBeenCalledWith(
+      'employee',
+      'org',
+      'actor-member',
+      [
         expect.objectContaining({
-          where: { membership: { organizationId: 'org-1' } },
+          fieldName: 'firstName',
+          oldValue: 'Anna',
+          newValue: 'Updated',
         }),
+      ],
+      manager,
+    );
+    expect(
+      manager.save.mock.calls.some(
+        ([entity]) => entity === User || entity === UserEmail,
+      ),
+    ).toBe(false);
+  });
+
+  describe('directory and legacy endpoints', () => {
+    it.each(['list', 'teacher', 'detail'])(
+      'rejects missing organization before %s access',
+      async (kind) => {
+        const result =
+          kind === 'list'
+            ? service.findEmployeesByOrgId('')
+            : kind === 'teacher'
+              ? service.findTeachersByOrgId('')
+              : service.findEmployeeById('employee', '');
+        await expect(result).rejects.toThrow('No active organization');
+        expect(repo.find).not.toHaveBeenCalled();
+        expect(repo.findOne).not.toHaveBeenCalled();
+      },
+    );
+    it('scopes list rows directly to the organization, including unlinked employees', async () => {
+      repo.find.mockResolvedValue([{ ...employee, membership }]);
+      const rows = await service.findEmployeesByOrgId('org');
+      expect(rows[0].membership.userId).toBeNull();
+      expect(repo.find).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { organizationId: 'org' } }),
       );
     });
-  });
-
-  describe('findTeachersByOrgId', () => {
-    it('only returns active teachers of the given organization', async () => {
-      employeeRepo.find.mockResolvedValue([]);
-
-      await service.findTeachersByOrgId('org-1');
-
-      expect(employeeRepo.find).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: {
-            isActive: true,
-            membership: {
-              organizationId: 'org-1',
-              persona: Persona.TEACHER,
-              isActive: true,
+    it.each([null, { organizationId: 'other' }])(
+      'does not return missing or foreign detail rows',
+      async (value) => {
+        repo.findOne.mockResolvedValue(value);
+        await expect(
+          service.findEmployeeById('employee', 'org'),
+        ).rejects.toThrow('Employee not found');
+      },
+    );
+    it('returns only teacher directory fields and never global private data', async () => {
+      repo.find.mockResolvedValue([
+        {
+          ...employee,
+          profile: {
+            firstName: 'Local',
+            lastName: 'Teacher',
+            privateEmail: 'secret@example.test',
+          },
+          membership: {
+            user: {
+              id: 'account',
+              firstName: 'Global',
+              socialSecurityNumber: 'secret',
             },
           },
+        },
+        { ...employee, profile: {}, membership: { user: null } },
+      ]);
+      await expect(service.findTeachersByOrgId('org')).resolves.toEqual([
+        {
+          id: 'employee',
+          firstName: 'Local',
+          lastName: 'Teacher',
+          userId: 'account',
+        },
+        { id: 'employee', firstName: '', lastName: '', userId: null },
+      ]);
+      expect(repo.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            organizationId: 'org',
+            isActive: true,
+            status: EmployeeStatus.ACTIVE,
+          }),
         }),
       );
     });
-  });
-
-  describe('findEmployeeById', () => {
-    it('throws NotFoundException when the employee does not exist', async () => {
-      employeeRepo.findOne.mockResolvedValue(null);
-
-      await expect(
-        service.findEmployeeById('emp-1', 'org-1'),
-      ).rejects.toBeInstanceOf(NotFoundException);
-    });
-
-    it('throws NotFoundException when the employee belongs to a foreign org (multi-tenant isolation)', async () => {
-      employeeRepo.findOne.mockResolvedValue({
-        id: 'emp-1',
-        membership: { organizationId: 'other-org' },
-      });
-
-      await expect(
-        service.findEmployeeById('emp-1', 'org-1'),
-      ).rejects.toBeInstanceOf(NotFoundException);
-    });
-
-    it('returns the employee when it belongs to the given org', async () => {
-      const employee = {
-        id: 'emp-1',
-        membership: { organizationId: 'org-1' },
-      };
-      employeeRepo.findOne.mockResolvedValue(employee);
-
-      await expect(service.findEmployeeById('emp-1', 'org-1')).resolves.toBe(
-        employee,
-      );
-    });
-  });
-
-  describe('createEmployeeMinimal', () => {
-    const input = {
-      email: 'Jane.Doe@Example.com',
-      firstName: 'Jane',
-      lastName: 'Doe',
-      persona: Persona.EMPLOYEE,
-    } as CreateEmployeeInput;
-
-    it('throws NotFoundException when the organization does not exist', async () => {
-      manager.findOne.mockImplementation((entity: unknown) => {
-        if (entity === Organization) return Promise.resolve(null);
-        return Promise.resolve(null);
-      });
-
-      await expect(
-        service.createEmployeeMinimal(input, 'org-1'),
-      ).rejects.toBeInstanceOf(NotFoundException);
-    });
-
-    it('throws ConflictException when the membership already has an employee', async () => {
-      manager.findOne.mockImplementation((entity: unknown) => {
-        if (entity === Organization) return Promise.resolve({ id: 'org-1' });
-        if (entity === UserEmail)
-          return Promise.resolve({ id: 'ue-1', userId: 'user-1' });
-        if (entity === Membership)
-          return Promise.resolve({ id: 'mem-1', employeeId: 'emp-existing' });
-        return Promise.resolve(null);
-      });
-      manager.findOneBy.mockResolvedValue({ id: 'user-1' });
-
-      await expect(
-        service.createEmployeeMinimal(input, 'org-1'),
-      ).rejects.toBeInstanceOf(ConflictException);
-    });
-  });
-
-  describe('updateEmployeeMinimal', () => {
-    const buildEmployee = (organizationId: string) => ({
-      id: 'emp-1',
-      timeTrackingEnabled: false,
-      membership: {
-        id: 'mem-1',
-        organizationId,
-        persona: Persona.EMPLOYEE,
-        contactPhone: null,
-        user: { id: 'user-1', firstName: 'Old', lastName: 'Doe' },
-      },
-    });
-
-    it('throws NotFoundException when the employee belongs to a foreign org (multi-tenant isolation)', async () => {
-      manager.findOne.mockResolvedValue(buildEmployee('other-org'));
-
+    it('rejects clearing a mandatory name through the minimal update endpoint', async () => {
       await expect(
         service.updateEmployeeMinimal(
-          { id: 'emp-1', firstName: 'New' },
-          'org-1',
-          'actor-1',
+          { id: 'employee', firstName: null } as never,
+          'org',
         ),
-      ).rejects.toBeInstanceOf(NotFoundException);
-      expect(auditLogService.logChanges).not.toHaveBeenCalled();
+      ).rejects.toThrow('names cannot be cleared');
+      expect(repo.findOne).not.toHaveBeenCalled();
     });
-
-    it('persists changed user fields and writes an audit log entry', async () => {
-      const employee = buildEmployee('org-1');
-      manager.findOne.mockResolvedValue(employee);
-      manager.findOneOrFail.mockResolvedValue(employee);
-
-      const result = await service.updateEmployeeMinimal(
-        { id: 'emp-1', firstName: 'New' },
-        'org-1',
-        'actor-1',
-      );
-
-      expect(result).toBe(employee);
-      expect(employee.membership.user.firstName).toBe('New');
-      expect(auditLogService.logChanges).toHaveBeenCalledWith(
-        'emp-1',
-        'org-1',
-        'actor-1',
-        [
-          expect.objectContaining({
-            entityType: EmployeeAuditLogEntityType.USER,
-            fieldName: 'firstName',
-            oldValue: 'Old',
-            newValue: 'New',
-          }),
-        ],
-        manager,
-      );
-    });
-
-    it('does not write an audit log entry when nothing changed', async () => {
-      const employee = buildEmployee('org-1');
-      manager.findOne.mockResolvedValue(employee);
-      manager.findOneOrFail.mockResolvedValue(employee);
-
+    it('updates optional data through the minimal endpoint without replacing existing names', async () => {
+      employee.profile.privateEmail = 'before@example.test';
       await service.updateEmployeeMinimal(
-        { id: 'emp-1', firstName: 'Old' },
-        'org-1',
-        'actor-1',
+        { id: 'employee', expectedVersion: 1, privateEmail: null } as never,
+        'org',
+        'actor-member',
       );
-
-      expect(auditLogService.logChanges).not.toHaveBeenCalled();
+      expect(employee.profile.firstName).toBe('Anna');
+      expect(employee.profile.lastName).toBe('Test');
+      expect(employee.profile.privateEmail).toBeNull();
+    });
+  });
+  it.each([
+    'title',
+    'dateOfBirth',
+    'socialSecurityNumber',
+    'privateEmail',
+    'street',
+    'houseNumber',
+    'addressLine2',
+    'postalCode',
+    'city',
+    'country',
+    'avatarUrl',
+    'language',
+  ])('clears optional profile field %s', async (field) => {
+    (employee.profile as Record<string, unknown>)[field] =
+      field === 'dateOfBirth' ? '2000-01-01' : 'old';
+    await patch({ [field]: null });
+    expect(employee.profile).toHaveProperty(field, null);
+  });
+  it.each(['contactPhone', 'contactPhone2'])(
+    'clears optional membership field %s',
+    async (field) => {
+      (membership as unknown as Record<string, unknown>)[field] =
+        '+41790000000';
+      await patch({ [field]: null });
+      expect(membership).toHaveProperty(field, null);
+    },
+  );
+  it('does not log unchanged data or touch role assignments', async () => {
+    membership.roles = [{ id: 'one' }, { id: 'two' }] as Membership['roles'];
+    await patch();
+    expect(audit.logChanges).not.toHaveBeenCalled();
+    expect(membership.roles?.map((r) => r.id)).toEqual(['one', 'two']);
+  });
+  it.each([undefined, 0, 99])(
+    'rejects missing or stale version %s without writes',
+    async (expectedVersion) => {
+      await expect(patch({ expectedVersion })).rejects.toThrow();
       expect(manager.save).not.toHaveBeenCalled();
+    },
+  );
+  it('rejects a foreign employee before writing', async () => {
+    employee.organizationId = 'foreign';
+    await expect(patch()).rejects.toThrow('Employee not found');
+    expect(manager.save).not.toHaveBeenCalled();
+  });
+  it.each([
+    { firstName: ' ' },
+    { lastName: 'X'.repeat(121) },
+    { privateEmail: 'bad' },
+    { dateOfBirth: '2000-02-30' },
+  ])('validates basis fields %#', async (values) => {
+    await expect(patch(values)).rejects.toThrow('Invalid employee fields');
+    expect(manager.save).not.toHaveBeenCalled();
+  });
+  it('rejects replacing a linked account address', async () => {
+    employee.accountLinkStatus = 'CONFIRMED';
+    await expect(patch({ email: 'other@example.test' })).rejects.toThrow(
+      'account owner',
+    );
+    expect(manager.save).not.toHaveBeenCalled();
+  });
+  it('creates an unlinked profile without looking up a globally existing email', async () => {
+    await service.upsertEmployeeOnboardingDraft(
+      { firstName: 'New', lastName: 'Employee', email: 'known@example.test' },
+      'org',
+    );
+    expect(
+      manager.findOne.mock.calls.some(
+        ([entity]) => entity === User || entity === UserEmail,
+      ),
+    ).toBe(false);
+    expect(manager.save).toHaveBeenCalledWith(
+      Employee,
+      expect.objectContaining({
+        organizationId: 'org',
+        accountLinkStatus: 'UNLINKED',
+        profile: expect.objectContaining({ email: 'known@example.test' }),
+      }),
+    );
+    expect(manager.save).toHaveBeenCalledWith(
+      Membership,
+      expect.objectContaining({ userId: null, isActive: false }),
+    );
+  });
+  it('deletes the unlinked draft and its placeholder without touching global accounts', async () => {
+    await service.removeEmployeeOnboardingDraft('employee', 'org');
+    expect(manager.update).toHaveBeenCalledWith(
+      Membership,
+      { id: 'member', organizationId: 'org' },
+      { employeeId: null },
+    );
+    expect(manager.remove).toHaveBeenCalledTimes(2);
+    expect(manager.remove).toHaveBeenCalledWith(Membership, membership);
+    expect(manager.remove).toHaveBeenCalledWith(Employee, employee);
+    expect(manager.delete).toHaveBeenCalledWith(EmployeeContract, {
+      employeeId: 'employee',
+      organizationId: 'org',
     });
   });
-
-  describe('removeEmployeeOnboardingDraft', () => {
-    const buildDraft = (organizationId: string) => ({
-      id: 'emp-1',
-      status: EmployeeStatus.DRAFT,
-      membership: {
-        id: 'mem-1',
-        organizationId,
-        user: { id: 'user-1' },
-      },
-    });
-
-    it('hard-deletes employee, membership and user for a DRAFT in the caller org', async () => {
-      const employee = buildDraft('org-1');
-      employeeRepo.findOne.mockResolvedValue(employee);
-
-      const result = await service.removeEmployeeOnboardingDraft(
-        'emp-1',
-        'org-1',
-      );
-
-      expect(result).toBe(true);
-      expect(manager.delete).toHaveBeenCalledWith(EmployeeContract, {
-        employeeId: 'emp-1',
-      });
-      expect(manager.remove).toHaveBeenNthCalledWith(
-        1,
-        Membership,
-        employee.membership,
-      );
-      expect(manager.remove).toHaveBeenNthCalledWith(2, Employee, employee);
-      expect(manager.remove).toHaveBeenNthCalledWith(
-        3,
-        User,
-        employee.membership.user,
-      );
-    });
-
-    it('throws NotFoundException when the employee does not exist', async () => {
-      employeeRepo.findOne.mockResolvedValue(null);
-
+  it.each(['LEGACY', 'CONFIRMED'])(
+    'protects a %s linked draft from deletion',
+    async (status) => {
+      employee.accountLinkStatus = status as Employee['accountLinkStatus'];
       await expect(
-        service.removeEmployeeOnboardingDraft('emp-1', 'org-1'),
-      ).rejects.toThrow(NotFoundException);
+        service.removeEmployeeOnboardingDraft('employee', 'org'),
+      ).rejects.toThrow();
       expect(manager.remove).not.toHaveBeenCalled();
-    });
-
-    it('throws NotFoundException for a foreign-org employee (multi-tenant isolation)', async () => {
-      const employee = buildDraft('org-2');
-      employeeRepo.findOne.mockResolvedValue(employee);
-
-      await expect(
-        service.removeEmployeeOnboardingDraft('emp-1', 'org-1'),
-      ).rejects.toThrow(NotFoundException);
-      expect(manager.remove).not.toHaveBeenCalled();
-    });
-
-    it('throws BadRequestException when the employee is no longer a draft', async () => {
-      const employee = {
-        ...buildDraft('org-1'),
-        status: EmployeeStatus.ACTIVE,
-      };
-      employeeRepo.findOne.mockResolvedValue(employee);
-
-      await expect(
-        service.removeEmployeeOnboardingDraft('emp-1', 'org-1'),
-      ).rejects.toThrow(BadRequestException);
-      expect(manager.remove).not.toHaveBeenCalled();
-    });
+    },
+  );
+  it('protects an existing account even if link status is inconsistent', async () => {
+    membership.userId = 'existing-account';
+    await expect(
+      service.removeEmployeeOnboardingDraft('employee', 'org'),
+    ).rejects.toThrow();
+    expect(manager.remove).not.toHaveBeenCalled();
   });
+  it.each([EmployeeInvitationStatus.SENT, EmployeeInvitationStatus.SCHEDULED])(
+    'rejects deletion after invitation %s',
+    async (status) => {
+      employee.invitationStatus = status;
+      await expect(
+        service.removeEmployeeOnboardingDraft('employee', 'org'),
+      ).rejects.toThrow();
+      expect(manager.remove).not.toHaveBeenCalled();
+    },
+  );
 });

@@ -1,3 +1,9 @@
+import {
+  IsEmail,
+  MaxLength,
+  Matches as MatchesBasis,
+  IsDateString as IsBasisDate,
+} from 'class-validator';
 import { Persona } from '@/common/enums/persona.enum';
 import {
   EmployeeContractType,
@@ -7,6 +13,7 @@ import { TeamMemberRole } from '@/employee-management/team-members/entities/team
 import { Field, Float, ID, InputType, Int } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
 import {
+  IsInt,
   IsArray,
   IsBoolean,
   IsDateString,
@@ -230,23 +237,36 @@ export class EmployeeOnboardingInput {
   @IsUUID()
   id?: string;
 
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  expectedVersion?: number;
+
   // --- Step 1: Person ---
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(20)
   title?: string;
 
   @Field(() => String)
   @IsString()
+  @MaxLength(120)
+  @MatchesBasis(/\S/, { message: 'Name must not be blank' })
   firstName: string;
 
   @Field(() => String)
   @IsString()
+  @MaxLength(120)
+  @MatchesBasis(/\S/, { message: 'Name must not be blank' })
   lastName: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(320)
+  @IsEmail()
   email?: string;
 
   @Field(() => Persona, { nullable: true })
@@ -257,61 +277,75 @@ export class EmployeeOnboardingInput {
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  @MatchesBasis(/^\d{4}-\d{2}-\d{2}$/)
+  @IsBasisDate({ strict: true })
   dateOfBirth?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(30)
   socialSecurityNumber?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(320)
+  @IsEmail()
   privateEmail?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(30)
   contactPhone?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(40)
   contactPhone2?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(200)
   street?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(30)
   houseNumber?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(200)
   addressLine2?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(20)
   postalCode?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(120)
   city?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(80)
   country?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   avatarUrl?: string;
 
   // --- Step 2: Vertrag & Pensum ---
@@ -346,5 +380,6 @@ export class EmployeeOnboardingInput {
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(10)
   language?: string;
 }

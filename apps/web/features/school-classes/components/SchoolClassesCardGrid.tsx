@@ -81,7 +81,7 @@ const teacherNames = (item: SchoolClassListItem): string[] => {
   if (assignments.length > 0) {
     return assignments
       .map((a) => {
-        const user = a.employee?.membership?.user;
+        const user = a.employee;
         const name = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim();
         if (!name) return "";
         return a.workloadPercent != null
@@ -93,7 +93,7 @@ const teacherNames = (item: SchoolClassListItem): string[] => {
 
   return (item.teachers ?? [])
     .map((te) =>
-      `${te.membership?.user?.firstName ?? ""} ${te.membership?.user?.lastName ?? ""}`.trim(),
+      `${te.firstName ?? ""} ${te.lastName ?? ""}`.trim(),
     )
     .filter(Boolean);
 };

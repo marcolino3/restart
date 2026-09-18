@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
+import { UserEmail } from '@/user-emails/entities/user-email.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Membership } from './entities/membership.entity';
 import { User } from '@/users/entities/user.entity';
@@ -13,7 +19,25 @@ export class MembershipsService {
     private readonly membershipRepository: Repository<Membership>,
   ) {}
 
-  async create(input: CreateMembershipInput): Promise<Membership> {
+  async create(
+    input: CreateMembershipInput,
+    actor: TokenPayload,
+  ): Promise<Membership> {
+    if (
+      !actor.orgId ||
+      input.organizationId !== actor.orgId ||
+      input.userId !== actor.sub
+    ) {
+      throw new ForbiddenException(
+        'Account linking requires confirmation by the account owner',
+      );
+    }
+    if (input.userEmailId) {
+      const email = await this.membershipRepository.manager.findOne(UserEmail, {
+        where: { id: input.userEmailId, userId: actor.sub },
+      });
+      if (!email) throw new ForbiddenException('Invalid account email');
+    }
     const membership = new Membership({
       userId: input.userId,
       organizationId: input.organizationId,
@@ -24,11 +48,21 @@ export class MembershipsService {
     return this.membershipRepository.save(membership);
   }
 
-  async update(input: UpdateMembershipInput): Promise<Membership> {
-    const { id, ...rest } = input;
-    await this.membershipRepository.update({ id }, rest);
+  async update(
+    input: UpdateMembershipInput,
+    organizationId: string,
+  ): Promise<Membership> {
+    if (!organizationId) throw new ForbiddenException('No active organization');
+    const { id, contactPhone } = input;
+    if (contactPhone !== undefined) {
+      const result = await this.membershipRepository.update(
+        { id, organizationId },
+        { contactPhone: contactPhone?.trim() || null },
+      );
+      if (!result.affected) throw new NotFoundException('Membership not found');
+    }
     const updated = await this.membershipRepository.findOne({
-      where: { id },
+      where: { id, organizationId },
       relations: ['userEmail'],
     });
     if (!updated) throw new NotFoundException('Membership not found');
@@ -85,6 +119,7 @@ export class MembershipsService {
   }
 
   async findByOrgId(organizationId: string): Promise<Membership[]> {
+    if (!organizationId) throw new ForbiddenException('No active organization');
     return this.membershipRepository.find({
       where: { organizationId },
       relations: ['user', 'userEmail', 'roles'],

@@ -1,7 +1,7 @@
 import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
 import { Membership } from './entities/membership.entity';
 import { MembershipsService } from './memberships.service';
-import { UseGuards } from '@nestjs/common';
+import { ForbiddenException, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { GqlBetterAuthGuard } from '@/auth/guard/gql-better-auth.guard';
 import { GraphQLAccessGuard } from '@/auth/guard/graphql-access.guard';
@@ -20,24 +20,39 @@ export class MembershipsResolver {
   @Permissions('USER_INVITE')
   createMembership(
     @Args('createMembershipInput') input: CreateMembershipInput,
+    @CurrentUser() user: TokenPayload,
   ) {
-    return this.membershipsService.create(input);
+    this.assertOrganization(input.organizationId, user);
+    return this.membershipsService.create(input, user);
   }
 
   @Query(() => [Membership], { name: 'membershipsByOrgId' })
   @Permissions('EMPLOYEE_READ')
   findByOrgId(
     @Args('organizationId', { type: () => ID }) organizationId: string,
+    @CurrentUser() user: TokenPayload,
   ) {
-    return this.membershipsService.findByOrgId(organizationId);
+    this.assertOrganization(organizationId, user);
+    return this.membershipsService.findByOrgId(user.orgId!);
   }
 
   @Mutation(() => Membership)
   @Permissions('EMPLOYEE_WRITE')
   updateMembership(
     @Args('updateMembershipInput') input: UpdateMembershipInput,
+    @CurrentUser() user: TokenPayload,
   ) {
-    return this.membershipsService.update(input);
+    this.assertOrganization(user.orgId, user);
+    return this.membershipsService.update(input, user.orgId!);
+  }
+
+  private assertOrganization(
+    organizationId: string | undefined,
+    user: TokenPayload,
+  ) {
+    if (!user.orgId || organizationId !== user.orgId) {
+      throw new ForbiddenException('No access to this organization');
+    }
   }
 
   /**

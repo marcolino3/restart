@@ -16,6 +16,10 @@ updates:
     # One grouped PR for all minor+patch (dev + prod) to keep PR volume low.
     # Majors still open individually so they get manual review.
     groups:
+      nestjs:
+        patterns: ["@nestjs/*"]
+      tiptap:
+        patterns: ["@tiptap/*"]
       minor-and-patch:
         patterns:
           - "*"
@@ -24,6 +28,9 @@ updates:
           - "patch"
 
     ignore:
+      # Better Auth 1.7.x requires this exact peer; 0.5 breaks its type contract.
+      - dependency-name: "@better-auth/utils"
+        versions: [">=0.5.0"]
       # NativeWind (apps/mobile) ist an Tailwind 3 gebunden — Tailwind 4 bricht die JS-Config-Auflösung
       - dependency-name: "tailwindcss"
         versions: [">=4.0.0"]
@@ -51,28 +58,6 @@ updates:
       - dependency-name: "eslint-config-expo"
         versions: [">=55.0.0"]
 
-      # @better-auth/expo bricht ab 1.6.24 den Mobile-Typecheck: der
-      # Expo-Client verliert getCookie() und das Plugin passt nicht mehr auf
-      # BetterAuthClientPlugin (5 Fehler in chats-api.ts, active-org.ts,
-      # auth-client.ts). Isoliert verifiziert 2026-07-31: 1.6.23 = 0 Fehler,
-      # 1.6.24 und 1.6.25 = 5 Fehler.
-      #
-      # Nur das Expo-Paket ist gesperrt, NICHT better-auth selbst — Backend
-      # und Web laufen gesund auf ^1.7.1 und sollen Updates bekommen.
-      #
-      # Ein exakter Pin in apps/mobile/package.json reicht dafür NICHT:
-      # Dependabot schlägt trotzdem vor (#233 kam trotz "1.6.23" und
-      # "19.1.0"). Dieselbe Annahme war schon bei react falsch.
-      #
-      # Diese Sperre gilt NUR für den Root-Scan und damit für apps/mobile.
-      # apps/backend importiert aus demselben Paket ausschliesslich das
-      # Server-Plugin `expo()` (apps/backend/src/lib/auth.ts) und ist vom
-      # Client-Bruch nicht betroffen; der /apps/backend-Eintrag unten lässt
-      # 1.6.24+ deshalb bewusst durch (Stand: ^1.6.26). Die beiden
-      # Verzeichnisse laufen hier absichtlich auseinander — wer das
-      # angleichen will, muss zuerst den Mobile-Typecheck grün bekommen.
-      - dependency-name: "@better-auth/expo"
-        versions: [">=1.6.24"]
       # @types/node 26 typisiert Node-26-APIs; CI und Runtime laufen auf Node 22
       # (node-version in ci.yml/security.yml, engines: ">=20").
       - dependency-name: "@types/node"
@@ -114,12 +99,6 @@ updates:
       # Sauber lösbar erst mit einem eigenen dependabot-Eintrag für
       # /apps/mobile, der die Root-Gruppe für dieses Verzeichnis ersetzt.
 
-      # sanitize-html 2.17.6 hebt htmlparser2 auf ^12 (ESM-only, kein CJS-Entry).
-      # Jest transformiert node_modules nicht → beide Admissions-E-Mail-Suiten
-      # sterben mit "Cannot use import statement outside a module" (21 Tests).
-      - dependency-name: "sanitize-html"
-        versions: [">=2.17.6"]
-
       # Siehe /apps/backend bzw. /apps/web für die ausführliche Begründung.
       # Diese Liste muss jede dortige Sperre spiegeln — der Root-Scan kennt
       # die verzeichnis-spezifischen Einträge nicht.
@@ -127,8 +106,6 @@ updates:
         versions: [">=6.0.0"]
       - dependency-name: "typeorm"
         versions: [">=1.0.0"]
-      - dependency-name: "@tiptap/*"
-        versions: [">=3.0.0"]
       - dependency-name: "graphql"
         versions: [">=16.14.1"]
       - dependency-name: "class-validator"
@@ -162,6 +139,8 @@ updates:
     commit-message:
       prefix: "chore(deps,backend)"
     groups:
+      nestjs:
+        patterns: ["@nestjs/*"]
       minor-and-patch:
         patterns:
           - "*"
@@ -169,14 +148,6 @@ updates:
           - "minor"
           - "patch"
     ignore:
-      # @better-auth/expo ist hier BEWUSST NICHT gesperrt, obwohl der
-      # Root-Eintrag ">=1.6.24" blockt. Der Bruch ab 1.6.24 liegt im
-      # Client-Teil des Pakets (getCookie(), BetterAuthClientPlugin) und
-      # trifft nur apps/mobile. apps/backend importiert daraus einzig das
-      # Server-Plugin `expo()` (src/lib/auth.ts) und soll Updates bekommen.
-      # Nicht "der Vollständigkeit halber" nachtragen — das würde das
-      # Backend ohne Grund auf 1.6.23 einfrieren.
-
       # Bewusste Pins (siehe MEMORY.md „Bekannte Issues")
       - dependency-name: "class-validator"
         versions: [">=0.15.0"]
@@ -185,13 +156,6 @@ updates:
       # TypeORM 1.0 = Datenschicht-Major, braucht dedizierten Migrations-PR
       - dependency-name: "typeorm"
         versions: [">=1.0.0"]
-      # sanitize-html 2.17.6 hebt htmlparser2 von ^10.1.0 auf ^12.0.0 — v12 ist
-      # ESM-only (kein CommonJS-Entry mehr). Jest transformiert node_modules
-      # nicht, deshalb brechen die Suiten, die sanitize-email-html.ts laden.
-      # Zur Laufzeit ist es unkritisch (Node löst es über die exports-Map auf).
-      # Erst nachziehen, wenn die Jest-Config ESM in node_modules verarbeitet.
-      - dependency-name: "sanitize-html"
-        versions: [">=2.17.6"]
       # graphql 17: das Nest/Apollo-Ökosystem ist noch auf 16 festgelegt —
       # @nestjs/graphql und @apollo/server verlangen ^16.11.0, @nestjs/apollo
       # ^16.10.0. Erst nachziehen, wenn diese drei 17 als Peer akzeptieren.
@@ -235,6 +199,8 @@ updates:
     commit-message:
       prefix: "chore(deps,web)"
     groups:
+      tiptap:
+        patterns: ["@tiptap/*"]
       minor-and-patch:
         patterns:
           - "*"
@@ -262,13 +228,6 @@ updates:
       # (Missing initializer in const declaration) — Major braucht eigene Migration
       - dependency-name: "@graphql-codegen/cli"
         versions: [">=7.0.0"]
-      # Tiptap 2 -> 3 ist ein koordinierter Umstieg ALLER vier Pakete auf einmal:
-      # @tiptap/react@3 verlangt "@tiptap/pm": "3.27.3" exakt (kein Range).
-      # Dependabot öffnet aber nur Einzel-PRs und keinen für @tiptap/pm, jeder
-      # davon würde also die Peer-Dependency brechen. Braucht einen eigenen
-      # Migrations-PR über extension-link + pm + react + starter-kit gemeinsam.
-      - dependency-name: "@tiptap/*"
-        versions: [">=3.0.0"]
       # @types/node 26 typisiert Node-26-APIs; CI und Runtime laufen auf Node 22
       # (siehe node-version in ci.yml/security.yml, engines: ">=20").
       # Erst nachziehen, wenn die Node-Baseline angehoben wird.
@@ -310,6 +269,9 @@ updates:
           - "minor"
           - "patch"
     ignore:
+      # Better Auth 1.7.x requires this exact peer; 0.5 breaks its type contract.
+      - dependency-name: "@better-auth/utils"
+        versions: [">=0.5.0"]
       # Expo koppelt ab SDK 55 die Paket-Major an die SDK-Nummer.
       # apps/mobile steht auf SDK 54 — 55+ gehört zu einer fremden
       # SDK-Generation. Upgrade nur gemeinsam via `npx expo install --fix`.
@@ -332,20 +294,11 @@ updates:
         versions: [">=5.7.0"]
       - dependency-name: "react-native-worklets"
         versions: [">=0.6.0"]
-      # Expo SDK 54 verlangt react 19.1.0. Hier durchsetzbar, ohne apps/web
-      # von React-Updates abzuschneiden — das war im Root-Eintrag unmöglich.
+      # Keep the mobile React SDK constraint separate from web updates.
       - dependency-name: "react"
         versions: [">=19.2.0"]
       - dependency-name: "react-dom"
         versions: [">=19.2.0"]
-      # @better-auth/expo bricht ab 1.6.24 den Mobile-Typecheck: der
-      # Expo-Client verliert getCookie() und das Plugin passt nicht mehr auf
-      # BetterAuthClientPlugin (5 Fehler in chats-api.ts, active-org.ts,
-      # auth-client.ts). Isoliert verifiziert 2026-07-31: 1.6.23 = 0 Fehler,
-      # 1.6.24 und 1.6.25 = 5 Fehler. Betrifft nur den Client — apps/backend
-      # nutzt aus demselben Paket nur das Server-Plugin und darf höher.
-      - dependency-name: "@better-auth/expo"
-        versions: [">=1.6.24"]
       # NativeWind ist an Tailwind 3 gebunden — Tailwind 4 bricht die
       # JS-Config-Auflösung.
       - dependency-name: "tailwindcss"

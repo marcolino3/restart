@@ -30,6 +30,8 @@ type DatePickerFormFieldProps<TFormValues extends FieldValues> = {
   disabledDate?: (date: Date) => boolean;
   /** When true, selected days are stored at 00:00 local time. */
   startOfDay?: boolean;
+  /** Store a calendar date as YYYY-MM-DD, without a timezone. */
+  dateOnly?: boolean;
   width?: string;
   /** i18n namespace for `label`. Default `"Common"`. */
   namespace?: string;
@@ -45,6 +47,7 @@ export function DatePickerFormField<TFormValues extends FieldValues>({
   description,
   disabledDate = (date) => date > new Date() || date < new Date("1900-01-01"),
   startOfDay = false,
+  dateOnly = false,
   width = "w-full",
   namespace = "Common",
   showWeekday = false,
@@ -58,11 +61,16 @@ export function DatePickerFormField<TFormValues extends FieldValues>({
       control={form.control}
       name={name}
       render={({ field }) => {
-        const value = field.value ? new Date(field.value) : undefined;
+        const value = field.value ? new Date(dateOnly && typeof field.value === "string" ? `${field.value}T12:00:00` : field.value) : undefined;
 
         const handleDateChange = (selectedDate: Date | undefined) => {
           if (!selectedDate) {
             field.onChange(null);
+            return;
+          }
+
+          if (dateOnly) {
+            field.onChange(format(selectedDate, "yyyy-MM-dd"));
             return;
           }
 

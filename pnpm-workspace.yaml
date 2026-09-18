@@ -3,6 +3,10 @@ packages:
   - "packages/*"
   - "e2e"
 
+# Copy newly generated build files into injected workspace dependencies.
+syncInjectedDepsAfterScripts:
+  - build
+
 # Security overrides — force fixed versions of transitive deps with no
 # direct upgrade path. These clear the Trivy CRITICAL gate and the
 # `pnpm audit --prod --audit-level=high` gate. Range-scoped where a package

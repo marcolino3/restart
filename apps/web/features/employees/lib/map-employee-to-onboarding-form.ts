@@ -48,24 +48,24 @@ export function mapEmployeeToOnboardingForm(input: {
 }): EmployeeOnboardingFormType {
   const { employee, contracts, teamId, orgCountry, locale, employeeFunctions = [] } =
     input;
-  const user = employee.membership?.user;
+  const user = employee.profile;
   const membership = employee.membership;
   // Same priority as overview / backend versioning target.
   const contract =
     pickOverviewContract(contracts).contract ?? contracts[0];
-  const primaryEmail =
-    user?.userEmails?.find((e) => e.isPrimary)?.email ??
-    user?.userEmails?.[0]?.email ??
-    "";
+  const primaryEmail = employee.profile.email ?? "";
 
   return {
     id: employee.id,
+    version: employee.version,
+    accountLinkStatus: employee.accountLinkStatus as "UNLINKED" | "LEGACY" | "CONFIRMED",
+    loginEmail: employee.membership.userEmail?.email,
     title: user?.title ?? "",
     firstName: user?.firstName ?? "",
     lastName: user?.lastName ?? "",
     email: primaryEmail,
     persona: (membership?.persona as Persona) ?? Persona.Employee,
-    dateOfBirth: parseDate(user?.dateOfBirth),
+    dateOfBirth: user?.dateOfBirth ?? null,
     socialSecurityNumber: user?.socialSecurityNumber ?? "",
     privateEmail: user?.privateEmail ?? "",
     contactPhone: membership?.contactPhone ?? "",

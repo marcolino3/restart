@@ -60,4 +60,9 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-return': 'off',
     },
   },
+  {
+    files: ['test/jest-employee-coverage.cjs'],
+    extends: [tseslint.configs.disableTypeChecked],
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
 );

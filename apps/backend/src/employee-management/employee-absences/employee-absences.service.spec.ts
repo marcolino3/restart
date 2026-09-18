@@ -239,6 +239,7 @@ describe('EmployeeAbsencesService', () => {
     it('speichert Arztzeugnisse und weitere Dokumente mit Bezeichnung', async () => {
       const employee = {
         id: 'emp-1',
+        profile: { firstName: 'Anna', lastName: 'Test' },
         membership: {
           id: 'mem-1',
           user: { firstName: 'Anna', lastName: 'Test' },
@@ -479,7 +480,11 @@ describe('EmployeeAbsencesService', () => {
       entityManager.findOne
         .mockResolvedValueOnce({
           id: 'mem-1',
-          employee: { id: 'emp-1' },
+          employeeId: 'emp-1',
+          employee: {
+            id: 'emp-1',
+            profile: { firstName: 'Anna', lastName: 'Test' },
+          },
           user: { firstName: 'Anna', lastName: 'Test' },
         })
         .mockResolvedValueOnce({

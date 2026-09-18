@@ -1,4 +1,5 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { QueryFailedError } from 'typeorm';
 
 import { PERMS_KEY } from '@/auth/decorators/permissions.decorator';
 import { BetterAuthGuard } from '@/auth/guard/better-auth.guard';
@@ -90,6 +91,15 @@ describe('EmployeesController', () => {
       importService.importFile.mockRejectedValue(new Error('corrupt zip'));
       await expect(controller.upload(csvFile(), orgUser)).rejects.toThrow(
         new BadRequestException('corrupt zip'),
+      );
+    });
+
+    it('never returns database internals', async () => {
+      importService.importFile.mockRejectedValue(
+        new QueryFailedError('INSERT', [], new Error('secret SQL detail')),
+      );
+      await expect(controller.upload(csvFile(), orgUser)).rejects.toThrow(
+        new BadRequestException('Employee import failed'),
       );
     });
   });

@@ -1,3 +1,4 @@
+import { linkFixtureAccount } from '../helpers/link-fixture-account'
 import { test, expect, type Page } from '@playwright/test'
 import { ensureActiveOrg, signInAsSuperAdmin } from '../helpers/auth'
 
@@ -62,6 +63,9 @@ const ensureSelfEmployee = async (page: Page): Promise<string> => {
       },
     },
   )
+  const orgId = (await page.context().cookies()).find(c => c.name === 'Active-Org')?.value
+  if (!orgId) throw new Error('Fixture requires an active organization')
+  await linkFixtureAccount(created.createEmployee.id, orgId, SUPERADMIN_EMAIL)
   return created.createEmployee.id
 }
 

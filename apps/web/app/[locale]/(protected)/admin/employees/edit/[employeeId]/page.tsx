@@ -7,7 +7,7 @@ import { getActiveOrganizationAction } from "@/features/organizations/actions/ge
 import { getRolesAction } from "@/features/roles/actions/get-roles.action";
 import { buildRoleOptions } from "@/features/employees/lib/role-options";
 import { getTeamsAction } from "@/features/teams/actions/get-teams.action";
-import { requireAdminRole } from "@/features/users/guards/require-admin-role";
+import { requireEmployeeWrite } from "@/features/users/guards/require-employee-write";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
@@ -16,7 +16,7 @@ interface Props {
 }
 
 const EditEmployeePage = async ({ params }: Props) => {
-  await requireAdminRole();
+  await requireEmployeeWrite();
   const { employeeId } = await params;
   const locale = await getLocale();
   const t = await getTranslations("EmployeeOnboarding");
@@ -68,8 +68,8 @@ const EditEmployeePage = async ({ params }: Props) => {
     : [];
 
   const isDraft = employee.status === "DRAFT";
-  const employeeName = employee.membership?.user
-    ? `${employee.membership.user.firstName} ${employee.membership.user.lastName}`
+  const employeeName = employee.profile
+    ? `${employee.profile.firstName} ${employee.profile.lastName}`
     : t("editTitle");
 
   return (
@@ -85,6 +85,7 @@ const EditEmployeePage = async ({ params }: Props) => {
         </p>
       </div>
       <EmployeeOnboardingWizard
+        key={employeeId}
         orgCountry={orgCountry}
         roleOptions={roleOptions}
         teamOptions={teamOptions}

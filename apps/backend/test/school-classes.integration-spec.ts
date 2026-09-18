@@ -75,7 +75,13 @@ describe('SchoolClasses service (Integration)', () => {
     const user = await userRepo.save(
       userRepo.create({ firstName, lastName: 'Test' }),
     );
-    const employee = await employeeRepo.save(employeeRepo.create({}));
+    const employee = await employeeRepo.save(
+      employeeRepo.create({
+        organizationId: organizationId,
+        profile: { firstName: user.firstName, lastName: user.lastName },
+        accountLinkStatus: 'LEGACY',
+      }),
+    );
     await membershipRepo.save(
       membershipRepo.create({
         organizationId,

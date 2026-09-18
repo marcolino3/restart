@@ -8,6 +8,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { TypeORMError } from 'typeorm';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { BetterAuthGuard } from '@/auth/guard/better-auth.guard';
@@ -34,7 +35,9 @@ export class EmployeesController {
   @Post('upload')
   @Permissions('EMPLOYEE_WRITE')
   @UseInterceptors(
-    FileInterceptor('file', { limits: { fileSize: MAX_UPLOAD_BYTES } }),
+    FileInterceptor('file', {
+      limits: { fileSize: MAX_UPLOAD_BYTES, files: 1, fields: 0 },
+    }),
   )
   async upload(
     @UploadedFile() file: Express.Multer.File,
@@ -62,6 +65,10 @@ export class EmployeesController {
       );
     } catch (err) {
       if (err instanceof HttpException) throw err;
+      // Database errors carry SQL/constraint details — never echo them.
+      if (err instanceof TypeORMError) {
+        throw new BadRequestException('Employee import failed');
+      }
       throw new BadRequestException(
         err instanceof Error ? err.message : 'Failed to parse employee file',
       );

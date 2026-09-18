@@ -1,3 +1,6 @@
+import { EmployeeAccountInvitation } from '@/employee-management/employees/entities/employee-account-invitation.entity';
+import { EmployeeStorageCleanup } from '@/employee-management/employees/entities/employee-storage-cleanup.entity';
+import { AccountEmailChange } from '@/employee-management/employees/entities/account-email-change.entity';
 import { Address } from '@/addresses/entities/address.entity';
 import { AuthAccount } from '@/auth-accounts/entities/auth-account.entity';
 import { Country } from '@/countries/entities/country.entity';
@@ -40,6 +43,7 @@ import { AdmissionEmail } from '@/school-management/admissions/entities/admissio
 import { AdmissionReminder } from '@/school-management/admissions/entities/admission-reminder.entity';
 import { AdmissionDocument } from '@/school-management/admissions/entities/admission-document.entity';
 import { EmailTemplate } from '@/school-management/admissions/entities/email-template.entity';
+import { ContractTemplate } from '@/employee-management/contract-templates/entities/contract-template.entity';
 import { ContactPerson } from '@/school-management/contact-persons/entities/contact-person.entity';
 import { StudentContactPerson } from '@/school-management/contact-persons/entities/student-contact-person.entity';
 import { Family } from '@/school-management/families/entities/family.entity';
@@ -114,6 +118,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       Team,
       TeamMember,
       Employee,
+      EmployeeAccountInvitation,
+      EmployeeStorageCleanup,
+      AccountEmailChange,
       EmployeeContract,
       EmployeeFunction,
       EmployeeFunctionTranslation,
@@ -159,6 +166,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       AdmissionAppointmentAssignee,
       AdmissionEmail,
       EmailTemplate,
+      ContractTemplate,
       ContactPerson,
       StudentContactPerson,
       Family,

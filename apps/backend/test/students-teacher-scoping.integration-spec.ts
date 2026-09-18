@@ -63,7 +63,13 @@ describe('StudentsService teacher row-level scoping (Integration)', () => {
     const user = await userRepo.save(
       userRepo.create({ firstName, lastName: 'Test' }),
     );
-    const employee = await employeeRepo.save(employeeRepo.create({}));
+    const employee = await employeeRepo.save(
+      employeeRepo.create({
+        organizationId: orgId,
+        profile: { firstName: user.firstName, lastName: user.lastName },
+        accountLinkStatus: 'LEGACY',
+      }),
+    );
     await membershipRepo.save(
       membershipRepo.create({
         organizationId: orgId,

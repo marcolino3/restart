@@ -4,6 +4,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { protectedFieldKey } from '@restart/shared-schemas/rbac/field-catalog';
+import { QueryFailedError } from 'typeorm';
 
 import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
 import { Persona } from '@/common/enums/persona.enum';
@@ -249,6 +250,7 @@ describe('EmployeeImportService.importRows', () => {
   const employeesService = {
     createEmployeeMinimal: jest.fn(),
     updateEmployeeMinimal: jest.fn(),
+    findEmployeeById: jest.fn(),
   };
   const hrProfilesService = { upsert: jest.fn() };
   const emergencyService = { upsert: jest.fn() };
@@ -277,6 +279,7 @@ describe('EmployeeImportService.importRows', () => {
     jest.clearAllMocks();
     employeesService.createEmployeeMinimal.mockResolvedValue(createdEmployee);
     employeesService.updateEmployeeMinimal.mockResolvedValue(createdEmployee);
+    employeesService.findEmployeeById.mockResolvedValue({ version: 7 });
     entityManager.findOne.mockResolvedValue(null);
     entityManager.update.mockResolvedValue(undefined);
     entityManager.save.mockResolvedValue(undefined);
@@ -373,6 +376,20 @@ describe('EmployeeImportService.importRows', () => {
     expect(contractsService.create).not.toHaveBeenCalled();
   });
 
+  it('never returns database internals in a failed row', async () => {
+    employeesService.createEmployeeMinimal.mockRejectedValue(
+      new QueryFailedError('INSERT', [], new Error('secret SQL detail')),
+    );
+    const result = await service.importRows(
+      [{ email: 'a@x.ch' }],
+      ORG_ID,
+      superAdmin,
+    );
+    expect(result.failed).toEqual([
+      { email: 'a@x.ch', reason: 'Employee could not be created' },
+    ]);
+  });
+
   it('keeps the employee and reports a warning when a sub-step fails', async () => {
     hrProfilesService.upsert.mockRejectedValue(new Error('IBAN invalid'));
     const result = await service.importRows(
@@ -421,9 +438,19 @@ describe('EmployeeImportService.importRows', () => {
       });
       expect(employeesService.createEmployeeMinimal).not.toHaveBeenCalled();
       expect(employeesService.updateEmployeeMinimal).toHaveBeenCalledWith(
-        { id: EMPLOYEE_ID, firstName: 'Anna', city: 'Bern' },
+        {
+          id: EMPLOYEE_ID,
+          expectedVersion: 7,
+          firstName: 'Anna',
+          city: 'Bern',
+        },
         ORG_ID,
         superAdmin.membershipId,
+      );
+      // The version is read through the org-scoped lookup.
+      expect(employeesService.findEmployeeById).toHaveBeenCalledWith(
+        EMPLOYEE_ID,
+        ORG_ID,
       );
     });
 

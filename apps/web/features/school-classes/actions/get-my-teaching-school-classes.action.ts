@@ -19,12 +19,8 @@ const Document = gql`
       }
       teachers {
         id
-        membership {
-          user {
-            firstName
-            lastName
-          }
-        }
+        firstName
+        lastName
       }
       color
       description

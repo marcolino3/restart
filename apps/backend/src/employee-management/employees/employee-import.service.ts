@@ -3,7 +3,7 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-import { EntityManager } from 'typeorm';
+import { EntityManager, TypeORMError } from 'typeorm';
 import { protectedFieldKey } from '@restart/shared-schemas/rbac/field-catalog';
 
 import type { TokenPayload } from '@/auth/interfaces/token-payload.interface';
@@ -66,7 +66,7 @@ export interface MappedEmployeeRow {
    * filled cells are present, so `updateEmployeeMinimal` leaves the rest
    * untouched (empty cell = keep, not clear).
    */
-  personUpdate: Omit<UpdateEmployeeInput, 'id' | 'email'>;
+  personUpdate: Omit<UpdateEmployeeInput, 'id' | 'email' | 'expectedVersion'>;
   /** User/membership fields createEmployeeMinimal does not accept. */
   extras: { privateEmail?: string; contactPhone2?: string; language?: string };
   hr?: Omit<UpsertEmployeeHrProfileInput, 'employeeId'>;
@@ -450,8 +450,11 @@ export function mapEmployeeRow(row: EmployeeImportRow): MappedEmployeeRow {
 // Orchestration
 // ---------------------------------------------------------------------------
 
-const errorMessage = (err: unknown): string =>
-  err instanceof Error ? err.message : String(err);
+/** Row-level failure reason; database errors are masked so SQL/constraint details never reach the client. */
+const errorMessage = (err: unknown): string => {
+  if (err instanceof TypeORMError) return 'Employee could not be created';
+  return err instanceof Error ? err.message : String(err);
+};
 
 @Injectable()
 export class EmployeeImportService {
@@ -515,9 +518,20 @@ export class EmployeeImportService {
       let membershipId: string | undefined;
       let userId: string | undefined;
       try {
+        // Optimistic lock: the import overwrites the version it just read
+        // (org-scoped), so a concurrent edit fails the row instead of being lost.
         const employee = existingEmployeeId
           ? await this.employeesService.updateEmployeeMinimal(
-              { id: existingEmployeeId, ...mapped.personUpdate },
+              {
+                id: existingEmployeeId,
+                expectedVersion: (
+                  await this.employeesService.findEmployeeById(
+                    existingEmployeeId,
+                    orgId,
+                  )
+                ).version,
+                ...mapped.personUpdate,
+              },
               orgId,
               user.membershipId,
             )

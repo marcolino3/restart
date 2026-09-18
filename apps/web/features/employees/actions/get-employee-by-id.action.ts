@@ -6,6 +6,26 @@ import { gql } from "graphql-request";
 export type EmployeeDetail = {
   id: string;
   status: string;
+  version: number;
+  accountLinkStatus: string;
+  profile: {
+      title?: string | null;
+      firstName?: string | null;
+      lastName?: string | null;
+      dateOfBirth?: string | null;
+      socialSecurityNumber?: string | null;
+      street?: string | null;
+      houseNumber?: string | null;
+      addressLine2?: string | null;
+      postalCode?: string | null;
+      city?: string | null;
+      country?: string | null;
+      privateEmail?: string | null;
+      avatarUrl?: string | null;
+      language?: string | null;
+      email?: string | null;
+  };
+
   timeTrackingEnabled: boolean;
   teamMembers?: {
     team?: {
@@ -15,6 +35,7 @@ export type EmployeeDetail = {
   }[] | null;
   membership: {
     id: string;
+    userEmail?: { email: string } | null;
     persona: string;
     contactPhone?: string | null;
     contactPhone2?: string | null;
@@ -61,6 +82,9 @@ const GetEmployeeByIdDocument = gql`
     employeeById(employeeId: $employeeId) {
       id
       status
+      version
+      accountLinkStatus
+      profile { firstName lastName title dateOfBirth socialSecurityNumber street houseNumber addressLine2 postalCode city country privateEmail avatarUrl language email }
       timeTrackingEnabled
       teamMembers {
         team {
@@ -70,6 +94,7 @@ const GetEmployeeByIdDocument = gql`
       }
       membership {
         id
+        userEmail { email }
         persona
         contactPhone
         contactPhone2

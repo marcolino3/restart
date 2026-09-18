@@ -1,3 +1,4 @@
+import { linkFixtureAccount } from '../helpers/link-fixture-account'
 import { test, expect, type Page } from '@playwright/test'
 import { ensureActiveOrg, ensureEmployee, signInAsSuperAdmin } from '../helpers/auth'
 
@@ -206,24 +207,16 @@ test.describe('Employee company vacation assignments — access control', () => 
         },
       )
       expect(signUp.ok()).toBeTruthy()
+      await linkFixtureAccount(employeeCreated.createEmployee.id, orgId, employeeEmail)
       await context.clearCookies()
 
-      await employeePage.goto('/en/sign-in', { waitUntil: 'networkidle' })
-      await employeePage
-        .getByRole('textbox', { name: /e-?mail/i })
-        .fill(employeeEmail)
-      await employeePage
-        .locator('input[name="password"]')
-        .fill(employeePassword)
-      await employeePage.getByRole('button', { name: /sign in/i }).click()
-      // The login form's onSubmit fires a client-side router.push('/admin')
-      // after sign-in resolves, without the test awaiting it. If that soft
-      // navigation is still in flight when we later hard-navigate to the
-      // employee-detail page, it can land AFTER our goto and silently
-      // overwrite the server-side redirect to /admin/forbidden. Wait for it
-      // to fully settle on /admin first so the subsequent goto is the only
-      // navigation in flight.
-      await expect(employeePage).toHaveURL(/\/admin$/, { timeout: 20000 })
+      // Authentication is fixture setup; assert authorization on the target
+      // page/API without racing the sign-in page's organization redirect.
+      const signedIn = await employeePage.request.post(`${BACKEND_URL}/api/auth/sign-in/email`, {
+        headers: { origin: FRONTEND_ORIGIN },
+        data: { email: employeeEmail, password: employeePassword },
+      })
+      expect(signedIn.ok()).toBeTruthy()
 
       const switched = await employeePage.request.post(
         `${BACKEND_URL}/api/org/switch`,

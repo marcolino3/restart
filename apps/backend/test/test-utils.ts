@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { join } from 'path';
 import { config } from 'dotenv';
+import { assertTestDatabase } from './database-safety';
 
 // Load test environment variables
 config({ path: join(__dirname, '.env.test') });
@@ -15,7 +16,7 @@ config({ path: join(__dirname, '.env.test') });
  * Usage:
  *   const { module, dataSource } = await createTestingApp([OrganizationsModule]);
  *
- * Run the suite with `pnpm test:e2e`, which pins `--runInBand`: every suite
+ * Run the suite with `pnpm test:e2e`, whose config pins a single worker: every suite
  * connects with `dropSchema: true`, so parallel workers pull the schema out
  * from under each other and the hooks time out. The same script also excludes
  * `app.e2e-spec.ts`, broken since the initial import (its namespace-style
@@ -28,6 +29,10 @@ export async function createTestingApp(
     extraProviders?: any[];
   } = {},
 ) {
+  assertTestDatabase({
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+  });
   const module: TestingModule = await Test.createTestingModule({
     providers: options.extraProviders ?? [],
     imports: [
@@ -71,6 +76,11 @@ export async function createTestingApp(
  * table list, and CASCADE covers the FK dependencies between them.
  */
 export async function cleanDatabase(dataSource: DataSource) {
+  const target = dataSource.options;
+  assertTestDatabase({
+    host: 'host' in target ? target.host : undefined,
+    database: target.database,
+  });
   const tables = dataSource.entityMetadatas.map(
     (entity) => `"${entity.tableName}"`,
   );

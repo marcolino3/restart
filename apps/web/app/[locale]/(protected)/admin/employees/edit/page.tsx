@@ -4,11 +4,11 @@ import { getActiveOrganizationAction } from "@/features/organizations/actions/ge
 import { getRolesAction } from "@/features/roles/actions/get-roles.action";
 import { buildRoleOptions } from "@/features/employees/lib/role-options";
 import { getTeamsAction } from "@/features/teams/actions/get-teams.action";
-import { requireAdminRole } from "@/features/users/guards/require-admin-role";
+import { requireEmployeeWrite } from "@/features/users/guards/require-employee-write";
 import { getTranslations } from "next-intl/server";
 
 export default async function CreateEmployeePage() {
-  await requireAdminRole();
+  await requireEmployeeWrite();
   const t = await getTranslations("EmployeeOnboarding");
 
   const orgRes = await getActiveOrganizationAction();

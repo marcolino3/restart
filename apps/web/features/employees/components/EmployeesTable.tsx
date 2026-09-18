@@ -36,12 +36,12 @@ const PERSONA_VARIANT: Record<string, BadgeProps["variant"]> = {
 };
 
 const fullName = (row: EmployeeListItem) =>
-  `${row.membership.user?.firstName ?? ""} ${
-    row.membership.user?.lastName ?? ""
+  `${row.profile?.firstName ?? ""} ${
+    row.profile?.lastName ?? ""
   }`.trim();
 
 const primaryEmail = (row: EmployeeListItem) => {
-  const emails = row.membership.user?.userEmails;
+  const emails = row.profile?.email ? [{ email: row.profile.email, isPrimary: true }] : [];
   return emails?.find((e) => e.isPrimary)?.email ?? emails?.[0]?.email ?? "";
 };
 
@@ -87,9 +87,7 @@ const useColumns = (): ColumnDef<
       // Sort key: surname, then first name. Search covers name and e-mail
       // via `searchableText` below.
       accessorFn: (row) =>
-        `${row.membership.user?.lastName ?? ""} ${
-          row.membership.user?.firstName ?? ""
-        }`.trim(),
+        `${row.profile?.lastName ?? ""} ${row.profile?.firstName ?? ""}`.trim(),
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={t("person")} />
       ),
@@ -98,8 +96,8 @@ const useColumns = (): ColumnDef<
         <PersonCell
           avatar={
             <EmployeeAvatar
-              firstName={row.original.membership.user?.firstName}
-              lastName={row.original.membership.user?.lastName}
+              firstName={row.original.profile?.firstName}
+              lastName={row.original.profile?.lastName}
               className="size-8"
             />
           }

@@ -28,7 +28,10 @@ export class StorageService {
   private readonly logger = new Logger(StorageService.name);
   private readonly s3?: S3Client;
   private readonly bucket?: string;
-  private readonly localRoot = path.join(process.cwd(), 'private-uploads');
+  private readonly localRoot =
+    process.env.NODE_ENV === 'test' && process.env.E2E_STORAGE_DIR
+      ? path.resolve(process.env.E2E_STORAGE_DIR)
+      : path.join(process.cwd(), 'private-uploads');
 
   constructor() {
     const bucket = process.env.S3_BUCKET;

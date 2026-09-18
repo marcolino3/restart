@@ -149,7 +149,7 @@ const MAX_QUERY_DEPTH = 12;
           // Introspection and the Apollo sandbox landing page leak the full
           // schema and an interactive query console — dev-only.
           introspection: !isProd,
-          playground: false,
+          graphiql: false,
           validationRules: [createMaxDepthRule(MAX_QUERY_DEPTH)],
           // Realtime chat runs over graphql-ws on the same /graphql endpoint.
           // Web sends the session cookie on the WS upgrade request; native
