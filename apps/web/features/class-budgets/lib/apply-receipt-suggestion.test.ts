@@ -5,6 +5,7 @@ import {
   expenseAiNeedsOwnKey,
   isExpenseAiProvider,
   isNonEuExpenseAiProvider,
+  maskApiKey,
 } from "@/features/organization-settings/expense-ai-providers";
 import type { ExpenseReceiptSuggestion } from "../types";
 import { receiptSuggestionPatch } from "./apply-receipt-suggestion";
@@ -82,8 +83,16 @@ describe("expense AI providers", () => {
   it("reuses the contract key only for the default provider", () => {
     expect(expenseAiNeedsOwnKey("contracts")).toBe(false);
     expect(expenseAiNeedsOwnKey("mistral")).toBe(true);
-    expect(defaultExpenseAiModel("contracts")).toBe("");
+    expect(defaultExpenseAiModel("contracts")).toBe("mistral-small-latest");
     expect(defaultExpenseAiModel("mistral")).toBe("mistral-small-latest");
+  });
+
+  it("shows only the last four characters of a stored key", () => {
+    expect(maskApiKey("sk-1234567890abcd")).toBe("••••••••abcd");
+    expect(maskApiKey("  sk-1234567890abcd  ")).toBe("••••••••abcd");
+    // A short value would give most of itself away.
+    expect(maskApiKey("short-key")).toBe("••••••••");
+    expect(maskApiKey("")).toBe("");
   });
 
   it("rejects unknown provider ids", () => {

@@ -3,6 +3,7 @@ import { CONTRACT_AI_SETTING_KEYS } from '@/employee-management/contract-templat
 import { OrganizationSettingsService } from '@/organization-settings/organization-settings.service';
 import {
   BadGatewayException,
+  BadRequestException,
   Injectable,
   Logger,
   NotFoundException,
@@ -11,6 +12,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClassBudgetAccessService } from './class-budget-access.service';
+import { ExpenseAiModelList } from './dto/expense-ai-model-list.object';
 import { ExpenseReceiptSuggestion } from './dto/expense-receipt-suggestion.object';
 import { ExpenseCategory } from './entities/expense-category.entity';
 import { ExpenseReceiptsService } from './expense-receipts.service';
@@ -23,9 +25,14 @@ import {
   retryDelayMs,
 } from './lib/expense-ai-errors';
 import {
+  buildExpenseAiModelsRequest,
+  parseExpenseAiModels,
+} from './lib/expense-ai-models';
+import {
   buildExpenseAiRequest,
   EXPENSE_AI_DEFAULT_MODELS,
   EXPENSE_AI_DEFAULT_PROVIDER,
+  ExpenseAiProvider,
   ExpenseAiVendor,
   isExpenseAiProvider,
   readExpenseAiText,
@@ -48,6 +55,7 @@ export const EXPENSE_AI_SETTING_KEYS = {
 } as const;
 
 const REQUEST_TIMEOUT_MS = 60_000;
+const MODELS_TIMEOUT_MS = 10_000;
 const RETRY_FALLBACK_MS = 2_000;
 const MAX_RETRY_DELAY_MS = 5_000;
 
@@ -150,6 +158,89 @@ export class ExpenseReceiptAiService {
     return suggestion;
   }
 
+  /**
+   * Models the org's stored key can use with `provider`, for the settings
+   * form. Org admins only — same rule as editing the settings. The key is
+   * only ever sent to the vendor it was stored for.
+   */
+  async listModels(
+    organizationId: string,
+    user: TokenPayload,
+    provider: string,
+  ): Promise<ExpenseAiModelList> {
+    await this.organizationSettings.assertCanManageSettings(
+      organizationId,
+      user,
+    );
+    if (!isExpenseAiProvider(provider)) {
+      throw new BadRequestException('Unknown provider');
+    }
+    const vendor: ExpenseAiVendor =
+      provider === 'contracts' ? 'mistral' : provider;
+    const apiKey = await this.keyFor(organizationId, provider);
+    if (!apiKey) {
+      return { models: [], errorCode: EXPENSE_AI_ERRORS.notConfigured };
+    }
+
+    const request = buildExpenseAiModelsRequest(vendor, apiKey);
+    let response: Response;
+    try {
+      response = await fetch(request.url, {
+        headers: request.headers,
+        signal: AbortSignal.timeout(MODELS_TIMEOUT_MS),
+      });
+    } catch (error) {
+      const name = (error as Error).name;
+      this.logger.warn(`Receipt AI models (${vendor}) not reachable: ${name}`);
+      return {
+        models: [],
+        errorCode:
+          name === 'TimeoutError' || name === 'AbortError'
+            ? EXPENSE_AI_ERRORS.timeout
+            : EXPENSE_AI_ERRORS.unreachable,
+      };
+    }
+    if (!response.ok) {
+      this.logger.warn(
+        `Receipt AI models (${vendor}) answered ${response.status}`,
+      );
+      return {
+        models: [],
+        errorCode:
+          response.status === 401 || response.status === 403
+            ? EXPENSE_AI_ERRORS.keyRejected
+            : EXPENSE_AI_ERRORS.failed,
+      };
+    }
+    let json: unknown;
+    try {
+      json = await response.json();
+    } catch {
+      return { models: [], errorCode: EXPENSE_AI_ERRORS.unusableAnswer };
+    }
+    return { models: parseExpenseAiModels(vendor, json), errorCode: null };
+  }
+
+  /**
+   * One key slot serves all vendors, so the stored key only counts for the
+   * provider it was saved with; "contracts" reads the contract AI key.
+   */
+  private async keyFor(
+    organizationId: string,
+    provider: ExpenseAiProvider,
+  ): Promise<string | null> {
+    if (provider === 'contracts') {
+      return this.setting(organizationId, CONTRACT_AI_SETTING_KEYS.apiKey);
+    }
+    const stored = await this.setting(
+      organizationId,
+      EXPENSE_AI_SETTING_KEYS.provider,
+    );
+    return stored === provider
+      ? this.setting(organizationId, EXPENSE_AI_SETTING_KEYS.apiKey)
+      : null;
+  }
+
   private async setting(
     organizationId: string,
     key: string,
@@ -182,13 +273,11 @@ export class ExpenseReceiptAiService {
     );
     if (!apiKey) return null;
 
-    // "contracts" always runs on the vision default: the contract model is a
-    // text model, and EXPENSE_AI_MODEL may still hold a model name of a
-    // previously selected vendor.
+    // Never the contract model: it is picked for text. The settings form
+    // stores EXPENSE_AI_MODEL together with the provider, so it always
+    // names a model of the active vendor.
     const model =
-      (provider === 'contracts'
-        ? null
-        : await this.setting(organizationId, EXPENSE_AI_SETTING_KEYS.model)) ??
+      (await this.setting(organizationId, EXPENSE_AI_SETTING_KEYS.model)) ??
       EXPENSE_AI_DEFAULT_MODELS[vendor];
     return { vendor, apiKey, model };
   }

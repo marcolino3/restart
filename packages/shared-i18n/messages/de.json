@@ -2582,7 +2582,21 @@
     "expenseAiNonEuTitle": "Anbieter ausserhalb der EU",
     "expenseAiNonEuText": "Belege können Personendaten enthalten (Namen, Adressen). Bei diesem Anbieter werden sie ausserhalb der EU/Schweiz verarbeitet. Nur verwenden, wenn das mit den Datenschutzvorgaben der Schule vereinbar ist.",
     "expenseAiModelHint": "Das Modell muss Bilder und PDFs lesen können.",
-    "expenseAiKeyRequired": "Bitte den API-Schlüssel dieses Anbieters eingeben. Der gespeicherte Schlüssel gehört zu einem anderen Anbieter."
+    "expenseAiKeyRequired": "Bitte den API-Schlüssel dieses Anbieters eingeben. Der gespeicherte Schlüssel gehört zu einem anderen Anbieter.",
+    "expenseAiKeyHint": "Der Key wird verschlüsselt gespeichert. Nur Organisations-Admins können ihn anzeigen.",
+    "expenseAiContractKeyHint": "Es wird der API-Key der Vertrags-KI verwendet. Ändern lässt er sich in deren Einstellungen.",
+    "aiKeyShow": "Key anzeigen",
+    "aiKeyHide": "Key verbergen",
+    "aiKeyCopy": "Key kopieren",
+    "aiKeyCopied": "Key kopiert",
+    "aiKeyRevealError": "Der Key konnte nicht geladen werden.",
+    "aiModelSelectPlaceholder": "Modell wählen…",
+    "aiModelCurrent": "{model} (aktuell)",
+    "aiModelsRefresh": "Modelle vom Anbieter laden",
+    "aiModelsLoading": "Modelle werden geladen…",
+    "aiModelsNoKey": "Zuerst den API-Key speichern, dann lassen sich die Modelle laden.",
+    "aiModelsKeyRejected": "Der Anbieter lehnt den hinterlegten API-Key ab. Die Modell-ID lässt sich von Hand eingeben.",
+    "aiModelsFailed": "Die Modelle konnten nicht geladen werden. Die Modell-ID lässt sich von Hand eingeben."
   },
   "Projects": {
     "pageTitle": "Projekte",

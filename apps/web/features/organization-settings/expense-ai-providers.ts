@@ -44,9 +44,21 @@ const EU_PROVIDERS: readonly ExpenseAiProvider[] = ["contracts", "mistral"];
 export const isExpenseAiProvider = (value: string): value is ExpenseAiProvider =>
   (EXPENSE_AI_PROVIDERS as readonly string[]).includes(value);
 
-/** Default model per provider; "contracts" has none (fixed by the backend). */
+/** Default model per provider; "contracts" runs on the Mistral key. */
 export const defaultExpenseAiModel = (provider: ExpenseAiProvider): string =>
-  provider === "contracts" ? "" : DEFAULT_MODELS[provider];
+  DEFAULT_MODELS[provider === "contracts" ? "mistral" : provider];
+
+const MASK = "••••••••";
+
+/**
+ * What the form shows of a stored key: its last four characters. Short
+ * values stay fully masked so the hint never gives most of a key away.
+ */
+export const maskApiKey = (value: string): string => {
+  const key = value.trim();
+  if (!key) return "";
+  return key.length >= 12 ? `${MASK}${key.slice(-4)}` : MASK;
+};
 
 /** Providers that need their own API key stored under EXPENSE_AI_API_KEY. */
 export const expenseAiNeedsOwnKey = (provider: ExpenseAiProvider): boolean =>

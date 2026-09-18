@@ -2582,7 +2582,21 @@
     "expenseAiNonEuTitle": "Provider outside the EU",
     "expenseAiNonEuText": "Receipts can contain personal data (names, addresses). This provider processes them outside the EU/Switzerland. Only use it if that is compatible with the school's data protection rules.",
     "expenseAiModelHint": "The model must be able to read images and PDFs.",
-    "expenseAiKeyRequired": "Please enter the API key of this provider. The stored key belongs to another provider."
+    "expenseAiKeyRequired": "Please enter the API key of this provider. The stored key belongs to another provider.",
+    "expenseAiKeyHint": "The key is stored encrypted. Only organisation admins can reveal it.",
+    "expenseAiContractKeyHint": "The API key of the contract AI is used. Change it in the contract AI settings.",
+    "aiKeyShow": "Show key",
+    "aiKeyHide": "Hide key",
+    "aiKeyCopy": "Copy key",
+    "aiKeyCopied": "Key copied",
+    "aiKeyRevealError": "The key could not be loaded.",
+    "aiModelSelectPlaceholder": "Select a model…",
+    "aiModelCurrent": "{model} (current)",
+    "aiModelsRefresh": "Load models from the provider",
+    "aiModelsLoading": "Loading models…",
+    "aiModelsNoKey": "Save the API key first, then the models can be loaded.",
+    "aiModelsKeyRejected": "The provider rejects the stored API key. You can enter the model id by hand.",
+    "aiModelsFailed": "The models could not be loaded. You can enter the model id by hand."
   },
   "Projects": {
     "pageTitle": "Projects",

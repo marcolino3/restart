@@ -1,5 +1,7 @@
 import {
   BadGatewayException,
+  BadRequestException,
+  ForbiddenException,
   Logger,
   NotFoundException,
   ServiceUnavailableException,
@@ -20,6 +22,7 @@ describe('ExpenseReceiptAiService', () => {
   let service: ExpenseReceiptAiService;
   let settings: Record<string, string>;
   let getDecryptedValue: jest.Mock;
+  let assertCanManageSettings: jest.Mock;
   let categoriesRepo: { find: jest.Mock };
   let receipts: { read: jest.Mock; mimeOf: jest.Mock };
   let access: { assertSchoolClassAccessible: jest.Mock };
@@ -47,6 +50,7 @@ describe('ExpenseReceiptAiService', () => {
     getDecryptedValue = jest.fn((orgId: string, key: string) =>
       Promise.resolve(orgId === ORG ? (settings[key] ?? null) : null),
     );
+    assertCanManageSettings = jest.fn().mockResolvedValue(undefined);
     categoriesRepo = {
       find: jest.fn().mockResolvedValue([{ id: 'cat-1', name: 'Material' }]),
     };
@@ -61,7 +65,10 @@ describe('ExpenseReceiptAiService', () => {
     global.fetch = fetchMock;
 
     service = new ExpenseReceiptAiService(
-      { getDecryptedValue } as unknown as OrganizationSettingsService,
+      {
+        getDecryptedValue,
+        assertCanManageSettings,
+      } as unknown as OrganizationSettingsService,
       categoriesRepo as unknown as Repository<ExpenseCategory>,
       receipts as unknown as ExpenseReceiptsService,
       access as unknown as ClassBudgetAccessService,
@@ -74,8 +81,6 @@ describe('ExpenseReceiptAiService', () => {
   });
 
   it('defaults to the contract Mistral key with a vision model', async () => {
-    // Left over from a previously selected vendor — must not reach Mistral.
-    settings.EXPENSE_AI_MODEL = 'gpt-5';
     fetchMock.mockReturnValue(
       mistralAnswer({
         vendor: 'Migros',
@@ -98,6 +103,95 @@ describe('ExpenseReceiptAiService', () => {
     );
     expect(JSON.parse(init.body as string)).toMatchObject({
       model: 'mistral-small-latest',
+    });
+  });
+
+  it('uses the model picked for the contract key', async () => {
+    settings.EXPENSE_AI_MODEL = 'mistral-large-latest';
+    fetchMock.mockReturnValue(mistralAnswer({ vendor: 'Migros' }));
+
+    await service.analyze(CLASS, FILE, ORG, user);
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect((init.headers as Record<string, string>).Authorization).toBe(
+      'Bearer mistral-key',
+    );
+    expect(JSON.parse(init.body as string)).toMatchObject({
+      model: 'mistral-large-latest',
+    });
+  });
+
+  describe('listModels', () => {
+    const modelList = () =>
+      answer({
+        data: [{ id: 'mistral-large-latest', capabilities: { vision: true } }],
+      });
+
+    it('is refused for a user who may not manage the org settings', async () => {
+      assertCanManageSettings.mockRejectedValue(new ForbiddenException());
+
+      await expect(
+        service.listModels(ORG, user, 'contracts'),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(assertCanManageSettings).toHaveBeenCalledWith(ORG, user);
+      expect(getDecryptedValue).not.toHaveBeenCalled();
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('rejects an unknown provider without calling anyone', async () => {
+      await expect(
+        service.listModels(ORG, user, 'https://evil.example'),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('lists the models of the contract key', async () => {
+      fetchMock.mockReturnValue(modelList());
+
+      const result = await service.listModels(ORG, user, 'contracts');
+
+      expect(result).toEqual({
+        models: [{ id: 'mistral-large-latest', displayName: null }],
+        errorCode: null,
+      });
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe('https://api.mistral.ai/v1/models');
+      expect((init.headers as Record<string, string>).Authorization).toBe(
+        'Bearer mistral-key',
+      );
+    });
+
+    it('never sends the stored key to another vendor', async () => {
+      settings.EXPENSE_AI_PROVIDER = 'openai';
+      settings.EXPENSE_AI_API_KEY = 'openai-key';
+
+      const result = await service.listModels(ORG, user, 'anthropic');
+
+      expect(result).toEqual({
+        models: [],
+        errorCode: 'EXPENSE_AI_NOT_CONFIGURED',
+      });
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('reads the key of the given organization only', async () => {
+      const result = await service.listModels('other-org', user, 'contracts');
+
+      expect(result.errorCode).toBe('EXPENSE_AI_NOT_CONFIGURED');
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('reports a rejected key and an unreachable provider as codes', async () => {
+      jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+      fetchMock.mockReturnValueOnce(answer({}, 401));
+      expect((await service.listModels(ORG, user, 'contracts')).errorCode).toBe(
+        'EXPENSE_AI_KEY_REJECTED',
+      );
+
+      fetchMock.mockRejectedValueOnce(new TypeError('fetch failed'));
+      expect((await service.listModels(ORG, user, 'contracts')).errorCode).toBe(
+        'EXPENSE_AI_UNREACHABLE',
+      );
     });
   });
 

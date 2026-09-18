@@ -48,6 +48,7 @@ const MATRIX: [ResolverClass, Record<string, string>][] = [
     ExpenseReceiptAiResolver,
     {
       isConfigured: 'CLASS_EXPENSE_READ',
+      models: 'CLASS_BUDGET_MANAGE',
       analyzeExpenseReceipt: 'CLASS_EXPENSE_WRITE',
     },
   ],

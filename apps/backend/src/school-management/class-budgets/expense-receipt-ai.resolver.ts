@@ -7,6 +7,7 @@ import { Permissions } from '@/auth/decorators/permissions.decorator';
 import { CurrentOrgId } from '@/auth/decorators/current-org-id.decorator';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
+import { ExpenseAiModelList } from './dto/expense-ai-model-list.object';
 import { ExpenseReceiptSuggestion } from './dto/expense-receipt-suggestion.object';
 import { ExpenseReceiptAiService } from './expense-receipt-ai.service';
 
@@ -20,6 +21,22 @@ export class ExpenseReceiptAiResolver {
   @Permissions('CLASS_EXPENSE_READ')
   isConfigured(@CurrentOrgId() orgId: string) {
     return this.aiService.isConfigured(orgId);
+  }
+
+  /**
+   * Models the stored key can use, for the settings form. The service
+   * restricts it to org admins (the rule of the org settings); throttled
+   * because every call reaches the external provider.
+   */
+  @Query(() => ExpenseAiModelList, { name: 'expenseAiModels' })
+  @Permissions('CLASS_BUDGET_MANAGE')
+  @Throttle({ long: { ttl: 60_000, limit: 20 } })
+  models(
+    @Args('provider') provider: string,
+    @CurrentOrgId() orgId: string,
+    @CurrentUser() user: TokenPayload,
+  ) {
+    return this.aiService.listModels(orgId, user, provider);
   }
 
   /**

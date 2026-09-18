@@ -177,6 +177,7 @@ type Documents = {
     "\n  query GetGradeLevels {\n    gradeLevelsByOrgId {\n      id\n      name\n      parentId\n      curriculumLevelId\n      color\n      shortCode\n      ageMin\n      ageMax\n      sortOrder\n      classCount\n      studentCount\n    }\n  }\n": typeof types.GetGradeLevelsDocument,
     "\n  mutation ReorderGradeLevels($input: ReorderGradeLevelsInput!) {\n    reorderGradeLevels(input: $input) {\n      id\n      name\n      parentId\n      sortOrder\n    }\n  }\n": typeof types.ReorderGradeLevelsDocument,
     "\n  mutation UpdateGradeLevel($input: UpdateGradeLevelInput!) {\n    updateGradeLevel(input: $input) {\n      id\n      name\n      parentId\n      curriculumLevelId\n      color\n      shortCode\n      ageMin\n      ageMax\n      sortOrder\n    }\n  }\n": typeof types.UpdateGradeLevelDocument,
+    "\n  query ExpenseAiModels($provider: String!) {\n    expenseAiModels(provider: $provider) {\n      models {\n        id\n        displayName\n      }\n      errorCode\n    }\n  }\n": typeof types.ExpenseAiModelsDocument,
     "\n  mutation CreateOrganizationSetting($input: CreateOrganizationSettingInput!) {\n    createOrganizationSetting(input: $input) {\n      id\n      key\n      description\n      hasValue\n    }\n  }\n": typeof types.CreateOrganizationSettingDocument,
     "\n  mutation DeleteOrganizationSetting($organizationId: ID!, $key: String!) {\n    deleteOrganizationSetting(organizationId: $organizationId, key: $key)\n  }\n": typeof types.DeleteOrganizationSettingDocument,
     "\n  query GetOrganizationSetting($organizationId: ID!, $key: String!, $decrypt: Boolean!) {\n    organizationSetting(organizationId: $organizationId, key: $key, decrypt: $decrypt) {\n      id\n      organizationId\n      key\n      description\n      hasValue\n      value\n      version\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.GetOrganizationSettingDocument,
@@ -537,6 +538,7 @@ const documents: Documents = {
     "\n  query GetGradeLevels {\n    gradeLevelsByOrgId {\n      id\n      name\n      parentId\n      curriculumLevelId\n      color\n      shortCode\n      ageMin\n      ageMax\n      sortOrder\n      classCount\n      studentCount\n    }\n  }\n": types.GetGradeLevelsDocument,
     "\n  mutation ReorderGradeLevels($input: ReorderGradeLevelsInput!) {\n    reorderGradeLevels(input: $input) {\n      id\n      name\n      parentId\n      sortOrder\n    }\n  }\n": types.ReorderGradeLevelsDocument,
     "\n  mutation UpdateGradeLevel($input: UpdateGradeLevelInput!) {\n    updateGradeLevel(input: $input) {\n      id\n      name\n      parentId\n      curriculumLevelId\n      color\n      shortCode\n      ageMin\n      ageMax\n      sortOrder\n    }\n  }\n": types.UpdateGradeLevelDocument,
+    "\n  query ExpenseAiModels($provider: String!) {\n    expenseAiModels(provider: $provider) {\n      models {\n        id\n        displayName\n      }\n      errorCode\n    }\n  }\n": types.ExpenseAiModelsDocument,
     "\n  mutation CreateOrganizationSetting($input: CreateOrganizationSettingInput!) {\n    createOrganizationSetting(input: $input) {\n      id\n      key\n      description\n      hasValue\n    }\n  }\n": types.CreateOrganizationSettingDocument,
     "\n  mutation DeleteOrganizationSetting($organizationId: ID!, $key: String!) {\n    deleteOrganizationSetting(organizationId: $organizationId, key: $key)\n  }\n": types.DeleteOrganizationSettingDocument,
     "\n  query GetOrganizationSetting($organizationId: ID!, $key: String!, $decrypt: Boolean!) {\n    organizationSetting(organizationId: $organizationId, key: $key, decrypt: $decrypt) {\n      id\n      organizationId\n      key\n      description\n      hasValue\n      value\n      version\n      createdAt\n      updatedAt\n    }\n  }\n": types.GetOrganizationSettingDocument,
@@ -1400,6 +1402,10 @@ export function graphql(source: "\n  mutation ReorderGradeLevels($input: Reorder
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation UpdateGradeLevel($input: UpdateGradeLevelInput!) {\n    updateGradeLevel(input: $input) {\n      id\n      name\n      parentId\n      curriculumLevelId\n      color\n      shortCode\n      ageMin\n      ageMax\n      sortOrder\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateGradeLevel($input: UpdateGradeLevelInput!) {\n    updateGradeLevel(input: $input) {\n      id\n      name\n      parentId\n      curriculumLevelId\n      color\n      shortCode\n      ageMin\n      ageMax\n      sortOrder\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query ExpenseAiModels($provider: String!) {\n    expenseAiModels(provider: $provider) {\n      models {\n        id\n        displayName\n      }\n      errorCode\n    }\n  }\n"): (typeof documents)["\n  query ExpenseAiModels($provider: String!) {\n    expenseAiModels(provider: $provider) {\n      models {\n        id\n        displayName\n      }\n      errorCode\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

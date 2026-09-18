@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { graphql } from "@restart/shared-types";
+import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-client";
 import { getOrganizationSettingsAction } from "@/features/organization-settings/actions/get-settings.action";
 import { getOrganizationSettingValueAction } from "@/features/organization-settings/actions/get-setting-value.action";
 import { createOrganizationSettingAction } from "@/features/organization-settings/actions/create-setting.action";
@@ -18,10 +20,23 @@ import {
   EXPENSE_AI_KEY_REQUIRED,
   EXPENSE_AI_SETTING_KEYS,
   isExpenseAiProvider,
+  maskApiKey,
   type ExpenseAiProvider,
 } from "../expense-ai-providers";
 
 const SETTINGS_PATH = "/admin/settings/ai";
+
+const ExpenseAiModelsDocument = graphql(`
+  query ExpenseAiModels($provider: String!) {
+    expenseAiModels(provider: $provider) {
+      models {
+        id
+        displayName
+      }
+      errorCode
+    }
+  }
+`);
 
 // Keys must match CONTRACT_AI_SETTING_KEYS in the backend ContractAiService.
 const KEYS = {
@@ -41,8 +56,18 @@ export interface ShiftAiSettings {
 export interface ExpenseAiSettings {
   provider: ExpenseAiProvider;
   model: string;
-  /** Whether an own API key is stored (the value itself is never returned). */
+  /** Whether an own API key is stored. */
   apiKeySet: boolean;
+  /** Masked end of the own key; the key itself only leaves on reveal. */
+  apiKeyHint: string;
+  /** The contract AI key the "contracts" provider runs on. */
+  contractKeySet: boolean;
+  contractKeyHint: string;
+}
+
+export interface ExpenseAiModelOption {
+  id: string;
+  displayName?: string | null;
 }
 
 export interface AiSettings {
@@ -107,6 +132,15 @@ export async function getAiSettingsAction(
           provider: expenseProvider,
           model: expenseModel || defaultExpenseAiModel(expenseProvider),
           apiKeySet: have.has(EXPENSE_AI_SETTING_KEYS.apiKey),
+          apiKeyHint: have.has(EXPENSE_AI_SETTING_KEYS.apiKey)
+            ? maskApiKey(
+                await readValue(organizationId, EXPENSE_AI_SETTING_KEYS.apiKey),
+              )
+            : "",
+          contractKeySet: have.has(KEYS.apiKey),
+          contractKeyHint: have.has(KEYS.apiKey)
+            ? maskApiKey(await readValue(organizationId, KEYS.apiKey))
+            : "",
         },
       },
     };
@@ -247,12 +281,12 @@ export async function saveExpenseAiSettingsAction(
     }
 
     await upsert(EXPENSE_AI_SETTING_KEYS.provider, input.provider);
-    if (input.provider !== "contracts") {
-      await upsert(
-        EXPENSE_AI_SETTING_KEYS.model,
-        input.model.trim() || defaultExpenseAiModel(input.provider),
-      );
-    }
+    // Always written, also for "contracts": the backend reads this model for
+    // every provider, so it must never keep a model of the previous vendor.
+    await upsert(
+      EXPENSE_AI_SETTING_KEYS.model,
+      input.model.trim() || defaultExpenseAiModel(input.provider),
+    );
     // Only touch the key when the user actually entered a new one.
     if (input.apiKey && input.apiKey.trim().length > 0) {
       await upsert(EXPENSE_AI_SETTING_KEYS.apiKey, input.apiKey.trim());
@@ -266,5 +300,63 @@ export async function saveExpenseAiSettingsAction(
       success: false,
       error: error instanceof Error ? error.message : "Save failed",
     };
+  }
+}
+
+/**
+ * Full stored key for the eye and copy buttons. The backend only decrypts
+ * for an admin of `organizationId`; the key of another vendor is never
+ * returned for `provider`.
+ */
+export async function revealExpenseAiKeyAction(
+  organizationId: string,
+  provider: ExpenseAiProvider,
+): Promise<{ success: true; value: string } | { success: false }> {
+  try {
+    if (!isExpenseAiProvider(provider)) return { success: false };
+    if (provider !== "contracts") {
+      const storedProvider = await readValue(
+        organizationId,
+        EXPENSE_AI_SETTING_KEYS.provider,
+      );
+      if (storedProvider !== provider) return { success: false };
+    }
+    const value = await readValue(
+      organizationId,
+      provider === "contracts" ? KEYS.apiKey : EXPENSE_AI_SETTING_KEYS.apiKey,
+    );
+    return value ? { success: true, value } : { success: false };
+  } catch (error) {
+    console.error(error);
+    return { success: false };
+  }
+}
+
+/** Models the stored key of the active organization can use. */
+export async function getExpenseAiModelsAction(
+  provider: ExpenseAiProvider,
+): Promise<
+  | {
+      success: true;
+      data: { models: ExpenseAiModelOption[]; errorCode: string | null };
+    }
+  | { success: false }
+> {
+  try {
+    if (!isExpenseAiProvider(provider)) return { success: false };
+    const client = await serverCookieGqlClient();
+    const { expenseAiModels } = await client.request(ExpenseAiModelsDocument, {
+      provider,
+    });
+    return {
+      success: true,
+      data: {
+        models: expenseAiModels.models,
+        errorCode: expenseAiModels.errorCode ?? null,
+      },
+    };
+  } catch (error) {
+    console.error(error);
+    return { success: false };
   }
 }
