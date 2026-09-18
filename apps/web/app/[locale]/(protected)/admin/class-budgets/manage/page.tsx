@@ -8,6 +8,8 @@ import {
   AdminClassBudgetsTable,
   type AdminBudgetRow,
 } from "@/features/class-budgets/components/AdminClassBudgetsTable";
+import { BudgetEvaluation } from "@/features/class-budgets/components/BudgetEvaluation";
+import { combineSummaries } from "@/features/class-budgets/lib/combine-summaries";
 import { userHasPermission } from "@/features/class-budgets/lib/permissions";
 import {
   budgetPlanningYears,
@@ -68,11 +70,16 @@ const ManageClassBudgetsPage = async ({ searchParams }: Props) => {
     };
   });
 
+  const total = combineSummaries(
+    summaries.flatMap((summary) => (summary.success ? [summary.data] : [])),
+  );
+
   return (
     <AdminClassBudgetsTable
       rows={rows}
       yearOptions={yearOptions}
       selectedStartYear={selected.startYear}
+      evaluation={total && <BudgetEvaluation summary={total} />}
     />
   );
 };

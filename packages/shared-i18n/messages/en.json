@@ -4308,7 +4308,8 @@
     "aiErrorNoAllowance": "The stored API key has no request allowance at the AI provider (limit 0). Waiting does not help: an admin has to check plan and billing of the provider account, or set another provider under Settings > AI.",
     "receiptDropTitle": "Drop the receipt here or click",
     "receiptPreviewError": "The preview could not be loaded. Open the receipt via \"View receipt\".",
-    "expenseNotFound": "This expense was not found or cannot be edited."
+    "expenseNotFound": "This expense was not found or cannot be edited.",
+    "evaluationTitle": "Evaluation of all classes {label}"
   },
   "ExpenseCategories": {
     "noAccess": "You do not have permission for this area.",

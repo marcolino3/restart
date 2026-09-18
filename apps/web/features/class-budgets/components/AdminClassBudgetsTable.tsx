@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -45,12 +45,15 @@ interface Props {
   rows: AdminBudgetRow[];
   yearOptions: { startYear: number; label: string }[];
   selectedStartYear: number;
+  /** Evaluation of the selected year, shown between year choice and table. */
+  evaluation?: ReactNode;
 }
 
 export function AdminClassBudgetsTable({
   rows,
   yearOptions,
   selectedStartYear,
+  evaluation,
 }: Props) {
   const t = useTranslations("ClassBudgets");
   const locale = useLocale();
@@ -104,6 +107,7 @@ export function AdminClassBudgetsTable({
           {t("copyFromPreviousYear")}
         </Button>
       </div>
+      {evaluation}
       <p className="text-sm text-muted-foreground">{t("copyHint")}</p>
 
       <TableCard>

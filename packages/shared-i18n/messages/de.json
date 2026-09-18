@@ -4308,7 +4308,8 @@
     "aiErrorNoAllowance": "Der hinterlegte API-Key hat beim KI-Anbieter kein Anfragekontingent (Limit 0). Warten hilft nicht: Ein Admin muss Tarif und Abrechnung des Anbieter-Kontos prüfen oder unter Einstellungen > KI einen anderen Anbieter hinterlegen.",
     "receiptDropTitle": "Beleg hierher ziehen oder klicken",
     "receiptPreviewError": "Die Vorschau konnte nicht geladen werden. Der Beleg lässt sich über «Beleg anzeigen» öffnen.",
-    "expenseNotFound": "Diese Ausgabe wurde nicht gefunden oder kann nicht bearbeitet werden."
+    "expenseNotFound": "Diese Ausgabe wurde nicht gefunden oder kann nicht bearbeitet werden.",
+    "evaluationTitle": "Auswertung aller Klassen {label}"
   },
   "ExpenseCategories": {
     "noAccess": "Für diesen Bereich fehlt die Berechtigung.",

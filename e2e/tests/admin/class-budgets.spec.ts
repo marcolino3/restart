@@ -298,6 +298,11 @@ test.describe('Class budgets', () => {
     await page.goto('/en/admin/class-budgets/manage', { waitUntil: 'networkidle' })
     const input = page.getByLabel(`Budget for ${schoolClass.name}`)
     await expect(input).toBeVisible({ timeout: 15000 })
+    // The evaluation over all classes sits above the planning table.
+    await expect(page.getByTestId('budget-evaluation')).toBeVisible()
+    await expect(
+      page.getByTestId('budget-evaluation').getByText('Breakdown by category'),
+    ).toBeVisible()
     await input.fill("1'250.00")
     await input.blur()
     await expect(page.getByText('Budget saved.')).toBeVisible({ timeout: 15000 })
