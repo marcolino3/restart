@@ -312,7 +312,7 @@ export async function uploadAttachment(
       credentials: authCredentials,
       headers: {
         "apollo-require-preflight": "true",
-        ...authHeaders(),
+        ...(await authHeaders()),
       },
       body: form,
     },

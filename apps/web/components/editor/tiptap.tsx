@@ -46,6 +46,8 @@ const Tiptap = ({ description, onChange, className, a4, compact }: TiptapProps) 
     extensions: [
       StarterKit.configure({
         heading: { levels: [2] },
+        link: false,
+        underline: false,
       }),
       Link.configure({
         openOnClick: false,
@@ -80,13 +82,14 @@ const Tiptap = ({ description, onChange, className, a4, compact }: TiptapProps) 
       onChange(editor.getHTML());
     },
     immediatelyRender: false,
+    shouldRerenderOnTransaction: true,
   });
 
   // Keep the editor in sync when the value is set externally (e.g. a template
   // preview prefilling the body).
   useEffect(() => {
     if (editor && description !== editor.getHTML()) {
-      editor.commands.setContent(description ?? "", false);
+      editor.commands.setContent(description ?? "", { emitUpdate: false });
     }
   }, [description, editor]);
 

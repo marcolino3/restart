@@ -31,6 +31,9 @@ export const fieldPermissionMiddleware = async (
   ctx: MiddlewareContext,
   next: NextFn,
 ) => {
+  // Without resolver metadata, field-level authorization cannot be evaluated.
+  if (!ctx.info) return null;
+
   const parentTypeName = ctx.info.parentType.name;
   const fieldName = ctx.info.fieldName;
   const resource = resourceNameFromGraphQLType(parentTypeName);

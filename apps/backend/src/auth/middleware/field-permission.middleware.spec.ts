@@ -1,3 +1,4 @@
+import type { MiddlewareContext } from '@nestjs/graphql';
 import { fieldPermissionMiddleware } from './field-permission.middleware';
 
 describe('employee and global account field boundaries', () => {
@@ -118,5 +119,14 @@ describe('employee and global account field boundaries', () => {
         },
       ),
     ).toBe('private value');
+  });
+});
+
+describe('fieldPermissionMiddleware resolver metadata', () => {
+  it.each([undefined, null])('denies access when info is %s', async (info) => {
+    const next = jest.fn();
+    const context = { info } as MiddlewareContext;
+    await expect(fieldPermissionMiddleware(context, next)).resolves.toBeNull();
+    expect(next).not.toHaveBeenCalled();
   });
 });
