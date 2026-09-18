@@ -8,6 +8,7 @@ import {
   AdminClassBudgetsTable,
   type AdminBudgetRow,
 } from "@/features/class-budgets/components/AdminClassBudgetsTable";
+import { userHasPermission } from "@/features/class-budgets/lib/permissions";
 import {
   budgetPlanningYears,
   pickSchoolYear,
@@ -31,7 +32,7 @@ const ManageClassBudgetsPage = async ({ searchParams }: Props) => {
   const userRes = await getCurrentUserAction();
 
   if (!userRes?.data?.orgId) return <Notice text={t("selectOrganizationFirst")} />;
-  if (!userRes.data.permissions.includes("CLASS_BUDGET_MANAGE")) {
+  if (!userHasPermission(userRes.data, "CLASS_BUDGET_MANAGE")) {
     return <Notice text={t("noAccess")} />;
   }
 

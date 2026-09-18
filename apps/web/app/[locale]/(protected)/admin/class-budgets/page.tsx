@@ -8,6 +8,7 @@ import { getClassExpensesAction } from "@/features/class-budgets/actions/class-e
 import { getExpenseAiConfiguredAction } from "@/features/class-budgets/actions/expense-receipt-ai-actions";
 import { getExpenseCategoriesAction } from "@/features/class-budgets/actions/expense-categories-actions";
 import { ClassBudgetsOverview } from "@/features/class-budgets/components/ClassBudgetsOverview";
+import { userHasPermission } from "@/features/class-budgets/lib/permissions";
 import {
   defaultExpenseDateFor,
   pickSchoolYear,
@@ -33,10 +34,9 @@ const ClassBudgetsPage = async ({ searchParams }: Props) => {
   const t = await getTranslations("ClassBudgets");
   const { classId, year, categoryId } = await searchParams;
   const userRes = await getCurrentUserAction();
-  const permissions = userRes?.data?.permissions ?? [];
 
   if (!userRes?.data?.orgId) return <Notice text={t("selectOrganizationFirst")} />;
-  if (!permissions.includes("CLASS_EXPENSE_READ")) {
+  if (!userHasPermission(userRes.data, "CLASS_EXPENSE_READ")) {
     return <Notice text={t("noAccess")} />;
   }
 
@@ -60,7 +60,7 @@ const ClassBudgetsPage = async ({ searchParams }: Props) => {
   const selectedCategoryId =
     categories.find((c) => c.id === categoryId)?.id ?? null;
 
-  const canWrite = permissions.includes("CLASS_EXPENSE_WRITE");
+  const canWrite = userHasPermission(userRes.data, "CLASS_EXPENSE_WRITE");
   const [summaryRes, expensesRes, aiConfigured] = await Promise.all([
     getClassBudgetSummaryAction(selectedClass.id, selectedYear.startYear),
     getClassExpensesAction({

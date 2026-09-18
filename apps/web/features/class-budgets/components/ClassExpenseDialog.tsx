@@ -231,7 +231,9 @@ export function ClassExpenseDialog({
                   label="amount"
                   namespace={NAMESPACE}
                   min={0.01}
-                  step={0.05}
+                  // Must divide every valid amount from `min` on, otherwise the
+                  // browser's native step validation silently blocks the submit.
+                  step={0.01}
                 />
               </div>
               <SelectFormField

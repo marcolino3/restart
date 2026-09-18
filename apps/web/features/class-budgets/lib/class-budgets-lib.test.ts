@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { BudgetSchoolYear } from "../types";
 import { formatMoney, spentPercent } from "./format-money";
+import { userHasPermission } from "./permissions";
 import { RECEIPT_MAX_BYTES, receiptUrl, rejectReceipt } from "./receipts";
 import {
   budgetPlanningYears,
@@ -73,5 +74,19 @@ describe("receipt helpers", () => {
     expect(receiptUrl("class-1", "file.pdf")).toBe(
       "/api/expense-receipts/file.pdf?schoolClassId=class-1",
     );
+  });
+});
+
+describe("userHasPermission", () => {
+  it("lets a SuperAdmin pass without the code, like the client hook", () => {
+    expect(
+      userHasPermission({ isSuperAdmin: true, permissions: [] }, "X"),
+    ).toBe(true);
+  });
+
+  it("requires the code for everyone else", () => {
+    expect(userHasPermission({ permissions: ["X"] }, "X")).toBe(true);
+    expect(userHasPermission({ permissions: ["Y"] }, "X")).toBe(false);
+    expect(userHasPermission(undefined, "X")).toBe(false);
   });
 });
