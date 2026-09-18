@@ -14,6 +14,12 @@ export const ROUTES = {
     employeesCreate: (locale: string) => `/${locale}/admin/employees/edit`,
     employeesEdit: (locale: string, id: string) =>
       `/${locale}/admin/employees/edit/${id}`,
+    employeesContractTemplates: (locale: string) =>
+      `/${locale}/admin/employees/contract-templates`,
+    employeesContractTemplateCreate: (locale: string) =>
+      `/${locale}/admin/employees/contract-templates/edit`,
+    employeesContractTemplateEdit: (locale: string, id: string) =>
+      `/${locale}/admin/employees/contract-templates/edit/${id}`,
     employeesContractCreate: (locale: string, employeeId: string) =>
       `/${locale}/admin/employees/${employeeId}/contracts/edit`,
     employeesContractEdit: (

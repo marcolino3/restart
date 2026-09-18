@@ -25,6 +25,9 @@ function makeEmployee(
   return {
     id: "emp-1",
     status: "ACTIVE",
+    version: 1,
+    accountLinkStatus: "LEGACY",
+    profile: { firstName: "Ada", lastName: "Lovelace", email: "ada@school.ch" },
     timeTrackingEnabled: true,
     membership: {
       id: "mem-1",
@@ -65,6 +68,26 @@ function makeContract(
 }
 
 describe("mapEmployeeToOnboardingForm", () => {
+  it('uses the organization profile and explicitly selected login address instead of global account fields', () => {
+    const employee = makeEmployee();
+    employee.profile = { title:'Dr.',firstName:'Local',lastName:'Person',email:'contact@example.test',dateOfBirth:'2000-02-29',socialSecurityNumber:'local-ssn',privateEmail:'private@example.test',street:'Local Street',houseNumber:'2',addressLine2:'Floor 1',postalCode:'8000',city:'Zürich',country:'CH',avatarUrl:'/local.webp',language:'en' };
+    employee.membership.userEmail = { email:'selected-login@example.test' } as never;
+    employee.membership.language = null;
+    employee.membership.contactPhone = '+41 1';
+    employee.membership.contactPhone2 = '+41 2';
+    const form = mapEmployeeToOnboardingForm({ employee,contracts:[],locale:'en',teamId:'team' });
+    expect(form).toMatchObject({ ...employee.profile,loginEmail:'selected-login@example.test',contactPhone:'+41 1',contactPhone2:'+41 2',teamId:'team' });
+    expect(form.firstName).not.toBe(employee.membership.user?.firstName);
+  });
+  it('does not refill an empty organization profile from the linked global account', () => {
+    const employee = makeEmployee({ profile:{},timeTrackingEnabled:false });
+    employee.membership.language = null;
+    employee.membership.roles = [];
+    const form = mapEmployeeToOnboardingForm({ employee,contracts:[],locale:'en',orgCountry:'CH' });
+    expect(form).toMatchObject({ firstName:'',lastName:'',email:'',dateOfBirth:null,privateEmail:'',country:'CH',language:'en',timeTrackingEnabled:false });
+    expect(form.roleId).toBeUndefined();
+    expect(form.loginEmail).toBeUndefined();
+  });
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-08-03T12:00:00.000Z"));

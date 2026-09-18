@@ -20,7 +20,7 @@ export const gqlClient = new GraphQLClient(`${API_BASE_URL}/graphql`, {
   // auth-headers.ts / auth-headers.web.ts for why each side needs the other's
   // opposite.
   credentials: authCredentials,
-  requestMiddleware: (request) => {
+  requestMiddleware: async (request) => {
     // request.headers is a Headers instance in graphql-request 7; spreading it
     // yields {}, so copy it explicitly before adding ours.
     const base: Record<string, string> = {};
@@ -39,7 +39,7 @@ export const gqlClient = new GraphQLClient(`${API_BASE_URL}/graphql`, {
         // header; send both.
         "content-type": "application/json",
         "apollo-require-preflight": "true",
-        ...authHeaders(),
+        ...(await authHeaders()),
         ...(activeOrgId
           ? { [ACTIVE_ORG_COOKIE.toLowerCase()]: activeOrgId }
           : {}),

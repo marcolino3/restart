@@ -62,15 +62,9 @@ test.describe('Employee onboarding — wizard happy path', () => {
     // Calendar day cell — accessible name may be just "15" or a full date, so
     // match by substring (non-exact) and take the first (outside-month days can
     // repeat the number).
-    await page.getByRole('gridcell', { name: '15' }).first().click()
+    await page.locator('[data-day]').filter({ hasText: /^15$/ }).first().click()
 
-    // The wizard auto-saves the draft on a 1500ms debounce. Clicking "next"
-    // before that save lands races it: the entry date never reaches the
-    // contract row, and finalize later rejects the draft for a missing start
-    // date. Wait for the explicit "Draft saved" indicator instead.
-    await expect(page.getByText(/draft saved/i).first()).toBeVisible({
-      timeout: 15000,
-    })
+    // Advancing must persist the latest values without waiting for debounce.
     await page.getByRole('button', { name: /^next$/i }).click()
 
     // Step 3 (Roles & access) becomes active once the entry date is set.
@@ -81,7 +75,8 @@ test.describe('Employee onboarding — wizard happy path', () => {
     // finalize stays on /edit without a roleId.
     const employeeRole = page
       .getByRole('main')
-      .getByRole('radio', { name: /^employee\b/i })
+      .getByRole('radio')
+      .filter({ has: page.getByText('Employee', { exact: true }) })
     await expect(employeeRole).toBeVisible({ timeout: 15000 })
 
     // --- Step 3: Roles --------------------------------------------------
@@ -90,7 +85,7 @@ test.describe('Employee onboarding — wizard happy path', () => {
 
     await page.getByRole('button', { name: /create & send invitation/i }).click()
 
-    // Back on the list; the new employee (draft or active) is visible.
+    // Returning to the list is only successful when finalization persisted.
     await expect(page).toHaveURL(/\/admin\/employees(\?|$)/, { timeout: 20000 })
     // The wizard routes back before `revalidatePath` has refreshed the cached
     // list, so the first render can still be the stale one. Search for the new
@@ -100,6 +95,16 @@ test.describe('Employee onboarding — wizard happy path', () => {
     await expect(page.getByText(new RegExp(`Wizard ${stamp}`))).toBeVisible({
       timeout: 15000,
     })
+    const response = await page.request.post(`${process.env.BACKEND_URL}/graphql`, { data:{ query:'{ employeesByOrgId { status invitationStatus profile { firstName lastName email } membership { isActive userId roles { id } } } }' } })
+    const persisted = await response.json()
+    expect(persisted.errors).toBeUndefined()
+    const employee = persisted.data.employeesByOrgId.find((item: { profile:{ email:string } }) => item.profile.email === email)
+    expect(employee.status).toBe('ACTIVE')
+    expect(employee.invitationStatus).toBe('SENT')
+    expect(employee.profile).toEqual({ firstName:'E2E',lastName:`Wizard ${stamp}`,email })
+    expect(employee.membership.userId).toBeNull()
+    expect(employee.membership.isActive).toBe(false)
+    expect(employee.membership.roles.length).toBeGreaterThan(0)
   })
 
   /**

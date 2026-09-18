@@ -1,15 +1,16 @@
-import { auth } from '@/lib/auth';
+import { mailer } from '@/lib/mailer';
+import { EmployeeAccountInvitation } from './entities/employee-account-invitation.entity';
+import { Organization } from '@/organizations/entities/organization.entity';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { randomBytes } from 'crypto';
+import { randomBytes, createHash } from 'crypto';
 import { EntityManager, LessThanOrEqual } from 'typeorm';
 import { Employee, EmployeeInvitationStatus } from './entities/employee.entity';
 
 /**
- * Sends the first-login invitation for a newly onboarded employee using
- * better-auth's password-reset primitive (see auth.ts sendResetPassword). The
- * employee sets their own password on /onboarding/set-password.
+ * Sends a purpose-bound invitation, accepted explicitly by the signed-in
+ * account owner. Creating an invitation never creates or resets an account.
  *
  * Callable from three places (see plan): the finalize resolver (immediate),
  * the nightly cron (scheduled for the entry date) and a manual admin mutation.
@@ -23,7 +24,7 @@ export class EmployeeInvitationService {
     private readonly entityManager: EntityManager,
   ) {}
 
-  /** Web base URL for the set-password redirect (first trusted origin). */
+  /** Web base URL for the explicit account-link confirmation. */
   private webBaseUrl(): string {
     const first = (process.env.ALLOWED_ORIGINS ?? '')
       .split(',')
@@ -33,56 +34,51 @@ export class EmployeeInvitationService {
   }
 
   /**
-   * Send the invitation now: ensure a better-auth credential user exists, then
-   * trigger the reset-password e-mail and mark the employee as invited.
-   * Idempotent enough for the cron — re-sending just issues a fresh link.
+   * Send a fresh purpose-bound link and revoke the previous token. Account
+   * creation and membership activation happen only during acceptance.
    */
   async sendInvite(
     employeeId: string,
     organizationId: string,
     manager: EntityManager = this.entityManager,
   ): Promise<void> {
+    if (!manager.queryRunner?.isTransactionActive) {
+      return manager.transaction((transaction) =>
+        this.sendInvite(employeeId, organizationId, transaction),
+      );
+    }
+    await manager.findOneOrFail(Organization, {
+      where: { id: organizationId },
+      lock: { mode: 'pessimistic_write' },
+    });
     const employee = await manager.findOne(Employee, {
-      where: { id: employeeId },
-      relations: { membership: { user: true, userEmail: true } },
+      where: { id: employeeId, organizationId },
+      lock: { mode: 'pessimistic_write' },
     });
-    if (!employee || employee.membership?.organizationId !== organizationId) {
-      throw new NotFoundException('Employee not found');
-    }
-
-    const email = employee.membership.userEmail?.email?.toLowerCase().trim();
-    if (!email) {
-      throw new NotFoundException('Employee has no e-mail address');
-    }
-    const user = employee.membership.user;
-    const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ');
-
-    // 1) Ensure a better-auth credential account exists (login authenticates
-    //    against better-auth's own `user`/`account` tables, not user_emails).
-    //    Mirrors super-admin-bootstrap.service.ts.
-    const existing: Array<{ id: string }> = await manager.query(
-      `SELECT id FROM "user" WHERE LOWER(email) = $1 LIMIT 1`,
-      [email],
+    if (!employee) throw new NotFoundException('Employee not found');
+    const email = employee.profile.email?.trim().toLowerCase();
+    if (!email) throw new NotFoundException('Employee has no invitation email');
+    if (employee.accountLinkStatus !== 'UNLINKED') return;
+    const organization = await manager.findOneOrFail(Organization, {
+      where: { id: organizationId },
+    });
+    const token = randomBytes(32).toString('hex');
+    await manager.delete(EmployeeAccountInvitation, {
+      employeeId,
+      organizationId,
+    });
+    await manager.save(EmployeeAccountInvitation, {
+      employeeId,
+      organizationId,
+      email,
+      tokenHash: createHash('sha256').update(token).digest('hex'),
+      expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
+    });
+    await mailer.sendEmployeeInvitation(
+      email,
+      `${this.webBaseUrl()}/onboarding/accept-employee?token=${token}`,
+      organization.name ?? 'Restart',
     );
-    if (existing.length === 0) {
-      await auth.api.signUpEmail({
-        body: {
-          name: name || email,
-          email,
-          // Random throwaway password — the employee sets their own via the
-          // reset link below. 32 hex chars satisfies better-auth's min length.
-          password: randomBytes(16).toString('hex'),
-        },
-      });
-    }
-
-    // 2) Trigger the reset-password e-mail (sendResetPassword callback).
-    await auth.api.requestPasswordReset({
-      body: {
-        email,
-        redirectTo: `${this.webBaseUrl()}/onboarding/set-password`,
-      },
-    });
 
     // 3) Mark as invited.
     await manager.update(
@@ -129,7 +125,7 @@ export class EmployeeInvitationService {
     });
     for (const employee of due) {
       try {
-        await this.sendInvite(employee.id, employee.membership.organizationId);
+        await this.sendInvite(employee.id, employee.organizationId);
       } catch (err) {
         this.logger.error(
           `Scheduled invitation failed for employee ${employee.id}: ${(err as Error).message}`,

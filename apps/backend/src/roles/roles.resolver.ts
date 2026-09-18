@@ -51,7 +51,12 @@ export class RolesResolver {
     @CurrentOrgId() orgId: string,
     @CurrentUser() user: TokenPayload,
   ) {
-    return this.rolesService.createRole(orgId, input, user.permissions ?? []);
+    return this.rolesService.createRole(
+      orgId,
+      input,
+      user.permissions ?? [],
+      user,
+    );
   }
 
   @Mutation(() => Role)
@@ -66,6 +71,7 @@ export class RolesResolver {
       input.sourceRoleId,
       input.name,
       user.permissions ?? [],
+      user,
     );
   }
 
@@ -111,7 +117,7 @@ export class RolesResolver {
       orgId,
       input.roleId,
       input.fieldPermissions,
-      user.fieldPermissions ?? new Map(),
+      user.fieldPermissions ?? new Map<string, Set<string>>(),
       user.isSuperAdmin ?? false,
     );
   }
@@ -121,11 +127,13 @@ export class RolesResolver {
   updateRoleMembers(
     @Args('input') input: UpdateRoleMembersInput,
     @CurrentOrgId() orgId: string,
+    @CurrentUser() actor?: TokenPayload,
   ) {
     return this.rolesService.updateRoleMembers(
       orgId,
       input.roleId,
       input.membershipIds,
+      actor,
     );
   }
 

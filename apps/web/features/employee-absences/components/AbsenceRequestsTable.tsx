@@ -57,7 +57,7 @@ export default function AbsenceRequestsTable({ requests }: Props) {
     }) ?? "–";
 
   const employeeName = (absence: EmployeeAbsence) => {
-    const user = absence.employee?.membership?.user;
+    const user = absence.employee;
     const name = [user?.firstName, user?.lastName].filter(Boolean).join(" ");
     return name || "–";
   };

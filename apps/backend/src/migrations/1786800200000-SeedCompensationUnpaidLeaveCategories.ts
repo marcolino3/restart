@@ -1,5 +1,5 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
-import { backfillEmployeeAbsenceCategoriesForAllOrgs } from '@/employee-management/employee-absence-categories/seeds/backfill-system-employee-absence-categories';
+import { seedHistoricalAbsenceCategories } from './helpers/seed-historical-absence-categories';
 
 /**
  * Seeds the new COMPENSATION and UNPAID_LEAVE system categories (plus any
@@ -11,7 +11,10 @@ export class SeedCompensationUnpaidLeaveCategories1786800200000 implements Migra
   name = 'SeedCompensationUnpaidLeaveCategories1786800200000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await backfillEmployeeAbsenceCategoriesForAllOrgs(queryRunner.manager);
+    await seedHistoricalAbsenceCategories(queryRunner, [
+      'COMPENSATION',
+      'UNPAID_LEAVE',
+    ]);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

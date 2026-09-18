@@ -146,13 +146,16 @@ describe('RolesResolver', () => {
         membershipIds: ['m-1', 'm-2'],
       };
 
-      await expect(resolver.updateRoleMembers(input, orgId)).resolves.toEqual({
+      await expect(
+        resolver.updateRoleMembers(input, orgId, user),
+      ).resolves.toEqual({
         id: 'role-1',
       });
       expect(rolesService.updateRoleMembers).toHaveBeenCalledWith(
         orgId,
         'role-1',
         ['m-1', 'm-2'],
+        user,
       );
     });
 
@@ -162,12 +165,13 @@ describe('RolesResolver', () => {
         membershipIds: [],
       };
 
-      await resolver.updateRoleMembers(input, orgId);
+      await resolver.updateRoleMembers(input, orgId, user);
 
       expect(rolesService.updateRoleMembers).toHaveBeenCalledWith(
         orgId,
         'role-1',
         [],
+        user,
       );
     });
 
@@ -181,7 +185,7 @@ describe('RolesResolver', () => {
       };
 
       await expect(
-        resolver.updateRoleMembers(input, orgId),
+        resolver.updateRoleMembers(input, orgId, user),
       ).rejects.toBeInstanceOf(NotFoundException);
     });
   });

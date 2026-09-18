@@ -1,10 +1,20 @@
+import { EmployeeProfile } from './employee-profile';
+import { Organization } from '@/organizations/entities/organization.entity';
 import { AbstractEntity } from '@/database/abstract.entity';
 import { EmployeeAbsence } from '@/employee-management/employee-absences/entities/employee-absence.entity';
 import { EmployeeNote } from '@/employee-management/employee-notes/entities/employee-note.entity';
 import { TeamMember } from '@/employee-management/team-members/entities/team-member.entity';
 import { Membership } from '@/memberships/entities/membership.entity';
 import { Field, ObjectType, registerEnumType } from '@nestjs/graphql';
-import { Column, Entity, OneToMany, OneToOne } from 'typeorm';
+import {
+  Column,
+  Entity,
+  OneToMany,
+  OneToOne,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
 
 // Lifecycle status of an employee record. DRAFT = incomplete onboarding
 // (created by the wizard, auto-saved, not yet invited); ACTIVE = finalized.
@@ -30,7 +40,43 @@ registerEnumType(EmployeeInvitationStatus, {
 
 @ObjectType()
 @Entity('employees')
+@Index('uq_employees_org_email', ['organizationId', 'profile.email'], {
+  unique: true,
+  where: 'profile_email IS NOT NULL',
+})
+@Index('uq_employees_id_org', ['id', 'organizationId'], { unique: true })
 export class Employee extends AbstractEntity<Employee> {
+  @Field(() => String)
+  @Index()
+  @Column('uuid', { name: 'organization_id' })
+  organizationId!: string;
+
+  @ManyToOne(() => Organization)
+  @JoinColumn({ name: 'organization_id' })
+  organization!: Organization;
+
+  @Field(() => EmployeeProfile)
+  @Column(() => EmployeeProfile, { prefix: false })
+  profile!: EmployeeProfile;
+
+  @Field(() => String)
+  @Column('varchar', {
+    name: 'account_link_status',
+    length: 20,
+    default: 'UNLINKED',
+  })
+  accountLinkStatus!: 'UNLINKED' | 'LEGACY' | 'CONFIRMED';
+
+  @Field(() => String)
+  get firstName(): string {
+    return this.profile?.firstName ?? '';
+  }
+
+  @Field(() => String)
+  get lastName(): string {
+    return this.profile?.lastName ?? '';
+  }
+
   @Field(() => Membership)
   @OneToOne(() => Membership, (membership) => membership.employee)
   membership: Membership;

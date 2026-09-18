@@ -4,6 +4,7 @@ import { serverCookieGqlClient } from "@/lib/graphql/server-cookie-graphql-clien
 import { gql } from "graphql-request";
 
 export type EmployeeListItem = Record<string, unknown> & {
+  profile: { firstName?: string | null; lastName?: string | null; email?: string | null; avatarUrl?: string | null };
   membership: {
     id: string;
     employee?: {
@@ -12,6 +13,7 @@ export type EmployeeListItem = Record<string, unknown> & {
       id: string;
       status: string;
       invitationStatus: string;
+      accountLinkStatus?: string;
     } | null;
     user?: {
       firstName: string;
@@ -42,6 +44,7 @@ type GetEmployeesResponse = {
 const GetEmployeesDocument = gql`
   query GetEmployees {
     employeesByOrgId {
+      profile { firstName lastName email avatarUrl }
       workloadPercent
       timeBalanceMinutes
       membership {
@@ -52,6 +55,7 @@ const GetEmployeesDocument = gql`
           id
           status
           invitationStatus
+          accountLinkStatus
         }
         user {
           firstName

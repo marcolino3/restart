@@ -43,6 +43,21 @@ describe('EmployeesService onboarding orchestrator', () => {
           entity: { name: string },
           opts?: { where?: Record<string, unknown> },
         ) => {
+          if (entity.name === 'Employee' && rows.Employee) {
+            const employee = rows.Employee as {
+              organizationId?: string;
+              version?: number;
+              profile?: unknown;
+              membership?: { organizationId?: string; user?: unknown };
+            };
+            employee.organizationId ??= employee.membership?.organizationId;
+            employee.version ??= 1;
+            employee.profile ??= {
+              firstName: 'A',
+              lastName: 'B',
+              ...(employee.membership?.user ?? {}),
+            };
+          }
           if (entity.name === 'EmployeeFunction') {
             const raw = rows.EmployeeFunction;
             const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
@@ -82,7 +97,15 @@ describe('EmployeesService onboarding orchestrator', () => {
       ),
       create: jest.fn((_entity: unknown, value: unknown) => value),
       findOneBy: jest.fn().mockResolvedValue(null),
-      findOneOrFail: jest.fn(() => Promise.resolve(rows.Employee)),
+      findOneOrFail: jest.fn((entity: { name: string }) =>
+        Promise.resolve(
+          entity.name === 'Membership'
+            ? (rows.Employee as { membership: unknown })?.membership
+            : entity.name === 'Organization'
+              ? rows.Organization
+              : rows.Employee,
+        ),
+      ),
       update: jest.fn().mockResolvedValue(undefined),
     };
 
@@ -105,6 +128,7 @@ describe('EmployeesService onboarding orchestrator', () => {
       rows.Organization = { id: 'org-1' };
       rows.Employee = {
         id: 'emp-1',
+        expectedVersion: 1,
         membership: { organizationId: 'org-1', user: {} },
         timeTrackingEnabled: false,
       };
@@ -114,11 +138,13 @@ describe('EmployeesService onboarding orchestrator', () => {
         service.upsertEmployeeOnboardingDraft(
           {
             id: 'emp-1',
+            expectedVersion: 1,
             firstName: 'A',
             lastName: 'B',
             roleIds: ['role-x'],
           },
           'org-1',
+          { sub: 'owner', orgId: 'org-1', isSuperAdmin: true },
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
@@ -127,6 +153,7 @@ describe('EmployeesService onboarding orchestrator', () => {
       rows.Organization = { id: 'org-1' };
       rows.Employee = {
         id: 'emp-1',
+        expectedVersion: 1,
         membership: { organizationId: 'org-1', user: {} },
         timeTrackingEnabled: false,
       };
@@ -136,6 +163,7 @@ describe('EmployeesService onboarding orchestrator', () => {
         service.upsertEmployeeOnboardingDraft(
           {
             id: 'emp-1',
+            expectedVersion: 1,
             firstName: 'A',
             lastName: 'B',
             teamId: 'team-x',
@@ -149,12 +177,13 @@ describe('EmployeesService onboarding orchestrator', () => {
       rows.Organization = { id: 'org-1' };
       rows.Employee = {
         id: 'emp-1',
+        expectedVersion: 1,
         membership: { organizationId: 'other-org', user: {} },
       };
 
       await expect(
         service.upsertEmployeeOnboardingDraft(
-          { id: 'emp-1', firstName: 'A', lastName: 'B' },
+          { id: 'emp-1', expectedVersion: 1, firstName: 'A', lastName: 'B' },
           'org-1',
         ),
       ).rejects.toBeInstanceOf(NotFoundException);
@@ -164,6 +193,7 @@ describe('EmployeesService onboarding orchestrator', () => {
       rows.Organization = { id: 'org-1' };
       rows.Employee = {
         id: 'emp-1',
+        expectedVersion: 1,
         status: 'ACTIVE',
         membership: { organizationId: 'org-1', user: {} },
         timeTrackingEnabled: false,
@@ -186,6 +216,7 @@ describe('EmployeesService onboarding orchestrator', () => {
       await service.upsertEmployeeOnboardingDraft(
         {
           id: 'emp-1',
+          expectedVersion: 1,
           firstName: 'A',
           lastName: 'B',
           contract: {
@@ -223,6 +254,7 @@ describe('EmployeesService onboarding orchestrator', () => {
       rows.Organization = { id: 'org-1' };
       rows.Employee = {
         id: 'emp-1',
+        expectedVersion: 1,
         status: 'ACTIVE',
         membership: { organizationId: 'org-1', user: {} },
         timeTrackingEnabled: false,
@@ -247,6 +279,7 @@ describe('EmployeesService onboarding orchestrator', () => {
       await service.upsertEmployeeOnboardingDraft(
         {
           id: 'emp-1',
+          expectedVersion: 1,
           firstName: 'A',
           lastName: 'B',
           contract: {
@@ -278,6 +311,7 @@ describe('EmployeesService onboarding orchestrator', () => {
       rows.Organization = { id: 'org-1' };
       rows.Employee = {
         id: 'emp-1',
+        expectedVersion: 1,
         status: 'ACTIVE',
         membership: { organizationId: 'org-1', user: {} },
         timeTrackingEnabled: false,
@@ -305,6 +339,7 @@ describe('EmployeesService onboarding orchestrator', () => {
       await service.upsertEmployeeOnboardingDraft(
         {
           id: 'emp-1',
+          expectedVersion: 1,
           firstName: 'Updated',
           lastName: 'Name',
           contract: {
@@ -339,6 +374,7 @@ describe('EmployeesService onboarding orchestrator', () => {
       rows.Organization = { id: 'org-1' };
       rows.Employee = {
         id: 'emp-1',
+        expectedVersion: 1,
         status: 'ACTIVE',
         membership: { organizationId: 'org-1', user: {} },
         timeTrackingEnabled: false,
@@ -368,6 +404,7 @@ describe('EmployeesService onboarding orchestrator', () => {
       await service.upsertEmployeeOnboardingDraft(
         {
           id: 'emp-1',
+          expectedVersion: 1,
           firstName: 'A',
           lastName: 'B',
           contract: {
@@ -397,6 +434,7 @@ describe('EmployeesService onboarding orchestrator', () => {
       rows.Organization = { id: 'org-1' };
       rows.Employee = {
         id: 'emp-1',
+        expectedVersion: 1,
         status: 'ACTIVE',
         membership: { organizationId: 'org-1', user: {} },
         timeTrackingEnabled: false,
@@ -426,6 +464,7 @@ describe('EmployeesService onboarding orchestrator', () => {
       await service.upsertEmployeeOnboardingDraft(
         {
           id: 'emp-1',
+          expectedVersion: 1,
           firstName: 'A',
           lastName: 'B',
           contract: {
@@ -451,6 +490,7 @@ describe('EmployeesService onboarding orchestrator', () => {
       rows.Organization = { id: 'org-1' };
       rows.Employee = {
         id: 'emp-1',
+        expectedVersion: 1,
         status: 'DRAFT',
         membership: { organizationId: 'org-1', user: {} },
         timeTrackingEnabled: false,
@@ -468,6 +508,7 @@ describe('EmployeesService onboarding orchestrator', () => {
       await service.upsertEmployeeOnboardingDraft(
         {
           id: 'emp-1',
+          expectedVersion: 1,
           firstName: 'A',
           lastName: 'B',
           contract: {
@@ -496,6 +537,7 @@ describe('EmployeesService onboarding orchestrator', () => {
       rows.Organization = { id: 'org-1' };
       rows.Employee = {
         id: 'emp-1',
+        expectedVersion: 1,
         status: 'ACTIVE',
         membership: { organizationId: 'org-1', user: {} },
         timeTrackingEnabled: false,
@@ -549,6 +591,7 @@ describe('EmployeesService onboarding orchestrator', () => {
       await service.upsertEmployeeOnboardingDraft(
         {
           id: 'emp-1',
+          expectedVersion: 1,
           firstName: 'A',
           lastName: 'B',
           contract: {
@@ -588,6 +631,7 @@ describe('EmployeesService onboarding orchestrator', () => {
       rows.Organization = { id: 'org-1' };
       rows.Employee = {
         id: 'emp-1',
+        expectedVersion: 1,
         status: 'ACTIVE',
         membership: { organizationId: 'org-1', user: {} },
         timeTrackingEnabled: false,
@@ -611,6 +655,7 @@ describe('EmployeesService onboarding orchestrator', () => {
         await service.upsertEmployeeOnboardingDraft(
           {
             id: 'emp-1',
+            expectedVersion: 1,
             firstName: 'A',
             lastName: 'B',
             contract: {
@@ -650,6 +695,7 @@ describe('EmployeesService onboarding orchestrator', () => {
       rows.Organization = { id: 'org-1' };
       rows.Employee = {
         id: 'emp-1',
+        expectedVersion: 1,
         status: 'ACTIVE',
         membership: { organizationId: 'org-1', user: {} },
         timeTrackingEnabled: false,
@@ -674,6 +720,7 @@ describe('EmployeesService onboarding orchestrator', () => {
       await service.upsertEmployeeOnboardingDraft(
         {
           id: 'emp-1',
+          expectedVersion: 1,
           firstName: 'A',
           lastName: 'B',
           contract: {
@@ -702,11 +749,19 @@ describe('EmployeesService onboarding orchestrator', () => {
 
   describe('finalizeEmployeeOnboarding', () => {
     it('rejects finalizing an employee of another organization', async () => {
-      rows.Employee = { id: 'emp-1', membership: { organizationId: 'other' } };
+      rows.Employee = {
+        id: 'emp-1',
+        expectedVersion: 1,
+        membership: { organizationId: 'other' },
+      };
 
       await expect(
         service.finalizeEmployeeOnboarding(
-          { id: 'emp-1', invitationTiming: InvitationTiming.IMMEDIATE },
+          {
+            id: 'emp-1',
+            expectedVersion: 1,
+            invitationTiming: InvitationTiming.IMMEDIATE,
+          },
           'org-1',
         ),
       ).rejects.toBeInstanceOf(NotFoundException);
@@ -714,14 +769,20 @@ describe('EmployeesService onboarding orchestrator', () => {
 
     it('requires a contract with a start date', async () => {
       rows.Employee = {
+        status: 'DRAFT',
         id: 'emp-1',
+        expectedVersion: 1,
         membership: { organizationId: 'org-1', roles: [{ id: 'r1' }] },
       };
       rows.EmployeeContract = null;
 
       await expect(
         service.finalizeEmployeeOnboarding(
-          { id: 'emp-1', invitationTiming: InvitationTiming.IMMEDIATE },
+          {
+            id: 'emp-1',
+            expectedVersion: 1,
+            invitationTiming: InvitationTiming.IMMEDIATE,
+          },
           'org-1',
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
@@ -729,14 +790,20 @@ describe('EmployeesService onboarding orchestrator', () => {
 
     it('requires at least one role', async () => {
       rows.Employee = {
+        status: 'DRAFT',
         id: 'emp-1',
+        expectedVersion: 1,
         membership: { organizationId: 'org-1', roles: [] },
       };
       rows.EmployeeContract = { id: 'c1', startDate: '2026-08-01' };
 
       await expect(
         service.finalizeEmployeeOnboarding(
-          { id: 'emp-1', invitationTiming: InvitationTiming.IMMEDIATE },
+          {
+            id: 'emp-1',
+            expectedVersion: 1,
+            invitationTiming: InvitationTiming.IMMEDIATE,
+          },
           'org-1',
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
@@ -745,13 +812,18 @@ describe('EmployeesService onboarding orchestrator', () => {
     it('activates and sends the invitation immediately when complete', async () => {
       rows.Employee = {
         id: 'emp-1',
+        expectedVersion: 1,
         membership: { organizationId: 'org-1', roles: [{ id: 'r1' }] },
         status: 'DRAFT',
       };
       rows.EmployeeContract = { id: 'c1', startDate: '2026-08-01' };
 
       await service.finalizeEmployeeOnboarding(
-        { id: 'emp-1', invitationTiming: InvitationTiming.IMMEDIATE },
+        {
+          id: 'emp-1',
+          expectedVersion: 1,
+          invitationTiming: InvitationTiming.IMMEDIATE,
+        },
         'org-1',
       );
 

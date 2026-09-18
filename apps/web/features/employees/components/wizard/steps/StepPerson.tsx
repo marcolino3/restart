@@ -1,6 +1,7 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import Link from 'next/link';
 import { useFormContext } from "react-hook-form";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +21,7 @@ interface Props {
 
 export function StepPerson({ orgCountry, draftId }: Props) {
   const t = useTranslations("EmployeeOnboarding");
+  const locale = useLocale();
   const form = useFormContext();
   const currentCountry = form.watch("country") || orgCountry;
 
@@ -55,7 +57,7 @@ export function StepPerson({ orgCountry, draftId }: Props) {
             <div />
             <InputFormField name="firstName" label="firstName" />
             <InputFormField name="lastName" label="lastName" />
-            <DatePickerFormField name="dateOfBirth" label="dateOfBirth" />
+            <DatePickerFormField name="dateOfBirth" label="dateOfBirth" dateOnly />
             <SocialSecurityNumberFormField
               name="socialSecurityNumber"
               country={currentCountry}
@@ -74,8 +76,13 @@ export function StepPerson({ orgCountry, draftId }: Props) {
               name="email"
               type="email"
               label="emailLogin"
+              disabled={form.watch("accountLinkStatus") === "LEGACY" || form.watch("accountLinkStatus") === "CONFIRMED"}
               namespace="EmployeeOnboarding"
             />
+            {form.watch('accountLinkStatus') && form.watch('accountLinkStatus') !== 'UNLINKED' && <div className="text-sm">
+              <p>{t('loginEmail')}: {form.watch('loginEmail') || '—'}</p>
+              <Link className="underline" href={`/${locale}/onboarding/change-email`}>{locale === 'en' ? 'Change your own login email' : 'Eigene Login-E-Mail ändern'}</Link>
+            </div>}
             <InputFormField
               name="privateEmail"
               type="email"

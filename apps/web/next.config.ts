@@ -31,7 +31,14 @@ const swcHelpersEsm = (() => {
 })();
 
 const nextConfig: NextConfig = {
+  distDir: process.env.NEXT_DIST_DIR ?? ".next",
   output: "standalone",
+  // These workspaces publish TypeScript sources, including pnpm peer variants.
+  transpilePackages: [
+    "@restart/shared-schemas",
+    "@restart/shared-types",
+    "@restart/shared-i18n",
+  ],
   outputFileTracingRoot: workspaceRoot,
   outputFileTracingIncludes: {
     "**": swcHelpersEsm,

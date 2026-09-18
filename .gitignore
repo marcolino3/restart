@@ -45,3 +45,10 @@ sealed-secrets-backup/
 sealed-secrets-keys-*.yaml
 sealed-secrets-keys-*.yaml.age
 *.tsbuildinfo
+
+# Isolated employee browser test build
+/apps/web/.next-employee-e2e/
+/apps/web/.next-employee-build/
+/e2e/.employee-mail/
+
+e2e/.employee-storage/

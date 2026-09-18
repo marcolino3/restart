@@ -22,6 +22,10 @@ import {
 @Index('idx_memberships_user', ['userId'])
 @Index('idx_memberships_employee', ['employeeId'])
 @Index('idx_memberships_org', ['organizationId'])
+@Index('uq_memberships_org_user', ['organizationId', 'userId'], {
+  unique: true,
+  where: 'user_id IS NOT NULL',
+})
 export class Membership extends AbstractEntity<Membership> {
   // Organization
   @Field(() => ID)
@@ -49,9 +53,9 @@ export class Membership extends AbstractEntity<Membership> {
   persona!: Persona;
 
   // User
-  @Field(() => ID)
-  @Column('uuid', { name: 'user_id' })
-  userId?: string;
+  @Field(() => ID, { nullable: true })
+  @Column('uuid', { name: 'user_id', nullable: true })
+  userId?: string | null;
 
   @Field(() => User, { nullable: true })
   @ManyToOne(() => User, (user) => user.memberships, {
@@ -78,7 +82,7 @@ export class Membership extends AbstractEntity<Membership> {
     length: 30,
     nullable: true,
   })
-  contactPhone?: string;
+  contactPhone?: string | null;
 
   // Secondary contact phone without a country mask (e.g. a foreign number).
   @Field(() => String, { nullable: true })
@@ -88,7 +92,7 @@ export class Membership extends AbstractEntity<Membership> {
     length: 40,
     nullable: true,
   })
-  contactPhone2?: string;
+  contactPhone2?: string | null;
 
   // UI color theme chosen by this member for this org context. Stores a
   // theme id from the frontend theme registry (apps/web/lib/themes.ts);
@@ -107,7 +111,7 @@ export class Membership extends AbstractEntity<Membership> {
   // Employee
   @Field(() => String, { nullable: true })
   @Column('uuid', { nullable: true, name: 'employee_id' })
-  employeeId: string;
+  employeeId: string | null;
 
   @Field(() => Employee, { nullable: true })
   @OneToOne(() => Employee, (employee) => employee.membership, {

@@ -1,5 +1,5 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
-import { backfillEmployeeAbsenceCategoriesForAllOrgs } from '@/employee-management/employee-absence-categories/seeds/backfill-system-employee-absence-categories';
+import { seedHistoricalAbsenceCategories } from './helpers/seed-historical-absence-categories';
 
 /**
  * Seeds the VACATION system category (plus any missing translations) into
@@ -10,7 +10,7 @@ export class SeedVacationAbsenceCategory1786900200000 implements MigrationInterf
   name = 'SeedVacationAbsenceCategory1786900200000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await backfillEmployeeAbsenceCategoriesForAllOrgs(queryRunner.manager);
+    await seedHistoricalAbsenceCategories(queryRunner, ['VACATION']);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

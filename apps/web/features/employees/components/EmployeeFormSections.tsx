@@ -61,8 +61,8 @@ export const PersonalEmploymentSection = ({
   const locale = useLocale();
   const currentUser = useUser();
   const form = useFormContext();
-  const user = employee?.membership?.user;
-  const primaryEmail = user?.userEmails?.find((e) => e.isPrimary)?.email ?? "";
+  const user = employee?.profile;
+  const primaryEmail = user?.email ?? "";
 
   return (
     <div className="border-t border-border">
@@ -88,7 +88,7 @@ export const PersonalEmploymentSection = ({
         </FormRow>
 
         <FormRow label={t("dateOfBirth")}>
-          <DatePickerFormField name="dateOfBirth" width="w-full sm:w-1/2" />
+          <DatePickerFormField name="dateOfBirth" dateOnly width="w-full sm:w-1/2" />
         </FormRow>
 
         <FormRow label={t("socialSecurityNumber")}>
@@ -107,9 +107,9 @@ export const PersonalEmploymentSection = ({
               <Badge variant="secondary" className="text-xs">
                 {t("primaryEmail")}
               </Badge>
-              {currentUser?.isSuperAdmin && user?.id && (
+              {currentUser?.isSuperAdmin && employee?.membership.user?.id && (
                 <Link
-                  href={ROUTES.admin.usersEdit(locale, user.id)}
+                  href={ROUTES.admin.usersEdit(locale, employee!.membership.user!.id)}
                   className="inline-flex items-center gap-1 text-xs text-primary underline-offset-4 hover:underline"
                 >
                   <Mail className="h-3 w-3" />

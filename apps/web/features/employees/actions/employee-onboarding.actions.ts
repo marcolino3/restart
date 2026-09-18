@@ -9,66 +9,7 @@ import { revalidatePath } from "next/cache";
 import { ROUTES } from "@/constants/routes";
 import { getLocale } from "next-intl/server";
 import { gql } from "graphql-request";
-import { resolveContractScheduleFields } from "../lib/resolve-contract-schedule";
-
-const toIsoDate = (d: Date | string | null | undefined): string | undefined => {
-  if (!d) return undefined;
-  if (typeof d === "string") return d.split("T")[0] || undefined;
-  return d.toISOString().split("T")[0];
-};
-
-const emptyToUndef = (s: string | null | undefined): string | undefined =>
-  s && s.trim() ? s.trim() : undefined;
-
-/** Maps the wizard form output onto the EmployeeOnboardingInput GraphQL shape. */
-function toOnboardingInput(values: EmployeeOnboardingFormOutput) {
-  const schedule = resolveContractScheduleFields(values);
-
-  const contract = {
-    contractType: values.contractType || undefined,
-    position: emptyToUndef(values.position),
-    startDate: toIsoDate(values.startDate),
-    endDate: toIsoDate(values.endDate),
-    probationEndDate: toIsoDate(values.probationEndDate),
-    workloadPercent: values.workloadPercent ?? undefined,
-    weeklyHours: emptyToUndef(values.weeklyHours),
-    annualVacationDays: values.annualVacationDays ?? undefined,
-    grossSalary: values.grossSalary ?? undefined,
-    hourlyRate: values.hourlyRate ?? undefined,
-    paymentInterval: values.paymentInterval || undefined,
-    has13thSalary: values.has13thSalary ?? undefined,
-    weekdayTimeWindows: schedule.weekdayTimeWindows,
-    weekdayWorkloads: schedule.weekdayWorkloads,
-    documentUrl: emptyToUndef(values.documentUrl),
-  };
-  const hasContract = Object.values(contract).some((v) => v !== undefined && v !== null);
-
-  return {
-    id: values.id,
-    title: emptyToUndef(values.title),
-    firstName: values.firstName,
-    lastName: values.lastName,
-    email: emptyToUndef(values.email),
-    persona: values.persona,
-    dateOfBirth: toIsoDate(values.dateOfBirth),
-    socialSecurityNumber: emptyToUndef(values.socialSecurityNumber),
-    privateEmail: emptyToUndef(values.privateEmail),
-    contactPhone: emptyToUndef(values.contactPhone),
-    contactPhone2: emptyToUndef(values.contactPhone2),
-    street: emptyToUndef(values.street),
-    houseNumber: emptyToUndef(values.houseNumber),
-    addressLine2: emptyToUndef(values.addressLine2),
-    postalCode: emptyToUndef(values.postalCode),
-    city: emptyToUndef(values.city),
-    country: emptyToUndef(values.country),
-    avatarUrl: emptyToUndef(values.avatarUrl),
-    timeTrackingEnabled: values.timeTrackingEnabled,
-    teamId: values.teamId ?? undefined,
-    roleIds: values.roleId ? [values.roleId] : undefined,
-    language: values.language,
-    ...(hasContract ? { contract } : {}),
-  };
-}
+import { toOnboardingInput, ONBOARDING_CONTRACT_FIELDS } from "../lib/to-onboarding-input";
 
 const UpsertDraftDocument = gql`
   mutation UpsertEmployeeOnboardingDraft($input: EmployeeOnboardingInput!) {
@@ -76,6 +17,7 @@ const UpsertDraftDocument = gql`
       id
       status
       invitationStatus
+      version
     }
   }
 `;
@@ -85,20 +27,26 @@ type UpsertDraftResponse = {
     id: string;
     status: string;
     invitationStatus: string;
+    version: number;
   };
 };
 
 /** Create or patch the auto-saving onboarding draft. Returns the employee id. */
 export const upsertEmployeeOnboardingDraftAction = async (
   values: EmployeeOnboardingFormOutput,
+  changedFields?: string[],
 ) => {
-  const parsed = EmployeeOnboardingFormSchema.parse(values);
-  const locale = await getLocale();
-  const client = await serverCookieGqlClient();
   try {
+    const basisOnly = changedFields && !changedFields.some((field) => ONBOARDING_CONTRACT_FIELDS.includes(field));
+    const submitted = basisOnly ? Object.fromEntries(Object.entries(values).filter(([key]) => !ONBOARDING_CONTRACT_FIELDS.includes(key))) : values;
+    const validation = EmployeeOnboardingFormSchema.safeParse(submitted);
+    if (!validation.success) return { success: false as const, error: "Invalid employee fields", fieldErrors: validation.error.flatten().fieldErrors };
+    const parsed = validation.data;
+    const locale = await getLocale();
+    const client = await serverCookieGqlClient();
     const { upsertEmployeeOnboardingDraft } =
       await client.request<UpsertDraftResponse>(UpsertDraftDocument, {
-        input: toOnboardingInput(parsed),
+        input: toOnboardingInput(parsed, changedFields),
       });
     revalidatePath(ROUTES.admin.employees(locale));
     if (parsed.id) {
@@ -107,13 +55,8 @@ export const upsertEmployeeOnboardingDraftAction = async (
     }
     return { success: true as const, data: upsertEmployeeOnboardingDraft };
   } catch (error) {
-    // Surface the server-side reason (e.g. duplicate e-mail conflict) so the
-    // wizard can show a specific message instead of a generic failure.
-    const gqlMessage = (
-      error as { response?: { errors?: { message?: string }[] } }
-    )?.response?.errors?.[0]?.message;
-    const message = gqlMessage ?? (error as Error)?.message ?? "unknown";
-    return { success: false as const, error: message };
+    const code = (error as { response?: { errors?: { extensions?: { code?: string } }[] } })?.response?.errors?.[0]?.extensions?.code;
+    return { success: false as const, error: code === 'CONFLICT' ? 'Employee was changed; reload before saving' : code === 'FORBIDDEN' ? 'Permission denied' : 'Employee could not be saved' };
   }
 };
 
@@ -123,6 +66,7 @@ const FinalizeDocument = gql`
       id
       status
       invitationStatus
+      version
     }
   }
 `;
@@ -132,6 +76,7 @@ type FinalizeResponse = {
     id: string;
     status: string;
     invitationStatus: string;
+    version: number;
   };
 };
 
@@ -139,16 +84,17 @@ type FinalizeResponse = {
 export const finalizeEmployeeOnboardingAction = async (input: {
   id: string;
   invitationTiming: "IMMEDIATE" | "ON_ENTRY_DATE" | "MANUAL";
+  expectedVersion: number;
 }) => {
-  const locale = await getLocale();
-  const client = await serverCookieGqlClient();
   try {
+    const locale = await getLocale();
+    const client = await serverCookieGqlClient();
     const { finalizeEmployeeOnboarding } =
       await client.request<FinalizeResponse>(FinalizeDocument, { input });
     revalidatePath(ROUTES.admin.employees(locale));
     return { success: true as const, data: finalizeEmployeeOnboarding };
-  } catch (error) {
-    return { success: false as const, error };
+  } catch {
+    return { success: false as const, error: 'Employee could not be finalized' };
   }
 };
 
@@ -157,6 +103,7 @@ const SendInvitationDocument = gql`
     sendEmployeeInvitation(employeeId: $employeeId) {
       id
       invitationStatus
+      version
     }
   }
 `;
@@ -167,16 +114,31 @@ type SendInvitationResponse = {
 
 /** Manually (re-)send the first-login invitation. */
 export const sendEmployeeInvitationAction = async (employeeId: string) => {
-  const locale = await getLocale();
-  const client = await serverCookieGqlClient();
   try {
+    const locale = await getLocale();
+    const client = await serverCookieGqlClient();
     const { sendEmployeeInvitation } =
       await client.request<SendInvitationResponse>(SendInvitationDocument, {
         employeeId,
       });
     revalidatePath(ROUTES.admin.employees(locale));
     return { success: true as const, data: sendEmployeeInvitation };
-  } catch (error) {
-    return { success: false as const, error };
+  } catch {
+    return { success: false as const, error: 'Invitation could not be sent' };
+  }
+};
+
+export const removeEmployeeDraftAction = async (employeeId: string) => {
+  try {
+    const client = await serverCookieGqlClient();
+    await client.request(gql`
+      mutation RemoveEmployeeDraft($employeeId: ID!) {
+        removeEmployeeOnboardingDraft(employeeId: $employeeId)
+      }
+    `, { employeeId });
+    revalidatePath(ROUTES.admin.employees(await getLocale()));
+    return { success: true as const };
+  } catch {
+    return { success: false as const };
   }
 };

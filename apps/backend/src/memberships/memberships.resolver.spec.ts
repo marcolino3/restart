@@ -43,6 +43,8 @@ describe('MembershipsResolver', () => {
     expect(resolver).toBeDefined();
   });
 
+  const actor = { sub: 'user-1', orgId: 'org-1' } as TokenPayload;
+
   describe('createMembership', () => {
     it('delegates to the service with the given input', async () => {
       const input = {
@@ -50,10 +52,10 @@ describe('MembershipsResolver', () => {
         organizationId: 'org-1',
       } as CreateMembershipInput;
 
-      await expect(resolver.createMembership(input)).resolves.toEqual({
+      await expect(resolver.createMembership(input, actor)).resolves.toEqual({
         id: 'mem-1',
       });
-      expect(membershipsService.create).toHaveBeenCalledWith(input);
+      expect(membershipsService.create).toHaveBeenCalledWith(input, actor);
     });
   });
 
@@ -62,18 +64,28 @@ describe('MembershipsResolver', () => {
       const memberships = [{ id: 'mem-1' }, { id: 'mem-2' }];
       membershipsService.findByOrgId.mockResolvedValue(memberships);
 
-      await expect(resolver.findByOrgId('org-1')).resolves.toEqual(memberships);
+      await expect(resolver.findByOrgId('org-1', actor)).resolves.toEqual(
+        memberships,
+      );
       expect(membershipsService.findByOrgId).toHaveBeenCalledWith('org-1');
       expect(membershipsService.findByOrgId).toHaveBeenCalledTimes(1);
     });
 
-    // NOTE (multi-tenant): the resolver forwards a caller-supplied
-    // organizationId argument instead of the session's active org
-    // (@CurrentOrgId). Isolation currently relies on the caller passing
-    // their own org — see report for the flagged production gap.
-    it('forwards the organizationId argument unchanged to the service', async () => {
-      await resolver.findByOrgId('org-other');
-      expect(membershipsService.findByOrgId).toHaveBeenCalledWith('org-other');
+    it.each(['org-1', undefined])(
+      'rejects foreign or missing active organization: %s',
+      (orgId) => {
+        expect(() =>
+          resolver.findByOrgId('org-other', { ...actor, orgId }),
+        ).toThrow();
+        expect(membershipsService.findByOrgId).not.toHaveBeenCalled();
+      },
+    );
+
+    it('does not let superadmin read an arbitrary organization without selecting it', () => {
+      expect(() =>
+        resolver.findByOrgId('org-other', { ...actor, isSuperAdmin: true }),
+      ).toThrow();
+      expect(membershipsService.findByOrgId).not.toHaveBeenCalled();
     });
   });
 
@@ -84,8 +96,8 @@ describe('MembershipsResolver', () => {
         contactPhone: '+41791234567',
       } as UpdateMembershipInput;
 
-      await resolver.updateMembership(input);
-      expect(membershipsService.update).toHaveBeenCalledWith(input);
+      await resolver.updateMembership(input, actor);
+      expect(membershipsService.update).toHaveBeenCalledWith(input, 'org-1');
     });
   });
 

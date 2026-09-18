@@ -6,7 +6,6 @@ import {
 import { EntityManager } from 'typeorm';
 import { UploadController } from './upload.controller';
 import { BetterAuthGuard } from '@/auth/guard/better-auth.guard';
-import { ROLES_KEY } from '@/auth/decorators/roles.decorator';
 import { SystemRole } from '@/roles/entities/system-role.enum';
 import { StorageService } from '@/storage/storage.service';
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
@@ -43,14 +42,25 @@ const pngFile = {
 describe('UploadController', () => {
   let controller: UploadController;
   let storage: { put: jest.Mock; delete: jest.Mock };
-  let entityManager: { findOne: jest.Mock };
+  let entityManager: {
+    findOne: jest.Mock;
+    findOneOrFail: jest.Mock;
+    transaction: jest.Mock;
+  };
 
   beforeEach(() => {
     storage = {
       put: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn().mockResolvedValue(undefined),
     };
-    entityManager = { findOne: jest.fn() };
+    entityManager = {
+      findOne: jest.fn(),
+      findOneOrFail: jest.fn().mockResolvedValue({ id: ORG_ID }),
+      transaction: jest.fn(
+        (callback: (manager: typeof entityManager) => Promise<unknown>) =>
+          callback(entityManager),
+      ),
+    };
     controller = new UploadController(
       entityManager as unknown as EntityManager,
       storage as unknown as StorageService,
@@ -65,16 +75,35 @@ describe('UploadController', () => {
       expect(guards).toContain(BetterAuthGuard);
     });
 
-    it('requires ORG_OWNER/ORG_ADMIN roles', () => {
-      const roles: SystemRole[] =
-        Reflect.getMetadata(ROLES_KEY, UploadController) ?? [];
-      expect(roles).toEqual(
-        expect.arrayContaining([SystemRole.ORG_OWNER, SystemRole.ORG_ADMIN]),
-      );
+    it('rejects a plain member for administrator-owned assets', async () => {
+      await expect(
+        controller.upload(pngFile, 'organizations', ORG_ID, {
+          ...orgAdmin,
+          roles: [],
+        }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+    it('rejects employee photo writes without EMPLOYEE_WRITE', async () => {
+      await expect(
+        controller.upload(pngFile, 'employees', ORG_ID, orgAdmin),
+      ).rejects.toBeInstanceOf(ForbiddenException);
     });
   });
 
   describe('upload', () => {
+    it('does not recreate a photo when the employee was deleted during image processing', async () => {
+      entityManager.findOne
+        .mockResolvedValueOnce({ id: ORG_ID })
+        .mockResolvedValueOnce(null);
+      await expect(
+        controller.upload(pngFile, 'employees', ORG_ID, {
+          ...orgAdmin,
+          permissions: ['EMPLOYEE_WRITE'],
+        }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(storage.put).not.toHaveBeenCalled();
+      expect(entityManager.transaction).toHaveBeenCalledTimes(1);
+    });
     it('rejects missing file', async () => {
       await expect(
         controller.upload(

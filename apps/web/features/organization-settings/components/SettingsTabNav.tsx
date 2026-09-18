@@ -26,6 +26,11 @@ export const SettingsTabNav = ({ locale }: Props) => {
       label: t("tabSmtp"),
     },
     {
+      value: "ai",
+      href: `/${locale}/admin/settings/ai`,
+      label: t("tabAi"),
+    },
+    {
       value: "recordKeeping",
       href: `/${locale}/admin/settings/record-keeping`,
       label: t("tabRecordKeeping"),

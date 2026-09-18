@@ -16,8 +16,8 @@ import { authClient } from "./auth-client";
  */
 export const authCredentials = "omit" satisfies RequestCredentials;
 
-export const authHeaders = (): Record<string, string> => {
-  const cookie = authClient.getCookie();
+export const authHeaders = async (): Promise<Record<string, string>> => {
+  const cookie = await authClient.getCookie();
   return cookie ? { Cookie: cookie } : {};
 };
 
@@ -27,7 +27,7 @@ export const authHeaders = (): Record<string, string> => {
  * onConnect reads it from there. Evaluated per connect so reconnects pick up
  * the current session.
  */
-export const wsConnectionParams = (): Record<string, string> => {
-  const cookie = authClient.getCookie();
+export const wsConnectionParams = async (): Promise<Record<string, string>> => {
+  const cookie = await authClient.getCookie();
   return cookie ? { cookie } : {};
 };

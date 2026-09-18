@@ -11,30 +11,15 @@ export type TeacherOption = {
   userId?: string | null;
 };
 
-type GetTeachersResponse = {
-  teachersByOrgId: {
-    id: string;
-    membership: {
-      user?: {
-        id: string;
-        firstName: string;
-        lastName: string;
-      } | null;
-    };
-  }[];
-};
+type GetTeachersResponse = { teachersByOrgId: TeacherOption[] };
 
 const GetTeachersDocument = gql`
   query GetTeachersByOrgId {
     teachersByOrgId {
       id
-      membership {
-        user {
-          id
-          firstName
-          lastName
-        }
-      }
+      firstName
+      lastName
+      userId
     }
   }
 `;
@@ -46,12 +31,7 @@ export const getTeachersAction = async () => {
     const { teachersByOrgId } = await client.request<GetTeachersResponse>(
       GetTeachersDocument
     );
-    const data: TeacherOption[] = teachersByOrgId.map((e) => ({
-      id: e.id,
-      firstName: e.membership.user?.firstName ?? "",
-      lastName: e.membership.user?.lastName ?? "",
-      userId: e.membership.user?.id ?? null,
-    }));
+    const data = teachersByOrgId;
     return { success: true as const, data };
   } catch (error) {
     console.error(error);

@@ -119,15 +119,14 @@ export default function EmployeeViewPage({
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
-  const user = employee.membership?.user;
+  const user = employee.profile;
   const membership = employee.membership;
-  const primaryEmail =
-    user?.userEmails?.find((e) => e.isPrimary)?.email ??
-    user?.userEmails?.[0]?.email;
+  const primaryEmail = user?.email;
 
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return "–";
-    return new Date(dateStr).toLocaleDateString(
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(dateStr) ? new Date(`${dateStr}T12:00:00`) : new Date(dateStr);
+    return date.toLocaleDateString(
       locale === "de" ? "de-CH" : "en-GB",
       { day: "numeric", month: "long", year: "numeric" },
     );
@@ -185,7 +184,7 @@ export default function EmployeeViewPage({
             <div className="mb-[18px] overflow-x-auto rounded-card border bg-card px-[22px] pt-[18px] shadow-xs">
               <div className="flex flex-wrap items-center gap-4">
                 <span className="flex size-[52px] shrink-0 items-center justify-center rounded-[16px] bg-accent text-[18px] font-bold text-accent-foreground">
-                  {getInitials(user?.firstName, user?.lastName)}
+                  {getInitials(user?.firstName ?? undefined, user?.lastName ?? undefined)}
                 </span>
                 <div className="min-w-0">
                   <h2 className="text-[20px] font-bold tracking-[-0.02em]">

@@ -22,6 +22,10 @@ type TiptapFormFieldProps<TFormValues extends FieldValues> = {
   className?: string;
   /** i18n namespace for `label`. Default `"Common"`. */
   namespace?: string;
+  /** A4-sheet editing surface (contract documents). */
+  a4?: boolean;
+  /** Low editing surface for short snippets. */
+  compact?: boolean;
 };
 
 export function EditorFormField<TFormValues extends FieldValues>({
@@ -29,6 +33,8 @@ export function EditorFormField<TFormValues extends FieldValues>({
   label,
   className,
   namespace = "Common",
+  a4,
+  compact,
 }: TiptapFormFieldProps<TFormValues>) {
   const t = useTranslations(namespace);
   const { control } = useFormContext();
@@ -41,7 +47,12 @@ export function EditorFormField<TFormValues extends FieldValues>({
         <FormItem className={cn(className, "flex flex-col gap-2")}>
           {label && <FormLabel>{t(label)}</FormLabel>}
           <FormControl>
-            <Tiptap description={field.value} onChange={field.onChange} />
+            <Tiptap
+              description={field.value}
+              onChange={field.onChange}
+              a4={a4}
+              compact={compact}
+            />
           </FormControl>
           <FormMessage />
         </FormItem>

@@ -84,6 +84,8 @@ const member = (
   employee: {
     id: employeeId,
     isActive: true,
+    firstName: first,
+    lastName: last,
     membership: {
       user: {
         id: employeeId,
@@ -96,6 +98,7 @@ const member = (
 });
 
 const employee = (empId: string, first: string, last: string): EmployeeListItem => ({
+  profile: { firstName: first, lastName: last, email: `${first}@school.ch` },
   membership: {
     id: empId,
     employee: {

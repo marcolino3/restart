@@ -28,18 +28,19 @@ export const updateEmployeeAction = async (values: EmployeeFormOutput) => {
 
   const input = {
     id: parsed.id,
+    expectedVersion: parsed.expectedVersion,
     firstName: parsed.firstName,
     lastName: parsed.lastName,
     persona: parsed.persona,
     timeTrackingEnabled: parsed.timeTrackingEnabled,
     ...(parsed.title ? { title: parsed.title } : { title: "" }),
     ...(parsed.dateOfBirth
-      ? { dateOfBirth: parsed.dateOfBirth.toISOString().split("T")[0] }
-      : {}),
+      ? { dateOfBirth: typeof parsed.dateOfBirth === "string" ? parsed.dateOfBirth : `${parsed.dateOfBirth.getFullYear()}-${String(parsed.dateOfBirth.getMonth()+1).padStart(2,"0")}-${String(parsed.dateOfBirth.getDate()).padStart(2,"0")}` }
+      : { dateOfBirth: null }),
     ...(parsed.socialSecurityNumber
       ? { socialSecurityNumber: parsed.socialSecurityNumber }
-      : {}),
-    ...(parsed.contactPhone ? { contactPhone: parsed.contactPhone } : {}),
+      : { socialSecurityNumber: null }),
+    contactPhone: parsed.contactPhone?.trim() || null,
     street: parsed.street ?? "",
     houseNumber: parsed.houseNumber ?? "",
     addressLine2: parsed.addressLine2 ?? "",

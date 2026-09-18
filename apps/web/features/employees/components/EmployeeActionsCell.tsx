@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { removeEmployeeDraftAction } from '../actions/employee-onboarding.actions';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { LogIn, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
@@ -31,11 +34,13 @@ export function EmployeeActionsCell({ row }: Props) {
   const user = useUser();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const router = useRouter();
 
   const employee = row.membership.employee;
   const target = row.membership.user;
   const targetUserId = target?.id;
-  const firstName = target?.firstName ?? "";
+  const firstName = row.profile.firstName ?? "";
 
   const handleImpersonate = () => {
     if (!targetUserId) {
@@ -58,6 +63,7 @@ export function EmployeeActionsCell({ row }: Props) {
   };
 
   return (
+    <>
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="h-8 w-8 p-0">
@@ -93,12 +99,37 @@ export function EmployeeActionsCell({ row }: Props) {
           </>
         )}
 
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-destructive focus:text-destructive cursor-pointer">
-          <Trash2 className="h-4 w-4 mr-2" />
-          {t("delete")}
-        </DropdownMenuItem>
+        {employee?.status === 'DRAFT' && employee.accountLinkStatus === 'UNLINKED' && employee.invitationStatus === 'PENDING' && (user?.isSuperAdmin || user?.permissions.includes('EMPLOYEE_WRITE')) && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => setConfirmOpen(true)} className="text-destructive focus:text-destructive cursor-pointer">
+              <Trash2 className="h-4 w-4 mr-2" />
+              {t("delete")}
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
+    <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t('deleteConfirmTitle')}</AlertDialogTitle>
+          <AlertDialogDescription>{t('deleteConfirmDescription', { itemName: `${firstName} ${row.profile.lastName ?? ''}`.trim() })}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isPending}>{t('cancel')}</AlertDialogCancel>
+          <AlertDialogAction disabled={isPending} onClick={(event) => {
+            event.preventDefault();
+            if (!employee?.id) return;
+            startTransition(async () => {
+              const result = await removeEmployeeDraftAction(employee.id);
+              if (result.success) { setConfirmOpen(false); router.refresh(); }
+              else toast.error(t('deleteError'));
+            });
+          }}>{t('confirmDelete')}</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
