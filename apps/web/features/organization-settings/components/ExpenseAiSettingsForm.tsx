@@ -3,12 +3,10 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { AlertTriangle, Copy, Eye, EyeOff, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -24,6 +22,7 @@ import {
   type ExpenseAiModelOption,
   type ExpenseAiSettings,
 } from "../actions/ai-settings-actions";
+import { AiApiKeyField } from "./AiApiKeyField";
 import { AiModelSelectField } from "./AiModelSelectField";
 import {
   defaultExpenseAiModel,
@@ -59,10 +58,6 @@ export function ExpenseAiSettingsForm({
   const [model, setModel] = useState(initial.model);
   const [apiKey, setApiKey] = useState("");
   const [saving, setSaving] = useState(false);
-  // The stored key, fetched on demand for the eye button — never sent back.
-  const [revealedKey, setRevealedKey] = useState<string | null>(null);
-  const [showKey, setShowKey] = useState(false);
-  const [revealing, setRevealing] = useState(false);
   const [reload, setReload] = useState(0);
   const [loaded, setLoaded] = useState<LoadedModels | null>(null);
 
@@ -106,51 +101,21 @@ export function ExpenseAiSettingsForm({
         ? t("aiModelsFailed")
         : null;
 
-  const hideKey = () => {
-    setShowKey(false);
-    setRevealedKey(null);
-  };
-
-  const storedKey = async (): Promise<string | null> => {
-    if (revealedKey) return revealedKey;
-    setRevealing(true);
+  const reveal = async () => {
     const res = await revealExpenseAiKeyAction(organizationId, provider);
-    setRevealing(false);
-    if (!res.success) {
-      toast.error(t("aiKeyRevealError"));
-      return null;
-    }
-    return res.value;
-  };
-
-  const toggleKey = async () => {
-    if (showKey) return hideKey();
-    if (!apiKey && keyStored) {
-      const value = await storedKey();
-      if (!value) return;
-      setRevealedKey(value);
-    }
-    setShowKey(true);
-  };
-
-  const copyKey = async () => {
-    const value = apiKey || (keyStored ? await storedKey() : null);
-    if (!value) return;
-    try {
-      await navigator.clipboard.writeText(value);
-      toast.success(t("aiKeyCopied"));
-    } catch {
-      toast.error(t("aiKeyRevealError"));
-    }
+    return res.success ? res.value : null;
   };
 
   const changeProvider = (value: string) => {
     const next = value as ExpenseAiProvider;
     setProvider(next);
     setApiKey("");
-    hideKey();
     setModel(
-      next === initial.provider ? initial.model : defaultExpenseAiModel(next),
+      next === initial.provider
+        ? initial.model
+        : next === "contracts"
+          ? initial.contractModel
+          : defaultExpenseAiModel(next),
     );
   };
 
@@ -172,7 +137,6 @@ export function ExpenseAiSettingsForm({
       return;
     }
     setApiKey("");
-    hideKey();
     setReload((count) => count + 1);
     toast.success(t("aiSaveOk"));
   };
@@ -217,67 +181,21 @@ export function ExpenseAiSettingsForm({
         </Alert>
       )}
 
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-2">
-          <Label htmlFor="expense-ai-api-key">{t("shiftAiApiKeyLabel")}</Label>
-          {keyStored && (
-            <Badge variant="slate" className="text-[11px]">
-              {t("aiApiKeySet")}
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <Input
-            id="expense-ai-api-key"
-            type={showKey ? "text" : "password"}
-            autoComplete="off"
-            className="min-w-0 flex-1"
-            value={apiKey || (showKey ? (revealedKey ?? "") : "")}
-            onChange={(e) => {
-              setApiKey(e.target.value);
-              setRevealedKey(null);
-            }}
-            placeholder={keyHint || (ownKey ? "sk-..." : "")}
-            readOnly={!ownKey}
-            disabled={!canManage || saving}
-          />
-          {canManage && (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={toggleKey}
-                disabled={revealing || (!apiKey && !keyStored)}
-                title={showKey ? t("aiKeyHide") : t("aiKeyShow")}
-                aria-label={showKey ? t("aiKeyHide") : t("aiKeyShow")}
-              >
-                {revealing ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : showKey ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={copyKey}
-                disabled={revealing || (!apiKey && !keyStored)}
-                title={t("aiKeyCopy")}
-                aria-label={t("aiKeyCopy")}
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-            </>
-          )}
-        </div>
-        <p className="text-xs text-muted-foreground">
-          {ownKey ? t("expenseAiKeyHint") : t("expenseAiContractKeyHint")}
-        </p>
-      </div>
+      <AiApiKeyField
+        // A revealed key must not survive a provider switch or a save.
+        key={loadKey}
+        id="expense-ai-api-key"
+        label={t("shiftAiApiKeyLabel")}
+        hint={ownKey ? t("expenseAiKeyHint") : t("expenseAiContractKeyHint")}
+        value={apiKey}
+        onChange={setApiKey}
+        keyStored={keyStored}
+        keyHint={keyHint}
+        reveal={reveal}
+        canManage={canManage}
+        readOnly={!ownKey}
+        disabled={!canManage || saving}
+      />
 
       <div className="space-y-1.5">
         <Label htmlFor="expense-ai-model">{t("aiModelLabel")}</Label>

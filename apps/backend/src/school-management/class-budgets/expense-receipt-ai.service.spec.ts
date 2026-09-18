@@ -80,7 +80,7 @@ describe('ExpenseReceiptAiService', () => {
     global.fetch = realFetch;
   });
 
-  it('defaults to the contract Mistral key with a vision model', async () => {
+  it('defaults to the contract Mistral key and the contract model', async () => {
     fetchMock.mockReturnValue(
       mistralAnswer({
         vendor: 'Migros',
@@ -102,11 +102,24 @@ describe('ExpenseReceiptAiService', () => {
       'Bearer mistral-key',
     );
     expect(JSON.parse(init.body as string)).toMatchObject({
-      model: 'mistral-small-latest',
+      model: 'mistral-large-latest',
+    });
+  });
+
+  it('follows the stored contract model until a receipt model is picked', async () => {
+    settings.CONTRACT_AI_MODEL = 'mistral-medium-latest';
+    fetchMock.mockReturnValue(mistralAnswer({ vendor: 'Migros' }));
+
+    await service.analyze(CLASS, FILE, ORG, user);
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(init.body as string)).toMatchObject({
+      model: 'mistral-medium-latest',
     });
   });
 
   it('uses the model picked for the contract key', async () => {
+    settings.CONTRACT_AI_MODEL = 'mistral-medium-latest';
     settings.EXPENSE_AI_MODEL = 'mistral-large-latest';
     fetchMock.mockReturnValue(mistralAnswer({ vendor: 'Migros' }));
 

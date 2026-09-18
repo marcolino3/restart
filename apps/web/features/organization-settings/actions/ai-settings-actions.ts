@@ -63,6 +63,8 @@ export interface ExpenseAiSettings {
   /** The contract AI key the "contracts" provider runs on. */
   contractKeySet: boolean;
   contractKeyHint: string;
+  /** Model "contracts" runs on until a receipt model is picked. */
+  contractModel: string;
 }
 
 export interface ExpenseAiModelOption {
@@ -72,8 +74,10 @@ export interface ExpenseAiModelOption {
 
 export interface AiSettings {
   model: string;
-  /** Whether an API key is stored (the value itself is never returned). */
+  /** Whether an API key is stored. */
   apiKeySet: boolean;
+  /** Masked end of the key; the key itself only leaves on reveal. */
+  apiKeyHint: string;
   shiftPlanning: ShiftAiSettings;
   expenseReceipts: ExpenseAiSettings;
 }
@@ -118,11 +122,16 @@ export async function getAiSettingsAction(
       ? await readValue(organizationId, EXPENSE_AI_SETTING_KEYS.model)
       : "";
 
+    const contractKeyHint = have.has(KEYS.apiKey)
+      ? maskApiKey(await readValue(organizationId, KEYS.apiKey))
+      : "";
+
     return {
       success: true,
       data: {
         model: model || AI_DEFAULT_MODEL,
         apiKeySet: have.has(KEYS.apiKey),
+        apiKeyHint: contractKeyHint,
         shiftPlanning: {
           provider,
           model: shiftModel || defaultShiftAiModel(provider),
@@ -130,7 +139,13 @@ export async function getAiSettingsAction(
         },
         expenseReceipts: {
           provider: expenseProvider,
-          model: expenseModel || defaultExpenseAiModel(expenseProvider),
+          // Until a model is picked, "contracts" runs on the contract model
+          // (same rule as the backend).
+          model:
+            expenseModel ||
+            (expenseProvider === "contracts"
+              ? model || AI_DEFAULT_MODEL
+              : defaultExpenseAiModel(expenseProvider)),
           apiKeySet: have.has(EXPENSE_AI_SETTING_KEYS.apiKey),
           apiKeyHint: have.has(EXPENSE_AI_SETTING_KEYS.apiKey)
             ? maskApiKey(
@@ -138,9 +153,8 @@ export async function getAiSettingsAction(
               )
             : "",
           contractKeySet: have.has(KEYS.apiKey),
-          contractKeyHint: have.has(KEYS.apiKey)
-            ? maskApiKey(await readValue(organizationId, KEYS.apiKey))
-            : "",
+          contractKeyHint,
+          contractModel: model || AI_DEFAULT_MODEL,
         },
       },
     };
@@ -359,4 +373,11 @@ export async function getExpenseAiModelsAction(
     console.error(error);
     return { success: false };
   }
+}
+
+/** Full contract AI key for the eye and copy buttons — org admins only. */
+export async function revealContractAiKeyAction(
+  organizationId: string,
+): Promise<{ success: true; value: string } | { success: false }> {
+  return revealExpenseAiKeyAction(organizationId, "contracts");
 }

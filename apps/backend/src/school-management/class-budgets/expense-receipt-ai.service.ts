@@ -1,5 +1,8 @@
 import { TokenPayload } from '@/auth/interfaces/token-payload.interface';
-import { CONTRACT_AI_SETTING_KEYS } from '@/employee-management/contract-templates/contract-ai.service';
+import {
+  CONTRACT_AI_DEFAULT_MODEL,
+  CONTRACT_AI_SETTING_KEYS,
+} from '@/employee-management/contract-templates/contract-ai.service';
 import { OrganizationSettingsService } from '@/organization-settings/organization-settings.service';
 import {
   BadGatewayException,
@@ -273,12 +276,18 @@ export class ExpenseReceiptAiService {
     );
     if (!apiKey) return null;
 
-    // Never the contract model: it is picked for text. The settings form
-    // stores EXPENSE_AI_MODEL together with the provider, so it always
-    // names a model of the active vendor.
+    // The settings form stores EXPENSE_AI_MODEL together with the provider,
+    // so it always names a model of the active vendor. Until one is picked,
+    // "contracts" runs on the contract model: that is the model the key is
+    // known to have an allowance for, and the Mistral chat models read images.
     const model =
       (await this.setting(organizationId, EXPENSE_AI_SETTING_KEYS.model)) ??
-      EXPENSE_AI_DEFAULT_MODELS[vendor];
+      (provider === 'contracts'
+        ? ((await this.setting(
+            organizationId,
+            CONTRACT_AI_SETTING_KEYS.model,
+          )) ?? CONTRACT_AI_DEFAULT_MODEL)
+        : EXPENSE_AI_DEFAULT_MODELS[vendor]);
     return { vendor, apiKey, model };
   }
 

@@ -6,9 +6,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -17,9 +15,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  revealContractAiKeyAction,
   saveAiSettingsAction,
   type AiSettings,
 } from "../actions/ai-settings-actions";
+import { AiApiKeyField } from "./AiApiKeyField";
 
 const MODELS = [
   "mistral-large-latest",
@@ -38,6 +38,13 @@ export function AiSettingsForm({ organizationId, initial, canManage }: Props) {
   const [model, setModel] = useState(initial.model);
   const [apiKey, setApiKey] = useState("");
   const [saving, setSaving] = useState(false);
+  // Remounts the key field after a save so a revealed key is dropped.
+  const [saves, setSaves] = useState(0);
+
+  const reveal = async () => {
+    const res = await revealContractAiKeyAction(organizationId);
+    return res.success ? res.value : null;
+  };
 
   const save = async () => {
     setSaving(true);
@@ -48,6 +55,7 @@ export function AiSettingsForm({ organizationId, initial, canManage }: Props) {
       return;
     }
     setApiKey("");
+    setSaves((count) => count + 1);
     toast.success(t("aiSaveOk"));
   };
 
@@ -58,28 +66,19 @@ export function AiSettingsForm({ organizationId, initial, canManage }: Props) {
         <p className="text-sm text-muted-foreground">{t("aiSubtitle")}</p>
       </div>
 
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-2">
-          <Label htmlFor="ai-api-key">{t("aiApiKeyLabel")}</Label>
-          {initial.apiKeySet && (
-            <Badge variant="slate" className="text-[11px]">
-              {t("aiApiKeySet")}
-            </Badge>
-          )}
-        </div>
-        <Input
-          id="ai-api-key"
-          type="password"
-          autoComplete="off"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          placeholder={
-            initial.apiKeySet ? t("aiApiKeyKeepPlaceholder") : "sk-..."
-          }
-          disabled={!canManage || saving}
-        />
-        <p className="text-xs text-muted-foreground">{t("aiApiKeyHint")}</p>
-      </div>
+      <AiApiKeyField
+        key={saves}
+        id="ai-api-key"
+        label={t("aiApiKeyLabel")}
+        hint={t("expenseAiKeyHint")}
+        value={apiKey}
+        onChange={setApiKey}
+        keyStored={initial.apiKeySet}
+        keyHint={initial.apiKeyHint}
+        reveal={reveal}
+        canManage={canManage}
+        disabled={!canManage || saving}
+      />
 
       <div className="space-y-1.5">
         <Label>{t("aiModelLabel")}</Label>

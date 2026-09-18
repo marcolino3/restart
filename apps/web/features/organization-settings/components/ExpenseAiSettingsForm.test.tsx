@@ -27,6 +27,7 @@ const settings = (patch: Partial<ExpenseAiSettings> = {}): ExpenseAiSettings => 
   apiKeyHint: "",
   contractKeySet: true,
   contractKeyHint: "••••••••wxyz",
+  contractModel: "mistral-large-latest",
   ...patch,
 });
 
