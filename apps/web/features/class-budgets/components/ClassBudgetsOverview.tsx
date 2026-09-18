@@ -137,13 +137,6 @@ export function ClassBudgetsOverview({
       />
 
       <div className="flex flex-wrap items-center gap-2">
-        <SearchInput
-          value={query}
-          onValueChange={setQuery}
-          placeholder={t("searchPlaceholder")}
-          aria-label={t("searchPlaceholder")}
-          containerClassName="max-w-xs"
-        />
         <Select
           value={selectedSchoolClassId}
           onValueChange={(value) => select("classId", value)}
@@ -174,19 +167,6 @@ export function ClassBudgetsOverview({
             ))}
           </SelectContent>
         </Select>
-        {categories.length > 0 && (
-          <DataTableFacetedFilter
-            title={t("category")}
-            options={categories.map((category) => ({
-              value: category.id,
-              label: category.name,
-              searchValue: category.name,
-            }))}
-            selected={categoryFilter}
-            onChange={setCategoryFilter}
-            searchPlaceholder={t("searchCategory")}
-          />
-        )}
       </div>
 
       {summary && (
@@ -206,6 +186,29 @@ export function ClassBudgetsOverview({
             {visibleExpenses.length}
           </span>
         </h2>
+        {/* Search and category facet only narrow the table below. */}
+        <div className="flex flex-wrap items-center gap-2">
+          <SearchInput
+            value={query}
+            onValueChange={setQuery}
+            placeholder={t("searchPlaceholder")}
+            aria-label={t("searchPlaceholder")}
+            containerClassName="max-w-xs"
+          />
+          {categories.length > 0 && (
+            <DataTableFacetedFilter
+              title={t("category")}
+              options={categories.map((category) => ({
+                value: category.id,
+                label: category.name,
+                searchValue: category.name,
+              }))}
+              selected={categoryFilter}
+              onChange={setCategoryFilter}
+              searchPlaceholder={t("searchCategory")}
+            />
+          )}
+        </div>
         <ClassExpensesTable
           expenses={visibleExpenses}
           empty={
